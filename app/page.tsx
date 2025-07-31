@@ -9,6 +9,8 @@ import SecureLoginForm from "@/components/auth/secure-login-form"
 import AdminDashboard from "./components/admin-dashboard"
 import TeacherDashboard from "./components/teacher-dashboard"
 import ParentDashboard from "./components/parent-dashboard"
+import AccountantDashboard from "./components/accountant-dashboard"
+import ErrorBoundary from "@/components/error-boundary"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle, Mail, Clock } from "lucide-react"
@@ -128,6 +130,8 @@ export default function Dashboard() {
         return <TeacherDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
       case "parent":
         return <ParentDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
+      case "accountant":
+        return <AccountantDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
       default:
         return <AdminDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
     }
@@ -141,6 +145,8 @@ export default function Dashboard() {
         return "教师工作台"
       case "parent":
         return "家长服务台"
+      case "accountant":
+        return "会计工作台"
       default:
         return "安亲班管理系统"
     }
@@ -154,6 +160,8 @@ export default function Dashboard() {
         return "default"
       case "parent":
         return "secondary"
+      case "accountant":
+        return "outline"
       default:
         return "outline"
     }
@@ -167,6 +175,8 @@ export default function Dashboard() {
         return "老师"
       case "parent":
         return "家长"
+      case "accountant":
+        return "会计"
       default:
         return userProfile.role
     }
@@ -212,7 +222,11 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">{renderDashboard()}</div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <ErrorBoundary>
+          {renderDashboard()}
+        </ErrorBoundary>
+      </div>
     </div>
   )
 }

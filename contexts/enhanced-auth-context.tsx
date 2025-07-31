@@ -18,7 +18,7 @@ import { auth, db } from "@/lib/firebase"
 interface UserProfile {
   uid: string
   email: string
-  role: "admin" | "teacher" | "parent"
+  role: "admin" | "teacher" | "parent" | "accountant"
   name: string
   status: "pending" | "approved" | "suspended"
   emailVerified: boolean
@@ -35,7 +35,7 @@ interface AuthContextType {
   userProfile: UserProfile | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, name: string, role: "teacher" | "parent") => Promise<void>
+  signUp: (email: string, password: string, name: string, role: "teacher" | "parent" | "accountant") => Promise<void>
   logout: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
   resendVerification: () => Promise<void>
@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signUp = async (email: string, password: string, name: string, role: "teacher" | "parent") => {
+  const signUp = async (email: string, password: string, name: string, role: "teacher" | "parent" | "accountant") => {
     try {
       // 验证密码强度
       if (!isPasswordStrong(password)) {

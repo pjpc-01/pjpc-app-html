@@ -17,7 +17,7 @@ import { auth, db } from "@/lib/firebase"
 interface UserProfile {
   uid: string
   email: string
-  role: "admin" | "teacher" | "parent"
+  role: "admin" | "teacher" | "parent" | "accountant"
   name: string
   createdAt: Date
 }
@@ -27,7 +27,7 @@ interface AuthContextType {
   userProfile: UserProfile | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, name: string, role: "admin" | "teacher" | "parent") => Promise<void>
+  signUp: (email: string, password: string, name: string, role: "admin" | "teacher" | "parent" | "accountant") => Promise<void>
   logout: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
 }
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signUp = async (email: string, password: string, name: string, role: "admin" | "teacher" | "parent") => {
+  const signUp = async (email: string, password: string, name: string, role: "admin" | "teacher" | "parent" | "accountant") => {
     try {
       console.log("尝试注册:", email, "角色:", role)
       const { user } = await createUserWithEmailAndPassword(auth, email, password)

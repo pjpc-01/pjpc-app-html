@@ -30,6 +30,7 @@ import {
   TrendingUp,
   Activity,
 } from "lucide-react"
+import { useAuth } from "@/contexts/enhanced-auth-context"
 
 interface AdminDashboardProps {
   activeTab: string
@@ -54,6 +55,8 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
     { time: "09:20", action: "作业提交", user: "小红", type: "assignment" },
     { time: "08:50", action: "缴费完成", user: "李家长", type: "payment" },
   ]
+
+  const { userProfile } = useAuth()
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -214,14 +217,16 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                     <Settings className="h-6 w-6 text-blue-600" />
                     <span className="text-sm">系统设定</span>
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="h-20 flex flex-col gap-2 bg-transparent hover:bg-purple-50"
-                    onClick={() => setActiveTab("finance")}
-                  >
-                    <DollarSign className="h-6 w-6 text-purple-600" />
-                    <span className="text-sm">财务管理</span>
-                  </Button>
+                  {userProfile?.role === "admin" && (
+                    <Button
+                      variant="outline"
+                      className="h-20 flex flex-col gap-2 bg-transparent hover:bg-purple-50"
+                      onClick={() => setActiveTab("finance")}
+                    >
+                      <DollarSign className="h-6 w-6 text-purple-600" />
+                      <span className="text-sm">财务管理</span>
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     className="h-20 flex flex-col gap-2 bg-transparent hover:bg-green-50"
@@ -389,23 +394,29 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 h-12">
+        <TabsList className={`grid w-full h-12 ${
+          userProfile?.role === "admin" ? "grid-cols-4" : "grid-cols-3"
+        }`}>
           <TabsTrigger value="overview" className="flex items-center gap-2 text-sm">
             <BarChart3 className="h-4 w-4" />
             概览
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2 text-sm">
-            <Settings className="h-4 w-4" />
-            设定
-          </TabsTrigger>
-          <TabsTrigger value="finance" className="flex items-center gap-2 text-sm">
-            <DollarSign className="h-4 w-4" />
-            财务
-          </TabsTrigger>
+          {userProfile?.role === "admin" && (
+            <TabsTrigger value="finance" className="flex items-center gap-2 text-sm">
+              <DollarSign className="h-4 w-4" />
+              财务
+            </TabsTrigger>
+          )}
           <TabsTrigger value="education" className="flex items-center gap-2 text-sm">
             <BookOpen className="h-4 w-4" />
             教育
           </TabsTrigger>
+          {userProfile?.role === "admin" && (
+            <TabsTrigger value="settings" className="flex items-center gap-2 text-sm">
+              <Settings className="h-4 w-4" />
+              设定
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-6">

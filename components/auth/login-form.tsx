@@ -34,7 +34,7 @@ export default function LoginForm() {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "" as "admin" | "teacher" | "parent" | "",
+    role: "" as "admin" | "teacher" | "parent" | "accountant" | "",
   })
 
   // 重置密码表单状态
@@ -240,7 +240,7 @@ export default function LoginForm() {
                     <Label htmlFor="signup-role">用户角色</Label>
                     <Select
                       value={signupForm.role}
-                      onValueChange={(value: "admin" | "teacher" | "parent") =>
+                      onValueChange={(value: "admin" | "teacher" | "parent" | "accountant") =>
                         setSignupForm({ ...signupForm, role: value })
                       }
                     >
@@ -251,6 +251,7 @@ export default function LoginForm() {
                         <SelectItem value="admin">管理员</SelectItem>
                         <SelectItem value="teacher">老师</SelectItem>
                         <SelectItem value="parent">家长</SelectItem>
+                        <SelectItem value="accountant">会计</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

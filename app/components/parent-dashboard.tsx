@@ -9,7 +9,6 @@ import { Progress } from "@/components/ui/progress"
 import StudentManagement from "./student-management"
 import CommunicationSystem from "./communication-system"
 import LearningAnalytics from "./learning-analytics"
-import FinanceManagement from "./finance-management"
 import ScheduleManagement from "./schedule-management"
 import {
   GraduationCap,
@@ -283,7 +282,7 @@ export default function ParentDashboard({ activeTab, setActiveTab }: ParentDashb
                 <CardTitle>快速操作</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <Button
                     variant="outline"
                     className="h-20 flex flex-col gap-2 bg-transparent hover:bg-blue-50"
@@ -302,14 +301,6 @@ export default function ParentDashboard({ activeTab, setActiveTab }: ParentDashb
                   </Button>
                   <Button
                     variant="outline"
-                    className="h-20 flex flex-col gap-2 bg-transparent hover:bg-green-50"
-                    onClick={() => setActiveTab("finance")}
-                  >
-                    <DollarSign className="h-6 w-6 text-green-600" />
-                    <span className="text-sm">缴费记录</span>
-                  </Button>
-                  <Button
-                    variant="outline"
                     className="h-20 flex flex-col gap-2 bg-transparent hover:bg-orange-50"
                     onClick={() => setActiveTab("settings")}
                   >
@@ -322,54 +313,7 @@ export default function ParentDashboard({ activeTab, setActiveTab }: ParentDashb
           </div>
         )
 
-      case "settings":
-        return (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  账户设置
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">个人信息</h3>
-                    <div className="space-y-2">
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        修改个人资料
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        更改密码
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        联系方式管理
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">通知设置</h3>
-                    <div className="space-y-2">
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        WhatsApp通知设置
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        邮件通知偏好
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        紧急联系设置
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )
 
-      case "finance":
-        return <FinanceManagement />
 
       case "education":
         return (
@@ -428,18 +372,10 @@ export default function ParentDashboard({ activeTab, setActiveTab }: ParentDashb
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 h-12">
+        <TabsList className="grid w-full grid-cols-2 h-12">
           <TabsTrigger value="overview" className="flex items-center gap-2 text-sm">
             <BarChart3 className="h-4 w-4" />
             概览
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2 text-sm">
-            <Settings className="h-4 w-4" />
-            设定
-          </TabsTrigger>
-          <TabsTrigger value="finance" className="flex items-center gap-2 text-sm">
-            <DollarSign className="h-4 w-4" />
-            财务
           </TabsTrigger>
           <TabsTrigger value="education" className="flex items-center gap-2 text-sm">
             <BookOpen className="h-4 w-4" />

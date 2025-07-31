@@ -293,51 +293,7 @@ export default function TeacherDashboard({ activeTab, setActiveTab }: TeacherDas
           </div>
         )
 
-      case "settings":
-        return (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  个人设置
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">账户设置</h3>
-                    <div className="space-y-2">
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        修改个人信息
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        更改密码
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        通知设置
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">教学偏好</h3>
-                    <div className="space-y-2">
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        课程模板设置
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        评分标准配置
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        班级管理设置
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )
+
 
       case "education":
         return (
@@ -439,14 +395,10 @@ export default function TeacherDashboard({ activeTab, setActiveTab }: TeacherDas
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-12">
+        <TabsList className="grid w-full grid-cols-2 h-12">
           <TabsTrigger value="overview" className="flex items-center gap-2 text-sm">
             <BarChart3 className="h-4 w-4" />
             概览
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2 text-sm">
-            <Settings className="h-4 w-4" />
-            设定
           </TabsTrigger>
           <TabsTrigger value="education" className="flex items-center gap-2 text-sm">
             <BookOpen className="h-4 w-4" />
