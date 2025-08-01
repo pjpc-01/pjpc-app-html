@@ -69,10 +69,9 @@ export default function FinanceManagement() {
     lastReminderDate: string | null
   }
 
-  const [payments, setPayments] = useState([
-    { id: 1, student: "王小明", amount: 1200, type: "学费", status: "paid", date: "2024-01-15", method: "支付宝" },
-    { id: 2, student: "李小红", amount: 1200, type: "学费", status: "pending", date: "2024-01-10", method: "微信" },
-    { id: 3, student: "张小华", amount: 300, type: "餐费", status: "paid", date: "2024-01-12", method: "银行卡" },
+  const [payments, setPayments] = useState<Payment[]>([
+    { id: 1, invoiceId: 1, amount: 1200, paymentMethod: "支付宝", paymentDate: "2024-01-20", reference: "ALI2024012001" },
+    { id: 2, invoiceId: 2, amount: 150, paymentMethod: "微信", paymentDate: "2024-01-25", reference: "WX2024012501" },
   ])
 
   const [invoices, setInvoices] = useState<Invoice[]>([
@@ -308,6 +307,170 @@ export default function FinanceManagement() {
     }
     setInvoices([...invoices, newInvoice])
     return newInvoice
+  }
+
+  // New function to generate invoice from student fee assignments
+  const generateInvoiceFromStudentFees = (studentId: number, studentName: string, month?: string): Invoice => {
+    // Get student's active fee assignments and calculate total
+    const studentFees = feeItems.filter(fee => fee.status === 'active')
+    const invoiceItems: { name: string; amount: number }[] = []
+    let totalAmount = 0
+
+    // Calculate active sub-items for this student (this would integrate with useStudentFees)
+    studentFees.forEach(fee => {
+      const activeSubItems = fee.subItems.filter(subItem => subItem.active)
+      if (activeSubItems.length > 0) {
+        const feeTotal = activeSubItems.reduce((sum, subItem) => sum + subItem.amount, 0)
+        invoiceItems.push({
+          name: fee.name,
+          amount: feeTotal
+        })
+        totalAmount += feeTotal
+      }
+    })
+
+    const newInvoice: Invoice = {
+      id: Date.now(),
+      invoiceNumber: generateInvoiceNumber(),
+      student: studentName,
+      studentId: studentId,
+      amount: totalAmount,
+      items: invoiceItems,
+      status: "draft",
+      issueDate: new Date().toISOString().split('T')[0],
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      paidDate: null,
+      paymentMethod: null,
+      notes: month ? `${month}月费用` : "学生费用",
+      tax: 0,
+      discount: 0,
+      totalAmount: totalAmount,
+      parentEmail: "", // Would get from student data
+      reminderSent: false,
+      lastReminderDate: null
+    }
+    setInvoices([...invoices, newInvoice])
+    return newInvoice
+  }
+
+  // Function to generate invoices for all students
+  const generateInvoicesForAllStudents = (month?: string) => {
+    students.forEach(student => {
+      generateInvoiceFromStudentFees(student.id, student.name, month)
+    })
+  }
+
+  // Recurring invoice logic for monthly fees
+  const generateMonthlyInvoices = (targetMonth?: string) => {
+    const currentDate = new Date()
+    const month = targetMonth || `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
+    const monthName = new Date(currentDate.getFullYear(), currentDate.getMonth()).toLocaleDateString('zh-CN', { month: 'long' })
+    
+    // Filter for monthly fees only
+    const monthlyFees = feeItems.filter(fee => fee.type === 'monthly' && fee.status === 'active')
+    
+    students.forEach(student => {
+      const invoiceItems: { name: string; amount: number }[] = []
+      let totalAmount = 0
+
+      monthlyFees.forEach(fee => {
+        const activeSubItems = fee.subItems.filter(subItem => subItem.active)
+        if (activeSubItems.length > 0) {
+          const feeTotal = activeSubItems.reduce((sum, subItem) => sum + subItem.amount, 0)
+          invoiceItems.push({
+            name: fee.name,
+            amount: feeTotal
+          })
+          totalAmount += feeTotal
+        }
+      })
+
+      if (totalAmount > 0) {
+        const newInvoice: Invoice = {
+          id: Date.now() + student.id, // Ensure unique ID
+          invoiceNumber: generateInvoiceNumber(),
+          student: student.name,
+          studentId: student.id,
+          amount: totalAmount,
+          items: invoiceItems,
+          status: "draft",
+          issueDate: new Date().toISOString().split('T')[0],
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          paidDate: null,
+          paymentMethod: null,
+          notes: `${monthName}月费用`,
+          tax: 0,
+          discount: 0,
+          totalAmount: totalAmount,
+          parentEmail: "", // Would get from student data
+          reminderSent: false,
+          lastReminderDate: null
+        }
+        setInvoices(prev => [...prev, newInvoice])
+      }
+    })
+  }
+
+  // Check for overdue invoices and update status
+  const checkOverdueInvoices = () => {
+    const today = new Date().toISOString().split('T')[0]
+    setInvoices(prev => prev.map(invoice => {
+      if (invoice.status === 'pending' && invoice.dueDate < today) {
+        return { ...invoice, status: 'overdue' as Invoice['status'] }
+      }
+      return invoice
+    }))
+  }
+
+  // Enhanced payment tracking
+  interface Payment {
+    id: number
+    invoiceId: number
+    amount: number
+    paymentMethod: string
+    paymentDate: string
+    reference: string
+    notes?: string
+  }
+
+  // Add payment to invoice
+  const addPaymentToInvoice = (invoiceId: number, paymentData: Omit<Payment, 'id'>) => {
+    const newPayment: Payment = {
+      id: Date.now(),
+      ...paymentData
+    }
+    setPayments(prev => [...prev, newPayment])
+
+    // Update invoice status based on total payments
+    const invoice = invoices.find(inv => inv.id === invoiceId)
+    if (invoice) {
+      const totalPaid = payments
+        .filter(p => p.invoiceId === invoiceId)
+        .reduce((sum, p) => sum + p.amount, 0) + paymentData.amount
+
+      if (totalPaid >= invoice.totalAmount) {
+        updateInvoiceStatus(invoiceId, 'paid')
+      } else if (totalPaid > 0) {
+        updateInvoiceStatus(invoiceId, 'pending')
+      }
+    }
+  }
+
+  // Get outstanding balance for invoice
+  const getInvoiceOutstandingBalance = (invoiceId: number) => {
+    const invoice = invoices.find(inv => inv.id === invoiceId)
+    if (!invoice) return 0
+
+    const totalPaid = payments
+      .filter(p => p.invoiceId === invoiceId)
+      .reduce((sum, p) => sum + p.amount, 0)
+
+    return Math.max(0, invoice.totalAmount - totalPaid)
+  }
+
+  // Get payment history for invoice
+  const getInvoicePaymentHistory = (invoiceId: number) => {
+    return payments.filter(p => p.invoiceId === invoiceId)
   }
 
   const updateInvoiceStatus = (invoiceId: number, status: Invoice['status']) => {
@@ -912,11 +1075,17 @@ export default function FinanceManagement() {
                   <Button variant="outline" size="sm" onClick={() => setIsBulkInvoiceDialogOpen(true)}>
                     批量开具
                   </Button>
+                  <Button variant="outline" size="sm" onClick={() => generateMonthlyInvoices()}>
+                    生成月费发票
+                  </Button>
                   <Button variant="outline" size="sm">
                     导出发票
                   </Button>
                   <Button variant="outline" size="sm">
                     发送提醒
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={checkOverdueInvoices}>
+                    检查逾期
                   </Button>
                 </div>
                 <Button size="sm" onClick={() => setIsCreateInvoiceDialogOpen(true)}>
@@ -1102,22 +1271,58 @@ export default function FinanceManagement() {
                     </Table>
                   </div>
 
-                  {/* Invoice Summary */}
-                  <div className="border-t pt-4">
-                    <div className="flex justify-between items-center">
-                      <div className="space-y-1">
-                        <div className="text-sm">小计: ¥{selectedInvoice.amount}</div>
-                        <div className="text-sm">税费: ¥{selectedInvoice.tax}</div>
-                        <div className="text-sm">折扣: -¥{selectedInvoice.discount}</div>
-                        <div className="font-semibold">总计: ¥{selectedInvoice.totalAmount}</div>
-                      </div>
-                      <div className="space-x-2">
-                        <Button variant="outline" size="sm">下载PDF</Button>
-                        <Button variant="outline" size="sm">发送邮件</Button>
-                        <Button variant="outline" size="sm">打印</Button>
-                      </div>
-                    </div>
-                  </div>
+                                     {/* Payment History */}
+                   <div>
+                     <h3 className="font-semibold mb-3">付款记录</h3>
+                     {getInvoicePaymentHistory(selectedInvoice.id).length > 0 ? (
+                       <Table>
+                         <TableHeader>
+                           <TableRow>
+                             <TableHead>付款日期</TableHead>
+                             <TableHead>金额</TableHead>
+                             <TableHead>支付方式</TableHead>
+                             <TableHead>参考号</TableHead>
+                           </TableRow>
+                         </TableHeader>
+                         <TableBody>
+                           {getInvoicePaymentHistory(selectedInvoice.id).map((payment) => (
+                             <TableRow key={payment.id}>
+                               <TableCell>{payment.paymentDate}</TableCell>
+                               <TableCell>¥{payment.amount}</TableCell>
+                               <TableCell>{payment.paymentMethod}</TableCell>
+                               <TableCell>{payment.reference}</TableCell>
+                             </TableRow>
+                           ))}
+                         </TableBody>
+                       </Table>
+                     ) : (
+                       <p className="text-gray-500 text-sm">暂无付款记录</p>
+                     )}
+                   </div>
+
+                   {/* Invoice Summary */}
+                   <div className="border-t pt-4">
+                     <div className="flex justify-between items-center">
+                       <div className="space-y-1">
+                         <div className="text-sm">小计: ¥{selectedInvoice.amount}</div>
+                         <div className="text-sm">税费: ¥{selectedInvoice.tax}</div>
+                         <div className="text-sm">折扣: -¥{selectedInvoice.discount}</div>
+                         <div className="font-semibold">总计: ¥{selectedInvoice.totalAmount}</div>
+                         <div className="text-sm text-green-600">
+                           已付款: ¥{getInvoicePaymentHistory(selectedInvoice.id).reduce((sum, p) => sum + p.amount, 0)}
+                         </div>
+                         <div className="text-sm text-red-600">
+                           未付款: ¥{getInvoiceOutstandingBalance(selectedInvoice.id)}
+                         </div>
+                       </div>
+                       <div className="space-x-2">
+                         <Button variant="outline" size="sm">下载PDF</Button>
+                         <Button variant="outline" size="sm">发送邮件</Button>
+                         <Button variant="outline" size="sm">打印</Button>
+                         <Button variant="outline" size="sm">添加付款</Button>
+                       </div>
+                     </div>
+                   </div>
                 </div>
               )}
             </DialogContent>
@@ -1244,30 +1449,31 @@ export default function FinanceManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {payments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell className="font-medium">{payment.student}</TableCell>
-                      <TableCell>{payment.type}</TableCell>
-                      <TableCell>¥{payment.amount}</TableCell>
-                      <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                      <TableCell>{payment.date}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{payment.method}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="ghost" size="sm">
-                            查看
-                          </Button>
-                          {payment.status === "pending" && (
+                  {payments.map((payment) => {
+                    const invoice = invoices.find(inv => inv.id === payment.invoiceId)
+                    return (
+                      <TableRow key={payment.id}>
+                        <TableCell className="font-medium">{invoice?.student || '未知学生'}</TableCell>
+                        <TableCell>发票付款</TableCell>
+                        <TableCell>¥{payment.amount}</TableCell>
+                        <TableCell>{getStatusBadge('paid')}</TableCell>
+                        <TableCell>{payment.paymentDate}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{payment.paymentMethod}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
                             <Button variant="ghost" size="sm">
-                              催缴
+                              查看
                             </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                            <Button variant="ghost" size="sm">
+                              退款
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
