@@ -29,6 +29,7 @@ import {
   Calendar,
   TrendingUp,
   Activity,
+  Database,
 } from "lucide-react"
 import { useAuth } from "@/contexts/enhanced-auth-context"
 
@@ -284,6 +285,17 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                   <p className="text-sm text-gray-600 mb-3">系统安全和访问监控</p>
                   <Badge variant="secondary" className="bg-green-100 text-green-800">
                     {stats.systemHealth}% 健康
+                  </Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-purple-200">
+                <CardContent className="p-6 text-center" onClick={() => window.location.href = '/data-import'}>
+                  <Database className="h-12 w-12 mx-auto mb-4 text-purple-600" />
+                  <h3 className="font-semibold mb-2">数据导入</h3>
+                  <p className="text-sm text-gray-600 mb-3">从Google Sheets导入学生数据</p>
+                  <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                    一次性设置
                   </Badge>
                 </CardContent>
               </Card>
