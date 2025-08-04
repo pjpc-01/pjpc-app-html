@@ -50,10 +50,14 @@ export const useFinancialStats = () => {
       let monthlyRevenue = 0
       paymentsSnapshot.forEach(doc => {
         const paymentData = doc.data()
-        const paymentDate = paymentData.date.toDate()
         
-        if (paymentDate >= startOfMonth && paymentDate <= endOfMonth && paymentData.status === 'completed') {
-          monthlyRevenue += paymentData.amount
+        // 安全检查：确保 date 字段存在且是 Firestore Timestamp
+        if (paymentData.date && typeof paymentData.date.toDate === 'function') {
+          const paymentDate = paymentData.date.toDate()
+          
+          if (paymentDate >= startOfMonth && paymentDate <= endOfMonth && paymentData.status === 'completed') {
+            monthlyRevenue += paymentData.amount || 0
+          }
         }
       })
       
@@ -139,16 +143,20 @@ export const useFinancialStats = () => {
       const transactions: Transaction[] = []
       paymentsSnapshot.forEach(doc => {
         const paymentData = doc.data()
-        transactions.push({
-          id: doc.id,
-          amount: paymentData.amount,
-          type: paymentData.type,
-          status: paymentData.status,
-          description: paymentData.description,
-          studentName: paymentData.studentName,
-          date: paymentData.date.toDate(),
-          paymentMethod: paymentData.paymentMethod
-        })
+        
+        // 安全检查：确保必要字段存在
+        if (paymentData.date && typeof paymentData.date.toDate === 'function') {
+          transactions.push({
+            id: doc.id,
+            amount: paymentData.amount || 0,
+            type: paymentData.type || 'payment',
+            status: paymentData.status || 'pending',
+            description: paymentData.description || 'Payment',
+            studentName: paymentData.studentName || 'Unknown Student',
+            date: paymentData.date.toDate(),
+            paymentMethod: paymentData.paymentMethod || 'Unknown'
+          })
+        }
       })
       
       // 按日期排序，最新的在前
@@ -172,14 +180,18 @@ export const useFinancialStats = () => {
       
       paymentsSnapshot.forEach(doc => {
         const paymentData = doc.data()
-        if (paymentData.status === 'completed') {
+        
+        // 安全检查：确保必要字段存在
+        if (paymentData.status === 'completed' && 
+            paymentData.date && 
+            typeof paymentData.date.toDate === 'function') {
           const paymentDate = paymentData.date.toDate()
           const monthKey = `${paymentDate.getFullYear()}-${String(paymentDate.getMonth() + 1).padStart(2, '0')}`
           
           if (!revenueByMonth[monthKey]) {
             revenueByMonth[monthKey] = 0
           }
-          revenueByMonth[monthKey] += paymentData.amount
+          revenueByMonth[monthKey] += paymentData.amount || 0
         }
       })
       
