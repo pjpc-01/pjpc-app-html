@@ -79,17 +79,45 @@ export const useDashboardStats = () => {
   // 获取学生统计
   const fetchStudentStats = useCallback(async () => {
     try {
+      let totalStudents = 0
+      
+      // 获取主要学生集合
+      const studentsRef = collection(db, 'students')
+      const studentsSnapshot = await getDocs(studentsRef)
+      const studentsCount = studentsSnapshot.size
+      totalStudents += studentsCount
+
       // 获取小学学生
       const primaryStudentsRef = collection(db, 'primary_students')
       const primarySnapshot = await getDocs(primaryStudentsRef)
       const primaryCount = primarySnapshot.size
+      totalStudents += primaryCount
 
       // 获取中学学生
       const secondaryStudentsRef = collection(db, 'secondary_students')
       const secondarySnapshot = await getDocs(secondaryStudentsRef)
       const secondaryCount = secondarySnapshot.size
+      totalStudents += secondaryCount
 
-      const totalStudents = primaryCount + secondaryCount
+      // 获取其他可能的学生集合
+      const otherStudentCollections = [
+        'primary-students',
+        'secondary-students', 
+        'elementary_students',
+        'middle_students',
+        'high_students'
+      ]
+
+      for (const collectionName of otherStudentCollections) {
+        try {
+          const collectionRef = collection(db, collectionName)
+          const snapshot = await getDocs(collectionRef)
+          totalStudents += snapshot.size
+        } catch (error) {
+          // 忽略不存在的集合
+          console.log(`Collection ${collectionName} does not exist or is not accessible`)
+        }
+      }
 
       // 计算今日出勤（这里可以根据实际需求调整）
       const today = new Date()
@@ -220,6 +248,14 @@ export const useDashboardStats = () => {
       setError('获取用户数据失败')
     })
 
+    // 监听主要学生集合
+    const unsubscribeStudents = onSnapshot(collection(db, 'students'), () => {
+      fetchAllStats()
+    }, (error) => {
+      console.error('Students snapshot error:', error)
+      setError('获取学生数据失败')
+    })
+
     const unsubscribePrimaryStudents = onSnapshot(collection(db, 'primary_students'), () => {
       fetchAllStats()
     }, (error) => {
@@ -236,6 +272,7 @@ export const useDashboardStats = () => {
 
     return () => {
       unsubscribeUsers()
+      unsubscribeStudents()
       unsubscribePrimaryStudents()
       unsubscribeSecondaryStudents()
     }
