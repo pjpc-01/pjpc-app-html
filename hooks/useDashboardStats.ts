@@ -123,18 +123,14 @@ export const useDashboardStats = () => {
     try {
       const activities: Activity[] = []
       
-      // 获取最近登录的用户
+      // 获取所有用户，然后在客户端进行过滤和排序
       const usersRef = collection(db, 'users')
-      const recentUsersQuery = query(
-        usersRef,
-        where('lastLogin', '!=', null),
-        orderBy('lastLogin', 'desc'),
-        limit(5)
-      )
+      const usersSnapshot = await getDocs(usersRef)
       
-      const recentUsersSnapshot = await getDocs(recentUsersQuery)
-      recentUsersSnapshot.forEach(doc => {
+      usersSnapshot.forEach(doc => {
         const userData = doc.data()
+        
+        // 添加登录活动
         if (userData.lastLogin) {
           activities.push({
             id: doc.id,
@@ -145,27 +141,18 @@ export const useDashboardStats = () => {
             timestamp: userData.lastLogin.toDate()
           })
         }
-      })
-
-      // 获取待审核用户
-      const pendingUsersQuery = query(
-        usersRef,
-        where('status', '==', 'pending'),
-        orderBy('createdAt', 'desc'),
-        limit(3)
-      )
-      
-      const pendingUsersSnapshot = await getDocs(pendingUsersQuery)
-      pendingUsersSnapshot.forEach(doc => {
-        const userData = doc.data()
-        activities.push({
-          id: doc.id,
-          time: Formatter.formatDate(userData.createdAt?.toDate(), 'short'),
-          action: '新用户注册',
-          user: userData.name || userData.email,
-          type: 'user',
-          timestamp: userData.createdAt?.toDate() || new Date()
-        })
+        
+        // 添加待审核用户活动
+        if (userData.status === 'pending' && userData.createdAt) {
+          activities.push({
+            id: doc.id,
+            time: Formatter.formatDate(userData.createdAt.toDate(), 'short'),
+            action: '新用户注册',
+            user: userData.name || userData.email,
+            type: 'user',
+            timestamp: userData.createdAt.toDate()
+          })
+        }
       })
 
       // 按时间排序
