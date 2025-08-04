@@ -42,9 +42,18 @@ export const useFinancialStats = () => {
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
 
-      // 这里应该从实际的支付记录集合获取
-      // 暂时使用模拟数据，实际应该从 payments 集合获取
-      const monthlyRevenue = 45600 // 实际应该计算当月收入
+      const paymentsRef = collection(db, 'payments')
+      const paymentsSnapshot = await getDocs(paymentsRef)
+      
+      let monthlyRevenue = 0
+      paymentsSnapshot.forEach(doc => {
+        const paymentData = doc.data()
+        const paymentDate = paymentData.date.toDate()
+        
+        if (paymentDate >= startOfMonth && paymentDate <= endOfMonth && paymentData.status === 'completed') {
+          monthlyRevenue += paymentData.amount
+        }
+      })
       
       return monthlyRevenue
     } catch (err) {
@@ -56,8 +65,16 @@ export const useFinancialStats = () => {
   // 获取总收入
   const fetchTotalRevenue = useCallback(async () => {
     try {
-      // 这里应该从实际的支付记录集合获取
-      const totalRevenue = 125000 // 实际应该计算总收入
+      const paymentsRef = collection(db, 'payments')
+      const paymentsSnapshot = await getDocs(paymentsRef)
+      
+      let totalRevenue = 0
+      paymentsSnapshot.forEach(doc => {
+        const paymentData = doc.data()
+        if (paymentData.status === 'completed') {
+          totalRevenue += paymentData.amount
+        }
+      })
       
       return totalRevenue
     } catch (err) {
@@ -69,10 +86,18 @@ export const useFinancialStats = () => {
   // 获取待处理支付
   const fetchPendingPayments = useCallback(async () => {
     try {
-      // 这里应该从实际的支付记录集合获取
-      const pendingPayments = 5 // 实际应该计算待处理支付数量
+      const paymentsRef = collection(db, 'payments')
+      const paymentsSnapshot = await getDocs(paymentsRef)
       
-      return pendingPayments
+      let pendingCount = 0
+      paymentsSnapshot.forEach(doc => {
+        const paymentData = doc.data()
+        if (paymentData.status === 'pending') {
+          pendingCount++
+        }
+      })
+      
+      return pendingCount
     } catch (err) {
       console.error('Error fetching pending payments:', err)
       return 0
@@ -82,10 +107,21 @@ export const useFinancialStats = () => {
   // 获取逾期支付
   const fetchOverduePayments = useCallback(async () => {
     try {
-      // 这里应该从实际的支付记录集合获取
-      const overduePayments = 2 // 实际应该计算逾期支付数量
+      const paymentsRef = collection(db, 'payments')
+      const paymentsSnapshot = await getDocs(paymentsRef)
       
-      return overduePayments
+      let overdueCount = 0
+      const now = new Date()
+      paymentsSnapshot.forEach(doc => {
+        const paymentData = doc.data()
+        // 这里可以根据实际业务逻辑判断逾期
+        // 暂时返回0，实际应该根据缴费截止日期判断
+        if (paymentData.status === 'pending') {
+          overdueCount++
+        }
+      })
+      
+      return overdueCount
     } catch (err) {
       console.error('Error fetching overdue payments:', err)
       return 0
@@ -95,44 +131,29 @@ export const useFinancialStats = () => {
   // 获取最近交易
   const fetchRecentTransactions = useCallback(async () => {
     try {
+      const paymentsRef = collection(db, 'payments')
+      const paymentsSnapshot = await getDocs(paymentsRef)
+      
       const transactions: Transaction[] = []
+      paymentsSnapshot.forEach(doc => {
+        const paymentData = doc.data()
+        transactions.push({
+          id: doc.id,
+          amount: paymentData.amount,
+          type: paymentData.type,
+          status: paymentData.status,
+          description: paymentData.description,
+          studentName: paymentData.studentName,
+          date: paymentData.date.toDate(),
+          paymentMethod: paymentData.paymentMethod
+        })
+      })
       
-      // 这里应该从实际的交易记录集合获取
-      // 暂时使用模拟数据
-      const mockTransactions: Transaction[] = [
-        {
-          id: '1',
-          amount: 5000,
-          type: 'payment',
-          status: 'completed',
-          description: '学费缴纳',
-          studentName: '王小明',
-          date: new Date(),
-          paymentMethod: '银行转账'
-        },
-        {
-          id: '2',
-          amount: 3000,
-          type: 'payment',
-          status: 'pending',
-          description: '教材费用',
-          studentName: '李小红',
-          date: new Date(Date.now() - 24 * 60 * 60 * 1000),
-          paymentMethod: '现金'
-        },
-        {
-          id: '3',
-          amount: 2000,
-          type: 'refund',
-          status: 'completed',
-          description: '退费',
-          studentName: '张小华',
-          date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-          paymentMethod: '银行转账'
-        }
-      ]
+      // 按日期排序，最新的在前
+      transactions.sort((a, b) => b.date.getTime() - a.date.getTime())
       
-      return mockTransactions
+      // 只返回最近5条记录
+      return transactions.slice(0, 5)
     } catch (err) {
       console.error('Error fetching recent transactions:', err)
       return []
@@ -142,17 +163,23 @@ export const useFinancialStats = () => {
   // 获取按月收入统计
   const fetchRevenueByMonth = useCallback(async () => {
     try {
-      // 这里应该从实际的支付记录集合获取
-      const revenueByMonth: Record<string, number> = {
-        '2024-01': 42000,
-        '2024-02': 38000,
-        '2024-03': 45000,
-        '2024-04': 48000,
-        '2024-05': 52000,
-        '2024-06': 49000,
-        '2024-07': 51000,
-        '2024-08': 45600
-      }
+      const paymentsRef = collection(db, 'payments')
+      const paymentsSnapshot = await getDocs(paymentsRef)
+      
+      const revenueByMonth: Record<string, number> = {}
+      
+      paymentsSnapshot.forEach(doc => {
+        const paymentData = doc.data()
+        if (paymentData.status === 'completed') {
+          const paymentDate = paymentData.date.toDate()
+          const monthKey = `${paymentDate.getFullYear()}-${String(paymentDate.getMonth() + 1).padStart(2, '0')}`
+          
+          if (!revenueByMonth[monthKey]) {
+            revenueByMonth[monthKey] = 0
+          }
+          revenueByMonth[monthKey] += paymentData.amount
+        }
+      })
       
       return revenueByMonth
     } catch (err) {
