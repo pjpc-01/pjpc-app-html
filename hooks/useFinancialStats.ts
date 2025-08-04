@@ -51,12 +51,20 @@ export const useFinancialStats = () => {
       paymentsSnapshot.forEach(doc => {
         const paymentData = doc.data()
         
-        // 安全检查：确保 date 字段存在且是 Firestore Timestamp
-        if (paymentData.date && typeof paymentData.date.toDate === 'function') {
-          const paymentDate = paymentData.date.toDate()
+        // 更严格的安全检查
+        if (paymentData && 
+            paymentData.date && 
+            typeof paymentData.date.toDate === 'function' &&
+            paymentData.amount !== undefined) {
           
-          if (paymentDate >= startOfMonth && paymentDate <= endOfMonth && paymentData.status === 'completed') {
-            monthlyRevenue += paymentData.amount || 0
+          try {
+            const paymentDate = paymentData.date.toDate()
+            
+            if (paymentDate >= startOfMonth && paymentDate <= endOfMonth && paymentData.status === 'completed') {
+              monthlyRevenue += paymentData.amount || 0
+            }
+          } catch (dateError) {
+            console.warn('Invalid date in payment document for monthly revenue:', doc.id, dateError)
           }
         }
       })
@@ -144,17 +152,33 @@ export const useFinancialStats = () => {
       paymentsSnapshot.forEach(doc => {
         const paymentData = doc.data()
         
-        // 安全检查：确保必要字段存在
-        if (paymentData.date && typeof paymentData.date.toDate === 'function') {
-          transactions.push({
-            id: doc.id,
-            amount: paymentData.amount || 0,
-            type: paymentData.type || 'payment',
-            status: paymentData.status || 'pending',
-            description: paymentData.description || 'Payment',
-            studentName: paymentData.studentName || 'Unknown Student',
-            date: paymentData.date.toDate(),
-            paymentMethod: paymentData.paymentMethod || 'Unknown'
+        // 更严格的安全检查
+        if (paymentData && 
+            paymentData.date && 
+            typeof paymentData.date.toDate === 'function' &&
+            paymentData.amount !== undefined) {
+          
+          try {
+            const paymentDate = paymentData.date.toDate()
+            transactions.push({
+              id: doc.id,
+              amount: paymentData.amount || 0,
+              type: paymentData.type || 'payment',
+              status: paymentData.status || 'pending',
+              description: paymentData.description || 'Payment',
+              studentName: paymentData.studentName || 'Unknown Student',
+              date: paymentDate,
+              paymentMethod: paymentData.paymentMethod || 'Unknown'
+            })
+          } catch (dateError) {
+            console.warn('Invalid date in payment document:', doc.id, dateError)
+            // 跳过这个文档
+          }
+        } else {
+          console.warn('Skipping payment document with missing required fields:', doc.id, {
+            hasDate: !!paymentData?.date,
+            hasToDate: typeof paymentData?.date?.toDate === 'function',
+            hasAmount: paymentData?.amount !== undefined
           })
         }
       })
@@ -181,17 +205,24 @@ export const useFinancialStats = () => {
       paymentsSnapshot.forEach(doc => {
         const paymentData = doc.data()
         
-        // 安全检查：确保必要字段存在
-        if (paymentData.status === 'completed' && 
+        // 更严格的安全检查
+        if (paymentData && 
+            paymentData.status === 'completed' && 
             paymentData.date && 
-            typeof paymentData.date.toDate === 'function') {
-          const paymentDate = paymentData.date.toDate()
-          const monthKey = `${paymentDate.getFullYear()}-${String(paymentDate.getMonth() + 1).padStart(2, '0')}`
+            typeof paymentData.date.toDate === 'function' &&
+            paymentData.amount !== undefined) {
           
-          if (!revenueByMonth[monthKey]) {
-            revenueByMonth[monthKey] = 0
+          try {
+            const paymentDate = paymentData.date.toDate()
+            const monthKey = `${paymentDate.getFullYear()}-${String(paymentDate.getMonth() + 1).padStart(2, '0')}`
+            
+            if (!revenueByMonth[monthKey]) {
+              revenueByMonth[monthKey] = 0
+            }
+            revenueByMonth[monthKey] += paymentData.amount || 0
+          } catch (dateError) {
+            console.warn('Invalid date in payment document for revenue calculation:', doc.id, dateError)
           }
-          revenueByMonth[monthKey] += paymentData.amount || 0
         }
       })
       
