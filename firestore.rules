@@ -2,6 +2,11 @@ rules_version = '2';
 
 service cloud.firestore {
  match /databases/{database}/documents {
+   // 临时允许所有访问用于测试
+   allow read, write: if true;
+   
+   // 以下是正式的安全规则（暂时注释掉）
+   /*
     // 学生数据访问控制
     match /students/{studentId} {
       // 管理员和老师可以读写所有学生数据
@@ -182,5 +187,6 @@ service cloud.firestore {
       // 临时允许匿名读写以进行测试和导入（可以稍后移除）
       allow read, write: if true;
     }
+    */
   }
 }
