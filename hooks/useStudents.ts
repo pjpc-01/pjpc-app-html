@@ -13,9 +13,22 @@ export interface Student {
   status?: string
   createdAt?: Date
   updatedAt?: Date
+  // Additional fields that might exist in Firebase
+  class?: string
+  fatherName?: string
+  motherName?: string
+  attendance?: number
+  progress?: number
+  age?: number
+  dateOfBirth?: string
+  emergencyContact?: string
+  emergencyPhone?: string
+  medicalInfo?: string
+  notes?: string
+  image?: string
 }
 
-export const useStudents = () => {
+export const useStudents = (dataType: 'primary' | 'secondary' = 'primary') => {
   const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -25,36 +38,80 @@ export const useStudents = () => {
       setLoading(true)
       setError(null)
       
-      const firestoreImport = new FirestoreImport()
-      const firestoreStudents = await firestoreImport.getAllStudents()
+      console.log(`Fetching students for dataType: ${dataType}`)
       
-      // Convert FirestoreStudent to Student interface
-      const convertedStudents: Student[] = firestoreStudents.map(student => ({
-        id: student.id,
-        name: student.name,
-        grade: student.grade,
-        parentName: student.parentName,
-        parentEmail: student.parentEmail,
-        phone: student.phone,
-        address: student.address,
-        enrollmentDate: student.enrollmentDate,
-        status: student.status,
-        createdAt: student.createdAt?.toDate(),
-        updatedAt: student.updatedAt?.toDate(),
-      }))
+      // Add timeout protection
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Firebase connection timeout')), 10000) // 10 second timeout
+      })
       
-      setStudents(convertedStudents)
-    } catch (err) {
-      console.error('Error fetching students:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch students')
+             const firestoreImport = new FirestoreImport(dataType)
+       const firestorePromise = firestoreImport.getAllStudents()
       
-      // Fallback to static data if Firestore fails
-      setStudents([
-        { id: "1", name: "王小明", grade: "三年级", parentName: "王大明", parentEmail: "wang@example.com" },
-        { id: "2", name: "李小红", grade: "四年级", parentName: "李大红", parentEmail: "li@example.com" },
-        { id: "3", name: "张小华", grade: "五年级", parentName: "张大华", parentEmail: "zhang@example.com" },
-        { id: "4", name: "陈小军", grade: "三年级", parentName: "陈大军", parentEmail: "chen@example.com" },
-      ])
+             const firestoreStudents = await Promise.race([firestorePromise, timeoutPromise]) as any[]
+       
+       console.log('Raw Firebase students:', firestoreStudents)
+       
+       // Convert FirestoreStudent to Student interface - preserve all Firebase fields
+       const convertedStudents: Student[] = firestoreStudents.map(student => {
+         console.log('Processing student:', { 
+           firebaseId: student.id, 
+           name: student.name,
+           hasId: !!student.id,
+           idType: typeof student.id,
+           allFields: Object.keys(student)
+         })
+         return {
+           id: student.id,
+           name: student.name,
+           grade: student.grade,
+           parentName: student.parentName,
+           parentEmail: student.parentEmail,
+           phone: student.phone,
+           address: student.address,
+           enrollmentDate: student.enrollmentDate,
+           status: student.status,
+           createdAt: student.createdAt?.toDate(),
+           updatedAt: student.updatedAt?.toDate(),
+           // Preserve all additional Firebase fields
+           class: student.class,
+           fatherName: student.fatherName,
+           motherName: student.motherName,
+           attendance: student.attendance,
+           progress: student.progress,
+           age: student.age,
+           dateOfBirth: student.dateOfBirth,
+           emergencyContact: student.emergencyContact,
+           emergencyPhone: student.emergencyPhone,
+           medicalInfo: student.medicalInfo,
+           notes: student.notes,
+           image: student.image,
+         }
+       })
+       
+       // Filter out students with names starting with "Student" (empty placeholders)
+       const filteredStudents = convertedStudents.filter(student => 
+         !student.name?.startsWith("Student") && student.name?.trim() !== ""
+       )
+       
+       console.log('Filtered students:', filteredStudents.map(s => ({ id: s.id, name: s.name })))
+       setStudents(filteredStudents)
+         } catch (err) {
+       console.error('Error fetching students:', err)
+       console.error('Error details:', {
+         message: err instanceof Error ? err.message : 'Unknown error',
+         stack: err instanceof Error ? err.stack : 'No stack trace',
+         type: typeof err
+       })
+       setError(err instanceof Error ? err.message : 'Failed to fetch students')
+       
+       // Fallback to static data if Firestore fails
+       setStudents([
+         { id: "G16", name: "王小明", grade: "三年级", parentName: "王大明", parentEmail: "wang@example.com" },
+         { id: "G17", name: "李小红", grade: "四年级", parentName: "李大红", parentEmail: "li@example.com" },
+         { id: "G18", name: "张小华", grade: "五年级", parentName: "张大华", parentEmail: "zhang@example.com" },
+         { id: "G19", name: "陈小军", grade: "三年级", parentName: "陈大军", parentEmail: "chen@example.com" },
+       ])
     } finally {
       setLoading(false)
     }
@@ -62,22 +119,35 @@ export const useStudents = () => {
 
   const getStudentsByGrade = async (grade: string): Promise<Student[]> => {
     try {
-      const firestoreImport = new FirestoreImport()
-      const firestoreStudents = await firestoreImport.getStudentsByGrade(grade)
+           const firestoreImport = new FirestoreImport(dataType)
+     const firestoreStudents = await firestoreImport.getStudentsByGrade(grade)
       
-      return firestoreStudents.map(student => ({
-        id: student.id,
-        name: student.name,
-        grade: student.grade,
-        parentName: student.parentName,
-        parentEmail: student.parentEmail,
-        phone: student.phone,
-        address: student.address,
-        enrollmentDate: student.enrollmentDate,
-        status: student.status,
-        createdAt: student.createdAt?.toDate(),
-        updatedAt: student.updatedAt?.toDate(),
-      }))
+             return firestoreStudents.map(student => ({
+         id: student.id,
+         name: student.name,
+         grade: student.grade,
+         parentName: student.parentName,
+         parentEmail: student.parentEmail,
+         phone: student.phone,
+         address: student.address,
+         enrollmentDate: student.enrollmentDate,
+         status: student.status,
+         createdAt: student.createdAt?.toDate(),
+         updatedAt: student.updatedAt?.toDate(),
+         // Preserve all additional Firebase fields
+         class: student.class,
+         fatherName: student.fatherName,
+         motherName: student.motherName,
+         attendance: student.attendance,
+         progress: student.progress,
+         age: student.age,
+         dateOfBirth: student.dateOfBirth,
+         emergencyContact: student.emergencyContact,
+         emergencyPhone: student.emergencyPhone,
+         medicalInfo: student.medicalInfo,
+         notes: student.notes,
+         image: student.image,
+       }))
     } catch (err) {
       console.error('Error fetching students by grade:', err)
       throw err
@@ -86,8 +156,8 @@ export const useStudents = () => {
 
   const updateStudent = async (studentId: string, updates: Partial<Student>) => {
     try {
-      const firestoreImport = new FirestoreImport()
-      await firestoreImport.updateStudent(studentId, updates)
+           const firestoreImport = new FirestoreImport(dataType)
+     await firestoreImport.updateStudent(studentId, updates)
       
       // Refresh the students list
       await fetchStudents()
@@ -99,8 +169,8 @@ export const useStudents = () => {
 
   const deleteStudent = async (studentId: string) => {
     try {
-      const firestoreImport = new FirestoreImport()
-      await firestoreImport.deleteStudent(studentId)
+           const firestoreImport = new FirestoreImport(dataType)
+     await firestoreImport.deleteStudent(studentId)
       
       // Refresh the students list
       await fetchStudents()
@@ -110,10 +180,23 @@ export const useStudents = () => {
     }
   }
 
+  const addStudent = async (studentData: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+           const firestoreImport = new FirestoreImport(dataType)
+     await firestoreImport.addStudent(studentData)
+      
+      // Refresh the students list
+      await fetchStudents()
+    } catch (err) {
+      console.error('Error adding student:', err)
+      throw err
+    }
+  }
+
   const getImportStats = async () => {
     try {
-      const firestoreImport = new FirestoreImport()
-      return await firestoreImport.getImportStats()
+           const firestoreImport = new FirestoreImport(dataType)
+     return await firestoreImport.getImportStats()
     } catch (err) {
       console.error('Error getting import stats:', err)
       throw err
@@ -122,7 +205,7 @@ export const useStudents = () => {
 
   useEffect(() => {
     fetchStudents()
-  }, [])
+  }, [dataType]) // 当dataType改变时重新获取数据
 
   return { 
     students, 
@@ -132,6 +215,7 @@ export const useStudents = () => {
     getStudentsByGrade,
     updateStudent,
     deleteStudent,
+    addStudent,
     getImportStats
   }
 } 

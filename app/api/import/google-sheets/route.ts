@@ -17,11 +17,14 @@ class GoogleSheetsAPI {
     this.sheets = google.sheets({ version: 'v4', auth: this.auth })
   }
 
-  async getStudentData(spreadsheetId: string, range: string = 'A:Z'): Promise<StudentData[]> {
+  async getStudentData(spreadsheetId: string, range: string = 'A:Z', sheetName?: string): Promise<StudentData[]> {
     try {
+      // If sheetName is provided, use it in the range
+      const fullRange = sheetName ? `${sheetName}!${range}` : range
+      
       const response = await this.sheets.spreadsheets.values.get({
         spreadsheetId,
-        range,
+        range: fullRange,
       })
 
       const rows = response.data.values
@@ -92,11 +95,14 @@ class GoogleSheetsAPI {
     }
   }
 
-  async validateSpreadsheet(spreadsheetId: string): Promise<{ isValid: boolean; headers: string[] }> {
+  async validateSpreadsheet(spreadsheetId: string, sheetName?: string): Promise<{ isValid: boolean; headers: string[] }> {
     try {
+      // If sheetName is provided, use it in the range
+      const fullRange = sheetName ? `${sheetName}!A1:Z1` : 'A1:Z1'
+      
       const response = await this.sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: 'A1:Z1',
+        range: fullRange,
       })
 
       const headers = response.data.values?.[0] || []
@@ -120,7 +126,7 @@ class GoogleSheetsAPI {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { spreadsheetId, spreadsheetRange, credentials, action } = body
+    const { spreadsheetId, spreadsheetRange, credentials, dataType = 'primary', action, sheetName } = body
 
     // For stats action, we don't need spreadsheetId and credentials
     if (action !== 'stats' && (!spreadsheetId || !credentials)) {
@@ -152,21 +158,45 @@ export async function POST(request: NextRequest) {
       )
     }
     const sheetsAPI = new GoogleSheetsAPI(creds)
-    const firestoreImport = new FirestoreImport()
+    const firestoreImport = new FirestoreImport(dataType as 'primary' | 'secondary')
 
     switch (action) {
       case 'validate':
-        const validation = await sheetsAPI.validateSpreadsheet(spreadsheetId)
+        const validation = await sheetsAPI.validateSpreadsheet(spreadsheetId, sheetName)
         return NextResponse.json(validation)
 
       case 'preview':
-        const previewData = await sheetsAPI.getStudentData(spreadsheetId, spreadsheetRange)
+        const previewData = await sheetsAPI.getStudentData(spreadsheetId, spreadsheetRange, sheetName)
         return NextResponse.json({ data: previewData.slice(0, 5) })
 
       case 'import':
-        const data = await sheetsAPI.getStudentData(spreadsheetId, spreadsheetRange)
-        const result = await firestoreImport.importStudents(data, 'google-sheets')
-        return NextResponse.json(result)
+        try {
+          console.log(`Starting import process for dataType: ${dataType}`)
+          console.log(`Spreadsheet ID: ${spreadsheetId}, Sheet Name: ${sheetName || 'default'}`)
+          
+          const data = await sheetsAPI.getStudentData(spreadsheetId, spreadsheetRange, sheetName)
+          console.log(`Retrieved ${data.length} students from Google Sheets`)
+          
+          if (data.length === 0) {
+            return NextResponse.json({
+              error: 'No data found to import',
+              suggestion: 'Please check your spreadsheet data and sheet name'
+            }, { status: 400 })
+          }
+          
+          console.log('Sample data:', data.slice(0, 2))
+          
+          const result = await firestoreImport.importStudents(data, 'google-sheets')
+          console.log('Import result:', result)
+          
+          return NextResponse.json(result)
+        } catch (error) {
+          console.error('Import error:', error)
+          return NextResponse.json({
+            error: error instanceof Error ? error.message : 'Unknown import error',
+            suggestion: 'Check Firebase configuration and permissions'
+          }, { status: 500 })
+        }
 
       case 'stats':
         const stats = await firestoreImport.getImportStats()

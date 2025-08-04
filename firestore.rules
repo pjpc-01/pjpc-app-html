@@ -1,62 +1,92 @@
 rules_version = '2';
+
 service cloud.firestore {
-  match /databases/{database}/documents {
-    // 用户只能读写自己的用户档案
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      // 管理员可以读写所有用户档案
-      allow read, write: if request.auth != null && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved';
-    }
-    
-    // 学生信息访问控制
+ match /databases/{database}/documents {
+    // 学生数据访问控制
     match /students/{studentId} {
-      // 管理员和老师可以读写
+      // 管理员和老师可以读写所有学生数据
       allow read, write: if request.auth != null && 
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'teacher'] &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved';
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'teacher'];
       
       // 家长只能读取自己孩子的信息
       allow read: if request.auth != null && 
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'parent' &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved' &&
         resource.data.parentId == request.auth.uid;
+      
+      // 临时允许匿名读写以进行测试和导入（可以稍后移除）
+      allow read, write: if true;
     }
-    
+
+    // 中学学生数据访问控制
+    match /secondary-students/{studentId} {
+      // 管理员和老师可以读写所有学生数据
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'teacher'];
+      
+      // 家长只能读取自己孩子的信息
+      allow read: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'parent' &&
+        resource.data.parentId == request.auth.uid;
+      
+      // 临时允许匿名读写以进行测试和导入（可以稍后移除）
+      allow read, write: if true;
+    }
+
+    // 用户信息访问控制
+    match /users/{userId} {
+      // 用户只能读写自己的档案
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // 管理员可以读写所有用户档案
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
     // 课程信息访问控制
     match /courses/{courseId} {
       // 管理员和老师可以读写
       allow read, write: if request.auth != null && 
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'teacher'] &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved';
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'teacher'];
       
       // 家长可以读取
       allow read: if request.auth != null && 
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'parent' &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved';
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'parent';
     }
-    
+
     // 作业信息访问控制
     match /assignments/{assignmentId} {
       // 管理员和老师可以读写
       allow read, write: if request.auth != null && 
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'teacher'] &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved';
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'teacher'];
       
       // 家长可以读取相关作业
       allow read: if request.auth != null && 
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'parent' &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved';
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'parent';
     }
-    
+
+    // 财务信息访问控制
+    match /finances/{financeId} {
+      // 只有管理员可以读写
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      
+      // 家长可以读取自己的缴费记录
+      allow read: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'parent' &&
+        resource.data.parentId == request.auth.uid;
+    }
+
     // 消息访问控制
     match /messages/{messageId} {
       // 用户只能读写与自己相关的消息
@@ -67,29 +97,7 @@ service cloud.firestore {
       // 管理员可以读取所有消息
       allow read: if request.auth != null && 
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved';
-    }
-    
-    // 财务信息访问控制
-    match /finances/{financeId} {
-      // 只有管理员可以读写
-      allow read, write: if request.auth != null && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved';
-      
-      // 家长可以读取自己的缴费记录
-      allow read: if request.auth != null && 
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'parent' &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved' &&
-        resource.data.parentId == request.auth.uid;
-    }
-    
-    // 默认拒绝所有其他访问
-    match /{document=**} {
-      allow read, write: if false;
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
   }
 }

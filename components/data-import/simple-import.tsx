@@ -30,6 +30,8 @@ interface ImportStatus {
 
 export default function SimpleImport() {
   const [spreadsheetId, setSpreadsheetId] = useState('')
+  const [dataType, setDataType] = useState<'primary' | 'secondary'>('primary')
+  const [sheetName, setSheetName] = useState('')
   const [useEnvironmentCredentials, setUseEnvironmentCredentials] = useState(true)
   const [customCredentials, setCustomCredentials] = useState('')
   const [previewData, setPreviewData] = useState<StudentData[]>([])
@@ -65,6 +67,8 @@ export default function SimpleImport() {
           spreadsheetId,
           spreadsheetRange: 'A:Z',
           credentials: useEnvironmentCredentials ? 'env' : customCredentials,
+          dataType,
+          sheetName,
           action: 'validate'
         })
       })
@@ -134,6 +138,8 @@ export default function SimpleImport() {
           spreadsheetId,
           spreadsheetRange: 'A:Z',
           credentials: useEnvironmentCredentials ? 'env' : customCredentials,
+          dataType,
+          sheetName,
           action: 'preview'
         })
       })
@@ -203,6 +209,8 @@ export default function SimpleImport() {
           spreadsheetId,
           spreadsheetRange: 'A:Z',
           credentials: useEnvironmentCredentials ? 'env' : customCredentials,
+          dataType,
+          sheetName,
           action: 'import'
         })
       })
@@ -263,6 +271,235 @@ export default function SimpleImport() {
     }
   }
 
+  const testPermission = async () => {
+    if (!spreadsheetId) {
+      setImportStatus({
+        isImporting: false,
+        progress: 0,
+        message: '请输入Spreadsheet ID',
+        error: '缺少Spreadsheet ID'
+      })
+      return
+    }
+
+    try {
+      setImportStatus({
+        isImporting: true,
+        progress: 10,
+        message: '测试权限...'
+      })
+
+      const response = await fetch('/api/debug/sheets-permission', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          spreadsheetId,
+          sheetName
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.error) {
+        setImportStatus({
+          isImporting: false,
+          progress: 0,
+          message: '权限测试失败',
+          error: `${result.error}\n\n服务账户邮箱: ${result.serviceAccountEmail}\n\n建议: ${result.suggestion}`
+        })
+      } else {
+        setImportStatus({
+          isImporting: false,
+          progress: 100,
+          message: `权限测试成功！\n服务账户邮箱: ${result.serviceAccountEmail}\n找到的列: ${result.headers.join(', ')}`,
+          success: true
+        })
+      }
+    } catch (error) {
+      setImportStatus({
+        isImporting: false,
+        progress: 0,
+        message: '权限测试失败',
+        error: error instanceof Error ? error.message : '未知错误'
+      })
+    }
+  }
+
+  const checkEnvironment = async () => {
+    try {
+      setImportStatus({
+        isImporting: true,
+        progress: 10,
+        message: '检查环境配置...'
+      })
+
+      const response = await fetch('/api/debug/check-env')
+      const result = await response.json()
+
+      if (result.error) {
+        setImportStatus({
+          isImporting: false,
+          progress: 0,
+          message: '环境配置检查失败',
+          error: `${result.error}\n\n建议: ${result.suggestion}`
+        })
+      } else {
+        setImportStatus({
+          isImporting: false,
+          progress: 100,
+          message: `环境配置正确！\n服务账户邮箱: ${result.serviceAccountEmail}\n项目ID: ${result.projectId}`,
+          success: true
+        })
+      }
+    } catch (error) {
+      setImportStatus({
+        isImporting: false,
+        progress: 0,
+        message: '环境配置检查失败',
+        error: error instanceof Error ? error.message : '未知错误'
+      })
+    }
+  }
+
+  const detailedPermissionCheck = async () => {
+    if (!spreadsheetId) {
+      setImportStatus({
+        isImporting: false,
+        progress: 0,
+        message: '请输入Spreadsheet ID',
+        error: '缺少Spreadsheet ID'
+      })
+      return
+    }
+
+    try {
+      setImportStatus({
+        isImporting: true,
+        progress: 10,
+        message: '详细权限检查...'
+      })
+
+      const response = await fetch('/api/debug/detailed-permission-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          spreadsheetId,
+          sheetName
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.error) {
+        let errorMessage = `步骤: ${result.step}\n错误: ${result.error}`
+        if (result.details) {
+          errorMessage += `\n详细信息: ${result.details}`
+        }
+        if (result.serviceAccountEmail) {
+          errorMessage += `\n服务账户邮箱: ${result.serviceAccountEmail}`
+        }
+        errorMessage += `\n\n建议: ${result.suggestion}`
+
+        setImportStatus({
+          isImporting: false,
+          progress: 0,
+          message: '详细权限检查失败',
+          error: errorMessage
+        })
+      } else {
+        let successMessage = `步骤: ${result.step}\n${result.message}`
+        if (result.serviceAccountEmail) {
+          successMessage += `\n服务账户邮箱: ${result.serviceAccountEmail}`
+        }
+        if (result.spreadsheetTitle) {
+          successMessage += `\n表格标题: ${result.spreadsheetTitle}`
+        }
+        if (result.availableSheets && result.availableSheets.length > 0) {
+          successMessage += `\n可用Sheet: ${result.availableSheets.join(', ')}`
+        }
+        successMessage += `\n\n建议: ${result.suggestion}`
+
+        setImportStatus({
+          isImporting: false,
+          progress: 100,
+          message: '详细权限检查成功',
+          success: true
+        })
+      }
+    } catch (error) {
+      setImportStatus({
+        isImporting: false,
+        progress: 0,
+        message: '详细权限检查失败',
+        error: error instanceof Error ? error.message : '未知错误'
+      })
+    }
+  }
+
+  const testFirebaseImport = async () => {
+    try {
+      setImportStatus({
+        isImporting: true,
+        progress: 10,
+        message: '测试Firebase导入...'
+      })
+
+      const response = await fetch('/api/debug/firebase-import-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dataType
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.error) {
+        let errorMessage = `步骤: ${result.step}\n错误: ${result.error}`
+        if (result.details) {
+          errorMessage += `\n详细信息: ${result.details}`
+        }
+        if (result.collectionName) {
+          errorMessage += `\n集合名称: ${result.collectionName}`
+        }
+        errorMessage += `\n\n建议: ${result.suggestion}`
+
+        setImportStatus({
+          isImporting: false,
+          progress: 0,
+          message: 'Firebase导入测试失败',
+          error: errorMessage
+        })
+      } else {
+        let successMessage = `步骤: ${result.step}\n${result.message}`
+        if (result.collectionName) {
+          successMessage += `\n集合名称: ${result.collectionName}`
+        }
+        if (result.importResult) {
+          successMessage += `\n导入结果: 成功 ${result.importResult.success} 条记录`
+          if (result.importResult.errors && result.importResult.errors.length > 0) {
+            successMessage += `\n错误: ${result.importResult.errors.join(', ')}`
+          }
+        }
+        successMessage += `\n\n建议: ${result.suggestion}`
+
+        setImportStatus({
+          isImporting: false,
+          progress: 100,
+          message: 'Firebase导入测试成功',
+          success: true
+        })
+      }
+    } catch (error) {
+      setImportStatus({
+        isImporting: false,
+        progress: 0,
+        message: 'Firebase导入测试失败',
+        error: error instanceof Error ? error.message : '未知错误'
+      })
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -276,19 +513,65 @@ export default function SimpleImport() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Spreadsheet ID */}
+          {/* Data Type Selection */}
           <div>
-            <Label htmlFor="spreadsheetId">Google Spreadsheet ID</Label>
-            <Input
-              id="spreadsheetId"
-              placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
-              value={spreadsheetId}
-              onChange={(e) => setSpreadsheetId(e.target.value)}
-            />
+            <Label>数据类型</Label>
+            <div className="flex items-center space-x-4 mt-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="primary-data"
+                  checked={dataType === 'primary'}
+                  onChange={() => setDataType('primary')}
+                />
+                <Label htmlFor="primary-data" className="text-sm">
+                  小学数据 (Primary)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="secondary-data"
+                  checked={dataType === 'secondary'}
+                  onChange={() => setDataType('secondary')}
+                />
+                <Label htmlFor="secondary-data" className="text-sm">
+                  中学数据 (Secondary)
+                </Label>
+              </div>
+            </div>
             <p className="text-sm text-muted-foreground mt-1">
-              在URL中找到：https://docs.google.com/spreadsheets/d/[SPREADSHEET_ID]/edit
+              选择要导入的数据类型，这将影响数据在Firebase中的存储位置
             </p>
           </div>
+
+                     {/* Spreadsheet ID */}
+           <div>
+             <Label htmlFor="spreadsheetId">Google Spreadsheet ID</Label>
+             <Input
+               id="spreadsheetId"
+               placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+               value={spreadsheetId}
+               onChange={(e) => setSpreadsheetId(e.target.value)}
+             />
+             <p className="text-sm text-muted-foreground mt-1">
+               在URL中找到：https://docs.google.com/spreadsheets/d/[SPREADSHEET_ID]/edit
+             </p>
+           </div>
+
+           {/* Sheet Name */}
+           <div>
+             <Label htmlFor="sheetName">Sheet名称（可选）</Label>
+             <Input
+               id="sheetName"
+               placeholder="Sheet1, 小学数据, 中学数据"
+               value={sheetName}
+               onChange={(e) => setSheetName(e.target.value)}
+             />
+             <p className="text-sm text-muted-foreground mt-1">
+               如果数据在特定的Sheet中，请输入Sheet名称。留空则使用默认Sheet。
+             </p>
+           </div>
 
           {/* Credentials Options */}
           <div className="space-y-2">
@@ -333,43 +616,75 @@ export default function SimpleImport() {
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            <Button
-              onClick={validateSpreadsheet}
-              disabled={importStatus.isImporting}
-              variant="outline"
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              验证
-            </Button>
-            <Button
-              onClick={previewDataFromSheet}
-              disabled={importStatus.isImporting}
-              variant="outline"
-            >
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              预览数据
-            </Button>
-            <Button
-              onClick={importToFirestore}
-              disabled={importStatus.isImporting}
-            >
-              {importStatus.isImporting ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Upload className="h-4 w-4 mr-2" />
-              )}
-              导入到Firestore
-            </Button>
-            <Button
-              onClick={getCurrentStats}
-              variant="outline"
-            >
-              <Users className="h-4 w-4 mr-2" />
-              获取统计
-            </Button>
-          </div>
+                     {/* Action Buttons */}
+           <div className="flex gap-2">
+             <Button
+               onClick={checkEnvironment}
+               disabled={importStatus.isImporting}
+               variant="outline"
+             >
+               <Settings className="h-4 w-4 mr-2" />
+               检查环境
+             </Button>
+                           <Button
+                onClick={detailedPermissionCheck}
+                disabled={importStatus.isImporting}
+                variant="outline"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                详细权限检查
+              </Button>
+              <Button
+                onClick={testFirebaseImport}
+                disabled={importStatus.isImporting}
+                variant="outline"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                测试Firebase导入
+              </Button>
+              <Button
+                onClick={testPermission}
+                disabled={importStatus.isImporting}
+                variant="outline"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                测试权限
+              </Button>
+             <Button
+               onClick={validateSpreadsheet}
+               disabled={importStatus.isImporting}
+               variant="outline"
+             >
+               <CheckCircle className="h-4 w-4 mr-2" />
+               验证
+             </Button>
+             <Button
+               onClick={previewDataFromSheet}
+               disabled={importStatus.isImporting}
+               variant="outline"
+             >
+               <FileSpreadsheet className="h-4 w-4 mr-2" />
+               预览数据
+             </Button>
+             <Button
+               onClick={importToFirestore}
+               disabled={importStatus.isImporting}
+             >
+               {importStatus.isImporting ? (
+                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+               ) : (
+                 <Upload className="h-4 w-4 mr-2" />
+               )}
+               导入到Firestore
+             </Button>
+             <Button
+               onClick={getCurrentStats}
+               variant="outline"
+             >
+               <Users className="h-4 w-4 mr-2" />
+               获取统计
+             </Button>
+           </div>
 
           {/* Progress */}
           {importStatus.isImporting && (

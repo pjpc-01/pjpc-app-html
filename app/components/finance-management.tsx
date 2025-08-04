@@ -18,10 +18,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { DollarSign, CreditCard, FileText, TrendingUp, AlertCircle, CheckCircle, Plus, Trash2, Edit } from "lucide-react"
+import { DollarSign, CreditCard, FileText, TrendingUp, AlertCircle, CheckCircle, Plus, Trash2, Edit, Download, Printer, Send, Clock, Users } from "lucide-react"
 import React from "react"
 import { StudentFeeMatrix } from "../../components/features/StudentFeeMatrix"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useInvoices } from "@/hooks/useInvoices"
+import { usePayments } from "@/hooks/usePayments"
+import { useReminders } from "@/hooks/useReminders"
+import { downloadInvoicePDF, printInvoicePDF, PDFOptions } from "@/lib/pdf-generator"
 
 // Custom Toggle Switch Component
 const ToggleSwitch = ({ checked, onChange, className = "" }: { checked: boolean; onChange: () => void; className?: string }) => {
@@ -47,116 +51,74 @@ const ToggleSwitch = ({ checked, onChange, className = "" }: { checked: boolean;
 }
 
 export default function FinanceManagement() {
-  // Invoice interface
-  interface Invoice {
-    id: number
-    invoiceNumber: string
-    student: string
-    studentId: number
-    amount: number
-    items: { name: string; amount: number }[]
-    status: 'draft' | 'issued' | 'sent' | 'pending' | 'overdue' | 'paid' | 'cancelled'
-    issueDate: string
-    dueDate: string
-    paidDate: string | null
-    paymentMethod: string | null
-    notes: string
-    tax: number
-    discount: number
-    totalAmount: number
-    parentEmail: string
-    reminderSent: boolean
-    lastReminderDate: string | null
+  const [activeSection, setActiveSection] = useState("overview")
+  
+  // Custom hooks for better state management
+  const {
+    invoices,
+    filters: invoiceFilters,
+    setFilters: setInvoiceFilters,
+    createInvoice,
+    updateInvoice,
+    deleteInvoice,
+    updateInvoiceStatus,
+    sendInvoiceReminder,
+    getFilteredInvoices,
+    generateInvoiceFromStudentFees,
+    generateInvoicesForAllStudents,
+    generateMonthlyInvoices,
+    checkOverdueInvoices,
+    getInvoiceStatistics,
+    generateInvoiceNumber
+  } = useInvoices()
+
+  const {
+    payments,
+    filters: paymentFilters,
+    setFilters: setPaymentFilters,
+    addPayment,
+    updatePayment,
+    deletePayment,
+    getPaymentByInvoice,
+    getInvoiceOutstandingBalance,
+    getInvoicePaymentHistory,
+    addPaymentToInvoice,
+    getFilteredPayments,
+    getPaymentStatistics,
+    reconcilePayments,
+    processPartialPayment
+  } = usePayments(invoices)
+
+  const {
+    reminders,
+    templates,
+    scheduleReminder,
+    sendReminder,
+    markReminderFailed,
+    getRemindersByInvoice,
+    getScheduledReminders,
+    getOverdueInvoicesForReminders,
+    autoScheduleReminders,
+    getReminderStatistics,
+    addTemplate,
+    updateTemplate,
+    deleteTemplate
+  } = useReminders(invoices)
+
+  // PDF options for school branding
+  const pdfOptions: PDFOptions = {
+    schoolName: "智慧教育学校",
+    schoolAddress: "北京市朝阳区教育路123号",
+    schoolPhone: "010-12345678",
+    schoolEmail: "info@smarteducation.com",
+    taxNumber: "91110105MA12345678"
   }
-
-  const [payments, setPayments] = useState([
-    { id: 1, student: "王小明", amount: 1200, type: "学费", status: "paid", date: "2024-01-15", method: "支付宝" },
-    { id: 2, student: "李小红", amount: 1200, type: "学费", status: "pending", date: "2024-01-10", method: "微信" },
-    { id: 3, student: "张小华", amount: 300, type: "餐费", status: "paid", date: "2024-01-12", method: "银行卡" },
-  ])
-
-  const [invoices, setInvoices] = useState<Invoice[]>([
-    { 
-      id: 1, 
-      invoiceNumber: "INV-2024-001", 
-      student: "王小明", 
-      studentId: 1,
-      amount: 1200, 
-      items: [
-        { name: "基础学费", amount: 800 },
-        { name: "特色课程费", amount: 400 }
-      ],
-      status: "issued", 
-      issueDate: "2024-01-15", 
-      dueDate: "2024-01-30",
-      paidDate: "2024-01-20",
-      paymentMethod: "支付宝",
-      notes: "1月学费",
-      tax: 0,
-      discount: 0,
-      totalAmount: 1200,
-      parentEmail: "parent1@example.com",
-      reminderSent: false,
-      lastReminderDate: null
-    },
-    { 
-      id: 2, 
-      invoiceNumber: "INV-2024-002", 
-      student: "李小红", 
-      studentId: 2,
-      amount: 300, 
-      items: [
-        { name: "午餐费", amount: 200 },
-        { name: "点心费", amount: 100 }
-      ],
-      status: "pending", 
-      issueDate: "2024-01-10", 
-      dueDate: "2024-01-25",
-      paidDate: null,
-      paymentMethod: null,
-      notes: "1月餐费",
-      tax: 0,
-      discount: 0,
-      totalAmount: 300,
-      parentEmail: "parent2@example.com",
-      reminderSent: false,
-      lastReminderDate: null
-    },
-    { 
-      id: 3, 
-      invoiceNumber: "INV-2024-003", 
-      student: "张小华", 
-      studentId: 3,
-      amount: 150, 
-      items: [
-        { name: "户外活动费", amount: 100 },
-        { name: "室内活动费", amount: 50 }
-      ],
-      status: "overdue", 
-      issueDate: "2024-01-05", 
-      dueDate: "2024-01-20",
-      paidDate: null,
-      paymentMethod: null,
-      notes: "课外活动费",
-      tax: 0,
-      discount: 0,
-      totalAmount: 150,
-      parentEmail: "parent3@example.com",
-      reminderSent: true,
-      lastReminderDate: "2024-01-22"
-    },
-  ])
 
   // Invoice management states
   const [isCreateInvoiceDialogOpen, setIsCreateInvoiceDialogOpen] = useState(false)
   const [isBulkInvoiceDialogOpen, setIsBulkInvoiceDialogOpen] = useState(false)
   const [isInvoiceDetailDialogOpen, setIsInvoiceDetailDialogOpen] = useState(false)
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
-  const [invoiceFilters, setInvoiceFilters] = useState({
-    status: 'all',
-    dateRange: 'all',
-    student: ''
-  })
 
   // Sample students data for invoice creation
   const students = [
@@ -276,62 +238,33 @@ export default function FinanceManagement() {
     }
   }
 
-  // Invoice management functions
-  const generateInvoiceNumber = () => {
-    const year = new Date().getFullYear()
-    const existingInvoices = invoices.filter(inv => inv.invoiceNumber.startsWith(`INV-${year}`))
-    const nextNumber = existingInvoices.length + 1
-    return `INV-${year}-${nextNumber.toString().padStart(3, '0')}`
-  }
-
-  const createInvoiceFromStudentFees = (studentId: number, studentName: string): Invoice => {
-    // This would integrate with the student fee system
-    const newInvoice: Invoice = {
-      id: Date.now(),
-      invoiceNumber: generateInvoiceNumber(),
-      student: studentName,
-      studentId: studentId,
-      amount: 0, // Will be calculated from student fees
-      items: [], // Will be populated from student fee assignments
-      status: "draft",
-      issueDate: new Date().toISOString().split('T')[0],
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
-      paidDate: null,
-      paymentMethod: null,
-      notes: "",
-      tax: 0,
-      discount: 0,
-      totalAmount: 0,
-      parentEmail: "",
-      reminderSent: false,
-      lastReminderDate: null
+  // Enhanced invoice functions using custom hooks
+  const handleDownloadInvoice = async (invoice: any) => {
+    try {
+      await downloadInvoicePDF(invoice, pdfOptions)
+    } catch (error) {
+      console.error('Failed to download invoice:', error)
     }
-    setInvoices([...invoices, newInvoice])
-    return newInvoice
   }
 
-  const updateInvoiceStatus = (invoiceId: number, status: Invoice['status']) => {
-    setInvoices(prev => prev.map(inv => 
-      inv.id === invoiceId 
-        ? { ...inv, status, paidDate: status === 'paid' ? new Date().toISOString().split('T')[0] : inv.paidDate }
-        : inv
-    ))
+  const handlePrintInvoice = async (invoice: any) => {
+    try {
+      await printInvoicePDF(invoice, pdfOptions)
+    } catch (error) {
+      console.error('Failed to print invoice:', error)
+    }
   }
 
-  const sendInvoiceReminder = (invoiceId: number) => {
-    setInvoices(prev => prev.map(inv => 
-      inv.id === invoiceId 
-        ? { ...inv, reminderSent: true, lastReminderDate: new Date().toISOString().split('T')[0] }
-        : inv
-    ))
+  const handleSendInvoice = (invoice: any) => {
+    // In a real implementation, this would send the invoice via email
+    updateInvoiceStatus(invoice.id, 'sent')
   }
 
-  const getFilteredInvoices = () => {
-    return invoices.filter(invoice => {
-      const statusMatch = invoiceFilters.status === 'all' || invoice.status === invoiceFilters.status
-      const studentMatch = !invoiceFilters.student || invoice.student.toLowerCase().includes(invoiceFilters.student.toLowerCase())
-      return statusMatch && studentMatch
-    })
+  const handleProcessPayment = (invoiceId: number, amount: number, method: string) => {
+    const { payment, isFullyPaid } = processPartialPayment(invoiceId, amount, method as any)
+    if (isFullyPaid) {
+      updateInvoiceStatus(invoiceId, 'paid')
+    }
   }
 
   const handleAddFeeItem = () => {
@@ -671,47 +604,47 @@ export default function FinanceManagement() {
 
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <Card>
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => (document.querySelector('[data-value="student-fees"]') as HTMLElement)?.click()}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">本月收入</CardTitle>
+                <CardTitle className="text-sm font-medium">学生费用分配</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">¥45,600</div>
-                <p className="text-xs text-muted-foreground">+12% 较上月</p>
+                <p className="text-xs text-muted-foreground">管理学生费用分配</p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => (document.querySelector('[data-value="invoices"]') as HTMLElement)?.click()}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">待收款</CardTitle>
-                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">发票管理</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">¥8,400</div>
-                <p className="text-xs text-muted-foreground">7笔未缴费</p>
+                <p className="text-xs text-muted-foreground">管理发票和账单</p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => (document.querySelector('[data-value="payments"]') as HTMLElement)?.click()}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">缴费率</CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">缴费管理</CardTitle>
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">92.1%</div>
-                <p className="text-xs text-muted-foreground">本月缴费率</p>
+                <p className="text-xs text-muted-foreground">跟踪缴费状态</p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => (document.querySelector('[data-value="reminders"]') as HTMLElement)?.click()}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">年度收入</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">收费提醒</CardTitle>
+                <AlertCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">¥425,800</div>
-                <p className="text-xs text-muted-foreground">累计收入</p>
+                <p className="text-xs text-muted-foreground">发送缴费提醒</p>
               </CardContent>
             </Card>
           </div>
@@ -901,8 +834,8 @@ export default function FinanceManagement() {
                 
                 <Input 
                   placeholder="搜索学生姓名..." 
-                  value={invoiceFilters.student}
-                  onChange={(e) => setInvoiceFilters(prev => ({ ...prev, student: e.target.value }))}
+                  value={invoiceFilters.studentName}
+                  onChange={(e) => setInvoiceFilters(prev => ({ ...prev, studentName: e.target.value }))}
                   className="w-[200px]"
                 />
               </div>
@@ -1235,7 +1168,7 @@ export default function FinanceManagement() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>学生姓名</TableHead>
-                    <TableHead>费用类型</TableHead>
+                    <TableHead>付款编号</TableHead>
                     <TableHead>金额</TableHead>
                     <TableHead>缴费状态</TableHead>
                     <TableHead>缴费日期</TableHead>
@@ -1244,30 +1177,33 @@ export default function FinanceManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {payments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell className="font-medium">{payment.student}</TableCell>
-                      <TableCell>{payment.type}</TableCell>
-                      <TableCell>¥{payment.amount}</TableCell>
-                      <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                      <TableCell>{payment.date}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{payment.method}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="ghost" size="sm">
-                            查看
-                          </Button>
-                          {payment.status === "pending" && (
+                  {getFilteredPayments().map((payment) => {
+                    const invoice = invoices.find(inv => inv.id === payment.invoiceId)
+                    return (
+                      <TableRow key={payment.id}>
+                        <TableCell className="font-medium">{invoice?.student || '未知学生'}</TableCell>
+                        <TableCell>{payment.reference}</TableCell>
+                        <TableCell>¥{payment.amount}</TableCell>
+                        <TableCell>{getStatusBadge(payment.status)}</TableCell>
+                        <TableCell>{payment.date}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{payment.method}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
                             <Button variant="ghost" size="sm">
-                              催缴
+                              查看
                             </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                            {payment.status === "pending" && (
+                              <Button variant="ghost" size="sm">
+                                退款
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </CardContent>

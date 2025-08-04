@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,76 +20,50 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress"
 import { UserPlus, Search, Edit, Calendar, TrendingUp, Users, Trash2 } from "lucide-react"
 import React from "react" // Added for useEffect
+import { useStudents, Student } from "@/hooks/useStudents"
 
 export default function StudentManagement() {
-  const [students, setStudents] = useState([
-    {
-      id: 1,
-      name: "王小明",
-      grade: "三年级",
-      class: "A班",
-      fatherName: "王爸爸",
-      motherName: "王妈妈",
-      phone: "138****1234",
-      attendance: 95,
-      progress: 85,
-      status: "active",
-      age: 9,
-      dateOfBirth: "2015-03-15",
-      studentId: "STU001",
-      address: "北京市朝阳区阳光小区1号楼",
-      emergencyContact: "王妈妈",
-      emergencyPhone: "139****5678",
-      medicalInfo: "无特殊病史",
-      enrollmentDate: "2023-09-01",
-      notes: "学习认真，性格开朗",
-      image: "",
-    },
-    {
-      id: 2,
-      name: "李小红",
-      grade: "四年级",
-      class: "B班",
-      fatherName: "李爸爸",
-      motherName: "李妈妈",
-      phone: "139****5678",
-      attendance: 98,
-      progress: 92,
-      status: "active",
-      age: 10,
-      dateOfBirth: "2014-07-22",
-      studentId: "STU002",
-      address: "北京市海淀区智慧园2号楼",
-      emergencyContact: "李爸爸",
-      emergencyPhone: "138****1234",
-      medicalInfo: "对花生过敏",
-      enrollmentDate: "2022-09-01",
-      notes: "成绩优秀，擅长数学",
-      image: "",
-    },
-    {
-      id: 3,
-      name: "张小华",
-      grade: "三年级",
-      class: "A班",
-      fatherName: "张爸爸",
-      motherName: "张妈妈",
-      phone: "137****9012",
-      attendance: 88,
-      progress: 78,
-      status: "active",
-      age: 9,
-      dateOfBirth: "2015-11-08",
-      studentId: "STU003",
-      address: "北京市西城区文化街3号楼",
-      emergencyContact: "张爸爸",
-      emergencyPhone: "136****3456",
-      medicalInfo: "无特殊病史",
-      enrollmentDate: "2023-09-01",
-      notes: "需要加强英语学习",
-      image: "",
-    },
-  ])
+  const [dataType, setDataType] = useState<'primary' | 'secondary'>('primary')
+  const { students, loading, error, refetch, updateStudent, deleteStudent, addStudent } = useStudents(dataType)
+  
+  // Add a test mode to avoid Firebase issues
+  const [testMode, setTestMode] = useState(false) // 默认使用Firebase数据
+  
+  // Use test data if in test mode or if Firebase fails
+  const testStudents: Student[] = [
+    { id: "G16", name: "王小明", grade: "三年级", parentName: "王大明", parentEmail: "wang@example.com", phone: "13800138001", address: "北京市朝阳区", status: "active", enrollmentDate: "2023-09-01" },
+    { id: "G17", name: "李小红", grade: "四年级", parentName: "李大红", parentEmail: "li@example.com", phone: "13800138002", address: "北京市海淀区", status: "active", enrollmentDate: "2023-09-01" },
+    { id: "G18", name: "张小华", grade: "五年级", parentName: "张大华", parentEmail: "zhang@example.com", phone: "13800138003", address: "北京市西城区", status: "active", enrollmentDate: "2023-09-01" },
+    { id: "G19", name: "陈小军", grade: "三年级", parentName: "陈大军", parentEmail: "chen@example.com", phone: "13800138004", address: "北京市东城区", status: "active", enrollmentDate: "2023-09-01" },
+  ]
+
+  // Transform Firebase students to match the component's expected format
+  console.log(`StudentManagement: dataType=${dataType}, testMode=${testMode}, students.length=${students.length}`)
+  const transformedStudents = (testMode || students.length === 0 ? testStudents : students).map((student, index) => {
+    // Use the actual Firebase data without any modifications
+    return {
+      id: student.id,
+      name: student.name || "",
+      grade: student.grade || "",
+      class: student.class || "A班",
+      fatherName: student.parentName || student.fatherName || "",
+      motherName: student.parentEmail || student.motherName || "",
+      phone: student.phone || "",
+      attendance: student.attendance || 95,
+      progress: student.progress || 85,
+      status: student.status || "active",
+      age: student.age || 9,
+      dateOfBirth: student.dateOfBirth || "",
+      studentId: student.id, // Use the actual Firebase ID
+      address: student.address || "",
+      emergencyContact: student.emergencyContact || student.parentName || "",
+      emergencyPhone: student.emergencyPhone || student.phone || "",
+      medicalInfo: student.medicalInfo || "无特殊病史",
+      enrollmentDate: student.enrollmentDate || "",
+      notes: student.notes || "",
+      image: student.image || "",
+    }
+  })
 
   const [attendanceRecords] = useState([
     { date: "2024-01-15", present: 85, absent: 4, late: 0 },
@@ -101,6 +75,8 @@ export default function StudentManagement() {
 
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedGrade, setSelectedGrade] = useState("all")
+  const [selectedClass, setSelectedClass] = useState("all")
+  const [selectedStatus, setSelectedStatus] = useState("all")
   const [selectedGradeForView, setSelectedGradeForView] = useState<string | null>(null)
   
   // Grade management state
@@ -128,6 +104,8 @@ export default function StudentManagement() {
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<any>(null)
   const [isDetailEditMode, setIsDetailEditMode] = useState(false)
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([])
+  const [isBulkActionMode, setIsBulkActionMode] = useState(false)
   const [newStudent, setNewStudent] = useState({
     name: "",
     grade: "",
@@ -146,10 +124,13 @@ export default function StudentManagement() {
     image: "",
   })
 
-  const filteredStudents = students.filter((student) => {
-    const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredStudents = transformedStudents.filter((student) => {
+    const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         student.studentId.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesGrade = selectedGrade === "all" || student.grade === selectedGrade
-    return matchesSearch && matchesGrade
+    const matchesClass = selectedClass === "all" || student.class === selectedClass
+    const matchesStatus = selectedStatus === "all" || student.status === selectedStatus
+    return matchesSearch && matchesGrade && matchesClass && matchesStatus
   })
 
   // Handle form input changes
@@ -175,61 +156,56 @@ export default function StudentManagement() {
     return age
   }
 
+  // Note: We no longer auto-generate IDs, we use Firebase's actual data
+
   // Handle adding new student
-  const handleAddStudent = () => {
-    if (!newStudent.name || !newStudent.grade || !newStudent.class || (!newStudent.fatherName && !newStudent.motherName) || !newStudent.phone) {
+  const handleAddStudent = async () => {
+    if (!newStudent.name || !newStudent.grade || !newStudent.fatherName || !newStudent.phone) {
       alert("请填写所有必填字段")
       return
     }
 
-    const calculatedAge = calculateAge(newStudent.dateOfBirth)
-
-    const newStudentData = {
-      id: students.length + 1,
-      name: newStudent.name,
-      grade: newStudent.grade,
-      class: newStudent.class,
-      fatherName: newStudent.fatherName,
-      motherName: newStudent.motherName,
-      phone: newStudent.phone,
-      attendance: 100, // Default attendance for new student
-      progress: 0, // Default progress for new student
-      status: "active",
-      age: calculatedAge,
-      dateOfBirth: newStudent.dateOfBirth || "",
-      studentId: newStudent.studentId || `STU${String(students.length + 1).padStart(3, '0')}`,
-      address: newStudent.address || "",
-      emergencyContact: newStudent.emergencyContact || "",
-      emergencyPhone: newStudent.emergencyPhone || "",
-      medicalInfo: newStudent.medicalInfo || "无特殊病史",
-      enrollmentDate: newStudent.enrollmentDate || new Date().toISOString().split('T')[0],
-      notes: newStudent.notes || "",
-      image: newStudent.image || "",
+    try {
+      // Create new student in Firebase format - let Firebase generate the ID
+      const newStudentData = {
+        name: newStudent.name,
+        grade: newStudent.grade,
+        parentName: newStudent.fatherName,
+        parentEmail: newStudent.motherName || "", // Using motherName field for email
+        phone: newStudent.phone,
+        address: newStudent.address || "",
+        enrollmentDate: newStudent.enrollmentDate || new Date().toISOString().split('T')[0],
+        status: "active",
+      }
+      
+            // Add student to Firebase
+      await addStudent(newStudentData)
+      
+      // Reset form
+      setNewStudent({
+        name: "",
+        grade: "",
+        class: "",
+        fatherName: "",
+        motherName: "",
+        phone: "",
+        dateOfBirth: "",
+        studentId: "",
+        address: "",
+        emergencyContact: "",
+        emergencyPhone: "",
+        medicalInfo: "",
+        enrollmentDate: "",
+        notes: "",
+        image: "",
+      })
+      
+      // Close dialog
+      setIsAddDialogOpen(false)
+    } catch (error) {
+      console.error('Error adding student:', error)
+      alert('添加学生失败，请重试')
     }
-
-    setStudents(prev => [...prev, newStudentData])
-    
-    // Reset form
-    setNewStudent({
-      name: "",
-      grade: "",
-      class: "",
-      fatherName: "",
-      motherName: "",
-      phone: "",
-      dateOfBirth: "",
-      studentId: "",
-      address: "",
-      emergencyContact: "",
-      emergencyPhone: "",
-      medicalInfo: "",
-      enrollmentDate: "",
-      notes: "",
-      image: "",
-    })
-    
-    // Close dialog
-    setIsAddDialogOpen(false)
   }
 
   // Reset form when dialog opens/closes
@@ -266,10 +242,103 @@ export default function StudentManagement() {
 
 
   // Handle delete student
-  const handleDeleteStudent = (studentId: number) => {
+  const handleDeleteStudent = async (studentId: string) => {
     if (confirm("确定要删除这个学生吗？此操作无法撤销。")) {
-      setStudents(prev => prev.filter(student => student.id !== studentId))
+      try {
+        await deleteStudent(studentId)
+        // The students list will be automatically refreshed by the hook
+      } catch (error) {
+        console.error('Error deleting student:', error)
+        alert('删除学生失败，请重试')
+      }
     }
+  }
+
+  // Handle bulk selection
+  const handleBulkSelect = (studentId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedStudents(prev => [...prev, studentId])
+    } else {
+      setSelectedStudents(prev => prev.filter(id => id !== studentId))
+    }
+  }
+
+  // Handle select all students
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedStudents(filteredStudents.map(student => String(student.id)))
+    } else {
+      setSelectedStudents([])
+    }
+  }
+
+  // Handle bulk delete
+  const handleBulkDelete = async () => {
+    if (selectedStudents.length === 0) {
+      alert("请先选择要删除的学生")
+      return
+    }
+    
+    if (confirm(`确定要删除选中的 ${selectedStudents.length} 个学生吗？此操作无法撤销。`)) {
+      try {
+        // Delete each selected student
+        for (const studentId of selectedStudents) {
+          await deleteStudent(studentId)
+        }
+        setSelectedStudents([])
+        setIsBulkActionMode(false)
+        // The students list will be automatically refreshed by the hook
+      } catch (error) {
+        console.error('Error deleting students:', error)
+        alert('批量删除学生失败，请重试')
+      }
+    }
+  }
+
+  // Handle bulk export
+  const handleBulkExport = () => {
+    if (selectedStudents.length === 0) {
+      alert("请先选择要导出的学生")
+      return
+    }
+    
+    const selectedStudentData = students.filter(student => selectedStudents.includes(String(student.id)))
+    const csvContent = generateCSV(selectedStudentData)
+    downloadCSV(csvContent, "学生数据导出.csv")
+  }
+
+  // Generate CSV content
+  const generateCSV = (studentData: any[]) => {
+    const headers = ["学生编号", "姓名", "年级", "班级", "父亲姓名", "母亲姓名", "联系电话", "生日", "地址", "出勤率", "学习进度", "状态"]
+    const rows = studentData.map(student => [
+      student.studentId,
+      student.name,
+      student.grade,
+      student.class,
+      student.fatherName,
+      student.motherName,
+      student.phone,
+      student.dateOfBirth,
+      student.address,
+      student.attendance,
+      student.progress,
+      student.status
+    ])
+    
+    return [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(",")).join("\n")
+  }
+
+  // Download CSV file
+  const downloadCSV = (content: string, filename: string) => {
+    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" })
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    link.setAttribute("href", url)
+    link.setAttribute("download", filename)
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
 
@@ -299,12 +368,27 @@ export default function StudentManagement() {
   }
 
   // Handle update student details
-  const handleUpdateStudentDetails = () => {
-    setStudents(prev => prev.map(student => 
-      student.id === selectedStudent.id ? selectedStudent : student
-    ))
-    setIsDetailEditMode(false)
-    setSelectedStudent(null)
+  const handleUpdateStudentDetails = async () => {
+    try {
+      // Convert the selectedStudent back to Firebase format
+      const updates = {
+        name: selectedStudent.name,
+        grade: selectedStudent.grade,
+        parentName: selectedStudent.fatherName,
+        phone: selectedStudent.phone,
+        address: selectedStudent.address,
+        enrollmentDate: selectedStudent.enrollmentDate,
+        status: selectedStudent.status,
+      }
+      
+      await updateStudent(selectedStudent.studentId, updates)
+      setIsDetailEditMode(false)
+      setSelectedStudent(null)
+      // The students list will be automatically refreshed by the hook
+    } catch (error) {
+      console.error('Error updating student:', error)
+      alert('更新学生信息失败，请重试')
+    }
   }
 
   // Handle cancel edit mode
@@ -367,7 +451,7 @@ export default function StudentManagement() {
 
   // Get students filtered by selected grade for view
   const getStudentsByGrade = (grade: string) => {
-    return students.filter(student => student.grade === grade)
+    return transformedStudents.filter(student => student.grade === grade)
   }
 
   // Grade management functions
@@ -455,38 +539,192 @@ export default function StudentManagement() {
     setIsGradeEditMode(!isGradeEditMode)
   }
 
-  // Update grade statistics when students change
-  const updateGradeStats = () => {
-    setGrades(prev => prev.map(grade => {
-      const gradeStudents = students.filter(student => student.grade === grade.name)
-      const avgAttendance = gradeStudents.length > 0 
-        ? Math.round(gradeStudents.reduce((sum, student) => sum + student.attendance, 0) / gradeStudents.length)
-        : 0
-      const avgProgress = gradeStudents.length > 0
-        ? Math.round(gradeStudents.reduce((sum, student) => sum + student.progress, 0) / gradeStudents.length)
-        : 0
-      
-      return {
-        ...grade,
-        studentCount: gradeStudents.length,
-        avgAttendance,
-        avgProgress,
-      }
-    }))
+  // Update grade statistics when students change - simplified
+  const updateGradeStats = useCallback(() => {
+    try {
+      setGrades(prev => prev.map(grade => {
+        const gradeStudents = transformedStudents.filter(student => student.grade === grade.name)
+        const avgAttendance = gradeStudents.length > 0 
+          ? Math.round(gradeStudents.reduce((sum, student) => sum + (student.attendance || 0), 0) / gradeStudents.length)
+          : 0
+        const avgProgress = gradeStudents.length > 0
+          ? Math.round(gradeStudents.reduce((sum, student) => sum + (student.progress || 0), 0) / gradeStudents.length)
+          : 0
+        
+        return {
+          ...grade,
+          studentCount: gradeStudents.length,
+          avgAttendance,
+          avgProgress,
+        }
+      }))
+    } catch (error) {
+      console.error('Error updating grade stats:', error)
+    }
+  }, [transformedStudents.length]) // 只依赖长度
+
+  // Update grade stats when students change - simplified to avoid crashes
+  React.useEffect(() => {
+    if (transformedStudents.length > 0) {
+      updateGradeStats()
+    }
+  }, [transformedStudents.length]) // 只依赖长度，避免对象引用问题
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">正在加载学生数据...</p>
+            <p className="text-sm text-gray-500 mt-2">如果加载时间过长，请检查网络连接</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
-  // Update grade stats when students change
-  React.useEffect(() => {
-    updateGradeStats()
-  }, [students])
-
-  return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">学生管理系统</h2>
-          <p className="text-gray-600">管理学生档案、班级分组、出勤记录和学习进度</p>
+  // Show error state
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">加载学生数据失败: {error}</p>
+            <Button onClick={refetch}>重试</Button>
+            <div className="mt-4">
+              <p className="text-sm text-gray-600 mb-2">如果没有数据，可以添加测试数据：</p>
+              <Button 
+                variant="outline" 
+                onClick={async () => {
+                  try {
+                    const testStudents = [
+                      { id: "G16", name: "王小明", grade: "三年级", parentName: "王大明", parentEmail: "wang@example.com", phone: "13800138001", address: "北京市朝阳区", status: "active" },
+                      { id: "G17", name: "李小红", grade: "四年级", parentName: "李大红", parentEmail: "li@example.com", phone: "13800138002", address: "北京市海淀区", status: "active" },
+                      { id: "G18", name: "张小华", grade: "五年级", parentName: "张大华", parentEmail: "zhang@example.com", phone: "13800138003", address: "北京市西城区", status: "active" },
+                      { id: "G19", name: "陈小军", grade: "三年级", parentName: "陈大军", parentEmail: "chen@example.com", phone: "13800138004", address: "北京市东城区", status: "active" },
+                    ]
+                    
+                    for (const student of testStudents) {
+                      await addStudent({
+                        ...student,
+                        enrollmentDate: new Date().toISOString().split('T')[0]
+                      })
+                    }
+                    
+                    alert('测试数据添加成功！')
+                  } catch (error) {
+                    console.error('Error adding test data:', error)
+                    alert('添加测试数据失败')
+                  }
+                }}
+              >
+                添加测试数据
+              </Button>
+            </div>
+          </div>
         </div>
+      </div>
+    )
+  }
+
+  // Error boundary for the component
+  try {
+    return (
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">学生管理系统</h2>
+            <p className="text-gray-600">管理学生档案、班级分组、出勤记录和学习进度</p>
+            
+            {/* Data Type Selector */}
+            <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="primary-data"
+                    checked={dataType === 'primary'}
+                    onChange={() => setDataType('primary')}
+                  />
+                  <Label htmlFor="primary-data" className="text-sm">
+                    小学数据 (Primary)
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="secondary-data"
+                    checked={dataType === 'secondary'}
+                    onChange={() => setDataType('secondary')}
+                  />
+                  <Label htmlFor="secondary-data" className="text-sm">
+                    中学数据 (Secondary)
+                  </Label>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+        {/* Show message if no students */}
+        {transformedStudents.length === 0 && !loading && (
+          <div className="text-center p-4 border rounded-lg bg-blue-50">
+            <p className="text-blue-600 mb-2">暂无学生数据</p>
+            <div className="flex gap-2 justify-center">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setTestMode(true)}
+              >
+                使用测试数据
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const testStudents = [
+                      { id: "G16", name: "王小明", grade: "三年级", parentName: "王大明", parentEmail: "wang@example.com", phone: "13800138001", address: "北京市朝阳区", status: "active" },
+                      { id: "G17", name: "李小红", grade: "四年级", parentName: "李大红", parentEmail: "li@example.com", phone: "13800138002", address: "北京市海淀区", status: "active" },
+                      { id: "G18", name: "张小华", grade: "五年级", parentName: "张大华", parentEmail: "zhang@example.com", phone: "13800138003", address: "北京市西城区", status: "active" },
+                      { id: "G19", name: "陈小军", grade: "三年级", parentName: "陈大军", parentEmail: "chen@example.com", phone: "13800138004", address: "北京市东城区", status: "active" },
+                    ]
+                    
+                    for (const student of testStudents) {
+                      await addStudent({
+                        ...student,
+                        enrollmentDate: new Date().toISOString().split('T')[0]
+                      })
+                    }
+                    
+                    alert('测试数据添加成功！')
+                  } catch (error) {
+                    console.error('Error adding test data:', error)
+                    alert('添加测试数据失败')
+                  }
+                }}
+              >
+                添加到Firebase
+              </Button>
+            </div>
+          </div>
+        )}
+        
+        {/* Test mode indicator */}
+        {testMode && (
+          <div className="text-center p-2 border rounded-lg bg-yellow-50 mb-4">
+            <p className="text-yellow-700 text-sm">测试模式 - 使用本地数据</p>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setTestMode(false)}
+              className="mt-1"
+            >
+              切换到Firebase模式
+            </Button>
+          </div>
+        )}
         <Dialog open={isAddDialogOpen} onOpenChange={handleDialogOpenChange}>
            <DialogTrigger asChild>
              <Button>
@@ -521,7 +759,7 @@ export default function StudentManagement() {
                        className="col-span-3"
                        value={newStudent.studentId}
                        onChange={(e) => handleInputChange("studentId", e.target.value)}
-                       placeholder="自动生成或手动输入"
+                       placeholder="自动生成 (如: G16) 或手动输入"
                      />
                    </div>
                    <div className="grid grid-cols-4 items-center gap-4">
@@ -771,12 +1009,12 @@ export default function StudentManagement() {
                           <Input 
                             id="detailStudentId" 
                             className="col-span-3"
-                            value={selectedStudent.studentId}
-                            onChange={(e) => handleDetailInputChange("studentId", e.target.value)}
+                            value={selectedStudent.id}
+                            onChange={(e) => handleDetailInputChange("id", e.target.value)}
                           />
                         ) : (
                           <div className="col-span-3 py-2 px-3 bg-gray-50 rounded-md">
-                            {selectedStudent.studentId}
+                            {selectedStudent.id}
                           </div>
                         )}
                       </div>
@@ -1125,6 +1363,68 @@ export default function StudentManagement() {
         </TabsList>
 
         <TabsContent value="students" className="space-y-6">
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">总学生数</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{transformedStudents.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  当前在读学生
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">平均出勤率</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {transformedStudents.length > 0 
+                    ? Math.round(transformedStudents.reduce((sum, student) => sum + student.attendance, 0) / transformedStudents.length)
+                    : 0}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  整体出勤表现
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">平均学习进度</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {transformedStudents.length > 0 
+                    ? Math.round(transformedStudents.reduce((sum, student) => sum + student.progress, 0) / transformedStudents.length)
+                    : 0}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  整体学习表现
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">年级分布</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {new Set(transformedStudents.map(s => s.grade)).size}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  覆盖年级数量
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Search and Filter */}
           <Card>
             <CardHeader>
@@ -1136,7 +1436,7 @@ export default function StudentManagement() {
                   <div className="relative">
                     <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
-                      placeholder="搜索学生姓名..."
+                      placeholder="搜索学生姓名或编号..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
@@ -1145,7 +1445,7 @@ export default function StudentManagement() {
                 </div>
                 <Select value={selectedGrade} onValueChange={setSelectedGrade}>
                   <SelectTrigger className="w-32">
-                    <SelectValue />
+                    <SelectValue placeholder="年级" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">全部年级</SelectItem>
@@ -1156,6 +1456,41 @@ export default function StudentManagement() {
                     ))}
                   </SelectContent>
                 </Select>
+                <Select value={selectedClass} onValueChange={setSelectedClass}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="班级" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部班级</SelectItem>
+                    <SelectItem value="A班">A班</SelectItem>
+                    <SelectItem value="B班">B班</SelectItem>
+                    <SelectItem value="C班">C班</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="状态" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部状态</SelectItem>
+                    <SelectItem value="active">在读</SelectItem>
+                    <SelectItem value="suspended">休学</SelectItem>
+                    <SelectItem value="graduated">毕业</SelectItem>
+                    <SelectItem value="transferred">转学</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearchTerm("")
+                    setSelectedGrade("all")
+                    setSelectedClass("all")
+                    setSelectedStatus("all")
+                  }}
+                >
+                  重置筛选
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -1163,13 +1498,54 @@ export default function StudentManagement() {
           {/* Students Table */}
           <Card>
             <CardHeader>
-              <CardTitle>学生列表 ({filteredStudents.length})</CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle>学生列表 ({filteredStudents.length})</CardTitle>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsBulkActionMode(!isBulkActionMode)}
+                  >
+                    {isBulkActionMode ? "退出" : "批量操作"}
+                  </Button>
+                  {isBulkActionMode && selectedStudents.length > 0 && (
+                    <>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleBulkDelete}
+                      >
+                        删除选中 ({selectedStudents.length})
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleBulkExport}
+                      >
+                        导出选中
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {isBulkActionMode && (
+                      <TableHead>
+                        <input
+                          type="checkbox"
+                          checked={selectedStudents.length === filteredStudents.length && filteredStudents.length > 0}
+                          onChange={(e) => handleSelectAll(e.target.checked)}
+                          className="rounded"
+                        />
+                      </TableHead>
+                    )}
+                    <TableHead>学生编号</TableHead>
                     <TableHead>姓名</TableHead>
+                    <TableHead>生日</TableHead>
                     <TableHead>年级</TableHead>
                     <TableHead>班级</TableHead>
                     <TableHead>家长</TableHead>
@@ -1180,16 +1556,32 @@ export default function StudentManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                                     {filteredStudents.map((student) => (
-                     <TableRow key={student.id}>
-                       <TableCell className="font-medium">
-                         <button
-                           className="text-blue-600 hover:text-blue-800 underline cursor-pointer"
-                           onClick={() => handleViewStudentDetails(student)}
-                         >
-                           {student.name}
-                         </button>
-                       </TableCell>
+                  {filteredStudents.map((student) => (
+                    <TableRow key={student.id}>
+                      {isBulkActionMode && (
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={selectedStudents.includes(String(student.id))}
+                            onChange={(e) => handleBulkSelect(String(student.id), e.target.checked)}
+                            className="rounded"
+                          />
+                        </TableCell>
+                      )}
+                      <TableCell className="font-medium">
+                        {student.id}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <button
+                          className="text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                          onClick={() => handleViewStudentDetails(student)}
+                        >
+                          {student.name}
+                        </button>
+                      </TableCell>
+                      <TableCell>
+                        {student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString('zh-CN') : '未设置'}
+                      </TableCell>
                       <TableCell>{student.grade}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{student.class}</Badge>
@@ -1631,4 +2023,17 @@ export default function StudentManagement() {
       </Tabs>
     </div>
   )
+  } catch (error) {
+    console.error('StudentManagement component error:', error)
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">组件加载失败，请刷新页面重试</p>
+            <Button onClick={() => window.location.reload()}>刷新页面</Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 }
