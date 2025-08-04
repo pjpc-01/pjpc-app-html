@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react"
 import {
   type User,
   signInWithEmailAndPassword,
@@ -13,7 +13,7 @@ import {
   updatePassword,
 } from "firebase/auth"
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore"
-import { auth, db } from "@/lib/firebase"
+import { auth, db, checkFirebaseConnection } from "@/lib/firebase"
 
 interface UserProfile {
   uid: string
@@ -34,12 +34,15 @@ interface AuthContextType {
   user: User | null
   userProfile: UserProfile | null
   loading: boolean
+  error: string | null
+  connectionStatus: 'connected' | 'disconnected' | 'checking'
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, name: string, role: "teacher" | "parent" | "accountant") => Promise<void>
   logout: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
   resendVerification: () => Promise<void>
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>
+  clearError: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -56,32 +59,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking')
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setUser(user)
-        try {
-          const userDoc = await getDoc(doc(db, "users", user.uid))
-          if (userDoc.exists()) {
-            const profile = userDoc.data() as UserProfile
+  // 检查Firebase连接状态
+  const checkConnection = useCallback(async () => {
+    try {
+      setConnectionStatus('checking')
+      const { connected, error: connError } = await checkFirebaseConnection()
+      setConnectionStatus(connected ? 'connected' : 'disconnected')
+      if (!connected && connError) {
+        setError(`连接失败: ${connError}`)
+      }
+    } catch (err) {
+      setConnectionStatus('disconnected')
+      setError('无法连接到Firebase服务')
+    }
+  }, [])
 
-            // 检查账户状态
-            if (profile.status === "suspended") {
-              await signOut(auth)
-              throw new Error("账户已被暂停，请联系管理员")
-            }
+  // 清除错误
+  const clearError = useCallback(() => {
+    setError(null)
+  }, [])
 
-            // 更新最后登录时间
+  // 获取用户资料的优化版本
+  const fetchUserProfile = useCallback(async (user: User) => {
+    try {
+      const userDoc = await getDoc(doc(db, "users", user.uid))
+      if (userDoc.exists()) {
+        const profile = userDoc.data() as UserProfile
+
+        // 检查账户状态
+        if (profile.status === "suspended") {
+          await signOut(auth)
+          throw new Error("账户已被暂停，请联系管理员")
+        }
+
+        // 更新最后登录时间（使用防抖）
+        const updateLoginTime = async () => {
+          try {
             await updateDoc(doc(db, "users", user.uid), {
               lastLogin: serverTimestamp(),
               emailVerified: user.emailVerified,
             })
-
-            setUserProfile({ ...profile, emailVerified: user.emailVerified })
+          } catch (updateError) {
+            console.warn("更新登录时间失败:", updateError)
           }
+        }
+        
+        // 延迟更新，避免频繁写入
+        setTimeout(updateLoginTime, 1000)
+
+        setUserProfile({ ...profile, emailVerified: user.emailVerified })
+      }
+    } catch (error) {
+      console.error("获取用户资料失败:", error)
+      throw error
+    }
+  }, [])
+
+  useEffect(() => {
+    // 初始化时检查连接
+    checkConnection()
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUser(user)
+        try {
+          await fetchUserProfile(user)
         } catch (error) {
           console.error("获取用户资料失败:", error)
+          setError(error instanceof Error ? error.message : "获取用户资料失败")
         }
       } else {
         setUser(null)
@@ -91,29 +139,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     return unsubscribe
-  }, [])
+  }, [checkConnection, fetchUserProfile])
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     try {
+      setError(null)
       const result = await signInWithEmailAndPassword(auth, email, password)
 
       // 重置登录尝试次数
       if (result.user) {
-        await updateDoc(doc(db, "users", result.user.uid), {
-          loginAttempts: 0,
-          lockedUntil: null,
-        })
+        try {
+          await updateDoc(doc(db, "users", result.user.uid), {
+            loginAttempts: 0,
+            lockedUntil: null,
+          })
+        } catch (updateError) {
+          console.warn("重置登录尝试次数失败:", updateError)
+        }
       }
     } catch (error: any) {
-      throw new Error(getErrorMessage(error.code))
+      const errorMessage = getErrorMessage(error.code)
+      setError(errorMessage)
+      throw new Error(errorMessage)
     }
-  }
+  }, [])
 
-  const signUp = async (email: string, password: string, name: string, role: "teacher" | "parent" | "accountant") => {
+  const signUp = useCallback(async (email: string, password: string, name: string, role: "teacher" | "parent" | "accountant") => {
     try {
+      setError(null)
+      
       // 验证密码强度
       if (!isPasswordStrong(password)) {
-        throw new Error("密码必须包含至少8位字符，包括大小写字母、数字和特殊字符")
+        const errorMsg = "密码必须包含至少8位字符，包括大小写字母、数字和特殊字符"
+        setError(errorMsg)
+        throw new Error(errorMsg)
       }
 
       const { user } = await createUserWithEmailAndPassword(auth, email, password)
@@ -141,53 +200,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUserProfile(userProfile)
     } catch (error: any) {
-      throw new Error(getErrorMessage(error.code))
+      const errorMessage = getErrorMessage(error.code)
+      setError(errorMessage)
+      throw new Error(errorMessage)
     }
-  }
+  }, [])
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
+      setError(null)
       await signOut(auth)
     } catch (error: any) {
-      throw new Error("登出失败，请重试")
+      const errorMessage = "登出失败，请重试"
+      setError(errorMessage)
+      throw new Error(errorMessage)
     }
-  }
+  }, [])
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = useCallback(async (email: string) => {
     try {
+      setError(null)
       await sendPasswordResetEmail(auth, email)
     } catch (error: any) {
-      throw new Error(getErrorMessage(error.code))
+      const errorMessage = getErrorMessage(error.code)
+      setError(errorMessage)
+      throw new Error(errorMessage)
     }
-  }
+  }, [])
 
-  const resendVerification = async () => {
+  const resendVerification = useCallback(async () => {
     if (user) {
       try {
+        setError(null)
         await sendEmailVerification(user)
       } catch (error: any) {
-        throw new Error("发送验证邮件失败")
+        const errorMessage = "发送验证邮件失败"
+        setError(errorMessage)
+        throw new Error(errorMessage)
       }
     }
-  }
+  }, [user])
 
-  const changePassword = async (currentPassword: string, newPassword: string) => {
-    if (!user) throw new Error("用户未登录")
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    if (!user) {
+      const errorMessage = "用户未登录"
+      setError(errorMessage)
+      throw new Error(errorMessage)
+    }
 
     try {
+      setError(null)
+      
       // 验证当前密码
       await signInWithEmailAndPassword(auth, user.email!, currentPassword)
 
       // 验证新密码强度
       if (!isPasswordStrong(newPassword)) {
-        throw new Error("新密码必须包含至少8位字符，包括大小写字母、数字和特殊字符")
+        const errorMsg = "新密码必须包含至少8位字符，包括大小写字母、数字和特殊字符"
+        setError(errorMsg)
+        throw new Error(errorMsg)
       }
 
       await updatePassword(user, newPassword)
     } catch (error: any) {
-      throw new Error(getErrorMessage(error.code))
+      const errorMessage = getErrorMessage(error.code)
+      setError(errorMessage)
+      throw new Error(errorMessage)
     }
-  }
+  }, [user])
 
   // 密码强度验证
   const isPasswordStrong = (password: string): boolean => {
@@ -235,22 +315,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return "网络连接失败，请检查网络"
       case "auth/user-disabled":
         return "账户已被禁用"
+      case "auth/requires-recent-login":
+        return "需要重新登录以执行此操作"
+      case "auth/operation-not-allowed":
+        return "此操作不被允许"
       default:
         return `操作失败: ${errorCode}`
     }
   }
 
-  const value = {
+  // 使用useMemo优化context value
+  const value = useMemo(() => ({
     user,
     userProfile,
     loading,
+    error,
+    connectionStatus,
     signIn,
     signUp,
     logout,
     resetPassword,
     resendVerification,
     changePassword,
-  }
+    clearError,
+  }), [
+    user,
+    userProfile,
+    loading,
+    error,
+    connectionStatus,
+    signIn,
+    signUp,
+    logout,
+    resetPassword,
+    resendVerification,
+    changePassword,
+    clearError,
+  ])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

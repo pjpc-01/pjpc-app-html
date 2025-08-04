@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { GraduationCap, Bell, Settings, LogOut, UserCheck } from "lucide-react"
+import { GraduationCap, Bell, Settings, LogOut, UserCheck, Wifi, WifiOff, AlertTriangle } from "lucide-react"
 import { useAuth } from "@/contexts/enhanced-auth-context"
 import SecureLoginForm from "@/components/auth/secure-login-form"
 import AdminDashboard from "./components/admin-dashboard"
@@ -13,19 +13,54 @@ import AccountantDashboard from "./components/accountant-dashboard"
 import ErrorBoundary from "@/components/error-boundary"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertTriangle, Mail, Clock } from "lucide-react"
+import { AlertTriangle as AlertTriangleIcon, Mail, Clock } from "lucide-react"
 
 export default function Dashboard() {
-  const { user, userProfile, loading, logout, resendVerification } = useAuth()
+  const { user, userProfile, loading, logout, resendVerification, error, connectionStatus, clearError } = useAuth()
   const [activeTab, setActiveTab] = useState("overview")
 
+  // 显示连接状态
+  if (connectionStatus === 'disconnected') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-600">
+              <WifiOff className="h-5 w-5" />
+              连接失败
+            </CardTitle>
+            <CardDescription>无法连接到服务器，请检查网络连接</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert variant="destructive">
+              <AlertTriangleIcon className="h-4 w-4" />
+              <AlertDescription>
+                系统无法连接到Firebase服务。请检查：
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>网络连接是否正常</li>
+                  <li>Firebase配置是否正确</li>
+                  <li>服务器是否在线</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
+            <Button onClick={() => window.location.reload()} className="w-full">
+              重新加载
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   // 显示加载状态
-  if (loading) {
+  if (loading || connectionStatus === 'checking') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <GraduationCap className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600">加载中...</p>
+          <p className="text-gray-600">
+            {connectionStatus === 'checking' ? '检查连接中...' : '加载中...'}
+          </p>
         </div>
       </div>
     )
@@ -50,7 +85,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert>
-              <AlertTriangle className="h-4 w-4" />
+              <AlertTriangleIcon className="h-4 w-4" />
               <AlertDescription>我们已向 {user.email} 发送了验证邮件。请检查您的邮箱并点击验证链接。</AlertDescription>
             </Alert>
             <div className="flex gap-2">
@@ -81,7 +116,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert>
-              <AlertTriangle className="h-4 w-4" />
+              <AlertTriangleIcon className="h-4 w-4" />
               <AlertDescription>
                 您的 {userProfile.role === "teacher" ? "老师" : "家长"} 账户申请已提交，请耐心等待管理员审核。
                 审核通过后您将收到邮件通知。
@@ -103,14 +138,14 @@ export default function Dashboard() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <AlertTriangleIcon className="h-5 w-5 text-red-500" />
               账户已暂停
             </CardTitle>
             <CardDescription>您的账户已被管理员暂停使用</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
+              <AlertTriangleIcon className="h-4 w-4" />
               <AlertDescription>您的账户已被暂停，如有疑问请联系管理员。</AlertDescription>
             </Alert>
             <Button onClick={logout} variant="outline" className="w-full bg-transparent">
@@ -201,6 +236,18 @@ export default function Dashboard() {
               <h1 className="ml-2 text-xl font-bold text-gray-900">{getRoleTitle()}</h1>
             </div>
             <div className="flex items-center space-x-4">
+              {/* Connection Status */}
+              <div className="flex items-center gap-1">
+                {connectionStatus === 'connected' ? (
+                  <Wifi className="h-4 w-4 text-green-500" />
+                ) : (
+                  <WifiOff className="h-4 w-4 text-red-500" />
+                )}
+                <span className="text-xs text-gray-500">
+                  {connectionStatus === 'connected' ? '已连接' : '未连接'}
+                </span>
+              </div>
+              
               {/* User Info */}
               <div className="flex items-center gap-2">
                 <UserCheck className="h-4 w-4 text-gray-500" />
@@ -221,6 +268,21 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
+
+      {/* Error Display */}
+      {error && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangleIcon className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>{error}</span>
+              <Button variant="ghost" size="sm" onClick={clearError}>
+                关闭
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <ErrorBoundary>
