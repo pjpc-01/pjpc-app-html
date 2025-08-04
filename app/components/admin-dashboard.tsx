@@ -30,8 +30,12 @@ import {
   TrendingUp,
   Activity,
   Database,
+  Loader2,
+  AlertCircle,
 } from "lucide-react"
 import { useAuth } from "@/contexts/enhanced-auth-context"
+import { useDashboardStats } from "@/hooks/useDashboardStats"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface AdminDashboardProps {
   activeTab: string
@@ -39,31 +43,22 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboardProps) {
-  const [stats] = useState({
-    totalUsers: 156,
-    totalStudents: 89,
-    monthlyRevenue: 45600,
-    pendingApprovals: 3,
-    todayAttendance: 82,
-    activeTeachers: 12,
-    totalParents: 67,
-    systemHealth: 98,
-  })
-
-  const recentActivities = [
-    { time: "10:30", action: "新用户注册", user: "张老师", type: "user" },
-    { time: "09:45", action: "学生签到", user: "小明", type: "attendance" },
-    { time: "09:20", action: "作业提交", user: "小红", type: "assignment" },
-    { time: "08:50", action: "缴费完成", user: "李家长", type: "payment" },
-  ]
-
   const { userProfile } = useAuth()
+  const { stats, loading, error, refetch } = useDashboardStats()
 
   const renderTabContent = () => {
     switch (activeTab) {
       case "overview":
         return (
           <div className="space-y-6">
+            {/* 错误提示 */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
             {/* Key Performance Indicators */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card>
@@ -71,11 +66,20 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">总用户数</p>
-                      <p className="text-2xl font-bold">{stats.totalUsers}</p>
-                      <p className="text-xs text-green-600 flex items-center mt-1">
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                        +12% 本月
-                      </p>
+                      {loading ? (
+                        <div className="flex items-center mt-2">
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <span className="text-sm text-gray-500">加载中...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-2xl font-bold">{stats.totalUsers}</p>
+                          <p className="text-xs text-green-600 flex items-center mt-1">
+                            <TrendingUp className="h-3 w-3 mr-1" />
+                            实时数据
+                          </p>
+                        </>
+                      )}
                     </div>
                     <Users className="h-8 w-8 text-blue-600" />
                   </div>
@@ -87,11 +91,20 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">学生总数</p>
-                      <p className="text-2xl font-bold">{stats.totalStudents}</p>
-                      <p className="text-xs text-green-600 flex items-center mt-1">
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                        +8% 本月
-                      </p>
+                      {loading ? (
+                        <div className="flex items-center mt-2">
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <span className="text-sm text-gray-500">加载中...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-2xl font-bold">{stats.totalStudents}</p>
+                          <p className="text-xs text-green-600 flex items-center mt-1">
+                            <TrendingUp className="h-3 w-3 mr-1" />
+                            实时数据
+                          </p>
+                        </>
+                      )}
                     </div>
                     <GraduationCap className="h-8 w-8 text-green-600" />
                   </div>
@@ -103,11 +116,20 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">月收入</p>
-                      <p className="text-2xl font-bold">¥{stats.monthlyRevenue.toLocaleString()}</p>
-                      <p className="text-xs text-green-600 flex items-center mt-1">
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                        +15% 本月
-                      </p>
+                      {loading ? (
+                        <div className="flex items-center mt-2">
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <span className="text-sm text-gray-500">加载中...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-2xl font-bold">¥{stats.monthlyRevenue.toLocaleString()}</p>
+                          <p className="text-xs text-green-600 flex items-center mt-1">
+                            <TrendingUp className="h-3 w-3 mr-1" />
+                            实时数据
+                          </p>
+                        </>
+                      )}
                     </div>
                     <DollarSign className="h-8 w-8 text-purple-600" />
                   </div>
@@ -119,11 +141,20 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">今日出勤</p>
-                      <p className="text-2xl font-bold">{stats.todayAttendance}</p>
-                      <p className="text-xs text-blue-600 flex items-center mt-1">
-                        <Activity className="h-3 w-3 mr-1" />
-                        92% 出勤率
-                      </p>
+                      {loading ? (
+                        <div className="flex items-center mt-2">
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <span className="text-sm text-gray-500">加载中...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-2xl font-bold">{stats.todayAttendance}</p>
+                          <p className="text-xs text-blue-600 flex items-center mt-1">
+                            <Activity className="h-3 w-3 mr-1" />
+                            实时数据
+                          </p>
+                        </>
+                      )}
                     </div>
                     <Clock className="h-8 w-8 text-orange-600" />
                   </div>
@@ -142,26 +173,35 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">系统健康度</span>
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">
-                      {stats.systemHealth}%
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">活跃教师</span>
-                    <span className="font-medium">{stats.activeTeachers}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">注册家长</span>
-                    <span className="font-medium">{stats.totalParents}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">待审核用户</span>
-                    <Badge variant="destructive" className="bg-red-100 text-red-800">
-                      {stats.pendingApprovals}
-                    </Badge>
-                  </div>
+                  {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                      <span>加载系统状态...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">系统健康度</span>
+                        <Badge variant="secondary" className="bg-green-100 text-green-800">
+                          {stats.systemHealth}%
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">活跃教师</span>
+                        <span className="font-medium">{stats.activeTeachers}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">注册家长</span>
+                        <span className="font-medium">{stats.totalParents}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">待审核用户</span>
+                        <Badge variant="destructive" className="bg-red-100 text-red-800">
+                          {stats.pendingApprovals}
+                        </Badge>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
@@ -174,31 +214,47 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {recentActivities.map((activity, index) => (
-                      <div key={index} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-                        <div className="text-xs text-gray-500 w-12">{activity.time}</div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">{activity.action}</div>
-                          <div className="text-xs text-gray-500">{activity.user}</div>
+                  {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                      <span>加载活动数据...</span>
+                    </div>
+                  ) : stats.recentActivities.length > 0 ? (
+                    <div className="space-y-3">
+                      {stats.recentActivities.map((activity) => (
+                        <div key={activity.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                          <div className="text-xs text-gray-500 w-12">{activity.time}</div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">{activity.action}</div>
+                            <div className="text-xs text-gray-500">{activity.user}</div>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={
+                              activity.type === "user"
+                                ? "border-blue-200 text-blue-700"
+                                : activity.type === "attendance"
+                                  ? "border-green-200 text-green-700"
+                                  : activity.type === "assignment"
+                                    ? "border-orange-200 text-orange-700"
+                                    : activity.type === "payment"
+                                      ? "border-purple-200 text-purple-700"
+                                      : activity.type === "login"
+                                        ? "border-indigo-200 text-indigo-700"
+                                        : "border-gray-200 text-gray-700"
+                            }
+                          >
+                            {activity.type}
+                          </Badge>
                         </div>
-                        <Badge
-                          variant="outline"
-                          className={
-                            activity.type === "user"
-                              ? "border-blue-200 text-blue-700"
-                              : activity.type === "attendance"
-                                ? "border-green-200 text-green-700"
-                                : activity.type === "assignment"
-                                  ? "border-orange-200 text-orange-700"
-                                  : "border-purple-200 text-purple-700"
-                          }
-                        >
-                          {activity.type}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Activity className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                      <p>暂无活动记录</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -259,7 +315,7 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                   <UserCheck className="h-12 w-12 mx-auto mb-4 text-blue-600" />
                   <h3 className="font-semibold mb-2">用户审核</h3>
                   <p className="text-sm text-gray-600 mb-3">审核新用户注册申请</p>
-                  {stats.pendingApprovals > 0 && (
+                  {!loading && stats.pendingApprovals > 0 && (
                     <Badge variant="destructive" className="bg-red-100 text-red-800">
                       {stats.pendingApprovals} 待处理
                     </Badge>
@@ -272,9 +328,11 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                   <Users className="h-12 w-12 mx-auto mb-4 text-green-600" />
                   <h3 className="font-semibold mb-2">用户管理</h3>
                   <p className="text-sm text-gray-600 mb-3">管理所有系统用户权限</p>
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    {stats.totalUsers} 用户
-                  </Badge>
+                  {!loading && (
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      {stats.totalUsers} 用户
+                    </Badge>
+                  )}
                 </CardContent>
               </Card>
 
@@ -283,9 +341,11 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                   <Shield className="h-12 w-12 mx-auto mb-4 text-red-600" />
                   <h3 className="font-semibold mb-2">安全监控</h3>
                   <p className="text-sm text-gray-600 mb-3">系统安全和访问监控</p>
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    {stats.systemHealth}% 健康
-                  </Badge>
+                  {!loading && (
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      {stats.systemHealth}% 健康
+                    </Badge>
+                  )}
                 </CardContent>
               </Card>
 
@@ -315,9 +375,11 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                   <GraduationCap className="h-12 w-12 mx-auto mb-4 text-blue-600" />
                   <h3 className="font-semibold mb-2">学生管理</h3>
                   <p className="text-sm text-gray-600 mb-3">管理学生信息和档案</p>
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                    {stats.totalStudents} 学生
-                  </Badge>
+                  {!loading && (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                      {stats.totalStudents} 学生
+                    </Badge>
+                  )}
                 </CardContent>
               </Card>
 
@@ -326,9 +388,11 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                   <Clock className="h-12 w-12 mx-auto mb-4 text-green-600" />
                   <h3 className="font-semibold mb-2">出勤管理</h3>
                   <p className="text-sm text-gray-600 mb-3">门禁系统和出勤记录</p>
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    {stats.todayAttendance} 今日出勤
-                  </Badge>
+                  {!loading && (
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      {stats.todayAttendance} 今日出勤
+                    </Badge>
+                  )}
                 </CardContent>
               </Card>
 

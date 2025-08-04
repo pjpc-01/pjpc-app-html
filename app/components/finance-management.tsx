@@ -18,13 +18,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { DollarSign, CreditCard, FileText, TrendingUp, AlertCircle, CheckCircle, Plus, Trash2, Edit, Download, Printer, Send, Clock, Users } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { DollarSign, CreditCard, FileText, TrendingUp, AlertCircle, CheckCircle, Plus, Trash2, Edit, Download, Printer, Send, Clock, Users, Loader2 } from "lucide-react"
 import React from "react"
 import { StudentFeeMatrix } from "../../components/features/StudentFeeMatrix"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useInvoices } from "@/hooks/useInvoices"
 import { usePayments } from "@/hooks/usePayments"
 import { useReminders } from "@/hooks/useReminders"
+import { useFinancialStats } from "@/hooks/useFinancialStats"
 import { downloadInvoicePDF, printInvoicePDF, PDFOptions } from "@/lib/pdf-generator"
 
 // Custom Toggle Switch Component
@@ -52,6 +54,9 @@ const ToggleSwitch = ({ checked, onChange, className = "" }: { checked: boolean;
 
 export default function FinanceManagement() {
   const [activeSection, setActiveSection] = useState("overview")
+  
+  // 实时财务数据
+  const { stats: financialStats, loading: financialLoading, error: financialError } = useFinancialStats()
   
   // Custom hooks for better state management
   const {
@@ -603,48 +608,92 @@ export default function FinanceManagement() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
+          {/* 错误提示 */}
+          {financialError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{financialError}</AlertDescription>
+            </Alert>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
             <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => (document.querySelector('[data-value="student-fees"]') as HTMLElement)?.click()}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">学生费用分配</CardTitle>
+                <CardTitle className="text-sm font-medium">月收入</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">¥45,600</div>
-                <p className="text-xs text-muted-foreground">管理学生费用分配</p>
+                {financialLoading ? (
+                  <div className="flex items-center">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span className="text-sm text-gray-500">加载中...</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">¥{financialStats.monthlyRevenue.toLocaleString()}</div>
+                    <p className="text-xs text-muted-foreground">本月实时收入</p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
             <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => (document.querySelector('[data-value="invoices"]') as HTMLElement)?.click()}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">发票管理</CardTitle>
+                <CardTitle className="text-sm font-medium">待处理支付</CardTitle>
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">¥8,400</div>
-                <p className="text-xs text-muted-foreground">管理发票和账单</p>
+                {financialLoading ? (
+                  <div className="flex items-center">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span className="text-sm text-gray-500">加载中...</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">{financialStats.pendingPayments}</div>
+                    <p className="text-xs text-muted-foreground">待处理支付数量</p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
             <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => (document.querySelector('[data-value="payments"]') as HTMLElement)?.click()}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">缴费管理</CardTitle>
+                <CardTitle className="text-sm font-medium">逾期支付</CardTitle>
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">92.1%</div>
-                <p className="text-xs text-muted-foreground">跟踪缴费状态</p>
+                {financialLoading ? (
+                  <div className="flex items-center">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span className="text-sm text-gray-500">加载中...</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold text-red-600">{financialStats.overduePayments}</div>
+                    <p className="text-xs text-muted-foreground">逾期支付数量</p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
             <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => (document.querySelector('[data-value="reminders"]') as HTMLElement)?.click()}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">收费提醒</CardTitle>
-                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">总收入</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">¥425,800</div>
-                <p className="text-xs text-muted-foreground">发送缴费提醒</p>
+                {financialLoading ? (
+                  <div className="flex items-center">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span className="text-sm text-gray-500">加载中...</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">¥{financialStats.totalRevenue.toLocaleString()}</div>
+                    <p className="text-xs text-muted-foreground">累计总收入</p>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -652,53 +701,73 @@ export default function FinanceManagement() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>收入构成</CardTitle>
+                <CardTitle>最近交易</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span>学费收入</span>
-                    <Badge variant="default">¥38,400 (84%)</Badge>
+                {financialLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                    <span>加载交易数据...</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span>餐费收入</span>
-                    <Badge variant="secondary">¥5,200 (11%)</Badge>
+                ) : financialStats.recentTransactions.length > 0 ? (
+                  <div className="space-y-3">
+                    {financialStats.recentTransactions.slice(0, 5).map((transaction) => (
+                      <div key={transaction.id} className="flex justify-between items-center p-2 rounded-lg hover:bg-gray-50">
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">{transaction.description}</div>
+                          <div className="text-xs text-gray-500">{transaction.studentName}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`text-sm font-medium ${
+                            transaction.type === 'refund' ? 'text-red-600' : 'text-green-600'
+                          }`}>
+                            {transaction.type === 'refund' ? '-' : '+'}¥{transaction.amount.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-gray-500">{transaction.paymentMethod}</div>
+                        </div>
+                        <Badge
+                          variant={transaction.status === 'completed' ? 'default' : 
+                                  transaction.status === 'pending' ? 'secondary' : 'destructive'}
+                          className="ml-2"
+                        >
+                          {transaction.status === 'completed' ? '已完成' : 
+                           transaction.status === 'pending' ? '处理中' : '失败'}
+                        </Badge>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span>教材费</span>
-                    <Badge variant="outline">¥1,800 (4%)</Badge>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <CreditCard className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                    <p>暂无交易记录</p>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span>其他费用</span>
-                    <Badge variant="outline">¥200 (1%)</Badge>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>支付方式统计</CardTitle>
+                <CardTitle>月度收入趋势</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span>微信支付</span>
-                    <Badge variant="default">45%</Badge>
+                {financialLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                    <span>加载趋势数据...</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span>支付宝</span>
-                    <Badge variant="secondary">32%</Badge>
+                ) : (
+                  <div className="space-y-3">
+                    {Object.entries(financialStats.revenueByMonth)
+                      .sort(([a], [b]) => a.localeCompare(b))
+                      .slice(-6)
+                      .map(([month, revenue]) => (
+                        <div key={month} className="flex justify-between items-center">
+                          <span className="text-sm">{month}</span>
+                          <Badge variant="outline">¥{revenue.toLocaleString()}</Badge>
+                        </div>
+                      ))}
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span>银行转账</span>
-                    <Badge variant="outline">18%</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>现金</span>
-                    <Badge variant="outline">5%</Badge>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
