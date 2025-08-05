@@ -66,10 +66,16 @@ export default app
 // 添加连接状态检查
 export const checkFirebaseConnection = async () => {
   try {
+    // 添加超时保护
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Connection timeout')), 5000) // 5秒超时
+    })
+    
     // 简单的连接测试
-    await auth.authStateReady()
+    await Promise.race([auth.authStateReady(), timeoutPromise])
     return { connected: true, error: null }
   } catch (error) {
+    console.warn('Firebase connection check failed:', error)
     return { 
       connected: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 

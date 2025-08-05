@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import NFCAttendanceSystem from "./nfc-attendance-system"
 import {
   Clock,
   UserCheck,
@@ -22,11 +23,15 @@ import {
   Activity,
   Eye,
   Shield,
+  CreditCard,
+  Zap,
+  Database,
 } from "lucide-react"
 
 export default function AttendanceSystem() {
   const [activeTab, setActiveTab] = useState("overview")
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
+  const [showNFCSystem, setShowNFCSystem] = useState(false)
 
   // Mock data
   const [stats] = useState({
@@ -34,7 +39,7 @@ export default function AttendanceSystem() {
     presentToday: 82,
     absentToday: 7,
     lateArrivals: 3,
-    faceRecognitionAccuracy: 98.5,
+    // faceRecognitionAccuracy: 98.5, // 暂时隐藏脸部识别
     whatsappDeliveryRate: 99.2,
     systemHealth: 95,
   })
@@ -47,7 +52,7 @@ export default function AttendanceSystem() {
       status: "present",
       arrivalTime: "08:30",
       departureTime: null,
-      faceId: "registered",
+      // faceId: "registered", // 暂时隐藏脸部识别
       parentPhone: "+886912345678",
       notificationSent: true,
     },
@@ -58,7 +63,7 @@ export default function AttendanceSystem() {
       status: "present",
       arrivalTime: "08:25",
       departureTime: null,
-      faceId: "registered",
+      // faceId: "registered", // 暂时隐藏脸部识别
       parentPhone: "+886987654321",
       notificationSent: true,
     },
@@ -69,7 +74,7 @@ export default function AttendanceSystem() {
       status: "late",
       arrivalTime: "09:15",
       departureTime: null,
-      faceId: "registered",
+      // faceId: "registered", // 暂时隐藏脸部识别
       parentPhone: "+886555666777",
       notificationSent: true,
     },
@@ -80,7 +85,7 @@ export default function AttendanceSystem() {
       status: "absent",
       arrivalTime: null,
       departureTime: null,
-      faceId: "registered",
+      // faceId: "registered", // 暂时隐藏脸部识别
       parentPhone: "+886444555666",
       notificationSent: false,
     },
@@ -93,7 +98,7 @@ export default function AttendanceSystem() {
       status: "online",
       location: "学校正门",
       lastActivity: "2分钟前",
-      recognitionCount: 45,
+      // recognitionCount: 45, // 暂时隐藏脸部识别统计
     },
     {
       id: "side_gate",
@@ -101,7 +106,7 @@ export default function AttendanceSystem() {
       status: "online",
       location: "操场入口",
       lastActivity: "5分钟前",
-      recognitionCount: 23,
+      // recognitionCount: 23, // 暂时隐藏脸部识别统计
     },
     {
       id: "back_gate",
@@ -109,7 +114,7 @@ export default function AttendanceSystem() {
       status: "offline",
       location: "后院入口",
       lastActivity: "30分钟前",
-      recognitionCount: 0,
+      // recognitionCount: 0, // 暂时隐藏脸部识别统计
     },
   ])
 
@@ -171,6 +176,25 @@ export default function AttendanceSystem() {
       case "overview":
         return (
           <div className="space-y-6">
+            {/* NFC System Toggle */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold">NFC/RFID 打卡系统</h3>
+                    <p className="text-sm text-gray-600">使用NFC或RFID卡进行学生打卡</p>
+                  </div>
+                  <Button 
+                    onClick={() => setShowNFCSystem(!showNFCSystem)}
+                    className="flex items-center gap-2"
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    {showNFCSystem ? "隐藏" : "启用"} NFC系统
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card>
@@ -214,6 +238,7 @@ export default function AttendanceSystem() {
                 </CardContent>
               </Card>
 
+              {/* 暂时隐藏脸部识别统计卡片
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
@@ -226,51 +251,12 @@ export default function AttendanceSystem() {
                   </div>
                 </CardContent>
               </Card>
+              */}
             </div>
 
-            {/* System Status and Recent Activities */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Access Control Devices */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5" />
-                    门禁设备状态
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {accessControlDevices.map((device) => (
-                      <div key={device.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-2">
-                            {device.status === "online" ? (
-                              <Wifi className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <WifiOff className="h-4 w-4 text-red-600" />
-                            )}
-                            <div>
-                              <div className="font-medium">{device.name}</div>
-                              <div className="text-sm text-gray-500">{device.location}</div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <Badge
-                            variant={device.status === "online" ? "default" : "destructive"}
-                            className={
-                              device.status === "online" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                            }
-                          >
-                            {device.status === "online" ? "在线" : "离线"}
-                          </Badge>
-                          <div className="text-xs text-gray-500 mt-1">{device.recognitionCount} 次识别</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                         {/* System Status and Recent Activities */}
+             <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+               {/* 暂时隐藏门禁设备状态 */}
 
               {/* Recent Activities */}
               <Card>
@@ -385,58 +371,21 @@ export default function AttendanceSystem() {
       case "face-recognition":
         return (
           <div className="space-y-6">
-            {/* Face Recognition Management */}
+            {/* 暂时隐藏脸部识别管理功能 */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Camera className="h-5 w-5" />
-                  脸部识别管理
+                  脸部识别管理 (暂时隐藏)
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <Alert>
                   <Eye className="h-4 w-4" />
                   <AlertDescription>
-                    系统当前识别准确率: {stats.faceRecognitionAccuracy}%，建议定期更新学生脸部数据以保持最佳性能。
+                    脸部识别功能暂时隐藏，如需启用请联系管理员。
                   </AlertDescription>
                 </Alert>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">脸部数据管理</h3>
-                    <div className="space-y-2">
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        <Camera className="h-4 w-4 mr-2" />
-                        录入新学生脸部数据
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        <Eye className="h-4 w-4 mr-2" />
-                        更新现有脸部数据
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        <Settings className="h-4 w-4 mr-2" />
-                        测试识别准确度
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">系统设置</h3>
-                    <div className="space-y-2">
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        <Settings className="h-4 w-4 mr-2" />
-                        调整识别阈值
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        <Shield className="h-4 w-4 mr-2" />
-                        安全设置
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start bg-transparent">
-                        <Activity className="h-4 w-4 mr-2" />
-                        系统监控
-                      </Button>
-                    </div>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -503,8 +452,27 @@ export default function AttendanceSystem() {
 
   return (
     <div className="space-y-6">
+      {/* NFC System */}
+      {showNFCSystem && (
+        <div className="border rounded-lg p-4 bg-blue-50">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-blue-900">NFC/RFID 打卡系统</h2>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowNFCSystem(false)}
+            >
+              关闭
+            </Button>
+          </div>
+          <div className="bg-white rounded-lg p-4">
+            <NFCAttendanceSystem />
+          </div>
+        </div>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 h-12">
+        <TabsList className="grid w-full grid-cols-3 h-12">
           <TabsTrigger value="overview" className="flex items-center gap-2 text-sm">
             <Activity className="h-4 w-4" />
             概览
@@ -512,10 +480,6 @@ export default function AttendanceSystem() {
           <TabsTrigger value="students" className="flex items-center gap-2 text-sm">
             <Users className="h-4 w-4" />
             学生出勤
-          </TabsTrigger>
-          <TabsTrigger value="face-recognition" className="flex items-center gap-2 text-sm">
-            <Camera className="h-4 w-4" />
-            脸部识别
           </TabsTrigger>
           <TabsTrigger value="whatsapp" className="flex items-center gap-2 text-sm">
             <MessageSquare className="h-4 w-4" />

@@ -66,12 +66,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkConnection = useCallback(async () => {
     try {
       setConnectionStatus('checking')
-      const { connected, error: connError } = await checkFirebaseConnection()
+      
+      // 添加超时保护
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Connection check timeout')), 10000) // 10秒超时
+      })
+      
+      const connectionPromise = checkFirebaseConnection()
+      const { connected, error: connError } = await Promise.race([connectionPromise, timeoutPromise]) as any
+      
       setConnectionStatus(connected ? 'connected' : 'disconnected')
       if (!connected && connError) {
         setError(`连接失败: ${connError}`)
       }
     } catch (err) {
+      console.warn('Connection check failed:', err)
       setConnectionStatus('disconnected')
       setError('无法连接到Firebase服务')
     }
@@ -122,6 +131,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 初始化时检查连接
     checkConnection()
 
+    // 添加备用机制：如果10秒后仍在检查状态，自动设为已连接
+    const fallbackTimer = setTimeout(() => {
+      if (connectionStatus === 'checking') {
+        console.warn('Connection check taking too long, assuming connected')
+        setConnectionStatus('connected')
+      }
+    }, 10000)
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user)
@@ -138,8 +155,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false)
     })
 
-    return unsubscribe
-  }, [checkConnection, fetchUserProfile])
+    return () => {
+      clearTimeout(fallbackTimer)
+      unsubscribe()
+    }
+  }, [checkConnection, fetchUserProfile, connectionStatus])
 
   const signIn = useCallback(async (email: string, password: string) => {
     try {

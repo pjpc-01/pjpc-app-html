@@ -98,7 +98,7 @@ export class FirestoreImport {
         const data = doc.data()
         return {
           ...data,
-          id: doc.id // Use the actual document ID
+          id: data.id || doc.id // Use the id field from document data, fallback to document ID
         }
       }) as FirestoreStudent[]
       
@@ -120,10 +120,13 @@ export class FirestoreImport {
       )
       
       const querySnapshot = await getDocs(q)
-      return querySnapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id
-      })) as FirestoreStudent[]
+      return querySnapshot.docs.map(doc => {
+        const data = doc.data()
+        return {
+          ...data,
+          id: data.id || doc.id // Use the id field from document data, fallback to document ID
+        }
+      }) as FirestoreStudent[]
     } catch (error) {
       console.error('Error fetching students by grade:', error)
       throw error
