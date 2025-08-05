@@ -49,6 +49,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 处理打卡 - 使用统一的API
+    console.log(`Processing attendance for card: ${uid}, device: ${deviceType}`)
+    
     const attendanceRecord = await nfcManager.processAttendance(
       uid, // 使用UID作为cardNumber
       deviceId,
