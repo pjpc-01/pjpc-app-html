@@ -500,6 +500,70 @@ export default function SimpleImport() {
     }
   }
 
+  const checkSheetsColumns = async () => {
+    if (!spreadsheetId) {
+      setImportStatus({
+        isImporting: false,
+        progress: 0,
+        message: '请输入Spreadsheet ID',
+        error: '缺少Spreadsheet ID'
+      })
+      return
+    }
+
+    try {
+      setImportStatus({
+        isImporting: true,
+        progress: 10,
+        message: '检查Google Sheets列...'
+      })
+
+      const response = await fetch('/api/debug/check-sheets-columns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          spreadsheetId,
+          credentials: useEnvironmentCredentials ? 'env' : customCredentials,
+          sheetName
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        const birthDateFields = result.potentialBirthDateFields
+        const allFields = result.allFields
+        
+        let message = `找到 ${result.headers.length} 列\n`
+        message += `潜在出生日期字段: ${birthDateFields.length > 0 ? birthDateFields.map((f: any) => f.originalHeader).join(', ') : '无'}\n`
+        message += `所有字段: ${allFields.map((f: any) => f.originalHeader).join(', ')}`
+        
+        setImportStatus({
+          isImporting: false,
+          progress: 100,
+          message: message,
+          success: true
+        })
+        
+        console.log('Sheets columns check result:', result)
+      } else {
+        setImportStatus({
+          isImporting: false,
+          progress: 0,
+          message: '检查失败',
+          error: result.error
+        })
+      }
+    } catch (error) {
+      setImportStatus({
+        isImporting: false,
+        progress: 0,
+        message: '检查失败',
+        error: error instanceof Error ? error.message : '未知错误'
+      })
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -643,6 +707,14 @@ export default function SimpleImport() {
                 测试Firebase导入
               </Button>
               <Button
+                onClick={checkSheetsColumns}
+                disabled={importStatus.isImporting}
+                variant="outline"
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                检查出生日期字段
+              </Button>
+              <Button
                 onClick={testPermission}
                 disabled={importStatus.isImporting}
                 variant="outline"
@@ -725,14 +797,14 @@ export default function SimpleImport() {
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-medium">{student.name}</p>
-                      <p className="text-sm text-muted-foreground">Standard: {student.grade}</p>
-                      <p className="text-sm text-muted-foreground">Phone: {student.parentPhone || 'N/A'}</p>
-                      <p className="text-sm text-muted-foreground">Address: {student.address || 'N/A'}</p>
+                      <p className="text-sm text-muted-foreground">年级: {student.grade}</p>
+                      <p className="text-sm text-muted-foreground">电话: {student.parentPhone || '无'}</p>
+                      <p className="text-sm text-muted-foreground">地址: {student.address || '无'}</p>
                       {student.dateOfBirth && (
-                        <p className="text-sm text-muted-foreground">DOB: {student.dateOfBirth}</p>
+                        <p className="text-sm text-muted-foreground">出生日期: {student.dateOfBirth}</p>
                       )}
                       {student.gender && (
-                        <p className="text-sm text-muted-foreground">Gender: {student.gender}</p>
+                        <p className="text-sm text-muted-foreground">性别: {student.gender}</p>
                       )}
                     </div>
                     <Badge variant="secondary">{student.id}</Badge>

@@ -60,7 +60,15 @@ class GoogleSheetsAPI {
               case 'homeaddress':
                 student.address = row[colIndex]
                 break
+              // Birth date field mappings
               case 'dob':
+              case 'birthdate':
+              case 'birth':
+              case 'dateofbirth':
+              case 'birthday':
+              case '生日':
+              case '出生日期':
+              case '出生':
                 student.dateOfBirth = row[colIndex]
                 break
               case 'score':

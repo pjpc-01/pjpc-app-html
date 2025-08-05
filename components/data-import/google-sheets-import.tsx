@@ -385,8 +385,8 @@ export default function GoogleSheetsImport() {
       {previewData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Data Preview</CardTitle>
-            <CardDescription>First 5 records from your spreadsheet</CardDescription>
+            <CardTitle>数据预览</CardTitle>
+            <CardDescription>来自您的电子表格的前5条记录</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -395,14 +395,14 @@ export default function GoogleSheetsImport() {
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-medium">{student.name}</p>
-                      <p className="text-sm text-muted-foreground">Standard: {student.grade}</p>
-                      <p className="text-sm text-muted-foreground">Phone: {student.parentPhone || 'N/A'}</p>
-                      <p className="text-sm text-muted-foreground">Address: {student.address || 'N/A'}</p>
+                      <p className="text-sm text-muted-foreground">年级: {student.grade}</p>
+                      <p className="text-sm text-muted-foreground">电话: {student.parentPhone || '无'}</p>
+                      <p className="text-sm text-muted-foreground">地址: {student.address || '无'}</p>
                       {student.dateOfBirth && (
-                        <p className="text-sm text-muted-foreground">DOB: {student.dateOfBirth}</p>
+                        <p className="text-sm text-muted-foreground">出生日期: {student.dateOfBirth}</p>
                       )}
                       {student.gender && (
-                        <p className="text-sm text-muted-foreground">Gender: {student.gender}</p>
+                        <p className="text-sm text-muted-foreground">性别: {student.gender}</p>
                       )}
                     </div>
                     <Badge variant="secondary">{student.id}</Badge>
@@ -418,17 +418,17 @@ export default function GoogleSheetsImport() {
       {stats && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Import Statistics
-            </CardTitle>
+                          <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                导入统计
+              </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 border rounded-lg">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  <span className="font-medium">Total Students</span>
+                  <span className="font-medium">总学生数</span>
                 </div>
                 <p className="text-2xl font-bold">{stats.total}</p>
               </div>
@@ -436,7 +436,7 @@ export default function GoogleSheetsImport() {
               <div className="p-4 border rounded-lg">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  <span className="font-medium">By Grade</span>
+                  <span className="font-medium">按年级分布</span>
                 </div>
                 <div className="space-y-1 mt-2">
                   {stats.byGrade && Object.entries(stats.byGrade).map(([grade, count]) => (

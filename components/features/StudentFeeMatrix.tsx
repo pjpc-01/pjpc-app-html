@@ -104,11 +104,11 @@ export const StudentFeeMatrix = () => {
       // For each selected sub-item
       selectedSubItems.forEach((isSelected, key) => {
         if (isSelected) {
-          const [feeId, subItemId] = key.split('-').map(Number)
+          const [feeId, subItemId] = key.split('-').map((s: string) => Number(s))
           
           // Set the sub-item active/inactive for all students in this grade
           studentsInGrade.forEach(student => {
-            setStudentSubItemState(student.id, feeId, subItemId, batchAction === 'activate')
+            setStudentSubItemState(Number(student.id), feeId, subItemId, batchAction === 'activate')
           })
         }
       })
@@ -276,14 +276,14 @@ export const StudentFeeMatrix = () => {
       {/* Student Fee Matrix */}
       <div className="grid gap-4">
         {students.map(student => {
-          const isExpanded = expandedStudents.includes(student.id)
+          const isExpanded = expandedStudents.includes(Number(student.id))
           return (
             <Card key={student.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <CardContent className="p-0">
                 {/* Student Header - Clickable */}
                 <div 
                   className="bg-gray-50 px-4 py-3 border-b cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => toggleStudentExpansion(student.id)}
+                  onClick={() => toggleStudentExpansion(Number(student.id))}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -304,17 +304,17 @@ export const StudentFeeMatrix = () => {
                             ¥{activeFees.reduce((total, fee) => {
                               // Calculate amount based on this student's active sub-items for this fee
                               const feeAmount = fee.subItems
-                                .filter(subItem => getStudentSubItemState(student.id, fee.id, subItem.id))
+                                .filter(subItem => getStudentSubItemState(Number(student.id), fee.id, subItem.id))
                                 .reduce((subTotal, subItem) => subTotal + subItem.amount, 0)
                               return total + feeAmount
                             }, 0)}
                           </span>
                         </div>
                        <div className="flex items-center gap-2 mt-1">
-                         {getStatusBadge(getPaymentStatus(student.id).status)}
-                         {getPaymentStatus(student.id).date && (
+                         {getStatusBadge(getPaymentStatus(Number(student.id)).status)}
+                         {getPaymentStatus(Number(student.id)).date && (
                            <span className="text-xs text-gray-500">
-                             {getPaymentStatus(student.id).date}
+                             {getPaymentStatus(Number(student.id)).date}
                            </span>
                          )}
                        </div>
@@ -323,7 +323,7 @@ export const StudentFeeMatrix = () => {
                            variant="ghost"
                            size="sm"
                            className="h-6 px-2 text-xs"
-                           onClick={() => updatePaymentStatus(student.id, 'paid')}
+                           onClick={() => updatePaymentStatus(Number(student.id), 'paid')}
                          >
                            已缴费
                          </Button>
@@ -331,7 +331,7 @@ export const StudentFeeMatrix = () => {
                            variant="ghost"
                            size="sm"
                            className="h-6 px-2 text-xs"
-                           onClick={() => updatePaymentStatus(student.id, 'pending')}
+                           onClick={() => updatePaymentStatus(Number(student.id), 'pending')}
                          >
                            待缴费
                          </Button>
@@ -339,7 +339,7 @@ export const StudentFeeMatrix = () => {
                            variant="ghost"
                            size="sm"
                            className="h-6 px-2 text-xs"
-                           onClick={() => updatePaymentStatus(student.id, 'overdue')}
+                           onClick={() => updatePaymentStatus(Number(student.id), 'overdue')}
                          >
                            逾期
                          </Button>
@@ -353,18 +353,18 @@ export const StudentFeeMatrix = () => {
                    <div className="p-4">
                      <div className="space-y-3">
                                                {activeFees.map(fee => {
-                          const feeExpanded = isFeeExpanded(student.id, fee.id)
+                          const feeExpanded = isFeeExpanded(Number(student.id), fee.id)
                           return (
                                                        <div key={fee.id} className="space-y-2">
                               <FeeCard
                                 fee={fee}
-                                isAssigned={isAssigned(student.id, fee.id)}
-                                onToggle={() => toggleFeeExpansion(student.id, fee.id)}
+                                isAssigned={isAssigned(Number(student.id), fee.id)}
+                                onToggle={() => toggleFeeExpansion(Number(student.id), fee.id)}
                                 isExpanded={feeExpanded}
                                 calculateAmount={() => {
                                   // Calculate amount based on this student's active sub-items
                                   return fee.subItems
-                                    .filter(subItem => getStudentSubItemState(student.id, fee.id, subItem.id))
+                                    .filter(subItem => getStudentSubItemState(Number(student.id), fee.id, subItem.id))
                                     .reduce((total, subItem) => total + subItem.amount, 0)
                                 }}
                               />
@@ -377,8 +377,8 @@ export const StudentFeeMatrix = () => {
                                        <div className="flex items-center gap-4">
                                          <span className="text-sm font-medium min-w-[120px]">{subItem.name}</span>
                                          <ToggleSwitch
-                                           checked={getStudentSubItemState(student.id, fee.id, subItem.id)}
-                                           onChange={() => toggleSubItemActive(student.id, fee.id, subItem.id)}
+                                           checked={getStudentSubItemState(Number(student.id), fee.id, subItem.id)}
+                                           onChange={() => toggleSubItemActive(Number(student.id), fee.id, subItem.id)}
                                            size="sm"
                                          />
                                        </div>

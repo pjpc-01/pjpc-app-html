@@ -207,7 +207,7 @@ export default function FinanceManagement() {
     subItems: [] as { id: number; name: string; amount: number; description: string; active: boolean }[]
   })
 
-  const grades = ["一年级", "二年级", "三年级", "四年级", "五年级", "六年级"]
+  const grades = ["一年级", "二年级", "三年级", "四年级", "五年级", "六年级", "初一", "初二", "初三"]
 
   const getStatusBadge = (status: string) => {
     switch (status) {

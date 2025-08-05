@@ -60,6 +60,8 @@ export default function StudentManagement() {
       emergencyPhone: student.emergencyPhone || student.phone || "",
       medicalInfo: student.medicalInfo || "无特殊病史",
       enrollmentDate: student.enrollmentDate || "",
+      enrollmentYear: student.enrollmentYear,
+      calculatedGrade: student.calculatedGrade,
       notes: student.notes || "",
       image: student.image || "",
     }
@@ -87,6 +89,9 @@ export default function StudentManagement() {
     { id: 4, name: "四年级", description: "小学四年级", studentCount: 0, avgAttendance: 0, avgProgress: 0 },
     { id: 5, name: "五年级", description: "小学五年级", studentCount: 0, avgProgress: 0 },
     { id: 6, name: "六年级", description: "小学六年级", studentCount: 0, avgAttendance: 0, avgProgress: 0 },
+    { id: 7, name: "初一", description: "中学一年级", studentCount: 0, avgAttendance: 0, avgProgress: 0 },
+    { id: 8, name: "初二", description: "中学二年级", studentCount: 0, avgAttendance: 0, avgProgress: 0 },
+    { id: 9, name: "初三", description: "中学三年级", studentCount: 0, avgAttendance: 0, avgProgress: 0 },
   ])
   
   // Grade management dialog states
@@ -141,19 +146,95 @@ export default function StudentManagement() {
     }))
   }
 
+  // Shared month mapping for date parsing
+  const monthMap: Record<string, number> = {
+    'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5,
+    'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11,
+    'january': 0, 'february': 1, 'march': 2, 'april': 3, 'june': 5,
+    'august': 7, 'september': 8, 'october': 9, 'november': 10, 'december': 11
+  }
+
+  // Helper function to format birth date from various formats
+  const formatBirthDate = (dateString: string): string => {
+    if (!dateString || dateString.trim() === '') return '未设置'
+    
+    try {
+      // Handle common date formats from Google Sheets
+      const cleanDate = dateString.trim()
+      
+      // Try to parse as ISO date first
+      const isoDate = new Date(cleanDate)
+      if (!isNaN(isoDate.getTime())) {
+        return isoDate.toLocaleDateString('zh-CN')
+      }
+      
+      // Handle formats like "22 Sept 2014", "13 Aug 2016"
+      // Match patterns like "22 Sept 2014"
+      const match = cleanDate.match(/^(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})$/i)
+      if (match) {
+        const day = parseInt(match[1])
+        const monthName = match[2].toLowerCase()
+        const year = parseInt(match[3])
+        
+        if (monthMap[monthName] !== undefined && day >= 1 && day <= 31 && year >= 1900 && year <= 2100) {
+          const date = new Date(year, monthMap[monthName], day)
+          return date.toLocaleDateString('zh-CN')
+        }
+      }
+      
+      // If all parsing fails, return the original string
+      return cleanDate
+    } catch (error) {
+      console.error('Error formatting birth date:', error, 'Original string:', dateString)
+      return dateString
+    }
+  }
+
   // Calculate age from birthdate
   const calculateAge = (birthDate: string): number => {
     if (!birthDate) return 0
-    const today = new Date()
-    const birth = new Date(birthDate)
-    let age = today.getFullYear() - birth.getFullYear()
-    const monthDiff = today.getMonth() - birth.getMonth()
     
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--
+    try {
+      const today = new Date()
+      const birth = new Date(birthDate)
+      
+      if (isNaN(birth.getTime())) {
+        // Try to parse using the same logic as formatBirthDate
+        const cleanDate = birthDate.trim()
+        
+        const match = cleanDate.match(/^(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})$/i)
+        if (match) {
+          const day = parseInt(match[1])
+          const monthName = match[2].toLowerCase()
+          const year = parseInt(match[3])
+          
+          if (monthMap[monthName] !== undefined && day >= 1 && day <= 31 && year >= 1900 && year <= 2100) {
+            const parsedBirth = new Date(year, monthMap[monthName], day)
+            let age = today.getFullYear() - parsedBirth.getFullYear()
+            const monthDiff = today.getMonth() - parsedBirth.getMonth()
+            
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < parsedBirth.getDate())) {
+              age--
+            }
+            
+            return age
+          }
+        }
+        return 0
+      }
+      
+      let age = today.getFullYear() - birth.getFullYear()
+      const monthDiff = today.getMonth() - birth.getMonth()
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age--
+      }
+      
+      return age
+    } catch (error) {
+      console.error('Error calculating age:', error)
+      return 0
     }
-    
-    return age
   }
 
   // Note: We no longer auto-generate IDs, we use Firebase's actual data
@@ -663,6 +744,106 @@ export default function StudentManagement() {
                   </Label>
                 </div>
               </div>
+              
+              {/* Debug button */}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/debug/check-collections')
+                    const data = await response.json()
+                    console.log('Collection debug data:', data)
+                    alert(`Firebase集合检查结果:\n\n小学数据: ${data.collections?.students?.count || 0} 条记录\n中学数据: ${data.collections?.['secondary-students']?.count || 0} 条记录\n\n详细数据请查看控制台`)
+                  } catch (error) {
+                    console.error('Error checking collections:', error)
+                    alert('检查集合失败')
+                  }
+                }}
+              >
+                检查Firebase数据
+              </Button>
+              
+              {/* Birth date debug button */}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/debug/check-collections', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ dataType })
+                    })
+                    const data = await response.json()
+                    
+                    if (data.success) {
+                      const students = data.collections?.[dataType === 'secondary' ? 'secondary-students' : 'students']?.sample || []
+                      const birthDateInfo = students.map((s: Record<string, any>) => ({
+                        id: s.id || 'unknown',
+                        name: s.name || 'unknown',
+                        dateOfBirth: s.dateOfBirth || '',
+                        hasBirthDate: !!s.dateOfBirth
+                      }))
+                      
+                      console.log('Birth date debug data:', birthDateInfo)
+                      
+                      const withBirthDate = birthDateInfo.filter((s: Record<string, any>) => s.hasBirthDate).length
+                      const total = birthDateInfo.length
+                      
+                      alert(`出生日期数据检查:\n\n总学生数: ${total}\n有出生日期的学生: ${withBirthDate}\n\n详细数据请查看控制台`)
+                    } else {
+                      alert('检查出生日期数据失败: ' + data.error)
+                    }
+                  } catch (error) {
+                    console.error('Error checking birth date data:', error)
+                    alert('检查出生日期数据失败')
+                  }
+                }}
+              >
+                检查出生日期数据
+              </Button>
+              
+              {/* Grade calculation info */}
+              {dataType === 'primary' && (
+                <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
+                  <strong>年级计算规则：</strong><br/>
+                  2018年入学 → 一年级 | 2017年入学 → 二年级<br/>
+                  2016年入学 → 三年级 | 2015年入学 → 四年级<br/>
+                  2014年入学 → 五年级 | 2013年入学 → 六年级
+                </div>
+              )}
+              
+              {/* Update enrollment years button */}
+              {dataType === 'primary' && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/debug/update-enrollment-years', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ dataType })
+                      })
+                      const data = await response.json()
+                      console.log('Update enrollment years result:', data)
+                      if (data.success) {
+                        alert(data.message)
+                        // 刷新数据
+                        refetch()
+                      } else {
+                        alert('更新入学年份失败: ' + data.error)
+                      }
+                    } catch (error) {
+                      console.error('Error updating enrollment years:', error)
+                      alert('更新入学年份失败')
+                    }
+                  }}
+                >
+                  更新入学年份
+                </Button>
+              )}
             </div>
           </div>
         
@@ -1035,7 +1216,7 @@ export default function StudentManagement() {
                           />
                         ) : (
                           <div className="col-span-3 py-2 px-3 bg-gray-50 rounded-md">
-                            {selectedStudent.dateOfBirth}
+                            {formatBirthDate(selectedStudent.dateOfBirth)}
                           </div>
                         )}
                       </div>
@@ -1545,6 +1726,7 @@ export default function StudentManagement() {
                     <TableHead>学生编号</TableHead>
                     <TableHead>姓名</TableHead>
                     <TableHead>生日</TableHead>
+                    <TableHead>入学年份</TableHead>
                     <TableHead>年级</TableHead>
                     <TableHead>班级</TableHead>
                     <TableHead>家长</TableHead>
@@ -1579,9 +1761,19 @@ export default function StudentManagement() {
                         </button>
                       </TableCell>
                       <TableCell>
-                        {student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString('zh-CN') : '未设置'}
+                        {formatBirthDate(student.dateOfBirth)}
                       </TableCell>
-                      <TableCell>{student.grade}</TableCell>
+                      <TableCell>
+                        {student.enrollmentYear ? `${student.enrollmentYear}年` : '未设置'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={student.calculatedGrade ? "secondary" : "default"}>
+                          {student.grade}
+                          {student.calculatedGrade && student.calculatedGrade !== student.grade && (
+                            <span className="ml-1 text-xs">(计算: {student.calculatedGrade})</span>
+                          )}
+                        </Badge>
+                      </TableCell>
                       <TableCell>
                         <Badge variant="outline">{student.class}</Badge>
                       </TableCell>

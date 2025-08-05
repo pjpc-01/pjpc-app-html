@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       deviceName,
       location,
       {
-        deviceType,
+        deviceType: deviceType as 'RFID' | 'NFC',
         frequency,
         uid
       }
