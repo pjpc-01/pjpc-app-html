@@ -25,6 +25,41 @@ export class FirestoreImport {
     this.COLLECTION_NAME = dataType === 'secondary' ? 'secondary-students' : 'students'
   }
 
+  // 根据入学年份计算年级
+  private calculateGradeByEnrollmentYear(enrollmentYear: number, currentYear: number = new Date().getFullYear()): string {
+    const yearDiff = currentYear - enrollmentYear
+    
+    if (this.COLLECTION_NAME === 'students') {
+      // 小学年级计算
+      if (yearDiff <= 0) return '一年级'
+      if (yearDiff === 1) return '二年级'
+      if (yearDiff === 2) return '三年级'
+      if (yearDiff === 3) return '四年级'
+      if (yearDiff === 4) return '五年级'
+      if (yearDiff === 5) return '六年级'
+      return '已毕业'
+    } else {
+      // 中学年级计算（如果需要的话）
+      if (yearDiff <= 0) return '初一'
+      if (yearDiff === 1) return '初二'
+      if (yearDiff === 2) return '初三'
+      return '已毕业'
+    }
+  }
+
+  // 根据入学年份更新学生年级
+  private updateStudentGradeByEnrollmentYear(student: any): any {
+    if (student.enrollmentYear && typeof student.enrollmentYear === 'number') {
+      const calculatedGrade = this.calculateGradeByEnrollmentYear(student.enrollmentYear)
+      return {
+        ...student,
+        grade: calculatedGrade,
+        calculatedGrade: calculatedGrade // 添加计算出的年级字段
+      }
+    }
+    return student
+  }
+
   // Import students to Firestore
   async importStudents(students: StudentData[], source: string = 'google-sheets'): Promise<{ success: number; errors: string[] }> {
     const batch = writeBatch(db)
@@ -96,13 +131,17 @@ export class FirestoreImport {
       
       const students = querySnapshot.docs.map(doc => {
         const data = doc.data()
-        return {
+        const student = {
           ...data,
           id: data.id || doc.id // Use the id field from document data, fallback to document ID
         }
+        
+        // 根据入学年份计算年级
+        return this.updateStudentGradeByEnrollmentYear(student)
       }) as FirestoreStudent[]
       
       console.log('Student IDs:', students.map(s => s.id))
+      console.log('Students with calculated grades:', students.map(s => ({ id: s.id, name: s.name, grade: s.grade, enrollmentYear: s.enrollmentYear })))
       return students
     } catch (error) {
       console.error('Error fetching students from Firestore:', error)
@@ -163,7 +202,7 @@ export class FirestoreImport {
       // Let Firebase generate the document ID automatically
       const docRef = doc(collection(db, this.COLLECTION_NAME))
       
-      const firestoreStudent: FirestoreStudent = {
+      const firestoreStudent: Omit<FirestoreStudent, 'id'> = {
         ...studentData,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),

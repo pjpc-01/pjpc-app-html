@@ -186,8 +186,8 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     const results = {
-      primary_students: { count: 0, students: [] },
-      secondary_students: { count: 0, students: [] }
+      primary_students: { count: 0, students: [] as { id: string; [key: string]: any }[] },
+      secondary_students: { count: 0, students: [] as { id: string; [key: string]: any }[] }
     }
 
     // 获取小学学生数据

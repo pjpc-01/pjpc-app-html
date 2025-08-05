@@ -59,7 +59,7 @@ if (typeof window !== 'undefined') {
 }
 
 export const auth = getAuth(app)
-export const db = getFirestore(app)
+export const db = getFirestore(app!)
 export { analytics }
 export default app
 
@@ -71,8 +71,15 @@ export const checkFirebaseConnection = async () => {
       setTimeout(() => reject(new Error('Connection timeout')), 5000) // 5秒超时
     })
     
-    // 简单的连接测试
-    await Promise.race([auth.authStateReady(), timeoutPromise])
+    // 简单的连接测试 - 使用 onAuthStateChanged 来检查连接
+    const authCheckPromise = new Promise((resolve) => {
+      const unsubscribe = auth.onAuthStateChanged(() => {
+        unsubscribe()
+        resolve(true)
+      })
+    })
+    
+    await Promise.race([authCheckPromise, timeoutPromise])
     return { connected: true, error: null }
   } catch (error) {
     console.warn('Firebase connection check failed:', error)

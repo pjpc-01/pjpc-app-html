@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { FirestoreImport, FirestoreStudent } from '@/lib/firestore-import'
+import { Timestamp } from 'firebase/firestore'
 
 export interface Student {
   id: string
@@ -10,6 +11,7 @@ export interface Student {
   phone?: string
   address?: string
   enrollmentDate?: string
+  enrollmentYear?: number
   status?: string
   createdAt?: Date
   updatedAt?: Date
@@ -26,6 +28,7 @@ export interface Student {
   medicalInfo?: string
   notes?: string
   image?: string
+  calculatedGrade?: string
 }
 
 interface UseStudentsOptions {
@@ -49,13 +52,16 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
   const [hasMore, setHasMore] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [lastFetchTime, setLastFetchTime] = useState<number | null>(null)
+  const [lastDataType, setLastDataType] = useState(dataType)
 
   // 缓存机制
   const cacheKey = useMemo(() => `students_${dataType}_${currentPage}`, [dataType, currentPage])
   const isCacheValid = useMemo(() => {
     if (!enableCache || !lastFetchTime) return false
+    // 当dataType改变时，缓存无效
+    if (dataType !== lastDataType) return false
     return Date.now() - lastFetchTime < cacheTimeout
-  }, [enableCache, lastFetchTime, cacheTimeout])
+  }, [enableCache, lastFetchTime, cacheTimeout, dataType, lastDataType]) // 添加lastDataType依赖
 
   // 转换Firestore学生数据到Student接口
   const convertFirestoreStudent = useCallback((student: any): Student => {
@@ -68,6 +74,7 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
       phone: student.phone,
       address: student.address,
       enrollmentDate: student.enrollmentDate,
+      enrollmentYear: student.enrollmentYear,
       status: student.status,
       createdAt: student.createdAt?.toDate(),
       updatedAt: student.updatedAt?.toDate(),
@@ -84,6 +91,7 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
       medicalInfo: student.medicalInfo,
       notes: student.notes,
       image: student.image,
+      calculatedGrade: student.calculatedGrade,
     }
   }, [])
 
@@ -99,9 +107,13 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
   const fetchStudents = useCallback(async (page: number = 1, forceRefresh: boolean = false) => {
     try {
       // 如果缓存有效且不是强制刷新，直接返回
+      // 但是当dataType改变时，强制刷新
       if (isCacheValid && !forceRefresh) {
+        console.log(`Using cached data for ${dataType}`)
         return
       }
+      
+      console.log(`Fetching fresh data for ${dataType}, forceRefresh: ${forceRefresh}`)
 
       setLoading(true)
       setError(null)
@@ -139,6 +151,7 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
       
       setStudents(filteredStudents)
       setLastFetchTime(Date.now())
+      setLastDataType(dataType) // 更新最后使用的dataType
       setHasMore(filteredStudents.length >= pageSize)
       
     } catch (err) {
@@ -182,7 +195,12 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
     try {
       setError(null)
       const firestoreImport = new FirestoreImport(dataType)
-      await firestoreImport.updateStudent(studentId, updates)
+      // Convert Student updates to FirestoreStudent updates
+      const firestoreUpdates = {
+        ...updates,
+        updatedAt: Timestamp.now()
+      } as Partial<FirestoreStudent>
+      await firestoreImport.updateStudent(studentId, firestoreUpdates)
       
       // 更新本地状态
       setStudents(prevStudents => 
@@ -269,7 +287,7 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
 
   useEffect(() => {
     fetchStudents(currentPage)
-  }, [currentPage, fetchStudents])
+  }, [currentPage, fetchStudents, dataType])
 
   return { 
     students, 

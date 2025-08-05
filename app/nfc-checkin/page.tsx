@@ -203,7 +203,7 @@ export default function NFCCheckInPage() {
       const response = await fetch('/api/nfc/debug')
       const data = await response.json()
       if (data.success) {
-        setSuccess(`数据库中有 ${data.count} 张卡片: ${data.cards.map(c => `${c.studentName}(${c.cardNumber})`).join(', ')}`)
+        setSuccess(`数据库中有 ${data.count} 张卡片: ${data.cards.map((c: any) => `${c.studentName}(${c.cardNumber})`).join(', ')}`)
       } else {
         setError(data.error || '检查卡片失败')
       }
