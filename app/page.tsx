@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { GraduationCap, Bell, Settings, LogOut, UserCheck, Wifi, WifiOff, AlertTriangle } from "lucide-react"
+import { GraduationCap, Bell, Settings, LogOut, UserCheck, Wifi, WifiOff, AlertTriangle, CreditCard } from "lucide-react"
 import { useAuth } from "@/contexts/enhanced-auth-context"
 import SecureLoginForm from "@/components/auth/secure-login-form"
 import AdminDashboard from "./components/admin-dashboard"
@@ -236,6 +236,14 @@ export default function Dashboard() {
               <h1 className="ml-2 text-xl font-bold text-gray-900">{getRoleTitle()}</h1>
             </div>
             <div className="flex items-center space-x-4">
+              {/* Quick Access to Check-in System */}
+              <Button variant="outline" size="sm" asChild>
+                <a href="/checkin" className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  <span className="hidden sm:inline">打卡系统</span>
+                </a>
+              </Button>
+              
               {/* Connection Status */}
               <div className="flex items-center gap-1">
                 {connectionStatus === 'connected' ? (

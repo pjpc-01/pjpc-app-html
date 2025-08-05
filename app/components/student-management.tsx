@@ -24,7 +24,7 @@ import { useStudents, Student } from "@/hooks/useStudents"
 
 export default function StudentManagement() {
   const [dataType, setDataType] = useState<'primary' | 'secondary'>('primary')
-  const { students, loading, error, refetch, updateStudent, deleteStudent, addStudent } = useStudents(dataType)
+  const { students, loading, error, refetch, updateStudent, deleteStudent, addStudent } = useStudents({ dataType })
   
   // Add a test mode to avoid Firebase issues
   const [testMode, setTestMode] = useState(false) // 默认使用Firebase数据
@@ -266,7 +266,7 @@ export default function StudentManagement() {
   // Handle select all students
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedStudents(filteredStudents.map(student => String(student.id)))
+      setSelectedStudents(filteredStudents.map(student => String(student.studentId)))
     } else {
       setSelectedStudents([])
     }
@@ -630,7 +630,6 @@ export default function StudentManagement() {
   }
 
   // Error boundary for the component
-  try {
     return (
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
@@ -1562,14 +1561,14 @@ export default function StudentManagement() {
                         <TableCell>
                           <input
                             type="checkbox"
-                            checked={selectedStudents.includes(String(student.id))}
-                            onChange={(e) => handleBulkSelect(String(student.id), e.target.checked)}
+                            checked={selectedStudents.includes(String(student.studentId))}
+                            onChange={(e) => handleBulkSelect(String(student.studentId), e.target.checked)}
                             className="rounded"
                           />
                         </TableCell>
                       )}
                       <TableCell className="font-medium">
-                        {student.id}
+                        {student.studentId}
                       </TableCell>
                       <TableCell className="font-medium">
                         <button
@@ -1617,7 +1616,7 @@ export default function StudentManagement() {
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => handleDeleteStudent(student.id)}
+                              onClick={() => handleDeleteStudent(student.studentId)}
                               className="text-red-600 hover:text-red-700"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -2023,17 +2022,4 @@ export default function StudentManagement() {
       </Tabs>
     </div>
   )
-  } catch (error) {
-    console.error('StudentManagement component error:', error)
-    return (
-      <div className="p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <p className="text-red-600 mb-4">组件加载失败，请刷新页面重试</p>
-            <Button onClick={() => window.location.reload()}>刷新页面</Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
 }
