@@ -70,8 +70,9 @@ export default function NFCCheckInPage() {
     if (!isListening) return
 
     const simulateNFCRead = () => {
-      // 生成模拟的NFC UID (13.56MHz格式)
-      const uid = `NFC_${Math.random().toString(36).substr(2, 8).toUpperCase()}`
+      // 使用测试卡片号码
+      const testCards = ['NFC_TEST_001', 'NFC_TEST_002']
+      const uid = testCards[Math.floor(Math.random() * testCards.length)]
       setLastRead(uid)
       handleCardRead(uid)
     }
@@ -103,6 +104,10 @@ export default function NFCCheckInPage() {
           frequency: '13.56MHz'
         }),
       })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
 
       const data = await response.json()
 
@@ -143,8 +148,25 @@ export default function NFCCheckInPage() {
         setRecentRecords(prev => [errorRecord, ...prev.slice(0, 9)])
       }
     } catch (error) {
-      setError('网络错误，请重试')
+      const errorMessage = error instanceof Error ? error.message : '网络错误，请重试'
+      setError(errorMessage)
       console.error('NFC check-in error:', error)
+      
+      // 添加错误记录
+      const errorRecord: AttendanceRecord = {
+        id: Date.now().toString(),
+        cardNumber: uid,
+        studentId: 'Unknown',
+        studentName: 'Unknown',
+        deviceId: 'nfc_reader_001',
+        deviceName: 'NFC Reader (13.56MHz)',
+        location: 'Side Entrance',
+        timestamp: new Date(),
+        status: 'error',
+        message: errorMessage
+      }
+
+      setRecentRecords(prev => [errorRecord, ...prev.slice(0, 9)])
     } finally {
       setIsProcessing(false)
     }
@@ -152,6 +174,28 @@ export default function NFCCheckInPage() {
 
   const toggleListening = () => {
     setIsListening(!isListening)
+  }
+
+  const addTestData = async () => {
+    try {
+      const response = await fetch('/api/nfc/test-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'add-test-cards' }),
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setSuccess('测试数据添加成功！现在可以测试打卡功能了。')
+      } else {
+        setError(data.error || '添加测试数据失败')
+      }
+    } catch (error) {
+      setError('添加测试数据时发生错误')
+      console.error('Error adding test data:', error)
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -213,6 +257,14 @@ export default function NFCCheckInPage() {
               )}
               {deviceStatus === "online" ? "在线" : "离线"}
             </Badge>
+            <Button
+              onClick={addTestData}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              添加测试数据
+            </Button>
             <Button
               onClick={toggleListening}
               disabled={deviceStatus !== "online"}
