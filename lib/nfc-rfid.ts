@@ -137,10 +137,12 @@ export class NFCManager {
   // 根据卡号获取卡
   async getCardByNumber(cardNumber: string): Promise<NFCCard | null> {
     try {
+      console.log(`Looking for card: ${cardNumber} in collection: ${this.collectionName}`)
       const cardsRef = collection(db, this.collectionName)
       const q = query(cardsRef, where('cardNumber', '==', cardNumber))
       const querySnapshot = await getDocs(q)
       
+      console.log(`Found ${querySnapshot.size} cards with number: ${cardNumber}`)
       if (querySnapshot.empty) return null
       
       const doc = querySnapshot.docs[0]

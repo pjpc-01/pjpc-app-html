@@ -198,6 +198,21 @@ export default function NFCCheckInPage() {
     }
   }
 
+  const checkCards = async () => {
+    try {
+      const response = await fetch('/api/nfc/debug')
+      const data = await response.json()
+      if (data.success) {
+        setSuccess(`数据库中有 ${data.count} 张卡片: ${data.cards.map(c => `${c.studentName}(${c.cardNumber})`).join(', ')}`)
+      } else {
+        setError(data.error || '检查卡片失败')
+      }
+    } catch (error) {
+      setError('检查卡片时发生错误')
+      console.error('Error checking cards:', error)
+    }
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "success":
@@ -264,6 +279,14 @@ export default function NFCCheckInPage() {
             >
               <Settings className="h-4 w-4" />
               添加测试数据
+            </Button>
+            <Button
+              onClick={checkCards}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Shield className="h-4 w-4" />
+              检查卡片
             </Button>
             <Button
               onClick={toggleListening}
