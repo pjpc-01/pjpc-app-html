@@ -2,16 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { nfcManager } from '@/lib/nfc-rfid'
 
 export async function POST(request: NextRequest) {
+  let deviceType: string | undefined
+  
   try {
     const body = await request.json()
     const { 
       uid, 
-      deviceType, 
+      deviceType: reqDeviceType, 
       deviceId, 
       deviceName, 
       location, 
       frequency 
     } = body
+
+    deviceType = reqDeviceType
 
     // 验证必要参数
     if (!uid || !deviceType || !deviceId || !deviceName || !location) {
@@ -69,7 +73,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error(`${deviceType} attendance error:`, error)
+    console.error(`${deviceType || 'Unknown'} attendance error:`, error)
     
     return NextResponse.json(
       { 

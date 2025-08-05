@@ -69,8 +69,9 @@ export default function RFIDCheckInPage() {
     if (!isListening) return
 
     const simulateRFIDRead = () => {
-      // 生成模拟的RFID UID (125KHz格式)
-      const uid = `RFID_${Math.random().toString(36).substr(2, 8).toUpperCase()}`
+      // 使用测试卡片号码
+      const testCards = ['RFID_TEST_001', 'RFID_TEST_002']
+      const uid = testCards[Math.floor(Math.random() * testCards.length)]
       setLastRead(uid)
       handleCardRead(uid)
     }
@@ -102,6 +103,10 @@ export default function RFIDCheckInPage() {
           frequency: '125KHz'
         }),
       })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
 
       const data = await response.json()
 
@@ -142,8 +147,25 @@ export default function RFIDCheckInPage() {
         setRecentRecords(prev => [errorRecord, ...prev.slice(0, 9)])
       }
     } catch (error) {
-      setError('网络错误，请重试')
+      const errorMessage = error instanceof Error ? error.message : '网络错误，请重试'
+      setError(errorMessage)
       console.error('RFID check-in error:', error)
+      
+      // 添加错误记录
+      const errorRecord: AttendanceRecord = {
+        id: Date.now().toString(),
+        cardNumber: uid,
+        studentId: 'Unknown',
+        studentName: 'Unknown',
+        deviceId: 'rfid_reader_001',
+        deviceName: 'RFID Reader (125KHz)',
+        location: 'Main Entrance',
+        timestamp: new Date(),
+        status: 'error',
+        message: errorMessage
+      }
+
+      setRecentRecords(prev => [errorRecord, ...prev.slice(0, 9)])
     } finally {
       setIsProcessing(false)
     }
@@ -151,6 +173,28 @@ export default function RFIDCheckInPage() {
 
   const toggleListening = () => {
     setIsListening(!isListening)
+  }
+
+  const addTestData = async () => {
+    try {
+      const response = await fetch('/api/nfc/test-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'add-test-cards' }),
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setSuccess('测试数据添加成功！现在可以测试打卡功能了。')
+      } else {
+        setError(data.error || '添加测试数据失败')
+      }
+    } catch (error) {
+      setError('添加测试数据时发生错误')
+      console.error('Error adding test data:', error)
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -212,6 +256,14 @@ export default function RFIDCheckInPage() {
               )}
               {deviceStatus === "online" ? "在线" : "离线"}
             </Badge>
+            <Button
+              onClick={addTestData}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              添加测试数据
+            </Button>
             <Button
               onClick={toggleListening}
               disabled={deviceStatus !== "online"}
