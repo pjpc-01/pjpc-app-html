@@ -14,8 +14,8 @@ import StudentBulkActions from "./StudentBulkActions"
 import StudentFilters from "./StudentFilters"
 import StudentStats from "./StudentStats"
 
-export default function StudentManagement() {
-  const { students, loading, error, refetch, updateStudent, deleteStudent, addStudent } = useStudents({})
+export default function SecondaryStudentManagement() {
+  const { students, loading, error, refetch, updateStudent, deleteStudent, addStudent } = useStudents({ dataType: 'secondary' })
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedGrade, setSelectedGrade] = useState<string>("")
@@ -111,7 +111,19 @@ export default function StudentManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Data Type Selector */}
+      {/* Header with Add Button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-green-600">中学生管理</h3>
+          <p className="text-sm text-gray-600">管理中学学生信息和学习进度</p>
+        </div>
+        <Button onClick={() => setIsAddDialogOpen(true)} className="bg-green-600 hover:bg-green-700">
+          <UserPlus className="h-4 w-4 mr-2" />
+          添加中学生
+        </Button>
+      </div>
+
+      {/* Filters */}
       <div>
         <StudentFilters
           searchTerm={searchTerm}
@@ -179,4 +191,4 @@ export default function StudentManagement() {
       />
     </div>
   )
-} 
+}

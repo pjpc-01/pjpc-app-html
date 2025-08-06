@@ -27,9 +27,9 @@ export default function StudentStats({ students }: StudentStatsProps) {
     return acc
   }, {} as Record<string, number>)
 
-  const studentsWithAge = students.filter(s => s.birthDate)
+  const studentsWithAge = students.filter(s => s.age || s.birthDate)
   const totalAge = studentsWithAge.reduce((sum, student) => {
-    return sum + calculateAge(student.birthDate!)
+    return sum + (student.age || calculateAge(student.birthDate!))
   }, 0)
   const averageAge = studentsWithAge.length > 0 ? Math.round(totalAge / studentsWithAge.length) : 0
 

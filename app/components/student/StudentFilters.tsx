@@ -5,15 +5,18 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Filter, X } from "lucide-react"
-import { Student } from "@/hooks/useStudents"
-import { convertGradeToChinese } from "./utils"
 import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Filter, Search, X } from "lucide-react"
+import { Student } from "@/hooks/useStudents"
 
 interface StudentFiltersProps {
-  dataType: 'primary' | 'secondary'
-  setDataType: (type: 'primary' | 'secondary') => void
   searchTerm: string
   setSearchTerm: (term: string) => void
   selectedGrade: string
@@ -22,8 +25,6 @@ interface StudentFiltersProps {
 }
 
 export default function StudentFilters({
-  dataType,
-  setDataType,
   searchTerm,
   setSearchTerm,
   selectedGrade,
@@ -32,7 +33,27 @@ export default function StudentFilters({
 }: StudentFiltersProps) {
   const [showFilters, setShowFilters] = useState(false)
 
-  const gradeOptions = Array.from(new Set(students.map(student => student.grade).filter(Boolean)))
+  // 获取年级选项
+  const gradeOptions = Array.from(new Set(students.map(student => student.grade))).sort()
+
+  // 转换年级为中文显示
+  const convertGradeToChinese = (grade: string) => {
+    const gradeMap: { [key: string]: string } = {
+      '1': '一年级',
+      '2': '二年级',
+      '3': '三年级',
+      '4': '四年级',
+      '5': '五年级',
+      '6': '六年级',
+      '7': '七年级',
+      '8': '八年级',
+      '9': '九年级',
+      '10': '十年级',
+      '11': '十一年级',
+      '12': '十二年级'
+    }
+    return gradeMap[grade] || grade
+  }
 
   const clearFilters = () => {
     setSearchTerm("")
@@ -43,32 +64,11 @@ export default function StudentFilters({
 
   return (
     <Card>
-      <CardContent className="pt-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  id="primary-data"
-                  checked={dataType === 'primary'}
-                  onChange={() => setDataType('primary')}
-                />
-                <Label htmlFor="primary-data" className="text-sm">
-                  小学数据
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  id="secondary-data"
-                  checked={dataType === 'secondary'}
-                  onChange={() => setDataType('secondary')}
-                />
-                <Label htmlFor="secondary-data" className="text-sm">
-                  中学数据
-                </Label>
-              </div>
+      <CardContent className="p-4">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium text-gray-600">学生筛选</span>
             </div>
             
             <Button
