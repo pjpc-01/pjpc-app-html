@@ -66,8 +66,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkConnection = useCallback(async () => {
     try {
       setConnectionStatus('checking')
+      console.log('Starting Firebase connection check...')
       
-      // 添加超时保护
+      // 添加超时保护 - 设置为10秒
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Connection check timeout')), 10000) // 10秒超时
       })
@@ -75,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const connectionPromise = checkFirebaseConnection()
       const { connected, error: connError } = await Promise.race([connectionPromise, timeoutPromise]) as any
       
+      console.log('Connection check result:', { connected, error: connError })
       setConnectionStatus(connected ? 'connected' : 'disconnected')
       if (!connected && connError) {
         setError(`连接失败: ${connError}`)
@@ -128,6 +130,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
+    console.log('AuthProvider useEffect - starting initialization')
+    
     // 初始化时检查连接
     checkConnection()
 
@@ -140,6 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, 10000)
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('Auth state changed:', user ? 'User logged in' : 'No user')
       if (user) {
         setUser(user)
         try {
@@ -152,6 +157,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null)
         setUserProfile(null)
       }
+      
+      // 确保无论是否有用户，都设置loading为false
+      console.log('Setting loading to false')
       setLoading(false)
     })
 
@@ -160,6 +168,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unsubscribe()
     }
   }, [checkConnection, fetchUserProfile, connectionStatus])
+
+  // 添加额外的useEffect来处理连接状态变化
+  useEffect(() => {
+    console.log('Connection status changed:', connectionStatus)
+    
+    // 如果连接成功且没有用户，确保loading为false
+    if (connectionStatus === 'connected' && !user && !loading) {
+      console.log('Connection successful, no user, ensuring loading is false')
+      setLoading(false)
+    }
+  }, [connectionStatus, user, loading])
 
   const signIn = useCallback(async (email: string, password: string) => {
     try {

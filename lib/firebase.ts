@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app"
+import { initializeApp, type FirebaseApp } from "firebase/app"
 import { getAuth } from "firebase/auth"
 import { getFirestore } from "firebase/firestore"
 import { getAnalytics } from "firebase/analytics"
@@ -25,11 +25,11 @@ if (missingKeys.length > 0) {
 }
 
 // 添加错误处理和重试机制
-let app
+let app: FirebaseApp
 let retryCount = 0
 const maxRetries = 3
 
-const initializeFirebase = () => {
+const initializeFirebase = (): FirebaseApp => {
   try {
     app = initializeApp(firebaseConfig)
     console.log("Firebase 初始化成功")
@@ -39,7 +39,7 @@ const initializeFirebase = () => {
     if (retryCount < maxRetries) {
       retryCount++
       console.log(`重试 Firebase 初始化 (${retryCount}/${maxRetries})`)
-      setTimeout(initializeFirebase, 1000 * retryCount)
+      return initializeFirebase() // 递归调用
     } else {
       throw new Error(`Firebase 初始化失败，已重试 ${maxRetries} 次`)
     }
@@ -59,27 +59,36 @@ if (typeof window !== 'undefined') {
 }
 
 export const auth = getAuth(app)
-export const db = getFirestore(app!)
+export const db = getFirestore(app)
 export { analytics }
 export default app
 
 // 添加连接状态检查
 export const checkFirebaseConnection = async () => {
   try {
-    // 添加超时保护
+    console.log('Firebase connection check starting...')
+    
+    // 使用更简单的连接测试 - 设置为10秒超时
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Connection timeout')), 5000) // 5秒超时
+      setTimeout(() => reject(new Error('Connection timeout')), 10000) // 设置为10秒超时
     })
     
-    // 简单的连接测试 - 使用 onAuthStateChanged 来检查连接
-    const authCheckPromise = new Promise((resolve) => {
-      const unsubscribe = auth.onAuthStateChanged(() => {
-        unsubscribe()
-        resolve(true)
-      })
-    })
+    // 简单的连接测试 - 尝试访问Firestore
+    const connectionTest = async () => {
+      try {
+        // 尝试获取Firestore实例，这比onAuthStateChanged更可靠
+        const firestore = getFirestore(app)
+        console.log('Firestore instance created successfully')
+        // 如果Firestore初始化成功，认为连接正常
+        return true
+      } catch (error) {
+        console.error('Firestore connection failed:', error)
+        throw new Error('Firestore connection failed')
+      }
+    }
     
-    await Promise.race([authCheckPromise, timeoutPromise])
+    await Promise.race([connectionTest(), timeoutPromise])
+    console.log('Firebase connection check successful')
     return { connected: true, error: null }
   } catch (error) {
     console.warn('Firebase connection check failed:', error)

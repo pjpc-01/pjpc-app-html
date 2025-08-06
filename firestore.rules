@@ -6,18 +6,5 @@ service cloud.firestore {
    match /{document=**} {
      allow read, write: if true;
    }
-   
-   // NFC/RFID 相关集合
-   match /nfc_cards/{cardId} {
-     allow read, write: if true;
-   }
-   
-   match /nfc_devices/{deviceId} {
-     allow read, write: if true;
-   }
-   
-   match /attendance_records/{recordId} {
-     allow read, write: if true;
-   }
  }
 }
