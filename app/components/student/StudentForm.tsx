@@ -1,0 +1,367 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { UserPlus, Edit, AlertTriangle } from "lucide-react"
+import { Student } from "@/hooks/useStudents"
+import { validateStudentId, validatePhone, validateEmail } from "./utils"
+
+interface StudentFormProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  student?: Student | null
+  onSubmit: (studentData: Partial<Student>) => Promise<void>
+  dataType: 'primary' | 'secondary'
+}
+
+export default function StudentForm({
+  open,
+  onOpenChange,
+  student,
+  onSubmit,
+  dataType
+}: StudentFormProps) {
+  const [formData, setFormData] = useState<Partial<Student>>({
+    name: '',
+    studentId: '',
+    grade: '',
+    gender: '',
+    birthDate: '',
+    phone: '',
+    email: '',
+    address: '',
+    parentName: '',
+    parentPhone: '',
+    status: 'active',
+    enrollmentDate: new Date().toISOString().split('T')[0],
+    notes: ''
+  })
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const isEditing = !!student
+
+  useEffect(() => {
+    if (student) {
+      setFormData({
+        name: student.name || '',
+        studentId: student.studentId || '',
+        grade: student.grade || '',
+        gender: student.gender || '',
+        birthDate: student.birthDate || '',
+        phone: student.phone || '',
+        email: student.email || '',
+        address: student.address || '',
+        parentName: student.parentName || '',
+        parentPhone: student.parentPhone || '',
+        status: student.status || 'active',
+        enrollmentDate: student.enrollmentDate || new Date().toISOString().split('T')[0],
+        notes: student.notes || ''
+      })
+    } else {
+      setFormData({
+        name: '',
+        studentId: '',
+        grade: '',
+        gender: '',
+        birthDate: '',
+        phone: '',
+        email: '',
+        address: '',
+        parentName: '',
+        parentPhone: '',
+        status: 'active',
+        enrollmentDate: new Date().toISOString().split('T')[0],
+        notes: ''
+      })
+    }
+    setErrors({})
+  }, [student, open])
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {}
+
+    if (!formData.name?.trim()) {
+      newErrors.name = '姓名是必填项'
+    }
+
+    if (!formData.studentId?.trim()) {
+      newErrors.studentId = '学号是必填项'
+    } else if (!validateStudentId(formData.studentId)) {
+      newErrors.studentId = '学号格式不正确'
+    }
+
+    if (!formData.grade?.trim()) {
+      newErrors.grade = '年级是必填项'
+    }
+
+    if (formData.phone && !validatePhone(formData.phone)) {
+      newErrors.phone = '电话号码格式不正确'
+    }
+
+    if (formData.email && !validateEmail(formData.email)) {
+      newErrors.email = '邮箱格式不正确'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!validateForm()) return
+
+    setIsSubmitting(true)
+    try {
+      await onSubmit(formData)
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Error submitting form:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }))
+    }
+  }
+
+  const gradeOptions = dataType === 'primary' 
+    ? ['1', '2', '3', '4', '5', '6']
+    : ['form 1', 'form 2', 'form 3', 'form 4', 'form 5', 'form 6']
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {isEditing ? <Edit className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
+            {isEditing ? '编辑学生信息' : '添加新学生'}
+          </DialogTitle>
+          <DialogDescription>
+            {isEditing ? '修改学生档案信息' : '录入新学生的完整信息'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* 基本信息 */}
+          <Card>
+            <CardHeader>
+              <CardTitle>基本信息</CardTitle>
+              <CardDescription>学生的基本个人信息</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">姓名 *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder="请输入学生姓名"
+                  className={errors.name ? 'border-red-500' : ''}
+                />
+                {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+              </div>
+
+              <div>
+                <Label htmlFor="studentId">学号 *</Label>
+                <Input
+                  id="studentId"
+                  value={formData.studentId}
+                  onChange={(e) => handleInputChange('studentId', e.target.value)}
+                  placeholder="请输入学号"
+                  className={errors.studentId ? 'border-red-500' : ''}
+                />
+                {errors.studentId && <p className="text-red-500 text-sm mt-1">{errors.studentId}</p>}
+              </div>
+
+              <div>
+                <Label htmlFor="grade">年级 *</Label>
+                <Select value={formData.grade} onValueChange={(value) => handleInputChange('grade', value)}>
+                  <SelectTrigger className={errors.grade ? 'border-red-500' : ''}>
+                    <SelectValue placeholder="选择年级" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {gradeOptions.map((grade) => (
+                      <SelectItem key={grade} value={grade}>
+                        {dataType === 'primary' ? `${grade}年级` : `Form ${grade.split(' ')[1]}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.grade && <p className="text-red-500 text-sm mt-1">{errors.grade}</p>}
+              </div>
+
+              <div>
+                <Label htmlFor="gender">性别</Label>
+                <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择性别" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">男</SelectItem>
+                    <SelectItem value="female">女</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="birthDate">出生日期</Label>
+                <Input
+                  id="birthDate"
+                  type="date"
+                  value={formData.birthDate}
+                  onChange={(e) => handleInputChange('birthDate', e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="status">状态</Label>
+                <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">在读</SelectItem>
+                    <SelectItem value="inactive">离校</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 联系信息 */}
+          <Card>
+            <CardHeader>
+              <CardTitle>联系信息</CardTitle>
+              <CardDescription>学生和家长的联系方式</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="phone">联系电话</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  placeholder="请输入电话号码"
+                  className={errors.phone ? 'border-red-500' : ''}
+                />
+                {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+              </div>
+
+              <div>
+                <Label htmlFor="email">邮箱地址</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="请输入邮箱地址"
+                  className={errors.email ? 'border-red-500' : ''}
+                />
+                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+              </div>
+
+              <div className="md:col-span-2">
+                <Label htmlFor="address">地址</Label>
+                <Textarea
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
+                  placeholder="请输入详细地址"
+                  rows={2}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="parentName">家长姓名</Label>
+                <Input
+                  id="parentName"
+                  value={formData.parentName}
+                  onChange={(e) => handleInputChange('parentName', e.target.value)}
+                  placeholder="请输入家长姓名"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="parentPhone">家长电话</Label>
+                <Input
+                  id="parentPhone"
+                  value={formData.parentPhone}
+                  onChange={(e) => handleInputChange('parentPhone', e.target.value)}
+                  placeholder="请输入家长电话号码"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 其他信息 */}
+          <Card>
+            <CardHeader>
+              <CardTitle>其他信息</CardTitle>
+              <CardDescription>入学日期和备注信息</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="enrollmentDate">入学日期</Label>
+                <Input
+                  id="enrollmentDate"
+                  type="date"
+                  value={formData.enrollmentDate}
+                  onChange={(e) => handleInputChange('enrollmentDate', e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="notes">备注</Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => handleInputChange('notes', e.target.value)}
+                  placeholder="请输入备注信息"
+                  rows={3}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 错误提示 */}
+          {Object.keys(errors).length > 0 && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                请检查并修正表单中的错误信息
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* 提交按钮 */}
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              取消
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? '保存中...' : (isEditing ? '更新学生' : '添加学生')}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+} 
