@@ -59,7 +59,8 @@ export default function RFIDCheckInPage() {
     }
 
     checkDeviceStatus()
-    const interval = setInterval(checkDeviceStatus, 5000) // 每5秒检查一次
+    // 增加检查间隔到30秒，减少频繁刷新
+    const interval = setInterval(checkDeviceStatus, 30000)
 
     return () => clearInterval(interval)
   }, [])
@@ -76,7 +77,8 @@ export default function RFIDCheckInPage() {
       handleCardRead(uid)
     }
 
-    const interval = setInterval(simulateRFIDRead, 3000) // 每3秒模拟一次读取
+    // 增加模拟间隔到15秒，减少频繁刷新
+    const interval = setInterval(simulateRFIDRead, 15000)
 
     return () => clearInterval(interval)
   }, [isListening])

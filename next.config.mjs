@@ -13,9 +13,9 @@ const nextConfig = {
     if (dev && !isServer) {
       // 优化HMR配置 - 减少连接时间
       config.watchOptions = {
-        poll: 500, // 减少轮询间隔
-        aggregateTimeout: 200, // 减少聚合超时
-        ignored: ['**/node_modules', '**/.git', '**/.next', '**/dist', '**/.cache'],
+        poll: 1000, // 增加轮询间隔到1秒
+        aggregateTimeout: 500, // 增加聚合超时到500ms
+        ignored: ['**/node_modules', '**/.git', '**/.next', '**/dist', '**/.cache', '**/public', '**/*.log'],
       }
       
       // 优化编译性能
@@ -51,8 +51,8 @@ const nextConfig = {
             plugin.options = {
               ...plugin.options,
               multiStep: false, // 禁用多步模式
-              fullBuildTimeout: 100, // 减少超时时间
-              requestTimeout: 5000, // 减少请求超时
+              fullBuildTimeout: 200, // 增加超时时间
+              requestTimeout: 10000, // 增加请求超时
             }
           }
         })

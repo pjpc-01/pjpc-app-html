@@ -65,6 +65,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 检查Firebase连接状态
   const checkConnection = useCallback(async () => {
     try {
+      // 如果已经在检查中，避免重复检查
+      if (connectionStatus === 'checking') {
+        return
+      }
+      
       setConnectionStatus('checking')
       console.log('Starting Firebase connection check...')
       
@@ -77,16 +82,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { connected, error: connError } = await Promise.race([connectionPromise, timeoutPromise]) as any
       
       console.log('Connection check result:', { connected, error: connError })
-      setConnectionStatus(connected ? 'connected' : 'disconnected')
+      
+      // 只有在状态真正改变时才更新
+      if (connectionStatus !== (connected ? 'connected' : 'disconnected')) {
+        setConnectionStatus(connected ? 'connected' : 'disconnected')
+      }
+      
       if (!connected && connError) {
         setError(`连接失败: ${connError}`)
       }
     } catch (err) {
       console.warn('Connection check failed:', err)
-      setConnectionStatus('disconnected')
+      // 只有在状态真正改变时才更新
+      if (connectionStatus !== 'disconnected') {
+        setConnectionStatus('disconnected')
+      }
       setError('无法连接到Firebase服务')
     }
-  }, [])
+  }, [connectionStatus])
 
   // 清除错误
   const clearError = useCallback(() => {
@@ -176,7 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(loadingFallbackTimer)
       unsubscribe()
     }
-  }, [checkConnection, fetchUserProfile, connectionStatus, loading])
+  }, []) // 移除依赖项，避免循环依赖
 
   // 添加额外的useEffect来处理连接状态变化
   useEffect(() => {
