@@ -1,15 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Edit, Eye, Trash2, User } from "lucide-react"
 import { Student } from "@/hooks/useStudents"
-import { convertGradeToChinese, formatBirthDate, calculateAge } from "./utils"
+import { convertGradeToChinese, calculateAge } from "./utils"
 
 interface StudentListProps {
   students: Student[]
@@ -61,7 +60,7 @@ export default function StudentList({
         <CardContent className="pt-6">
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-2 text-gray-600">加载学生数据中...</span>
+            <span className="ml-2 text-gray-600">加载中...</span>
           </div>
         </CardContent>
       </Card>
@@ -84,11 +83,7 @@ export default function StudentList({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>学生列表 ({students.length})</CardTitle>
-        <CardDescription>管理所有学生信息和档案</CardDescription>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         <div className="rounded-md border">
           <Table>
             <TableHeader>

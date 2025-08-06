@@ -4,7 +4,6 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { UserPlus, Search, Edit, Users, Trash2, Download, Upload } from "lucide-react"
 import { useStudents, Student } from "@/hooks/useStudents"
 import { useAuth } from "@/contexts/enhanced-auth-context"
@@ -36,7 +35,15 @@ export default function StudentManagement() {
 
   const handleAddStudent = async (studentData: Partial<Student>) => {
     try {
-      await addStudent(studentData)
+      // Ensure required fields are present
+      const studentToAdd = {
+        name: studentData.name || '',
+        grade: studentData.grade || '',
+        parentName: studentData.parentName || '',
+        parentEmail: studentData.parentEmail || '',
+        ...studentData
+      }
+      await addStudent(studentToAdd)
       setIsAddDialogOpen(false)
       refetch()
     } catch (error) {
@@ -94,39 +101,19 @@ export default function StudentManagement() {
 
   if (error) {
     return (
-      <div className="p-6">
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="pt-6">
-            <p className="text-red-600">Error loading students: {error}</p>
-            <Button onClick={refetch} className="mt-2">Retry</Button>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="border-red-200 bg-red-50">
+        <CardContent className="pt-6">
+          <p className="text-red-600">Error loading students: {error}</p>
+          <Button onClick={refetch} className="mt-2">Retry</Button>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">学生管理系统</h2>
-          <p className="text-gray-600">管理学生档案、班级分组、出勤记录和学习进度</p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={refetch} disabled={loading}>
-            <Users className="h-4 w-4 mr-2" />
-            刷新
-          </Button>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            添加学生
-          </Button>
-        </div>
-      </div>
-
+    <div className="space-y-6">
       {/* Data Type Selector */}
-      <div className="mb-6">
+      <div>
         <StudentFilters
           dataType={dataType}
           setDataType={setDataType}
@@ -139,13 +126,13 @@ export default function StudentManagement() {
       </div>
 
       {/* Statistics */}
-      <div className="mb-6">
+      <div>
         <StudentStats students={filteredStudents} />
       </div>
 
       {/* Bulk Actions */}
       {selectedStudents.length > 0 && (
-        <div className="mb-4">
+        <div>
           <StudentBulkActions
             selectedCount={selectedStudents.length}
             onDelete={handleBulkDelete}
@@ -155,7 +142,7 @@ export default function StudentManagement() {
       )}
 
       {/* Student List */}
-      <div className="mb-6">
+      <div>
         <StudentList
           students={filteredStudents}
           loading={loading}
@@ -171,7 +158,7 @@ export default function StudentManagement() {
       {/* Add/Edit Student Dialog */}
       <StudentForm
         open={isAddDialogOpen || !!editingStudent}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           if (!open) {
             setIsAddDialogOpen(false)
             setEditingStudent(null)
@@ -185,10 +172,10 @@ export default function StudentManagement() {
       {/* Student Details Dialog */}
       <StudentDetails
         student={viewingStudent}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           if (!open) setViewingStudent(null)
         }}
-        onEdit={(student) => {
+        onEdit={(student: Student) => {
           setViewingStudent(null)
           setEditingStudent(student)
         }}

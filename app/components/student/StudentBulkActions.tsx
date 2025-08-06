@@ -11,7 +11,7 @@ interface StudentBulkActionsProps {
   selectedCount: number
   onDelete: () => void
   onClearSelection: () => void
-  selectedStudents?: any[] // 如果需要导出选中的学生数据
+  selectedStudents?: any[]
 }
 
 export default function StudentBulkActions({
