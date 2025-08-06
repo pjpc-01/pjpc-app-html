@@ -2,22 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { GoogleAuth } from 'google-auth-library'
 import { google } from 'googleapis'
 import { FirestoreImport } from '@/lib/firestore-import'
-
-interface StudentData {
-  id: string
-  name: string
-  grade: string
-  parentName?: string
-  parentEmail?: string
-  parentPhone?: string
-  address?: string
-  dateOfBirth?: string
-  score?: string
-  gender?: string
-  food?: string
-  drink?: string
-  [key: string]: any
-}
+import { StudentData } from '@/lib/google-sheets'
 
 class GoogleSheetsAPI {
   private auth: any
@@ -39,13 +24,56 @@ class GoogleSheetsAPI {
     
     // 英文年级映射
     const englishGradeMap: Record<string, string> = {
+      // Standard格式（Google Sheets中的标准格式）
+      'standard 1': '一年级',
+      'standard1': '一年级',
+      'std 1': '一年级',
+      'std1': '一年级',
+      's1': '一年级',
+      '1': '一年级',
+      
+      'standard 2': '二年级',
+      'standard2': '二年级',
+      'std 2': '二年级',
+      'std2': '二年级',
+      's2': '二年级',
+      '2': '二年级',
+      
+      'standard 3': '三年级',
+      'standard3': '三年级',
+      'std 3': '三年级',
+      'std3': '三年级',
+      's3': '三年级',
+      '3': '三年级',
+      
+      'standard 4': '四年级',
+      'standard4': '四年级',
+      'std 4': '四年级',
+      'std4': '四年级',
+      's4': '四年级',
+      '4': '四年级',
+      
+      'standard 5': '五年级',
+      'standard5': '五年级',
+      'std 5': '五年级',
+      'std5': '五年级',
+      's5': '五年级',
+      '5': '五年级',
+      
+      'standard 6': '六年级',
+      'standard6': '六年级',
+      'std 6': '六年级',
+      'std6': '六年级',
+      's6': '六年级',
+      '6': '六年级',
+      
+      // Grade格式
       'grade 1': '一年级',
       'grade1': '一年级',
       '1st grade': '一年级',
       '1st': '一年级',
       'first grade': '一年级',
       'first': '一年级',
-      '1': '一年级',
       
       'grade 2': '二年级',
       'grade2': '二年级',
@@ -53,7 +81,6 @@ class GoogleSheetsAPI {
       '2nd': '二年级',
       'second grade': '二年级',
       'second': '二年级',
-      '2': '二年级',
       
       'grade 3': '三年级',
       'grade3': '三年级',
@@ -61,7 +88,6 @@ class GoogleSheetsAPI {
       '3rd': '三年级',
       'third grade': '三年级',
       'third': '三年级',
-      '3': '三年级',
       
       'grade 4': '四年级',
       'grade4': '四年级',
@@ -69,7 +95,6 @@ class GoogleSheetsAPI {
       '4th': '四年级',
       'fourth grade': '四年级',
       'fourth': '四年级',
-      '4': '四年级',
       
       'grade 5': '五年级',
       'grade5': '五年级',
@@ -77,7 +102,6 @@ class GoogleSheetsAPI {
       '5th': '五年级',
       'fifth grade': '五年级',
       'fifth': '五年级',
-      '5': '五年级',
       
       'grade 6': '六年级',
       'grade6': '六年级',
@@ -85,7 +109,6 @@ class GoogleSheetsAPI {
       '6th': '六年级',
       'sixth grade': '六年级',
       'sixth': '六年级',
-      '6': '六年级',
       
       // 中学年级
       'form 1': '初一',
@@ -109,10 +132,6 @@ class GoogleSheetsAPI {
       'secondary 3': '初三',
       'secondary3': '初三',
       
-      's1': '初一',
-      's2': '初二',
-      's3': '初三',
-      
       // 华文年级（保持不变）
       '一年级': '一年级',
       '二年级': '二年级',
@@ -134,6 +153,16 @@ class GoogleSheetsAPI {
     for (const [english, chinese] of Object.entries(englishGradeMap)) {
       if (gradeStr.includes(english) || english.includes(gradeStr)) {
         return chinese
+      }
+    }
+    
+    // 尝试数字匹配（如果输入只是数字）
+    const numericMatch = gradeStr.match(/^(\d+)$/)
+    if (numericMatch) {
+      const num = parseInt(numericMatch[1])
+      if (num >= 1 && num <= 6) {
+        const chineseGrades = ['一年级', '二年级', '三年级', '四年级', '五年级', '六年级']
+        return chineseGrades[num - 1]
       }
     }
     
