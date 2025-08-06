@@ -6,6 +6,7 @@ const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 export interface StudentData {
   id: string
   name: string
+  studentId?: string
   grade: string
   parentName: string
   parentEmail: string

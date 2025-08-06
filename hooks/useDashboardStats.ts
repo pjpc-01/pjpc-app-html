@@ -214,29 +214,34 @@ export const useDashboardStats = () => {
 
     fetchAllStats()
 
+    // 添加防抖机制，避免频繁更新
+    let updateTimeout: NodeJS.Timeout
+
+    const debouncedUpdate = () => {
+      clearTimeout(updateTimeout)
+      updateTimeout = setTimeout(() => {
+        fetchAllStats()
+      }, 2000) // 2秒防抖
+    }
+
     // 设置实时监听
-    const unsubscribeUsers = onSnapshot(collection(db, 'users'), () => {
-      fetchAllStats()
-    }, (error) => {
+    const unsubscribeUsers = onSnapshot(collection(db, 'users'), debouncedUpdate, (error) => {
       console.error('Users snapshot error:', error)
       setError('获取用户数据失败')
     })
 
-    const unsubscribePrimaryStudents = onSnapshot(collection(db, 'primary_students'), () => {
-      fetchAllStats()
-    }, (error) => {
+    const unsubscribePrimaryStudents = onSnapshot(collection(db, 'primary_students'), debouncedUpdate, (error) => {
       console.error('Primary students snapshot error:', error)
       setError('获取小学学生数据失败')
     })
 
-    const unsubscribeSecondaryStudents = onSnapshot(collection(db, 'secondary_students'), () => {
-      fetchAllStats()
-    }, (error) => {
+    const unsubscribeSecondaryStudents = onSnapshot(collection(db, 'secondary_students'), debouncedUpdate, (error) => {
       console.error('Secondary students snapshot error:', error)
       setError('获取中学学生数据失败')
     })
 
     return () => {
+      clearTimeout(updateTimeout)
       unsubscribeUsers()
       unsubscribePrimaryStudents()
       unsubscribeSecondaryStudents()

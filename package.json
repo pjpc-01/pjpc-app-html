@@ -5,6 +5,8 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
+    "dev:optimized": "node dev-optimized.js",
+    "dev:fast": "next dev --turbo --experimental-turbo",
     "lint": "next lint",
     "start": "next start"
   },

@@ -274,15 +274,24 @@ export const useFinancialStats = () => {
 
     fetchAllFinancialStats()
 
+    // 添加防抖机制，避免频繁更新
+    let updateTimeout: NodeJS.Timeout
+
+    const debouncedUpdate = () => {
+      clearTimeout(updateTimeout)
+      updateTimeout = setTimeout(() => {
+        fetchAllFinancialStats()
+      }, 2000) // 2秒防抖
+    }
+
     // 设置实时监听
-    const unsubscribePayments = onSnapshot(collection(db, 'payments'), () => {
-      fetchAllFinancialStats()
-    }, (error) => {
+    const unsubscribePayments = onSnapshot(collection(db, 'payments'), debouncedUpdate, (error) => {
       console.error('Payments snapshot error:', error)
       setError('获取支付数据失败')
     })
 
     return () => {
+      clearTimeout(updateTimeout)
       unsubscribePayments()
     }
   }, [fetchAllFinancialStats])

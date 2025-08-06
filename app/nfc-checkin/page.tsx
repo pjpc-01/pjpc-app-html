@@ -60,7 +60,8 @@ export default function NFCCheckInPage() {
     }
 
     checkDeviceStatus()
-    const interval = setInterval(checkDeviceStatus, 5000) // 每5秒检查一次
+    // 增加检查间隔到30秒，减少频繁刷新
+    const interval = setInterval(checkDeviceStatus, 30000)
 
     return () => clearInterval(interval)
   }, [])
@@ -77,7 +78,8 @@ export default function NFCCheckInPage() {
       handleCardRead(uid)
     }
 
-    const interval = setInterval(simulateNFCRead, 2000) // 每2秒模拟一次读取
+    // 增加模拟间隔到10秒，减少频繁刷新
+    const interval = setInterval(simulateNFCRead, 10000)
 
     return () => clearInterval(interval)
   }, [isListening])

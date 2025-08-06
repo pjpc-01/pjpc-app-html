@@ -73,7 +73,7 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
     return {
       id: student.id,
       name: student.name,
-      studentId: student.studentId,
+      studentId: student.id, // 使用Firebase文档ID作为学号
       grade: student.grade,
       gender: student.gender,
       birthDate: student.birthDate,
@@ -178,10 +178,54 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
       // 如果Firestore失败，使用备用数据
       if (students.length === 0) {
         setStudents([
-          { id: "G16", name: "王小明", grade: "三年级", parentName: "王大明", parentEmail: "wang@example.com" },
-          { id: "G17", name: "李小红", grade: "四年级", parentName: "李大红", parentEmail: "li@example.com" },
-          { id: "G18", name: "张小华", grade: "五年级", parentName: "张大华", parentEmail: "zhang@example.com" },
-          { id: "G19", name: "陈小军", grade: "三年级", parentName: "陈大军", parentEmail: "chen@example.com" },
+          { 
+            id: "G16", 
+            name: "王小明", 
+            studentId: "G16", // 使用ID作为学号
+            grade: "三年级", 
+            birthDate: "2015-03-15",
+            gender: "male",
+            phone: "0123456789",
+            parentName: "王大明", 
+            parentEmail: "wang@example.com",
+            status: "active"
+          },
+          { 
+            id: "G17", 
+            name: "李小红", 
+            studentId: "G17", // 使用ID作为学号
+            grade: "四年级", 
+            birthDate: "2014-07-22",
+            gender: "female",
+            phone: "0123456790",
+            parentName: "李大红", 
+            parentEmail: "li@example.com",
+            status: "active"
+          },
+          { 
+            id: "G18", 
+            name: "张小华", 
+            studentId: "G18", // 使用ID作为学号
+            grade: "五年级", 
+            birthDate: "2013-11-08",
+            gender: "male",
+            phone: "0123456791",
+            parentName: "张大华", 
+            parentEmail: "zhang@example.com",
+            status: "active"
+          },
+          { 
+            id: "G19", 
+            name: "陈小军", 
+            studentId: "G19", // 使用ID作为学号
+            grade: "三年级", 
+            birthDate: "2015-01-30",
+            gender: "male",
+            phone: "0123456792",
+            parentName: "陈大军", 
+            parentEmail: "chen@example.com",
+            status: "active"
+          },
         ])
       }
     } finally {

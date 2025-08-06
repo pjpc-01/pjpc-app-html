@@ -15,8 +15,7 @@ import StudentFilters from "./StudentFilters"
 import StudentStats from "./StudentStats"
 
 export default function StudentManagement() {
-  const [dataType, setDataType] = useState<'primary' | 'secondary'>('primary')
-  const { students, loading, error, refetch, updateStudent, deleteStudent, addStudent } = useStudents({ dataType })
+  const { students, loading, error, refetch, updateStudent, deleteStudent, addStudent } = useStudents({})
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedGrade, setSelectedGrade] = useState<string>("")
@@ -115,8 +114,6 @@ export default function StudentManagement() {
       {/* Data Type Selector */}
       <div>
         <StudentFilters
-          dataType={dataType}
-          setDataType={setDataType}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           selectedGrade={selectedGrade}
@@ -166,7 +163,6 @@ export default function StudentManagement() {
         }}
         student={editingStudent}
         onSubmit={editingStudent ? handleUpdateStudent : handleAddStudent}
-        dataType={dataType}
       />
 
       {/* Student Details Dialog */}
