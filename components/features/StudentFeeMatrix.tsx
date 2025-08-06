@@ -81,19 +81,13 @@ export const StudentFeeMatrix = () => {
   }, [students])
 
   const toggleStudentExpansion = (studentId: string) => {
-    console.log('=== TOGGLE STUDENT EXPANSION ===')
-    console.log('Student ID:', studentId, 'Type:', typeof studentId)
-    console.log('Current expanded students:', expandedStudents)
-    
     setExpandedStudents(prev => {
       const isCurrentlyExpanded = prev.includes(studentId)
-      console.log('Is currently expanded:', isCurrentlyExpanded)
       
       const newExpanded = isCurrentlyExpanded
         ? prev.filter(id => id !== studentId)
         : [...prev, studentId]
       
-      console.log('New expanded students:', newExpanded)
       return newExpanded
     })
   }
@@ -151,7 +145,6 @@ export const StudentFeeMatrix = () => {
 
   const createInvoice = () => {
     // TODO: Implement invoice creation functionality
-    console.log('Creating invoice for selected students...')
   }
 
   const toggleEditMode = () => {
@@ -423,15 +416,15 @@ export const StudentFeeMatrix = () => {
             </DialogContent>
           </Dialog>
 
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={createInvoice}
-            className="flex items-center gap-2"
-          >
-            <FileText className="h-4 w-4" />
-            创建发票
-          </Button>
+                     <Button 
+             variant="outline" 
+             size="sm" 
+             onClick={createInvoice}
+             className="flex items-center gap-2 bg-white hover:bg-gray-50 border-gray-300 shadow-sm hover:shadow-md transition-all duration-200"
+           >
+             <FileText className="h-4 w-4 text-blue-600" />
+             创建发票
+           </Button>
         </div>
       </div>
 
@@ -494,10 +487,9 @@ export const StudentFeeMatrix = () => {
           </div>
         ) : (
           filteredStudents.map(student => {
-            const studentId = student.id // Use string ID directly
-            const isExpanded = expandedStudents.includes(studentId)
-            const studentTotal = calculateStudentTotal(Number(studentId), activeFees)
-            console.log(`Student ${student.name}: ID=${studentId}, expanded=${isExpanded}`)
+                         const studentId = student.id // Use string ID directly
+             const isExpanded = expandedStudents.includes(studentId)
+             const studentTotal = calculateStudentTotal(Number(studentId), activeFees)
             
             return (
               <Card key={student.id} className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -505,78 +497,91 @@ export const StudentFeeMatrix = () => {
                   {/* Student Header - Clickable */}
                   <div 
                     className="bg-gray-50 px-4 py-3 border-b cursor-pointer hover:bg-gray-100 transition-colors"
-                    onClick={() => {
-                      console.log('=== HEADER CLICK ===')
-                      console.log('Student:', student.name, 'ID:', studentId)
-                      toggleStudentExpansion(studentId)
-                    }}
+                                         onClick={() => {
+                       toggleStudentExpansion(studentId)
+                     }}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {isExpanded ? (
-                          <ChevronDown className="h-4 w-4 text-gray-500" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-gray-500" />
-                        )}
-                        <div>
-                          <h3 className="font-medium text-gray-900">{student.name}</h3>
-                          <p className="text-sm text-gray-600">
-                            {student.grade} • {student.parentName} • ID: {student.id}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="h-4 w-4 text-green-600" />
-                          <span className="font-semibold text-green-600">
-                            ¥{studentTotal}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          {getStatusBadge(getPaymentStatus(studentId).status)}
-                          {getPaymentStatus(studentId).date && (
-                            <span className="text-xs text-gray-500">
-                              {getPaymentStatus(studentId).date}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex gap-1 mt-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              updatePaymentStatus(studentId, 'paid')
-                            }}
-                          >
-                            已缴费
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              updatePaymentStatus(studentId, 'pending')
-                            }}
-                          >
-                            待缴费
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              updatePaymentStatus(studentId, 'overdue')
-                            }}
-                          >
-                            逾期
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+                                         <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-3">
+                         {isExpanded ? (
+                           <ChevronDown className="h-4 w-4 text-gray-500" />
+                         ) : (
+                           <ChevronRight className="h-4 w-4 text-gray-500" />
+                         )}
+                         <div>
+                           <h3 className="font-medium text-gray-900">{student.name}</h3>
+                           <p className="text-sm text-gray-600">
+                             {student.grade} • {student.parentName} • ID: {student.id}
+                           </p>
+                         </div>
+                       </div>
+                                                <div className="text-right">
+                           <div className="flex items-center justify-end gap-12">
+                             <div className="flex items-center gap-1">
+                               <DollarSign className="h-4 w-4 text-green-600" />
+                               <span className="font-semibold text-green-600">
+                                 ¥{studentTotal}
+                               </span>
+                             </div>
+                                                           <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 w-6 p-0 bg-black hover:bg-gray-800 border-gray-300 shadow-sm hover:shadow-md transition-all duration-200"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  createInvoice()
+                                }}
+                              >
+                                <FileText className="h-3 w-3 text-white" />
+                              </Button>
+                           </div>
+                         <div className="flex justify-between items-center mt-1">
+                           <div className="flex gap-1">
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               className="h-6 px-2 text-xs"
+                               onClick={(e) => {
+                                 e.stopPropagation()
+                                 updatePaymentStatus(studentId, 'paid')
+                               }}
+                             >
+                               已缴费
+                             </Button>
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               className="h-6 px-2 text-xs"
+                               onClick={(e) => {
+                                 e.stopPropagation()
+                                 updatePaymentStatus(studentId, 'overdue')
+                               }}
+                             >
+                               逾期
+                             </Button>
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               className="h-6 px-2 text-xs"
+                               onClick={(e) => {
+                                 e.stopPropagation()
+                                 updatePaymentStatus(studentId, 'pending')
+                               }}
+                             >
+                               待缴费
+                             </Button>
+                           </div>
+                           <div className="flex items-center gap-2">
+                             {getStatusBadge(getPaymentStatus(studentId).status)}
+                             {getPaymentStatus(studentId).date && (
+                               <span className="text-xs text-gray-500">
+                                 {getPaymentStatus(studentId).date}
+                               </span>
+                             )}
+                           </div>
+                         </div>
+                       </div>
+                     </div>
                   </div>
 
                   {/* Fee Assignment Grid - Only show when expanded */}
