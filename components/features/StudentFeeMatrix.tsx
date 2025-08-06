@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FeeCard } from "./FeeCard"
 import { useFees } from "../../hooks/useFees"
 import { useStudents } from "../../hooks/useStudents"
@@ -31,6 +32,7 @@ export const StudentFeeMatrix = () => {
   const [studentPayments, setStudentPayments] = useState<Map<string, { status: string; date: string }>>(new Map())
   const [editMode, setEditMode] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [selectedGradeFilter, setSelectedGradeFilter] = useState<string>("all")
   const [batchDialogOpen, setBatchDialogOpen] = useState(false)
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedSubItems, setSelectedSubItems] = useState<{feeId: number, subItemId: number}[]>([])
@@ -43,12 +45,16 @@ export const StudentFeeMatrix = () => {
   // Get unique categories from active fees
   const categories = [...new Set(activeFees.map(fee => fee.category).filter(Boolean))]
 
-  // Filter students based on search term and exclude graduated students
+  // Filter students based on search term, grade filter, and exclude graduated students
   const filteredStudents = useMemo(() => {
     return students.filter(student => {
       // Exclude graduated students
       if (student.grade === '已毕业') return false
       
+      // Apply grade filter
+      if (selectedGradeFilter !== "all" && student.grade !== selectedGradeFilter) return false
+      
+      // Apply search term filter
       if (!searchTerm.trim()) return true
       
       const searchLower = searchTerm.toLowerCase()
@@ -59,18 +65,20 @@ export const StudentFeeMatrix = () => {
         student.parentName.toLowerCase().includes(searchLower)
       )
     })
-  }, [students, searchTerm])
+  }, [students, searchTerm, selectedGradeFilter])
 
-  // Get available grades from filtered students in ascending order
+  // Get available grades from all students (excluding graduated) in ascending order
   const availableGrades = useMemo(() => {
-    const grades = [...new Set(filteredStudents.map(s => s.grade))]
+    const grades = [...new Set(students
+      .filter(student => student.grade !== '已毕业')
+      .map(s => s.grade))]
     return grades.sort((a, b) => {
       // Extract numbers from grade strings (e.g., "Standard 3" -> 3)
       const numA = parseInt(a.match(/\d+/)?.[0] || '0')
       const numB = parseInt(b.match(/\d+/)?.[0] || '0')
       return numA - numB
     })
-  }, [filteredStudents])
+  }, [students])
 
   const toggleStudentExpansion = (studentId: string) => {
     console.log('=== TOGGLE STUDENT EXPANSION ===')
@@ -152,6 +160,10 @@ export const StudentFeeMatrix = () => {
 
   const clearSearch = () => {
     setSearchTerm("")
+  }
+
+  const clearGradeFilter = () => {
+    setSelectedGradeFilter("all")
   }
 
   const handleCategoryToggle = (category: string) => {
@@ -423,32 +435,54 @@ export const StudentFeeMatrix = () => {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="搜索学生姓名、ID、年级或家长姓名..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-10"
-          />
-          {searchTerm && (
-            <button
-              onClick={clearSearch}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-        {searchTerm && (
-          <div className="mt-2 text-sm text-gray-600">
-            找到 {filteredStudents.length} 个学生 (共 {students.length} 个)
+      {/* Search Bar and Grade Filter */}
+      <div className="flex gap-4 items-end">
+        {/* Search Bar */}
+        <div className="flex-1 relative">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="搜索学生姓名、ID、年级或家长姓名..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-10"
+            />
+            {searchTerm && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Grade Filter */}
+        <div className="w-48">
+          <Select value={selectedGradeFilter} onValueChange={setSelectedGradeFilter}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="选择年级" />
+            </SelectTrigger>
+                         <SelectContent>
+               <SelectItem value="all">所有年级</SelectItem>
+               {availableGrades.map(grade => (
+                 <SelectItem key={grade} value={grade}>
+                   {grade}
+                 </SelectItem>
+               ))}
+             </SelectContent>
+          </Select>
+        </div>
       </div>
+
+             {/* Search Results Info */}
+       {(searchTerm || selectedGradeFilter !== "all") && (
+         <div className="text-sm text-gray-600">
+           找到 {filteredStudents.length} 个学生 (共 {students.length} 个)
+         </div>
+       )}
 
       {/* Student Fee Matrix */}
       <div className="grid gap-4">
