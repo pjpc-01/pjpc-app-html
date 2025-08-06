@@ -1,0 +1,23 @@
+rules_version = '2';
+
+service cloud.firestore {
+ match /databases/{database}/documents {
+   // 完全开放所有访问用于测试
+   match /{document=**} {
+     allow read, write: if true;
+   }
+   
+   // NFC/RFID 相关集合
+   match /nfc_cards/{cardId} {
+     allow read, write: if true;
+   }
+   
+   match /nfc_devices/{deviceId} {
+     allow read, write: if true;
+   }
+   
+   match /attendance_records/{recordId} {
+     allow read, write: if true;
+   }
+ }
+}
