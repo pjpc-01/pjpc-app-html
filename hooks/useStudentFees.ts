@@ -71,16 +71,13 @@ export const useStudentFees = () => {
 
   const calculateStudentTotal = useCallback((studentId: number, feeItems: FeeItem[]) => {
     return feeItems.reduce((total, fee) => {
-      if (isAssigned(studentId, fee.id)) {
-        // Calculate total based on active sub-items for this specific student
-        const activeSubItemsTotal = fee.subItems
-          .filter(subItem => getStudentSubItemState(studentId, fee.id, subItem.id))
-          .reduce((subTotal, subItem) => subTotal + subItem.amount, 0)
-        return total + activeSubItemsTotal
-      }
-      return total
+      // Calculate total based on active sub-items for this specific student
+      const activeSubItemsTotal = fee.subItems
+        .filter(subItem => getStudentSubItemState(studentId, fee.id, subItem.id))
+        .reduce((subTotal, subItem) => subTotal + subItem.amount, 0)
+      return total + activeSubItemsTotal
     }, 0)
-  }, [isAssigned, getStudentSubItemState])
+  }, [getStudentSubItemState])
 
   return {
     assignments,
