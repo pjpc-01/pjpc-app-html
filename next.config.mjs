@@ -84,8 +84,6 @@ const nextConfig = {
         },
       },
     },
-    // 启用SWC编译
-    swcMinify: true,
     // 优化编译
     forceSwcTransforms: true,
   },
