@@ -21,6 +21,7 @@ import { Progress } from "@/components/ui/progress"
 import { UserPlus, Search, Edit, Calendar, TrendingUp, Users, Trash2 } from "lucide-react"
 import React from "react" // Added for useEffect
 import { useStudents, Student } from "@/hooks/useStudents"
+import { useAuth } from "@/contexts/enhanced-auth-context"
 
 export default function StudentManagement() {
   const [dataType, setDataType] = useState<'primary' | 'secondary'>('primary')
@@ -37,6 +38,161 @@ export default function StudentManagement() {
     { id: "G19", name: "陈小军", grade: "三年级", parentName: "陈大军", parentEmail: "chen@example.com", phone: "13800138004", address: "北京市东城区", status: "active", enrollmentDate: "2023-09-01" },
   ]
 
+  // 年级转换函数：将英文年级转换为华文年级
+  const convertGradeToChinese = (grade: string): string => {
+    if (!grade) return '未知年级'
+    
+    const gradeStr = grade.toString().toLowerCase().trim()
+    
+    // 英文年级映射
+    const englishGradeMap: Record<string, string> = {
+      // Standard格式（Google Sheets中的标准格式）
+      'standard 1': '一年级',
+      'standard1': '一年级',
+      'std 1': '一年级',
+      'std1': '一年级',
+      's1': '一年级',
+      '1': '一年级',
+      
+      'standard 2': '二年级',
+      'standard2': '二年级',
+      'std 2': '二年级',
+      'std2': '二年级',
+      's2': '二年级',
+      '2': '二年级',
+      
+      'standard 3': '三年级',
+      'standard3': '三年级',
+      'std 3': '三年级',
+      'std3': '三年级',
+      's3': '三年级',
+      '3': '三年级',
+      
+      'standard 4': '四年级',
+      'standard4': '四年级',
+      'std 4': '四年级',
+      'std4': '四年级',
+      's4': '四年级',
+      '4': '四年级',
+      
+      'standard 5': '五年级',
+      'standard5': '五年级',
+      'std 5': '五年级',
+      'std5': '五年级',
+      's5': '五年级',
+      '5': '五年级',
+      
+      'standard 6': '六年级',
+      'standard6': '六年级',
+      'std 6': '六年级',
+      'std6': '六年级',
+      's6': '六年级',
+      '6': '六年级',
+      
+      // Grade格式
+      'grade 1': '一年级',
+      'grade1': '一年级',
+      '1st grade': '一年级',
+      '1st': '一年级',
+      'first grade': '一年级',
+      'first': '一年级',
+      
+      'grade 2': '二年级',
+      'grade2': '二年级',
+      '2nd grade': '二年级',
+      '2nd': '二年级',
+      'second grade': '二年级',
+      'second': '二年级',
+      
+      'grade 3': '三年级',
+      'grade3': '三年级',
+      '3rd grade': '三年级',
+      '3rd': '三年级',
+      'third grade': '三年级',
+      'third': '三年级',
+      
+      'grade 4': '四年级',
+      'grade4': '四年级',
+      '4th grade': '四年级',
+      '4th': '四年级',
+      'fourth grade': '四年级',
+      'fourth': '四年级',
+      
+      'grade 5': '五年级',
+      'grade5': '五年级',
+      '5th grade': '五年级',
+      '5th': '五年级',
+      'fifth grade': '五年级',
+      'fifth': '五年级',
+      
+      'grade 6': '六年级',
+      'grade6': '六年级',
+      '6th grade': '六年级',
+      '6th': '六年级',
+      'sixth grade': '六年级',
+      'sixth': '六年级',
+      
+      // 中学年级
+      'form 1': '初一',
+      'form1': '初一',
+      'form 2': '初二',
+      'form2': '初二',
+      'form 3': '初三',
+      'form3': '初三',
+      
+      'year 1': '初一',
+      'year1': '初一',
+      'year 2': '初二',
+      'year2': '初二',
+      'year 3': '初三',
+      'year3': '初三',
+      
+      'secondary 1': '初一',
+      'secondary1': '初一',
+      'secondary 2': '初二',
+      'secondary2': '初二',
+      'secondary 3': '初三',
+      'secondary3': '初三',
+      
+      // 华文年级（保持不变）
+      '一年级': '一年级',
+      '二年级': '二年级',
+      '三年级': '三年级',
+      '四年级': '四年级',
+      '五年级': '五年级',
+      '六年级': '六年级',
+      '初一': '初一',
+      '初二': '初二',
+      '初三': '初三',
+    }
+    
+    // 尝试精确匹配
+    if (englishGradeMap[gradeStr]) {
+      return englishGradeMap[gradeStr]
+    }
+    
+    // 尝试部分匹配
+    for (const [english, chinese] of Object.entries(englishGradeMap)) {
+      if (gradeStr.includes(english) || english.includes(gradeStr)) {
+        return chinese
+      }
+    }
+    
+    // 尝试数字匹配（如果输入只是数字）
+    const numericMatch = gradeStr.match(/^(\d+)$/)
+    if (numericMatch) {
+      const num = parseInt(numericMatch[1])
+      if (num >= 1 && num <= 6) {
+        const chineseGrades = ['一年级', '二年级', '三年级', '四年级', '五年级', '六年级']
+        return chineseGrades[num - 1]
+      }
+    }
+    
+    // 如果无法匹配，返回原值
+    console.log(`无法映射年级: "${grade}"，使用原值`)
+    return grade
+  }
+
   // Transform Firebase students to match the component's expected format
   console.log(`StudentManagement: dataType=${dataType}, testMode=${testMode}, students.length=${students.length}`)
   const transformedStudents = (testMode || students.length === 0 ? testStudents : students).map((student, index) => {
@@ -44,7 +200,7 @@ export default function StudentManagement() {
     return {
       id: student.id,
       name: student.name || "",
-      grade: student.grade || "",
+      grade: convertGradeToChinese(student.grade || ""), // 转换年级为华文
       class: student.class || "A班",
       fatherName: student.parentName || student.fatherName || "",
       motherName: student.parentEmail || student.motherName || "",
@@ -61,7 +217,7 @@ export default function StudentManagement() {
       medicalInfo: student.medicalInfo || "无特殊病史",
       enrollmentDate: student.enrollmentDate || "",
       enrollmentYear: student.enrollmentYear,
-      calculatedGrade: student.calculatedGrade,
+      calculatedGrade: student.calculatedGrade ? convertGradeToChinese(student.calculatedGrade) : null,
       notes: student.notes || "",
       image: student.image || "",
     }
