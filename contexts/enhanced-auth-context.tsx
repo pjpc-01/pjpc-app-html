@@ -143,6 +143,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }, 10000)
 
+    // 添加额外的备用机制：如果5秒后仍在loading，强制设置为false
+    const loadingFallbackTimer = setTimeout(() => {
+      if (loading) {
+        console.warn('Loading taking too long, forcing loading to false')
+        setLoading(false)
+      }
+    }, 5000)
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       console.log('Auth state changed:', user ? 'User logged in' : 'No user')
       if (user) {
@@ -165,9 +173,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       clearTimeout(fallbackTimer)
+      clearTimeout(loadingFallbackTimer)
       unsubscribe()
     }
-  }, [checkConnection, fetchUserProfile, connectionStatus])
+  }, [checkConnection, fetchUserProfile, connectionStatus, loading])
 
   // 添加额外的useEffect来处理连接状态变化
   useEffect(() => {

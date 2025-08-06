@@ -5,11 +5,16 @@ import { Timestamp } from 'firebase/firestore'
 export interface Student {
   id: string
   name: string
+  studentId?: string
   grade: string
-  parentName: string
-  parentEmail: string
+  gender?: string
+  birthDate?: string
   phone?: string
+  email?: string
   address?: string
+  parentName: string
+  parentPhone?: string
+  parentEmail: string
   enrollmentDate?: string
   enrollmentYear?: number
   status?: string
@@ -68,11 +73,16 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
     return {
       id: student.id,
       name: student.name,
+      studentId: student.studentId,
       grade: student.grade,
-      parentName: student.parentName,
-      parentEmail: student.parentEmail,
+      gender: student.gender,
+      birthDate: student.birthDate,
       phone: student.phone,
+      email: student.email,
       address: student.address,
+      parentName: student.parentName,
+      parentPhone: student.parentPhone,
+      parentEmail: student.parentEmail,
       enrollmentDate: student.enrollmentDate,
       enrollmentYear: student.enrollmentYear,
       status: student.status,

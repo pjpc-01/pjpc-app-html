@@ -143,200 +143,164 @@ export default function StudentForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {isEditing ? <Edit className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
-            {isEditing ? '编辑学生信息' : '添加新学生'}
+            {isEditing ? '编辑学生' : '添加学生'}
           </DialogTitle>
           <DialogDescription>
-            {isEditing ? '修改学生档案信息' : '录入新学生的完整信息'}
+            {isEditing ? '修改学生信息' : '录入新学生信息'}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* 基本信息 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>基本信息</CardTitle>
-              <CardDescription>学生的基本个人信息</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name">姓名 *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="请输入学生姓名"
-                  className={errors.name ? 'border-red-500' : ''}
-                />
-                {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-              </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">姓名 *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="学生姓名"
+                className={errors.name ? 'border-red-500' : ''}
+              />
+              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+            </div>
 
-              <div>
-                <Label htmlFor="studentId">学号 *</Label>
-                <Input
-                  id="studentId"
-                  value={formData.studentId}
-                  onChange={(e) => handleInputChange('studentId', e.target.value)}
-                  placeholder="请输入学号"
-                  className={errors.studentId ? 'border-red-500' : ''}
-                />
-                {errors.studentId && <p className="text-red-500 text-sm mt-1">{errors.studentId}</p>}
-              </div>
+            <div>
+              <Label htmlFor="studentId">学号 *</Label>
+              <Input
+                id="studentId"
+                value={formData.studentId}
+                onChange={(e) => handleInputChange('studentId', e.target.value)}
+                placeholder="学号"
+                className={errors.studentId ? 'border-red-500' : ''}
+              />
+              {errors.studentId && <p className="text-red-500 text-sm mt-1">{errors.studentId}</p>}
+            </div>
 
-              <div>
-                <Label htmlFor="grade">年级 *</Label>
-                <Select value={formData.grade} onValueChange={(value) => handleInputChange('grade', value)}>
-                  <SelectTrigger className={errors.grade ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="选择年级" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {gradeOptions.map((grade) => (
-                      <SelectItem key={grade} value={grade}>
-                        {dataType === 'primary' ? `${grade}年级` : `Form ${grade.split(' ')[1]}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.grade && <p className="text-red-500 text-sm mt-1">{errors.grade}</p>}
-              </div>
+            <div>
+              <Label htmlFor="grade">年级 *</Label>
+              <Select value={formData.grade} onValueChange={(value) => handleInputChange('grade', value)}>
+                <SelectTrigger className={errors.grade ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="选择年级" />
+                </SelectTrigger>
+                <SelectContent>
+                  {gradeOptions.map((grade) => (
+                    <SelectItem key={grade} value={grade}>
+                      {dataType === 'primary' ? `${grade}年级` : `Form ${grade.split(' ')[1]}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.grade && <p className="text-red-500 text-sm mt-1">{errors.grade}</p>}
+            </div>
 
-              <div>
-                <Label htmlFor="gender">性别</Label>
-                <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择性别" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">男</SelectItem>
-                    <SelectItem value="female">女</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label htmlFor="gender">性别</Label>
+              <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择性别" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">男</SelectItem>
+                  <SelectItem value="female">女</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div>
-                <Label htmlFor="birthDate">出生日期</Label>
-                <Input
-                  id="birthDate"
-                  type="date"
-                  value={formData.birthDate}
-                  onChange={(e) => handleInputChange('birthDate', e.target.value)}
-                />
-              </div>
+            <div>
+              <Label htmlFor="birthDate">出生日期</Label>
+              <Input
+                id="birthDate"
+                type="date"
+                value={formData.birthDate}
+                onChange={(e) => handleInputChange('birthDate', e.target.value)}
+              />
+            </div>
 
-              <div>
-                <Label htmlFor="status">状态</Label>
-                <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">在读</SelectItem>
-                    <SelectItem value="inactive">离校</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+            <div>
+              <Label htmlFor="status">状态</Label>
+              <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">在读</SelectItem>
+                  <SelectItem value="inactive">离校</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* 联系信息 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>联系信息</CardTitle>
-              <CardDescription>学生和家长的联系方式</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="phone">联系电话</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="请输入电话号码"
-                  className={errors.phone ? 'border-red-500' : ''}
-                />
-                {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-              </div>
+            <div>
+              <Label htmlFor="phone">联系电话</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                placeholder="电话号码"
+                className={errors.phone ? 'border-red-500' : ''}
+              />
+              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+            </div>
 
-              <div>
-                <Label htmlFor="email">邮箱地址</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="请输入邮箱地址"
-                  className={errors.email ? 'border-red-500' : ''}
-                />
-                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-              </div>
+            <div>
+              <Label htmlFor="email">邮箱地址</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                placeholder="邮箱地址"
+                className={errors.email ? 'border-red-500' : ''}
+              />
+              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+            </div>
 
-              <div className="md:col-span-2">
-                <Label htmlFor="address">地址</Label>
-                <Textarea
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  placeholder="请输入详细地址"
-                  rows={2}
-                />
-              </div>
+            <div>
+              <Label htmlFor="parentName">家长姓名</Label>
+              <Input
+                id="parentName"
+                value={formData.parentName}
+                onChange={(e) => handleInputChange('parentName', e.target.value)}
+                placeholder="家长姓名"
+              />
+            </div>
 
-              <div>
-                <Label htmlFor="parentName">家长姓名</Label>
-                <Input
-                  id="parentName"
-                  value={formData.parentName}
-                  onChange={(e) => handleInputChange('parentName', e.target.value)}
-                  placeholder="请输入家长姓名"
-                />
-              </div>
+            <div>
+              <Label htmlFor="parentPhone">家长电话</Label>
+              <Input
+                id="parentPhone"
+                value={formData.parentPhone}
+                onChange={(e) => handleInputChange('parentPhone', e.target.value)}
+                placeholder="家长电话号码"
+              />
+            </div>
+          </div>
 
-              <div>
-                <Label htmlFor="parentPhone">家长电话</Label>
-                <Input
-                  id="parentPhone"
-                  value={formData.parentPhone}
-                  onChange={(e) => handleInputChange('parentPhone', e.target.value)}
-                  placeholder="请输入家长电话号码"
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <div>
+            <Label htmlFor="address">地址</Label>
+            <Textarea
+              id="address"
+              value={formData.address}
+              onChange={(e) => handleInputChange('address', e.target.value)}
+              placeholder="详细地址"
+              rows={2}
+            />
+          </div>
 
-          {/* 其他信息 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>其他信息</CardTitle>
-              <CardDescription>入学日期和备注信息</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="enrollmentDate">入学日期</Label>
-                <Input
-                  id="enrollmentDate"
-                  type="date"
-                  value={formData.enrollmentDate}
-                  onChange={(e) => handleInputChange('enrollmentDate', e.target.value)}
-                />
-              </div>
+          <div>
+            <Label htmlFor="notes">备注</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
+              placeholder="备注信息"
+              rows={2}
+            />
+          </div>
 
-              <div>
-                <Label htmlFor="notes">备注</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => handleInputChange('notes', e.target.value)}
-                  placeholder="请输入备注信息"
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 错误提示 */}
           {Object.keys(errors).length > 0 && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
@@ -346,7 +310,6 @@ export default function StudentForm({
             </Alert>
           )}
 
-          {/* 提交按钮 */}
           <div className="flex justify-end gap-2">
             <Button
               type="button"
@@ -357,7 +320,7 @@ export default function StudentForm({
               取消
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? '保存中...' : (isEditing ? '更新学生' : '添加学生')}
+              {isSubmitting ? '保存中...' : (isEditing ? '更新' : '添加')}
             </Button>
           </div>
         </form>
