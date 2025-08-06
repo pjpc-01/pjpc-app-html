@@ -724,6 +724,53 @@ export default function StudentManagement() {
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">学生管理系统</h2>
             <p className="text-gray-600">管理学生档案、班级分组、出勤记录和学习进度</p>
+            
+            {/* Data Type Selector */}
+            <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="primary-data"
+                    checked={dataType === 'primary'}
+                    onChange={() => setDataType('primary')}
+                  />
+                  <Label htmlFor="primary-data" className="text-sm">
+                    小学数据 (Primary)
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="secondary-data"
+                    checked={dataType === 'secondary'}
+                    onChange={() => setDataType('secondary')}
+                  />
+                  <Label htmlFor="secondary-data" className="text-sm">
+                    中学数据 (Secondary)
+                  </Label>
+                </div>
+              </div>
+              
+              {/* 临时调试按钮 */}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/debug/check-secondary-data')
+                    const data = await response.json()
+                    console.log('Secondary data check:', data)
+                    alert(`中学数据检查结果:\n\n${JSON.stringify(data.results, null, 2)}`)
+                  } catch (error) {
+                    console.error('Error checking secondary data:', error)
+                    alert('检查中学数据失败')
+                  }
+                }}
+              >
+                检查中学数据
+              </Button>
+            </div>
           </div>
         
         {/* Show message if no students */}
