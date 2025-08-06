@@ -53,7 +53,6 @@ export default function StudentManagementPage() {
             onOpenChange={() => {}}
             student={null}
             onSubmit={async () => {}}
-            dataType="primary"
           />
         </TabsContent>
 
@@ -67,8 +66,6 @@ export default function StudentManagementPage() {
 
         <TabsContent value="filters">
           <StudentFilters
-            dataType="primary"
-            setDataType={() => {}}
             searchTerm=""
             setSearchTerm={() => {}}
             selectedGrade=""

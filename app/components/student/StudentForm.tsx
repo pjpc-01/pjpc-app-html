@@ -11,26 +11,24 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { UserPlus, Edit, AlertTriangle } from "lucide-react"
 import { Student } from "@/hooks/useStudents"
-import { validateStudentId, validatePhone, validateEmail } from "./utils"
+import { validateStudentId, validatePhone, validateEmail, calculateAge } from "./utils"
+import { Badge } from "@/components/ui/badge"
 
 interface StudentFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   student?: Student | null
   onSubmit: (studentData: Partial<Student>) => Promise<void>
-  dataType: 'primary' | 'secondary'
 }
 
 export default function StudentForm({
   open,
   onOpenChange,
   student,
-  onSubmit,
-  dataType
+  onSubmit
 }: StudentFormProps) {
   const [formData, setFormData] = useState<Partial<Student>>({
     name: '',
-    studentId: '',
     grade: '',
     gender: '',
     birthDate: '',
@@ -52,7 +50,6 @@ export default function StudentForm({
     if (student) {
       setFormData({
         name: student.name || '',
-        studentId: student.studentId || '',
         grade: student.grade || '',
         gender: student.gender || '',
         birthDate: student.birthDate || '',
@@ -68,7 +65,6 @@ export default function StudentForm({
     } else {
       setFormData({
         name: '',
-        studentId: '',
         grade: '',
         gender: '',
         birthDate: '',
@@ -90,12 +86,6 @@ export default function StudentForm({
 
     if (!formData.name?.trim()) {
       newErrors.name = '姓名是必填项'
-    }
-
-    if (!formData.studentId?.trim()) {
-      newErrors.studentId = '学号是必填项'
-    } else if (!validateStudentId(formData.studentId)) {
-      newErrors.studentId = '学号格式不正确'
     }
 
     if (!formData.grade?.trim()) {
@@ -137,9 +127,8 @@ export default function StudentForm({
     }
   }
 
-  const gradeOptions = dataType === 'primary' 
-    ? ['1', '2', '3', '4', '5', '6']
-    : ['form 1', 'form 2', 'form 3', 'form 4', 'form 5', 'form 6']
+  const gradeOptions = 
+    ['1', '2', '3', '4', '5', '6']
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -169,18 +158,6 @@ export default function StudentForm({
             </div>
 
             <div>
-              <Label htmlFor="studentId">学号 *</Label>
-              <Input
-                id="studentId"
-                value={formData.studentId}
-                onChange={(e) => handleInputChange('studentId', e.target.value)}
-                placeholder="学号"
-                className={errors.studentId ? 'border-red-500' : ''}
-              />
-              {errors.studentId && <p className="text-red-500 text-sm mt-1">{errors.studentId}</p>}
-            </div>
-
-            <div>
               <Label htmlFor="grade">年级 *</Label>
               <Select value={formData.grade} onValueChange={(value) => handleInputChange('grade', value)}>
                 <SelectTrigger className={errors.grade ? 'border-red-500' : ''}>
@@ -189,7 +166,7 @@ export default function StudentForm({
                 <SelectContent>
                   {gradeOptions.map((grade) => (
                     <SelectItem key={grade} value={grade}>
-                      {dataType === 'primary' ? `${grade}年级` : `Form ${grade.split(' ')[1]}`}
+                      {`${grade}年级`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -212,12 +189,19 @@ export default function StudentForm({
 
             <div>
               <Label htmlFor="birthDate">出生日期</Label>
-              <Input
-                id="birthDate"
-                type="date"
-                value={formData.birthDate}
-                onChange={(e) => handleInputChange('birthDate', e.target.value)}
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="birthDate"
+                  type="date"
+                  value={formData.birthDate}
+                  onChange={(e) => handleInputChange('birthDate', e.target.value)}
+                />
+                {formData.birthDate && (
+                  <Badge variant="secondary" className="whitespace-nowrap">
+                    {calculateAge(formData.birthDate)} 岁
+                  </Badge>
+                )}
+              </div>
             </div>
 
             <div>

@@ -66,7 +66,7 @@ export default function StudentDetails({
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">年龄</label>
-                <p className="text-lg">{student.birthDate ? calculateAge(student.birthDate) : '-'}</p>
+                <p className="text-lg">{student.age ? student.age : (student.birthDate ? calculateAge(student.birthDate) : '-')}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">状态</label>

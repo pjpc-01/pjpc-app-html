@@ -136,7 +136,7 @@ export default function StudentList({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {student.birthDate ? calculateAge(student.birthDate) : '-'}
+                    {student.age ? student.age : (student.birthDate ? calculateAge(student.birthDate) : '-')}
                   </TableCell>
                   <TableCell>{student.gender || '-'}</TableCell>
                   <TableCell>{student.phone || '-'}</TableCell>
