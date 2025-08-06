@@ -19,7 +19,29 @@ export default function Dashboard() {
   const { user, userProfile, loading, logout, resendVerification, error, connectionStatus, clearError } = useAuth()
   const [activeTab, setActiveTab] = useState("overview")
 
-  // 显示连接状态
+  // 添加调试日志
+  console.log('Dashboard render state:', { 
+    loading, 
+    connectionStatus, 
+    hasUser: !!user, 
+    hasUserProfile: !!userProfile 
+  })
+
+  // 显示加载状态 - 只有在真正需要等待时才显示
+  if (loading && connectionStatus === 'checking') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <GraduationCap className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-pulse" />
+          <p className="text-gray-600">
+            检查连接中...
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // 如果连接失败，显示错误
   if (connectionStatus === 'disconnected') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -48,20 +70,6 @@ export default function Dashboard() {
             </Button>
           </CardContent>
         </Card>
-      </div>
-    )
-  }
-
-  // 显示加载状态
-  if (loading || connectionStatus === 'checking') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <GraduationCap className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600">
-            {connectionStatus === 'checking' ? '检查连接中...' : '加载中...'}
-          </p>
-        </div>
       </div>
     )
   }

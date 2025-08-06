@@ -18,7 +18,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
-import { UserPlus, Search, Edit, Calendar, TrendingUp, Users, Trash2 } from "lucide-react"
+import { UserPlus, Search, Edit, Users, Trash2 } from "lucide-react"
 import React from "react" // Added for useEffect
 import { useStudents, Student } from "@/hooks/useStudents"
 import { useAuth } from "@/contexts/enhanced-auth-context"
@@ -27,16 +27,7 @@ export default function StudentManagement() {
   const [dataType, setDataType] = useState<'primary' | 'secondary'>('primary')
   const { students, loading, error, refetch, updateStudent, deleteStudent, addStudent } = useStudents({ dataType })
   
-  // Add a test mode to avoid Firebase issues
-  const [testMode, setTestMode] = useState(false) // 默认使用Firebase数据
-  
-  // Use test data if in test mode or if Firebase fails
-  const testStudents: Student[] = [
-    { id: "G16", name: "王小明", grade: "三年级", parentName: "王大明", parentEmail: "wang@example.com", phone: "13800138001", address: "北京市朝阳区", status: "active", enrollmentDate: "2023-09-01" },
-    { id: "G17", name: "李小红", grade: "四年级", parentName: "李大红", parentEmail: "li@example.com", phone: "13800138002", address: "北京市海淀区", status: "active", enrollmentDate: "2023-09-01" },
-    { id: "G18", name: "张小华", grade: "五年级", parentName: "张大华", parentEmail: "zhang@example.com", phone: "13800138003", address: "北京市西城区", status: "active", enrollmentDate: "2023-09-01" },
-    { id: "G19", name: "陈小军", grade: "三年级", parentName: "陈大军", parentEmail: "chen@example.com", phone: "13800138004", address: "北京市东城区", status: "active", enrollmentDate: "2023-09-01" },
-  ]
+
 
   // 年级转换函数：将英文年级转换为华文年级
   const convertGradeToChinese = (grade: string): string => {
@@ -194,8 +185,7 @@ export default function StudentManagement() {
   }
 
   // Transform Firebase students to match the component's expected format
-  console.log(`StudentManagement: dataType=${dataType}, testMode=${testMode}, students.length=${students.length}`)
-  const transformedStudents = (testMode || students.length === 0 ? testStudents : students).map((student, index) => {
+  const transformedStudents = students.map((student, index) => {
     // Use the actual Firebase data without any modifications
     return {
       id: student.id,
@@ -223,18 +213,10 @@ export default function StudentManagement() {
     }
   })
 
-  const [attendanceRecords] = useState([
-    { date: "2024-01-15", present: 85, absent: 4, late: 0 },
-    { date: "2024-01-14", present: 87, absent: 2, late: 0 },
-    { date: "2024-01-13", present: 89, absent: 0, late: 0 },
-    { date: "2024-01-12", present: 86, absent: 2, late: 1 },
-    { date: "2024-01-11", present: 88, absent: 1, late: 0 },
-  ])
+
 
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedGrade, setSelectedGrade] = useState("all")
-  const [selectedClass, setSelectedClass] = useState("all")
-  const [selectedStatus, setSelectedStatus] = useState("all")
   const [selectedGradeForView, setSelectedGradeForView] = useState<string | null>(null)
   
   // Grade management state
@@ -250,15 +232,7 @@ export default function StudentManagement() {
     { id: 9, name: "初三", description: "中学三年级", studentCount: 0, avgAttendance: 0, avgProgress: 0 },
   ])
   
-  // Grade management dialog states
-  const [isAddGradeDialogOpen, setIsAddGradeDialogOpen] = useState(false)
-  const [isEditGradeDialogOpen, setIsEditGradeDialogOpen] = useState(false)
-  const [editingGrade, setEditingGrade] = useState<any>(null)
-  const [newGrade, setNewGrade] = useState({
-    name: "",
-    description: "",
-  })
-  const [isGradeEditMode, setIsGradeEditMode] = useState(false)
+
   
   // Add student form state
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -289,9 +263,7 @@ export default function StudentManagement() {
     const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          student.studentId.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesGrade = selectedGrade === "all" || student.grade === selectedGrade
-    const matchesClass = selectedClass === "all" || student.class === selectedClass
-    const matchesStatus = selectedStatus === "all" || student.status === selectedStatus
-    return matchesSearch && matchesGrade && matchesClass && matchesStatus
+    return matchesSearch && matchesGrade
   })
 
   // Handle form input changes
@@ -691,121 +663,30 @@ export default function StudentManagement() {
     return transformedStudents.filter(student => student.grade === grade)
   }
 
-  // Grade management functions
-  const handleAddGrade = () => {
-    if (!newGrade.name || !newGrade.description) {
-      alert("请填写年级名称和描述")
-      return
-    }
 
-    const newGradeData = {
-      id: grades.length + 1,
-      name: newGrade.name,
-      description: newGrade.description,
-      studentCount: 0,
-      avgAttendance: 0,
-      avgProgress: 0,
-    }
 
-    setGrades(prev => [...prev, newGradeData])
-    
-    // Reset form
-    setNewGrade({
-      name: "",
-      description: "",
-    })
-    
-    // Close dialog
-    setIsAddGradeDialogOpen(false)
-  }
-
-  const handleEditGrade = (grade: any) => {
-    setEditingGrade(grade)
-    setIsEditGradeDialogOpen(true)
-  }
-
-  const handleUpdateGrade = () => {
-    if (!editingGrade.name || !editingGrade.description) {
-      alert("请填写年级名称和描述")
-      return
-    }
-
-    setGrades(prev => prev.map(grade => 
-      grade.id === editingGrade.id ? editingGrade : grade
-    ))
-    
-    setIsEditGradeDialogOpen(false)
-    setEditingGrade(null)
-  }
-
-  const handleDeleteGrade = (gradeId: number) => {
-    // Check if there are students in this grade
-    const gradeToDelete = grades.find(g => g.id === gradeId)
-    if (!gradeToDelete) {
-      alert("年级不存在")
-      return
-    }
-    
-    const studentsInGrade = students.filter(student => student.grade === gradeToDelete.name)
-    
-    if (studentsInGrade.length > 0) {
-      alert(`无法删除年级，该年级还有 ${studentsInGrade.length} 名学生。请先转移或删除这些学生。`)
-      return
-    }
-
-    if (confirm("确定要删除这个年级吗？此操作无法撤销。")) {
-      setGrades(prev => prev.filter(grade => grade.id !== gradeId))
-    }
-  }
-
-  const handleGradeInputChange = (field: string, value: string) => {
-    setNewGrade(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
-
-  const handleEditGradeInputChange = (field: string, value: string) => {
-    setEditingGrade((prev: any) => ({
-      ...prev,
-      [field]: value
-    }))
-  }
-
-  const handleGradeEditMode = () => {
-    setIsGradeEditMode(!isGradeEditMode)
-  }
-
-  // Update grade statistics when students change - simplified
+  // Update grade statistics when students change
   const updateGradeStats = useCallback(() => {
     try {
       setGrades(prev => prev.map(grade => {
         const gradeStudents = transformedStudents.filter(student => student.grade === grade.name)
-        const avgAttendance = gradeStudents.length > 0 
-          ? Math.round(gradeStudents.reduce((sum, student) => sum + (student.attendance || 0), 0) / gradeStudents.length)
-          : 0
-        const avgProgress = gradeStudents.length > 0
-          ? Math.round(gradeStudents.reduce((sum, student) => sum + (student.progress || 0), 0) / gradeStudents.length)
-          : 0
         
         return {
           ...grade,
           studentCount: gradeStudents.length,
-          avgAttendance,
-          avgProgress,
         }
       }))
     } catch (error) {
       console.error('Error updating grade stats:', error)
     }
-  }, [transformedStudents.length]) // 只依赖长度
+  }, [transformedStudents.length])
 
-  // Update grade stats when students change - simplified to avoid crashes
+  // Update grade stats when students change
   React.useEffect(() => {
     if (transformedStudents.length > 0) {
       updateGradeStats()
     }
-  }, [transformedStudents.length]) // 只依赖长度，避免对象引用问题
+  }, [transformedStudents.length])
 
   // Show loading state
   if (loading) {
@@ -830,36 +711,6 @@ export default function StudentManagement() {
           <div className="text-center">
             <p className="text-red-600 mb-4">加载学生数据失败: {error}</p>
             <Button onClick={refetch}>重试</Button>
-            <div className="mt-4">
-              <p className="text-sm text-gray-600 mb-2">如果没有数据，可以添加测试数据：</p>
-              <Button 
-                variant="outline" 
-                onClick={async () => {
-                  try {
-                    const testStudents = [
-                      { id: "G16", name: "王小明", grade: "三年级", parentName: "王大明", parentEmail: "wang@example.com", phone: "13800138001", address: "北京市朝阳区", status: "active" },
-                      { id: "G17", name: "李小红", grade: "四年级", parentName: "李大红", parentEmail: "li@example.com", phone: "13800138002", address: "北京市海淀区", status: "active" },
-                      { id: "G18", name: "张小华", grade: "五年级", parentName: "张大华", parentEmail: "zhang@example.com", phone: "13800138003", address: "北京市西城区", status: "active" },
-                      { id: "G19", name: "陈小军", grade: "三年级", parentName: "陈大军", parentEmail: "chen@example.com", phone: "13800138004", address: "北京市东城区", status: "active" },
-                    ]
-                    
-                    for (const student of testStudents) {
-                      await addStudent({
-                        ...student,
-                        enrollmentDate: new Date().toISOString().split('T')[0]
-                      })
-                    }
-                    
-                    alert('测试数据添加成功！')
-                  } catch (error) {
-                    console.error('Error adding test data:', error)
-                    alert('添加测试数据失败')
-                  }
-                }}
-              >
-                添加测试数据
-              </Button>
-            </div>
           </div>
         </div>
       </div>
@@ -873,192 +724,13 @@ export default function StudentManagement() {
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">学生管理系统</h2>
             <p className="text-gray-600">管理学生档案、班级分组、出勤记录和学习进度</p>
-            
-            {/* Data Type Selector */}
-            <div className="flex items-center gap-4 mt-4">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id="primary-data"
-                    checked={dataType === 'primary'}
-                    onChange={() => setDataType('primary')}
-                  />
-                  <Label htmlFor="primary-data" className="text-sm">
-                    小学数据 (Primary)
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id="secondary-data"
-                    checked={dataType === 'secondary'}
-                    onChange={() => setDataType('secondary')}
-                  />
-                  <Label htmlFor="secondary-data" className="text-sm">
-                    中学数据 (Secondary)
-                  </Label>
-                </div>
-              </div>
-              
-              {/* Debug button */}
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const response = await fetch('/api/debug/check-collections')
-                    const data = await response.json()
-                    console.log('Collection debug data:', data)
-                    alert(`Firebase集合检查结果:\n\n小学数据: ${data.collections?.students?.count || 0} 条记录\n中学数据: ${data.collections?.['secondary-students']?.count || 0} 条记录\n\n详细数据请查看控制台`)
-                  } catch (error) {
-                    console.error('Error checking collections:', error)
-                    alert('检查集合失败')
-                  }
-                }}
-              >
-                检查Firebase数据
-              </Button>
-              
-              {/* Birth date debug button */}
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const response = await fetch('/api/debug/check-collections', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ dataType })
-                    })
-                    const data = await response.json()
-                    
-                    if (data.success) {
-                      const students = data.collections?.[dataType === 'secondary' ? 'secondary-students' : 'students']?.sample || []
-                      const birthDateInfo = students.map((s: Record<string, any>) => ({
-                        id: s.id || 'unknown',
-                        name: s.name || 'unknown',
-                        dateOfBirth: s.dateOfBirth || '',
-                        hasBirthDate: !!s.dateOfBirth
-                      }))
-                      
-                      console.log('Birth date debug data:', birthDateInfo)
-                      
-                      const withBirthDate = birthDateInfo.filter((s: Record<string, any>) => s.hasBirthDate).length
-                      const total = birthDateInfo.length
-                      
-                      alert(`出生日期数据检查:\n\n总学生数: ${total}\n有出生日期的学生: ${withBirthDate}\n\n详细数据请查看控制台`)
-                    } else {
-                      alert('检查出生日期数据失败: ' + data.error)
-                    }
-                  } catch (error) {
-                    console.error('Error checking birth date data:', error)
-                    alert('检查出生日期数据失败')
-                  }
-                }}
-              >
-                检查出生日期数据
-              </Button>
-              
-              {/* Grade calculation info */}
-              {dataType === 'primary' && (
-                <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
-                  <strong>年级计算规则：</strong><br/>
-                  2018年入学 → 一年级 | 2017年入学 → 二年级<br/>
-                  2016年入学 → 三年级 | 2015年入学 → 四年级<br/>
-                  2014年入学 → 五年级 | 2013年入学 → 六年级
-                </div>
-              )}
-              
-              {/* Update enrollment years button */}
-              {dataType === 'primary' && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={async () => {
-                    try {
-                      const response = await fetch('/api/debug/update-enrollment-years', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ dataType })
-                      })
-                      const data = await response.json()
-                      console.log('Update enrollment years result:', data)
-                      if (data.success) {
-                        alert(data.message)
-                        // 刷新数据
-                        refetch()
-                      } else {
-                        alert('更新入学年份失败: ' + data.error)
-                      }
-                    } catch (error) {
-                      console.error('Error updating enrollment years:', error)
-                      alert('更新入学年份失败')
-                    }
-                  }}
-                >
-                  更新入学年份
-                </Button>
-              )}
-            </div>
           </div>
         
         {/* Show message if no students */}
         {transformedStudents.length === 0 && !loading && (
           <div className="text-center p-4 border rounded-lg bg-blue-50">
             <p className="text-blue-600 mb-2">暂无学生数据</p>
-            <div className="flex gap-2 justify-center">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setTestMode(true)}
-              >
-                使用测试数据
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const testStudents = [
-                      { id: "G16", name: "王小明", grade: "三年级", parentName: "王大明", parentEmail: "wang@example.com", phone: "13800138001", address: "北京市朝阳区", status: "active" },
-                      { id: "G17", name: "李小红", grade: "四年级", parentName: "李大红", parentEmail: "li@example.com", phone: "13800138002", address: "北京市海淀区", status: "active" },
-                      { id: "G18", name: "张小华", grade: "五年级", parentName: "张大华", parentEmail: "zhang@example.com", phone: "13800138003", address: "北京市西城区", status: "active" },
-                      { id: "G19", name: "陈小军", grade: "三年级", parentName: "陈大军", parentEmail: "chen@example.com", phone: "13800138004", address: "北京市东城区", status: "active" },
-                    ]
-                    
-                    for (const student of testStudents) {
-                      await addStudent({
-                        ...student,
-                        enrollmentDate: new Date().toISOString().split('T')[0]
-                      })
-                    }
-                    
-                    alert('测试数据添加成功！')
-                  } catch (error) {
-                    console.error('Error adding test data:', error)
-                    alert('添加测试数据失败')
-                  }
-                }}
-              >
-                添加到Firebase
-              </Button>
-            </div>
-          </div>
-        )}
-        
-        {/* Test mode indicator */}
-        {testMode && (
-          <div className="text-center p-2 border rounded-lg bg-yellow-50 mb-4">
-            <p className="text-yellow-700 text-sm">测试模式 - 使用本地数据</p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setTestMode(false)}
-              className="mt-1"
-            >
-              切换到Firebase模式
-            </Button>
+            <p className="text-sm text-gray-600">请点击"添加学生"按钮开始录入学生信息</p>
           </div>
         )}
         <Dialog open={isAddDialogOpen} onOpenChange={handleDialogOpenChange}>
@@ -1694,13 +1366,11 @@ export default function StudentManagement() {
         <TabsList>
           <TabsTrigger value="students">学生档案</TabsTrigger>
           <TabsTrigger value="classes">年级管理</TabsTrigger>
-          <TabsTrigger value="attendance">出勤记录</TabsTrigger>
-          <TabsTrigger value="progress">学习进度</TabsTrigger>
         </TabsList>
 
         <TabsContent value="students" className="space-y-6">
           {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">总学生数</CardTitle>
@@ -1710,38 +1380,6 @@ export default function StudentManagement() {
                 <div className="text-2xl font-bold">{transformedStudents.length}</div>
                 <p className="text-xs text-muted-foreground">
                   当前在读学生
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">平均出勤率</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {transformedStudents.length > 0 
-                    ? Math.round(transformedStudents.reduce((sum, student) => sum + student.attendance, 0) / transformedStudents.length)
-                    : 0}%
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  整体出勤表现
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">平均学习进度</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {transformedStudents.length > 0 
-                    ? Math.round(transformedStudents.reduce((sum, student) => sum + student.progress, 0) / transformedStudents.length)
-                    : 0}%
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  整体学习表现
                 </p>
               </CardContent>
             </Card>
@@ -1792,37 +1430,12 @@ export default function StudentManagement() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={selectedClass} onValueChange={setSelectedClass}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="班级" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全部班级</SelectItem>
-                    <SelectItem value="A班">A班</SelectItem>
-                    <SelectItem value="B班">B班</SelectItem>
-                    <SelectItem value="C班">C班</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="状态" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全部状态</SelectItem>
-                    <SelectItem value="active">在读</SelectItem>
-                    <SelectItem value="suspended">休学</SelectItem>
-                    <SelectItem value="graduated">毕业</SelectItem>
-                    <SelectItem value="transferred">转学</SelectItem>
-                  </SelectContent>
-                </Select>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
                     setSearchTerm("")
                     setSelectedGrade("all")
-                    setSelectedClass("all")
-                    setSelectedStatus("all")
                   }}
                 >
                   重置筛选
@@ -1881,14 +1494,10 @@ export default function StudentManagement() {
                     )}
                     <TableHead>学生编号</TableHead>
                     <TableHead>姓名</TableHead>
-                    <TableHead>生日</TableHead>
-                    <TableHead>入学年份</TableHead>
                     <TableHead>年级</TableHead>
                     <TableHead>班级</TableHead>
                     <TableHead>家长</TableHead>
                     <TableHead>联系电话</TableHead>
-                    <TableHead>出勤率</TableHead>
-                    <TableHead>学习进度</TableHead>
                     <TableHead>操作</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1917,41 +1526,18 @@ export default function StudentManagement() {
                         </button>
                       </TableCell>
                       <TableCell>
-                        {formatBirthDate(student.dateOfBirth)}
-                      </TableCell>
-                      <TableCell>
-                        {student.enrollmentYear ? `${student.enrollmentYear}年` : '未设置'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={student.calculatedGrade ? "secondary" : "default"}>
-                          {student.grade}
-                          {student.calculatedGrade && student.calculatedGrade !== student.grade && (
-                            <span className="ml-1 text-xs">(计算: {student.calculatedGrade})</span>
-                          )}
-                        </Badge>
+                        <Badge variant="default">{student.grade}</Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">{student.class}</Badge>
                       </TableCell>
-                                             <TableCell>
-                         <div className="text-sm">
-                           <div>父亲: {student.fatherName}</div>
-                           <div>母亲: {student.motherName}</div>
-                         </div>
-                       </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div>父亲: {student.fatherName}</div>
+                          <div>母亲: {student.motherName}</div>
+                        </div>
+                      </TableCell>
                       <TableCell>{student.phone}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Progress value={student.attendance} className="w-16" />
-                          <span className="text-sm">{student.attendance}%</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Progress value={student.progress} className="w-16" />
-                          <span className="text-sm">{student.progress}%</span>
-                        </div>
-                      </TableCell>
                                              <TableCell>
                          <div className="flex gap-2">
                            <Button 
@@ -2078,104 +1664,11 @@ export default function StudentManagement() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xl font-semibold">年级管理</h3>
-                  <p className="text-gray-600">管理学校年级信息</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleGradeEditMode}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    {isGradeEditMode ? "退出编辑" : "编辑"}
-                  </Button>
-                  <Dialog open={isAddGradeDialogOpen} onOpenChange={setIsAddGradeDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        添加年级
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>添加新年级</DialogTitle>
-                        <DialogDescription>创建新的年级信息</DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="gradeName" className="text-right">年级名称</Label>
-                          <Input
-                            id="gradeName"
-                            className="col-span-3"
-                            value={newGrade.name}
-                            onChange={(e) => handleGradeInputChange("name", e.target.value)}
-                            placeholder="例如：一年级"
-                          />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="gradeDescription" className="text-right">年级描述</Label>
-                          <Input
-                            id="gradeDescription"
-                            className="col-span-3"
-                            value={newGrade.description}
-                            onChange={(e) => handleGradeInputChange("description", e.target.value)}
-                            placeholder="例如：小学一年级"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setIsAddGradeDialogOpen(false)}>
-                          取消
-                        </Button>
-                        <Button onClick={handleAddGrade}>
-                          添加年级
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <p className="text-gray-600">查看各年级学生分布</p>
                 </div>
               </div>
 
-              {/* Edit Grade Dialog */}
-              <Dialog open={isEditGradeDialogOpen} onOpenChange={setIsEditGradeDialogOpen}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>编辑年级</DialogTitle>
-                    <DialogDescription>修改年级信息</DialogDescription>
-                  </DialogHeader>
-                  {editingGrade && (
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="editGradeName" className="text-right">年级名称</Label>
-                        <Input
-                          id="editGradeName"
-                          className="col-span-3"
-                          value={editingGrade.name}
-                          onChange={(e) => handleEditGradeInputChange("name", e.target.value)}
-                          placeholder="例如：一年级"
-                        />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="editGradeDescription" className="text-right">年级描述</Label>
-                        <Input
-                          id="editGradeDescription"
-                          className="col-span-3"
-                          value={editingGrade.description}
-                          onChange={(e) => handleEditGradeInputChange("description", e.target.value)}
-                          placeholder="例如：小学一年级"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setIsEditGradeDialogOpen(false)}>
-                      取消
-                    </Button>
-                    <Button onClick={handleUpdateGrade}>
-                      保存更改
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+
 
               {/* Grade Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -2186,40 +1679,13 @@ export default function StudentManagement() {
                     <Card 
                       key={grade.id} 
                       className="hover:shadow-lg transition-shadow cursor-pointer"
-                      onClick={() => !isGradeEditMode && handleGradeClick(grade.name)}
+                      onClick={() => handleGradeClick(grade.name)}
                     >
                       <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="flex items-center gap-2">
-                            <Users className="h-5 w-5" />
-                            {grade.name}
-                          </CardTitle>
-                          {isGradeEditMode && (
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleEditGrade(grade)
-                                }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDeleteGrade(grade.id)
-                                }}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          )}
-                        </div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Users className="h-5 w-5" />
+                          {grade.name}
+                        </CardTitle>
                         <CardDescription>{grade.description}</CardDescription>
                       </CardHeader>
                       <CardContent>
@@ -2227,14 +1693,6 @@ export default function StudentManagement() {
                           <div className="flex justify-between">
                             <span>学生人数</span>
                             <Badge>{grade.studentCount}人</Badge>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>平均出勤率</span>
-                            <Badge variant="outline">{grade.avgAttendance}%</Badge>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>平均进度</span>
-                            <Badge variant="outline">{grade.avgProgress}%</Badge>
                           </div>
                         </div>
                       </CardContent>
@@ -2246,127 +1704,7 @@ export default function StudentManagement() {
           )}
         </TabsContent>
 
-        <TabsContent value="attendance" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                出勤统计
-              </CardTitle>
-              <CardDescription>最近5天的出勤情况</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>日期</TableHead>
-                    <TableHead>出勤人数</TableHead>
-                    <TableHead>缺勤人数</TableHead>
-                    <TableHead>迟到人数</TableHead>
-                    <TableHead>出勤率</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {attendanceRecords.map((record, index) => {
-                    const total = record.present + record.absent + record.late
-                    const rate = Math.round((record.present / total) * 100)
-                    return (
-                      <TableRow key={index}>
-                        <TableCell>{record.date}</TableCell>
-                        <TableCell>
-                          <Badge variant="default">{record.present}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="destructive">{record.absent}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">{record.late}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Progress value={rate} className="w-16" />
-                            <span className="text-sm">{rate}%</span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="progress" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  学习进度概览
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span>数学</span>
-                      <span>85%</span>
-                    </div>
-                    <Progress value={85} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span>语文</span>
-                      <span>78%</span>
-                    </div>
-                    <Progress value={78} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span>英语</span>
-                      <span>92%</span>
-                    </div>
-                    <Progress value={92} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span>科学</span>
-                      <span>88%</span>
-                    </div>
-                    <Progress value={88} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>学习表现分析</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span>优秀学生</span>
-                    <Badge variant="default">23人</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>良好学生</span>
-                    <Badge variant="secondary">45人</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>需要帮助</span>
-                    <Badge variant="outline">12人</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>进步显著</span>
-                    <Badge variant="default">18人</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
       </Tabs>
     </div>
   )
