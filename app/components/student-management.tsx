@@ -770,6 +770,29 @@ export default function StudentManagement() {
               >
                 检查中学数据
               </Button>
+              
+              {/* 添加中学测试数据按钮 */}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/debug/add-secondary-test-data', {
+                      method: 'POST'
+                    })
+                    const data = await response.json()
+                    console.log('Add secondary test data result:', data)
+                    alert(data.message)
+                    // 刷新数据
+                    refetch()
+                  } catch (error) {
+                    console.error('Error adding secondary test data:', error)
+                    alert('添加中学测试数据失败')
+                  }
+                }}
+              >
+                添加中学测试数据
+              </Button>
             </div>
           </div>
         
