@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,6 +21,9 @@ import {
 import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 import { useInvoices } from "@/hooks/useInvoices"
 import { downloadInvoicePDF, printInvoicePDF, PDFOptions } from "@/lib/pdf-generator"
+import { useStudents } from "@/hooks/useStudents"
+import { useStudentFees } from "@/hooks/useStudentFees"
+import { useFees } from "@/hooks/useFees"
 
 export default function InvoiceManagement() {
   const {
@@ -41,17 +44,27 @@ export default function InvoiceManagement() {
     generateInvoiceNumber
   } = useInvoices()
 
+  // Get student data and fee calculations
+  const { students } = useStudents()
+  const { calculateStudentTotal } = useStudentFees()
+  const { feeItems } = useFees()
+
   const [isCreateInvoiceDialogOpen, setIsCreateInvoiceDialogOpen] = useState(false)
   const [isBulkInvoiceDialogOpen, setIsBulkInvoiceDialogOpen] = useState(false)
   const [isInvoiceDetailDialogOpen, setIsInvoiceDetailDialogOpen] = useState(false)
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
 
-  // Sample students data for invoice creation
-  const students = [
-    { id: 1, name: "王小明", grade: "三年级", parentName: "王先生" },
-    { id: 2, name: "李小红", grade: "四年级", parentName: "李女士" },
-    { id: 3, name: "张小华", grade: "五年级", parentName: "张先生" },
-  ]
+  // Get active fees and filter out graduated students
+  const activeFees = feeItems.filter(fee => fee.status === 'active')
+  const availableStudents = students.filter(student => student.grade !== '已毕业')
+
+  // Calculate student amounts for invoice creation
+  const studentsWithAmounts = useMemo(() => {
+    return availableStudents.map(student => ({
+      ...student,
+      amount: calculateStudentTotal(Number(student.id), activeFees)
+    }))
+  }, [availableStudents, calculateStudentTotal, activeFees])
 
   // PDF options for school branding
   const pdfOptions: PDFOptions = {
@@ -379,51 +392,56 @@ export default function InvoiceManagement() {
 
       {/* Create Invoice Dialog */}
       <Dialog open={isCreateInvoiceDialogOpen} onOpenChange={setIsCreateInvoiceDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>新建发票</DialogTitle>
+            <DialogDescription>从学生费用分配中选择学生和金额</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>选择学生</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择学生" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {students.map(student => (
-                      <SelectItem key={student.id} value={student.id.toString()}>
-                        {student.name} ({student.grade})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>发票类型</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择类型" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="tuition">学费</SelectItem>
-                    <SelectItem value="meal">餐费</SelectItem>
-                    <SelectItem value="activity">活动费</SelectItem>
-                    <SelectItem value="other">其他</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
             <div>
-              <Label>备注</Label>
-              <Textarea placeholder="发票备注..." />
+              <Label>选择学生和金额</Label>
+              <div className="max-h-96 overflow-y-auto border rounded-md p-4">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>学生姓名</TableHead>
+                      <TableHead>年级</TableHead>
+                      <TableHead>家长姓名</TableHead>
+                      <TableHead>应缴费金额</TableHead>
+                      <TableHead>操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {studentsWithAmounts.map(student => (
+                      <TableRow key={student.id}>
+                        <TableCell className="font-medium">{student.name}</TableCell>
+                        <TableCell>{student.grade}</TableCell>
+                        <TableCell>{student.parentName}</TableCell>
+                        <TableCell className="font-semibold text-green-600">
+                          ¥{student.amount}
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              // TODO: Implement invoice creation for this student
+                              console.log('Creating invoice for:', student.name, 'Amount:', student.amount)
+                            }}
+                          >
+                            创建发票
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsCreateInvoiceDialogOpen(false)}>
                 取消
               </Button>
-              <Button>创建发票</Button>
             </div>
           </div>
         </DialogContent>
@@ -431,15 +449,16 @@ export default function InvoiceManagement() {
 
       {/* Bulk Invoice Dialog */}
       <Dialog open={isBulkInvoiceDialogOpen} onOpenChange={setIsBulkInvoiceDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>批量开具发票</DialogTitle>
+            <DialogDescription>按年级批量创建发票</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label>选择年级</Label>
               <div className="grid grid-cols-3 gap-2 mt-2">
-                {[...new Set(students.map(student => student.grade))].map(grade => (
+                {[...new Set(studentsWithAmounts.map(student => student.grade))].map(grade => (
                   <div key={grade} className="flex items-center space-x-2">
                     <Checkbox id={`bulk-grade-${grade}`} />
                     <Label htmlFor={`bulk-grade-${grade}`} className="text-sm">{grade}</Label>
@@ -448,17 +467,36 @@ export default function InvoiceManagement() {
               </div>
             </div>
             <div>
-              <Label>发票类型</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="选择类型" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tuition">学费</SelectItem>
-                  <SelectItem value="meal">餐费</SelectItem>
-                  <SelectItem value="activity">活动费</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>预览选中年级的学生</Label>
+              <div className="max-h-64 overflow-y-auto border rounded-md p-4">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>学生姓名</TableHead>
+                      <TableHead>年级</TableHead>
+                      <TableHead>应缴费金额</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {studentsWithAmounts.slice(0, 5).map(student => (
+                      <TableRow key={student.id}>
+                        <TableCell className="font-medium">{student.name}</TableCell>
+                        <TableCell>{student.grade}</TableCell>
+                        <TableCell className="font-semibold text-green-600">
+                          ¥{student.amount}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {studentsWithAmounts.length > 5 && (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center text-sm text-gray-500">
+                          还有 {studentsWithAmounts.length - 5} 个学生...
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
             <div>
               <Label>到期日期</Label>
