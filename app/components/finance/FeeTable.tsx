@@ -99,7 +99,7 @@ export const FeeTable = ({
                                 onChange={() => onToggleSubItemActive(item.id, subItem.id)}
                               />
                             </div>
-                            <span className="text-sm font-medium text-blue-600">¥{subItem.amount}</span>
+                            <span className="text-sm font-medium text-blue-600">RM {subItem.amount}</span>
                           </div>
                         ))}
                       </div>
@@ -107,7 +107,7 @@ export const FeeTable = ({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="font-medium">¥{calculateTotalAmount(item.subItems)}</div>
+                  <div className="font-medium">RM {calculateTotalAmount(item.subItems)}</div>
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">

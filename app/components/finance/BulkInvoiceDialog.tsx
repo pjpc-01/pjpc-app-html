@@ -96,7 +96,7 @@ export function BulkInvoiceDialog({
                       <TableCell className="font-medium">{student.name}</TableCell>
                       <TableCell>{student.grade}</TableCell>
                       <TableCell className="font-semibold text-green-600">
-                        ¥{student.amount}
+                        RM {student.amount}
                       </TableCell>
                     </TableRow>
                   ))}

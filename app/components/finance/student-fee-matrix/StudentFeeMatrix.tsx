@@ -25,6 +25,7 @@ export const StudentFeeMatrix = () => {
   const [expandedStudents, setExpandedStudents] = useState<string[]>([])
   const [expandedFees, setExpandedFees] = useState<Map<string, boolean>>(new Map())
   const [studentPayments, setStudentPayments] = useState<Map<string, { status: string; date: string }>>(new Map())
+  const [studentInvoices, setStudentInvoices] = useState<Map<string, boolean>>(new Map())
   const [editMode, setEditMode] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedGradeFilter, setSelectedGradeFilter] = useState<string>("all")
@@ -102,6 +103,10 @@ export const StudentFeeMatrix = () => {
   }
 
   const getPaymentStatus = (studentId: string) => {
+    const hasInvoice = studentInvoices.get(studentId) || false
+    if (!hasInvoice) {
+      return { status: 'not_issued', date: '' }
+    }
     return studentPayments.get(studentId) || { status: 'pending', date: '' }
   }
 
@@ -127,13 +132,21 @@ export const StudentFeeMatrix = () => {
         return <Badge variant="secondary" className="text-xs">待缴费</Badge>
       case "overdue":
         return <Badge variant="destructive" className="text-xs">逾期</Badge>
+      case "not_issued":
+        return <Badge variant="outline" className="text-xs">未开具</Badge>
       default:
         return <Badge variant="outline" className="text-xs">{status}</Badge>
     }
   }
 
-  const createInvoice = () => {
-    // TODO: Implement invoice creation functionality
+  const createInvoice = (studentId: string) => {
+    // Mark invoice as created for this student
+    setStudentInvoices(prev => {
+      const newMap = new Map(prev)
+      newMap.set(studentId, true)
+      return newMap
+    })
+    // TODO: Implement actual invoice creation functionality
   }
 
   const toggleEditMode = () => {

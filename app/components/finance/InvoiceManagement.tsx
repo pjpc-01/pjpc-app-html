@@ -99,12 +99,12 @@ export default function InvoiceManagement() {
             {{#each items}}
             <div class="item">
               <span>{{name}}</span>
-              <span>¥{{amount}}</span>
+              <span>RM {{amount}}</span>
             </div>
             {{/each}}
           </div>
           <div class="total">
-            <h3>总计: ¥{{totalAmount}}</h3>
+            <h3>总计: RM {{totalAmount}}</h3>
           </div>
         </div>
       `,
@@ -394,7 +394,7 @@ export default function InvoiceManagement() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">¥{invoices.reduce((sum, invoice) => sum + invoice.amount, 0)}</div>
+            <div className="text-2xl font-bold">RM {invoices.reduce((sum, invoice) => sum + invoice.amount, 0)}</div>
             <p className="text-xs text-muted-foreground">所有发票总金额</p>
           </CardContent>
         </Card>
@@ -467,7 +467,7 @@ export default function InvoiceManagement() {
                     {selectedInvoice.items.map((item: { name: string; amount: number }, index: number) => (
                       <TableRow key={index}>
                         <TableCell>{item.name}</TableCell>
-                        <TableCell>¥{item.amount}</TableCell>
+                        <TableCell>RM {item.amount}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -478,10 +478,10 @@ export default function InvoiceManagement() {
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center">
                   <div className="space-y-1">
-                    <div className="text-sm">小计: ¥{selectedInvoice.amount}</div>
-                    <div className="text-sm">税费: ¥{selectedInvoice.tax}</div>
-                    <div className="text-sm">折扣: -¥{selectedInvoice.discount}</div>
-                    <div className="font-semibold">总计: ¥{selectedInvoice.totalAmount}</div>
+                                    <div className="text-sm">小计: RM {selectedInvoice.amount}</div>
+                <div className="text-sm">税费: RM {selectedInvoice.tax}</div>
+                <div className="text-sm">折扣: -RM {selectedInvoice.discount}</div>
+                <div className="font-semibold">总计: RM {selectedInvoice.totalAmount}</div>
                   </div>
                   <div className="space-x-2">
                     <Button 

@@ -134,7 +134,7 @@ export const generateInvoicePDF = async (invoice: Invoice, options: PDFOptions):
         <thead>
           <tr>
             <th>项目</th>
-            <th>金额 (¥)</th>
+            <th>金额 (RM)</th>
           </tr>
         </thead>
         <tbody>
@@ -150,23 +150,23 @@ export const generateInvoicePDF = async (invoice: Invoice, options: PDFOptions):
       <div class="totals">
         <div class="total-row">
           <span>小计:</span>
-          <span>¥${invoice.amount.toFixed(2)}</span>
+          <span>RM ${invoice.amount.toFixed(2)}</span>
         </div>
         ${invoice.tax > 0 ? `
           <div class="total-row">
             <span>税费:</span>
-            <span>¥${invoice.tax.toFixed(2)}</span>
+            <span>RM ${invoice.tax.toFixed(2)}</span>
           </div>
         ` : ''}
         ${invoice.discount > 0 ? `
           <div class="total-row">
             <span>折扣:</span>
-            <span>-¥${invoice.discount.toFixed(2)}</span>
+            <span>-RM ${invoice.discount.toFixed(2)}</span>
           </div>
         ` : ''}
         <div class="total-row total-amount">
           <span>总计:</span>
-          <span>¥${invoice.totalAmount.toFixed(2)}</span>
+          <span>RM ${invoice.totalAmount.toFixed(2)}</span>
         </div>
       </div>
       

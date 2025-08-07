@@ -252,11 +252,11 @@ export default function ParentDashboard({ activeTab, setActiveTab }: ParentDashb
                 <CardContent className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm">本月费用</span>
-                    <span className="font-medium">¥{stats.monthlyFee.toLocaleString()}</span>
+                    <span className="font-medium">RM {stats.monthlyFee.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">已缴金额</span>
-                    <span className="font-medium text-green-600">¥{stats.paidAmount.toLocaleString()}</span>
+                    <span className="font-medium text-green-600">RM {stats.paidAmount.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">缴费状态</span>

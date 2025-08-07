@@ -69,12 +69,12 @@ export default function InvoiceTemplateManager() {
             {{#each items}}
             <div class="item">
               <span>{{name}}</span>
-              <span>¥{{amount}}</span>
+              <span>RM {{amount}}</span>
             </div>
             {{/each}}
           </div>
           <div class="total">
-            <h3>总计: ¥{{totalAmount}}</h3>
+            <h3>总计: RM {{totalAmount}}</h3>
           </div>
         </div>
       `,
@@ -216,7 +216,7 @@ export default function InvoiceTemplateManager() {
         // Handle array items specially
         if (Array.isArray(value)) {
           const itemsHtml = value.map((item: any) => 
-            `<div class="item"><span>${item.name}</span><span>¥${item.amount}</span></div>`
+                            `<div class="item"><span>${item.name}</span><span>RM ${item.amount}</span></div>`
           ).join('')
           previewContent = previewContent.replace(/\{\{#each items\}\}([\s\S]*?)\{\{\/each\}\}/g, itemsHtml)
         }
