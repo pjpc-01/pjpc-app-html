@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Edit } from "lucide-react"
+import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Edit, Settings } from "lucide-react"
 import { useInvoices } from "@/hooks/useInvoices"
 import { downloadInvoicePDF, printInvoicePDF, PDFOptions } from "@/lib/pdf-generator"
 import { useStudents } from "@/hooks/useStudents"
@@ -28,6 +28,7 @@ import { InvoiceTemplate } from "./InvoiceTemplateManager"
 import { InvoiceCreateDialog } from "./InvoiceCreateDialog"
 import { BulkInvoiceDialog } from "./BulkInvoiceDialog"
 import { InvoiceList } from "./InvoiceList"
+import InvoiceTemplateManager from "./InvoiceTemplateManager"
 
 export default function InvoiceManagement() {
   const {
@@ -56,6 +57,7 @@ export default function InvoiceManagement() {
   const [isCreateInvoiceDialogOpen, setIsCreateInvoiceDialogOpen] = useState(false)
   const [isBulkInvoiceDialogOpen, setIsBulkInvoiceDialogOpen] = useState(false)
   const [isInvoiceDetailDialogOpen, setIsInvoiceDetailDialogOpen] = useState(false)
+  const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false)
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
   const [selectedStudentForInvoice, setSelectedStudentForInvoice] = useState<any>(null)
   const [isCreateInvoiceFormOpen, setIsCreateInvoiceFormOpen] = useState(false)
@@ -308,10 +310,20 @@ export default function InvoiceManagement() {
                 发送提醒
               </Button>
             </div>
-            <Button size="sm" onClick={() => setIsCreateInvoiceDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              新建发票
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={() => setIsCreateInvoiceDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                新建发票
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsTemplateManagerOpen(true)}
+                className="p-2"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
           
           <InvoiceList
@@ -504,6 +516,16 @@ export default function InvoiceManagement() {
         </DialogContent>
       </Dialog>
 
+      {/* Invoice Template Manager Dialog */}
+      <Dialog open={isTemplateManagerOpen} onOpenChange={setIsTemplateManagerOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>发票模板管理</DialogTitle>
+            <DialogDescription>管理自定义发票模板</DialogDescription>
+          </DialogHeader>
+          <InvoiceTemplateManager />
+        </DialogContent>
+      </Dialog>
 
       </div>
     )
