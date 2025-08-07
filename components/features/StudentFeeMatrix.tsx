@@ -1,18 +1,13 @@
 import { useState, useEffect, useMemo } from "react"
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FeeCard } from "./FeeCard"
+import { Search } from "lucide-react"
 import { useFees } from "../../hooks/useFees"
 import { useStudents } from "../../hooks/useStudents"
 import { useStudentFees } from "../../hooks/useStudentFees"
-import { Users, DollarSign, ChevronDown, ChevronRight, FileText, Edit3, Search, X, Settings, Filter } from "lucide-react"
-import { ToggleSwitch } from "../ui/ToggleSwitch"
+import { StudentFeeMatrixHeader } from "./StudentFeeMatrixHeader"
+import { SearchAndFilter } from "./SearchAndFilter"
+import { BatchOperationsDialog } from "./BatchOperationsDialog"
+import { StudentCard } from "./StudentCard"
 
 export const StudentFeeMatrix = () => {
   const { feeItems } = useFees()
@@ -104,12 +99,6 @@ export const StudentFeeMatrix = () => {
   const isFeeExpanded = (studentId: string, feeId: number) => {
     const key = `${studentId}-${feeId}`
     return expandedFees.get(key) || false
-  }
-
-  const toggleSubItemActive = (studentId: string, feeId: number, subItemId: number) => {
-    if (editMode) {
-      toggleStudentSubItem(Number(studentId), feeId, subItemId)
-    }
   }
 
   const getPaymentStatus = (studentId: string) => {
@@ -264,209 +253,41 @@ export const StudentFeeMatrix = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            学生费用分配
-          </h2>
-          <p className="text-gray-600 text-sm">为每位学生选择适用的收费项目</p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant={editMode ? "default" : "outline"}
-            size="sm" 
-            onClick={toggleEditMode}
-            className="flex items-center gap-2"
-          >
-            <Edit3 className="h-4 w-4" />
-            {editMode ? "退出编辑" : "编辑"}
-          </Button>
-          
-          <Dialog open={batchDialogOpen} onOpenChange={setBatchDialogOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-2"
-                disabled={!editMode}
-              >
-                <Filter className="h-4 w-4" />
-                批量操作
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  批量操作设置
-                </DialogTitle>
-              </DialogHeader>
-              
-              <div className="space-y-4">
-                                 {/* Category Selection */}
-                 <div>
-                   <Label className="text-sm font-medium">选择费用类别</Label>
-                   <div className="mt-2 space-y-2">
-                     {categories.map(category => (
-                       <div key={category}>
-                         <div className="flex items-center space-x-2">
-                           <Checkbox
-                             id={`category-${category}`}
-                             checked={selectedCategories.includes(category)}
-                             onCheckedChange={() => handleCategoryToggle(category)}
-                           />
-                           <Label htmlFor={`category-${category}`} className="text-sm">
-                             {category}
-                           </Label>
-                         </div>
-                         
-                                                   {/* Show sub-items when category is selected */}
-                          {selectedCategories.includes(category) && (
-                            <div className="ml-6 mt-2 space-y-1">
-                              {activeFees
-                                .filter(fee => fee.category === category)
-                                .map(fee => 
-                                  fee.subItems.map(subItem => (
-                                    <div key={subItem.id} className="flex items-center justify-between text-xs">
-                                      <div className="flex items-center space-x-2">
-                                        <Checkbox
-                                          id={`subitem-${fee.id}-${subItem.id}`}
-                                          checked={isSubItemSelected(fee.id, subItem.id)}
-                                          onCheckedChange={() => handleSubItemToggle(fee.id, subItem.id)}
-                                          className="h-3 w-3"
-                                        />
-                                        <span className="text-gray-600">{subItem.name}</span>
-                                      </div>
-                                      <span className="text-gray-600">¥{subItem.amount}</span>
-                                    </div>
-                                  ))
-                                )
-                              }
-                            </div>
-                          )}
-                       </div>
-                     ))}
-                     {categories.length === 0 && (
-                       <p className="text-sm text-gray-500">暂无可用的费用类别</p>
-                     )}
-                   </div>
-                 </div>
+      <StudentFeeMatrixHeader
+        editMode={editMode}
+        onToggleEditMode={toggleEditMode}
+        batchDialogOpen={batchDialogOpen}
+        onBatchDialogOpenChange={setBatchDialogOpen}
+      />
 
-                                 {/* Criteria Selection */}
-                 <div>
-                   <Label className="text-sm font-medium">选择标准 (可选)</Label>
-                   <p className="text-xs text-gray-500 mb-2">留空则操作所有显示的学生</p>
-                                       <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="criteria-grade"
-                          checked={selectedCriteria === 'grade'}
-                          onCheckedChange={() => handleCriteriaToggle('grade')}
-                        />
-                        <Label htmlFor="criteria-grade" className="text-sm">
-                          按年级分组
-                        </Label>
-                      </div>
-                     
-                                           {/* Grade Selection - Only show when grade criteria is selected */}
-                      {selectedCriteria === 'grade' && (
-                        <div>
-                          <Label className="text-sm font-medium">选择年级</Label>
-                          <div className="mt-2 space-y-2">
-                            {availableGrades.map(grade => (
-                              <div key={grade} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`grade-${grade}`}
-                                  checked={selectedGrades.includes(grade)}
-                                  onCheckedChange={() => handleGradeToggle(grade)}
-                                />
-                                <Label htmlFor={`grade-${grade}`} className="text-sm">
-                                  {grade}
-                                </Label>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                   </div>
-                 </div>
+      <SearchAndFilter
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onClearSearch={clearSearch}
+        selectedGradeFilter={selectedGradeFilter}
+        onGradeFilterChange={setSelectedGradeFilter}
+        availableGrades={availableGrades}
+        filteredStudentsCount={filteredStudents.length}
+        totalStudentsCount={students.length}
+      />
 
-                                 {/* Action Buttons */}
-                 <div className="flex gap-2 pt-4">
-                   <Button
-                     variant="outline"
-                     size="sm"
-                     onClick={() => executeBatchToggle('enable')}
-                     className="flex-1"
-                   >
-                     启用
-                   </Button>
-                   <Button
-                     variant="outline"
-                     size="sm"
-                     onClick={() => executeBatchToggle('disable')}
-                     className="flex-1"
-                   >
-                     关闭
-                   </Button>
-                 </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-        </div>
-      </div>
-
-      {/* Search Bar and Grade Filter */}
-      <div className="flex gap-4 items-end">
-        {/* Search Bar */}
-        <div className="flex-1 relative">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="搜索学生姓名、ID、年级或家长姓名..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-10"
-            />
-            {searchTerm && (
-              <button
-                onClick={clearSearch}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Grade Filter */}
-        <div className="w-48">
-          <Select value={selectedGradeFilter} onValueChange={setSelectedGradeFilter}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="选择年级" />
-            </SelectTrigger>
-                         <SelectContent>
-               <SelectItem value="all">所有年级</SelectItem>
-               {availableGrades.map(grade => (
-                 <SelectItem key={grade} value={grade}>
-                   {grade}
-                 </SelectItem>
-               ))}
-             </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-             {/* Search Results Info */}
-       {(searchTerm || selectedGradeFilter !== "all") && (
-         <div className="text-sm text-gray-600">
-           找到 {filteredStudents.length} 个学生 (共 {students.length} 个)
-         </div>
-       )}
+      <BatchOperationsDialog
+        isOpen={batchDialogOpen}
+        onOpenChange={setBatchDialogOpen}
+        categories={categories}
+        activeFees={activeFees}
+        availableGrades={availableGrades}
+        selectedCategories={selectedCategories}
+        onCategoryToggle={handleCategoryToggle}
+        selectedSubItems={selectedSubItems}
+        onSubItemToggle={handleSubItemToggle}
+        isSubItemSelected={isSubItemSelected}
+        selectedCriteria={selectedCriteria}
+        onCriteriaToggle={handleCriteriaToggle}
+        selectedGrades={selectedGrades}
+        onGradeToggle={handleGradeToggle}
+        onExecuteBatchToggle={executeBatchToggle}
+      />
 
       {/* Student Fee Matrix */}
       <div className="grid gap-4">
@@ -478,157 +299,30 @@ export const StudentFeeMatrix = () => {
           </div>
         ) : (
           filteredStudents.map(student => {
-                         const studentId = student.id // Use string ID directly
-             const isExpanded = expandedStudents.includes(studentId)
-             const studentTotal = calculateStudentTotal(Number(studentId), activeFees)
+            const studentId = student.id
+            const isExpanded = expandedStudents.includes(studentId)
+            const studentTotal = calculateStudentTotal(Number(studentId), activeFees)
             
             return (
-              <Card key={student.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <CardContent className="p-0">
-                  {/* Student Header - Clickable */}
-                  <div 
-                    className="bg-gray-50 px-4 py-3 border-b cursor-pointer hover:bg-gray-100 transition-colors"
-                                         onClick={() => {
-                       toggleStudentExpansion(studentId)
-                     }}
-                  >
-                                         <div className="flex items-center justify-between">
-                       <div className="flex items-center gap-3">
-                         {isExpanded ? (
-                           <ChevronDown className="h-4 w-4 text-gray-500" />
-                         ) : (
-                           <ChevronRight className="h-4 w-4 text-gray-500" />
-                         )}
-                         <div>
-                           <h3 className="font-medium text-gray-900">{student.name}</h3>
-                           <p className="text-sm text-gray-600">
-                             {student.grade} • {student.parentName} • ID: {student.id}
-                           </p>
-                         </div>
-                       </div>
-                                                <div className="text-right">
-                           <div className="flex items-center justify-end gap-12">
-                             <div className="flex items-center gap-1">
-                               <DollarSign className="h-4 w-4 text-green-600" />
-                               <span className="font-semibold text-green-600">
-                                 ¥{studentTotal}
-                               </span>
-                             </div>
-                                                           <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 w-6 p-0 bg-black hover:bg-gray-800 border-gray-300 shadow-sm hover:shadow-md transition-all duration-200"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  createInvoice()
-                                }}
-                              >
-                                <FileText className="h-3 w-3 text-white" />
-                              </Button>
-                           </div>
-                         <div className="flex justify-between items-center mt-1">
-                           <div className="flex gap-1">
-                             <Button
-                               variant="ghost"
-                               size="sm"
-                               className="h-6 px-2 text-xs"
-                               onClick={(e) => {
-                                 e.stopPropagation()
-                                 updatePaymentStatus(studentId, 'paid')
-                               }}
-                             >
-                               已缴费
-                             </Button>
-                             <Button
-                               variant="ghost"
-                               size="sm"
-                               className="h-6 px-2 text-xs"
-                               onClick={(e) => {
-                                 e.stopPropagation()
-                                 updatePaymentStatus(studentId, 'overdue')
-                               }}
-                             >
-                               逾期
-                             </Button>
-                             <Button
-                               variant="ghost"
-                               size="sm"
-                               className="h-6 px-2 text-xs"
-                               onClick={(e) => {
-                                 e.stopPropagation()
-                                 updatePaymentStatus(studentId, 'pending')
-                               }}
-                             >
-                               待缴费
-                             </Button>
-                           </div>
-                           <div className="flex items-center gap-2">
-                             {getStatusBadge(getPaymentStatus(studentId).status)}
-                             {getPaymentStatus(studentId).date && (
-                               <span className="text-xs text-gray-500">
-                                 {getPaymentStatus(studentId).date}
-                               </span>
-                             )}
-                           </div>
-                         </div>
-                       </div>
-                     </div>
-                  </div>
-
-                  {/* Fee Assignment Grid - Only show when expanded */}
-                  {isExpanded && (
-                    <div className="p-4">
-                      <div className="space-y-3">
-                        {activeFees.map(fee => {
-                          const feeExpanded = isFeeExpanded(studentId, fee.id)
-                          const feeTotal = fee.subItems
-                            .filter(subItem => getStudentSubItemState(Number(studentId), fee.id, subItem.id))
-                            .reduce((total, subItem) => total + subItem.amount, 0)
-                          
-                          return (
-                            <div key={fee.id} className="space-y-2">
-                              <FeeCard
-                                fee={fee}
-                                isAssigned={isAssigned(Number(studentId), fee.id)}
-                                onToggle={() => toggleFeeExpansion(studentId, fee.id)}
-                                isExpanded={feeExpanded}
-                                calculateAmount={() => feeTotal}
-                              />
-                              
-                              {/* Sub-items - Only show when fee is expanded */}
-                              {feeExpanded && fee.subItems && (
-                                <div className="pl-8 space-y-2">
-                                  {fee.subItems.map((subItem) => (
-                                    <div key={subItem.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border-l-2 border-blue-200">
-                                      <div className="flex items-center gap-4">
-                                        <span className="text-sm font-medium min-w-[120px]">{subItem.name}</span>
-                                        <ToggleSwitch
-                                          checked={getStudentSubItemState(Number(studentId), fee.id, subItem.id)}
-                                          onChange={() => toggleSubItemActive(studentId, fee.id, subItem.id)}
-                                          disabled={!editMode}
-                                          size="sm"
-                                        />
-                                      </div>
-                                      <span className="text-sm font-medium text-blue-600">¥{subItem.amount}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-
-                      {activeFees.length === 0 && (
-                        <div className="text-center py-8 text-gray-500">
-                          <p>暂无可分配的费用项目</p>
-                          <p className="text-sm">请先在收费项目管理中添加费用项目</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <StudentCard
+                key={student.id}
+                student={student}
+                isExpanded={isExpanded}
+                onToggleExpansion={() => toggleStudentExpansion(studentId)}
+                activeFees={activeFees}
+                studentTotal={studentTotal}
+                onUpdatePaymentStatus={updatePaymentStatus}
+                getPaymentStatus={getPaymentStatus}
+                getStatusBadge={getStatusBadge}
+                onCreateInvoice={createInvoice}
+                editMode={editMode}
+                expandedFees={expandedFees}
+                onToggleFeeExpansion={toggleFeeExpansion}
+                isFeeExpanded={isFeeExpanded}
+                isAssigned={isAssigned}
+                toggleStudentSubItem={toggleStudentSubItem}
+                getStudentSubItemState={getStudentSubItemState}
+              />
             )
           })
         )}

@@ -2,14 +2,14 @@
 
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { StudentFeeMatrix } from "../../components/features/StudentFeeMatrix"
-import FinanceOverview from "./finance/FinanceOverview"
-import FeeManagement from "./finance/FeeManagement"
-import InvoiceManagement from "./finance/InvoiceManagement"
-import InvoiceTemplateManager from "./finance/InvoiceTemplateManager"
-import PaymentManagement from "./finance/PaymentManagement"
-import ReminderManagement from "./finance/ReminderManagement"
-import FinancialReports from "./finance/FinancialReports"
+import { StudentFeeMatrix } from "./student-fee-matrix/StudentFeeMatrix"
+import FinanceOverview from "./FinanceOverview"
+import FeeManagement from "./FeeManagement"
+import InvoiceManagement from "./InvoiceManagement"
+import InvoiceTemplateManager from "./InvoiceTemplateManager"
+import PaymentManagement from "./PaymentManagement"
+import ReminderManagement from "./ReminderManagement"
+import FinancialReports from "./FinancialReports"
 
 export default function FinanceManagement() {
   return (

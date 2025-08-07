@@ -2,13 +2,13 @@
 
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import StudentManagement from "./student/StudentManagement"
-import StudentList from "./student/StudentList"
-import StudentForm from "./student/StudentForm"
-import StudentStats from "./student/StudentStats"
-import StudentFilters from "./student/StudentFilters"
-import StudentBulkActions from "./student/StudentBulkActions"
-import StudentDetails from "./student/StudentDetails"
+import StudentManagement from "../student/StudentManagement"
+import StudentList from "../student/StudentList"
+import StudentForm from "../student/StudentForm"
+import StudentStats from "../student/StudentStats"
+import StudentFilters from "../student/StudentFilters"
+import StudentBulkActions from "../student/StudentBulkActions"
+import StudentDetails from "../student/StudentDetails"
 
 export default function StudentManagementPage() {
   return (

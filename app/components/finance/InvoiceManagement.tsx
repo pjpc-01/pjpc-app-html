@@ -7,18 +7,17 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
-import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Loader2, Eye, Edit } from "lucide-react"
+import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Edit } from "lucide-react"
 import { useInvoices } from "@/hooks/useInvoices"
 import { downloadInvoicePDF, printInvoicePDF, PDFOptions } from "@/lib/pdf-generator"
 import { useStudents } from "@/hooks/useStudents"
@@ -26,6 +25,9 @@ import { useStudentFees } from "@/hooks/useStudentFees"
 import { useFees } from "@/hooks/useFees"
 import { renderInvoiceTemplate, type TemplateData } from "@/lib/template-renderer"
 import { InvoiceTemplate } from "./InvoiceTemplateManager"
+import { InvoiceCreateDialog } from "./InvoiceCreateDialog"
+import { BulkInvoiceDialog } from "./BulkInvoiceDialog"
+import { InvoiceList } from "./InvoiceList"
 
 export default function InvoiceManagement() {
   const {
@@ -312,83 +314,54 @@ export default function InvoiceManagement() {
             </Button>
           </div>
           
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>发票号码</TableHead>
-                <TableHead>学生姓名</TableHead>
-                <TableHead>金额</TableHead>
-                <TableHead>发票状态</TableHead>
-                <TableHead>开具日期</TableHead>
-                <TableHead>到期日期</TableHead>
-                <TableHead>付款日期</TableHead>
-                <TableHead>提醒状态</TableHead>
-                <TableHead>操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {getFilteredInvoices().map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                  <TableCell>{invoice.student}</TableCell>
-                  <TableCell>¥{invoice.totalAmount}</TableCell>
-                  <TableCell>{getInvoiceStatusBadge(invoice.status)}</TableCell>
-                  <TableCell>{invoice.issueDate}</TableCell>
-                  <TableCell>{invoice.dueDate}</TableCell>
-                  <TableCell>{invoice.paidDate || "-"}</TableCell>
-                  <TableCell>
-                    {invoice.reminderSent ? (
-                      <Badge variant="outline" className="text-xs">
-                        已提醒 ({invoice.lastReminderDate})
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="text-xs">未提醒</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => {
-                          setSelectedInvoice(invoice)
-                          setIsInvoiceDetailDialogOpen(true)
-                        }}
-                      >
-                        查看
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => updateInvoiceStatus(invoice.id, 'sent')}
-                        disabled={invoice.status === 'paid' || invoice.status === 'cancelled'}
-                      >
-                        发送
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => sendInvoiceReminder(invoice.id)}
-                        disabled={invoice.status === 'paid' || invoice.status === 'cancelled'}
-                      >
-                        提醒
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => updateInvoiceStatus(invoice.id, 'paid')}
-                        disabled={invoice.status === 'paid' || invoice.status === 'cancelled'}
-                      >
-                        标记已付
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <InvoiceList
+            invoices={getFilteredInvoices()}
+            filters={invoiceFilters}
+            setFilters={setInvoiceFilters}
+            onDownload={handleDownloadInvoice}
+            onPrint={handlePrintInvoice}
+            onSend={handleSendInvoice}
+            onView={(invoice) => {
+              setSelectedInvoice(invoice)
+              setIsInvoiceDetailDialogOpen(true)
+            }}
+            onEdit={(invoice) => {
+              // TODO: Implement edit functionality
+            }}
+            onDelete={(invoice) => {
+              // TODO: Implement delete functionality
+            }}
+            onStatusChange={updateInvoiceStatus}
+          />
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <InvoiceCreateDialog
+        isOpen={isCreateInvoiceDialogOpen}
+        onOpenChange={setIsCreateInvoiceDialogOpen}
+        students={students}
+        onCreateInvoice={handleSubmitInvoice}
+        selectedStudent={selectedStudentForInvoice}
+        setSelectedStudent={setSelectedStudentForInvoice}
+        invoiceFormData={invoiceFormData}
+        setInvoiceFormData={setInvoiceFormData}
+        availableTemplates={availableTemplates}
+        selectedTemplate={selectedTemplate}
+        setSelectedTemplate={setSelectedTemplate}
+        isTemplateSelectDialogOpen={isTemplateSelectDialogOpen}
+        setIsTemplateSelectDialogOpen={setIsTemplateSelectDialogOpen}
+      />
+
+      <BulkInvoiceDialog
+        isOpen={isBulkInvoiceDialogOpen}
+        onOpenChange={setIsBulkInvoiceDialogOpen}
+        students={students}
+        onBulkCreate={(selectedGrades, dueDate) => {
+          // TODO: Implement bulk create functionality
+          console.log('Bulk create:', selectedGrades, dueDate)
+        }}
+      />
 
       {/* Invoice Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -531,339 +504,7 @@ export default function InvoiceManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Create Invoice Dialog */}
-      <Dialog open={isCreateInvoiceDialogOpen} onOpenChange={setIsCreateInvoiceDialogOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>新建发票</DialogTitle>
-            <DialogDescription>从学生费用分配中选择学生和金额</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>选择学生和金额</Label>
-              <div className="max-h-96 overflow-y-auto border rounded-md p-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>学生姓名</TableHead>
-                      <TableHead>年级</TableHead>
-                      <TableHead>家长姓名</TableHead>
-                      <TableHead>应缴费金额</TableHead>
-                      <TableHead>操作</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {studentsWithAmounts.map(student => (
-                      <TableRow key={student.id}>
-                        <TableCell className="font-medium">{student.name}</TableCell>
-                        <TableCell>{student.grade}</TableCell>
-                        <TableCell>{student.parentName}</TableCell>
-                        <TableCell className="font-semibold text-green-600">
-                          ¥{student.amount}
-                        </TableCell>
-                                                 <TableCell>
-                           <Button 
-                             size="sm" 
-                             variant="outline"
-                             onClick={() => handleCreateInvoiceForStudent(student)}
-                           >
-                             创建发票
-                           </Button>
-                         </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsCreateInvoiceDialogOpen(false)}>
-                取消
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* Bulk Invoice Dialog */}
-      <Dialog open={isBulkInvoiceDialogOpen} onOpenChange={setIsBulkInvoiceDialogOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>批量开具发票</DialogTitle>
-            <DialogDescription>按年级批量创建发票</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>选择年级</Label>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                {[...new Set(studentsWithAmounts.map(student => student.grade))].map(grade => (
-                  <div key={grade} className="flex items-center space-x-2">
-                    <Checkbox id={`bulk-grade-${grade}`} />
-                    <Label htmlFor={`bulk-grade-${grade}`} className="text-sm">{grade}</Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label>预览选中年级的学生</Label>
-              <div className="max-h-64 overflow-y-auto border rounded-md p-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>学生姓名</TableHead>
-                      <TableHead>年级</TableHead>
-                      <TableHead>应缴费金额</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {studentsWithAmounts.slice(0, 5).map(student => (
-                      <TableRow key={student.id}>
-                        <TableCell className="font-medium">{student.name}</TableCell>
-                        <TableCell>{student.grade}</TableCell>
-                        <TableCell className="font-semibold text-green-600">
-                          ¥{student.amount}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {studentsWithAmounts.length > 5 && (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center text-sm text-gray-500">
-                          还有 {studentsWithAmounts.length - 5} 个学生...
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-            <div>
-              <Label>到期日期</Label>
-              <Input type="date" />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsBulkInvoiceDialogOpen(false)}>
-                取消
-              </Button>
-              <Button>批量开具</Button>
-            </div>
-          </div>
-                 </DialogContent>
-       </Dialog>
-
-       {/* Create Invoice Form Dialog */}
-       <Dialog open={isCreateInvoiceFormOpen} onOpenChange={setIsCreateInvoiceFormOpen}>
-         <DialogContent className="max-w-2xl">
-           <DialogHeader>
-             <DialogTitle>创建发票 - {selectedStudentForInvoice?.name}</DialogTitle>
-             <DialogDescription>为学生 {selectedStudentForInvoice?.name} 创建发票</DialogDescription>
-           </DialogHeader>
-           {selectedStudentForInvoice && (
-             <div className="space-y-4">
-               {/* Student Info */}
-               <div className="bg-gray-50 p-4 rounded-lg">
-                 <h3 className="font-semibold mb-2">学生信息</h3>
-                 <div className="grid grid-cols-2 gap-4 text-sm">
-                   <div>
-                     <span className="font-medium">学生姓名:</span> {selectedStudentForInvoice.name}
-                   </div>
-                   <div>
-                     <span className="font-medium">年级:</span> {selectedStudentForInvoice.grade}
-                   </div>
-                   <div>
-                     <span className="font-medium">家长姓名:</span> {selectedStudentForInvoice.parentName}
-                   </div>
-                   <div>
-                     <span className="font-medium">应缴费金额:</span> 
-                     <span className="font-semibold text-green-600 ml-1">¥{selectedStudentForInvoice.amount}</span>
-                   </div>
-                 </div>
-               </div>
-
-                               {/* Template Selection */}
-                <div>
-                  <Label htmlFor="templateSelect">选择发票模板</Label>
-                  <div className="flex gap-2 mt-2">
-                    <Select 
-                      value={selectedTemplate?.id || availableTemplates.find(t => t.isDefault)?.id} 
-                      onValueChange={(value) => {
-                        const template = availableTemplates.find(t => t.id === value)
-                        setSelectedTemplate(template || null)
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="选择模板" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableTemplates.map(template => (
-                          <SelectItem key={template.id} value={template.id}>
-                            {template.name} {template.isDefault ? '(默认)' : ''}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setIsTemplateSelectDialogOpen(true)}
-                    >
-                      管理模板
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Invoice Details */}
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="dueDate">到期日期</Label>
-                    <Input
-                      id="dueDate"
-                      type="date"
-                      value={invoiceFormData.dueDate}
-                      onChange={(e) => setInvoiceFormData(prev => ({ ...prev, dueDate: e.target.value }))}
-                      required
-                    />
-                  </div>
-
-                 <div>
-                   <Label htmlFor="paymentMethod">付款方式</Label>
-                   <Select 
-                     value={invoiceFormData.paymentMethod} 
-                     onValueChange={(value) => setInvoiceFormData(prev => ({ ...prev, paymentMethod: value }))}
-                   >
-                     <SelectTrigger>
-                       <SelectValue placeholder="选择付款方式" />
-                     </SelectTrigger>
-                     <SelectContent>
-                       <SelectItem value="bank_transfer">银行转账</SelectItem>
-                       <SelectItem value="cash">现金</SelectItem>
-                       <SelectItem value="check">支票</SelectItem>
-                       <SelectItem value="online">在线支付</SelectItem>
-                     </SelectContent>
-                   </Select>
-                 </div>
-
-                 <div>
-                   <Label htmlFor="notes">备注</Label>
-                   <Textarea
-                     id="notes"
-                     placeholder="发票备注..."
-                     value={invoiceFormData.notes}
-                     onChange={(e) => setInvoiceFormData(prev => ({ ...prev, notes: e.target.value }))}
-                   />
-                 </div>
-               </div>
-
-               {/* Invoice Summary */}
-               <div className="bg-blue-50 p-4 rounded-lg">
-                 <h3 className="font-semibold mb-2">发票摘要</h3>
-                 <div className="space-y-1 text-sm">
-                   <div className="flex justify-between">
-                     <span>学生费用:</span>
-                     <span>¥{selectedStudentForInvoice.amount}</span>
-                   </div>
-                   <div className="flex justify-between">
-                     <span>税费:</span>
-                     <span>¥0</span>
-                   </div>
-                   <div className="flex justify-between">
-                     <span>折扣:</span>
-                     <span>-¥0</span>
-                   </div>
-                   <div className="flex justify-between font-semibold border-t pt-1">
-                     <span>总计:</span>
-                     <span>¥{selectedStudentForInvoice.amount}</span>
-                   </div>
-                 </div>
-               </div>
-
-               <div className="flex justify-end gap-2">
-                 <Button 
-                   variant="outline" 
-                   onClick={() => {
-                     setIsCreateInvoiceFormOpen(false)
-                     setSelectedStudentForInvoice(null)
-                     setInvoiceFormData({
-                       dueDate: '',
-                       notes: '',
-                       paymentMethod: 'bank_transfer'
-                     })
-                   }}
-                 >
-                   取消
-                 </Button>
-                 <Button 
-                   onClick={handleSubmitInvoice}
-                   disabled={!invoiceFormData.dueDate}
-                 >
-                   创建发票
-                 </Button>
-               </div>
-             </div>
-           )}
-                   </DialogContent>
-        </Dialog>
-
-        {/* Template Management Dialog */}
-        <Dialog open={isTemplateSelectDialogOpen} onOpenChange={setIsTemplateSelectDialogOpen}>
-          <DialogContent className="max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>发票模板管理</DialogTitle>
-              <DialogDescription>管理自定义发票模板</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="font-semibold">可用模板</h3>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  添加模板
-                </Button>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {availableTemplates.map(template => (
-                  <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-sm">{template.name}</CardTitle>
-                          <CardDescription className="text-xs">{template.description}</CardDescription>
-                        </div>
-                        {template.isDefault && (
-                          <Badge variant="default" className="text-xs">
-                            默认
-                          </Badge>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="text-xs text-gray-500 mb-2">
-                        变量: {template.variables.length} 个
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            setSelectedTemplate(template)
-                            setIsTemplateSelectDialogOpen(false)
-                          }}
-                        >
-                          选择
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-3 w-3" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     )
  } 

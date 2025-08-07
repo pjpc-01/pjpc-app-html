@@ -1,0 +1,5 @@
+export { default as LearningAnalytics } from './learning-analytics'
+export { default as ResourceLibrary } from './resource-library'
+export { default as ScheduleManagement } from './schedule-management'
+export { default as ParentInteraction } from './parent-interaction'
+export { default as EducationDropdown } from './education-dropdown'

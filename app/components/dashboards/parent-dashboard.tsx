@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import StudentManagement from "./student-management-page"
-import CommunicationSystem from "./communication-system"
-import LearningAnalytics from "./learning-analytics"
-import ScheduleManagement from "./schedule-management"
+import StudentManagement from "../management/student-management-page"
+import CommunicationSystem from "../systems/communication-system"
+import LearningAnalytics from "../features/learning-analytics"
+import ScheduleManagement from "../features/schedule-management"
 import {
   GraduationCap,
   MessageSquare,
