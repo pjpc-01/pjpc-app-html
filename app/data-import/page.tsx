@@ -1,4 +1,4 @@
-import SimpleImport from '@/components/data-import/simple-import'
+import SimpleImport from '@/app/components/systems/data-import/simple-import'
 
 export default function DataImportPage() {
   return (

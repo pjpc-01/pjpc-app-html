@@ -1,4 +1,4 @@
-import CheckInNavigation from "@/components/checkin-navigation"
+import CheckInNavigation from "@/components/shared/checkin-navigation"
 
 export default function CheckInPage() {
   return (
