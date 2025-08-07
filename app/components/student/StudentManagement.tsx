@@ -14,14 +14,45 @@ import StudentBulkActions from "./StudentBulkActions"
 import StudentFilters from "./StudentFilters"
 import StudentStats from "./StudentStats"
 
-export default function StudentManagement() {
-  const { students, loading, error, refetch, updateStudent, deleteStudent, addStudent } = useStudents({})
+interface StudentManagementProps {
+  dataType?: 'primary' | 'secondary'
+  showHeader?: boolean
+  title?: string
+  description?: string
+  buttonText?: string
+  buttonColor?: 'blue' | 'green' | 'default'
+}
+
+export default function StudentManagement({
+  dataType,
+  showHeader = true,
+  title,
+  description,
+  buttonText,
+  buttonColor = 'default'
+}: StudentManagementProps) {
+  const { students, loading, error, refetch, updateStudent, deleteStudent, addStudent } = useStudents({ dataType })
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedGrade, setSelectedGrade] = useState<string>("")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null)
+
+  // Default values based on dataType
+  const defaultTitle = dataType === 'primary' ? '小学生管理' : 
+                      dataType === 'secondary' ? '中学生管理' : '学生管理'
+  const defaultDescription = dataType === 'primary' ? '管理小学学生信息和学习进度' :
+                           dataType === 'secondary' ? '管理中学学生信息和学习进度' : '管理学生信息和学习进度'
+  const defaultButtonText = dataType === 'primary' ? '添加小学生' :
+                           dataType === 'secondary' ? '添加中学生' : '添加学生'
+  const defaultButtonColor = dataType === 'primary' ? 'blue' :
+                            dataType === 'secondary' ? 'green' : 'default'
+
+  const finalTitle = title || defaultTitle
+  const finalDescription = description || defaultDescription
+  const finalButtonText = buttonText || defaultButtonText
+  const finalButtonColor = buttonColor === 'default' ? defaultButtonColor : buttonColor
 
   // Filter students based on search and grade
   const filteredStudents = students.filter(student => {
@@ -98,6 +129,28 @@ export default function StudentManagement() {
     }
   }
 
+  const getButtonColorClass = (color: string) => {
+    switch (color) {
+      case 'blue':
+        return 'bg-blue-600 hover:bg-blue-700'
+      case 'green':
+        return 'bg-green-600 hover:bg-green-700'
+      default:
+        return 'bg-gray-600 hover:bg-gray-700'
+    }
+  }
+
+  const getTitleColorClass = (color: string) => {
+    switch (color) {
+      case 'blue':
+        return 'text-blue-600'
+      case 'green':
+        return 'text-green-600'
+      default:
+        return 'text-gray-600'
+    }
+  }
+
   if (error) {
     return (
       <Card className="border-red-200 bg-red-50">
@@ -111,7 +164,26 @@ export default function StudentManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Data Type Selector */}
+      {/* Header with Add Button */}
+      {showHeader && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className={`text-lg font-semibold ${getTitleColorClass(finalButtonColor)}`}>
+              {finalTitle}
+            </h3>
+            <p className="text-sm text-gray-600">{finalDescription}</p>
+          </div>
+          <Button 
+            onClick={() => setIsAddDialogOpen(true)} 
+            className={getButtonColorClass(finalButtonColor)}
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            {finalButtonText}
+          </Button>
+        </div>
+      )}
+
+      {/* Filters */}
       <div>
         <StudentFilters
           searchTerm={searchTerm}

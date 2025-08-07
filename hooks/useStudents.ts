@@ -119,16 +119,11 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
       // 如果缓存有效且不是强制刷新，直接返回
       // 但是当dataType改变时，强制刷新
       if (isCacheValid && !forceRefresh) {
-        console.log(`Using cached data for ${dataType}`)
         return
       }
-      
-      console.log(`Fetching fresh data for ${dataType}, forceRefresh: ${forceRefresh}`)
 
       setLoading(true)
       setError(null)
-      
-      console.log(`Fetching students for dataType: ${dataType}, page: ${page}`)
       
       // 添加超时保护
       const timeoutPromise = new Promise((_, reject) => {
@@ -140,24 +135,13 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
       
       const firestoreStudents = await Promise.race([firestorePromise, timeoutPromise]) as any[]
       
-      console.log('Raw Firebase students:', firestoreStudents)
-      
       // 转换数据
       const convertedStudents: Student[] = firestoreStudents.map(student => {
-        console.log('Processing student:', { 
-          firebaseId: student.id, 
-          name: student.name,
-          hasId: !!student.id,
-          idType: typeof student.id,
-          allFields: Object.keys(student)
-        })
         return convertFirestoreStudent(student)
       })
       
       // 过滤数据
       const filteredStudents = filterStudents(convertedStudents)
-      
-      console.log('Filtered students:', filteredStudents.map(s => ({ id: s.id, name: s.name })))
       
       setStudents(filteredStudents)
       setLastFetchTime(Date.now())

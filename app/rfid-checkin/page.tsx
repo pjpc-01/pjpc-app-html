@@ -65,24 +65,6 @@ export default function RFIDCheckInPage() {
     return () => clearInterval(interval)
   }, [])
 
-  // 模拟RFID读取
-  useEffect(() => {
-    if (!isListening) return
-
-    const simulateRFIDRead = () => {
-      // 使用测试卡片号码
-      const testCards = ['RFID_TEST_001', 'RFID_TEST_002']
-      const uid = testCards[Math.floor(Math.random() * testCards.length)]
-      setLastRead(uid)
-      handleCardRead(uid)
-    }
-
-    // 增加模拟间隔到15秒，减少频繁刷新
-    const interval = setInterval(simulateRFIDRead, 15000)
-
-    return () => clearInterval(interval)
-  }, [isListening])
-
   const handleCardRead = useCallback(async (uid: string) => {
     if (isProcessing) return
 
@@ -172,6 +154,24 @@ export default function RFIDCheckInPage() {
       setIsProcessing(false)
     }
   }, [isProcessing])
+
+  // 模拟RFID读取
+  useEffect(() => {
+    if (!isListening) return
+
+    const simulateRFIDRead = () => {
+      // 使用测试卡片号码
+      const testCards = ['RFID_TEST_001', 'RFID_TEST_002']
+      const uid = testCards[Math.floor(Math.random() * testCards.length)]
+      setLastRead(uid)
+      handleCardRead(uid)
+    }
+
+    // 增加模拟间隔到15秒，减少频繁刷新
+    const interval = setInterval(simulateRFIDRead, 15000)
+
+    return () => clearInterval(interval)
+  }, [isListening, handleCardRead])
 
   const toggleListening = () => {
     setIsListening(!isListening)

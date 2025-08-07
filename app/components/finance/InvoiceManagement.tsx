@@ -18,12 +18,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
+import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Loader2, Eye, Edit } from "lucide-react"
 import { useInvoices } from "@/hooks/useInvoices"
 import { downloadInvoicePDF, printInvoicePDF, PDFOptions } from "@/lib/pdf-generator"
 import { useStudents } from "@/hooks/useStudents"
 import { useStudentFees } from "@/hooks/useStudentFees"
 import { useFees } from "@/hooks/useFees"
+import { renderInvoiceTemplate, type TemplateData } from "@/lib/template-renderer"
+import { InvoiceTemplate } from "./InvoiceTemplateManager"
 
 export default function InvoiceManagement() {
   const {
@@ -53,6 +55,65 @@ export default function InvoiceManagement() {
   const [isBulkInvoiceDialogOpen, setIsBulkInvoiceDialogOpen] = useState(false)
   const [isInvoiceDetailDialogOpen, setIsInvoiceDetailDialogOpen] = useState(false)
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
+  const [selectedStudentForInvoice, setSelectedStudentForInvoice] = useState<any>(null)
+  const [isCreateInvoiceFormOpen, setIsCreateInvoiceFormOpen] = useState(false)
+  const [invoiceFormData, setInvoiceFormData] = useState({
+    dueDate: '',
+    notes: '',
+    paymentMethod: 'bank_transfer'
+  })
+
+  // Template management
+  const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplate | null>(null)
+  const [isTemplateSelectDialogOpen, setIsTemplateSelectDialogOpen] = useState(false)
+  const [availableTemplates, setAvailableTemplates] = useState<InvoiceTemplate[]>([
+    {
+      id: "1",
+      name: "标准发票模板",
+      description: "默认的学校发票模板",
+      htmlContent: `
+        <div class="invoice-template">
+          <div class="header">
+            <h1>{{schoolName}}</h1>
+            <p>{{schoolAddress}}</p>
+            <p>电话: {{schoolPhone}}</p>
+          </div>
+          <div class="invoice-info">
+            <h2>发票</h2>
+            <p>发票号码: {{invoiceNumber}}</p>
+            <p>开具日期: {{issueDate}}</p>
+            <p>到期日期: {{dueDate}}</p>
+          </div>
+          <div class="student-info">
+            <h3>学生信息</h3>
+            <p>学生姓名: {{studentName}}</p>
+            <p>年级: {{studentGrade}}</p>
+            <p>家长姓名: {{parentName}}</p>
+          </div>
+          <div class="items">
+            <h3>费用明细</h3>
+            {{#each items}}
+            <div class="item">
+              <span>{{name}}</span>
+              <span>¥{{amount}}</span>
+            </div>
+            {{/each}}
+          </div>
+          <div class="total">
+            <h3>总计: ¥{{totalAmount}}</h3>
+          </div>
+        </div>
+      `,
+      variables: [
+        "schoolName", "schoolAddress", "schoolPhone", "invoiceNumber", 
+        "issueDate", "dueDate", "studentName", "studentGrade", 
+        "parentName", "items", "totalAmount"
+      ],
+      isDefault: true,
+      createdAt: "2024-01-01",
+      updatedAt: "2024-01-01"
+    }
+  ])
 
   // Get active fees and filter out graduated students
   const activeFees = feeItems.filter(fee => fee.status === 'active')
@@ -114,6 +175,86 @@ export default function InvoiceManagement() {
 
   const handleSendInvoice = (invoice: any) => {
     updateInvoiceStatus(invoice.id, 'sent')
+  }
+
+  const handleCreateInvoiceForStudent = (student: any) => {
+    setSelectedStudentForInvoice(student)
+    setIsCreateInvoiceFormOpen(true)
+    setIsCreateInvoiceDialogOpen(false)
+  }
+
+  const handleSubmitInvoice = () => {
+    if (!selectedStudentForInvoice) return
+
+    // Get the selected template or default template
+    const template = selectedTemplate || availableTemplates.find(t => t.isDefault)
+    
+    if (!template) {
+      console.error('No template available')
+      return
+    }
+
+    // Prepare template data
+    const templateData: TemplateData = {
+      schoolName: "智慧教育学校",
+      schoolAddress: "北京市朝阳区教育路123号",
+      schoolPhone: "010-12345678",
+      schoolEmail: "info@smarteducation.com",
+      invoiceNumber: generateInvoiceNumber(),
+      issueDate: new Date().toISOString().split('T')[0],
+      dueDate: invoiceFormData.dueDate,
+      studentName: selectedStudentForInvoice.name,
+      studentGrade: selectedStudentForInvoice.grade,
+      parentName: selectedStudentForInvoice.parentName,
+      items: [
+        { name: "学生费用", amount: selectedStudentForInvoice.amount }
+      ],
+      totalAmount: selectedStudentForInvoice.amount,
+      tax: 0,
+      discount: 0,
+      paymentMethod: invoiceFormData.paymentMethod,
+      notes: invoiceFormData.notes
+    }
+
+    // Render the template with data
+    const renderedHtml = renderInvoiceTemplate(template.htmlContent, templateData)
+
+    const newInvoice = {
+      id: Date.now(), // Temporary ID
+      invoiceNumber: templateData.invoiceNumber,
+      student: selectedStudentForInvoice.name,
+      studentId: selectedStudentForInvoice.id,
+      amount: selectedStudentForInvoice.amount,
+      items: templateData.items,
+      status: "issued" as const,
+      issueDate: templateData.issueDate,
+      dueDate: templateData.dueDate,
+      paidDate: null,
+      paymentMethod: templateData.paymentMethod || null,
+      notes: templateData.notes || '',
+      tax: templateData.tax,
+      discount: templateData.discount,
+      totalAmount: templateData.totalAmount,
+      parentEmail: `${selectedStudentForInvoice.parentName}@example.com`,
+      reminderSent: false,
+      lastReminderDate: null,
+      // Add template information
+      templateId: template.id,
+      templateName: template.name,
+      renderedHtml: renderedHtml
+    }
+
+    createInvoice(newInvoice)
+    
+    // Reset form
+    setSelectedStudentForInvoice(null)
+    setSelectedTemplate(null)
+    setInvoiceFormData({
+      dueDate: '',
+      notes: '',
+      paymentMethod: 'bank_transfer'
+    })
+    setIsCreateInvoiceFormOpen(false)
   }
 
   return (
@@ -420,18 +561,15 @@ export default function InvoiceManagement() {
                         <TableCell className="font-semibold text-green-600">
                           ¥{student.amount}
                         </TableCell>
-                        <TableCell>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => {
-                              // TODO: Implement invoice creation for this student
-                              console.log('Creating invoice for:', student.name, 'Amount:', student.amount)
-                            }}
-                          >
-                            创建发票
-                          </Button>
-                        </TableCell>
+                                                 <TableCell>
+                           <Button 
+                             size="sm" 
+                             variant="outline"
+                             onClick={() => handleCreateInvoiceForStudent(student)}
+                           >
+                             创建发票
+                           </Button>
+                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -509,8 +647,223 @@ export default function InvoiceManagement() {
               <Button>批量开具</Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  )
-} 
+                 </DialogContent>
+       </Dialog>
+
+       {/* Create Invoice Form Dialog */}
+       <Dialog open={isCreateInvoiceFormOpen} onOpenChange={setIsCreateInvoiceFormOpen}>
+         <DialogContent className="max-w-2xl">
+           <DialogHeader>
+             <DialogTitle>创建发票 - {selectedStudentForInvoice?.name}</DialogTitle>
+             <DialogDescription>为学生 {selectedStudentForInvoice?.name} 创建发票</DialogDescription>
+           </DialogHeader>
+           {selectedStudentForInvoice && (
+             <div className="space-y-4">
+               {/* Student Info */}
+               <div className="bg-gray-50 p-4 rounded-lg">
+                 <h3 className="font-semibold mb-2">学生信息</h3>
+                 <div className="grid grid-cols-2 gap-4 text-sm">
+                   <div>
+                     <span className="font-medium">学生姓名:</span> {selectedStudentForInvoice.name}
+                   </div>
+                   <div>
+                     <span className="font-medium">年级:</span> {selectedStudentForInvoice.grade}
+                   </div>
+                   <div>
+                     <span className="font-medium">家长姓名:</span> {selectedStudentForInvoice.parentName}
+                   </div>
+                   <div>
+                     <span className="font-medium">应缴费金额:</span> 
+                     <span className="font-semibold text-green-600 ml-1">¥{selectedStudentForInvoice.amount}</span>
+                   </div>
+                 </div>
+               </div>
+
+                               {/* Template Selection */}
+                <div>
+                  <Label htmlFor="templateSelect">选择发票模板</Label>
+                  <div className="flex gap-2 mt-2">
+                    <Select 
+                      value={selectedTemplate?.id || availableTemplates.find(t => t.isDefault)?.id} 
+                      onValueChange={(value) => {
+                        const template = availableTemplates.find(t => t.id === value)
+                        setSelectedTemplate(template || null)
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择模板" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableTemplates.map(template => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.name} {template.isDefault ? '(默认)' : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setIsTemplateSelectDialogOpen(true)}
+                    >
+                      管理模板
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Invoice Details */}
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="dueDate">到期日期</Label>
+                    <Input
+                      id="dueDate"
+                      type="date"
+                      value={invoiceFormData.dueDate}
+                      onChange={(e) => setInvoiceFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+                      required
+                    />
+                  </div>
+
+                 <div>
+                   <Label htmlFor="paymentMethod">付款方式</Label>
+                   <Select 
+                     value={invoiceFormData.paymentMethod} 
+                     onValueChange={(value) => setInvoiceFormData(prev => ({ ...prev, paymentMethod: value }))}
+                   >
+                     <SelectTrigger>
+                       <SelectValue placeholder="选择付款方式" />
+                     </SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="bank_transfer">银行转账</SelectItem>
+                       <SelectItem value="cash">现金</SelectItem>
+                       <SelectItem value="check">支票</SelectItem>
+                       <SelectItem value="online">在线支付</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 </div>
+
+                 <div>
+                   <Label htmlFor="notes">备注</Label>
+                   <Textarea
+                     id="notes"
+                     placeholder="发票备注..."
+                     value={invoiceFormData.notes}
+                     onChange={(e) => setInvoiceFormData(prev => ({ ...prev, notes: e.target.value }))}
+                   />
+                 </div>
+               </div>
+
+               {/* Invoice Summary */}
+               <div className="bg-blue-50 p-4 rounded-lg">
+                 <h3 className="font-semibold mb-2">发票摘要</h3>
+                 <div className="space-y-1 text-sm">
+                   <div className="flex justify-between">
+                     <span>学生费用:</span>
+                     <span>¥{selectedStudentForInvoice.amount}</span>
+                   </div>
+                   <div className="flex justify-between">
+                     <span>税费:</span>
+                     <span>¥0</span>
+                   </div>
+                   <div className="flex justify-between">
+                     <span>折扣:</span>
+                     <span>-¥0</span>
+                   </div>
+                   <div className="flex justify-between font-semibold border-t pt-1">
+                     <span>总计:</span>
+                     <span>¥{selectedStudentForInvoice.amount}</span>
+                   </div>
+                 </div>
+               </div>
+
+               <div className="flex justify-end gap-2">
+                 <Button 
+                   variant="outline" 
+                   onClick={() => {
+                     setIsCreateInvoiceFormOpen(false)
+                     setSelectedStudentForInvoice(null)
+                     setInvoiceFormData({
+                       dueDate: '',
+                       notes: '',
+                       paymentMethod: 'bank_transfer'
+                     })
+                   }}
+                 >
+                   取消
+                 </Button>
+                 <Button 
+                   onClick={handleSubmitInvoice}
+                   disabled={!invoiceFormData.dueDate}
+                 >
+                   创建发票
+                 </Button>
+               </div>
+             </div>
+           )}
+                   </DialogContent>
+        </Dialog>
+
+        {/* Template Management Dialog */}
+        <Dialog open={isTemplateSelectDialogOpen} onOpenChange={setIsTemplateSelectDialogOpen}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>发票模板管理</DialogTitle>
+              <DialogDescription>管理自定义发票模板</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="font-semibold">可用模板</h3>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  添加模板
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {availableTemplates.map(template => (
+                  <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-sm">{template.name}</CardTitle>
+                          <CardDescription className="text-xs">{template.description}</CardDescription>
+                        </div>
+                        {template.isDefault && (
+                          <Badge variant="default" className="text-xs">
+                            默认
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="text-xs text-gray-500 mb-2">
+                        变量: {template.variables.length} 个
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedTemplate(template)
+                            setIsTemplateSelectDialogOpen(false)
+                          }}
+                        >
+                          选择
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    )
+ } 
