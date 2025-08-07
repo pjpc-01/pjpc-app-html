@@ -27,10 +27,9 @@ import { useDashboardStats } from "@/hooks/useDashboardStats"
 import { useFinancialStats } from "@/hooks/useFinancialStats"
 import FinanceManagement from "./finance-management-page"
 import UserApproval from "@/components/admin/user-approval"
-import StudentManagement from "./student-management-page"
+import StudentManagementPage from "./student-management-page"
 import TeacherManagement from "./teacher-management"
-import PrimaryStudentManagement from "./student/PrimaryStudentManagement"
-import SecondaryStudentManagement from "./student/SecondaryStudentManagement"
+import UnifiedStudentManagement from "./student/StudentManagement"
 import AttendanceSystem from "./attendance-system"
 import SecurityMonitoring from "./security-monitoring"
 import CommunicationSystem from "./communication-system"
@@ -365,7 +364,7 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                     <CardDescription>管理小学学生信息和学习进度</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <PrimaryStudentManagement />
+                    <UnifiedStudentManagement dataType="primary" />
                   </CardContent>
                 </Card>
               </div>
@@ -382,7 +381,7 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                     <CardDescription>管理中学学生信息和学习进度</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <SecondaryStudentManagement />
+                    <UnifiedStudentManagement dataType="secondary" />
                   </CardContent>
                 </Card>
               </div>
@@ -516,7 +515,7 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
       case "security":
         return <SecurityMonitoring />
       case "students":
-        return <StudentManagement />
+        return <StudentManagementPage />
       case "attendance":
         return <AttendanceSystem />
       case "courses":

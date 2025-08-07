@@ -176,12 +176,7 @@ export const calculateAge = (birthDate: string): number => {
   }
 }
 
-// 验证学生ID格式
-export const validateStudentId = (studentId: string): boolean => {
-  if (!studentId) return false
-  // 基本验证：至少包含数字和字母
-  return /^[A-Za-z0-9]+$/.test(studentId) && studentId.length >= 3
-}
+
 
 // 验证电话号码格式
 export const validatePhone = (phone: string): boolean => {

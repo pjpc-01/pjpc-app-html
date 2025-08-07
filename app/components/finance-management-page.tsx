@@ -6,6 +6,7 @@ import { StudentFeeMatrix } from "../../components/features/StudentFeeMatrix"
 import FinanceOverview from "./finance/FinanceOverview"
 import FeeManagement from "./finance/FeeManagement"
 import InvoiceManagement from "./finance/InvoiceManagement"
+import InvoiceTemplateManager from "./finance/InvoiceTemplateManager"
 import PaymentManagement from "./finance/PaymentManagement"
 import ReminderManagement from "./finance/ReminderManagement"
 import FinancialReports from "./finance/FinancialReports"
@@ -26,6 +27,7 @@ export default function FinanceManagement() {
           <TabsTrigger value="fee-items">收费项目</TabsTrigger>
           <TabsTrigger value="student-fees">学生费用分配</TabsTrigger>
           <TabsTrigger value="invoices">发票管理</TabsTrigger>
+          <TabsTrigger value="templates">发票模板</TabsTrigger>
           <TabsTrigger value="payments">缴费管理</TabsTrigger>
           <TabsTrigger value="reminders">收费提醒</TabsTrigger>
           <TabsTrigger value="reports">财务报表</TabsTrigger>
@@ -45,6 +47,10 @@ export default function FinanceManagement() {
 
         <TabsContent value="invoices">
           <InvoiceManagement />
+        </TabsContent>
+
+        <TabsContent value="templates">
+          <InvoiceTemplateManager />
         </TabsContent>
 
         <TabsContent value="payments">

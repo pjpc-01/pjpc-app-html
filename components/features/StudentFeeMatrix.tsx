@@ -416,15 +416,6 @@ export const StudentFeeMatrix = () => {
             </DialogContent>
           </Dialog>
 
-                     <Button 
-             variant="outline" 
-             size="sm" 
-             onClick={createInvoice}
-             className="flex items-center gap-2 bg-white hover:bg-gray-50 border-gray-300 shadow-sm hover:shadow-md transition-all duration-200"
-           >
-             <FileText className="h-4 w-4 text-blue-600" />
-             创建发票
-           </Button>
         </div>
       </div>
 

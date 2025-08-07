@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发票模板</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .school-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        .school-info {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .invoice-title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin: 30px 0;
+            color: #1f2937;
+        }
+        .invoice-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .invoice-info, .student-info {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 6px;
+        }
+        .section-title {
+            font-weight: bold;
+            color: #374151;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .info-label {
+            color: #6b7280;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #1f2937;
+            font-weight: 600;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+        }
+        .items-table th {
+            background: #2563eb;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        .items-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .items-table tr:nth-child(even) {
+            background: #f9fafb;
+        }
+        .total-section {
+            text-align: right;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e5e7eb;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        .total-amount {
+            font-size: 20px;
+            font-weight: bold;
+            color: #dc2626;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 20px;
+        }
+        .payment-info {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            border-left: 4px solid #f59e0b;
+        }
+        .notes {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            border-left: 4px solid #0ea5e9;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- 学校信息头部 -->
+        <div class="header">
+            <div class="school-name">{{schoolName}}</div>
+            <div class="school-info">
+                <div>{{schoolAddress}}</div>
+                <div>电话: {{schoolPhone}} | 邮箱: {{schoolEmail}}</div>
+            </div>
+        </div>
+
+        <!-- 发票标题 -->
+        <div class="invoice-title">学费发票</div>
+
+        <!-- 发票和学生信息 -->
+        <div class="invoice-details">
+            <div class="invoice-info">
+                <div class="section-title">发票信息</div>
+                <div class="info-row">
+                    <span class="info-label">发票号码:</span>
+                    <span class="info-value">{{invoiceNumber}}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">开具日期:</span>
+                    <span class="info-value">{{issueDate}}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">到期日期:</span>
+                    <span class="info-value">{{dueDate}}</span>
+                </div>
+            </div>
+
+            <div class="student-info">
+                <div class="section-title">学生信息</div>
+                <div class="info-row">
+                    <span class="info-label">学生姓名:</span>
+                    <span class="info-value">{{studentName}}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">年级:</span>
+                    <span class="info-value">{{studentGrade}}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">家长姓名:</span>
+                    <span class="info-value">{{parentName}}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 费用明细表格 -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>费用项目</th>
+                    <th>金额 (¥)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each items}}
+                <tr>
+                    <td>{{name}}</td>
+                    <td>¥{{amount}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+
+        <!-- 总计 -->
+        <div class="total-section">
+            <div class="total-row">
+                <span>小计:</span>
+                <span>¥{{totalAmount}}</span>
+            </div>
+            <div class="total-row">
+                <span>税费:</span>
+                <span>¥{{tax}}</span>
+            </div>
+            <div class="total-row">
+                <span>折扣:</span>
+                <span>-¥{{discount}}</span>
+            </div>
+            <div class="total-row total-amount">
+                <span>总计:</span>
+                <span>¥{{totalAmount}}</span>
+            </div>
+        </div>
+
+        <!-- 付款信息 -->
+        {{#if paymentMethod}}
+        <div class="payment-info">
+            <div class="section-title">付款信息</div>
+            <div class="info-row">
+                <span class="info-label">付款方式:</span>
+                <span class="info-value">{{paymentMethod}}</span>
+            </div>
+        </div>
+        {{/if}}
+
+        <!-- 备注 -->
+        {{#if notes}}
+        <div class="notes">
+            <div class="section-title">备注</div>
+            <div>{{notes}}</div>
+        </div>
+        {{/if}}
+
+        <!-- 页脚 -->
+        <div class="footer">
+            <p>感谢您选择我们的教育服务</p>
+            <p>如有疑问，请联系学校财务部门</p>
+        </div>
+    </div>
+</body>
+</html> 

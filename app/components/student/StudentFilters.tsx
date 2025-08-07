@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select"
 import { Filter, Search, X } from "lucide-react"
 import { Student } from "@/hooks/useStudents"
+import { convertGradeToChinese } from "./utils"
 
 interface StudentFiltersProps {
   searchTerm: string
@@ -36,24 +37,7 @@ export default function StudentFilters({
   // 获取年级选项
   const gradeOptions = Array.from(new Set(students.map(student => student.grade))).sort()
 
-  // 转换年级为中文显示
-  const convertGradeToChinese = (grade: string) => {
-    const gradeMap: { [key: string]: string } = {
-      '1': '一年级',
-      '2': '二年级',
-      '3': '三年级',
-      '4': '四年级',
-      '5': '五年级',
-      '6': '六年级',
-      '7': '七年级',
-      '8': '八年级',
-      '9': '九年级',
-      '10': '十年级',
-      '11': '十一年级',
-      '12': '十二年级'
-    }
-    return gradeMap[grade] || grade
-  }
+
 
   const clearFilters = () => {
     setSearchTerm("")
