@@ -188,14 +188,14 @@
             <thead>
                 <tr>
                     <th>费用项目</th>
-                    <th>金额 (¥)</th>
+                    <th>金额 (RM)</th>
                 </tr>
             </thead>
             <tbody>
                 {{#each items}}
                 <tr>
                     <td>{{name}}</td>
-                    <td>¥{{amount}}</td>
+                    <td>RM {{amount}}</td>
                 </tr>
                 {{/each}}
             </tbody>
@@ -205,19 +205,19 @@
         <div class="total-section">
             <div class="total-row">
                 <span>小计:</span>
-                <span>¥{{totalAmount}}</span>
+                <span>RM {{totalAmount}}</span>
             </div>
             <div class="total-row">
                 <span>税费:</span>
-                <span>¥{{tax}}</span>
+                <span>RM {{tax}}</span>
             </div>
             <div class="total-row">
                 <span>折扣:</span>
-                <span>-¥{{discount}}</span>
+                <span>-RM {{discount}}</span>
             </div>
             <div class="total-row total-amount">
                 <span>总计:</span>
-                <span>¥{{totalAmount}}</span>
+                <span>RM {{totalAmount}}</span>
             </div>
         </div>
 

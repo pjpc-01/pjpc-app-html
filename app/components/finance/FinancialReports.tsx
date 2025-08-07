@@ -142,7 +142,7 @@ export default function FinancialReports() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">¥{monthlyData[0].revenue.toLocaleString()}</div>
+                    <div className="text-2xl font-bold text-blue-600">RM {monthlyData[0].revenue.toLocaleString()}</div>
                     <div className="text-sm text-gray-600">本月收入</div>
                   </div>
                   <div className="text-center p-4 border rounded-lg">
@@ -169,10 +169,10 @@ export default function FinancialReports() {
                     {monthlyData.map((data) => (
                       <TableRow key={data.month}>
                         <TableCell className="font-medium">{data.month}</TableCell>
-                        <TableCell>¥{data.revenue.toLocaleString()}</TableCell>
+                        <TableCell>RM {data.revenue.toLocaleString()}</TableCell>
                         <TableCell>{data.students}</TableCell>
                         <TableCell>{data.invoices}</TableCell>
-                        <TableCell>¥{Math.round(data.revenue / data.students).toLocaleString()}</TableCell>
+                        <TableCell>RM {Math.round(data.revenue / data.students).toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -198,9 +198,9 @@ export default function FinancialReports() {
                 {classData.map((classInfo) => (
                   <div key={classInfo.class} className="text-center p-4 border rounded-lg">
                     <div className="text-lg font-semibold">{classInfo.class}</div>
-                    <div className="text-2xl font-bold text-blue-600">¥{classInfo.revenue.toLocaleString()}</div>
+                    <div className="text-2xl font-bold text-blue-600">RM {classInfo.revenue.toLocaleString()}</div>
                     <div className="text-sm text-gray-600">{classInfo.students}名学生</div>
-                    <div className="text-xs text-gray-500">人均¥{classInfo.avgRevenue}</div>
+                    <div className="text-xs text-gray-500">人均RM {classInfo.avgRevenue}</div>
                   </div>
                 ))}
               </div>
@@ -222,9 +222,9 @@ export default function FinancialReports() {
                     return (
                       <TableRow key={classInfo.class}>
                         <TableCell className="font-medium">{classInfo.class}</TableCell>
-                        <TableCell>¥{classInfo.revenue.toLocaleString()}</TableCell>
+                        <TableCell>RM {classInfo.revenue.toLocaleString()}</TableCell>
                         <TableCell>{classInfo.students}</TableCell>
-                        <TableCell>¥{classInfo.avgRevenue}</TableCell>
+                        <TableCell>RM {classInfo.avgRevenue}</TableCell>
                         <TableCell>{percentage}%</TableCell>
                       </TableRow>
                     )
@@ -251,7 +251,7 @@ export default function FinancialReports() {
                 {feeData.map((fee) => (
                   <div key={fee.item} className="text-center p-4 border rounded-lg">
                     <div className="text-lg font-semibold">{fee.item}</div>
-                    <div className="text-2xl font-bold text-blue-600">¥{fee.revenue.toLocaleString()}</div>
+                    <div className="text-2xl font-bold text-blue-600">RM {fee.revenue.toLocaleString()}</div>
                     <div className="text-sm text-gray-600">{fee.students}名学生</div>
                     <div className="text-xs text-gray-500">{fee.percentage}%</div>
                   </div>
@@ -272,10 +272,10 @@ export default function FinancialReports() {
                   {feeData.map((fee) => (
                     <TableRow key={fee.item}>
                       <TableCell className="font-medium">{fee.item}</TableCell>
-                      <TableCell>¥{fee.revenue.toLocaleString()}</TableCell>
+                      <TableCell>RM {fee.revenue.toLocaleString()}</TableCell>
                       <TableCell>{fee.students}</TableCell>
                       <TableCell>{fee.percentage}%</TableCell>
-                      <TableCell>¥{Math.round(fee.revenue / fee.students).toLocaleString()}</TableCell>
+                      <TableCell>RM {Math.round(fee.revenue / fee.students).toLocaleString()}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -306,7 +306,7 @@ export default function FinancialReports() {
                   <div className="text-sm text-gray-600">同比增长</div>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">¥{monthlyData[0].revenue.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-purple-600">RM {monthlyData[0].revenue.toLocaleString()}</div>
                   <div className="text-sm text-gray-600">当前月收入</div>
                 </div>
               </div>
@@ -320,7 +320,7 @@ export default function FinancialReports() {
                     <div key={data.month} className="flex justify-between items-center p-3 border rounded-lg">
                       <div>
                         <div className="font-medium">{data.month}</div>
-                        <div className="text-sm text-gray-600">¥{data.revenue.toLocaleString()}</div>
+                        <div className="text-sm text-gray-600">RM {data.revenue.toLocaleString()}</div>
                       </div>
                       <div className="text-right">
                         <div className={`font-medium ${parseFloat(growth) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -345,7 +345,7 @@ export default function FinancialReports() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">¥{monthlyData.reduce((sum, data) => sum + data.revenue, 0).toLocaleString()}</div>
+            <div className="text-2xl font-bold">RM {monthlyData.reduce((sum, data) => sum + data.revenue, 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">累计年度收入</p>
           </CardContent>
         </Card>
@@ -356,7 +356,7 @@ export default function FinancialReports() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">¥{Math.round(monthlyData.reduce((sum, data) => sum + data.revenue, 0) / monthlyData.length).toLocaleString()}</div>
+            <div className="text-2xl font-bold">RM {Math.round(monthlyData.reduce((sum, data) => sum + data.revenue, 0) / monthlyData.length).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">月度平均收入</p>
           </CardContent>
         </Card>

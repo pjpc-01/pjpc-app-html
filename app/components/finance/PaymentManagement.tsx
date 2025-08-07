@@ -155,7 +155,7 @@ export default function PaymentManagement() {
                   <TableRow key={payment.id}>
                     <TableCell className="font-medium">{invoice?.student || '未知学生'}</TableCell>
                     <TableCell>{payment.reference}</TableCell>
-                    <TableCell>¥{payment.amount}</TableCell>
+                    <TableCell>RM {payment.amount}</TableCell>
                     <TableCell>{getStatusBadge(payment.status)}</TableCell>
                     <TableCell>{payment.date}</TableCell>
                     <TableCell>
@@ -211,7 +211,7 @@ export default function PaymentManagement() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">¥{payments.reduce((sum, payment) => sum + payment.amount, 0)}</div>
+            <div className="text-2xl font-bold">RM {payments.reduce((sum, payment) => sum + payment.amount, 0)}</div>
             <p className="text-xs text-muted-foreground">累计缴费金额</p>
           </CardContent>
         </Card>
@@ -252,7 +252,7 @@ export default function PaymentManagement() {
                   <h3 className="font-semibold mb-2">缴费信息</h3>
                   <div className="space-y-2 text-sm">
                     <div><span className="font-medium">付款编号:</span> {selectedPayment.reference}</div>
-                    <div><span className="font-medium">缴费金额:</span> ¥{selectedPayment.amount}</div>
+                    <div><span className="font-medium">缴费金额:</span> RM {selectedPayment.amount}</div>
                     <div><span className="font-medium">缴费状态:</span> {getStatusBadge(selectedPayment.status)}</div>
                     <div><span className="font-medium">缴费日期:</span> {selectedPayment.date}</div>
                   </div>
@@ -276,7 +276,7 @@ export default function PaymentManagement() {
                     <div className="space-y-2 text-sm">
                       <div><span className="font-medium">发票号码:</span> {invoice.invoiceNumber}</div>
                       <div><span className="font-medium">学生姓名:</span> {invoice.student}</div>
-                      <div><span className="font-medium">发票金额:</span> ¥{invoice.totalAmount}</div>
+                      <div><span className="font-medium">发票金额:</span> RM {invoice.totalAmount}</div>
                       <div><span className="font-medium">发票状态:</span> {invoice.status}</div>
                     </div>
                   ) : (
@@ -309,7 +309,7 @@ export default function PaymentManagement() {
                 <SelectContent>
                   {invoices.filter(inv => inv.status !== 'paid').map(invoice => (
                     <SelectItem key={invoice.id} value={invoice.id.toString()}>
-                      {invoice.invoiceNumber} - {invoice.student} (¥{invoice.totalAmount})
+                      {invoice.invoiceNumber} - {invoice.student} (RM {invoice.totalAmount})
                     </SelectItem>
                   ))}
                 </SelectContent>

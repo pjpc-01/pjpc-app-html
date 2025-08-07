@@ -143,7 +143,7 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                         </div>
                       ) : (
                         <>
-                          <p className="text-2xl font-bold">¥{(stats?.monthlyRevenue || 0).toLocaleString()}</p>
+                          <p className="text-2xl font-bold">RM {(stats?.monthlyRevenue || 0).toLocaleString()}</p>
                           <p className="text-xs text-green-600 flex items-center mt-1">
                             <TrendingUp className="h-3 w-3 mr-1" />
                             实时数据

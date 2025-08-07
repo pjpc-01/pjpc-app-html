@@ -33,7 +33,7 @@ export const FeeCard = ({
         <div className="flex-1">
           <h4 className="font-medium text-gray-900 text-sm">{fee.name}</h4>
           {showAmount && (
-            <p className="text-sm text-gray-600 font-medium">¥{activeAmount}</p>
+            <p className="text-sm text-gray-600 font-medium">RM {activeAmount}</p>
           )}
           <Badge variant="outline" className="text-xs mt-1">
             {fee.type === "monthly" ? "月费" : 

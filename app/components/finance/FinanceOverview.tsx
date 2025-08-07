@@ -34,7 +34,7 @@ export default function FinanceOverview() {
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold">¥{financialStats.monthlyRevenue.toLocaleString()}</div>
+                <div className="text-2xl font-bold">RM {financialStats.monthlyRevenue.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">本月实时收入</p>
               </>
             )}
@@ -94,7 +94,7 @@ export default function FinanceOverview() {
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold">¥{financialStats.totalRevenue.toLocaleString()}</div>
+                <div className="text-2xl font-bold">RM {financialStats.totalRevenue.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">累计总收入</p>
               </>
             )}
@@ -126,7 +126,7 @@ export default function FinanceOverview() {
                       <div className={`text-sm font-medium ${
                         transaction.type === 'refund' ? 'text-red-600' : 'text-green-600'
                       }`}>
-                        {transaction.type === 'refund' ? '-' : '+'}¥{transaction.amount.toLocaleString()}
+                        {transaction.type === 'refund' ? '-' : '+'}RM {transaction.amount.toLocaleString()}
                       </div>
                       <div className="text-xs text-gray-500">{transaction.paymentMethod}</div>
                     </div>
@@ -168,7 +168,7 @@ export default function FinanceOverview() {
                   .map(([month, revenue]) => (
                     <div key={month} className="flex justify-between items-center">
                       <span className="text-sm">{month}</span>
-                      <Badge variant="outline">¥{revenue.toLocaleString()}</Badge>
+                      <Badge variant="outline">RM {revenue.toLocaleString()}</Badge>
                     </div>
                   ))}
               </div>

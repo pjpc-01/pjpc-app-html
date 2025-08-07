@@ -96,7 +96,7 @@ export function InvoiceCreateDialog({
                         <TableCell>{student.grade}</TableCell>
                         <TableCell>{student.parentName}</TableCell>
                         <TableCell className="font-semibold text-green-600">
-                          ¥{student.amount}
+                          RM {student.amount}
                         </TableCell>
                         <TableCell>
                           <Button 
@@ -187,19 +187,19 @@ export function InvoiceCreateDialog({
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>基础学费</span>
-                    <span>¥800</span>
+                    <span>RM 800</span>
                   </div>
                   <div className="flex justify-between">
                     <span>特色课程费</span>
-                    <span>¥400</span>
+                    <span>RM 400</span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-500">
                     <span>折扣</span>
-                    <span>-¥0</span>
+                    <span>-RM 0</span>
                   </div>
                   <div className="flex justify-between font-semibold border-t pt-1">
                     <span>总计:</span>
-                    <span>¥{selectedStudent.amount}</span>
+                    <span>RM {selectedStudent.amount}</span>
                   </div>
                 </div>
               </div>

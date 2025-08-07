@@ -143,7 +143,7 @@ export default function ReminderManagement() {
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <div className="font-medium">李小红 - 1月学费</div>
-                  <div className="text-sm text-gray-500">应缴金额：¥1,200</div>
+                  <div className="text-sm text-gray-500">应缴金额：RM 1,200</div>
                 </div>
                 <Badge variant="destructive">逾期3天</Badge>
               </div>
@@ -167,7 +167,7 @@ export default function ReminderManagement() {
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <div className="font-medium">陈小军 - 餐费充值</div>
-                  <div className="text-sm text-gray-500">应缴金额：¥300</div>
+                  <div className="text-sm text-gray-500">应缴金额：RM 300</div>
                 </div>
                 <Badge variant="secondary">即将到期</Badge>
               </div>

@@ -102,7 +102,7 @@ export const BatchOperationsDialog = ({
                                 />
                                 <span className="text-gray-600">{subItem.name}</span>
                               </div>
-                              <span className="text-gray-600">¥{subItem.amount}</span>
+                              <span className="text-gray-600">RM {subItem.amount}</span>
                             </div>
                           ))
                         )

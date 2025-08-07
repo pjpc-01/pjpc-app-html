@@ -41,7 +41,7 @@ interface StudentCardProps {
   onUpdatePaymentStatus: (studentId: string, status: string) => void
   getPaymentStatus: (studentId: string) => { status: string; date: string }
   getStatusBadge: (status: string) => React.ReactNode
-  onCreateInvoice: () => void
+  onCreateInvoice: (studentId: string) => void
   editMode: boolean
   expandedFees: Map<string, boolean>
   onToggleFeeExpansion: (studentId: string, feeId: number) => void
@@ -82,7 +82,7 @@ export const StudentCard = ({
       <CardContent className="p-0">
         {/* Student Header - Clickable */}
         <div 
-          className="bg-gray-50 px-4 py-3 border-b cursor-pointer hover:bg-gray-100 transition-colors"
+          className="bg-gray-50 px-6 py-4 border-b cursor-pointer hover:bg-gray-100 transition-colors"
           onClick={onToggleExpansion}
         >
           <div className="flex items-center justify-between">
@@ -100,11 +100,11 @@ export const StudentCard = ({
               </div>
             </div>
             <div className="text-right">
-              <div className="flex items-center justify-end gap-12">
-                <div className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4 text-green-600" />
+              <div className="flex items-center justify-end gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-green-600">应缴费 </span>
                   <span className="font-semibold text-green-600">
-                    ¥{studentTotal}
+                    RM {studentTotal}
                   </span>
                 </div>
                 <Button
@@ -113,48 +113,11 @@ export const StudentCard = ({
                   className="h-6 w-6 p-0 bg-black hover:bg-gray-800 border-gray-300 shadow-sm hover:shadow-md transition-all duration-200"
                   onClick={(e) => {
                     e.stopPropagation()
-                    onCreateInvoice()
+                    onCreateInvoice(studentId)
                   }}
                 >
                   <FileText className="h-3 w-3 text-white" />
                 </Button>
-              </div>
-              <div className="flex justify-between items-center mt-1">
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-xs"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onUpdatePaymentStatus(studentId, 'paid')
-                    }}
-                  >
-                    已缴费
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-xs"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onUpdatePaymentStatus(studentId, 'overdue')
-                    }}
-                  >
-                    逾期
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-xs"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onUpdatePaymentStatus(studentId, 'pending')
-                    }}
-                  >
-                    待缴费
-                  </Button>
-                </div>
                 <div className="flex items-center gap-2">
                   {getStatusBadge(getPaymentStatus(studentId).status)}
                   {getPaymentStatus(studentId).date && (
@@ -170,7 +133,7 @@ export const StudentCard = ({
 
         {/* Fee Assignment Grid - Only show when expanded */}
         {isExpanded && (
-          <div className="p-4">
+          <div className="p-6">
             <div className="space-y-3">
               {activeFees.map(fee => {
                 const feeExpanded = isFeeExpanded(studentId, fee.id)
@@ -201,7 +164,7 @@ export const StudentCard = ({
                                 className={!editMode ? "opacity-50 cursor-not-allowed" : ""}
                               />
                             </div>
-                            <span className="text-sm font-medium text-blue-600">¥{subItem.amount}</span>
+                                                         <span className="text-sm font-medium text-blue-600">RM {subItem.amount}</span>
                           </div>
                         ))}
                       </div>

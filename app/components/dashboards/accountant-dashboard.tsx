@@ -55,7 +55,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">本月收入</p>
-                      <p className="text-2xl font-bold">¥{stats.monthlyRevenue.toLocaleString()}</p>
+                      <p className="text-2xl font-bold">RM {stats.monthlyRevenue.toLocaleString()}</p>
                       <p className="text-xs text-green-600 flex items-center mt-1">
                         <TrendingUp className="h-3 w-3 mr-1" />
                         +7.8% 较上月
@@ -128,15 +128,15 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm">总收入</span>
-                    <span className="font-medium text-green-600">¥{stats.totalRevenue.toLocaleString()}</span>
+                    <span className="font-medium text-green-600">RM {stats.totalRevenue.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">本月收入</span>
-                    <span className="font-medium">¥{stats.thisMonthIncome.toLocaleString()}</span>
+                    <span className="font-medium">RM {stats.thisMonthIncome.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">上月收入</span>
-                    <span className="font-medium">¥{stats.lastMonthIncome.toLocaleString()}</span>
+                    <span className="font-medium">RM {stats.lastMonthIncome.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">注册家长</span>
@@ -171,7 +171,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                         <div className={`font-medium ${
                           transaction.type === "income" ? "text-green-600" : "text-red-600"
                         }`}>
-                          ¥{transaction.amount.toLocaleString()}
+                          RM {transaction.amount.toLocaleString()}
                         </div>
                         <Badge
                           variant="outline"
