@@ -62,7 +62,12 @@ export default function EducationDropdown({
 }: EducationDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   
-  const currentConfig = educationTypeConfig[selectedType]
+  // Ensure selectedType is valid, default to 'primary' if not
+  const validSelectedType = selectedType && educationTypeConfig[selectedType] 
+    ? selectedType 
+    : 'primary'
+  
+  const currentConfig = educationTypeConfig[validSelectedType]
   const CurrentIcon = currentConfig.icon
 
   const getCount = (type: EducationDataType) => {
@@ -92,7 +97,7 @@ export default function EducationDropdown({
             <span className="font-medium">{currentConfig.label}</span>
             {showCounts && (
               <Badge variant="secondary" className="ml-1 text-xs">
-                {getCount(selectedType)}
+                {getCount(validSelectedType)}
               </Badge>
             )}
           </div>
@@ -114,7 +119,7 @@ export default function EducationDropdown({
               }}
               className={cn(
                 "flex items-center justify-between p-3 cursor-pointer",
-                selectedType === type && "bg-accent"
+                validSelectedType === type && "bg-accent"
               )}
             >
               <div className="flex items-center gap-3">
