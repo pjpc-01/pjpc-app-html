@@ -20,7 +20,9 @@ import { UserPlus, Search, Edit, Users, Trash2, Mail, Phone, Calendar, BookOpen 
 import { collection, getDocs, query, where, doc, updateDoc, deleteDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/contexts/enhanced-auth-context"
+import { getStatusBadge, getStatusText, formatDate } from "@/lib/utils"
 
+// Types
 interface Teacher {
   uid: string
   email: string
@@ -37,8 +39,21 @@ interface Teacher {
   avatar?: string
 }
 
+interface TeacherFormData {
+  name: string
+  email: string
+  phone: string
+  subject: string
+  department: string
+  experience: string
+}
+
+
+
 export default function TeacherManagement() {
   const { userProfile } = useAuth()
+  
+  // State
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -46,7 +61,7 @@ export default function TeacherManagement() {
   const [selectedTeachers, setSelectedTeachers] = useState<string[]>([])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null)
-  const [newTeacher, setNewTeacher] = useState({
+  const [newTeacher, setNewTeacher] = useState<TeacherFormData>({
     name: "",
     email: "",
     phone: "",
@@ -55,7 +70,7 @@ export default function TeacherManagement() {
     experience: ""
   })
 
-  // 获取所有老师
+  // Data fetching
   const fetchTeachers = useCallback(async () => {
     try {
       setLoading(true)
@@ -79,31 +94,29 @@ export default function TeacherManagement() {
     }
   }, [])
 
-  // 更新老师信息
+  // CRUD operations
   const updateTeacher = useCallback(async (uid: string, updates: Partial<Teacher>) => {
     try {
       setError(null)
       await updateDoc(doc(db, "users", uid), updates)
-      await fetchTeachers() // 重新获取数据
+      await fetchTeachers()
     } catch (err) {
       console.error('Error updating teacher:', err)
       setError(err instanceof Error ? err.message : '更新老师信息失败')
     }
   }, [fetchTeachers])
 
-  // 删除老师
   const deleteTeacher = useCallback(async (uid: string) => {
     try {
       setError(null)
       await deleteDoc(doc(db, "users", uid))
-      await fetchTeachers() // 重新获取数据
+      await fetchTeachers()
     } catch (err) {
       console.error('Error deleting teacher:', err)
       setError(err instanceof Error ? err.message : '删除老师失败')
     }
   }, [fetchTeachers])
 
-  // 批量删除
   const handleBulkDelete = useCallback(async () => {
     if (selectedTeachers.length === 0) return
     
@@ -119,7 +132,7 @@ export default function TeacherManagement() {
     }
   }, [selectedTeachers, fetchTeachers])
 
-  // 过滤老师
+  // Filtering and selection
   const filteredTeachers = teachers.filter(teacher =>
     teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     teacher.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -127,27 +140,23 @@ export default function TeacherManagement() {
     teacher.department?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  // 获取状态颜色
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800'
-      case 'pending': return 'bg-yellow-100 text-yellow-800'
-      case 'suspended': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
+  const handleBulkSelect = (uid: string, checked: boolean) => {
+    if (checked) {
+      setSelectedTeachers(prev => [...prev, uid])
+    } else {
+      setSelectedTeachers(prev => prev.filter(id => id !== uid))
     }
   }
 
-  // 获取状态文本
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'approved': return '已批准'
-      case 'pending': return '待审核'
-      case 'suspended': return '已暂停'
-      default: return '未知'
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedTeachers(filteredTeachers.map(t => t.uid))
+    } else {
+      setSelectedTeachers([])
     }
   }
 
-  // 处理编辑
+  // Form handling
   const handleEdit = (teacher: Teacher) => {
     setEditingTeacher(teacher)
     setNewTeacher({
@@ -161,7 +170,6 @@ export default function TeacherManagement() {
     setDialogOpen(true)
   }
 
-  // 处理保存
   const handleSave = async () => {
     if (!editingTeacher) return
 
@@ -180,22 +188,12 @@ export default function TeacherManagement() {
     }
   }
 
-  // 处理批量选择
-  const handleBulkSelect = (uid: string, checked: boolean) => {
-    if (checked) {
-      setSelectedTeachers(prev => [...prev, uid])
-    } else {
-      setSelectedTeachers(prev => prev.filter(id => id !== uid))
-    }
-  }
-
-  // 处理全选
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedTeachers(filteredTeachers.map(t => t.uid))
-    } else {
-      setSelectedTeachers([])
-    }
+  // Statistics
+  const stats = {
+    total: teachers.length,
+    approved: teachers.filter(t => t.status === 'approved').length,
+    pending: teachers.filter(t => t.status === 'pending').length,
+    verified: teachers.filter(t => t.emailVerified).length
   }
 
   useEffect(() => {
@@ -228,7 +226,7 @@ export default function TeacherManagement() {
 
   return (
     <div className="space-y-6">
-      {/* 统计卡片 */}
+      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -236,7 +234,7 @@ export default function TeacherManagement() {
               <Users className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-sm text-gray-600">总老师数</p>
-                <p className="text-2xl font-bold">{teachers.length}</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
               </div>
             </div>
           </CardContent>
@@ -248,9 +246,7 @@ export default function TeacherManagement() {
               <BookOpen className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600">已批准</p>
-                <p className="text-2xl font-bold">
-                  {teachers.filter(t => t.status === 'approved').length}
-                </p>
+                <p className="text-2xl font-bold">{stats.approved}</p>
               </div>
             </div>
           </CardContent>
@@ -262,9 +258,7 @@ export default function TeacherManagement() {
               <Calendar className="h-5 w-5 text-yellow-600" />
               <div>
                 <p className="text-sm text-gray-600">待审核</p>
-                <p className="text-2xl font-bold">
-                  {teachers.filter(t => t.status === 'pending').length}
-                </p>
+                <p className="text-2xl font-bold">{stats.pending}</p>
               </div>
             </div>
           </CardContent>
@@ -276,16 +270,14 @@ export default function TeacherManagement() {
               <Mail className="h-5 w-5 text-purple-600" />
               <div>
                 <p className="text-sm text-gray-600">已验证邮箱</p>
-                <p className="text-2xl font-bold">
-                  {teachers.filter(t => t.emailVerified).length}
-                </p>
+                <p className="text-2xl font-bold">{stats.verified}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* 操作栏 */}
+      {/* Main Content */}
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -397,7 +389,7 @@ export default function TeacherManagement() {
         </CardHeader>
         
         <CardContent>
-          {/* 搜索栏 */}
+          {/* Search */}
           <div className="flex gap-2 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -410,7 +402,7 @@ export default function TeacherManagement() {
             </div>
           </div>
 
-          {/* 老师表格 */}
+          {/* Table */}
           <div className="rounded-md border">
             <Table>
               <TableHeader>
@@ -482,16 +474,13 @@ export default function TeacherManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(teacher.status)}>
+                      <Badge className={getStatusBadge(teacher.status)}>
                         {getStatusText(teacher.status)}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <p className="text-sm text-gray-500">
-                        {teacher.lastLogin ? 
-                          new Date(teacher.lastLogin.toDate()).toLocaleDateString() : 
-                          '从未登录'
-                        }
+                        {formatDate(teacher.lastLogin)}
                       </p>
                     </TableCell>
                     <TableCell>

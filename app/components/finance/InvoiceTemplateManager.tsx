@@ -24,10 +24,11 @@ import {
   Trash2, 
   Download, 
   Plus,
-  CheckCircle,
-  AlertCircle
+  CheckCircle
 } from "lucide-react"
+import { downloadFile, extractTemplateVariables } from "@/lib/utils"
 
+// Types
 export interface InvoiceTemplate {
   id: string
   name: string
@@ -39,7 +40,62 @@ export interface InvoiceTemplate {
   updatedAt: string
 }
 
+// Utility functions
+const renderTemplatePreview = (template: InvoiceTemplate) => {
+  const sampleData = {
+    schoolName: "智慧教育学校",
+    schoolAddress: "北京市朝阳区教育路123号",
+    schoolPhone: "010-12345678",
+    invoiceNumber: "INV-2024-001",
+    issueDate: "2024-01-15",
+    dueDate: "2024-01-30",
+    studentName: "王小明",
+    studentGrade: "三年级",
+    parentName: "王先生",
+    items: [
+      { name: "基础学费", amount: 800 },
+      { name: "特色课程费", amount: 400 }
+    ],
+    totalAmount: 1200
+  }
+
+  let previewContent = template.htmlContent
+
+  Object.entries(sampleData).forEach(([key, value]) => {
+    if (key === 'items') {
+      if (Array.isArray(value)) {
+        const itemsHtml = value.map((item: any) => 
+          `<div class="item"><span>${item.name}</span><span>RM ${item.amount}</span></div>`
+        ).join('')
+        previewContent = previewContent.replace(/\{\{#each items\}\}([\s\S]*?)\{\{\/each\}\}/g, itemsHtml)
+      }
+    } else {
+      previewContent = previewContent.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(value))
+    }
+  })
+
+  return previewContent
+}
+
+// Available variables for template
+const AVAILABLE_VARIABLES = [
+  { code: '{{schoolName}}', description: '学校名称' },
+  { code: '{{schoolAddress}}', description: '学校地址' },
+  { code: '{{schoolPhone}}', description: '学校电话' },
+  { code: '{{invoiceNumber}}', description: '发票号码' },
+  { code: '{{issueDate}}', description: '开具日期' },
+  { code: '{{dueDate}}', description: '到期日期' },
+  { code: '{{studentName}}', description: '学生姓名' },
+  { code: '{{studentGrade}}', description: '学生年级' },
+  { code: '{{parentName}}', description: '家长姓名' },
+  { code: '{{totalAmount}}', description: '总金额' },
+  { code: '{{#each items}}', description: '费用项目循环' },
+  { code: '{{name}}', description: '项目名称' },
+  { code: '{{amount}}', description: '项目金额' }
+]
+
 export default function InvoiceTemplateManager() {
+  // State
   const [templates, setTemplates] = useState<InvoiceTemplate[]>([
     {
       id: "1",
@@ -100,6 +156,7 @@ export default function InvoiceTemplateManager() {
   })
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Event handlers
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
@@ -123,7 +180,7 @@ export default function InvoiceTemplateManager() {
       name: uploadFormData.name,
       description: uploadFormData.description,
       htmlContent: uploadFormData.htmlContent,
-      variables: extractVariables(uploadFormData.htmlContent),
+      variables: extractTemplateVariables(uploadFormData.htmlContent),
       isDefault: false,
       createdAt: new Date().toISOString().split('T')[0],
       updatedAt: new Date().toISOString().split('T')[0]
@@ -132,18 +189,6 @@ export default function InvoiceTemplateManager() {
     setTemplates(prev => [...prev, newTemplate])
     setUploadFormData({ name: "", description: "", htmlContent: "" })
     setIsUploadDialogOpen(false)
-  }
-
-  const extractVariables = (htmlContent: string): string[] => {
-    const variableRegex = /\{\{([^}]+)\}\}/g
-    const variables = new Set<string>()
-    let match
-
-    while ((match = variableRegex.exec(htmlContent)) !== null) {
-      variables.add(match[1].trim())
-    }
-
-    return Array.from(variables)
   }
 
   const handleDeleteTemplate = (templateId: string) => {
@@ -158,74 +203,18 @@ export default function InvoiceTemplateManager() {
   }
 
   const handleDownloadTemplate = (template: InvoiceTemplate) => {
-    const blob = new Blob([template.htmlContent], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${template.name}.html`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    downloadFile(template.htmlContent, `${template.name}.html`)
   }
 
   const handleDownloadSampleTemplate = () => {
-    // Download the sample template from public/templates/
     fetch('/templates/sample-invoice-template.html')
       .then(response => response.text())
       .then(content => {
-        const blob = new Blob([content], { type: 'text/html' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = 'sample-invoice-template.html'
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
+        downloadFile(content, 'sample-invoice-template.html')
       })
       .catch(error => {
         console.error('Failed to download sample template:', error)
       })
-  }
-
-  const renderTemplatePreview = (template: InvoiceTemplate) => {
-    // Sample data for preview
-    const sampleData = {
-      schoolName: "智慧教育学校",
-      schoolAddress: "北京市朝阳区教育路123号",
-      schoolPhone: "010-12345678",
-      invoiceNumber: "INV-2024-001",
-      issueDate: "2024-01-15",
-      dueDate: "2024-01-30",
-      studentName: "王小明",
-      studentGrade: "三年级",
-      parentName: "王先生",
-      items: [
-        { name: "基础学费", amount: 800 },
-        { name: "特色课程费", amount: 400 }
-      ],
-      totalAmount: 1200
-    }
-
-    let previewContent = template.htmlContent
-
-    // Replace variables with sample data
-    Object.entries(sampleData).forEach(([key, value]) => {
-      if (key === 'items') {
-        // Handle array items specially
-        if (Array.isArray(value)) {
-          const itemsHtml = value.map((item: any) => 
-                            `<div class="item"><span>${item.name}</span><span>RM ${item.amount}</span></div>`
-          ).join('')
-          previewContent = previewContent.replace(/\{\{#each items\}\}([\s\S]*?)\{\{\/each\}\}/g, itemsHtml)
-        }
-      } else {
-        previewContent = previewContent.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(value))
-      }
-    })
-
-    return previewContent
   }
 
   return (
@@ -244,10 +233,6 @@ export default function InvoiceTemplateManager() {
               <Button variant="outline" size="sm" onClick={handleDownloadSampleTemplate}>
                 <Download className="h-4 w-4 mr-2" />
                 下载示例模板
-              </Button>
-              <Button variant="outline" size="sm">
-                <Eye className="h-4 w-4 mr-2" />
-                预览所有
               </Button>
             </div>
             <Button size="sm" onClick={() => setIsUploadDialogOpen(true)}>
@@ -316,22 +301,22 @@ export default function InvoiceTemplateManager() {
                         <Edit className="h-4 w-4" />
                       </Button>
                       {!template.isDefault && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleDeleteTemplate(template.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {!template.isDefault && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleSetDefault(template.id)}
-                        >
-                          设为默认
-                        </Button>
+                        <>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleDeleteTemplate(template.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleSetDefault(template.id)}
+                          >
+                            设为默认
+                          </Button>
+                        </>
                       )}
                     </div>
                   </TableCell>
@@ -406,19 +391,11 @@ export default function InvoiceTemplateManager() {
             <div className="bg-blue-50 p-4 rounded-lg">
               <h3 className="font-semibold mb-2">可用变量</h3>
               <div className="grid grid-cols-3 gap-2 text-sm">
-                <div><code>{'{{schoolName}}'}</code> - 学校名称</div>
-                <div><code>{'{{schoolAddress}}'}</code> - 学校地址</div>
-                <div><code>{'{{schoolPhone}}'}</code> - 学校电话</div>
-                <div><code>{'{{invoiceNumber}}'}</code> - 发票号码</div>
-                <div><code>{'{{issueDate}}'}</code> - 开具日期</div>
-                <div><code>{'{{dueDate}}'}</code> - 到期日期</div>
-                <div><code>{'{{studentName}}'}</code> - 学生姓名</div>
-                <div><code>{'{{studentGrade}}'}</code> - 学生年级</div>
-                <div><code>{'{{parentName}}'}</code> - 家长姓名</div>
-                <div><code>{'{{totalAmount}}'}</code> - 总金额</div>
-                <div><code>{'{{#each items}}'}</code> - 费用项目循环</div>
-                <div><code>{'{{name}}'}</code> - 项目名称</div>
-                <div><code>{'{{amount}}'}</code> - 项目金额</div>
+                {AVAILABLE_VARIABLES.map((variable) => (
+                  <div key={variable.code}>
+                    <code>{variable.code}</code> - {variable.description}
+                  </div>
+                ))}
               </div>
             </div>
 

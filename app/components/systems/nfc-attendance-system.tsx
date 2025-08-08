@@ -16,7 +16,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   CreditCard,
@@ -46,6 +45,8 @@ import {
 } from "lucide-react"
 import { useNFC } from "@/hooks/useNFC"
 import { NFCCard, AttendanceRecord, NFCDevice } from "@/lib/nfc-rfid"
+import NFCOverviewTab from "./nfc-overview-tab"
+import NFCCardsTab from "./nfc-cards-tab"
 
 export default function NFCAttendanceSystem() {
   const [activeTab, setActiveTab] = useState("overview")
@@ -99,15 +100,10 @@ export default function NFCAttendanceSystem() {
     notes: "",
   })
 
-  // 处理新卡提交
-  const handleAddCard = useCallback(async () => {
+  // 处理添加卡片
+  const handleAddCard = async () => {
     try {
-      await addCard({
-        ...newCard,
-        issuedDate: new Date(newCard.issuedDate),
-        expiryDate: newCard.expiryDate ? new Date(newCard.expiryDate) : undefined,
-        usageCount: 0,
-      })
+      await addCard(newCard)
       setNewCardDialog(false)
       setNewCard({
         cardNumber: "",
@@ -120,18 +116,25 @@ export default function NFCAttendanceSystem() {
         notes: "",
       })
     } catch (error) {
-      console.error('Error adding card:', error)
+      console.error("添加卡片失败:", error)
     }
-  }, [addCard, newCard])
+  }
 
-  // 处理新设备提交
-  const handleAddDevice = useCallback(async () => {
+  // 处理更新卡片
+  const handleUpdateCard = async () => {
+    if (!editingCard) return
     try {
-      await addDevice({
-        ...newDevice,
-        cardCount: 0,
-        errorCount: 0,
-      })
+      await updateCard(editingCard)
+      setEditingCard(null)
+    } catch (error) {
+      console.error("更新卡片失败:", error)
+    }
+  }
+
+  // 处理添加设备
+  const handleAddDevice = async () => {
+    try {
+      await addDevice(newDevice)
       setNewDeviceDialog(false)
       setNewDevice({
         name: "",
@@ -144,59 +147,39 @@ export default function NFCAttendanceSystem() {
         notes: "",
       })
     } catch (error) {
-      console.error('Error adding device:', error)
+      console.error("添加设备失败:", error)
     }
-  }, [addDevice, newDevice])
-
-  // 开始模拟打卡
-  const startSimulation = useCallback(async () => {
-    if (!selectedDevice) return
-    
-    setIsSimulating(true)
-    try {
-      await simulateAttendance(selectedDevice)
-    } catch (error) {
-      console.error('Simulation error:', error)
-    } finally {
-      setIsSimulating(false)
-    }
-  }, [selectedDevice, simulateAttendance])
+  }
 
   // 获取状态颜色
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active":
-      case "online":
-      case "success":
-        return "bg-green-100 text-green-800"
-      case "inactive":
-      case "offline":
-      case "failed":
-        return "bg-red-100 text-red-800"
-      case "maintenance":
-      case "duplicate":
-        return "bg-yellow-100 text-yellow-800"
+      case 'active':
+        return 'bg-green-100 text-green-800'
+      case 'inactive':
+        return 'bg-gray-100 text-gray-800'
+      case 'lost':
+        return 'bg-red-100 text-red-800'
+      case 'replaced':
+        return 'bg-blue-100 text-blue-800'
       default:
-        return "bg-gray-100 text-gray-800"
+        return 'bg-gray-100 text-gray-800'
     }
   }
 
   // 获取状态图标
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "active":
-      case "online":
-      case "success":
-        return <CheckCircle className="h-4 w-4" />
-      case "inactive":
-      case "offline":
-      case "failed":
-        return <XCircle className="h-4 w-4" />
-      case "maintenance":
-      case "duplicate":
-        return <AlertTriangle className="h-4 w-4" />
+      case 'active':
+        return <CheckCircle className="h-3 w-3 mr-1" />
+      case 'inactive':
+        return <XCircle className="h-3 w-3 mr-1" />
+      case 'lost':
+        return <AlertTriangle className="h-3 w-3 mr-1" />
+      case 'replaced':
+        return <RefreshCw className="h-3 w-3 mr-1" />
       default:
-        return <Clock className="h-4 w-4" />
+        return <XCircle className="h-3 w-3 mr-1" />
     }
   }
 
@@ -216,337 +199,81 @@ export default function NFCAttendanceSystem() {
     switch (activeTab) {
       case "overview":
         return (
-          <div className="space-y-6">
-            {/* 统计卡片 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">总卡数</p>
-                      <p className="text-2xl font-bold text-blue-600">{stats.totalCards}</p>
-                      <p className="text-xs text-gray-500">
-                        {stats.activeCards} 张活跃卡
-                      </p>
-                    </div>
-                    <CreditCard className="h-8 w-8 text-blue-600" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">今日打卡</p>
-                      <p className="text-2xl font-bold text-green-600">{stats.todayAttendance}</p>
-                      <p className="text-xs text-gray-500">次打卡记录</p>
-                    </div>
-                    <Activity className="h-8 w-8 text-green-600" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">设备总数</p>
-                      <p className="text-2xl font-bold text-purple-600">{stats.deviceCount}</p>
-                      <p className="text-xs text-gray-500">
-                        {stats.onlineDevices} 台在线
-                      </p>
-                    </div>
-                    <Smartphone className="h-8 w-8 text-purple-600" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">系统状态</p>
-                      <p className="text-2xl font-bold text-orange-600">正常</p>
-                      <p className="text-xs text-gray-500">所有设备运行中</p>
-                    </div>
-                    <Shield className="h-8 w-8 text-orange-600" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* 实时打卡模拟 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-5 w-5" />
-                  实时打卡模拟
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <Label htmlFor="device-select">选择设备:</Label>
-                    <Select value={selectedDevice} onValueChange={setSelectedDevice}>
-                      <SelectTrigger className="w-64">
-                        <SelectValue placeholder="选择打卡设备" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {devices.map((device) => (
-                          <SelectItem key={device.id} value={device.id}>
-                            {device.name} - {device.location}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button 
-                      onClick={startSimulation} 
-                      disabled={!selectedDevice || isSimulating}
-                      className="flex items-center gap-2"
-                    >
-                      {isSimulating ? (
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Play className="h-4 w-4" />
-                      )}
-                      {isSimulating ? "模拟中..." : "开始模拟"}
-                    </Button>
-                  </div>
-                  
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 最近打卡记录 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  最近打卡记录
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {attendanceRecords.slice(0, 5).map((record) => (
-                    <div key={record.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(record.status)}
-                          <span className="font-medium">{record.studentName}</span>
-                          <Badge variant="outline">{record.cardNumber}</Badge>
-                        </div>
-                        <span className="text-sm text-gray-500">
-                          {record.deviceName} - {record.location}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-medium">{formatTime(record.timestamp)}</div>
-                        <Badge className={getStatusColor(record.status)}>
-                          {record.type === 'check_in' ? '签到' : '签退'}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <NFCOverviewTab
+            stats={stats}
+            devices={devices}
+            selectedDevice={selectedDevice}
+            setSelectedDevice={setSelectedDevice}
+            isSimulating={isSimulating}
+            setIsSimulating={setIsSimulating}
+            simulateAttendance={simulateAttendance}
+            loading={loading}
+          />
         )
-
       case "cards":
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">NFC/RFID 卡管理</h2>
-              <Button onClick={() => setNewCardDialog(true)} className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                添加新卡
-              </Button>
-            </div>
-
-            <Card>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>卡号</TableHead>
-                      <TableHead>学生姓名</TableHead>
-                      <TableHead>卡类型</TableHead>
-                      <TableHead>状态</TableHead>
-                      <TableHead>发卡日期</TableHead>
-                      <TableHead>使用次数</TableHead>
-                      <TableHead>最后使用</TableHead>
-                      <TableHead>操作</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {cards.map((card) => (
-                      <TableRow key={card.id}>
-                        <TableCell className="font-mono">{card.cardNumber}</TableCell>
-                        <TableCell>{card.studentName}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{card.cardType}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(card.status)}>
-                            {card.status === 'active' ? '活跃' : 
-                             card.status === 'inactive' ? '停用' :
-                             card.status === 'lost' ? '丢失' : '已替换'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{card.issuedDate.toLocaleDateString()}</TableCell>
-                        <TableCell>{card.usageCount}</TableCell>
-                        <TableCell>
-                          {card.lastUsed ? formatTime(card.lastUsed) : '未使用'}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
+          <NFCCardsTab
+            cards={cards}
+            loading={loading}
+            newCardDialog={newCardDialog}
+            setNewCardDialog={setNewCardDialog}
+            editingCard={editingCard}
+            setEditingCard={setEditingCard}
+            newCard={newCard}
+            setNewCard={setNewCard}
+            addCard={handleAddCard}
+            updateCard={handleUpdateCard}
+            deleteCard={deleteCard}
+            getStatusColor={getStatusColor}
+            getStatusIcon={getStatusIcon}
+          />
         )
-
       case "devices":
         return (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">设备管理</h2>
-              <Button onClick={() => setNewDeviceDialog(true)} className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                添加设备
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {devices.map((device) => (
-                <Card key={device.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{device.name}</CardTitle>
-                      <Badge className={getStatusColor(device.status)}>
-                        {device.status === 'online' ? '在线' : 
-                         device.status === 'offline' ? '离线' : '维护中'}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Settings className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm">{device.location}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Smartphone className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm">{device.deviceType}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Activity className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm">今日打卡: {device.cardCount} 次</span>
-                      </div>
-                      {device.lastActivity && (
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm">
-                            最后活动: {formatTime(device.lastActivity)}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex gap-2 pt-2">
-                        <Button size="sm" variant="outline" className="flex-1">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" className="flex-1">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )
-
-      case "records":
-        return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">打卡记录</h2>
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
-                  导出记录
-                </Button>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  生成报表
-                </Button>
-              </div>
-            </div>
-
+            {/* 设备管理内容 */}
             <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Smartphone className="h-5 w-5" />
+                    设备管理
+                  </CardTitle>
+                  <Button onClick={() => setNewDeviceDialog(true)} className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    添加设备
+                  </Button>
+                </div>
+              </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>时间</TableHead>
-                      <TableHead>学生姓名</TableHead>
-                      <TableHead>卡号</TableHead>
-                      <TableHead>设备</TableHead>
-                      <TableHead>类型</TableHead>
-                      <TableHead>状态</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {attendanceRecords.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell>{formatTime(record.timestamp)}</TableCell>
-                        <TableCell>{record.studentName}</TableCell>
-                        <TableCell className="font-mono">{record.cardNumber}</TableCell>
-                        <TableCell>{record.deviceName}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {record.type === 'check_in' ? '签到' : 
-                             record.type === 'check_out' ? '签退' :
-                             record.type === 'break_start' ? '休息开始' : '休息结束'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(record.status)}>
-                            {record.status === 'success' ? '成功' : 
-                             record.status === 'failed' ? '失败' : '重复'}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-blue-700 font-medium">✅ 设备管理功能开发中...</p>
+                </div>
               </CardContent>
             </Card>
           </div>
         )
-
+      case "records":
+        return (
+          <div className="space-y-6">
+            {/* 打卡记录内容 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  打卡记录
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-green-700 font-medium">✅ 打卡记录功能开发中...</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )
       default:
-        return null
+        return <div className="text-center py-12 text-gray-500">请选择一个功能模块</div>
     }
   }
 
@@ -557,19 +284,27 @@ export default function NFCAttendanceSystem() {
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
-          <Button size="sm" onClick={clearError} className="ml-auto">
-            关闭
-          </Button>
         </Alert>
       )}
 
-      {/* 标签页 */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">概览</TabsTrigger>
-          <TabsTrigger value="cards">卡管理</TabsTrigger>
-          <TabsTrigger value="devices">设备管理</TabsTrigger>
-          <TabsTrigger value="records">打卡记录</TabsTrigger>
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            概览
+          </TabsTrigger>
+          <TabsTrigger value="cards" className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            卡片管理
+          </TabsTrigger>
+          <TabsTrigger value="devices" className="flex items-center gap-2">
+            <Smartphone className="h-4 w-4" />
+            设备管理
+          </TabsTrigger>
+          <TabsTrigger value="records" className="flex items-center gap-2">
+            <Activity className="h-4 w-4" />
+            打卡记录
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-6">
@@ -577,119 +312,14 @@ export default function NFCAttendanceSystem() {
         </TabsContent>
       </Tabs>
 
-      {/* 添加新卡对话框 */}
-      <Dialog open={newCardDialog} onOpenChange={setNewCardDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>添加新卡</DialogTitle>
-            <DialogDescription>为学生分配新的NFC/RFID卡</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="cardNumber">卡号</Label>
-                <Input
-                  id="cardNumber"
-                  value={newCard.cardNumber}
-                  onChange={(e) => setNewCard({...newCard, cardNumber: e.target.value})}
-                  placeholder="输入卡号"
-                />
-              </div>
-              <div>
-                <Label htmlFor="studentId">学生ID</Label>
-                <Input
-                  id="studentId"
-                  value={newCard.studentId}
-                  onChange={(e) => setNewCard({...newCard, studentId: e.target.value})}
-                  placeholder="输入学生ID"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="studentName">学生姓名</Label>
-              <Input
-                id="studentName"
-                value={newCard.studentName}
-                onChange={(e) => setNewCard({...newCard, studentName: e.target.value})}
-                placeholder="输入学生姓名"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="cardType">卡类型</Label>
-                <Select value={newCard.cardType} onValueChange={(value: "NFC" | "RFID") => setNewCard({...newCard, cardType: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NFC">NFC</SelectItem>
-                    <SelectItem value="RFID">RFID</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="status">状态</Label>
-                <Select value={newCard.status} onValueChange={(value: "active" | "inactive" | "lost" | "replaced") => setNewCard({...newCard, status: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">活跃</SelectItem>
-                    <SelectItem value="inactive">停用</SelectItem>
-                    <SelectItem value="lost">丢失</SelectItem>
-                    <SelectItem value="replaced">已替换</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="issuedDate">发卡日期</Label>
-                <Input
-                  id="issuedDate"
-                  type="date"
-                  value={newCard.issuedDate}
-                  onChange={(e) => setNewCard({...newCard, issuedDate: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="expiryDate">过期日期</Label>
-                <Input
-                  id="expiryDate"
-                  type="date"
-                  value={newCard.expiryDate}
-                  onChange={(e) => setNewCard({...newCard, expiryDate: e.target.value})}
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="notes">备注</Label>
-              <Input
-                id="notes"
-                value={newCard.notes}
-                onChange={(e) => setNewCard({...newCard, notes: e.target.value})}
-                placeholder="输入备注信息"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setNewCardDialog(false)}>
-                取消
-              </Button>
-              <Button onClick={handleAddCard} disabled={loading}>
-                {loading ? "添加中..." : "添加"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* 添加新设备对话框 */}
+      {/* 添加设备对话框 */}
       <Dialog open={newDeviceDialog} onOpenChange={setNewDeviceDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>添加新设备</DialogTitle>
-            <DialogDescription>添加新的NFC/RFID读卡设备</DialogDescription>
+            <DialogDescription>配置新的NFC/RFID设备</DialogDescription>
           </DialogHeader>
+          
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>

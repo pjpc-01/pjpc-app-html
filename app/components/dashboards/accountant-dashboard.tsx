@@ -43,10 +43,29 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
     { time: "08:50", action: "杂费缴纳", user: "赵家长", amount: 300, type: "income" },
   ]
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "overview":
-        return (
+  return (
+    <div className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-4 h-12">
+          <TabsTrigger value="overview" className="flex items-center gap-2 text-sm">
+            <BarChart3 className="h-4 w-4" />
+            概览
+          </TabsTrigger>
+          <TabsTrigger value="finance" className="flex items-center gap-2 text-sm">
+            <DollarSign className="h-4 w-4" />
+            财务
+          </TabsTrigger>
+          <TabsTrigger value="reports" className="flex items-center gap-2 text-sm">
+            <FileText className="h-4 w-4" />
+            报表
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="flex items-center gap-2 text-sm">
+            <Receipt className="h-4 w-4" />
+            账单
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="mt-6">
           <div className="space-y-6">
             {/* Key Financial Indicators */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -233,13 +252,13 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
               </CardContent>
             </Card>
           </div>
-        )
+        </TabsContent>
 
-      case "finance":
-        return <FinanceManagement />
+        <TabsContent value="finance" className="mt-6">
+          <FinanceManagement />
+        </TabsContent>
 
-      case "reports":
-        return (
+        <TabsContent value="reports" className="mt-6">
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -286,10 +305,9 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
               </CardContent>
             </Card>
           </div>
-        )
+        </TabsContent>
 
-      case "billing":
-        return (
+        <TabsContent value="billing" className="mt-6">
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -336,10 +354,9 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
               </CardContent>
             </Card>
           </div>
-        )
+        </TabsContent>
 
-      case "analytics":
-        return (
+        <TabsContent value="analytics" className="mt-6">
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -386,37 +403,6 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
               </CardContent>
             </Card>
           </div>
-        )
-
-      default:
-        return <div className="text-center py-12 text-gray-500">请选择一个功能模块</div>
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 h-12">
-          <TabsTrigger value="overview" className="flex items-center gap-2 text-sm">
-            <BarChart3 className="h-4 w-4" />
-            概览
-          </TabsTrigger>
-          <TabsTrigger value="finance" className="flex items-center gap-2 text-sm">
-            <DollarSign className="h-4 w-4" />
-            财务
-          </TabsTrigger>
-          <TabsTrigger value="reports" className="flex items-center gap-2 text-sm">
-            <FileText className="h-4 w-4" />
-            报表
-          </TabsTrigger>
-          <TabsTrigger value="billing" className="flex items-center gap-2 text-sm">
-            <Receipt className="h-4 w-4" />
-            账单
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={activeTab} className="mt-6">
-          {renderTabContent()}
         </TabsContent>
       </Tabs>
     </div>

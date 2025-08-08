@@ -74,10 +74,21 @@ export default function ParentDashboard({ activeTab, setActiveTab }: ParentDashb
     { time: "08:30", action: "到校签到", detail: "小明已安全到校", child: "小明", type: "attendance" },
   ]
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "overview":
-        return (
+  return (
+    <div className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 h-12">
+          <TabsTrigger value="overview" className="flex items-center gap-2 text-sm">
+            <BarChart3 className="h-4 w-4" />
+            概览
+          </TabsTrigger>
+          <TabsTrigger value="education" className="flex items-center gap-2 text-sm">
+            <BookOpen className="h-4 w-4" />
+            教育
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="mt-6">
           <div className="space-y-6">
             {/* Key Performance Indicators */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -311,12 +322,9 @@ export default function ParentDashboard({ activeTab, setActiveTab }: ParentDashb
               </CardContent>
             </Card>
           </div>
-        )
+        </TabsContent>
 
-
-
-      case "education":
-        return (
+        <TabsContent value="education" className="mt-6">
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-blue-200">
@@ -353,38 +361,23 @@ export default function ParentDashboard({ activeTab, setActiveTab }: ParentDashb
               </Card>
             </div>
           </div>
-        )
+        </TabsContent>
 
-      // Individual feature pages
-      case "children":
-        return <StudentManagement />
-      case "communication":
-        return <CommunicationSystem />
-      case "analytics":
-        return <LearningAnalytics />
-      case "schedule":
-        return <ScheduleManagement />
-      default:
-        return <div className="text-center py-12 text-gray-500">请选择一个功能模块</div>
-    }
-  }
+        {/* Individual feature pages */}
+        <TabsContent value="children" className="mt-6">
+          <StudentManagement />
+        </TabsContent>
 
-  return (
-    <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 h-12">
-          <TabsTrigger value="overview" className="flex items-center gap-2 text-sm">
-            <BarChart3 className="h-4 w-4" />
-            概览
-          </TabsTrigger>
-          <TabsTrigger value="education" className="flex items-center gap-2 text-sm">
-            <BookOpen className="h-4 w-4" />
-            教育
-          </TabsTrigger>
-        </TabsList>
+        <TabsContent value="communication" className="mt-6">
+          <CommunicationSystem />
+        </TabsContent>
 
-        <TabsContent value={activeTab} className="mt-6">
-          {renderTabContent()}
+        <TabsContent value="analytics" className="mt-6">
+          <LearningAnalytics />
+        </TabsContent>
+
+        <TabsContent value="schedule" className="mt-6">
+          <ScheduleManagement />
         </TabsContent>
       </Tabs>
     </div>

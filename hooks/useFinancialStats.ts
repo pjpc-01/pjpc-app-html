@@ -11,6 +11,10 @@ export interface FinancialStats {
   overduePayments: number
   recentTransactions: Transaction[]
   revenueByMonth: Record<string, number>
+  cashBalance: number
+  monthlyExpenses: number
+  netProfit: number
+  cashFlowHistory: CashFlowRecord[]
 }
 
 export interface Transaction {
@@ -24,6 +28,16 @@ export interface Transaction {
   paymentMethod: string
 }
 
+export interface CashFlowRecord {
+  id: string
+  date: Date
+  type: 'income' | 'expense'
+  category: string
+  amount: number
+  description: string
+  balance: number
+}
+
 export const useFinancialStats = () => {
   const { user, userProfile } = useAuth()
   const [stats, setStats] = useState<FinancialStats>({
@@ -32,7 +46,11 @@ export const useFinancialStats = () => {
     pendingPayments: 0,
     overduePayments: 0,
     recentTransactions: [],
-    revenueByMonth: {}
+    revenueByMonth: {},
+    cashBalance: 0,
+    monthlyExpenses: 0,
+    netProfit: 0,
+    cashFlowHistory: []
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -233,20 +251,115 @@ export const useFinancialStats = () => {
     }
   }, [])
 
+  // 获取现金余额
+  const fetchCashBalance = useCallback(async () => {
+    try {
+      const cashFlowRef = collection(db, 'cashFlow')
+      const cashFlowSnapshot = await getDocs(cashFlowRef)
+      
+      let balance = 0
+      const cashFlowHistory: CashFlowRecord[] = []
+      
+      cashFlowSnapshot.forEach(doc => {
+        const cashFlowData = doc.data()
+        
+        if (cashFlowData && 
+            cashFlowData.date && 
+            typeof cashFlowData.date.toDate === 'function' &&
+            cashFlowData.amount !== undefined) {
+          
+          try {
+            const flowDate = cashFlowData.date.toDate()
+            const amount = cashFlowData.amount || 0
+            
+            if (cashFlowData.type === 'income') {
+              balance += amount
+            } else {
+              balance -= amount
+            }
+            
+            cashFlowHistory.push({
+              id: doc.id,
+              date: flowDate,
+              type: cashFlowData.type || 'income',
+              category: cashFlowData.category || 'General',
+              amount: amount,
+              description: cashFlowData.description || 'Cash flow entry',
+              balance: balance
+            })
+          } catch (dateError) {
+            console.warn('Invalid date in cash flow document:', doc.id, dateError)
+          }
+        }
+      })
+      
+      // 按日期排序，最新的在前
+      cashFlowHistory.sort((a, b) => b.date.getTime() - a.date.getTime())
+      
+      return { balance, cashFlowHistory: cashFlowHistory.slice(0, 10) }
+    } catch (err) {
+      console.error('Error fetching cash balance:', err)
+      return { balance: 0, cashFlowHistory: [] }
+    }
+  }, [])
+
+  // 获取月度支出
+  const fetchMonthlyExpenses = useCallback(async () => {
+    try {
+      const now = new Date()
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+
+      const cashFlowRef = collection(db, 'cashFlow')
+      const cashFlowSnapshot = await getDocs(cashFlowRef)
+      
+      let monthlyExpenses = 0
+      cashFlowSnapshot.forEach(doc => {
+        const cashFlowData = doc.data()
+        
+        if (cashFlowData && 
+            cashFlowData.date && 
+            typeof cashFlowData.date.toDate === 'function' &&
+            cashFlowData.amount !== undefined &&
+            cashFlowData.type === 'expense') {
+          
+          try {
+            const flowDate = cashFlowData.date.toDate()
+            
+            if (flowDate >= startOfMonth && flowDate <= endOfMonth) {
+              monthlyExpenses += cashFlowData.amount || 0
+            }
+          } catch (dateError) {
+            console.warn('Invalid date in cash flow document for monthly expenses:', doc.id, dateError)
+          }
+        }
+      })
+      
+      return monthlyExpenses
+    } catch (err) {
+      console.error('Error fetching monthly expenses:', err)
+      return 0
+    }
+  }, [])
+
   // 获取所有财务统计数据
   const fetchAllFinancialStats = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
 
-      const [monthlyRevenue, totalRevenue, pendingPayments, overduePayments, recentTransactions, revenueByMonth] = await Promise.all([
+      const [monthlyRevenue, totalRevenue, pendingPayments, overduePayments, recentTransactions, revenueByMonth, cashBalanceData, monthlyExpenses] = await Promise.all([
         fetchMonthlyRevenue(),
         fetchTotalRevenue(),
         fetchPendingPayments(),
         fetchOverduePayments(),
         fetchRecentTransactions(),
-        fetchRevenueByMonth()
+        fetchRevenueByMonth(),
+        fetchCashBalance(),
+        fetchMonthlyExpenses()
       ])
+
+      const netProfit = monthlyRevenue - monthlyExpenses
 
       setStats({
         monthlyRevenue,
@@ -254,7 +367,11 @@ export const useFinancialStats = () => {
         pendingPayments,
         overduePayments,
         recentTransactions,
-        revenueByMonth
+        revenueByMonth,
+        cashBalance: cashBalanceData.balance,
+        monthlyExpenses,
+        netProfit,
+        cashFlowHistory: cashBalanceData.cashFlowHistory
       })
     } catch (err) {
       console.error('Error fetching financial stats:', err)
@@ -262,7 +379,7 @@ export const useFinancialStats = () => {
     } finally {
       setLoading(false)
     }
-  }, [fetchMonthlyRevenue, fetchTotalRevenue, fetchPendingPayments, fetchOverduePayments, fetchRecentTransactions, fetchRevenueByMonth])
+  }, [fetchMonthlyRevenue, fetchTotalRevenue, fetchPendingPayments, fetchOverduePayments, fetchRecentTransactions, fetchRevenueByMonth, fetchCashBalance, fetchMonthlyExpenses])
 
   // 实时监听数据变化
   useEffect(() => {

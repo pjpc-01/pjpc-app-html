@@ -5,6 +5,121 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Status badge utilities
+export const getStatusBadge = (status: string) => {
+  switch (status) {
+    case 'approved':
+    case 'active':
+    case 'completed':
+    case 'paid':
+      return 'bg-green-100 text-green-800'
+    case 'pending':
+    case 'unpaid':
+      return 'bg-yellow-100 text-yellow-800'
+    case 'suspended':
+    case 'overdue':
+    case 'failed':
+      return 'bg-red-100 text-red-800'
+    case 'draft':
+    case 'inactive':
+      return 'bg-gray-100 text-gray-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
+  }
+}
+
+export const getStatusText = (status: string) => {
+  switch (status) {
+    case 'approved': return '已批准'
+    case 'pending': return '待审核'
+    case 'suspended': return '已暂停'
+    case 'active': return '活跃'
+    case 'inactive': return '非活跃'
+    case 'completed': return '已完成'
+    case 'paid': return '已支付'
+    case 'unpaid': return '未支付'
+    case 'overdue': return '逾期'
+    case 'failed': return '失败'
+    case 'draft': return '草稿'
+    default: return '未知'
+  }
+}
+
+// Date formatting utilities
+export const formatDate = (date: any) => {
+  if (!date) return '从未登录'
+  try {
+    return new Date(date.toDate()).toLocaleDateString()
+  } catch {
+    return new Date(date).toLocaleDateString()
+  }
+}
+
+// Error message utilities
+export const getErrorMessage = (errorCode: string) => {
+  switch (errorCode) {
+    case 'auth/user-not-found':
+      return '用户不存在'
+    case 'auth/wrong-password':
+      return '密码错误'
+    case 'auth/email-already-in-use':
+      return '邮箱已被使用'
+    case 'auth/weak-password':
+      return '密码强度不够'
+    case 'auth/invalid-email':
+      return '邮箱格式无效'
+    case 'auth/too-many-requests':
+      return '请求过于频繁，请稍后再试'
+    case 'auth/network-request-failed':
+      return '网络连接失败'
+    default:
+      return '操作失败，请重试'
+  }
+}
+
+// File download utilities
+export const downloadFile = (content: string, filename: string, type: string = 'text/html') => {
+  const blob = new Blob([content], { type })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+// Template variable extraction
+export const extractTemplateVariables = (htmlContent: string): string[] => {
+  const variableRegex = /\{\{([^}]+)\}\}/g
+  const variables = new Set<string>()
+  let match
+
+  while ((match = variableRegex.exec(htmlContent)) !== null) {
+    variables.add(match[1].trim())
+  }
+
+  return Array.from(variables)
+}
+
+// Search utilities
+export const filterBySearchTerm = <T extends Record<string, any>>(
+  items: T[],
+  searchTerm: string,
+  searchFields: (keyof T)[]
+) => {
+  if (!searchTerm) return items
+  
+  const searchLower = searchTerm.toLowerCase()
+  return items.filter(item =>
+    searchFields.some(field => {
+      const value = item[field]
+      return value && String(value).toLowerCase().includes(searchLower)
+    })
+  )
+}
+
 // 性能监控工具
 export class PerformanceMonitor {
   private static instance: PerformanceMonitor
