@@ -1,40 +1,18 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { FirestoreImport, FirestoreStudent } from '@/lib/firestore-import'
-import { Timestamp } from 'firebase/firestore'
+import { 
+  getAllStudents, 
+  getStudentsByGrade, 
+  addStudent, 
+  updateStudent, 
+  deleteStudent, 
+  searchStudents,
+  getStudentStats,
+  type Student,
+  type StudentCreateData,
+  type StudentUpdateData
+} from '@/lib/pocketbase-students'
 
-export interface Student {
-  id: string
-  name: string
-  studentId?: string
-  grade: string
-  gender?: string
-  birthDate?: string
-  phone?: string
-  email?: string
-  address?: string
-  parentName: string
-  parentPhone?: string
-  parentEmail: string
-  enrollmentDate?: string
-  enrollmentYear?: number
-  status?: string
-  createdAt?: Date
-  updatedAt?: Date
-  // Additional fields that might exist in Firebase
-  class?: string
-  fatherName?: string
-  motherName?: string
-  attendance?: number
-  progress?: number
-  age?: number
-  dateOfBirth?: string
-  emergencyContact?: string
-  emergencyPhone?: string
-  medicalInfo?: string
-  notes?: string
-  image?: string
-  calculatedGrade?: string
-}
+// 使用从pocketbase-students导入的Student类型，不再需要本地定义
 
 interface UseStudentsOptions {
   dataType?: 'primary' | 'secondary'
@@ -68,193 +46,129 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
     return Date.now() - lastFetchTime < cacheTimeout
   }, [enableCache, lastFetchTime, cacheTimeout, dataType, lastDataType]) // 添加lastDataType依赖
 
-  // 转换Firestore学生数据到Student接口
-  const convertFirestoreStudent = useCallback((student: any): Student => {
+  // 转换PocketBase学生数据到统一格式
+  const convertPocketBaseStudent = useCallback((student: any): any => {
+    // 标准化年级格式
+    const normalizeGrade = (grade: string) => {
+      if (!grade) return ''
+      // 移除空格和特殊字符，只保留数字
+      const cleanGrade = grade.toString().trim().replace(/[^\d]/g, '')
+      return cleanGrade || ''
+    }
+
+    // 标准化性别格式
+    const normalizeGender = (gender: string) => {
+      if (!gender) return ''
+      const genderLower = gender.toString().toLowerCase().trim()
+      if (genderLower === 'male' || genderLower === 'm') return '男'
+      if (genderLower === 'female' || genderLower === 'f') return '女'
+      return gender // 如果已经是中文或其他格式，保持原样
+    }
+
+    const normalizedGrade = normalizeGrade(student.standard)
+    const normalizedGender = normalizeGender(student.gender)
+    
     return {
       id: student.id,
-      name: student.name,
-      studentId: student.id, // 使用Firebase文档ID作为学号
-      grade: student.grade,
-      gender: student.gender,
-      birthDate: student.birthDate,
-      phone: student.phone,
-      email: student.email,
-      address: student.address,
-      parentName: student.parentName,
-      parentPhone: student.parentPhone,
-      parentEmail: student.parentEmail,
-      enrollmentDate: student.enrollmentDate,
-      enrollmentYear: student.enrollmentYear,
-      status: student.status,
-      createdAt: student.createdAt?.toDate(),
-      updatedAt: student.updatedAt?.toDate(),
-      // Preserve all additional Firebase fields
-      class: student.class,
-      fatherName: student.fatherName,
-      motherName: student.motherName,
-      attendance: student.attendance,
-      progress: student.progress,
-      age: student.age,
-      dateOfBirth: student.dateOfBirth,
-      emergencyContact: student.emergencyContact,
-      emergencyPhone: student.emergencyPhone,
-      medicalInfo: student.medicalInfo,
-      notes: student.notes,
-      image: student.image,
-      calculatedGrade: student.calculatedGrade,
+      name: student.student_name,
+      studentId: student.student_id,
+      grade: normalizedGrade,
+      gender: normalizedGender,
+      birthDate: student.dob,
+      phone: student.father_phone || student.mother_phone,
+      email: '', // PocketBase中没有email字段
+      address: student.home_address,
+      parentName: '', // PocketBase中没有parentName字段
+      parentPhone: student.father_phone || student.mother_phone,
+      parentEmail: '', // PocketBase中没有parentEmail字段
+      enrollmentDate: student.created,
+      enrollmentYear: new Date(student.created).getFullYear().toString(),
+      status: 'active', // 默认状态
+      createdAt: student.created,
+      updatedAt: student.updated,
+      // 其他字段保持为空或默认值
+      class: normalizedGrade,
+      fatherName: '', // PocketBase中没有fatherName字段
+      motherName: '', // PocketBase中没有motherName字段
+      attendance: 0,
+      progress: 0,
+      age: 0,
+      dateOfBirth: student.dob,
+      emergencyContact: student.father_phone || student.mother_phone,
+      emergencyPhone: student.father_phone || student.mother_phone,
+      medicalInfo: '',
+      notes: '',
+      image: '',
+      calculatedGrade: normalizedGrade,
     }
   }, [])
 
   // 过滤学生数据
-  const filterStudents = useCallback((students: Student[]): Student[] => {
-    return students.filter(student => 
-      !student.name?.startsWith("Student") && 
-      student.name?.trim() !== "" &&
-      student.name !== undefined
-    )
+  const filterStudents = useCallback((students: any[]): any[] => {
+    console.log('过滤前的学生数据:', students.map(s => ({ id: s.id, name: s.name, student_name: s.student_name })))
+    // 暂时不过滤，直接返回所有数据
+    console.log('过滤后的学生数据:', students.map(s => ({ id: s.id, name: s.name })))
+    return students
   }, [])
 
   const fetchStudents = useCallback(async (page: number = 1, forceRefresh: boolean = false) => {
     try {
-      // 如果缓存有效且不是强制刷新，直接返回
-      // 但是当dataType改变时，强制刷新
-      if (isCacheValid && !forceRefresh) {
-        console.log(`Using cached data for ${dataType}`)
-        return
-      }
-      
-      console.log(`Fetching fresh data for ${dataType}, forceRefresh: ${forceRefresh}`)
+      console.log(`开始获取学生数据...`)
+      console.log(`dataType: ${dataType}, forceRefresh: ${forceRefresh}`)
 
       setLoading(true)
       setError(null)
       
-      console.log(`Fetching students for dataType: ${dataType}, page: ${page}`)
+      // 使用PocketBase获取学生数据
+      const allStudents = await getAllStudents()
+      console.log('从PocketBase获取的学生数量:', allStudents.length)
+      console.log('原始学生数据示例:', allStudents[0])
       
-      // 添加超时保护
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Firebase连接超时')), 15000) // 15秒超时
-      })
-      
-      const firestoreImport = new FirestoreImport(dataType)
-      const firestorePromise = firestoreImport.getAllStudents()
-      
-      const firestoreStudents = await Promise.race([firestorePromise, timeoutPromise]) as any[]
-      
-      console.log('Raw Firebase students:', firestoreStudents)
-      
-      // 转换数据
-      const convertedStudents: Student[] = firestoreStudents.map(student => {
-        console.log('Processing student:', { 
-          firebaseId: student.id, 
-          name: student.name,
-          hasId: !!student.id,
-          idType: typeof student.id,
-          allFields: Object.keys(student)
-        })
-        return convertFirestoreStudent(student)
-      })
+      // 转换PocketBase数据格式
+      const convertedStudents = allStudents.map(convertPocketBaseStudent)
+      console.log('转换后的学生数量:', convertedStudents.length)
+      console.log('转换后学生数据示例:', convertedStudents[0])
       
       // 过滤数据
       const filteredStudents = filterStudents(convertedStudents)
       
-      console.log('Filtered students:', filteredStudents.map(s => ({ id: s.id, name: s.name })))
+      console.log('过滤后的学生数量:', filteredStudents.length)
+      console.log('过滤后学生数据示例:', filteredStudents[0])
       
       setStudents(filteredStudents)
       setLastFetchTime(Date.now())
-      setLastDataType(dataType) // 更新最后使用的dataType
+      setLastDataType(dataType)
       setHasMore(filteredStudents.length >= pageSize)
       
     } catch (err) {
-      console.error('Error fetching students:', err)
-      console.error('Error details:', {
-        message: err instanceof Error ? err.message : 'Unknown error',
-        stack: err instanceof Error ? err.stack : 'No stack trace',
+      console.error('获取学生数据失败:', err)
+      console.error('错误详情:', {
+        message: err instanceof Error ? err.message : '未知错误',
+        stack: err instanceof Error ? err.stack : '无堆栈跟踪',
         type: typeof err
       })
       
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch students'
+      const errorMessage = err instanceof Error ? err.message : '获取学生数据失败'
       setError(errorMessage)
-      
-      // 如果Firestore失败，使用备用数据
-      if (students.length === 0) {
-        setStudents([
-          { 
-            id: "G16", 
-            name: "王小明", 
-            studentId: "G16", // 使用ID作为学号
-            grade: "三年级", 
-            birthDate: "2015-03-15",
-            gender: "male",
-            phone: "0123456789",
-            parentName: "王大明", 
-            parentEmail: "wang@example.com",
-            status: "active"
-          },
-          { 
-            id: "G17", 
-            name: "李小红", 
-            studentId: "G17", // 使用ID作为学号
-            grade: "四年级", 
-            birthDate: "2014-07-22",
-            gender: "female",
-            phone: "0123456790",
-            parentName: "李大红", 
-            parentEmail: "li@example.com",
-            status: "active"
-          },
-          { 
-            id: "G18", 
-            name: "张小华", 
-            studentId: "G18", // 使用ID作为学号
-            grade: "五年级", 
-            birthDate: "2013-11-08",
-            gender: "male",
-            phone: "0123456791",
-            parentName: "张大华", 
-            parentEmail: "zhang@example.com",
-            status: "active"
-          },
-          { 
-            id: "G19", 
-            name: "陈小军", 
-            studentId: "G19", // 使用ID作为学号
-            grade: "三年级", 
-            birthDate: "2015-01-30",
-            gender: "male",
-            phone: "0123456792",
-            parentName: "陈大军", 
-            parentEmail: "chen@example.com",
-            status: "active"
-          },
-        ])
-      }
     } finally {
       setLoading(false)
     }
-  }, [dataType, isCacheValid, convertFirestoreStudent, filterStudents, pageSize, students.length])
+  }, [dataType, pageSize, convertPocketBaseStudent, filterStudents])
 
-  const getStudentsByGrade = useCallback(async (grade: string): Promise<Student[]> => {
+  const getStudentsByGradeHook = useCallback(async (standard: string): Promise<any[]> => {
     try {
-      const firestoreImport = new FirestoreImport(dataType)
-      const firestoreStudents = await firestoreImport.getStudentsByGrade(grade)
-      
-      return firestoreStudents.map(student => convertFirestoreStudent(student))
+      const students = await getStudentsByGrade(standard)
+      return students.map(convertPocketBaseStudent)
     } catch (err) {
       console.error('Error fetching students by grade:', err)
       throw err
     }
-  }, [dataType, convertFirestoreStudent])
+  }, [convertPocketBaseStudent])
 
-  const updateStudent = useCallback(async (studentId: string, updates: Partial<Student>) => {
+  const updateStudentHook = useCallback(async (studentId: string, updates: Partial<Student>) => {
     try {
       setError(null)
-      const firestoreImport = new FirestoreImport(dataType)
-      // Convert Student updates to FirestoreStudent updates
-      const firestoreUpdates = {
-        ...updates,
-        updatedAt: Timestamp.now()
-      } as Partial<FirestoreStudent>
-      await firestoreImport.updateStudent(studentId, firestoreUpdates)
+      await updateStudent({ id: studentId, ...updates })
       
       // 更新本地状态
       setStudents(prevStudents => 
@@ -268,13 +182,12 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
       setError(errorMessage)
       throw err
     }
-  }, [dataType])
+  }, [])
 
-  const deleteStudent = useCallback(async (studentId: string) => {
+  const deleteStudentHook = useCallback(async (studentId: string) => {
     try {
       setError(null)
-      const firestoreImport = new FirestoreImport(dataType)
-      await firestoreImport.deleteStudent(studentId)
+      await deleteStudent(studentId)
       
       // 更新本地状态
       setStudents(prevStudents => prevStudents.filter(student => student.id !== studentId))
@@ -284,33 +197,31 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
       setError(errorMessage)
       throw err
     }
-  }, [dataType])
+  }, [])
 
-  const addStudent = useCallback(async (studentData: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addStudentHook = useCallback(async (studentData: Omit<Student, 'id' | 'created' | 'updated'>) => {
     try {
       setError(null)
-      const firestoreImport = new FirestoreImport(dataType)
-      const newStudent = await firestoreImport.addStudent(studentData)
+      const newStudent = await addStudent(studentData as StudentCreateData)
       
       // 添加到本地状态
-      setStudents(prevStudents => [...prevStudents, convertFirestoreStudent(newStudent)])
+      setStudents(prevStudents => [...prevStudents, newStudent])
     } catch (err) {
       console.error('Error adding student:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to add student'
       setError(errorMessage)
       throw err
     }
-  }, [dataType, convertFirestoreStudent])
+  }, [])
 
   const getImportStats = useCallback(async () => {
     try {
-      const firestoreImport = new FirestoreImport(dataType)
-      return await firestoreImport.getImportStats()
+      return await getStudentStats()
     } catch (err) {
       console.error('Error getting import stats:', err)
       throw err
     }
-  }, [dataType])
+  }, [])
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
@@ -331,7 +242,7 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
   const stats = useMemo(() => {
     const total = students.length
     const byGrade = students.reduce((acc, student) => {
-      const grade = student.grade || 'Unknown'
+      const grade = student.grade || '无年级'
       acc[grade] = (acc[grade] || 0) + 1
       return acc
     }, {} as Record<string, number>)
@@ -340,8 +251,10 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
   }, [students])
 
   useEffect(() => {
+    console.log('useEffect触发，开始获取数据...')
+    console.log('依赖项:', { currentPage, dataType })
     fetchStudents(currentPage)
-  }, [currentPage, fetchStudents, dataType])
+  }, [currentPage, dataType, fetchStudents])
 
   return { 
     students, 
@@ -351,10 +264,10 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
     stats,
     refetch: refresh,
     loadMore,
-    getStudentsByGrade,
-    updateStudent,
-    deleteStudent,
-    addStudent,
+    getStudentsByGrade: getStudentsByGradeHook,
+    updateStudent: updateStudentHook,
+    deleteStudent: deleteStudentHook,
+    addStudent: addStudentHook,
     getImportStats,
     clearError
   }

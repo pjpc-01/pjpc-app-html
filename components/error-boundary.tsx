@@ -1,15 +1,11 @@
-"use client"
-
-import React, { Component, ErrorInfo, ReactNode } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertTriangle, RefreshCw, Home, Bug } from "lucide-react"
+import React, { Component, ErrorInfo, ReactNode } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
 
 interface Props {
   children: ReactNode
-  fallback?: ReactNode
-  onError?: (error: Error, errorInfo: ErrorInfo) => void
 }
 
 interface State {
@@ -31,31 +27,20 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    // 生成错误ID用于追踪
-    const errorId = `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    
     return {
       hasError: true,
       error,
       errorInfo: null,
-      errorId,
+      errorId: Math.random().toString(36).substr(2, 9),
     }
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // 记录错误信息
-    console.error("ErrorBoundary caught an error:", error, errorInfo)
-    
     this.setState({
+      error,
       errorInfo,
     })
 
-    // 调用自定义错误处理函数
-    if (this.props.onError) {
-      this.props.onError(error, errorInfo)
-    }
-
-    // 可以在这里发送错误报告到服务器
     this.reportError(error, errorInfo)
   }
 
@@ -72,8 +57,6 @@ export default class ErrorBoundary extends Component<Props, State> {
         url: window.location.href,
       }
 
-      console.log("Error Report:", errorReport)
-      
       // 可以发送到服务器或错误报告服务
       // fetch('/api/error-report', {
       //   method: 'POST',
@@ -98,70 +81,30 @@ export default class ErrorBoundary extends Component<Props, State> {
     window.location.href = "/"
   }
 
-  handleReload = () => {
-    window.location.reload()
-  }
-
   render() {
     if (this.state.hasError) {
-      // 如果有自定义fallback，使用它
-      if (this.props.fallback) {
-        return this.props.fallback
-      }
-
-      // 默认错误UI
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-red-600">
-                <Bug className="h-5 w-5" />
+                <AlertTriangle className="h-5 w-5" />
                 系统错误
               </CardTitle>
               <CardDescription>
-                抱歉，系统遇到了一个意外错误。我们的技术团队已经收到通知。
+                抱歉，系统遇到了一个错误。错误ID: {this.state.errorId}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  {this.state.error?.message || "未知错误"}
+                  {this.state.error?.message || '未知错误'}
                 </AlertDescription>
               </Alert>
 
-              {process.env.NODE_ENV === 'development' && this.state.error && (
-                <details className="text-xs bg-gray-100 p-3 rounded">
-                  <summary className="cursor-pointer font-medium mb-2">
-                    错误详情 (开发模式)
-                  </summary>
-                  <div className="space-y-2">
-                    <div>
-                      <strong>错误ID:</strong> {this.state.errorId}
-                    </div>
-                    <div>
-                      <strong>错误信息:</strong> {this.state.error.message}
-                    </div>
-                    <div>
-                      <strong>错误堆栈:</strong>
-                      <pre className="mt-1 text-xs overflow-auto max-h-32">
-                        {this.state.error.stack}
-                      </pre>
-                    </div>
-                    {this.state.errorInfo && (
-                      <div>
-                        <strong>组件堆栈:</strong>
-                        <pre className="mt-1 text-xs overflow-auto max-h-32">
-                          {this.state.errorInfo.componentStack}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
-                </details>
-              )}
-
               <div className="flex gap-2">
-                <Button onClick={this.handleRetry} variant="outline" className="flex-1">
+                <Button onClick={this.handleRetry} className="flex-1">
                   <RefreshCw className="h-4 w-4 mr-2" />
                   重试
                 </Button>
@@ -171,14 +114,15 @@ export default class ErrorBoundary extends Component<Props, State> {
                 </Button>
               </div>
 
-              <Button onClick={this.handleReload} variant="default" className="w-full">
-                重新加载页面
-              </Button>
-
-              {this.state.errorId && (
-                <p className="text-xs text-gray-500 text-center">
-                  错误ID: {this.state.errorId}
-                </p>
+              {process.env.NODE_ENV === 'development' && this.state.error && (
+                <details className="mt-4">
+                  <summary className="cursor-pointer text-sm text-gray-600">
+                    错误详情（开发模式）
+                  </summary>
+                  <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto max-h-40">
+                    {this.state.error.stack}
+                  </pre>
+                </details>
               )}
             </CardContent>
           </Card>
@@ -189,19 +133,3 @@ export default class ErrorBoundary extends Component<Props, State> {
     return this.props.children
   }
 }
-
-// 函数式错误边界Hook
-export function useErrorHandler() {
-  const [error, setError] = React.useState<Error | null>(null)
-
-  const handleError = React.useCallback((error: Error) => {
-    console.error("Error caught by useErrorHandler:", error)
-    setError(error)
-  }, [])
-
-  const clearError = React.useCallback(() => {
-    setError(null)
-  }, [])
-
-  return { error, handleError, clearError }
-} 

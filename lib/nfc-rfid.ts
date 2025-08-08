@@ -1,18 +1,21 @@
-import { db } from './firebase'
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  orderBy, 
-  serverTimestamp,
-  Timestamp 
-} from 'firebase/firestore'
+// import { db } from './firebase'
+// import { 
+//   collection, 
+//   doc, 
+//   getDocs, 
+//   getDoc, 
+//   setDoc, 
+//   updateDoc, 
+//   deleteDoc, 
+//   query, 
+//   where, 
+//   orderBy, 
+//   serverTimestamp,
+//   Timestamp 
+// } from 'firebase/firestore'
+
+// 暂时禁用Firebase，迁移到PocketBase
+console.log('NFC/RFID功能正在迁移到PocketBase，暂时禁用')
 
 // NFC/RFID 卡信息接口
 export interface NFCCard {
@@ -92,18 +95,9 @@ export class NFCManager {
   // 获取所有卡
   async getAllCards(): Promise<NFCCard[]> {
     try {
-      const cardsRef = collection(db, this.collectionName)
-      const q = query(cardsRef, orderBy('createdAt', 'desc'))
-      const querySnapshot = await getDocs(q)
-      
-      return querySnapshot.docs.map(doc => ({
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate(),
-        updatedAt: doc.data().updatedAt?.toDate(),
-        issuedDate: doc.data().issuedDate?.toDate(),
-        expiryDate: doc.data().expiryDate?.toDate(),
-        lastUsed: doc.data().lastUsed?.toDate(),
-      })) as NFCCard[]
+      // 暂时禁用Firebase，返回空数组
+      console.log('NFC/RFID功能已禁用，getAllCards返回空数组')
+      return []
     } catch (error) {
       console.error('Error getting NFC cards:', error)
       throw new Error('Failed to get NFC cards')
