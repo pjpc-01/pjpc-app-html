@@ -2,7 +2,8 @@
 
 import type React from "react"
 import { useState } from "react"
-import { useAuth } from "@/contexts/enhanced-auth-context"
+import { useAuth } from "@/contexts/pocketbase-auth-context"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,6 +16,7 @@ import { Eye, EyeOff, GraduationCap, AlertTriangle, CheckCircle, Loader2, Shield
 
 export default function SecureLoginForm() {
   const { signIn, signUp, resetPassword } = useAuth()
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
@@ -62,12 +64,22 @@ export default function SecureLoginForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // 防止重复提交
+    if (isLoading) {
+      return
+    }
+    
     setIsLoading(true)
     setError("")
 
     try {
       await signIn(loginData.email, loginData.password)
+      
+      // 登录成功后不跳转，让主页自动检测到用户状态变化
+
     } catch (error: any) {
+      console.error('Login failed:', error)
       setError(error.message)
     } finally {
       setIsLoading(false)
@@ -219,7 +231,18 @@ export default function SecureLoginForm() {
                       </Button>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isLoading}
+                    onClick={(e) => {
+                      if (isLoading) {
+                        e.preventDefault()
+                    
+                        return
+                      }
+                    }}
+                  >
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

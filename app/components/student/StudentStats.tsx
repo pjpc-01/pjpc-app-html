@@ -16,13 +16,13 @@ export default function StudentStats({ students }: StudentStatsProps) {
   const inactiveStudents = students.filter(s => s.status === 'inactive').length
   
   const studentsByGrade = students.reduce((acc, student) => {
-    const grade = student.grade || 'Unknown'
+    const grade = student.grade || '无年级'
     acc[grade] = (acc[grade] || 0) + 1
     return acc
   }, {} as Record<string, number>)
 
   const studentsByGender = students.reduce((acc, student) => {
-    const gender = student.gender || 'Unknown'
+    const gender = student.gender || '未知'
     acc[gender] = (acc[gender] || 0) + 1
     return acc
   }, {} as Record<string, number>)
@@ -121,7 +121,7 @@ export default function StudentStats({ students }: StudentStatsProps) {
               {Object.entries(studentsByGender).map(([gender, count]) => (
                 <div key={gender} className="flex items-center gap-2">
                   <Badge variant="outline">
-                    {gender === 'male' ? '男' : gender === 'female' ? '女' : '未知'}
+                    {gender}
                   </Badge>
                   <span className="text-lg font-semibold">{count}</span>
                   <span className="text-sm text-gray-500">

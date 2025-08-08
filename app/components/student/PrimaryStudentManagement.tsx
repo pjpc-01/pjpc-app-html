@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { UserPlus, Search, Edit, Users, Trash2, Download, Upload } from "lucide-react"
 import { useStudents, Student } from "@/hooks/useStudents"
-import { useAuth } from "@/contexts/enhanced-auth-context"
+import { useAuth } from "@/contexts/pocketbase-auth-context"
 import StudentList from "./StudentList"
 import StudentForm from "./StudentForm"
 import StudentDetails from "./StudentDetails"
@@ -22,9 +22,16 @@ export default function PrimaryStudentManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const studentsPerPage = 10
 
-  // Filter students based on search and grade
+  // Filter students based on search and grade, and exclude students without names
   const filteredStudents = students.filter(student => {
+    // 排除没有姓名的学生
+    if (!student.name || student.name.trim() === '') {
+      return false
+    }
+    
     const matchesSearch = student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          student.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          student.grade?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -34,12 +41,17 @@ export default function PrimaryStudentManagement() {
 
   const handleAddStudent = async (studentData: Partial<Student>) => {
     try {
-      // Ensure required fields are present
+      // Convert form data to PocketBase format
       const studentToAdd = {
-        name: studentData.name || '',
-        grade: studentData.grade || '',
-        parentName: studentData.parentName || '',
-        parentEmail: studentData.parentEmail || '',
+        student_name: studentData.name || '',
+        student_id: `STU${Date.now()}`, // Generate a unique student ID
+        standard: studentData.grade || '',
+        gender: studentData.gender || '',
+        dob: studentData.birthDate || '',
+        father_phone: studentData.parentPhone || '',
+        mother_phone: studentData.parentPhone || '',
+        home_address: studentData.address || '',
+        register_form_url: '',
         ...studentData
       }
       await addStudent(studentToAdd)
@@ -98,6 +110,35 @@ export default function PrimaryStudentManagement() {
     }
   }
 
+  // 分页逻辑
+  const totalPages = Math.ceil(filteredStudents.length / studentsPerPage)
+  const startIndex = (currentPage - 1) * studentsPerPage
+  const endIndex = startIndex + studentsPerPage
+  const paginatedStudents = filteredStudents.slice(startIndex, endIndex)
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
+
+  // 当搜索条件改变时，重置到第一页
+  const handleSearchChange = (newSearchTerm: string) => {
+    setSearchTerm(newSearchTerm)
+    setCurrentPage(1)
+  }
+
+  const handleGradeChange = (newGrade: string) => {
+    setSelectedGrade(newGrade)
+    setCurrentPage(1)
+  }
+
   if (error) {
     return (
       <Card className="border-red-200 bg-red-50">
@@ -127,9 +168,9 @@ export default function PrimaryStudentManagement() {
       <div>
         <StudentFilters
           searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
+          setSearchTerm={handleSearchChange}
           selectedGrade={selectedGrade}
-          setSelectedGrade={setSelectedGrade}
+          setSelectedGrade={handleGradeChange}
           students={students}
         />
       </div>
@@ -153,7 +194,7 @@ export default function PrimaryStudentManagement() {
       {/* Student List */}
       <div>
         <StudentList
-          students={filteredStudents}
+          students={paginatedStudents}
           loading={loading}
           selectedStudents={selectedStudents}
           onSelectStudent={handleSelectStudent}
@@ -163,6 +204,36 @@ export default function PrimaryStudentManagement() {
           onDeleteStudent={handleDeleteStudent}
         />
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            显示第 {startIndex + 1}-{Math.min(endIndex, filteredStudents.length)} 条，共 {filteredStudents.length} 条记录
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrevPage}
+              disabled={currentPage === 1}
+            >
+              上一页
+            </Button>
+            <span className="text-sm text-gray-600">
+              第 {currentPage} 页，共 {totalPages} 页
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+            >
+              下一页
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Add/Edit Student Dialog */}
       <StudentForm

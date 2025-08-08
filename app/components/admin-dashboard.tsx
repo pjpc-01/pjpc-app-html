@@ -21,14 +21,17 @@ import {
   FileText,
   Calendar,
   RefreshCw,
+  User,
 } from "lucide-react"
-import { useAuth } from "@/contexts/enhanced-auth-context"
-import { useDashboardStats } from "@/hooks/useDashboardStats"
-import { useFinancialStats } from "@/hooks/useFinancialStats"
+import { useAuth } from "@/contexts/pocketbase-auth-context"
+import { pb } from "@/lib/pocketbase"
+// import { useDashboardStats } from "@/hooks/useDashboardStats"
+// import { useFinancialStats } from "@/hooks/useFinancialStats"
 import FinanceManagement from "./finance-management-page"
-import UserApproval from "@/components/admin/user-approval"
-import StudentManagement from "./student-management-page"
-import TeacherManagement from "./teacher-management"
+        import UserApproval from "@/components/admin/user-approval"
+        import StudentManagement from "./student-management-page"
+        import GoogleCSVImport from "./data-import/GoogleCSVImport"
+        // import TeacherManagement from "./teacher-management"
 import PrimaryStudentManagement from "./student/PrimaryStudentManagement"
 import SecondaryStudentManagement from "./student/SecondaryStudentManagement"
 import AttendanceSystem from "./attendance-system"
@@ -50,9 +53,36 @@ interface AdminDashboardProps {
 
 export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboardProps) {
   const { user, userProfile, loading: authLoading, error: authError } = useAuth()
-  const { stats, loading: statsLoading, error: statsError } = useDashboardStats()
-  const { stats: financialStats, loading: financialLoading, error: financialError } = useFinancialStats()
+  // const { stats, loading: statsLoading, error: statsError } = useDashboardStats()
+  // const { stats: financialStats, loading: financialLoading, error: financialError } = useFinancialStats()
   const [educationDataType, setEducationDataType] = useState<EducationDataType>('primary')
+  
+  // 临时统计数据（迁移期间使用）
+  const stats = {
+    totalUsers: 0,
+    totalStudents: 0,
+    monthlyRevenue: 0,
+    pendingApprovals: 0,
+    todayAttendance: 0,
+    activeTeachers: 0,
+    totalParents: 0,
+    systemHealth: 100,
+    recentActivities: []
+  }
+  const statsLoading = false
+  const statsError = null
+  const financialStats = {
+    totalRevenue: 0,
+    monthlyRevenue: 0,
+    pendingPayments: 0,
+    overduePayments: 0,
+    revenueGrowth: 0,
+    averagePayment: 0,
+    paymentMethods: {},
+    revenueByMonth: []
+  }
+  const financialLoading = false
+  const financialError = null
 
   // 获取教育数据统计
   const getEducationStats = useCallback(() => {
@@ -295,16 +325,14 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                     <Settings className="h-6 w-6 text-blue-600" />
                     <span className="text-sm">系统设定</span>
                   </Button>
-                  {userProfile?.role === "admin" && (
-                    <Button
-                      variant="outline"
-                      className="h-20 flex flex-col gap-2 bg-transparent hover:bg-purple-50"
-                      onClick={() => setActiveTab("finance")}
-                    >
-                      <DollarSign className="h-6 w-6 text-purple-600" />
-                      <span className="text-sm">财务管理</span>
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    className="h-20 flex flex-col gap-2 bg-transparent hover:bg-purple-50"
+                    onClick={() => setActiveTab("finance")}
+                  >
+                    <DollarSign className="h-6 w-6 text-purple-600" />
+                    <span className="text-sm">财务管理</span>
+                  </Button>
                   <Button
                     variant="outline"
                     className="h-20 flex flex-col gap-2 bg-transparent hover:bg-green-50"
@@ -402,7 +430,9 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                     <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
                       <p className="text-purple-700 font-medium">✅ 正在加载教师管理界面...</p>
                     </div>
-                    <TeacherManagement />
+                    <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                      <p className="text-purple-700 font-medium">✅ 教师管理功能正在开发中...</p>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -504,15 +534,92 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
                   </Badge>
                 </CardContent>
               </Card>
+
+              <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-purple-200">
+                <CardContent className="p-6 text-center" onClick={() => setActiveTab("google-csv-import")}>
+                  <FileText className="h-12 w-12 mx-auto mb-4 text-purple-600" />
+                  <h3 className="font-semibold mb-2">Google CSV导入</h3>
+                  <p className="text-sm text-gray-600 mb-3">从Google Sheets导入学生和教师数据</p>
+                  <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                    导入功能
+                  </Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-green-200">
+                <CardContent className="p-6 text-center" onClick={() => setActiveTab("system-settings")}>
+                  <Settings className="h-12 w-12 mx-auto mb-4 text-green-600" />
+                  <h3 className="font-semibold mb-2">系统设置</h3>
+                  <p className="text-sm text-gray-600 mb-3">系统配置和参数设置</p>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    系统配置
+                  </Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-orange-200">
+                <CardContent className="p-6 text-center" onClick={() => setActiveTab("backup-restore")}>
+                  <Activity className="h-12 w-12 mx-auto mb-4 text-orange-600" />
+                  <h3 className="font-semibold mb-2">备份恢复</h3>
+                  <p className="text-sm text-gray-600 mb-3">数据备份和恢复功能</p>
+                  <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                    数据管理
+                  </Badge>
+                </CardContent>
+              </Card>
             </div>
           </div>
         )
 
       // Individual feature pages
-      case "user-approval":
-        return <UserApproval />
-      case "users":
-        return <TeacherManagement />
+              case "user-approval":
+        return (
+          <div className="space-y-6">
+            <UserApproval />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  测试功能
+                </CardTitle>
+                <CardDescription>创建测试用户以验证审核功能</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={async () => {
+                    try {
+                      const testUser = {
+                        email: `test${Date.now()}@example.com`,
+                        password: 'test123456',
+                        passwordConfirm: 'test123456',
+                        name: `测试用户${Date.now()}`,
+                        role: 'teacher',
+                        status: 'pending'
+                      }
+                      
+                      await pb.collection('users').create(testUser)
+                      alert('测试用户创建成功！请刷新用户审核页面查看。')
+                    } catch (err) {
+                      alert('创建测试用户失败：' + (err instanceof Error ? err.message : '未知错误'))
+                    }
+                  }}
+                  variant="outline"
+                >
+                  创建测试用户
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )
+              case "users":
+          return (
+            <div className="p-6">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">用户管理</h2>
+                <p className="text-gray-600">此功能正在迁移到PocketBase，暂时不可用</p>
+              </div>
+            </div>
+          )
       case "security":
         return <SecurityMonitoring />
       case "students":
@@ -527,6 +634,26 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
         return <ExamSystem />
       case "analytics":
         return <LearningAnalytics />
+      case "google-csv-import":
+        return <GoogleCSVImport />
+      case "system-settings":
+        return (
+          <div className="p-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">系统设置</h2>
+              <p className="text-gray-600">系统配置功能正在开发中</p>
+            </div>
+          </div>
+        )
+      case "backup-restore":
+        return (
+          <div className="p-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">备份恢复</h2>
+              <p className="text-gray-600">数据备份和恢复功能正在开发中</p>
+            </div>
+          </div>
+        )
       default:
         return <div className="text-center py-12 text-gray-500">请选择一个功能模块</div>
     }
@@ -535,29 +662,23 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`grid w-full h-12 ${
-          userProfile?.role === "admin" ? "grid-cols-4" : "grid-cols-3"
-        }`}>
+        <TabsList className="grid w-full grid-cols-4 h-12">
           <TabsTrigger value="overview" className="flex items-center gap-2 text-sm">
             <BarChart3 className="h-4 w-4" />
             概览
           </TabsTrigger>
-          {userProfile?.role === "admin" && (
-            <TabsTrigger value="finance" className="flex items-center gap-2 text-sm">
-              <DollarSign className="h-4 w-4" />
-              财务
-            </TabsTrigger>
-          )}
+          <TabsTrigger value="finance" className="flex items-center gap-2 text-sm">
+            <DollarSign className="h-4 w-4" />
+            财务
+          </TabsTrigger>
           <TabsTrigger value="education" className="flex items-center gap-2 text-sm">
             <BookOpen className="h-4 w-4" />
             教育
           </TabsTrigger>
-          {userProfile?.role === "admin" && (
-            <TabsTrigger value="settings" className="flex items-center gap-2 text-sm">
-              <Settings className="h-4 w-4" />
-              设定
-            </TabsTrigger>
-          )}
+          <TabsTrigger value="settings" className="flex items-center gap-2 text-sm">
+            <Settings className="h-4 w-4" />
+            设定
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-6">

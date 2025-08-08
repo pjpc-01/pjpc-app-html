@@ -17,9 +17,9 @@ import {
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { UserPlus, Search, Edit, Users, Trash2, Mail, Phone, Calendar, BookOpen } from "lucide-react"
-import { collection, getDocs, query, where, doc, updateDoc, deleteDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
-import { useAuth } from "@/contexts/enhanced-auth-context"
+// import { collection, getDocs, query, where, doc, updateDoc, deleteDoc } from "firebase/firestore"
+// import { db } from "@/lib/firebase"
+import { useAuth } from "@/contexts/pocketbase-auth-context"
 
 interface Teacher {
   uid: string
@@ -61,16 +61,9 @@ export default function TeacherManagement() {
       setLoading(true)
       setError(null)
       
-      const usersRef = collection(db, "users")
-      const q = query(usersRef, where("role", "==", "teacher"))
-      const querySnapshot = await getDocs(q)
-      
-      const teachersData: Teacher[] = []
-      querySnapshot.forEach((doc) => {
-        teachersData.push({ uid: doc.id, ...doc.data() } as Teacher)
-      })
-      
-      setTeachers(teachersData)
+      // 已迁移到PocketBase，暂时禁用Firebase
+      console.log('老师管理已迁移到PocketBase，暂时禁用')
+      setTeachers([])
     } catch (err) {
       console.error('Error fetching teachers:', err)
       setError(err instanceof Error ? err.message : '获取老师数据失败')
@@ -83,7 +76,8 @@ export default function TeacherManagement() {
   const updateTeacher = useCallback(async (uid: string, updates: Partial<Teacher>) => {
     try {
       setError(null)
-      await updateDoc(doc(db, "users", uid), updates)
+      // 已迁移到PocketBase，暂时禁用
+      console.log('老师管理已迁移到PocketBase，暂时禁用更新功能')
       await fetchTeachers() // 重新获取数据
     } catch (err) {
       console.error('Error updating teacher:', err)
@@ -95,7 +89,8 @@ export default function TeacherManagement() {
   const deleteTeacher = useCallback(async (uid: string) => {
     try {
       setError(null)
-      await deleteDoc(doc(db, "users", uid))
+      // 已迁移到PocketBase，暂时禁用
+      console.log('老师管理已迁移到PocketBase，暂时禁用删除功能')
       await fetchTeachers() // 重新获取数据
     } catch (err) {
       console.error('Error deleting teacher:', err)
@@ -109,8 +104,8 @@ export default function TeacherManagement() {
     
     try {
       setError(null)
-      const deletePromises = selectedTeachers.map(uid => deleteDoc(doc(db, "users", uid)))
-      await Promise.all(deletePromises)
+      // 已迁移到PocketBase，暂时禁用
+      console.log('老师管理已迁移到PocketBase，暂时禁用批量删除功能')
       setSelectedTeachers([])
       await fetchTeachers()
     } catch (err) {
