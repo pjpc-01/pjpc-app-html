@@ -1,43 +1,42 @@
-import PocketBase from 'pocketbase'
+const PocketBase = require('pocketbase')
 
-const pb = new PocketBase('http://192.168.0.59:8090')
+// 支持DDNS配置
+const getPocketBaseUrl = () => {
+  // 优先使用环境变量
+  if (process.env.NEXT_PUBLIC_POCKETBASE_URL) {
+    return process.env.NEXT_PUBLIC_POCKETBASE_URL
+  }
+  
+  // 开发环境默认使用本地IP
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://192.168.0.59:8090'
+  }
+  
+  // 生产环境使用DDNS
+  return 'http://pjpc.tplinkdns.com:8090'
+}
 
-async function testNetwork() {
+const pb = new PocketBase(getPocketBaseUrl())
+
+async function testConnection() {
   try {
-    console.log('=== 网络连接测试 ===')
+    console.log('Testing PocketBase connection...')
+    console.log('URL:', getPocketBaseUrl())
     
-    // 1. 测试基本连接
-    console.log('1. 测试基本连接...')
-    const health = await fetch('http://192.168.0.59:8090/api/health')
-    console.log('健康检查状态:', health.status, health.statusText)
+    const health = await fetch(`${getPocketBaseUrl()}/api/health`)
+    console.log('Health check status:', health.status)
     
     if (health.ok) {
       const data = await health.json()
-      console.log('健康检查数据:', data)
+      console.log('Health check data:', data)
+      console.log('✅ Connection successful!')
+    } else {
+      console.log('❌ Connection failed:', health.status, health.statusText)
     }
-    
-    // 2. 测试PocketBase客户端
-    console.log('2. 测试PocketBase客户端...')
-    const records = await pb.collection('students').getList(1, 5)
-    console.log('获取学生数据成功:', records.items.length, '个记录')
-    
-    // 3. 测试认证状态
-    console.log('3. 测试认证状态...')
-    console.log('认证有效:', pb.authStore.isValid)
-    console.log('当前用户:', pb.authStore.model)
-    
-    console.log('=== 网络测试完成 ===')
-    
   } catch (error) {
-    console.error('网络测试失败:', error)
-    console.error('错误详情:', {
-      name: error.name,
-      message: error.message,
-      status: error.status,
-      data: error.data
-    })
+    console.error('❌ Connection error:', error.message)
   }
 }
 
-testNetwork()
+testConnection()
 

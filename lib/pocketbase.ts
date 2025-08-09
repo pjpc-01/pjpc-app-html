@@ -1,7 +1,22 @@
 import PocketBase from 'pocketbase'
 
-// PocketBase客户端配置
-export const pb = new PocketBase('http://192.168.0.59:8090')
+// PocketBase客户端配置 - 支持DDNS访问
+const getPocketBaseUrl = () => {
+  // 优先使用环境变量
+  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POCKETBASE_URL) {
+    return process.env.NEXT_PUBLIC_POCKETBASE_URL
+  }
+  
+  // 开发环境默认使用本地IP
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://192.168.0.59:8090'
+  }
+  
+  // 生产环境使用DDNS
+  return 'http://pjpc.tplinkdns.com:8090'
+}
+
+export const pb = new PocketBase(getPocketBaseUrl())
 
 // 添加请求拦截器来处理网络错误
 pb.beforeSend = function(url, options) {
@@ -49,7 +64,8 @@ export const checkPocketBaseConnection = async () => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 5000)
     
-    const response = await fetch('http://192.168.0.59:8090/api/health', {
+    const baseUrl = getPocketBaseUrl()
+    const response = await fetch(`${baseUrl}/api/health`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

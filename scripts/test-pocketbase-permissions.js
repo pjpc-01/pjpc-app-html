@@ -1,103 +1,97 @@
-const fetch = require('node-fetch');
+const PocketBase = require('pocketbase')
 
-async function testPocketBasePermissions() {
-  const baseUrl = 'http://192.168.0.59:8090';
+// 支持DDNS配置
+const getPocketBaseUrl = () => {
+  // 优先使用环境变量
+  if (process.env.NEXT_PUBLIC_POCKETBASE_URL) {
+    return process.env.NEXT_PUBLIC_POCKETBASE_URL
+  }
   
-  console.log('测试PocketBase权限配置...');
+  // 开发环境默认使用本地IP
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://192.168.0.59:8090'
+  }
   
+  // 生产环境使用DDNS
+  return 'http://pjpc.tplinkdns.com:8090'
+}
+
+const baseUrl = getPocketBaseUrl();
+const pb = new PocketBase(baseUrl);
+
+async function testPermissions() {
   try {
-    // 1. 检查健康状态
-    console.log('\n1. 检查服务器健康状态...');
-    const healthResponse = await fetch(`${baseUrl}/api/health`);
-    console.log('健康状态:', healthResponse.status, healthResponse.statusText);
+    console.log('=== PocketBase 权限测试 ===')
+    console.log('服务器地址:', baseUrl)
     
-    if (!healthResponse.ok) {
-      throw new Error(`服务器健康检查失败: ${healthResponse.status}`);
-    }
-    
-    // 2. 尝试获取认证集合信息（不需要认证）
-    console.log('\n2. 检查认证集合...');
-    const authCollectionsResponse = await fetch(`${baseUrl}/api/collections?type=auth`);
-    
-    if (authCollectionsResponse.ok) {
-      const authCollections = await authCollectionsResponse.json();
-      console.log('认证集合:');
-      authCollections.items.forEach(collection => {
-        console.log(`- ${collection.name} (${collection.type})`);
-      });
-    } else {
-      console.log('获取认证集合失败:', authCollectionsResponse.status);
-    }
-    
-    // 3. 尝试获取users集合详情（不需要认证）
-    console.log('\n3. 检查users集合详情...');
-    const usersResponse = await fetch(`${baseUrl}/api/collections/users`);
-    
-    if (usersResponse.ok) {
-      const usersCollection = await usersResponse.json();
-      console.log('✅ users集合详情:');
-      console.log('- 类型:', usersCollection.type);
-      console.log('- 字段:', usersCollection.schema.map(f => f.name).join(', '));
-      
-      // 检查权限规则
-      console.log('\n4. 检查权限规则...');
-      console.log('- List rule:', usersCollection.listRule || '无');
-      console.log('- View rule:', usersCollection.viewRule || '无');
-      console.log('- Create rule:', usersCollection.createRule || '无');
-      console.log('- Update rule:', usersCollection.updateRule || '无');
-      console.log('- Delete rule:', usersCollection.deleteRule || '无');
-      
-    } else {
-      console.log('❌ 无法获取users集合详情:', usersResponse.status);
-    }
-    
-    // 4. 尝试创建一个测试用户（不需要认证）
-    console.log('\n5. 尝试创建测试用户...');
-    const testUserData = {
-      email: 'test@example.com',
-      password: 'TestPassword123!',
-      passwordConfirm: 'TestPassword123!',
-      name: 'Test User',
-      role: 'admin',
-      status: 'approved'
-    };
+    // 1. 测试未认证状态下的权限
+    console.log('1. 测试未认证状态...')
+    pb.authStore.clear()
+    console.log('认证状态:', pb.authStore.isValid)
     
     try {
-      const createUserResponse = await fetch(`${baseUrl}/api/collections/users/records`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(testUserData)
-      });
-      
-      if (createUserResponse.ok) {
-        console.log('✅ 测试用户创建成功');
-        const userData = await createUserResponse.json();
-        console.log('用户ID:', userData.id);
-        
-        // 尝试获取刚创建的用户
-        console.log('\n6. 尝试获取刚创建的用户...');
-        const getUserResponse = await fetch(`${baseUrl}/api/collections/users/records/${userData.id}`);
-        
-        if (getUserResponse.ok) {
-          console.log('✅ 成功获取用户信息');
-        } else {
-          console.log('❌ 获取用户信息失败:', getUserResponse.status);
-        }
-        
-      } else {
-        const errorData = await createUserResponse.json();
-        console.log('❌ 创建用户失败:', createUserResponse.status);
-        console.log('错误信息:', errorData);
-      }
+      const records = await pb.collection('students').getList(1, 5)
+      console.log('❌ 未认证状态下应该无法访问数据')
     } catch (error) {
-      console.log('❌ 创建用户请求失败:', error.message);
+      console.log('✅ 未认证状态下正确拒绝访问:', error.message)
     }
     
+    // 2. 测试管理员认证
+    console.log('2. 测试管理员认证...')
+    const adminEmail = 'admin@example.com' // 替换为实际的管理员邮箱
+    const adminPassword = 'admin123' // 替换为实际的密码
+    
+    const authData = await pb.collection('users').authWithPassword(adminEmail, adminPassword)
+    console.log('管理员认证成功:', authData.record.email)
+    console.log('用户角色:', authData.record.role)
+    
+    // 3. 测试管理员权限
+    console.log('3. 测试管理员权限...')
+    const students = await pb.collection('students').getList(1, 5)
+    console.log('✅ 管理员可以访问学生数据:', students.items.length, '个记录')
+    
+    const users = await pb.collection('users').getList(1, 5)
+    console.log('✅ 管理员可以访问用户数据:', users.items.length, '个记录')
+    
+    // 4. 测试其他角色认证
+    console.log('4. 测试其他角色认证...')
+    pb.authStore.clear()
+    
+    const teacherEmail = 'teacher@example.com' // 替换为实际的教师邮箱
+    const teacherPassword = 'teacher123' // 替换为实际的密码
+    
+    try {
+      const teacherAuth = await pb.collection('users').authWithPassword(teacherEmail, teacherPassword)
+      console.log('教师认证成功:', teacherAuth.record.email)
+      console.log('教师角色:', teacherAuth.record.role)
+      
+      // 测试教师权限
+      const teacherStudents = await pb.collection('students').getList(1, 5)
+      console.log('✅ 教师可以访问学生数据:', teacherStudents.items.length, '个记录')
+      
+      // 测试教师是否无法访问用户数据
+      try {
+        const teacherUsers = await pb.collection('users').getList(1, 5)
+        console.log('❌ 教师不应该能访问用户数据')
+      } catch (error) {
+        console.log('✅ 教师正确被拒绝访问用户数据:', error.message)
+      }
+      
+    } catch (error) {
+      console.log('教师认证失败:', error.message)
+    }
+    
+    console.log('=== 权限测试完成 ===')
+    
   } catch (error) {
-    console.error('测试失败:', error.message);
+    console.error('权限测试失败:', error)
+    console.error('错误详情:', {
+      name: error.name,
+      message: error.message,
+      status: error.status,
+      data: error.data
+    })
   }
 }
 
-testPocketBasePermissions();
+testPermissions()

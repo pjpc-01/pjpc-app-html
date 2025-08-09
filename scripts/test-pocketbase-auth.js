@@ -1,68 +1,69 @@
-const fetch = require('node-fetch');
+const PocketBase = require('pocketbase')
 
-async function testPocketBaseAuth() {
-  const baseUrl = 'http://192.168.0.59:8090';
+// 支持DDNS配置
+const getPocketBaseUrl = () => {
+  // 优先使用环境变量
+  if (process.env.NEXT_PUBLIC_POCKETBASE_URL) {
+    return process.env.NEXT_PUBLIC_POCKETBASE_URL
+  }
   
-  console.log('测试PocketBase认证功能...');
+  // 开发环境默认使用本地IP
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://192.168.0.59:8090'
+  }
   
+  // 生产环境使用DDNS
+  return 'http://pjpc.tplinkdns.com:8090'
+}
+
+const baseUrl = getPocketBaseUrl();
+const pb = new PocketBase(baseUrl);
+
+async function testAuth() {
   try {
-    // 1. 检查健康状态
-    console.log('\n1. 检查服务器健康状态...');
-    const healthResponse = await fetch(`${baseUrl}/api/health`);
-    console.log('健康状态:', healthResponse.status, healthResponse.statusText);
+    console.log('=== PocketBase 认证测试 ===')
+    console.log('服务器地址:', baseUrl)
     
-    if (!healthResponse.ok) {
-      throw new Error(`服务器健康检查失败: ${healthResponse.status}`);
+    // 1. 测试连接
+    console.log('1. 测试服务器连接...')
+    const health = await fetch(`${baseUrl}/api/health`)
+    console.log('健康检查状态:', health.status, health.statusText)
+    
+    if (!health.ok) {
+      throw new Error(`服务器连接失败: ${health.status} ${health.statusText}`)
     }
     
-    // 2. 尝试获取认证集合信息
-    console.log('\n2. 检查认证集合...');
-    const authCollectionsResponse = await fetch(`${baseUrl}/api/collections?type=auth`);
+    // 2. 测试用户认证
+    console.log('2. 测试用户认证...')
+    const email = 'admin@example.com' // 替换为实际的管理员邮箱
+    const password = 'admin123' // 替换为实际的密码
     
-    if (authCollectionsResponse.ok) {
-      const authCollections = await authCollectionsResponse.json();
-      console.log('认证集合:');
-      authCollections.items.forEach(collection => {
-        console.log(`- ${collection.name} (${collection.type})`);
-      });
-    } else {
-      console.log('获取认证集合失败:', authCollectionsResponse.status);
-    }
+    const authData = await pb.collection('users').authWithPassword(email, password)
+    console.log('认证成功:', authData.record.email)
+    console.log('用户角色:', authData.record.role)
+    console.log('认证状态:', pb.authStore.isValid)
     
-    // 3. 尝试创建一个测试用户
-    console.log('\n3. 尝试创建测试用户...');
-    const testUserData = {
-      email: 'test@example.com',
-      password: 'TestPassword123!',
-      passwordConfirm: 'TestPassword123!',
-      name: 'Test User',
-      role: 'admin',
-      status: 'approved'
-    };
+    // 3. 测试获取用户资料
+    console.log('3. 测试获取用户资料...')
+    const userProfile = await pb.collection('users').getOne(authData.record.id)
+    console.log('用户资料获取成功:', userProfile.name)
     
-    try {
-      const createUserResponse = await fetch(`${baseUrl}/api/collections/users/records`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(testUserData)
-      });
-      
-      if (createUserResponse.ok) {
-        console.log('✅ 测试用户创建成功');
-      } else {
-        const errorData = await createUserResponse.json();
-        console.log('❌ 创建用户失败:', createUserResponse.status);
-        console.log('错误信息:', errorData);
-      }
-    } catch (error) {
-      console.log('❌ 创建用户请求失败:', error.message);
-    }
+    // 4. 测试登出
+    console.log('4. 测试登出...')
+    pb.authStore.clear()
+    console.log('登出成功，认证状态:', pb.authStore.isValid)
+    
+    console.log('=== 认证测试完成 ===')
     
   } catch (error) {
-    console.error('测试失败:', error.message);
+    console.error('认证测试失败:', error)
+    console.error('错误详情:', {
+      name: error.name,
+      message: error.message,
+      status: error.status,
+      data: error.data
+    })
   }
 }
 
-testPocketBaseAuth();
+testAuth()
