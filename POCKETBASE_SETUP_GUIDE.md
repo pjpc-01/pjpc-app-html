@@ -2,7 +2,7 @@
 
 ## 1. 访问管理界面
 
-- URL: `http://192.168.0.59:8090/_/`
+- URL: `http://pjpc.tplinkdns.com:8090/_/`
 - 邮箱: `pjpcemerlang@gmail.com`
 - 密码: `0122270775Sw!`
 

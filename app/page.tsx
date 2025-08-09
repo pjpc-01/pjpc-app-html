@@ -58,7 +58,7 @@ export default function Dashboard() {
                 <ul className="list-disc list-inside mt-2 space-y-1">
                   <li>网络连接是否正常</li>
                   <li>PocketBase服务器是否运行</li>
-                  <li>服务器地址是否正确 (192.168.0.59:8090)</li>
+                  <li>服务器地址是否正确 (pjpc.tplinkdns.com:8090)</li>
                 </ul>
               </AlertDescription>
             </Alert>
