@@ -62,31 +62,17 @@ export const useDashboardStats = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchAllStats = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-
-
-      setStats(prevStats => ({
-        ...prevStats,
-        totalStudents: students.length,
-        totalParents: students.length,
-      }))
-    } catch (err) {
-      console.error('获取统计数据失败:', err)
-      setError('获取统计数据失败')
-    } finally {
-      setLoading(false)
-    }
+  const fetchAllStats = useCallback(() => {
+    setStats(prevStats => ({
+      ...prevStats,
+      totalStudents: students.length,
+      totalParents: students.length,
+    }))
   }, [students])
 
   useEffect(() => {
-    if (students.length > 0 || !studentsLoading) {
-      fetchAllStats()
-    }
-  }, [fetchAllStats, students, studentsLoading])
+    fetchAllStats()
+  }, [fetchAllStats])
 
   return {
     stats,

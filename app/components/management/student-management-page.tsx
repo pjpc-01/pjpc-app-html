@@ -12,7 +12,7 @@ import StudentDetails from "../student/StudentDetails"
 import { useStudents } from "@/hooks/useStudents"
 
 export default function StudentManagementPage() {
-  const { students, loading, error, refetch } = useStudents()
+  const { students, loading, error, refetch } = useStudents({ dataType: undefined })
   
   return (
     <div className="p-6">
