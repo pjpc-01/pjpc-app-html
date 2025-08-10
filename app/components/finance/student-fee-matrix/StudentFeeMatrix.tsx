@@ -4,6 +4,7 @@ import { Search } from "lucide-react"
 import { useFees } from "@/hooks/useFees"
 import { useStudents } from "@/hooks/useStudents"
 import { useStudentFees } from "@/hooks/useStudentFees"
+import { useInvoices } from "@/hooks/useInvoices"
 import { StudentFeeMatrixHeader } from "./StudentFeeMatrixHeader"
 import { SearchAndFilter } from "./SearchAndFilter"
 import { BatchOperationsDialog } from "./BatchOperationsDialog"
@@ -21,6 +22,7 @@ export const StudentFeeMatrix = () => {
     getStudentSubItemState,
     setStudentSubItemState
   } = useStudentFees()
+  const { createInvoice: createInvoiceFromHook, invoices } = useInvoices()
   
   const [expandedStudents, setExpandedStudents] = useState<string[]>([])
   const [expandedFees, setExpandedFees] = useState<Map<string, boolean>>(new Map())
@@ -140,13 +142,60 @@ export const StudentFeeMatrix = () => {
   }
 
   const createInvoice = (studentId: string) => {
+    const student = students.find(s => s.id === studentId)
+    if (!student) return
+
+    // Calculate total amount for the student
+    const studentTotal = calculateStudentTotal(Number(studentId), activeFees)
+    
+    // Create invoice items based on assigned fees
+    const invoiceItems = activeFees
+      .filter(fee => isAssigned(Number(studentId), fee.id))
+      .flatMap(fee => 
+        fee.subItems
+          .filter(subItem => getStudentSubItemState(Number(studentId), fee.id, subItem.id))
+          .map(subItem => ({ name: `${fee.name} - ${subItem.name}`, amount: subItem.amount }))
+      )
+
+    // Create the actual invoice
+    const newInvoice = createInvoiceFromHook({
+      studentId: Number(studentId),
+      student: student.name,
+      amount: studentTotal,
+      items: invoiceItems,
+      status: 'issued',
+      issueDate: new Date().toISOString().split('T')[0],
+      dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 15 days from now
+      paidDate: null,
+      paymentMethod: null,
+      notes: `${new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}学费`,
+      tax: 0,
+      discount: 0,
+      totalAmount: studentTotal,
+      parentEmail: student.parentEmail || `${student.name}@example.com`,
+      reminderSent: false,
+      lastReminderDate: null
+    })
+
     // Mark invoice as created for this student
     setStudentInvoices(prev => {
       const newMap = new Map(prev)
       newMap.set(studentId, true)
       return newMap
     })
-    // TODO: Implement actual invoice creation functionality
+
+    // Update payment status
+    updatePaymentStatus(studentId, 'pending')
+  }
+
+  // Check if student has invoice this month
+  const hasInvoiceThisMonth = (studentId: string) => {
+    const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM format
+    const studentInvoicesThisMonth = invoices.filter(invoice => 
+      invoice.studentId === Number(studentId) && 
+      invoice.issueDate.startsWith(currentMonth)
+    )
+    return studentInvoicesThisMonth.length > 0
   }
 
   const toggleEditMode = () => {
@@ -335,6 +384,7 @@ export const StudentFeeMatrix = () => {
                 isAssigned={isAssigned}
                 toggleStudentSubItem={toggleStudentSubItem}
                 getStudentSubItemState={getStudentSubItemState}
+                hasInvoiceThisMonth={hasInvoiceThisMonth}
               />
             )
           })

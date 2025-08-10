@@ -23,6 +23,8 @@ import { downloadInvoicePDF, printInvoicePDF, PDFOptions } from "@/lib/pdf-gener
 import { useStudents } from "@/hooks/useStudents"
 import { useStudentFees } from "@/hooks/useStudentFees"
 import { useFees } from "@/hooks/useFees"
+import { useReceipts } from "@/hooks/useReceipts"
+import { usePayments } from "@/hooks/usePayments"
 import { renderInvoiceTemplate, type TemplateData } from "@/lib/template-renderer"
 import { InvoiceTemplate } from "./InvoiceTemplateManager"
 import { InvoiceCreateDialog } from "./InvoiceCreateDialog"
@@ -86,6 +88,8 @@ export default function InvoiceManagement() {
   const { students } = useStudents()
   const { calculateStudentTotal } = useStudentFees()
   const { feeItems } = useFees()
+  const { createReceiptFromInvoice } = useReceipts()
+  const { payments } = usePayments(invoices)
 
   // State
   const [isCreateInvoiceDialogOpen, setIsCreateInvoiceDialogOpen] = useState(false)
@@ -358,9 +362,7 @@ export default function InvoiceManagement() {
         onDelete={(invoice) => {
           deleteInvoice(invoice.id)
         }}
-        onStatusChange={(invoiceId, status) => {
-          updateInvoiceStatus(invoiceId, status)
-        }}
+        payments={payments}
       />
 
       {/* Dialogs */}

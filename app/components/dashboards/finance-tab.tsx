@@ -20,6 +20,7 @@ import PaymentManagement from "../finance/PaymentManagement"
 import ReminderManagement from "../finance/ReminderManagement"
 import FinancialReports from "../finance/FinancialReports"
 import { StudentFeeMatrix } from "../finance/student-fee-matrix/StudentFeeMatrix"
+import ReceiptManagement from "../finance/ReceiptManagement"
 
 interface FinanceTabProps {
   financialStats: any
@@ -291,97 +292,7 @@ export default function FinanceTab({ financialStats, financialLoading, setActive
               
               {studentFeesSubTab === "overview" && <StudentFeeMatrix />}
               {studentFeesSubTab === "invoices" && <InvoiceManagement />}
-              {studentFeesSubTab === "receipts" && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="text-2xl font-bold">收据管理</h3>
-                      <p className="text-gray-600">管理学生缴费收据和凭证</p>
-                    </div>
-                    <button className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors">
-                      生成收据
-                    </button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">总收据数</p>
-                            <p className="text-2xl font-bold text-purple-600">156</p>
-                          </div>
-                          <FileText className="h-8 w-8 text-purple-600" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">本月收据</p>
-                            <p className="text-2xl font-bold text-blue-600">23</p>
-                          </div>
-                          <TrendingUp className="h-8 w-8 text-blue-600" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">待处理</p>
-                            <p className="text-2xl font-bold text-orange-600">8</p>
-                          </div>
-                          <Bell className="h-8 w-8 text-orange-600" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                  
-                  <Card>
-                    <CardContent className="p-6">
-                      <h4 className="text-lg font-semibold mb-4">收据列表</h4>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 border rounded-lg">
-                          <div>
-                            <p className="font-medium">张三 - 学费收据</p>
-                            <p className="text-sm text-gray-600">2024-01-15</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-green-600 font-medium">RM 1,200</span>
-                            <button className="text-purple-600 hover:text-purple-700">查看</button>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-between p-4 border rounded-lg">
-                          <div>
-                            <p className="font-medium">李四 - 杂费收据</p>
-                            <p className="text-sm text-gray-600">2024-01-14</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-green-600 font-medium">RM 800</span>
-                            <button className="text-purple-600 hover:text-purple-700">查看</button>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-between p-4 border rounded-lg">
-                          <div>
-                            <p className="font-medium">王五 - 住宿费收据</p>
-                            <p className="text-sm text-gray-600">2024-01-13</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-green-600 font-medium">RM 2,000</span>
-                            <button className="text-purple-600 hover:text-purple-700">查看</button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+                             {studentFeesSubTab === "receipts" && <ReceiptManagement />}
               {studentFeesSubTab === "payments" && <PaymentManagement />}
               {studentFeesSubTab === "reminders" && <ReminderManagement />}
             </div>

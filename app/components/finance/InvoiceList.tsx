@@ -20,7 +20,7 @@ interface InvoiceListProps {
   onView: (invoice: any) => void
   onEdit: (invoice: any) => void
   onDelete: (invoice: any) => void
-  onStatusChange: (invoiceId: number, status: "issued" | "draft" | "sent" | "pending" | "overdue" | "paid" | "cancelled") => void
+  payments?: any[] // Add payments to show payment status
 }
 
 export function InvoiceList({
@@ -33,20 +33,27 @@ export function InvoiceList({
   onView,
   onEdit,
   onDelete,
-  onStatusChange
+  payments = []
 }: InvoiceListProps) {
-  const getInvoiceStatusBadge = (status: string) => {
-    switch (status) {
-      case "paid":
-        return <Badge variant="default" className="bg-green-100 text-green-800">已支付</Badge>
-      case "pending":
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">待支付</Badge>
-      case "overdue":
-        return <Badge variant="destructive">逾期</Badge>
-      case "cancelled":
-        return <Badge variant="secondary">已取消</Badge>
-      default:
-        return <Badge variant="outline">{status}</Badge>
+  const getPaymentStatusBadge = (invoiceId: number) => {
+    const invoicePayments = payments.filter(payment => payment.invoiceId === invoiceId)
+    
+    if (invoicePayments.length === 0) {
+      return <Badge variant="outline">未缴费</Badge>
+    }
+    
+    const completedPayments = invoicePayments.filter(p => p.status === 'completed')
+    const totalPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0)
+    const invoice = invoices.find(inv => inv.id === invoiceId)
+    
+    if (!invoice) {
+      return <Badge variant="outline">未知</Badge>
+    }
+    
+    if (totalPaid >= invoice.totalAmount) {
+      return <Badge variant="default">已缴费</Badge>
+    } else {
+      return <Badge variant="secondary">待缴费</Badge>
     }
   }
 
@@ -83,7 +90,7 @@ export function InvoiceList({
             />
           </div>
           <div className="w-48">
-            <Label>状态</Label>
+            <Label>缴费状态</Label>
             <Select 
               value={filters.status || "all"} 
               onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
@@ -91,13 +98,11 @@ export function InvoiceList({
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">所有状态</SelectItem>
-                <SelectItem value="pending">待支付</SelectItem>
-                <SelectItem value="paid">已支付</SelectItem>
-                <SelectItem value="overdue">逾期</SelectItem>
-                <SelectItem value="cancelled">已取消</SelectItem>
-              </SelectContent>
+                             <SelectContent>
+                 <SelectItem value="all">所有缴费状态</SelectItem>
+                 <SelectItem value="unpaid">未缴费</SelectItem>
+                 <SelectItem value="paid">已缴费</SelectItem>
+               </SelectContent>
             </Select>
           </div>
           <div className="w-48">
@@ -128,10 +133,11 @@ export function InvoiceList({
             <TableHeader>
               <TableRow>
                 <TableHead>发票号码</TableHead>
+                <TableHead>收据号码</TableHead>
                 <TableHead>学生姓名</TableHead>
                 <TableHead>年级</TableHead>
                 <TableHead>金额</TableHead>
-                <TableHead>状态</TableHead>
+                <TableHead>缴费状态</TableHead>
                 <TableHead>开具日期</TableHead>
                 <TableHead>到期日期</TableHead>
                 <TableHead>操作</TableHead>
@@ -141,26 +147,16 @@ export function InvoiceList({
               {invoices.map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                  <TableCell className="text-blue-600 font-medium">
+                    {invoice.receiptNumber || '待生成'}
+                  </TableCell>
                   <TableCell>{invoice.studentName}</TableCell>
                   <TableCell>{invoice.grade}</TableCell>
                   <TableCell className="font-semibold text-green-600">
                     {formatCurrency(invoice.amount)}
                   </TableCell>
                   <TableCell>
-                    <Select 
-                      value={invoice.status} 
-                      onValueChange={(value) => onStatusChange(invoice.id, value)}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">待支付</SelectItem>
-                        <SelectItem value="paid">已支付</SelectItem>
-                        <SelectItem value="overdue">逾期</SelectItem>
-                        <SelectItem value="cancelled">已取消</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {getPaymentStatusBadge(invoice.id)}
                   </TableCell>
                   <TableCell>{formatDate(invoice.issueDate)}</TableCell>
                   <TableCell>{formatDate(invoice.dueDate)}</TableCell>
@@ -226,9 +222,14 @@ export function InvoiceList({
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">待支付</p>
+                  <p className="text-sm font-medium text-gray-600">待缴费</p>
                   <p className="text-2xl font-bold text-yellow-600">
-                    {invoices.filter(i => i.status === 'pending').length}
+                    {invoices.filter(invoice => {
+                      const invoicePayments = payments.filter(payment => payment.invoiceId === invoice.id)
+                      const completedPayments = invoicePayments.filter(p => p.status === 'completed')
+                      const totalPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0)
+                      return totalPaid === 0
+                    }).length}
                   </p>
                 </div>
                 <AlertCircle className="h-8 w-8 text-yellow-600" />
@@ -239,9 +240,14 @@ export function InvoiceList({
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">已支付</p>
+                  <p className="text-sm font-medium text-gray-600">已缴费</p>
                   <p className="text-2xl font-bold text-green-600">
-                    {invoices.filter(i => i.status === 'paid').length}
+                    {invoices.filter(invoice => {
+                      const invoicePayments = payments.filter(payment => payment.invoiceId === invoice.id)
+                      const completedPayments = invoicePayments.filter(p => p.status === 'completed')
+                      const totalPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0)
+                      return totalPaid >= invoice.totalAmount
+                    }).length}
                   </p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-600" />
