@@ -181,8 +181,8 @@ export default function StudentForm({
                   <SelectValue placeholder="选择性别" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="male">男</SelectItem>
-                  <SelectItem value="female">女</SelectItem>
+                  <SelectItem value="男">男</SelectItem>
+                  <SelectItem value="女">女</SelectItem>
                 </SelectContent>
               </Select>
             </div>

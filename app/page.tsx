@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { GraduationCap, Bell, Settings, LogOut, UserCheck, Wifi, WifiOff, AlertTriangle, CreditCard } from "lucide-react"
-import { useAuth } from "@/contexts/enhanced-auth-context"
+import { useAuth } from "@/contexts/pocketbase-auth-context"
 import SecureLoginForm from "@/app/components/systems/auth/secure-login-form"
 import AdminDashboard from "./components/dashboards/admin-dashboard"
 import TeacherDashboard from "./components/dashboards/teacher-dashboard"
@@ -14,18 +15,14 @@ import ErrorBoundary from "@/components/shared/error-boundary"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle as AlertTriangleIcon, Mail, Clock } from "lucide-react"
+import ConnectionStatus from "@/components/ConnectionStatus"
 
 export default function Dashboard() {
   const { user, userProfile, loading, logout, resendVerification, error, connectionStatus, clearError } = useAuth()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
 
-  // 添加调试日志
-  console.log('Dashboard render state:', { 
-    loading, 
-    connectionStatus, 
-    hasUser: !!user, 
-    hasUserProfile: !!userProfile 
-  })
+
 
   // 显示加载状态 - 只有在真正需要等待时才显示
   if (loading) {
@@ -51,22 +48,22 @@ export default function Dashboard() {
               <WifiOff className="h-5 w-5" />
               连接失败
             </CardTitle>
-            <CardDescription>无法连接到服务器，请检查网络连接</CardDescription>
+            <CardDescription>无法连接到PocketBase服务器，请检查网络连接</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert variant="destructive">
               <AlertTriangleIcon className="h-4 w-4" />
               <AlertDescription>
-                系统无法连接到Firebase服务。请检查：
+                系统无法连接到PocketBase服务。请检查：
                 <ul className="list-disc list-inside mt-2 space-y-1">
                   <li>网络连接是否正常</li>
-                  <li>Firebase配置是否正确</li>
-                  <li>服务器是否在线</li>
+                  <li>PocketBase服务器是否运行</li>
+                  <li>服务器地址是否正确 (pjpc.tplinkdns.com:8090)</li>
                 </ul>
               </AlertDescription>
             </Alert>
-            <Button onClick={() => window.location.reload()} className="w-full">
-              重新加载
+            <Button onClick={() => router.push('/')} className="w-full">
+              返回首页
             </Button>
           </CardContent>
         </Card>
@@ -75,40 +72,63 @@ export default function Dashboard() {
   }
 
   // 如果用户未登录，显示登录界面
-  if (!user || !userProfile) {
+  // 只有在loading为false且没有用户时才显示登录界面
+  if (!user && !loading) {
     return <SecureLoginForm />
   }
-
-  // 邮箱未验证
-  if (!user.emailVerified) {
+  
+  // 如果用户存在但没有用户资料，等待一下再检查
+  if (!userProfile) {
+    
+    // 暂时显示加载状态而不是登录界面
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              邮箱验证
-            </CardTitle>
-            <CardDescription>请验证您的邮箱地址以继续使用系统</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert>
-              <AlertTriangleIcon className="h-4 w-4" />
-              <AlertDescription>我们已向 {user.email} 发送了验证邮件。请检查您的邮箱并点击验证链接。</AlertDescription>
-            </Alert>
-            <div className="flex gap-2">
-              <Button onClick={resendVerification} variant="outline" className="flex-1 bg-transparent">
-                重新发送验证邮件
-              </Button>
-              <Button onClick={logout} variant="destructive" className="flex-1">
-                退出登录
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <GraduationCap className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-pulse" />
+          <p className="text-gray-600">
+            加载用户资料中...
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            用户ID: {user?.id || '未知'}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            如果长时间停留在此页面，请刷新页面
+          </p>
+        </div>
       </div>
     )
   }
+
+  // 邮箱验证暂时禁用 - 跳过邮箱验证检查
+  // if (!user.emailVerified) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center p-4">
+  //       <Card className="w-full max-w-md">
+  //         <CardHeader>
+  //           <CardTitle className="flex items-center gap-2">
+  //             <Mail className="h-5 w-5" />
+  //             邮箱验证
+  //           </CardTitle>
+  //           <CardDescription>请验证您的邮箱地址以继续使用系统</CardDescription>
+  //         </CardHeader>
+  //         <CardContent className="space-y-4">
+  //           <Alert>
+  //             <AlertTriangleIcon className="h-4 w-4" />
+  //             <AlertDescription>我们已向 {user.email} 发送了验证邮件。请检查您的邮箱并点击验证链接。</AlertDescription>
+  //           </Alert>
+  //           <div className="flex gap-2">
+  //             <Button onClick={resendVerification} variant="outline" className="flex-1 bg-transparent">
+  //               重新发送验证邮件
+  //             </Button>
+  //             <Button onClick={logout} variant="destructive" className="flex-1">
+  //               退出登录
+  //             </Button>
+  //           </div>
+  //         </CardContent>
+  //       </Card>
+  //     </div>
+  //   )
+  // }
 
   // 账户待审核
   if (userProfile?.status === "pending") {
@@ -235,6 +255,9 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Connection Status */}
+      <ConnectionStatus />
+      
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
