@@ -33,6 +33,7 @@ export interface Student {
   notes: string
   image: string
   calculatedGrade: string
+  level: 'primary' | 'secondary'
   // Preserve original PocketBase fields (even if not used with mock data)
   standard: string
   student_name: string
@@ -133,6 +134,7 @@ const convertPocketBaseStudent = (pbStudent: PocketBaseStudent): Student => {
     notes: '', // PocketBase doesn't have notes field
     image: '', // PocketBase doesn't have image field
     calculatedGrade: convertGradeFormat(pbStudent.standard || ''),
+    level: (pbStudent as any).level || 'primary', // Use the level field from PocketBase
     // Preserve original PocketBase fields
     standard: pbStudent.standard || '',
     student_name: pbStudent.student_name || '',
@@ -180,16 +182,11 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
       
       // Filter based on dataType
       let filteredStudents = convertedStudents
+      
       if (dataType === 'primary') {
-        filteredStudents = convertedStudents.filter(student => {
-          const gradeNum = parseInt(student.grade)
-          return !isNaN(gradeNum) && gradeNum <= 6
-        })
+        filteredStudents = convertedStudents.filter(student => student.level === 'primary')
       } else if (dataType === 'secondary') {
-        filteredStudents = convertedStudents.filter(student => {
-          const gradeNum = parseInt(student.grade)
-          return !isNaN(gradeNum) && gradeNum > 6
-        })
+        filteredStudents = convertedStudents.filter(student => student.level === 'secondary')
       }
       setStudents(filteredStudents)
       setLastFetchTime(Date.now())
@@ -324,7 +321,7 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
 
   useEffect(() => {
     fetchStudents(currentPage)
-  }, [currentPage, dataType, fetchStudents])
+  }, [currentPage, dataType])
 
   return {
     students,
