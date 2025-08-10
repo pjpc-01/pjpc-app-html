@@ -159,7 +159,7 @@ export default function InvoiceManagement() {
 
   // Computed values
   const activeFees = feeItems.filter(fee => fee.status === 'active')
-  const availableStudents = students.filter(student => student.grade !== '已毕业')
+  const availableStudents = students.filter(student => student.standard !== '已毕业')
 
   const studentsWithAmounts = useMemo(() => {
     return availableStudents.map(student => ({
@@ -214,7 +214,7 @@ export default function InvoiceManagement() {
       issueDate: new Date().toISOString().split('T')[0],
       dueDate: invoiceFormData.dueDate,
       studentName: selectedStudentForInvoice.name,
-      studentGrade: selectedStudentForInvoice.grade,
+      studentGrade: selectedStudentForInvoice.standard,
       parentName: selectedStudentForInvoice.parentName,
       items: [
         { name: "学生费用", amount: selectedStudentForInvoice.amount }
@@ -457,7 +457,7 @@ export default function InvoiceManagement() {
               <h3 className="font-semibold mb-2">发票信息</h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div><span className="font-medium">学生:</span> {selectedStudentForInvoice?.name}</div>
-                <div><span className="font-medium">年级:</span> {selectedStudentForInvoice?.grade}</div>
+                <div><span className="font-medium">年级:</span> {selectedStudentForInvoice?.standard}</div>
                 <div><span className="font-medium">金额:</span> RM {selectedStudentForInvoice?.amount}</div>
                 <div><span className="font-medium">发票号:</span> {generateInvoiceNumber()}</div>
               </div>

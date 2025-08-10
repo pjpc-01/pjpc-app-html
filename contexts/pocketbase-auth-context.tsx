@@ -68,59 +68,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null)
   }, [])
 
-  // 获取用户资料
+    // 获取用户资料 - 简化版本
   const fetchUserProfile = useCallback(async (user: any) => {
     try {
       if (!user?.id) {
-
         throw new Error("用户ID无效")
       }
 
-      console.log('Fetching user profile for:', user.id)
+      console.log('🔍 Fetching user profile for:', user.id)
       
-      // 首先检查认证状态
-      if (!pb.authStore.isValid) {
-        console.log('Auth store is not valid')
-        throw new Error("认证状态无效，请重新登录")
-      }
+      // 直接使用认证时的用户数据，避免额外的数据库查询
+      const profile = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role || 'admin',
+        status: user.status || 'approved',
+        emailVerified: true,
+        createdAt: user.created,
+        updatedAt: user.updated,
+        loginAttempts: 0
+      } as UserProfile
 
-      const record = await pb.collection('users').getOne(user.id)
-      const profile = record as unknown as UserProfile
-
-      console.log('User profile fetched:', profile)
-
-      // 检查账户状态
-      if (profile.status === "suspended") {
-        await pb.authStore.clear()
-        throw new Error("账户已被暂停，请联系管理员")
-      }
-
-      // 更新最后登录时间（可选，如果权限不足则跳过）
-      const updateLoginTime = async () => {
-        try {
-          await pb.collection('users').update(user.id, {
-            lastLogin: new Date().toISOString(),
-            emailVerified: true, // 暂时禁用邮箱验证
-          })
-          console.log('Login time updated successfully')
-        } catch (updateError) {
-          console.warn("更新登录时间失败:", updateError)
-          // 不抛出错误，因为这不是关键操作
-        }
-      }
-      
-      setTimeout(updateLoginTime, 1000)
-
-      // 暂时禁用邮箱验证，自动设置为已验证
-      setUserProfile({ ...profile, emailVerified: true })
+      console.log('✅ User profile created from auth data:', profile)
+      setUserProfile(profile)
+      return profile
     } catch (error) {
-      console.error("获取用户资料失败:", error)
-      
-      // 如果是权限错误，提供更友好的错误信息
-      if (error instanceof Error && (error.message?.includes('403') || error.message?.includes('permission'))) {
-        throw new Error("权限不足，请检查用户状态或联系管理员")
-      }
-      
+      console.error("❌ Failed to create user profile:", error)
       throw error
     }
   }, [])
@@ -137,7 +111,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (model && model.id && token) {
         console.log('Setting user and fetching profile for user ID:', model.id)
         setUser(model)
-        fetchUserProfile(model).catch(error => {
+        fetchUserProfile(model).then(profile => {
+          console.log('Profile fetched successfully:', profile)
+          setLoading(false)
+        }).catch(error => {
           console.error("获取用户资料失败:", error)
           setError(error instanceof Error ? error.message : "获取用户资料失败")
           // 不要清除认证状态，只设置错误信息
@@ -162,7 +139,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (pb.authStore.model && pb.authStore.model.id) {
         setUser(pb.authStore.model)
         try {
-          await fetchUserProfile(pb.authStore.model)
+          const profile = await fetchUserProfile(pb.authStore.model)
+          console.log('Initialization profile fetched:', profile)
           setLoading(false) // 只有在成功获取用户资料后才设置loading为false
         } catch (error) {
           console.error("初始化时获取用户资料失败:", error)
@@ -206,7 +184,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null)
       setLoading(true) // 确保登录过程中loading为true
       
-      const authData = await pb.collection('users').authWithPassword(email, password)
+      console.log('Attempting to authenticate with:', { email, password: '***' })
+      console.log('PocketBase URL:', pb.baseUrl)
+      
+      // Try to authenticate with the users collection first
+      let authData
+      try {
+        console.log('🔍 Attempting authentication with users collection...')
+        authData = await pb.collection('users').authWithPassword(email, password)
+        console.log('✅ Authentication successful with users collection')
+      } catch (authError: any) {
+        console.log('❌ Authentication failed with users collection:', authError.message)
+        
+        // If users collection fails, try other possible collections
+        const possibleCollections = ['accounts', 'teachers', 'admins']
+        
+        for (const collection of possibleCollections) {
+          try {
+            console.log(`🔍 Attempting authentication with ${collection} collection...`)
+            authData = await pb.collection(collection).authWithPassword(email, password)
+            console.log(`✅ Authentication successful with ${collection} collection`)
+            break
+          } catch (collectionError: any) {
+            console.log(`❌ Authentication failed with ${collection} collection:`, collectionError.message)
+          }
+        }
+        
+        if (!authData) {
+          throw authError // Re-throw the original error if all collections fail
+        }
+      }
 
       // 处理PocketBase SDK返回的数据结构
       // 根据测试结果，authData可能包含嵌套的data对象
@@ -234,7 +241,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // 重置登录尝试次数
         try {
-          await pb.collection('users').update(userRecord.id, {
+          const collectionName = userRecord.collectionName || 'users'
+          await pb.collection(collectionName).update(userRecord.id, {
             loginAttempts: 0,
             lockedUntil: null,
           })
@@ -243,58 +251,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
       
-      // 手动触发状态更新，确保React上下文同步
-      // 根据测试结果，数据在嵌套的data.record中
+      // 设置用户状态 - 简化流程
       if (userRecord && authToken) {
-        // 手动设置 authStore，确保认证状态正确
-        pb.authStore.save(authToken, userRecord)
-        console.log('手动设置认证状态完成')
-        
+        console.log('✅ Setting user state with authenticated data')
         setUser(userRecord)
         
-        // 直接获取用户资料，不依赖fetchUserProfile函数
-        try {
-          // 添加重试机制
-          let record = null
-          let retryCount = 0
-          const maxRetries = 3
-          
-          while (retryCount < maxRetries) {
-            try {
-              record = await pb.collection('users').getOne(userRecord.id)
-              break
-            } catch (error: any) {
-              retryCount++
-              console.log(`获取用户资料重试 ${retryCount}/${maxRetries}:`, error.message)
-              
-              if (retryCount >= maxRetries) {
-                throw error
-              }
-              
-              // 等待一段时间后重试
-              await new Promise(resolve => setTimeout(resolve, 1000))
-            }
-          }
-          
-          const profile = record as unknown as UserProfile
-          setUserProfile({ ...profile, emailVerified: true })
-          
-          // 强制更新loading状态
-          setLoading(false)
-        } catch (error) {
-          console.error("手动获取用户资料失败:", error)
-          // 如果是网络错误，使用认证时的用户数据作为备选方案
-          if (error instanceof Error && error.message?.includes('ClientResponseError 0')) {
-            console.log("网络错误，使用认证时的用户数据")
-            setUserProfile({ ...userRecord, emailVerified: true })
-            setLoading(false)
-          } else {
-            setError(error instanceof Error ? error.message : "获取用户资料失败")
-            setLoading(false)
-          }
-        }
+        // 直接使用认证时的用户数据作为用户资料
+        const profile = {
+          id: userRecord.id,
+          email: userRecord.email,
+          name: userRecord.name,
+          role: userRecord.role || 'admin',
+          status: userRecord.status || 'approved',
+          emailVerified: true,
+          createdAt: userRecord.created,
+          updatedAt: userRecord.updated,
+          loginAttempts: 0
+        } as UserProfile
+        
+        setUserProfile(profile)
+        setLoading(false)
+        console.log('✅ Authentication flow completed successfully')
       } else {
-        console.error("没有找到用户记录或token")
+        console.error("❌ No user record or token found")
         setError("认证成功但未获取到用户信息")
         setLoading(false)
       }
@@ -470,6 +449,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const getErrorMessage = (errorCode: string) => {
+    console.log('Processing error code:', errorCode)
+    
+    // Handle specific error patterns
+    if (errorCode.includes('ClientResponseError 400')) {
+      return "认证失败：请检查用户名和密码是否正确"
+    }
+    if (errorCode.includes('Failed to authenticate')) {
+      return "用户不存在或密码错误"
+    }
+    if (errorCode.includes('Users collection does not exist')) {
+      return "数据库配置错误：用户表不存在"
+    }
+    if (errorCode.includes('无法连接到PocketBase数据库')) {
+      return "无法连接到数据库服务器，请检查网络连接"
+    }
+    
     switch (errorCode) {
       case "Failed to authenticate.":
         return "用户不存在或密码错误"

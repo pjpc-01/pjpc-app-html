@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
-// import FirebaseStatus from "@/components/firebase-status"
+
 import { GraduationCap, Mail, Lock, User, AlertCircle, Loader2 } from "lucide-react"
 
 export default function LoginForm() {
@@ -22,7 +22,7 @@ export default function LoginForm() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [activeTab, setActiveTab] = useState("login")
-  // const [showFirebaseStatus, setShowFirebaseStatus] = useState(false)
+
 
   // 登录表单状态
   const [loginForm, setLoginForm] = useState({
@@ -139,15 +139,7 @@ export default function LoginForm() {
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
                     {error}
-                    {error.includes("Firebase") && (
-                      <Button
-                        variant="link"
-                        className="p-0 h-auto ml-2"
-                        // onClick={() => setShowFirebaseStatus(!showFirebaseStatus)}
-                      >
-                        检查配置
-                      </Button>
-                    )}
+
                   </AlertDescription>
                 </Alert>
               )}
@@ -159,8 +151,7 @@ export default function LoginForm() {
                 </Alert>
               )}
 
-              {/* Firebase 配置状态 */}
-              {/* {showFirebaseStatus && <FirebaseStatus />} */}
+
 
               {/* 登录表单 */}
               <TabsContent value="login">

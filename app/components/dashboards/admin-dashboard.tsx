@@ -8,7 +8,7 @@ import {
   Settings,
   BookOpen,
 } from "lucide-react"
-import { useAuth } from "@/contexts/enhanced-auth-context"
+import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useDashboardStats } from "@/hooks/useDashboardStats"
 import { useFinancialStats } from "@/hooks/useFinancialStats"
 import OverviewTab from "./overview-tab"
@@ -16,6 +16,7 @@ import FinanceTab from "./finance-tab"
 import EducationTab from "./education-tab"
 import SettingsTab from "./settings-tab"
 import EducationDropdown, { EducationDataType } from "../features/education-dropdown"
+
 
 interface AdminDashboardProps {
   activeTab: string

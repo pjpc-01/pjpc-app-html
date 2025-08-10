@@ -17,8 +17,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { UserPlus, Search, Edit, Users, Trash2, Mail, Phone, Calendar, BookOpen } from "lucide-react"
-// import { collection, getDocs, query, where, doc, updateDoc, deleteDoc } from "firebase/firestore"
-// import { db } from "@/lib/firebase"
+
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { getStatusBadge, getStatusText, formatDate } from "@/lib/utils"
 
@@ -76,7 +75,7 @@ export default function TeacherManagement() {
       setLoading(true)
       setError(null)
       
-      // 已迁移到PocketBase，暂时禁用Firebase
+      // 已迁移到PocketBase
       console.log('老师管理已迁移到PocketBase，暂时禁用')
       setTeachers([])
     } catch (err) {
@@ -91,14 +90,9 @@ export default function TeacherManagement() {
   const updateTeacher = useCallback(async (uid: string, updates: Partial<Teacher>) => {
     try {
       setError(null)
-<<<<<<< HEAD:app/components/management/teacher-management.tsx
-      await updateDoc(doc(db, "users", uid), updates)
-      await fetchTeachers()
-=======
       // 已迁移到PocketBase，暂时禁用
       console.log('老师管理已迁移到PocketBase，暂时禁用更新功能')
       await fetchTeachers() // 重新获取数据
->>>>>>> 377d27e310acbc445ced2f1204f55ad3b973e3b9:app/components/teacher-management.tsx
     } catch (err) {
       console.error('Error updating teacher:', err)
       setError(err instanceof Error ? err.message : '更新老师信息失败')
@@ -108,14 +102,9 @@ export default function TeacherManagement() {
   const deleteTeacher = useCallback(async (uid: string) => {
     try {
       setError(null)
-<<<<<<< HEAD:app/components/management/teacher-management.tsx
-      await deleteDoc(doc(db, "users", uid))
-      await fetchTeachers()
-=======
       // 已迁移到PocketBase，暂时禁用
       console.log('老师管理已迁移到PocketBase，暂时禁用删除功能')
       await fetchTeachers() // 重新获取数据
->>>>>>> 377d27e310acbc445ced2f1204f55ad3b973e3b9:app/components/teacher-management.tsx
     } catch (err) {
       console.error('Error deleting teacher:', err)
       setError(err instanceof Error ? err.message : '删除老师失败')

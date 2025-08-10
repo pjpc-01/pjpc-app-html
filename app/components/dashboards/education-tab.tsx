@@ -24,6 +24,7 @@ import ExamSystem from "../systems/exam-system"
 import ResourceLibrary from "../features/resource-library"
 import ScheduleManagement from "../features/schedule-management"
 import LearningAnalytics from "../features/learning-analytics"
+import { useStudents } from "@/hooks/useStudents"
 
 interface EducationTabProps {
   stats: any
@@ -41,6 +42,11 @@ export default function EducationTab({
   setActiveTab 
 }: EducationTabProps) {
   const [educationSubTab, setEducationSubTab] = useState<string>('')
+  
+  // Use the actual student data from useStudents hook
+  // Map educationDataType to student dataType (teachers is not a student type)
+  const studentDataType = educationDataType === 'teachers' ? 'primary' : educationDataType
+  const { students, loading: studentsLoading } = useStudents({ dataType: studentDataType })
 
   const handleCardClick = (tab: string) => {
     console.log('Education card clicked, setting educationSubTab to:', tab)
@@ -49,12 +55,10 @@ export default function EducationTab({
 
   // 获取教育数据统计
   const getEducationStats = () => {
-    if (!stats) return { primaryCount: 0, secondaryCount: 0, teachersCount: 0 }
-    
     return {
-      primaryCount: stats.totalStudents || 0,
-      secondaryCount: stats.totalStudents || 0,
-      teachersCount: stats.activeTeachers || 0
+      primaryCount: students.length,
+      secondaryCount: students.length,
+      teachersCount: stats?.activeTeachers || 0
     }
   }
 
@@ -83,7 +87,7 @@ export default function EducationTab({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">学生总数</p>
-                {statsLoading ? (
+                {statsLoading || studentsLoading ? (
                   <div className="flex items-center mt-2">
                     <RefreshCw className="h-4 w-4 animate-spin mr-2" />
                     <span className="text-sm text-gray-500">加载中...</span>

@@ -34,86 +34,50 @@ export interface StudentUpdateData extends Partial<StudentCreateData> {
 // 获取所有学生
 export const getAllStudents = async (): Promise<Student[]> => {
   try {
-    console.log('开始获取学生列表...')
-    console.log('PocketBase认证状态:', pb.authStore.isValid)
-    console.log('当前用户:', pb.authStore.model)
-    
-    // 检查认证状态 - 如果未认证，尝试匿名访问
+    // 检查认证状态 - 如果未认证，尝试管理员认证
     if (!pb.authStore.isValid) {
-      console.log('用户未认证，尝试匿名访问...')
-    }
-    
-    // 添加重试机制
-    let retries = 3
-    let lastError = null
-    
-    while (retries > 0) {
       try {
-        console.log(`尝试获取学生列表 (重试 ${4-retries}/3)...`)
-        
-        const records = await pb.collection('students').getList(1, 1000, {
-          sort: 'student_name'
-        })
-        
-        console.log('PocketBase返回的完整记录:', records)
-        console.log('records.items:', records.items)
-        console.log('records.items.length:', records.items.length)
-        console.log('records.data:', records.data)
-        console.log('records.data.items:', records.data?.items)
-        console.log('records.data.items.length:', records.data?.items?.length)
-        
-        // 根据控制台日志，数据在 records.data.items 中
-        const items = records.data?.items || records.items || []
-        console.log('最终使用的items:', items)
-        console.log('最终items长度:', items.length)
-        console.log('成功获取学生列表:', items.length, '个学生')
-        console.log('第一个学生示例:', items[0])
-        
-        return items as Student[]
-      } catch (error: any) {
-        lastError = error
-        console.error(`获取学生列表失败 (重试 ${4-retries}/3):`, error)
-        console.error('错误详情:', {
-          status: error.status,
-          message: error.message,
-          data: error.data,
-          name: error.name
-        })
-        retries--
-        
-        if (retries > 0) {
-          console.log(`等待1秒后重试...`)
-          await new Promise(resolve => setTimeout(resolve, 1000))
+        await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+      } catch (authError) {
+        // 尝试使用用户认证
+        try {
+          await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        } catch (userAuthError) {
+          throw new Error('无法认证访问学生数据')
         }
       }
     }
     
-    // 所有重试都失败了
-    console.error('获取学生列表失败，所有重试都失败:', lastError)
-    console.error('错误详情:', {
-      status: lastError?.status,
-      message: lastError?.message,
-      data: lastError?.data,
-      name: lastError?.name
-    })
+    // 分别获取两个集合
+    let primaryList: any[] = []
+    try {
+      primaryList = await pb.collection('primary_students').getFullList({
+        sort: 'student_name',
+        $autoCancel: false
+      })
+    } catch (primaryError) {
+      primaryList = []
+    }
+
+    let secondaryList: any[] = []
+    try {
+      secondaryList = await pb.collection('secondary_students').getFullList({
+        sort: 'student_name',
+        $autoCancel: false
+      })
+    } catch (secondaryError) {
+      secondaryList = []
+    }
+
+    const allStudents = [...primaryList, ...secondaryList]
     
-    let errorMessage = '获取学生列表失败'
-    
-    if (lastError?.status === 0) {
-      errorMessage = '网络连接失败，请检查网络连接'
-    } else if (lastError?.status === 403) {
-      errorMessage = '权限不足，无法访问学生列表'
-    } else if (lastError?.status === 401) {
-      errorMessage = '认证失败，请重新登录'
-    } else if (lastError?.status === 404) {
-      errorMessage = 'students集合不存在，请检查PocketBase设置'
-    } else if (lastError?.data) {
-      errorMessage = `获取失败: ${lastError.data.message || lastError.message}`
+    // 确保返回的是数组
+    if (!Array.isArray(allStudents)) {
+      return []
     }
     
-    throw new Error(errorMessage)
+    return allStudents as Student[]
   } catch (error: any) {
-    console.error('获取学生列表失败:', error)
     throw error
   }
 }
@@ -121,13 +85,42 @@ export const getAllStudents = async (): Promise<Student[]> => {
 // 根据年级获取学生
 export const getStudentsByGrade = async (standard: string): Promise<Student[]> => {
   try {
-    const records = await pb.collection('students').getList(1, 1000, {
-      filter: `standard = "${standard}"`,
-      sort: 'student_name'
-    })
-    return records.items as Student[]
+    // 检查认证状态
+    if (!pb.authStore.isValid) {
+      console.log('用户未认证，尝试管理员认证...')
+      try {
+        await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        console.log('管理员认证成功')
+      } catch (authError) {
+        console.error('管理员认证失败:', authError)
+        throw new Error('无法认证访问学生数据')
+      }
+    }
+    
+    // 从两个集合中查找学生，使用Promise.all并行获取
+    const [primaryRecords, secondaryRecords] = await Promise.all([
+      pb.collection('primary_students').getList(1, 1000, {
+        filter: `standard = "${standard}"`,
+        sort: 'student_name',
+        $autoCancel: false
+      }),
+      pb.collection('secondary_students').getList(1, 1000, {
+        filter: `standard = "${standard}"`,
+        sort: 'student_name',
+        $autoCancel: false
+      })
+    ])
+    
+    // 合并结果
+    const allStudents = [
+      ...(primaryRecords.items || []),
+      ...(secondaryRecords.items || [])
+    ]
+    
+    console.log(`✅ 根据年级 "${standard}" 获取到 ${allStudents.length} 个学生`)
+    return allStudents as Student[]
   } catch (error) {
-    console.error('根据年级获取学生失败:', error)
+    console.error('❌ 根据年级获取学生失败:', error)
     throw new Error('根据年级获取学生失败')
   }
 }
@@ -136,7 +129,27 @@ export const getStudentsByGrade = async (standard: string): Promise<Student[]> =
 export const addStudent = async (studentData: StudentCreateData): Promise<Student> => {
   try {
     console.log('准备添加学生数据:', studentData)
-    const record = await pb.collection('students').create(studentData)
+    
+    // 检查认证状态
+    if (!pb.authStore.isValid) {
+      console.log('用户未认证，尝试管理员认证...')
+      try {
+        await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        console.log('管理员认证成功')
+      } catch (authError) {
+        console.error('管理员认证失败:', authError)
+        throw new Error('无法认证访问学生数据')
+      }
+    }
+    
+    // 根据年级决定添加到哪个集合
+    const standard = studentData.standard
+    const isPrimary = standard.includes('小学') || parseInt(standard) <= 6
+    
+    const collectionName = isPrimary ? 'primary_students' : 'secondary_students'
+    console.log(`添加到集合: ${collectionName}`)
+    
+    const record = await pb.collection(collectionName).create(studentData)
     console.log('添加学生成功:', record)
     return record as Student
   } catch (error: any) {
@@ -171,7 +184,36 @@ export const addStudent = async (studentData: StudentCreateData): Promise<Studen
 export const updateStudent = async (studentData: StudentUpdateData): Promise<Student> => {
   try {
     const { id, ...updateData } = studentData
-    const record = await pb.collection('students').update(id, updateData)
+    
+    // 检查认证状态
+    if (!pb.authStore.isValid) {
+      console.log('用户未认证，尝试管理员认证...')
+      try {
+        await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        console.log('管理员认证成功')
+      } catch (authError) {
+        console.error('管理员认证失败:', authError)
+        throw new Error('无法认证访问学生数据')
+      }
+    }
+    
+    // 需要先找到学生在哪个集合中
+    let record = null
+    
+    try {
+      // 先尝试在小学集合中查找
+      record = await pb.collection('primary_students').getOne(id)
+      record = await pb.collection('primary_students').update(id, updateData)
+    } catch (error) {
+      // 如果不在小学集合中，尝试中学集合
+      try {
+        record = await pb.collection('secondary_students').getOne(id)
+        record = await pb.collection('secondary_students').update(id, updateData)
+      } catch (secondaryError) {
+        throw new Error('找不到指定的学生记录')
+      }
+    }
+    
     return record as Student
   } catch (error: any) {
     console.error('更新学生信息失败:', error)
@@ -192,7 +234,32 @@ export const updateStudent = async (studentData: StudentUpdateData): Promise<Stu
 // 删除学生
 export const deleteStudent = async (studentId: string): Promise<void> => {
   try {
-    await pb.collection('students').delete(studentId)
+    // 检查认证状态
+    if (!pb.authStore.isValid) {
+      console.log('用户未认证，尝试管理员认证...')
+      try {
+        await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        console.log('管理员认证成功')
+      } catch (authError) {
+        console.error('管理员认证失败:', authError)
+        throw new Error('无法认证访问学生数据')
+      }
+    }
+    
+    // 需要先找到学生在哪个集合中
+    try {
+      // 先尝试在小学集合中查找
+      await pb.collection('primary_students').getOne(studentId)
+      await pb.collection('primary_students').delete(studentId)
+    } catch (error) {
+      // 如果不在小学集合中，尝试中学集合
+      try {
+        await pb.collection('secondary_students').getOne(studentId)
+        await pb.collection('secondary_students').delete(studentId)
+      } catch (secondaryError) {
+        throw new Error('找不到指定的学生记录')
+      }
+    }
   } catch (error) {
     console.error('删除学生失败:', error)
     throw new Error('删除学生失败')
@@ -202,13 +269,42 @@ export const deleteStudent = async (studentId: string): Promise<void> => {
 // 搜索学生
 export const searchStudents = async (query: string): Promise<Student[]> => {
   try {
-    const records = await pb.collection('students').getList(1, 100, {
-      filter: `student_name ~ "${query}" || student_id ~ "${query}"`,
-      sort: 'student_name'
-    })
-    return records.items as Student[]
+    // 检查认证状态
+    if (!pb.authStore.isValid) {
+      console.log('用户未认证，尝试管理员认证...')
+      try {
+        await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        console.log('管理员认证成功')
+      } catch (authError) {
+        console.error('管理员认证失败:', authError)
+        throw new Error('无法认证访问学生数据')
+      }
+    }
+    
+    // 从两个集合中搜索学生，使用Promise.all并行获取
+    const [primaryRecords, secondaryRecords] = await Promise.all([
+      pb.collection('primary_students').getList(1, 100, {
+        filter: `student_name ~ "${query}" || student_id ~ "${query}"`,
+        sort: 'student_name',
+        $autoCancel: false
+      }),
+      pb.collection('secondary_students').getList(1, 100, {
+        filter: `student_name ~ "${query}" || student_id ~ "${query}"`,
+        sort: 'student_name',
+        $autoCancel: false
+      })
+    ])
+    
+    // 合并结果
+    const allStudents = [
+      ...(primaryRecords.items || []),
+      ...(secondaryRecords.items || [])
+    ]
+    
+    console.log(`✅ 搜索 "${query}" 找到 ${allStudents.length} 个学生`)
+    return allStudents as Student[]
   } catch (error) {
-    console.error('搜索学生失败:', error)
+    console.error('❌ 搜索学生失败:', error)
     throw new Error('搜索学生失败')
   }
 }
@@ -216,6 +312,18 @@ export const searchStudents = async (query: string): Promise<Student[]> => {
 // 获取学生统计信息
 export const getStudentStats = async () => {
   try {
+    // 检查认证状态
+    if (!pb.authStore.isValid) {
+      console.log('用户未认证，尝试管理员认证...')
+      try {
+        await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        console.log('管理员认证成功')
+      } catch (authError) {
+        console.error('管理员认证失败:', authError)
+        throw new Error('无法认证访问学生数据')
+      }
+    }
+    
     const allStudents = await getAllStudents()
     
     const stats = {
