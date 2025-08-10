@@ -8,7 +8,11 @@
     "dev:optimized": "node dev-optimized.js",
     "dev:fast": "next dev --turbo --experimental-turbo",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "test:network": "node scripts/test-network.js",
+    "test:auth": "node scripts/test-pocketbase-auth.js",
+    "test:permissions": "node scripts/test-pocketbase-permissions.js",
+    "test:ddns": "node scripts/test-ddns.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -52,6 +56,7 @@
     "lucide-react": "^0.454.0",
     "next": "15.2.4",
     "next-themes": "latest",
+    "pocketbase": "^0.26.2",
     "react": "^19",
     "react-day-picker": "latest",
     "react-dom": "^19",

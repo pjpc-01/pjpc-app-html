@@ -3,6 +3,7 @@
 import React from "react"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,17 +11,18 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useAuth } from "@/contexts/auth-context"
-import FirebaseStatus from "@/components/firebase-status"
+import { useAuth } from "@/contexts/pocketbase-auth-context"
+// import FirebaseStatus from "@/components/firebase-status"
 import { GraduationCap, Mail, Lock, User, AlertCircle, Loader2 } from "lucide-react"
 
 export default function LoginForm() {
   const { signIn, signUp, resetPassword } = useAuth()
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [activeTab, setActiveTab] = useState("login")
-  const [showFirebaseStatus, setShowFirebaseStatus] = useState(false)
+  // const [showFirebaseStatus, setShowFirebaseStatus] = useState(false)
 
   // 登录表单状态
   const [loginForm, setLoginForm] = useState({
@@ -49,6 +51,9 @@ export default function LoginForm() {
 
     try {
       await signIn(loginForm.email, loginForm.password)
+      
+      // 登录成功后不跳转，让主页自动检测到用户状态变化
+
     } catch (error: any) {
       console.error("登录错误:", error)
       setError(error.message)
@@ -76,7 +81,7 @@ export default function LoginForm() {
 
     try {
       await signUp(signupForm.email, signupForm.password, signupForm.name, signupForm.role)
-      setSuccess("注册成功！正在跳转...")
+      setSuccess("注册成功！请等待管理员审核后即可登录。")
     } catch (error: any) {
       console.error("注册错误:", error)
       setError(error.message)
@@ -138,7 +143,7 @@ export default function LoginForm() {
                       <Button
                         variant="link"
                         className="p-0 h-auto ml-2"
-                        onClick={() => setShowFirebaseStatus(!showFirebaseStatus)}
+                        // onClick={() => setShowFirebaseStatus(!showFirebaseStatus)}
                       >
                         检查配置
                       </Button>
@@ -155,7 +160,7 @@ export default function LoginForm() {
               )}
 
               {/* Firebase 配置状态 */}
-              {showFirebaseStatus && <FirebaseStatus />}
+              {/* {showFirebaseStatus && <FirebaseStatus />} */}
 
               {/* 登录表单 */}
               <TabsContent value="login">

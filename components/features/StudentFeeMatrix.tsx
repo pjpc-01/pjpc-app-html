@@ -1,81 +1,115 @@
-import { useState, useEffect, useMemo } from "react"
-import { Badge } from "@/components/ui/badge"
-import { Search } from "lucide-react"
-import { useFees } from "../../hooks/useFees"
-import { useStudents } from "../../hooks/useStudents"
-import { useStudentFees } from "../../hooks/useStudentFees"
-import { StudentFeeMatrixHeader } from "./StudentFeeMatrixHeader"
-import { SearchAndFilter } from "./SearchAndFilter"
-import { BatchOperationsDialog } from "./BatchOperationsDialog"
-import { StudentCard } from "./StudentCard"
+"use client"
 
-export const StudentFeeMatrix = () => {
-  const { feeItems } = useFees()
-  const { students } = useStudents()
-  const { 
-    toggleStudentFee, 
-    isAssigned, 
-    calculateStudentTotal, 
-    assignFeeToAllStudents,
-    toggleStudentSubItem,
-    getStudentSubItemState,
-    setStudentSubItemState
-  } = useStudentFees()
-  
-  const [expandedStudents, setExpandedStudents] = useState<string[]>([])
-  const [expandedFees, setExpandedFees] = useState<Map<string, boolean>>(new Map())
-  const [studentPayments, setStudentPayments] = useState<Map<string, { status: string; date: string }>>(new Map())
-  const [editMode, setEditMode] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedGradeFilter, setSelectedGradeFilter] = useState<string>("all")
-  const [batchDialogOpen, setBatchDialogOpen] = useState(false)
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [selectedSubItems, setSelectedSubItems] = useState<{feeId: number, subItemId: number}[]>([])
-  const [selectedStudents, setSelectedStudents] = useState<string[]>([])
-  const [selectedCriteria, setSelectedCriteria] = useState<'grade' | null>(null)
-  const [selectedGrades, setSelectedGrades] = useState<string[]>([])
+import { useState, useMemo } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { 
+  ChevronDown, 
+  ChevronRight, 
+  DollarSign, 
+  FileText, 
+  Download,
+  AlertTriangle,
+  CheckCircle
+} from 'lucide-react'
 
-  const activeFees = feeItems.filter(fee => fee.status === 'active')
+interface Student {
+  id: string
+  name: string
+  grade: string
+  fees: {
+    tuition: number
+    transportation: number
+    meals: number
+    activities: number
+    total: number
+  }
+  status: 'paid' | 'pending' | 'overdue'
+  lastPayment?: string
+}
 
-  // Get unique categories from active fees
-  const categories = [...new Set(activeFees.map(fee => fee.category).filter(Boolean))]
+interface FeeItem {
+  id: string
+  name: string
+  amount: number
+  description: string
+  required: boolean
+}
 
-  // Filter students based on search term, grade filter, and exclude graduated students
+export default function StudentFeeMatrix() {
+  const [students, setStudents] = useState<Student[]>([
+    {
+      id: '1',
+      name: '张三',
+      grade: '7年级',
+      fees: {
+        tuition: 5000,
+        transportation: 800,
+        meals: 1200,
+        activities: 500,
+        total: 7500
+      },
+      status: 'paid',
+      lastPayment: '2024-01-15'
+    },
+    {
+      id: '2',
+      name: '李四',
+      grade: '8年级',
+      fees: {
+        tuition: 5000,
+        transportation: 800,
+        meals: 1200,
+        activities: 500,
+        total: 7500
+      },
+      status: 'pending',
+      lastPayment: '2024-01-10'
+    },
+    {
+      id: '3',
+      name: '王五',
+      grade: '9年级',
+      fees: {
+        tuition: 5000,
+        transportation: 800,
+        meals: 1200,
+        activities: 500,
+        total: 7500
+      },
+      status: 'overdue',
+      lastPayment: '2023-12-20'
+    }
+  ])
+
+  const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set())
+  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set())
+  const [filterGrade, setFilterGrade] = useState<string>('all')
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+
+  const feeItems: FeeItem[] = [
+    { id: 'tuition', name: '学费', amount: 5000, description: '学期学费', required: true },
+    { id: 'transportation', name: '交通费', amount: 800, description: '校车服务费', required: false },
+    { id: 'meals', name: '餐费', amount: 1200, description: '午餐费用', required: false },
+    { id: 'activities', name: '活动费', amount: 500, description: '课外活动费用', required: false }
+  ]
+
   const filteredStudents = useMemo(() => {
     return students.filter(student => {
-      // Exclude graduated students
-      if (student.grade === '已毕业') return false
-      
-      // Apply grade filter
-      if (selectedGradeFilter !== "all" && student.grade !== selectedGradeFilter) return false
-      
-      // Apply search term filter
-      if (!searchTerm.trim()) return true
-      
-      const searchLower = searchTerm.toLowerCase()
-      return (
-        student.name.toLowerCase().includes(searchLower) ||
-        student.id.toLowerCase().includes(searchLower) ||
-        student.grade.toLowerCase().includes(searchLower) ||
-        student.parentName.toLowerCase().includes(searchLower)
-      )
+      const gradeMatch = filterGrade === 'all' || student.grade === filterGrade
+      const statusMatch = filterStatus === 'all' || student.status === filterStatus
+      return gradeMatch && statusMatch
     })
-  }, [students, searchTerm, selectedGradeFilter])
-
-  // Get available grades from all students (excluding graduated) in ascending order
-  const availableGrades = useMemo(() => {
-    const grades = [...new Set(students
-      .filter(student => student.grade !== '已毕业')
-      .map(s => s.grade))]
-    return grades.sort((a, b) => {
-      // Extract numbers from grade strings (e.g., "Standard 3" -> 3)
-      const numA = parseInt(a.match(/\d+/)?.[0] || '0')
-      const numB = parseInt(b.match(/\d+/)?.[0] || '0')
-      return numA - numB
-    })
-  }, [students])
+  }, [students, filterGrade, filterStatus])
 
   const toggleStudentExpansion = (studentId: string) => {
+<<<<<<< HEAD
     setExpandedStudents(prev => {
       const isCurrentlyExpanded = prev.includes(studentId)
       
@@ -111,148 +145,99 @@ export const StudentFeeMatrix = () => {
       ...currentPayment,
       status,
       date: status === 'paid' ? new Date().toISOString().split('T')[0] : currentPayment.date
+=======
+    const newExpanded = new Set(expandedStudents)
+    if (newExpanded.has(studentId)) {
+      newExpanded.delete(studentId)
+    } else {
+      newExpanded.add(studentId)
     }
-    setStudentPayments(prev => {
-      const newMap = new Map(prev)
-      newMap.set(studentId, newPayment)
-      return newMap
-    })
+    setExpandedStudents(newExpanded)
+  }
+
+  const toggleStudentSelection = (studentId: string) => {
+    const newSelected = new Set(selectedStudents)
+    if (newSelected.has(studentId)) {
+      newSelected.delete(studentId)
+    } else {
+      newSelected.add(studentId)
+    }
+    setSelectedStudents(newSelected)
+  }
+
+  const toggleAllStudents = () => {
+    if (selectedStudents.size === filteredStudents.length) {
+      setSelectedStudents(new Set())
+    } else {
+      setSelectedStudents(new Set(filteredStudents.map(s => s.id)))
+>>>>>>> 377d27e310acbc445ced2f1204f55ad3b973e3b9
+    }
   }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "paid":
-        return <Badge variant="default" className="text-xs">已缴费</Badge>
-      case "pending":
-        return <Badge variant="secondary" className="text-xs">待缴费</Badge>
-      case "overdue":
-        return <Badge variant="destructive" className="text-xs">逾期</Badge>
+      case 'paid':
+        return <Badge variant="default" className="bg-green-100 text-green-800">已缴费</Badge>
+      case 'pending':
+        return <Badge variant="secondary">待缴费</Badge>
+      case 'overdue':
+        return <Badge variant="destructive">逾期</Badge>
       default:
-        return <Badge variant="outline" className="text-xs">{status}</Badge>
+        return <Badge variant="outline">未知</Badge>
     }
   }
 
   const createInvoice = () => {
+<<<<<<< HEAD
     // TODO: Implement invoice creation functionality
+=======
+    const selectedStudentList = students.filter(s => selectedStudents.has(s.id))
+    alert(`为 ${selectedStudentList.length} 名学生创建发票`)
+>>>>>>> 377d27e310acbc445ced2f1204f55ad3b973e3b9
   }
 
-  const toggleEditMode = () => {
-    setEditMode(!editMode)
+  const exportData = () => {
+    const data = students.map(student => ({
+      姓名: student.name,
+      年级: student.grade,
+      学费: student.fees.tuition,
+      交通费: student.fees.transportation,
+      餐费: student.fees.meals,
+      活动费: student.fees.activities,
+      总计: student.fees.total,
+      状态: student.status === 'paid' ? '已缴费' : student.status === 'pending' ? '待缴费' : '逾期',
+      最后缴费日期: student.lastPayment || '无'
+    }))
+
+    const csv = [
+      Object.keys(data[0]).join(','),
+      ...data.map(row => Object.values(row).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = '学生费用报表.csv'
+    link.click()
   }
 
-  const clearSearch = () => {
-    setSearchTerm("")
-  }
-
-  const clearGradeFilter = () => {
-    setSelectedGradeFilter("all")
-  }
-
-  const handleCategoryToggle = (category: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(category) 
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    )
-  }
-
-  const handleSubItemToggle = (feeId: number, subItemId: number) => {
-    setSelectedSubItems(prev => {
-      const existing = prev.find(item => item.feeId === feeId && item.subItemId === subItemId)
-      if (existing) {
-        return prev.filter(item => !(item.feeId === feeId && item.subItemId === subItemId))
-      } else {
-        return [...prev, { feeId, subItemId }]
-      }
-    })
-  }
-
-  const isSubItemSelected = (feeId: number, subItemId: number) => {
-    return selectedSubItems.some(item => item.feeId === feeId && item.subItemId === subItemId)
-  }
-
-  const handleCriteriaToggle = (criteria: 'grade') => {
-    if (selectedCriteria === criteria) {
-      setSelectedCriteria(null)
-      setSelectedStudents([])
-      setSelectedGrades([])
-    } else {
-      setSelectedCriteria(criteria)
-      // Initialize with all available grades selected
-      setSelectedGrades([...availableGrades])
-      setSelectedStudents([])
+  const totalRevenue = students.reduce((sum, student) => {
+    if (student.status === 'paid') {
+      return sum + student.fees.total
     }
-  }
+    return sum
+  }, 0)
 
-  const handleGradeToggle = (grade: string) => {
-    setSelectedGrades(prev => 
-      prev.includes(grade) 
-        ? prev.filter(g => g !== grade)
-        : [...prev, grade]
-    )
-  }
-
-  const executeBatchToggle = (action: 'enable' | 'disable') => {
-    if (!editMode) {
-      alert('请先进入编辑模式')
-      return
+  const pendingAmount = students.reduce((sum, student) => {
+    if (student.status === 'pending' || student.status === 'overdue') {
+      return sum + student.fees.total
     }
-
-    let targetStudents: string[]
-    
-    if (selectedCriteria === 'grade' && selectedGrades.length > 0) {
-      // Filter students by selected grades
-      targetStudents = filteredStudents
-        .filter(student => selectedGrades.includes(student.grade))
-        .map(student => student.id)
-    } else {
-      // Use all filtered students
-      targetStudents = filteredStudents.map(s => s.id)
-    }
-
-    // If specific sub-items are selected, use those; otherwise use categories
-    if (selectedSubItems.length > 0) {
-      // Use selected sub-items
-      targetStudents.forEach(studentId => {
-        selectedSubItems.forEach(({ feeId, subItemId }) => {
-          const currentState = getStudentSubItemState(Number(studentId), feeId, subItemId)
-          if (action === 'enable' && !currentState) {
-            toggleStudentSubItem(Number(studentId), feeId, subItemId)
-          } else if (action === 'disable' && currentState) {
-            toggleStudentSubItem(Number(studentId), feeId, subItemId)
-          }
-        })
-      })
-    } else {
-      // Use selected categories (fallback to all if none selected)
-      const targetFees = activeFees.filter(fee => 
-        selectedCategories.length === 0 || selectedCategories.includes(fee.category)
-      )
-
-      targetStudents.forEach(studentId => {
-        targetFees.forEach(fee => {
-          fee.subItems.forEach(subItem => {
-            const currentState = getStudentSubItemState(Number(studentId), fee.id, subItem.id)
-            if (action === 'enable' && !currentState) {
-              toggleStudentSubItem(Number(studentId), fee.id, subItem.id)
-            } else if (action === 'disable' && currentState) {
-              toggleStudentSubItem(Number(studentId), fee.id, subItem.id)
-            }
-          })
-        })
-      })
-    }
-
-    setBatchDialogOpen(false)
-    setSelectedCategories([])
-    setSelectedSubItems([])
-    setSelectedStudents([])
-    setSelectedCriteria(null)
-    setSelectedGrades([])
-  }
+    return sum
+  }, 0)
 
   return (
     <div className="space-y-6">
+<<<<<<< HEAD
       <StudentFeeMatrixHeader
         editMode={editMode}
         onToggleEditMode={toggleEditMode}
@@ -327,6 +312,189 @@ export const StudentFeeMatrix = () => {
           })
         )}
       </div>
+=======
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">学生费用管理</h2>
+          <p className="text-gray-600">管理学生的各项费用和缴费状态</p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={createInvoice} disabled={selectedStudents.size === 0}>
+            <FileText className="h-4 w-4 mr-2" />
+            创建发票 ({selectedStudents.size})
+          </Button>
+          <Button onClick={exportData} variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            导出报表
+          </Button>
+        </div>
+      </div>
+
+      {/* 统计卡片 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">总学生数</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{students.length}</div>
+            <p className="text-xs text-muted-foreground">注册学生总数</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">已收费用</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">NT$ {totalRevenue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">已缴费学生总额</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">待收费用</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">NT$ {pendingAmount.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">待缴费学生总额</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 筛选器 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>筛选选项</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="grade-filter">年级:</Label>
+              <Select value={filterGrade} onValueChange={setFilterGrade}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部年级</SelectItem>
+                  <SelectItem value="7年级">7年级</SelectItem>
+                  <SelectItem value="8年级">8年级</SelectItem>
+                  <SelectItem value="9年级">9年级</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="status-filter">状态:</Label>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部状态</SelectItem>
+                  <SelectItem value="paid">已缴费</SelectItem>
+                  <SelectItem value="pending">待缴费</SelectItem>
+                  <SelectItem value="overdue">逾期</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 学生列表 */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>学生费用详情</CardTitle>
+              <CardDescription>点击学生姓名查看详细费用信息</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                checked={selectedStudents.size === filteredStudents.length && filteredStudents.length > 0}
+                onCheckedChange={toggleAllStudents}
+              />
+              <Label>全选</Label>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {filteredStudents.map((student) => {
+              const isExpanded = expandedStudents.has(student.id)
+              const isSelected = selectedStudents.has(student.id)
+              
+              return (
+                <div key={student.id} className="border rounded-lg">
+                  <div className="flex items-center p-4 hover:bg-gray-50">
+                    <Checkbox 
+                      checked={isSelected}
+                      onCheckedChange={() => toggleStudentSelection(student.id)}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleStudentExpansion(student.id)}
+                      className="flex-1 justify-start ml-2"
+                    >
+                      {isExpanded ? (
+                        <ChevronDown className="h-4 w-4 mr-2" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 mr-2" />
+                      )}
+                      <span className="font-medium">{student.name}</span>
+                      <Badge variant="outline" className="ml-2">{student.grade}</Badge>
+                    </Button>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="font-medium">NT$ {student.fees.total.toLocaleString()}</div>
+                        <div className="text-sm text-gray-500">总费用</div>
+                      </div>
+                      {getStatusBadge(student.status)}
+                    </div>
+                  </div>
+                  
+                  {isExpanded && (
+                    <div className="border-t bg-gray-50 p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-medium mb-2">费用明细</h4>
+                          <div className="space-y-2">
+                            {feeItems.map((item) => (
+                              <div key={item.id} className="flex justify-between text-sm">
+                                <span>{item.name}</span>
+                                <span>NT$ {student.fees[item.id as keyof typeof student.fees]?.toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="font-medium mb-2">缴费信息</h4>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span>状态:</span>
+                              {getStatusBadge(student.status)}
+                            </div>
+                            {student.lastPayment && (
+                              <div className="flex justify-between">
+                                <span>最后缴费:</span>
+                                <span>{student.lastPayment}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+>>>>>>> 377d27e310acbc445ced2f1204f55ad3b973e3b9
     </div>
   )
-} 
+}
