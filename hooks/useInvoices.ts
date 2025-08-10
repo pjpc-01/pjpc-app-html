@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react'
 export interface Invoice {
   id: number
   invoiceNumber: string
+  receiptNumber?: string // Reserved receipt number (null until payment)
   student: string
   studentId: number
   amount: number
@@ -111,10 +112,14 @@ export const useInvoices = () => {
   }, [invoices])
 
   const createInvoice = useCallback((invoiceData: Omit<Invoice, 'id' | 'invoiceNumber'>) => {
+    const invoiceNumber = generateInvoiceNumber()
+    const receiptNumber = invoiceNumber.replace('INV-', 'RCP-') // Reserve receipt number
+    
     const newInvoice: Invoice = {
       ...invoiceData,
       id: Math.max(...invoices.map(inv => inv.id), 0) + 1,
-      invoiceNumber: generateInvoiceNumber()
+      invoiceNumber,
+      receiptNumber // Reserve the receipt number for this invoice
     }
     setInvoices(prev => [...prev, newInvoice])
     return newInvoice
@@ -130,10 +135,17 @@ export const useInvoices = () => {
     setInvoices(prev => prev.filter(invoice => invoice.id !== invoiceId))
   }, [])
 
-  const updateInvoiceStatus = useCallback((invoiceId: number, status: Invoice['status']) => {
+  const updateInvoiceStatus = useCallback((
+    invoiceId: number, 
+    status: Invoice['status'], 
+    paymentMethod?: string
+  ) => {
     const updates: Partial<Invoice> = { status }
     if (status === 'paid') {
       updates.paidDate = new Date().toISOString().split('T')[0]
+      if (paymentMethod) {
+        updates.paymentMethod = paymentMethod
+      }
     }
     updateInvoice(invoiceId, updates)
   }, [updateInvoice])

@@ -19,9 +19,13 @@ import {
 import { CreditCard, DollarSign, CheckCircle, AlertCircle, RotateCcw, Eye, Loader2 } from "lucide-react"
 import { usePayments } from "@/hooks/usePayments"
 import { useInvoices } from "@/hooks/useInvoices"
+import { useReceipts } from "@/hooks/useReceipts"
 
 export default function PaymentManagement() {
-  const { invoices } = useInvoices()
+  const { 
+    invoices, 
+    updateInvoiceStatus 
+  } = useInvoices()
   const {
     payments,
     filters: paymentFilters,
@@ -38,20 +42,26 @@ export default function PaymentManagement() {
     reconcilePayments,
     processPartialPayment
   } = usePayments(invoices)
+  const { createReceiptFromInvoice } = useReceipts()
 
   const [isPaymentDetailDialogOpen, setIsPaymentDetailDialogOpen] = useState(false)
   const [selectedPayment, setSelectedPayment] = useState<any>(null)
   const [isProcessPaymentDialogOpen, setIsProcessPaymentDialogOpen] = useState(false)
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<any>(null)
+  const [paymentFormData, setPaymentFormData] = useState({
+    amount: '',
+    method: '',
+    notes: ''
+  })
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "paid":
+      case "completed":
         return <Badge variant="default">已缴费</Badge>
       case "pending":
         return <Badge variant="secondary">待缴费</Badge>
-      case "overdue":
-        return <Badge variant="destructive">逾期</Badge>
+      case "failed":
+        return <Badge variant="destructive">缴费失败</Badge>
       case "refunded":
         return <Badge variant="outline">已退款</Badge>
       default:
@@ -59,18 +69,106 @@ export default function PaymentManagement() {
     }
   }
 
-  const handleProcessPayment = (invoiceId: number, amount: number, method: string) => {
-    const { payment, isFullyPaid } = processPartialPayment(invoiceId, amount, method as any)
-    if (isFullyPaid) {
-      // Update invoice status to paid
-      console.log('Payment processed successfully')
+  const handleProcessPayment = () => {
+    if (!selectedInvoiceForPayment || !paymentFormData.amount || !paymentFormData.method) {
+      alert('请填写完整的缴费信息')
+      return
     }
+
+    const amount = parseFloat(paymentFormData.amount)
+    if (amount <= 0) {
+      alert('缴费金额必须大于0')
+      return
+    }
+
+    // Process the payment and trigger receipt generation when payment is completed
+    const { payment, isFullyPaid } = processPartialPayment(
+      selectedInvoiceForPayment.id, 
+      amount, 
+      paymentFormData.method as any,
+      paymentFormData.notes,
+      (receiptData) => {
+        if (receiptData) {
+          createReceiptFromInvoice(receiptData.invoice, receiptData.paymentMethod, receiptData.paymentDate)
+        }
+      }
+    )
+
+    // Update invoice status if fully paid
+    if (isFullyPaid) {
+      updateInvoiceStatus(selectedInvoiceForPayment.id, 'paid', paymentFormData.method)
+    }
+
+    // Reset form and close dialog
+    setPaymentFormData({
+      amount: '',
+      method: '',
+      notes: ''
+    })
+    setSelectedInvoiceForPayment(null)
+    setIsProcessPaymentDialogOpen(false)
+
+    alert('缴费处理成功！')
   }
 
   const handleRefundPayment = (paymentId: number) => {
     if (confirm("确定要退款吗？")) {
       updatePayment(paymentId, { status: 'refunded' })
     }
+  }
+
+  const handleReconciliation = () => {
+    // Perform reconciliation checks
+    const reconciliationResults = {
+      totalInvoices: invoices.length,
+      totalPayments: payments.length,
+      paidInvoices: invoices.filter(inv => {
+        const invoicePayments = payments.filter(p => p.invoiceId === inv.id)
+        const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amount, 0)
+        return totalPaid >= inv.totalAmount
+      }).length,
+      unpaidInvoices: invoices.filter(inv => {
+        const invoicePayments = payments.filter(p => p.invoiceId === inv.id)
+        const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amount, 0)
+        return totalPaid < inv.totalAmount
+      }).length,
+      totalAmountInvoiced: invoices.reduce((sum, inv) => sum + inv.totalAmount, 0),
+      totalAmountPaid: payments.reduce((sum, p) => sum + p.amount, 0),
+      discrepancies: []
+    }
+
+    // Check for discrepancies
+    invoices.forEach(invoice => {
+      const invoicePayments = payments.filter(p => p.invoiceId === invoice.id)
+      const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amount, 0)
+      
+      if (totalPaid > invoice.totalAmount) {
+        reconciliationResults.discrepancies.push({
+          type: 'overpayment',
+          invoiceId: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          expected: invoice.totalAmount,
+          actual: totalPaid,
+          difference: totalPaid - invoice.totalAmount
+        })
+      }
+    })
+
+    // Show reconciliation report
+    const report = `
+对账报告:
+- 总发票数: ${reconciliationResults.totalInvoices}
+- 总缴费记录: ${reconciliationResults.totalPayments}
+- 已缴费发票: ${reconciliationResults.paidInvoices}
+- 未缴费发票: ${reconciliationResults.unpaidInvoices}
+- 发票总金额: RM ${reconciliationResults.totalAmountInvoiced.toLocaleString()}
+- 缴费总金额: RM ${reconciliationResults.totalAmountPaid.toLocaleString()}
+- 差异金额: RM ${(reconciliationResults.totalAmountPaid - reconciliationResults.totalAmountInvoiced).toLocaleString()}
+- 发现差异: ${reconciliationResults.discrepancies.length} 项
+    `
+
+    alert(report)
+    console.log('Reconciliation Results:', reconciliationResults)
   }
 
   return (
@@ -92,9 +190,9 @@ export default function PaymentManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">全部状态</SelectItem>
-                <SelectItem value="paid">已缴费</SelectItem>
+                <SelectItem value="completed">已缴费</SelectItem>
                 <SelectItem value="pending">待缴费</SelectItem>
-                <SelectItem value="overdue">逾期</SelectItem>
+                <SelectItem value="failed">缴费失败</SelectItem>
                 <SelectItem value="refunded">已退款</SelectItem>
               </SelectContent>
             </Select>
@@ -105,11 +203,11 @@ export default function PaymentManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">全部方式</SelectItem>
-                <SelectItem value="cash">现金</SelectItem>
-                <SelectItem value="bank_transfer">银行转账</SelectItem>
-                <SelectItem value="wechat">微信支付</SelectItem>
-                <SelectItem value="alipay">支付宝</SelectItem>
-                <SelectItem value="card">银行卡</SelectItem>
+                <SelectItem value="现金">现金</SelectItem>
+                <SelectItem value="银行转账">银行转账</SelectItem>
+                <SelectItem value="微信">微信支付</SelectItem>
+                <SelectItem value="支付宝">支付宝</SelectItem>
+                <SelectItem value="银行卡">银行卡</SelectItem>
               </SelectContent>
             </Select>
             
@@ -122,14 +220,14 @@ export default function PaymentManagement() {
           </div>
 
           <div className="flex justify-between items-center mb-4">
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                导出记录
-              </Button>
-              <Button variant="outline" size="sm">
-                对账
-              </Button>
-            </div>
+                         <div className="flex gap-2">
+               <Button variant="outline" size="sm">
+                 导出记录
+               </Button>
+               <Button variant="outline" size="sm" onClick={handleReconciliation}>
+                 对账
+               </Button>
+             </div>
             <Button size="sm" onClick={() => setIsProcessPaymentDialogOpen(true)}>
               <DollarSign className="h-4 w-4 mr-2" />
               处理缴费
@@ -173,15 +271,15 @@ export default function PaymentManagement() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {payment.status === "paid" && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleRefundPayment(payment.id)}
-                          >
-                            <RotateCcw className="h-4 w-4" />
-                          </Button>
-                        )}
+                                                 {payment.status === "completed" && (
+                           <Button 
+                             variant="ghost" 
+                             size="sm"
+                             onClick={() => handleRefundPayment(payment.id)}
+                           >
+                             退款
+                           </Button>
+                         )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -302,6 +400,12 @@ export default function PaymentManagement() {
               <Select onValueChange={(value) => {
                 const invoice = invoices.find(inv => inv.id === parseInt(value))
                 setSelectedInvoiceForPayment(invoice)
+                if (invoice) {
+                  setPaymentFormData(prev => ({
+                    ...prev,
+                    amount: invoice.totalAmount.toString()
+                  }))
+                }
               }}>
                 <SelectTrigger>
                   <SelectValue placeholder="选择要缴费的发票" />
@@ -323,38 +427,88 @@ export default function PaymentManagement() {
                   <Input 
                     type="number" 
                     placeholder="输入缴费金额"
-                    defaultValue={selectedInvoiceForPayment.totalAmount}
+                    value={paymentFormData.amount}
+                    onChange={(e) => setPaymentFormData(prev => ({ ...prev, amount: e.target.value }))}
                   />
+                  <p className="text-sm text-gray-500 mt-1">
+                    发票总金额: RM {selectedInvoiceForPayment.totalAmount}
+                    {(() => {
+                      const outstandingBalance = getInvoiceOutstandingBalance(selectedInvoiceForPayment.id)
+                      return outstandingBalance > 0 ? (
+                        <span className="text-orange-600 ml-2">
+                          (待缴余额: RM {outstandingBalance})
+                        </span>
+                      ) : (
+                        <span className="text-green-600 ml-2">(已全额缴费)</span>
+                      )
+                    })()}
+                  </p>
                 </div>
                 
                 <div>
                   <Label>支付方式</Label>
-                  <Select>
+                  <Select 
+                    value={paymentFormData.method}
+                    onValueChange={(value) => setPaymentFormData(prev => ({ ...prev, method: value }))}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="选择支付方式" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cash">现金</SelectItem>
-                      <SelectItem value="bank_transfer">银行转账</SelectItem>
-                      <SelectItem value="wechat">微信支付</SelectItem>
-                      <SelectItem value="alipay">支付宝</SelectItem>
-                      <SelectItem value="card">银行卡</SelectItem>
+                      <SelectItem value="现金">现金</SelectItem>
+                      <SelectItem value="银行转账">银行转账</SelectItem>
+                      <SelectItem value="微信">微信支付</SelectItem>
+                      <SelectItem value="支付宝">支付宝</SelectItem>
+                      <SelectItem value="银行卡">银行卡</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div>
                   <Label>备注</Label>
-                  <Input placeholder="缴费备注..." />
+                  <Input 
+                    placeholder="缴费备注..." 
+                    value={paymentFormData.notes}
+                    onChange={(e) => setPaymentFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  />
+                </div>
+
+                {/* Payment History */}
+                <div>
+                  <Label>缴费历史</Label>
+                  <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
+                    {getInvoicePaymentHistory(selectedInvoiceForPayment.id).map((payment) => (
+                      <div key={payment.id} className="flex justify-between items-center p-2 bg-gray-50 rounded text-sm">
+                        <span>{payment.date}</span>
+                        <span className="font-medium">RM {payment.amount}</span>
+                        <Badge variant={payment.status === 'completed' ? 'default' : 'secondary'}>
+                          {payment.status === 'completed' ? '已缴费' : '待处理'}
+                        </Badge>
+                      </div>
+                    ))}
+                    {getInvoicePaymentHistory(selectedInvoiceForPayment.id).length === 0 && (
+                      <p className="text-gray-500 text-sm">暂无缴费记录</p>
+                    )}
+                  </div>
                 </div>
               </>
             )}
             
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsProcessPaymentDialogOpen(false)}>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setIsProcessPaymentDialogOpen(false)
+                  setSelectedInvoiceForPayment(null)
+                  setPaymentFormData({ amount: '', method: '', notes: '' })
+                }}
+              >
                 取消
               </Button>
-              <Button disabled={!selectedInvoiceForPayment}>
+              <Button 
+                disabled={!selectedInvoiceForPayment || !paymentFormData.amount || !paymentFormData.method}
+                onClick={handleProcessPayment}
+              >
                 确认缴费
               </Button>
             </div>

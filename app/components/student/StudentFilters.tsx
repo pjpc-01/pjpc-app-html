@@ -99,7 +99,7 @@ export default function StudentFilters({
                     <SelectValue placeholder="选择年级" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">全部年级</SelectItem>
+                    <SelectItem value="all">全部年级</SelectItem>
                     {gradeOptions.map((grade) => (
                       <SelectItem key={grade} value={grade}>
                         {convertGradeToChinese(grade)}
