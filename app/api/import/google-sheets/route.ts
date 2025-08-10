@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleAuth } from 'google-auth-library'
 import { google } from 'googleapis'
-import { FirestoreImport } from '@/lib/firestore-import'
+import { addStudent, updateStudent } from '@/lib/pocketbase-students'
 import { StudentData } from '@/lib/google-sheets'
 
 class GoogleSheetsAPI {
@@ -344,7 +344,6 @@ export async function POST(request: NextRequest) {
       )
     }
     const sheetsAPI = new GoogleSheetsAPI(creds)
-    const firestoreImport = new FirestoreImport(dataType as 'primary' | 'secondary')
 
     switch (action) {
       case 'validate':
@@ -372,23 +371,62 @@ export async function POST(request: NextRequest) {
           
           console.log('Sample data:', data.slice(0, 2))
           
-          const result = await firestoreImport.importStudents(data, 'google-sheets')
-          console.log('Import result:', result)
+          // Import to PocketBase
+          const importResults = {
+            success: 0,
+            failed: 0,
+            errors: [] as string[]
+          }
+
+          for (const studentData of data) {
+            try {
+              // Convert Google Sheets data to PocketBase format
+              const pocketbaseStudent = {
+                student_name: studentData.name,
+                standard: studentData.grade,
+                father_phone: studentData.phone || '',
+                mother_phone: studentData.phone || '',
+                father_name: studentData.parentName || '',
+                mother_name: studentData.parentName || '',
+                address: studentData.address || '',
+                email: studentData.email || '',
+                date_of_birth: studentData.dateOfBirth || '',
+                gender: studentData.gender || '',
+                emergency_contact: studentData.emergencyContact || '',
+                medical_info: studentData.medicalInfo || '',
+                enrollment_date: new Date().toISOString().split('T')[0],
+                status: 'active'
+              }
+
+              await addStudent(pocketbaseStudent, dataType as 'primary' | 'secondary')
+              importResults.success++
+            } catch (error) {
+              importResults.failed++
+              importResults.errors.push(`Failed to import ${studentData.name}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+            }
+          }
+
+          console.log('Import result:', importResults)
           
-          return NextResponse.json(result)
+          return NextResponse.json({
+            success: true,
+            message: `Successfully imported ${importResults.success} students, ${importResults.failed} failed`,
+            details: importResults
+          })
         } catch (error) {
           console.error('Import error:', error)
           return NextResponse.json({
             error: error instanceof Error ? error.message : 'Unknown import error',
-            suggestion: 'Check Firebase configuration and permissions'
+            suggestion: 'Check PocketBase configuration and permissions'
           }, { status: 500 })
         }
 
       case 'stats':
-        const stats = await firestoreImport.getImportStats()
+        // Return basic stats for PocketBase
         return NextResponse.json({
-          total: stats.total || 0,
-          byGrade: stats.byGrade || {}
+          total: 0, // This would need to be implemented with PocketBase queries
+          byGrade: {},
+          message: 'Stats feature not yet implemented for PocketBase'
         })
 
       default:

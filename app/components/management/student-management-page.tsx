@@ -9,14 +9,31 @@ import StudentStats from "../student/StudentStats"
 import StudentFilters from "../student/StudentFilters"
 import StudentBulkActions from "../student/StudentBulkActions"
 import StudentDetails from "../student/StudentDetails"
+import { useStudents } from "@/hooks/useStudents"
 
 export default function StudentManagementPage() {
+  const { students, loading, error, refetch } = useStudents()
+  
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">学生管理系统</h2>
           <p className="text-gray-600">管理学生档案、班级分组、出勤记录和学习进度</p>
+          {error && (
+            <div className="mt-2 p-2 bg-red-100 border border-red-400 text-red-700 rounded">
+              错误: {error}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {loading && <div className="text-sm text-gray-500">加载中...</div>}
+          <button 
+            onClick={() => refetch()} 
+            className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            刷新数据
+          </button>
         </div>
       </div>
 
@@ -36,8 +53,8 @@ export default function StudentManagementPage() {
 
         <TabsContent value="list">
           <StudentList 
-            students={[]}
-            loading={false}
+            students={students}
+            loading={loading}
             selectedStudents={[]}
             onSelectStudent={() => {}}
             onSelectAll={() => {}}
@@ -70,12 +87,12 @@ export default function StudentManagementPage() {
             setSearchTerm={() => {}}
             selectedGrade=""
             setSelectedGrade={() => {}}
-            students={[]}
+            students={students}
           />
         </TabsContent>
 
         <TabsContent value="stats">
-          <StudentStats students={[]} />
+          <StudentStats students={students} />
         </TabsContent>
       </Tabs>
     </div>

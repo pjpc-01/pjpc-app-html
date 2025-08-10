@@ -161,7 +161,7 @@ export default function CheckInNavigation() {
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">数据库:</span>
-              <span className="text-sm font-medium">Firebase Firestore</span>
+              <span className="text-sm font-medium">PocketBase</span>
             </div>
           </CardContent>
         </Card>

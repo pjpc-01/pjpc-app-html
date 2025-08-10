@@ -165,7 +165,7 @@ export default function GoogleSheetsImport() {
     }
   }
 
-  const importToFirestore = async () => {
+  const importToPocketBase = async () => {
     if (!spreadsheetId || !credentials) {
       setImportStatus({
         isImporting: false,
@@ -192,7 +192,7 @@ export default function GoogleSheetsImport() {
       setImportStatus({
         isImporting: true,
         progress: 60,
-        message: 'Importing to Firestore...'
+        message: 'Importing to PocketBase...'
       })
 
       const response = await fetch('/api/import/google-sheets', {
@@ -271,7 +271,7 @@ export default function GoogleSheetsImport() {
             Google Sheets Import
           </CardTitle>
           <CardDescription>
-            从Google Sheets一次性导入学生数据到Firebase Firestore。支持您的数据格式，包括：Student Name、Standard、Parents Phone Number等字段。
+            从Google Sheets一次性导入学生数据到PocketBase。支持您的数据格式，包括：Student Name、Standard、Parents Phone Number等字段。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -337,7 +337,7 @@ export default function GoogleSheetsImport() {
               Preview Data
             </Button>
             <Button
-              onClick={importToFirestore}
+              onClick={importToPocketBase}
               disabled={importStatus.isImporting}
             >
               {importStatus.isImporting ? (
@@ -345,7 +345,7 @@ export default function GoogleSheetsImport() {
               ) : (
                 <Upload className="h-4 w-4 mr-2" />
               )}
-              Import to Firestore
+                              Import to PocketBase
             </Button>
             <Button
               onClick={getCurrentStats}

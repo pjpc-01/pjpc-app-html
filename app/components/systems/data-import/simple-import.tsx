@@ -163,7 +163,7 @@ export default function SimpleImport() {
     }
   }
 
-  const importToFirestore = async () => {
+  const importToPocketBase = async () => {
     if (!spreadsheetId) {
       setImportStatus({
         isImporting: false,
@@ -332,19 +332,19 @@ export default function SimpleImport() {
     }
   }
 
-  const testFirebaseImport = async () => {
+  const testPocketBaseImport = async () => {
     try {
       setImportStatus({
         isImporting: true,
         progress: 10,
-        message: '测试Firebase导入...'
+        message: '测试PocketBase导入...'
       })
 
       const response = await fetch('/api/import/google-sheets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'test-firebase',
+          action: 'test-pocketbase',
           dataType
         })
       })
@@ -355,14 +355,14 @@ export default function SimpleImport() {
         setImportStatus({
           isImporting: false,
           progress: 0,
-          message: 'Firebase测试失败',
+          message: 'PocketBase测试失败',
           error: result.error
         })
       } else {
         setImportStatus({
           isImporting: false,
           progress: 100,
-          message: 'Firebase连接正常',
+          message: 'PocketBase连接正常',
           success: true
         })
       }
@@ -370,7 +370,7 @@ export default function SimpleImport() {
       setImportStatus({
         isImporting: false,
         progress: 0,
-        message: 'Firebase测试失败',
+        message: 'PocketBase测试失败',
         error: error instanceof Error ? error.message : '未知错误'
       })
     }
@@ -460,7 +460,7 @@ export default function SimpleImport() {
             setCustomCredentials={setCustomCredentials}
             onValidate={validateSpreadsheet}
             onPreview={previewDataFromSheet}
-            onImport={importToFirestore}
+                            onImport={importToPocketBase}
           />
 
           <div className="flex gap-2">
@@ -481,12 +481,12 @@ export default function SimpleImport() {
               详细权限检查
             </Button>
             <Button
-              onClick={testFirebaseImport}
+              onClick={testPocketBaseImport}
               disabled={importStatus.isImporting}
               variant="outline"
             >
               <Settings className="h-4 w-4 mr-2" />
-              测试Firebase导入
+              测试PocketBase导入
             </Button>
             <Button
               onClick={checkSheetsColumns}

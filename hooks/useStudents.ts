@@ -1,24 +1,146 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { 
-  getAllStudents, 
-  getStudentsByGrade, 
-  addStudent, 
-  updateStudent, 
-  deleteStudent, 
-  searchStudents,
-  getStudentStats,
-  type Student,
-  type StudentCreateData,
-  type StudentUpdateData
-} from '@/lib/pocketbase-students'
+import { getAllStudents, getStudentsByGrade, addStudent as addStudentPB, updateStudent as updateStudentPB, deleteStudent as deleteStudentPB, Student as PocketBaseStudent } from '@/lib/pocketbase-students'
 
-// 使用从pocketbase-students导入的Student类型，不再需要本地定义
+// Converted student interface - for UI components
+export interface Student {
+  id: string
+  name: string
+  studentId: string
+  grade: string
+  gender: string
+  birthDate: string
+  phone: string
+  email: string
+  address: string
+  parentName: string
+  parentPhone: string
+  parentEmail: string
+  enrollmentDate: string
+  enrollmentYear: string
+  status: string
+  createdAt: string
+  updatedAt: string
+  class: string
+  fatherName: string
+  motherName: string
+  attendance: number
+  progress: number
+  age: number
+  dateOfBirth: string
+  emergencyContact: string
+  emergencyPhone: string
+  medicalInfo: string
+  notes: string
+  image: string
+  calculatedGrade: string
+  // Preserve original PocketBase fields (even if not used with mock data)
+  standard: string
+  student_name: string
+  father_phone: string
+  mother_phone: string
+  home_address: string
+  dob: string
+}
 
 interface UseStudentsOptions {
-  dataType?: 'primary' | 'secondary'
+  dataType?: 'primary' | 'secondary' | undefined
   enableCache?: boolean
   cacheTimeout?: number
   pageSize?: number
+}
+
+// Function to convert PocketBase student to UI student format
+const convertPocketBaseStudent = (pbStudent: PocketBaseStudent): Student => {
+  // Calculate age from dob if available
+  const calculateAge = (dob: string): number => {
+    if (!dob) return 0
+    const birthDate = new Date(dob)
+    const today = new Date()
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--
+    }
+    return age
+  }
+
+  // Extract year from created date for enrollment year
+  const getEnrollmentYear = (created: string): string => {
+    if (!created) return new Date().getFullYear().toString()
+    return new Date(created).getFullYear().toString()
+  }
+
+  // Convert grade format (e.g., "Standard 2" -> "2", "Form 3" -> "9")
+  const convertGradeFormat = (standard: string): string => {
+    if (!standard) return ''
+    
+    // Handle "Standard X" format (Primary school)
+    if (standard.toLowerCase().includes('standard')) {
+      const match = standard.match(/\d+/)
+      return match ? match[0] : standard
+    }
+    
+    // Handle "Form X" format (Secondary school)
+    if (standard.toLowerCase().includes('form')) {
+      const match = standard.match(/\d+/)
+      if (match) {
+        const formNumber = parseInt(match[0])
+        // Convert Form 1-5 to grades 7-11
+        return (formNumber + 6).toString()
+      }
+      return standard
+    }
+    
+    return standard
+  }
+
+  // Convert gender format
+  const convertGender = (gender: string): string => {
+    if (!gender) return '未知'
+    if (gender.toLowerCase() === 'male') return '男'
+    if (gender.toLowerCase() === 'female') return '女'
+    return gender
+  }
+
+  return {
+    id: pbStudent.id,
+    name: pbStudent.student_name || '未知姓名',
+    studentId: pbStudent.student_id || '',
+    grade: convertGradeFormat(pbStudent.standard || ''),
+    gender: convertGender(pbStudent.gender || ''),
+    birthDate: pbStudent.dob || '',
+    phone: pbStudent.father_phone || pbStudent.mother_phone || '',
+    email: '', // PocketBase doesn't have email field
+    address: pbStudent.home_address || '',
+    parentName: '家长', // PocketBase doesn't have parent name field
+    parentPhone: pbStudent.father_phone || pbStudent.mother_phone || '',
+    parentEmail: '', // PocketBase doesn't have parent email field
+    enrollmentDate: pbStudent.created || new Date().toISOString().split('T')[0],
+    enrollmentYear: getEnrollmentYear(pbStudent.created),
+    status: 'active', // Default to active since PocketBase doesn't have status field
+    createdAt: pbStudent.created || new Date().toISOString(),
+    updatedAt: pbStudent.updated || new Date().toISOString(),
+    class: convertGradeFormat(pbStudent.standard || ''),
+    fatherName: '父亲', // PocketBase doesn't have father name field
+    motherName: '母亲', // PocketBase doesn't have mother name field
+    attendance: 0, // Default value since PocketBase doesn't have attendance field
+    progress: 0, // Default value since PocketBase doesn't have progress field
+    age: calculateAge(pbStudent.dob || ''),
+    dateOfBirth: pbStudent.dob || '',
+    emergencyContact: pbStudent.father_phone || pbStudent.mother_phone || '',
+    emergencyPhone: pbStudent.father_phone || pbStudent.mother_phone || '',
+    medicalInfo: '', // PocketBase doesn't have medical info field
+    notes: '', // PocketBase doesn't have notes field
+    image: '', // PocketBase doesn't have image field
+    calculatedGrade: convertGradeFormat(pbStudent.standard || ''),
+    // Preserve original PocketBase fields
+    standard: pbStudent.standard || '',
+    student_name: pbStudent.student_name || '',
+    father_phone: pbStudent.father_phone || '',
+    mother_phone: pbStudent.mother_phone || '',
+    home_address: pbStudent.home_address || '',
+    dob: pbStudent.dob || ''
+  }
 }
 
 export const useStudents = (options: UseStudentsOptions = {}) => {
@@ -37,146 +159,84 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
   const [lastFetchTime, setLastFetchTime] = useState<number | null>(null)
   const [lastDataType, setLastDataType] = useState(dataType)
 
-  // 缓存机制
   const cacheKey = useMemo(() => `students_${dataType}_${currentPage}`, [dataType, currentPage])
   const isCacheValid = useMemo(() => {
     if (!enableCache || !lastFetchTime) return false
-    // 当dataType改变时，缓存无效
     if (dataType !== lastDataType) return false
     return Date.now() - lastFetchTime < cacheTimeout
-  }, [enableCache, lastFetchTime, cacheTimeout, dataType, lastDataType]) // 添加lastDataType依赖
+  }, [enableCache, lastFetchTime, cacheTimeout, dataType, lastDataType])
 
-  // 转换PocketBase学生数据到统一格式
-  const convertPocketBaseStudent = useCallback((student: any): any => {
-    // 标准化年级格式
-    const normalizeGrade = (grade: string) => {
-      if (!grade) return ''
-      // 移除空格和特殊字符，只保留数字
-      const cleanGrade = grade.toString().trim().replace(/[^\d]/g, '')
-      return cleanGrade || ''
-    }
-
-    // 标准化性别格式
-    const normalizeGender = (gender: string) => {
-      if (!gender) return ''
-      const genderLower = gender.toString().toLowerCase().trim()
-      if (genderLower === 'male' || genderLower === 'm') return '男'
-      if (genderLower === 'female' || genderLower === 'f') return '女'
-      return gender // 如果已经是中文或其他格式，保持原样
-    }
-
-    const normalizedGrade = normalizeGrade(student.standard)
-    const normalizedGender = normalizeGender(student.gender)
-    
-    return {
-      id: student.id,
-      name: student.student_name,
-      studentId: student.student_id,
-      grade: normalizedGrade,
-      gender: normalizedGender,
-      birthDate: student.dob,
-      phone: student.father_phone || student.mother_phone,
-      email: '', // PocketBase中没有email字段
-      address: student.home_address,
-      parentName: '', // PocketBase中没有parentName字段
-      parentPhone: student.father_phone || student.mother_phone,
-      parentEmail: '', // PocketBase中没有parentEmail字段
-      enrollmentDate: student.created,
-      enrollmentYear: new Date(student.created).getFullYear().toString(),
-      status: 'active', // 默认状态
-      createdAt: student.created,
-      updatedAt: student.updated,
-      // 其他字段保持为空或默认值
-      class: normalizedGrade,
-      fatherName: '', // PocketBase中没有fatherName字段
-      motherName: '', // PocketBase中没有motherName字段
-      attendance: 0,
-      progress: 0,
-      age: 0,
-      dateOfBirth: student.dob,
-      emergencyContact: student.father_phone || student.mother_phone,
-      emergencyPhone: student.father_phone || student.mother_phone,
-      medicalInfo: '',
-      notes: '',
-      image: '',
-      calculatedGrade: normalizedGrade,
-    }
-  }, [])
-
-  // 过滤学生数据
-  const filterStudents = useCallback((students: any[]): any[] => {
-    console.log('过滤前的学生数据:', students.map(s => ({ id: s.id, name: s.name, student_name: s.student_name })))
-    // 暂时不过滤，直接返回所有数据
-    console.log('过滤后的学生数据:', students.map(s => ({ id: s.id, name: s.name })))
-    return students
-  }, [])
-
+  // Real PocketBase data fetching
   const fetchStudents = useCallback(async (page: number = 1, forceRefresh: boolean = false) => {
     try {
-      console.log(`开始获取学生数据...`)
-      console.log(`dataType: ${dataType}, forceRefresh: ${forceRefresh}`)
-
       setLoading(true)
       setError(null)
+
+      // Fetch all students from PocketBase
+      const allPocketBaseStudents = await getAllStudents()
       
-      // 使用PocketBase获取学生数据
-      const allStudents = await getAllStudents()
-      console.log('从PocketBase获取的学生数量:', allStudents.length)
-      console.log('原始学生数据示例:', allStudents[0])
+      // Convert to UI format
+      const convertedStudents = allPocketBaseStudents.map(convertPocketBaseStudent)
       
-      // 转换PocketBase数据格式
-      const convertedStudents = allStudents.map(convertPocketBaseStudent)
-      console.log('转换后的学生数量:', convertedStudents.length)
-      console.log('转换后学生数据示例:', convertedStudents[0])
-      
-      // 过滤数据
-      const filteredStudents = filterStudents(convertedStudents)
-      
-      console.log('过滤后的学生数量:', filteredStudents.length)
-      console.log('过滤后学生数据示例:', filteredStudents[0])
+      // Filter based on dataType
+      let filteredStudents = convertedStudents
+      if (dataType === 'primary') {
+        filteredStudents = convertedStudents.filter(student => {
+          const gradeNum = parseInt(student.grade)
+          return !isNaN(gradeNum) && gradeNum <= 6
+        })
+      } else if (dataType === 'secondary') {
+        filteredStudents = convertedStudents.filter(student => {
+          const gradeNum = parseInt(student.grade)
+          return !isNaN(gradeNum) && gradeNum > 6
+        })
+      }
       setStudents(filteredStudents)
       setLastFetchTime(Date.now())
       setLastDataType(dataType)
-      setHasMore(filteredStudents.length >= pageSize)
-      
+      setHasMore(false) // PocketBase returns all data at once
     } catch (err) {
-      console.error('获取学生数据失败:', err)
-      console.error('错误详情:', {
-        message: err instanceof Error ? err.message : '未知错误',
-        stack: err instanceof Error ? err.stack : '无堆栈跟踪',
-        type: typeof err
-      })
-      
       const errorMessage = err instanceof Error ? err.message : '获取学生数据失败'
       setError(errorMessage)
+      setStudents([])
+      setHasMore(false)
     } finally {
       setLoading(false)
     }
-  }, [dataType, pageSize, convertPocketBaseStudent, filterStudents])
+  }, [dataType, pageSize])
 
-  const getStudentsByGradeHook = useCallback(async (standard: string): Promise<any[]> => {
+  const getStudentsByGradeHook = useCallback(async (standard: string): Promise<Student[]> => {
     try {
-      const students = await getStudentsByGrade(standard)
-      return students.map(convertPocketBaseStudent)
+      const pocketBaseStudents = await getStudentsByGrade(standard)
+      return pocketBaseStudents.map(convertPocketBaseStudent)
     } catch (err) {
-      console.error('Error fetching students by grade:', err)
       throw err
     }
-  }, [convertPocketBaseStudent])
+  }, [])
 
   const updateStudentHook = useCallback(async (studentId: string, updates: Partial<Student>) => {
     try {
       setError(null)
-      await updateStudent({ id: studentId, ...updates })
       
-      // 更新本地状态
-      setStudents(prevStudents => 
-        prevStudents.map(student => 
+      // Convert UI updates to PocketBase format
+      const pbUpdates: any = {}
+      if (updates.name) pbUpdates.student_name = updates.name
+      if (updates.studentId) pbUpdates.student_id = updates.studentId
+      if (updates.grade) pbUpdates.standard = updates.grade
+      if (updates.gender) pbUpdates.gender = updates.gender
+      if (updates.birthDate) pbUpdates.dob = updates.birthDate
+      if (updates.phone) pbUpdates.father_phone = updates.phone
+      if (updates.address) pbUpdates.home_address = updates.address
+      
+      await updateStudentPB({ id: studentId, ...pbUpdates })
+      
+      // Update local state
+      setStudents(prevStudents =>
+        prevStudents.map(student =>
           student.id === studentId ? { ...student, ...updates } : student
         )
       )
     } catch (err) {
-      console.error('Error updating student:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to update student'
       setError(errorMessage)
       throw err
@@ -186,12 +246,9 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
   const deleteStudentHook = useCallback(async (studentId: string) => {
     try {
       setError(null)
-      await deleteStudent(studentId)
-      
-      // 更新本地状态
+      await deleteStudentPB(studentId)
       setStudents(prevStudents => prevStudents.filter(student => student.id !== studentId))
     } catch (err) {
-      console.error('Error deleting student:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete student'
       setError(errorMessage)
       throw err
@@ -201,12 +258,24 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
   const addStudentHook = useCallback(async (studentData: Omit<Student, 'id' | 'created' | 'updated'>) => {
     try {
       setError(null)
-      const newStudent = await addStudent(studentData as StudentCreateData)
       
-      // 添加到本地状态
+      // Convert UI student data to PocketBase format
+      const pbStudentData = {
+        student_id: studentData.studentId || `ST${Date.now()}`,
+        student_name: studentData.name,
+        dob: studentData.birthDate,
+        father_phone: studentData.phone,
+        mother_phone: studentData.parentPhone,
+        home_address: studentData.address,
+        gender: studentData.gender,
+        standard: studentData.grade
+      }
+      
+      const newPocketBaseStudent = await addStudentPB(pbStudentData)
+      const newStudent = convertPocketBaseStudent(newPocketBaseStudent)
+      
       setStudents(prevStudents => [...prevStudents, newStudent])
     } catch (err) {
-      console.error('Error adding student:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to add student'
       setError(errorMessage)
       throw err
@@ -215,12 +284,17 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
 
   const getImportStats = useCallback(async () => {
     try {
-      return await getStudentStats()
+      return {
+        total: students.length,
+        byGrade: students.reduce((acc, student) => {
+          acc[student.grade] = (acc[student.grade] || 0) + 1
+          return acc
+        }, {} as Record<string, number>)
+      }
     } catch (err) {
-      console.error('Error getting import stats:', err)
       throw err
     }
-  }, [])
+  }, [students])
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
@@ -237,28 +311,25 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
     setError(null)
   }, [])
 
-  // 计算统计信息
   const stats = useMemo(() => {
     const total = students.length
     const byGrade = students.reduce((acc, student) => {
-      const grade = student.grade || '无年级'
+      const grade = (student as any).grade || (student as any).standard || '无年级'
       acc[grade] = (acc[grade] || 0) + 1
       return acc
     }, {} as Record<string, number>)
-    
+
     return { total, byGrade }
   }, [students])
 
   useEffect(() => {
-    console.log('useEffect触发，开始获取数据...')
-    console.log('依赖项:', { currentPage, dataType })
     fetchStudents(currentPage)
   }, [currentPage, dataType, fetchStudents])
 
-  return { 
-    students, 
-    loading, 
-    error, 
+  return {
+    students,
+    loading,
+    error,
     hasMore,
     stats,
     refetch: refresh,

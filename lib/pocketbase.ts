@@ -7,7 +7,12 @@ const getPocketBaseUrl = () => {
     return process.env.NEXT_PUBLIC_POCKETBASE_URL
   }
   
-  // 开发环境默认使用本地IP
+  // 浏览器环境使用代理以避免CORS问题
+  if (typeof window !== 'undefined') {
+    return '/api/pocketbase'
+  }
+  
+  // 服务器环境直接使用PocketBase
   if (process.env.NODE_ENV === 'development') {
     return 'http://192.168.0.59:8090'
   }
@@ -65,7 +70,18 @@ export const checkPocketBaseConnection = async () => {
     const timeoutId = setTimeout(() => controller.abort(), 5000)
     
     const baseUrl = getPocketBaseUrl()
-    const response = await fetch(`${baseUrl}/api/health`, {
+    
+    // 根据环境选择正确的健康检查URL
+    let healthUrl: string
+    if (typeof window !== 'undefined') {
+      // 浏览器环境使用代理
+      healthUrl = '/api/pocketbase/health'
+    } else {
+      // 服务器环境直接访问
+      healthUrl = `${baseUrl}/api/health`
+    }
+    
+    const response = await fetch(healthUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
