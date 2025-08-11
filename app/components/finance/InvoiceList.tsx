@@ -86,14 +86,14 @@ export function InvoiceList({
               id="search"
               placeholder="搜索发票号码、学生姓名..."
               value={filters.search || ""}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              onChange={(e) => setFilters((prev: any) => ({ ...prev, search: e.target.value }))}
             />
           </div>
           <div className="w-48">
             <Label>缴费状态</Label>
             <Select 
               value={filters.status || "all"} 
-              onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+              onValueChange={(value) => setFilters((prev: any) => ({ ...prev, status: value }))}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -109,7 +109,7 @@ export function InvoiceList({
             <Label>年级</Label>
             <Select 
               value={filters.grade || "all"} 
-              onValueChange={(value) => setFilters(prev => ({ ...prev, grade: value }))}
+              onValueChange={(value) => setFilters((prev: any) => ({ ...prev, grade: value }))}
             >
               <SelectTrigger>
                 <SelectValue />

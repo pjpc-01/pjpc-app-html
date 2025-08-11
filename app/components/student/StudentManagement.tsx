@@ -66,15 +66,9 @@ export default function StudentManagement({
 
   const handleAddStudent = async (studentData: Partial<Student>) => {
     try {
-      // Ensure required fields are present
-      const studentToAdd = {
-        name: studentData.name || '',
-        grade: studentData.grade || '',
-        parentName: studentData.parentName || '',
-        parentEmail: studentData.parentEmail || '',
-        ...studentData
-      }
-      await addStudent(studentToAdd)
+      console.log('StudentManagement 接收到的数据:', studentData)
+      // 直接传递UI格式的数据给addStudent hook
+      await addStudent(studentData)
       setIsAddDialogOpen(false)
       refetch()
     } catch (error) {

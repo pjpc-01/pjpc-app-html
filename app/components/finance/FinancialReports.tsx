@@ -549,8 +549,8 @@ export default function FinancialReports() {
                         <div className="text-sm text-gray-600">RM {data.revenue.toLocaleString()}</div>
                       </div>
                       <div className="text-right">
-                        <div className={`font-medium ${parseFloat(growth) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {parseFloat(growth) >= 0 ? '+' : ''}{growth}%
+                        <div className={`font-medium ${parseFloat(String(growth)) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {parseFloat(String(growth)) >= 0 ? '+' : ''}{growth}%
                         </div>
                         <div className="text-sm text-gray-600">{data.students}名学生</div>
                       </div>

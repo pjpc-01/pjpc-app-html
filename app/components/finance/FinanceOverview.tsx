@@ -4,25 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { DollarSign, CreditCard, FileText, TrendingUp, AlertCircle, CheckCircle, Loader2 } from "lucide-react"
-// import { useFinancialStats } from "@/hooks/useFinancialStats"
+import { useFinancialStats } from "@/hooks/useFinancialStats"
 
 export default function FinanceOverview() {
-  // const { stats: financialStats, loading: financialLoading, error: financialError } = useFinancialStats()
-  
-  // 临时数据（迁移期间使用）
-  const financialStats = {
-    totalRevenue: 0,
-    monthlyRevenue: 0,
-    pendingPayments: 0,
-    overduePayments: 0,
-    revenueGrowth: 0,
-    averagePayment: 0,
-    paymentMethods: {},
-    revenueByMonth: [],
-    recentTransactions: []
-  }
-  const financialLoading = false
-  const financialError = null
+  const { stats: financialStats, loading: financialLoading, error: financialError } = useFinancialStats()
 
   return (
     <div className="space-y-6">

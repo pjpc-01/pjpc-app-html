@@ -41,6 +41,7 @@ export interface Student {
   mother_phone: string
   home_address: string
   dob: string
+  center: 'WX 01' | 'WX 02' | 'WX 03' | 'WX 04'
 }
 
 interface UseStudentsOptions {
@@ -134,14 +135,41 @@ const convertPocketBaseStudent = (pbStudent: PocketBaseStudent): Student => {
     notes: '', // PocketBase doesn't have notes field
     image: '', // PocketBase doesn't have image field
     calculatedGrade: convertGradeFormat(pbStudent.standard || ''),
-    level: (pbStudent as any).level || 'primary', // Use the level field from PocketBase
+      level: (() => {
+    // 改进level计算逻辑
+    let calculatedLevel = pbStudent.level
+    if (!calculatedLevel && pbStudent.standard) {
+      // 处理 "Standard 1", "Standard 2" 等格式
+      const standardMatch = pbStudent.standard.match(/Standard\s*(\d+)/i)
+      if (standardMatch) {
+        const gradeNum = parseInt(standardMatch[1])
+        calculatedLevel = gradeNum <= 6 ? 'primary' : 'secondary'
+      } else {
+        // 尝试直接解析数字
+        const gradeNum = parseInt(pbStudent.standard)
+        if (!isNaN(gradeNum)) {
+          calculatedLevel = gradeNum <= 6 ? 'primary' : 'secondary'
+        } else {
+          calculatedLevel = 'primary' // 默认值
+        }
+      }
+    }
+    
+    console.log(`学生 ${pbStudent.student_name} 的level计算:`, {
+      originalLevel: pbStudent.level,
+      standard: pbStudent.standard,
+      calculatedLevel
+    })
+    return calculatedLevel || 'primary'
+  })(),
     // Preserve original PocketBase fields
     standard: pbStudent.standard || '',
     student_name: pbStudent.student_name || '',
     father_phone: pbStudent.father_phone || '',
     mother_phone: pbStudent.mother_phone || '',
     home_address: pbStudent.home_address || '',
-    dob: pbStudent.dob || ''
+    dob: pbStudent.dob || '',
+    center: pbStudent.Center || 'WX 01'
   }
 }
 
@@ -176,17 +204,21 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
 
       // Fetch all students from PocketBase
       const allPocketBaseStudents = await getAllStudents()
+      console.log('从PocketBase获取的原始数据:', allPocketBaseStudents)
       
       // Convert to UI format
       const convertedStudents = allPocketBaseStudents.map(convertPocketBaseStudent)
+      console.log('转换后的学生数据:', convertedStudents)
       
       // Filter based on dataType
       let filteredStudents = convertedStudents
       
       if (dataType === 'primary') {
         filteredStudents = convertedStudents.filter(student => student.level === 'primary')
+        console.log('过滤后的primary学生:', filteredStudents)
       } else if (dataType === 'secondary') {
         filteredStudents = convertedStudents.filter(student => student.level === 'secondary')
+        console.log('过滤后的secondary学生:', filteredStudents)
       }
       setStudents(filteredStudents)
       setLastFetchTime(Date.now())
@@ -252,7 +284,7 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
     }
   }, [])
 
-  const addStudentHook = useCallback(async (studentData: Omit<Student, 'id' | 'created' | 'updated'>) => {
+  const addStudentHook = useCallback(async (studentData: Partial<Student>) => {
     try {
       setError(null)
       
@@ -265,7 +297,9 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
         mother_phone: studentData.parentPhone,
         home_address: studentData.address,
         gender: studentData.gender,
-        standard: studentData.grade
+        standard: studentData.grade,
+        Center: studentData.center || 'WX 01',
+        level: (parseInt(studentData.grade || '0') <= 6 ? 'primary' : 'secondary') as 'primary' | 'secondary'
       }
       
       const newPocketBaseStudent = await addStudentPB(pbStudentData)

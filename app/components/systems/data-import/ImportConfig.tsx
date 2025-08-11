@@ -13,8 +13,8 @@ import { FileSpreadsheet, Upload } from 'lucide-react'
 interface ImportConfigProps {
   spreadsheetId: string
   setSpreadsheetId: (id: string) => void
-  dataType: 'primary' | 'secondary'
-  setDataType: (type: 'primary' | 'secondary') => void
+  dataType: 'students'
+  setDataType: (type: 'students') => void
   sheetName: string
   setSheetName: (name: string) => void
   useEnvironmentCredentials: boolean
@@ -65,13 +65,12 @@ export function ImportConfig({
         {/* Data Type */}
         <div>
           <Label>数据类型</Label>
-          <Select value={dataType} onValueChange={(value: 'primary' | 'secondary') => setDataType(value)}>
+          <Select value={dataType} onValueChange={(value: 'students') => setDataType(value)}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="primary">主要数据</SelectItem>
-              <SelectItem value="secondary">辅助数据</SelectItem>
+              <SelectItem value="students">学生数据</SelectItem>
             </SelectContent>
           </Select>
         </div>

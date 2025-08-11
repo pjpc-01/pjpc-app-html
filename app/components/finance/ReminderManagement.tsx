@@ -42,10 +42,16 @@ export default function ReminderManagement() {
   const [isAddTemplateDialogOpen, setIsAddTemplateDialogOpen] = useState(false)
   const [isEditTemplateDialogOpen, setIsEditTemplateDialogOpen] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null)
-  const [newTemplate, setNewTemplate] = useState({
+  const [newTemplate, setNewTemplate] = useState<{
+    name: string;
+    subject: string;
+    body: string;
+    type: 'email' | 'sms';
+    daysBeforeDue: number;
+  }>({
     name: "",
     subject: "",
-    content: "",
+    body: "",
     type: "email",
     daysBeforeDue: 3
   })
@@ -66,7 +72,7 @@ export default function ReminderManagement() {
   }
 
   const handleAddTemplate = () => {
-    if (!newTemplate.name || !newTemplate.subject || !newTemplate.content) {
+    if (!newTemplate.name || !newTemplate.subject || !newTemplate.body) {
       alert("请填写完整信息")
       return
     }
@@ -75,8 +81,8 @@ export default function ReminderManagement() {
     setNewTemplate({
       name: "",
       subject: "",
-      content: "",
-      type: "email",
+      body: "",
+      type: "email" as const,
       daysBeforeDue: 3
     })
     setIsAddTemplateDialogOpen(false)
@@ -87,15 +93,15 @@ export default function ReminderManagement() {
     setNewTemplate({
       name: template.name,
       subject: template.subject,
-      content: template.content,
-      type: template.type,
+      body: template.body,
+      type: template.type as 'email' | 'sms',
       daysBeforeDue: template.daysBeforeDue
     })
     setIsEditTemplateDialogOpen(true)
   }
 
   const handleUpdateTemplate = () => {
-    if (!newTemplate.name || !newTemplate.subject || !newTemplate.content) {
+    if (!newTemplate.name || !newTemplate.subject || !newTemplate.body) {
       alert("请填写完整信息")
       return
     }
@@ -105,14 +111,14 @@ export default function ReminderManagement() {
     setNewTemplate({
       name: "",
       subject: "",
-      content: "",
-      type: "email",
+      body: "",
+      type: "email" as const,
       daysBeforeDue: 3
     })
     setIsEditTemplateDialogOpen(false)
   }
 
-  const handleDeleteTemplate = (templateId: number) => {
+  const handleDeleteTemplate = (templateId: string) => {
     if (confirm("确定要删除这个提醒模板吗？")) {
       deleteTemplate(templateId)
     }
@@ -122,8 +128,8 @@ export default function ReminderManagement() {
     sendReminder(reminderId)
   }
 
-  const handleScheduleReminder = (invoiceId: number, templateId: number) => {
-    scheduleReminder(invoiceId, templateId)
+  const handleScheduleReminder = (invoiceId: number, templateId: string) => {
+    scheduleReminder(invoiceId, templateId, new Date().toISOString().split('T')[0])
   }
 
   return (
@@ -244,7 +250,7 @@ export default function ReminderManagement() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteTemplate(template.id)}
+                        onClick={() => handleDeleteTemplate(template.id as string)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

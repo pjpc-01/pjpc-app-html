@@ -382,23 +382,34 @@ export async function POST(request: NextRequest) {
             try {
               // Convert Google Sheets data to PocketBase format
               const pocketbaseStudent = {
+                student_id: studentData.studentId || `STU${Date.now()}${Math.random().toString(36).substr(2, 5)}`,
                 student_name: studentData.name,
                 standard: studentData.grade,
-                father_phone: studentData.phone || '',
-                mother_phone: studentData.phone || '',
-                father_name: studentData.parentName || '',
-                mother_name: studentData.parentName || '',
-                address: studentData.address || '',
-                email: studentData.email || '',
-                date_of_birth: studentData.dateOfBirth || '',
+                father_phone: studentData.phone || studentData.parentPhone || '',
+                mother_phone: studentData.phone || studentData.parentPhone || '',
+                home_address: studentData.address || '',
                 gender: studentData.gender || '',
-                emergency_contact: studentData.emergencyContact || '',
-                medical_info: studentData.medicalInfo || '',
-                enrollment_date: new Date().toISOString().split('T')[0],
-                status: 'active'
+                dob: studentData.dateOfBirth || '',
+                Center: 'WX 01', // 默认中心
+                level: (() => {
+                  // 根据年级自动设置level
+                  if (studentData.grade) {
+                    const gradeMatch = studentData.grade.match(/Standard\s*(\d+)/i)
+                    if (gradeMatch) {
+                      const gradeNum = parseInt(gradeMatch[1])
+                      return gradeNum <= 6 ? 'primary' : 'secondary'
+                    }
+                    // 尝试直接解析数字
+                    const gradeNum = parseInt(studentData.grade)
+                    if (!isNaN(gradeNum)) {
+                      return gradeNum <= 6 ? 'primary' : 'secondary'
+                    }
+                  }
+                  return 'primary' // 默认值
+                })()
               }
 
-              await addStudent(pocketbaseStudent, dataType as 'primary' | 'secondary')
+              await addStudent(pocketbaseStudent)
               importResults.success++
             } catch (error) {
               importResults.failed++

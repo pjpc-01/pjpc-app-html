@@ -15,6 +15,7 @@ export interface Payment {
 export interface PaymentFilters {
   method: string
   status: string
+  studentName: string
   dateRange: { start: string; end: string }
 }
 
@@ -55,6 +56,7 @@ export const usePayments = (invoices: Invoice[]) => {
   const [filters, setFilters] = useState<PaymentFilters>({
     method: "",
     status: "",
+    studentName: "",
     dateRange: { start: "", end: "" }
   })
 

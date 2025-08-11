@@ -2,30 +2,33 @@ import { pb } from './pocketbase'
 
 export interface Student {
   id: string
-  student_id: string
-  student_name: string
+  student_id?: string
+  student_name?: string
   dob?: string
   father_phone?: string
   mother_phone?: string
   home_address?: string
   gender?: string
   register_form_url?: string
-  standard: string
-  level: 'primary' | 'secondary'
+  standard?: string
+  level?: 'primary' | 'secondary'
+  Center?: 'WX 01' | 'WX 02' | 'WX 03' | 'WX 04'
   created: string
   updated: string
 }
 
 export interface StudentCreateData {
-  student_id: string
-  student_name: string
+  student_id?: string
+  student_name?: string
   dob?: string
   father_phone?: string
   mother_phone?: string
   home_address?: string
   gender?: string
   register_form_url?: string
-  standard: string
+  standard?: string
+  level?: 'primary' | 'secondary'
+  Center?: 'WX 01' | 'WX 02' | 'WX 03' | 'WX 04'
 }
 
 export interface StudentUpdateData extends Partial<StudentCreateData> {
@@ -35,47 +38,53 @@ export interface StudentUpdateData extends Partial<StudentCreateData> {
 // 获取所有学生
 export const getAllStudents = async (): Promise<Student[]> => {
   try {
+    console.log('开始获取所有学生...')
+    console.log('当前认证状态:', pb.authStore.isValid)
+    console.log('当前认证用户:', pb.authStore.model)
+    console.log('PocketBase URL:', pb.baseUrl)
+    
     // 检查认证状态 - 如果未认证，尝试用户认证
     if (!pb.authStore.isValid) {
+      console.log('用户未认证，尝试用户认证...')
       try {
-        await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        const authResult = await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        console.log('用户认证成功:', authResult)
+        console.log('认证后状态:', pb.authStore.isValid)
       } catch (authError) {
+        console.error('用户认证失败:', authError)
         throw new Error('无法认证访问学生数据')
       }
+    } else {
+      console.log('用户已认证，跳过认证步骤')
     }
     
-    // 分别获取两个集合
-    // Fetch and tag primary students
-    let primaryList: any[] = []
-    try {
-      primaryList = (await pb.collection('primary_students').getFullList({
-        sort: 'student_name',
-        $autoCancel: false
-      })).map(s => ({ ...s, level: 'primary' }))
-    } catch (primaryError) {
-      primaryList = []
-    }
-
-    // Fetch and tag secondary students
-    let secondaryList: any[] = []
-    try {
-      secondaryList = (await pb.collection('secondary_students').getFullList({
-        sort: 'student_name',
-        $autoCancel: false
-      })).map(s => ({ ...s, level: 'secondary' }))
-    } catch (secondaryError) {
-      secondaryList = []
-    }
-
-    const allStudents = [...primaryList, ...secondaryList]
+    console.log('从students集合获取数据...')
+    // 从统一的students集合获取所有学生
+    const response = await pb.collection('students').getList(1, 500, {
+      sort: 'student_name',
+      $autoCancel: false
+    })
+    
+    console.log('PocketBase响应详情:', response)
+    console.log('PocketBase响应items:', response.items)
+    console.log('PocketBase响应items长度:', response.items.length)
+    console.log('PocketBase响应data:', (response as any).data)
+    
+    // 从response.data中获取items数组
+    const students = (response as any).data?.items || response.items || []
+    
+    console.log('获取到的学生数据:', students)
     
     // 确保返回的是数组
-    if (!Array.isArray(allStudents)) {
+    if (!Array.isArray(students)) {
+      console.log('返回的数据不是数组，返回空数组')
       return []
     }
     
-    return allStudents as Student[]
+    console.log(`成功获取到 ${students.length} 个学生`)
+    return students as unknown as Student[]
   } catch (error: any) {
+    console.error('获取所有学生失败:', error)
     throw error
   }
 }
@@ -95,28 +104,15 @@ export const getStudentsByGrade = async (standard: string): Promise<Student[]> =
       }
     }
     
-    // 从两个集合中查找学生，使用Promise.all并行获取
-    const [primaryRecords, secondaryRecords] = await Promise.all([
-      pb.collection('primary_students').getList(1, 1000, {
-        filter: `standard = "${standard}"`,
-        sort: 'student_name',
-        $autoCancel: false
-      }),
-      pb.collection('secondary_students').getList(1, 1000, {
-        filter: `standard = "${standard}"`,
-        sort: 'student_name',
-        $autoCancel: false
-      })
-    ])
+    // 从统一的students集合中查找学生
+    const records = await pb.collection('students').getList(1, 1000, {
+      filter: `standard = "${standard}"`,
+      sort: 'student_name',
+      $autoCancel: false
+    })
     
-    // 合并结果
-    const allStudents = [
-      ...(primaryRecords.items || []),
-      ...(secondaryRecords.items || [])
-    ]
-    
-    console.log(`✅ 根据年级 "${standard}" 获取到 ${allStudents.length} 个学生`)
-    return allStudents as unknown as Student[]
+    console.log(`✅ 根据年级 "${standard}" 获取到 ${records.items.length} 个学生`)
+    return records.items as unknown as Student[]
   } catch (error) {
     console.error('❌ 根据年级获取学生失败:', error)
     throw new Error('根据年级获取学生失败')
@@ -140,14 +136,18 @@ export const addStudent = async (studentData: StudentCreateData): Promise<Studen
       }
     }
     
-    // 根据年级决定添加到哪个集合
-    const standard = studentData.standard
-    const isPrimary = standard.includes('小学') || parseInt(standard) <= 6
+    // 准备完整的学生数据
+    const completeStudentData = {
+      ...studentData,
+      // 确保有默认的Center值
+      Center: studentData.Center || 'WX 01',
+      // 根据年级自动设置level
+      level: studentData.level || (parseInt(studentData.standard || '0') <= 6 ? 'primary' : 'secondary')
+    }
     
-    const collectionName = isPrimary ? 'primary_students' : 'secondary_students'
-    console.log(`添加到集合: ${collectionName}`)
+    console.log(`添加到students集合`)
     
-    const record = await pb.collection(collectionName).create(studentData)
+    const record = await pb.collection('students').create(completeStudentData)
     console.log('添加学生成功:', record)
     return record as unknown as Student
   } catch (error: any) {
@@ -195,22 +195,8 @@ export const updateStudent = async (studentData: StudentUpdateData): Promise<Stu
       }
     }
     
-    // 需要先找到学生在哪个集合中
-    let record = null
-    
-    try {
-      // 先尝试在小学集合中查找
-      record = await pb.collection('primary_students').getOne(id)
-      record = await pb.collection('primary_students').update(id, updateData)
-    } catch (error) {
-      // 如果不在小学集合中，尝试中学集合
-      try {
-        record = await pb.collection('secondary_students').getOne(id)
-        record = await pb.collection('secondary_students').update(id, updateData)
-      } catch (secondaryError) {
-        throw new Error('找不到指定的学生记录')
-      }
-    }
+    // 从统一的students集合更新学生
+    const record = await pb.collection('students').update(id, updateData)
     
     return record as unknown as Student
   } catch (error: any) {
@@ -244,20 +230,8 @@ export const deleteStudent = async (studentId: string): Promise<void> => {
       }
     }
     
-    // 需要先找到学生在哪个集合中
-    try {
-      // 先尝试在小学集合中查找
-      await pb.collection('primary_students').getOne(studentId)
-      await pb.collection('primary_students').delete(studentId)
-    } catch (error) {
-      // 如果不在小学集合中，尝试中学集合
-      try {
-        await pb.collection('secondary_students').getOne(studentId)
-        await pb.collection('secondary_students').delete(studentId)
-      } catch (secondaryError) {
-        throw new Error('找不到指定的学生记录')
-      }
-    }
+    // 从统一的students集合删除学生
+    await pb.collection('students').delete(studentId)
   } catch (error) {
     console.error('删除学生失败:', error)
     throw new Error('删除学生失败')
@@ -279,28 +253,15 @@ export const searchStudents = async (query: string): Promise<Student[]> => {
       }
     }
     
-    // 从两个集合中搜索学生，使用Promise.all并行获取
-    const [primaryRecords, secondaryRecords] = await Promise.all([
-      pb.collection('primary_students').getList(1, 100, {
-        filter: `student_name ~ "${query}" || student_id ~ "${query}"`,
-        sort: 'student_name',
-        $autoCancel: false
-      }),
-      pb.collection('secondary_students').getList(1, 100, {
-        filter: `student_name ~ "${query}" || student_id ~ "${query}"`,
-        sort: 'student_name',
-        $autoCancel: false
-      })
-    ])
+    // 从统一的students集合搜索学生
+    const records = await pb.collection('students').getList(1, 100, {
+      filter: `student_name ~ "${query}" || student_id ~ "${query}"`,
+      sort: 'student_name',
+      $autoCancel: false
+    })
     
-    // 合并结果
-    const allStudents = [
-      ...(primaryRecords.items || []),
-      ...(secondaryRecords.items || [])
-    ]
-    
-    console.log(`✅ 搜索 "${query}" 找到 ${allStudents.length} 个学生`)
-    return allStudents as unknown as Student[]
+    console.log(`✅ 搜索 "${query}" 找到 ${records.items.length} 个学生`)
+    return records.items as unknown as Student[]
   } catch (error) {
     console.error('❌ 搜索学生失败:', error)
     throw new Error('搜索学生失败')
@@ -331,10 +292,11 @@ export const getStudentStats = async () => {
     
     // 按年级统计
     allStudents.forEach(student => {
-      if (stats.byStandard[student.standard]) {
-        stats.byStandard[student.standard]++
+      const standard = student.standard || '未知年级'
+      if (stats.byStandard[standard]) {
+        stats.byStandard[standard]++
       } else {
-        stats.byStandard[student.standard] = 1
+        stats.byStandard[standard] = 1
       }
     })
     

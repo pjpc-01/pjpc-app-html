@@ -24,7 +24,7 @@ interface ImportResult {
   errors: string[]
 }
 
-type ImportType = 'primary_students' | 'secondary_students' | 'teachers' | 'parents'
+type ImportType = 'students' | 'teachers' | 'parents'
 
 export default function GoogleCSVImport() {
   const [file, setFile] = useState<File | null>(null)
@@ -33,7 +33,7 @@ export default function GoogleCSVImport() {
   const [progress, setProgress] = useState(0)
   const [result, setResult] = useState<ImportResult | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [importType, setImportType] = useState<ImportType>('primary_students')
+  const [importType, setImportType] = useState<ImportType>('students')
 
   // 处理文件上传
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,7 +96,8 @@ export default function GoogleCSVImport() {
       father_phone: row['父亲电话'] || row['Father Phone'] || row['father_phone'] || row['联系电话'] || row['Phone'] || '',
       mother_phone: row['母亲电话'] || row['Mother Phone'] || row['mother_phone'] || '',
       home_address: row['地址'] || row['Address'] || row['address'] || row['家庭地址'] || row['Home Address'] || '',
-      register_form_url: ''
+      register_form_url: '',
+      Center: (row['中心'] || row['Center'] || row['center'] || 'WX 01') as 'WX 01' | 'WX 02' | 'WX 03' | 'WX 04'
     }
   }
 
@@ -172,8 +173,7 @@ export default function GoogleCSVImport() {
           let validationErrors: string[] = []
 
           switch (importType) {
-            case 'primary_students':
-            case 'secondary_students':
+            case 'students':
               data = mapStudentData(rows[i])
               validationErrors = validateStudentData(data)
               if (validationErrors.length === 0) {
@@ -230,7 +230,7 @@ export default function GoogleCSVImport() {
     if (!confirm('确定要清空所有数据吗？此操作不可撤销！')) return
 
     try {
-      if (importType === 'primary_students' || importType === 'secondary_students') {
+      if (importType === 'students') {
         const records = await pb.collection('students').getList(1, 1000)
         for (const record of records.items) {
           await pb.collection('students').delete(record.id)
@@ -254,12 +254,9 @@ export default function GoogleCSVImport() {
     let template = ''
     
     switch (importType) {
-      case 'primary_students':
-        template = '姓名,学号,年级,性别,出生日期,父亲电话,母亲电话,家庭地址\n张三,STU001,3年级,男,2015-01-01,0912345678,0923456789,台北市信义区'
-        break
-      case 'secondary_students':
-        template = '姓名,学号,年级,性别,出生日期,父亲电话,母亲电话,家庭地址\n李四,STU002,7年级,女,2010-01-01,0934567890,0945678901,台北市大安区'
-        break
+             case 'students':
+         template = '姓名,学号,年级,性别,出生日期,父亲电话,母亲电话,家庭地址,中心\n张三,STU001,3年级,男,2015-01-01,0912345678,0923456789,台北市信义区,WX 01'
+         break
       case 'teachers':
         template = '姓名,邮箱,电话,科目,部门\n李老师,teacher@example.com,0934567890,数学,数学部'
         break
@@ -287,14 +284,10 @@ export default function GoogleCSVImport() {
       </div>
 
       <Tabs value={importType} onValueChange={(value) => setImportType(value as ImportType)}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="primary_students" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="students" className="flex items-center gap-2">
             <BookOpen className="h-4 w-4" />
-            小学生
-          </TabsTrigger>
-          <TabsTrigger value="secondary_students" className="flex items-center gap-2">
-            <School className="h-4 w-4" />
-            中学生
+            学生数据
           </TabsTrigger>
           <TabsTrigger value="teachers" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -306,50 +299,25 @@ export default function GoogleCSVImport() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="primary_students" className="space-y-4">
+        <TabsContent value="students" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5" />
-                小学生数据导入
+                学生数据导入
               </CardTitle>
               <CardDescription>
-                导入小学生信息，包括姓名、学号、年级、性别等基本信息
+                导入学生信息，包括姓名、学号、年级、性别等基本信息
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
                 <Button onClick={downloadTemplate} variant="outline">
                   <Download className="h-4 w-4 mr-2" />
-                  下载小学生模板
+                  下载学生模板
                 </Button>
                 <div className="text-sm text-gray-500">
-                  支持字段：姓名, 学号, 年级, 性别, 出生日期, 父亲电话, 母亲电话, 家庭地址
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="secondary_students" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <School className="h-5 w-5" />
-                中学生数据导入
-              </CardTitle>
-              <CardDescription>
-                导入中学生信息，包括姓名、学号、年级、性别等基本信息
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Button onClick={downloadTemplate} variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  下载中学生模板
-                </Button>
-                <div className="text-sm text-gray-500">
-                  支持字段：姓名, 学号, 年级, 性别, 出生日期, 父亲电话, 母亲电话, 家庭地址
+                  支持字段：姓名, 学号, 年级, 性别, 出生日期, 父亲电话, 母亲电话, 家庭地址, 中心
                 </div>
               </div>
             </CardContent>
