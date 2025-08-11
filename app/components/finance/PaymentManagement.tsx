@@ -86,12 +86,7 @@ export default function PaymentManagement() {
       selectedInvoiceForPayment.id, 
       amount, 
       paymentFormData.method as any,
-      paymentFormData.notes,
-      (receiptData) => {
-        if (receiptData) {
-          createReceiptFromInvoice(receiptData.invoice, receiptData.paymentMethod, receiptData.paymentDate)
-        }
-      }
+      paymentFormData.notes
     )
 
     // Update invoice status if fully paid
@@ -119,7 +114,22 @@ export default function PaymentManagement() {
 
   const handleReconciliation = () => {
     // Perform reconciliation checks
-    const reconciliationResults = {
+    const reconciliationResults: {
+      totalInvoices: number;
+      totalPayments: number;
+      paidInvoices: number;
+      unpaidInvoices: number;
+      totalAmountInvoiced: number;
+      totalAmountPaid: number;
+      discrepancies: Array<{
+        type: string;
+        invoiceId: number;
+        invoiceNumber: string;
+        expected: number;
+        actual: number;
+        difference: number;
+      }>;
+    } = {
       totalInvoices: invoices.length,
       totalPayments: payments.length,
       paidInvoices: invoices.filter(inv => {
@@ -320,7 +330,7 @@ export default function PaymentManagement() {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{payments.filter(p => p.status === 'paid').length}</div>
+            <div className="text-2xl font-bold">{payments.filter(p => p.status === 'completed').length}</div>
             <p className="text-xs text-muted-foreground">已缴费记录</p>
           </CardContent>
         </Card>

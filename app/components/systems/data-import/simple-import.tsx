@@ -19,7 +19,7 @@ interface ImportStatus {
 
 export default function SimpleImport() {
   const [spreadsheetId, setSpreadsheetId] = useState('')
-  const [dataType, setDataType] = useState<'primary' | 'secondary'>('primary')
+  const [dataType, setDataType] = useState<'students'>('students')
   const [sheetName, setSheetName] = useState('')
   const [useEnvironmentCredentials, setUseEnvironmentCredentials] = useState(true)
   const [customCredentials, setCustomCredentials] = useState('')

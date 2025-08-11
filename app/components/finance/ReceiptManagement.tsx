@@ -97,7 +97,7 @@ export default function ReceiptManagement() {
            <h3 className="text-2xl font-bold">收据管理</h3>
            <p className="text-gray-600">自动生成的学生缴费收据和凭证</p>
            <p className="text-sm text-green-600 mt-1">
-             💡 收据会在缴费状态更改为"已缴费"且发票全额付款时自动生成
+             💡 收据会在缴费状态更改为&quot;已缴费&quot;且发票全额付款时自动生成
            </p>
          </div>
        </div>

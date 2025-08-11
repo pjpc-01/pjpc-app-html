@@ -39,7 +39,8 @@ export default function StudentForm({
     parentPhone: '',
     status: 'active',
     enrollmentDate: new Date().toISOString().split('T')[0],
-    notes: ''
+    notes: '',
+    center: 'WX 01'
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -75,7 +76,8 @@ export default function StudentForm({
         parentPhone: '',
         status: 'active',
         enrollmentDate: new Date().toISOString().split('T')[0],
-        notes: ''
+        notes: '',
+        center: 'WX 01'
       })
     }
     setErrors({})
@@ -111,6 +113,7 @@ export default function StudentForm({
 
     setIsSubmitting(true)
     try {
+      console.log('StudentForm 提交的数据:', formData)
       await onSubmit(formData)
       onOpenChange(false)
     } catch (error) {
@@ -172,6 +175,21 @@ export default function StudentForm({
                 </SelectContent>
               </Select>
               {errors.grade && <p className="text-red-500 text-sm mt-1">{errors.grade}</p>}
+            </div>
+
+            <div>
+              <Label htmlFor="center">中心 *</Label>
+              <Select value={formData.center} onValueChange={(value) => handleInputChange('center', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择中心" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="WX 01">WX 01</SelectItem>
+                  <SelectItem value="WX 02">WX 02</SelectItem>
+                  <SelectItem value="WX 03">WX 03</SelectItem>
+                  <SelectItem value="WX 04">WX 04</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>

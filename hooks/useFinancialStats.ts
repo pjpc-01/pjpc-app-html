@@ -5,6 +5,7 @@ export interface Transaction {
   id: string
   amount: number
   status: 'completed' | 'pending' | 'failed'
+  type: 'payment' | 'refund'
   date: Date
   description: string
   studentName: string
@@ -46,6 +47,7 @@ export const useFinancialStats = () => {
         id: '1',
         amount: 5000,
         status: 'completed',
+        type: 'payment',
         date: new Date('2024-01-15'),
         description: '张三 - 学费',
         studentName: '张三',
@@ -55,6 +57,7 @@ export const useFinancialStats = () => {
         id: '2',
         amount: 4800,
         status: 'completed',
+        type: 'payment',
         date: new Date('2024-01-14'),
         description: '李四 - 学费',
         studentName: '李四',
@@ -64,6 +67,7 @@ export const useFinancialStats = () => {
         id: '3',
         amount: 5200,
         status: 'pending',
+        type: 'payment',
         date: new Date('2024-01-13'),
         description: '王五 - 学费',
         studentName: '王五',
@@ -106,6 +110,7 @@ export const useFinancialStats = () => {
             id: '1',
             amount: 5000,
             status: 'completed',
+            type: 'payment',
             date: new Date('2024-01-15'),
             description: '张三 - 学费',
             studentName: '张三',
@@ -115,6 +120,7 @@ export const useFinancialStats = () => {
             id: '2',
             amount: 4800,
             status: 'completed',
+            type: 'payment',
             date: new Date('2024-01-14'),
             description: '李四 - 学费',
             studentName: '李四',
@@ -124,6 +130,7 @@ export const useFinancialStats = () => {
             id: '3',
             amount: 5200,
             status: 'pending',
+            type: 'payment',
             date: new Date('2024-01-13'),
             description: '王五 - 学费',
             studentName: '王五',
