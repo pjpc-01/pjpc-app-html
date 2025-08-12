@@ -28,7 +28,6 @@ import { usePayments } from "@/hooks/usePayments"
 import { renderInvoiceTemplate, type TemplateData } from "@/lib/template-renderer"
 import { InvoiceTemplate } from "./InvoiceTemplateManager"
 import { InvoiceCreateDialog } from "./InvoiceCreateDialog"
-import { BulkInvoiceDialog } from "./BulkInvoiceDialog"
 import { InvoiceList } from "./InvoiceList"
 import InvoiceTemplateManager from "./InvoiceTemplateManager"
 import { getStatusBadge } from "@/lib/utils"
@@ -39,7 +38,6 @@ import { useEffect } from "react"
 interface InvoiceFormData {
   dueDate: string
   notes: string
-  paymentMethod: string
 }
 
 // Constants
@@ -95,7 +93,7 @@ export default function InvoiceManagement() {
 
   // State
   const [isCreateInvoiceDialogOpen, setIsCreateInvoiceDialogOpen] = useState(false)
-  const [isBulkInvoiceDialogOpen, setIsBulkInvoiceDialogOpen] = useState(false)
+
   const [isInvoiceDetailDialogOpen, setIsInvoiceDetailDialogOpen] = useState(false)
   const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false)
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
@@ -109,8 +107,7 @@ export default function InvoiceManagement() {
   const [isSending, setIsSending] = useState(false)
   const [invoiceFormData, setInvoiceFormData] = useState<InvoiceFormData>({
     dueDate: '',
-    notes: '',
-    paymentMethod: 'bank_transfer'
+    notes: ''
   })
 
   // Template management
@@ -428,35 +425,36 @@ export default function InvoiceManagement() {
       totalAmount: selectedStudentForInvoice.amount,
       tax: 0,
       discount: 0,
-      paymentMethod: invoiceFormData.paymentMethod,
-      notes: invoiceFormData.notes
+             paymentMethod: 'bank_transfer', // Default payment method
+       notes: invoiceFormData.notes
     }
 
     const renderedHtml = renderInvoiceTemplate(template.htmlContent, templateData)
 
-    const newInvoice = {
-      student: selectedStudentForInvoice.name,
-      studentId: selectedStudentForInvoice.id,
-      amount: selectedStudentForInvoice.amount,
-      items: templateData.items,
-      status: "issued" as const,
-      issueDate: templateData.issueDate,
-      dueDate: templateData.dueDate,
-      paidDate: null,
-      paymentMethod: templateData.paymentMethod || null,
-      notes: templateData.notes || '',
-      tax: templateData.tax,
-      discount: templateData.discount,
-      totalAmount: selectedStudentForInvoice.amount,
-      parentEmail: selectedStudentForInvoice.parentEmail || "parent@example.com",
-      reminderSent: false,
-      lastReminderDate: null
-    }
+         const newInvoice = {
+       student: selectedStudentForInvoice.name,
+       studentId: selectedStudentForInvoice.id,
+       grade: selectedStudentForInvoice.grade || selectedStudentForInvoice.standard,
+       amount: selectedStudentForInvoice.amount,
+       items: templateData.items,
+       status: "issued" as const,
+       issueDate: templateData.issueDate,
+       dueDate: templateData.dueDate,
+       paidDate: null,
+       paymentMethod: templateData.paymentMethod || null,
+       notes: templateData.notes || '',
+       tax: templateData.tax,
+       discount: templateData.discount,
+       totalAmount: selectedStudentForInvoice.amount,
+       parentEmail: selectedStudentForInvoice.parentEmail || "parent@example.com",
+       reminderSent: false,
+       lastReminderDate: null
+     }
 
     createInvoice(newInvoice)
     setIsCreateInvoiceFormOpen(false)
     setSelectedStudentForInvoice(null)
-    setInvoiceFormData({ dueDate: '', notes: '', paymentMethod: 'bank_transfer' })
+         setInvoiceFormData({ dueDate: '', notes: '' })
   }
 
   // Load saved message formats from localStorage on mount
@@ -485,13 +483,7 @@ export default function InvoiceManagement() {
             设置
           </Button>
           
-          <Button
-            variant="outline"
-            onClick={() => setIsBulkInvoiceDialogOpen(true)}
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            批量生成
-          </Button>
+
           
           <Button onClick={() => setIsCreateInvoiceDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -581,8 +573,11 @@ export default function InvoiceManagement() {
         onOpenChange={setIsCreateInvoiceDialogOpen}
         students={studentsWithAmounts}
         onCreateInvoice={handleCreateInvoiceForStudent}
-        selectedStudent={selectedStudentForInvoice}
-        setSelectedStudent={setSelectedStudentForInvoice}
+        onBulkCreate={(selectedGrades, formData) => {
+          // Handle bulk invoice creation
+          console.log('Bulk create invoices for grades:', selectedGrades, 'form data:', formData)
+          // You can implement the actual bulk creation logic here
+        }}
         invoiceFormData={invoiceFormData}
         setInvoiceFormData={setInvoiceFormData}
         availableTemplates={availableTemplates}
@@ -592,15 +587,7 @@ export default function InvoiceManagement() {
         setIsTemplateSelectDialogOpen={setIsTemplateSelectDialogOpen}
       />
 
-      <BulkInvoiceDialog
-        isOpen={isBulkInvoiceDialogOpen}
-        onOpenChange={setIsBulkInvoiceDialogOpen}
-        students={studentsWithAmounts}
-        onBulkCreate={(selectedGrades, dueDate) => {
-          // Handle bulk invoice creation
-          console.log('Bulk create invoices for grades:', selectedGrades, 'due date:', dueDate)
-        }}
-      />
+
 
       {/* Settings Dialog */}
       <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
@@ -735,34 +722,15 @@ export default function InvoiceManagement() {
           </DialogHeader>
           
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="dueDate">到期日期</Label>
-                <Input
-                  id="dueDate"
-                  type="date"
-                  value={invoiceFormData.dueDate}
-                  onChange={(e) => setInvoiceFormData(prev => ({ ...prev, dueDate: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="paymentMethod">付款方式</Label>
-                <Select
-                  value={invoiceFormData.paymentMethod}
-                  onValueChange={(value) => setInvoiceFormData(prev => ({ ...prev, paymentMethod: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bank_transfer">银行转账</SelectItem>
-                    <SelectItem value="cash">现金</SelectItem>
-                    <SelectItem value="check">支票</SelectItem>
-                    <SelectItem value="online">在线支付</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                         <div>
+               <Label htmlFor="dueDate">到期日期</Label>
+               <Input
+                 id="dueDate"
+                 type="date"
+                 value={invoiceFormData.dueDate}
+                 onChange={(e) => setInvoiceFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+               />
+             </div>
             
             <div>
               <Label htmlFor="notes">备注</Label>
@@ -895,18 +863,14 @@ export default function InvoiceManagement() {
                   
                   {/* Totals */}
                   <div className="mt-4 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>小计:</span>
-                      <span>RM {selectedInvoice.amount?.toLocaleString()}</span>
-                    </div>
-                    {selectedInvoice.tax && selectedInvoice.tax > 0 && (
+                    {selectedInvoice.tax !== null && selectedInvoice.tax !== undefined && Number(selectedInvoice.tax) > 0 && (
                       <div className="flex justify-between text-sm">
                         <span>税费:</span>
                         <span>RM {selectedInvoice.tax.toLocaleString()}</span>
                       </div>
                     )}
-                    {selectedInvoice.discount && selectedInvoice.discount > 0 && (
-                      <div className="flex justify-between text-sm text-green-600">
+                    {selectedInvoice.discount !== null && selectedInvoice.discount !== undefined && Number(selectedInvoice.discount) > 0 && (
+                      <div className="flex justify-between text-sm text-red-600">
                         <span>折扣:</span>
                         <span>-RM {selectedInvoice.discount.toLocaleString()}</span>
                       </div>
@@ -919,50 +883,40 @@ export default function InvoiceManagement() {
                 </CardContent>
               </Card>
 
-              {/* Payment Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">付款信息</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-600">付款方式</p>
-                      <p className="font-semibold">
-                        {selectedInvoice.paymentMethod === 'bank_transfer' && '银行转账'}
-                        {selectedInvoice.paymentMethod === 'cash' && '现金'}
-                        {selectedInvoice.paymentMethod === 'check' && '支票'}
-                        {selectedInvoice.paymentMethod === 'online' && '在线支付'}
-                        {!selectedInvoice.paymentMethod && '未指定'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">付款日期</p>
-                      <p className="font-semibold">
-                        {selectedInvoice.paidDate 
-                          ? new Date(selectedInvoice.paidDate).toLocaleDateString('zh-CN')
-                          : '未付款'
-                        }
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">提醒发送</p>
-                      <p className="font-semibold">
-                        {selectedInvoice.reminderSent ? '已发送' : '未发送'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">最后提醒日期</p>
-                      <p className="font-semibold">
-                        {selectedInvoice.lastReminderDate 
-                          ? new Date(selectedInvoice.lastReminderDate).toLocaleDateString('zh-CN')
-                          : '无'
-                        }
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                             {/* Payment Information */}
+               <Card>
+                 <CardHeader>
+                   <CardTitle className="text-lg">付款信息</CardTitle>
+                 </CardHeader>
+                 <CardContent>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div>
+                       <p className="text-sm text-gray-600">付款日期</p>
+                       <p className="font-semibold">
+                         {selectedInvoice.paidDate 
+                           ? new Date(selectedInvoice.paidDate).toLocaleDateString('zh-CN')
+                           : '未付款'
+                         }
+                       </p>
+                     </div>
+                     <div>
+                       <p className="text-sm text-gray-600">提醒发送</p>
+                       <p className="font-semibold">
+                         {selectedInvoice.reminderSent ? '已发送' : '未发送'}
+                       </p>
+                     </div>
+                     <div>
+                       <p className="text-sm text-gray-600">最后提醒日期</p>
+                       <p className="font-semibold">
+                         {selectedInvoice.lastReminderDate 
+                           ? new Date(selectedInvoice.lastReminderDate).toLocaleDateString('zh-CN')
+                           : '无'
+                         }
+                       </p>
+                     </div>
+                   </div>
+                 </CardContent>
+               </Card>
 
               {/* Notes */}
               {selectedInvoice.notes && (
