@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -175,7 +175,7 @@ export default function StudentFilters({
   }
 
   // 当筛选条件改变时自动应用
-  useMemo(() => {
+  useEffect(() => {
     applyFilters()
   }, [searchTerm, selectedGrade, selectedCenter, selectedGender, selectedLevel, 
       ageRange, enrollmentYear, hasPhone, hasAddress, sortBy, sortOrder])
