@@ -6,22 +6,24 @@ import { Download, FileSpreadsheet } from 'lucide-react'
 
 export function TemplateDownload() {
   const downloadTemplate = () => {
-    // 创建CSV模板内容 - 基于PocketBase数据库字段
-    const templateContent = `姓名,学号,年级,性别,出生日期,父亲电话,母亲电话,家庭地址,中心
-张三,STU001,Standard 1,男,2017-01-01,0123456789,0123456790,马来西亚柔佛州新山市,WX 01
-李四,STU002,Standard 2,女,2016-05-15,0123456791,0123456792,马来西亚柔佛州新山市,WX 01
-王五,STU003,Standard 3,男,2015-08-20,0123456793,0123456794,马来西亚柔佛州新山市,WX 01`
+    // 创建CSV模板内容 - 添加BOM以解决中文乱码问题
+    const templateContent = `ID,姓名,年级,父亲电话,母亲电话,地址,父亲姓名,母亲姓名,生日,性别,中心
+STU001,张三,Standard 1,0123456789,0987654321,吉隆坡市中心,张先生,李女士,2015-01-15,男,WX 01
+STU002,李四,Standard 2,0123456790,0987654322,雪兰莪州,李先生,王女士,2014-03-20,女,WX 01
+STU003,王五,Standard 3,0123456791,0987654323,槟城,王先生,陈女士,2013-07-10,男,WX 01`
 
-    // 创建Blob并下载
-    const blob = new Blob([templateContent], { type: 'text/csv;charset=utf-8;' })
+    // 添加UTF-8 BOM以解决中文乱码
+    const BOM = '\uFEFF'
+    const blob = new Blob([BOM + templateContent], { type: 'text/csv;charset=utf-8' })
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
     link.setAttribute('href', url)
-    link.setAttribute('download', '学生数据导入模板.csv')
+    link.setAttribute('download', 'student-import-template.csv')
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
 
   const openGoogleSheetsTemplate = () => {
@@ -44,17 +46,17 @@ export function TemplateDownload() {
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <h4 className="font-medium">模板说明：</h4>
-          <ul className="text-sm text-muted-foreground space-y-1">
-            <li>• <strong>姓名</strong>：学生姓名（必填）</li>
-            <li>• <strong>学号</strong>：学生学号（可选，系统会自动生成）</li>
-            <li>• <strong>年级</strong>：年级信息，如 "Standard 1"（必填）</li>
-            <li>• <strong>性别</strong>：男/女（可选）</li>
-            <li>• <strong>出生日期</strong>：YYYY-MM-DD格式（可选）</li>
-            <li>• <strong>父亲电话</strong>：父亲联系电话（可选）</li>
-            <li>• <strong>母亲电话</strong>：母亲联系电话（可选）</li>
-            <li>• <strong>家庭地址</strong>：家庭住址（可选）</li>
-            <li>• <strong>中心</strong>：WX 01, WX 02, WX 03, WX 04（可选，默认WX 01）</li>
-          </ul>
+                     <ul className="text-sm text-muted-foreground space-y-1">
+             <li>• <strong>ID</strong>：学生学号（可选，系统会自动生成）</li>
+             <li>• <strong>姓名</strong>：学生姓名（必填）</li>
+             <li>• <strong>年级</strong>：年级信息，如 "Standard 1"（必填）</li>
+             <li>• <strong>性别</strong>：男/女（可选）</li>
+             <li>• <strong>出生日期</strong>：YYYY-MM-DD格式（可选）</li>
+             <li>• <strong>父亲电话</strong>：父亲联系电话（可选）</li>
+             <li>• <strong>母亲电话</strong>：母亲联系电话（可选）</li>
+             <li>• <strong>家庭地址</strong>：家庭住址（可选）</li>
+             <li>• <strong>中心</strong>：WX 01, WX 02, WX 03, WX 04（可选，默认WX 01）</li>
+           </ul>
         </div>
 
         <div className="flex gap-2">

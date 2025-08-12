@@ -1,4 +1,4 @@
-import SimpleImport from '@/app/components/systems/data-import/simple-import'
+import SimpleCSVImport from '@/app/components/systems/data-import/simple-csv-import'
 import { TemplateDownload } from '@/app/components/systems/data-import/TemplateDownload'
 import { ImportGuide } from '@/app/components/systems/data-import/ImportGuide'
 
@@ -8,9 +8,9 @@ export default function DataImportPage() {
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">数据导入</h1>
-          <p className="text-muted-foreground">
-            从Google Sheets导入学生数据到PocketBase。使用预设凭据，只需输入Spreadsheet ID即可。
-          </p>
+                                <p className="text-muted-foreground">
+                        直接导入 CSV 数据到 PocketBase。支持文件上传或直接粘贴数据，简单快捷。
+                      </p>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -21,9 +21,9 @@ export default function DataImportPage() {
           </div>
           
           {/* 右侧：导入功能 */}
-          <div className="lg:col-span-2">
-            <SimpleImport />
-          </div>
+                                <div className="lg:col-span-2">
+                        <SimpleCSVImport />
+                      </div>
         </div>
       </div>
     </div>

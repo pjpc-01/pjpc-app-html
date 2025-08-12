@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -36,9 +36,22 @@ export default function StudentManagement({
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedGrade, setSelectedGrade] = useState<string>("")
+  const [selectedCenter, setSelectedCenter] = useState<string>("")
+  const [selectedGender, setSelectedGender] = useState<string>("")
+  const [selectedLevel, setSelectedLevel] = useState<string>("")
+  const [ageRange, setAgeRange] = useState<[number, number]>([0, 25])
+  const [enrollmentYear, setEnrollmentYear] = useState<string>("")
+  const [hasPhone, setHasPhone] = useState(false)
+  const [hasAddress, setHasAddress] = useState(false)
+  const [sortBy, setSortBy] = useState("name")
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null)
+  
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(15)
 
   // Default values based on dataType
   const defaultTitle = dataType === 'primary' ? '小学生管理' : 
@@ -55,14 +68,150 @@ export default function StudentManagement({
   const finalButtonText = buttonText || defaultButtonText
   const finalButtonColor = buttonColor === 'default' ? defaultButtonColor : buttonColor
 
-  // Filter students based on search and grade
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         student.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         student.grade?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesGrade = !selectedGrade || student.grade === selectedGrade
-    return matchesSearch && matchesGrade
-  })
+  // 智能筛选学生
+  const filteredStudents = useMemo(() => {
+    let filtered = students
+
+    // 搜索筛选
+    if (searchTerm) {
+      const lowerSearchTerm = searchTerm.toLowerCase()
+      filtered = filtered.filter(student => 
+        student.name?.toLowerCase().includes(lowerSearchTerm) ||
+        student.studentId?.toLowerCase().includes(lowerSearchTerm) ||
+        student.standard?.toLowerCase().includes(lowerSearchTerm) ||
+        student.center?.toLowerCase().includes(lowerSearchTerm) ||
+        student.gender?.toLowerCase().includes(lowerSearchTerm)
+      )
+    }
+
+    // 年级筛选
+    if (selectedGrade) {
+      filtered = filtered.filter(student => 
+        student.standard === selectedGrade || student.grade === selectedGrade
+      )
+    }
+
+    // 中心筛选
+    if (selectedCenter) {
+      filtered = filtered.filter(student => student.center === selectedCenter)
+    }
+
+    // 性别筛选
+    if (selectedGender) {
+      filtered = filtered.filter(student => student.gender === selectedGender)
+    }
+
+    // 级别筛选
+    if (selectedLevel) {
+      filtered = filtered.filter(student => student.level === selectedLevel)
+    }
+
+    // 入学年份筛选
+    if (enrollmentYear) {
+      filtered = filtered.filter(student => student.enrollmentYear === enrollmentYear)
+    }
+
+    // 年龄范围筛选
+    if (ageRange[0] > 0 || ageRange[1] < 25) {
+      filtered = filtered.filter(student => {
+        const age = student.age || 0
+        return age >= ageRange[0] && age <= ageRange[1]
+      })
+    }
+
+    // 有电话筛选
+    if (hasPhone) {
+      filtered = filtered.filter(student => 
+        student.father_phone || student.mother_phone || student.phone
+      )
+    }
+
+    // 有地址筛选
+    if (hasAddress) {
+      filtered = filtered.filter(student => 
+        student.home_address || student.address
+      )
+    }
+
+    // 排序
+    filtered.sort((a, b) => {
+      let aValue: any
+      let bValue: any
+
+      switch (sortBy) {
+        case 'name':
+          aValue = a.name || ''
+          bValue = b.name || ''
+          break
+        case 'studentId':
+          aValue = a.studentId || ''
+          bValue = b.studentId || ''
+          break
+        case 'grade':
+          aValue = a.standard || a.grade || ''
+          bValue = b.standard || b.grade || ''
+          break
+        case 'age':
+          aValue = a.age || 0
+          bValue = b.age || 0
+          break
+        case 'enrollmentYear':
+          aValue = a.enrollmentYear || ''
+          bValue = b.enrollmentYear || ''
+          break
+        case 'createdAt':
+          aValue = new Date(a.createdAt || '').getTime()
+          bValue = new Date(b.createdAt || '').getTime()
+          break
+        default:
+          aValue = a.name || ''
+          bValue = b.name || ''
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+      }
+    })
+
+         return filtered
+   }, [students, searchTerm, selectedGrade, selectedCenter, selectedGender, selectedLevel, 
+       enrollmentYear, ageRange, hasPhone, hasAddress, sortBy, sortOrder])
+
+  // 分页逻辑
+  const paginatedStudents = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize
+    const endIndex = startIndex + pageSize
+    return filteredStudents.slice(startIndex, endIndex)
+  }, [filteredStudents, currentPage, pageSize])
+
+  const totalPages = Math.ceil(filteredStudents.length / pageSize)
+  const hasNextPage = currentPage < totalPages
+  const hasPrevPage = currentPage > 1
+
+  // 分页处理函数
+  const handleNextPage = () => {
+    if (hasNextPage) {
+      setCurrentPage(prev => prev + 1)
+    }
+  }
+
+  const handlePrevPage = () => {
+    if (hasPrevPage) {
+      setCurrentPage(prev => prev - 1)
+    }
+  }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  // 当筛选条件改变时重置到第一页
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, selectedGrade, selectedCenter, selectedGender, selectedLevel, 
+      enrollmentYear, ageRange, hasPhone, hasAddress, sortBy, sortOrder])
 
   const handleAddStudent = async (studentData: Partial<Student>) => {
     try {
@@ -186,12 +335,25 @@ export default function StudentManagement({
           selectedGrade={selectedGrade}
           setSelectedGrade={setSelectedGrade}
           students={students}
+          onFiltersChange={(filters) => {
+            setSearchTerm(filters.searchTerm)
+            setSelectedGrade(filters.selectedGrade)
+            setSelectedCenter(filters.selectedCenter)
+            setSelectedGender(filters.selectedGender)
+            setSelectedLevel(filters.selectedLevel)
+            setAgeRange(filters.ageRange)
+            setEnrollmentYear(filters.enrollmentYear)
+            setHasPhone(filters.hasPhone)
+            setHasAddress(filters.hasAddress)
+            setSortBy(filters.sortBy)
+            setSortOrder(filters.sortOrder)
+          }}
         />
       </div>
 
       {/* Statistics */}
       <div>
-        <StudentStats students={filteredStudents} />
+        <StudentStats students={filteredStudents} totalStudents={students.length} />
       </div>
 
       {/* Bulk Actions */}
@@ -208,7 +370,7 @@ export default function StudentManagement({
       {/* Student List */}
       <div>
         <StudentList
-          students={filteredStudents}
+          students={paginatedStudents}
           loading={loading}
           selectedStudents={selectedStudents}
           onSelectStudent={handleSelectStudent}
@@ -218,6 +380,63 @@ export default function StudentManagement({
           onDeleteStudent={handleDeleteStudent}
         />
       </div>
+
+      {/* 分页控件 */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            显示第 {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredStudents.length)} 条，
+            共 {filteredStudents.length} 条记录
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrevPage}
+              disabled={!hasPrevPage}
+            >
+              上一页
+            </Button>
+            
+            {/* 页码显示 */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum
+                if (totalPages <= 5) {
+                  pageNum = i + 1
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i
+                } else {
+                  pageNum = currentPage - 2 + i
+                }
+                
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(pageNum)}
+                    className="w-8 h-8 p-0"
+                  >
+                    {pageNum}
+                  </Button>
+                )
+              })}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextPage}
+              disabled={!hasNextPage}
+            >
+              下一页
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Add/Edit Student Dialog */}
       <StudentForm
