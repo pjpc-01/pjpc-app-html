@@ -37,6 +37,7 @@ export const StudentFeeMatrix = () => {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [selectedCriteria, setSelectedCriteria] = useState<'grade' | null>(null)
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
+  const [batchMode, setBatchMode] = useState(false)
 
   const activeFees = feeItems.filter(fee => fee.status === 'active')
 
@@ -200,6 +201,13 @@ export const StudentFeeMatrix = () => {
 
   const toggleEditMode = () => {
     setEditMode(!editMode)
+    if (!editMode) {
+      setBatchMode(false) // Reset batch mode when entering edit mode
+    }
+  }
+
+  const toggleBatchMode = () => {
+    setBatchMode(!batchMode)
   }
 
   const clearSearch = () => {
@@ -320,6 +328,8 @@ export const StudentFeeMatrix = () => {
         onToggleEditMode={toggleEditMode}
         batchDialogOpen={batchDialogOpen}
         onBatchDialogOpenChange={setBatchDialogOpen}
+        batchMode={batchMode}
+        onToggleBatchMode={toggleBatchMode}
       />
 
       <SearchAndFilter

@@ -46,9 +46,13 @@ export const useStudentFees = () => {
   // New function to toggle sub-item state for a specific student
   const toggleStudentSubItem = useCallback((studentId: number, feeId: number, subItemId: number) => {
     const key = `${studentId}-${feeId}-${subItemId}`
+    console.log(`Toggling student sub-item: ${key}`)
     setStudentSubItemStates(prev => {
       const newMap = new Map(prev)
-      newMap.set(key, !prev.get(key))
+      const currentState = prev.get(key) || false
+      const newState = !currentState
+      console.log(`Setting ${key} from ${currentState} to ${newState}`)
+      newMap.set(key, newState)
       return newMap
     })
   }, [])
@@ -56,7 +60,9 @@ export const useStudentFees = () => {
   // New function to get sub-item state for a specific student
   const getStudentSubItemState = useCallback((studentId: number, feeId: number, subItemId: number) => {
     const key = `${studentId}-${feeId}-${subItemId}`
-    return studentSubItemStates.get(key) || false
+    const state = studentSubItemStates.get(key) || false
+    console.log(`Getting state for ${key}: ${state}`)
+    return state
   }, [studentSubItemStates])
 
   // New function to set sub-item state for a specific student

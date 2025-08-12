@@ -87,6 +87,7 @@ export const StudentCard = ({
 
   const toggleSubItemActive = (studentId: string, feeId: number, subItemId: number) => {
     if (editMode) {
+      console.log(`Toggling sub-item for student ${studentId}, fee ${feeId}, subItem ${subItemId}`)
       toggleStudentSubItem(Number(studentId), feeId, subItemId)
     }
   }
