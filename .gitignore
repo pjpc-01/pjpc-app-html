@@ -10,6 +10,17 @@ out/
 build/
 dist/
 
+# Google Service Account keys (SECURITY)
+serviceAccountKey.json
+google-service-account.json
+*-service-account*.json
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!components.json
+!next.config.mjs
+
 # Environment variables
 .env
 .env.local

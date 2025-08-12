@@ -1,138 +1,262 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useMemo } from "react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Users, UserCheck, UserX, Calendar, GraduationCap, Users2 } from "lucide-react"
+import { 
+  Users, 
+  GraduationCap, 
+  MapPin, 
+  Phone, 
+  Calendar,
+  TrendingUp,
+  UserCheck,
+  UserX
+} from "lucide-react"
 import { Student } from "@/hooks/useStudents"
-import { convertGradeToChinese, calculateAge } from "./utils"
 
 interface StudentStatsProps {
   students: Student[]
+  totalStudents: number
+  className?: string
 }
 
-export default function StudentStats({ students }: StudentStatsProps) {
-  const totalStudents = students.length
-  const activeStudents = students.filter(s => s.status === 'active').length
-  const inactiveStudents = students.filter(s => s.status === 'inactive').length
-  
-  const studentsByGrade = students.reduce((acc, student) => {
-    const grade = student.grade || '无年级'
-    acc[grade] = (acc[grade] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
+export default function StudentStats({ 
+  students, 
+  totalStudents, 
+  className = "" 
+}: StudentStatsProps) {
+  const stats = useMemo(() => {
+    const total = students.length
+    const primary = students.filter(s => s.level === 'primary').length
+    const secondary = students.filter(s => s.level === 'secondary').length
+    const hasPhone = students.filter(s => s.father_phone || s.mother_phone || s.phone).length
+    const hasAddress = students.filter(s => s.home_address || s.address).length
+    
+    // 按年龄范围分组
+    const byAgeRange = students.reduce((acc, student) => {
+      const age = student.age || 0
+      if (age >= 7 && age <= 12) {
+        acc['7-12岁'] = (acc['7-12岁'] || 0) + 1
+      } else if (age >= 13 && age <= 18) {
+        acc['13-18岁'] = (acc['13-18岁'] || 0) + 1
+      } else if (age > 0) {
+        acc['其他年龄'] = (acc['其他年龄'] || 0) + 1
+      } else {
+        acc['年龄未知'] = (acc['年龄未知'] || 0) + 1
+      }
+      return acc
+    }, {} as Record<string, number>)
+    
+    // 按中心分组
+    const byCenter = students.reduce((acc, student) => {
+      const center = student.center || '未知中心'
+      acc[center] = (acc[center] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    
+    // 按年级分组
+    const byGrade = students.reduce((acc, student) => {
+      const grade = student.standard || student.grade || '未知年级'
+      acc[grade] = (acc[grade] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    
+    // 按性别分组
+    const byGender = students.reduce((acc, student) => {
+      const gender = student.gender || '未知'
+      acc[gender] = (acc[gender] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    
+    // 最近入学的学生（3个月内）
+    const threeMonthsAgo = new Date()
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+    const recent = students.filter(student => {
+      const enrollmentDate = new Date(student.enrollmentDate || student.createdAt)
+      return enrollmentDate >= threeMonthsAgo
+    }).length
+    
+    // 本月新入学
+    const now = new Date()
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const newThisMonth = students.filter(student => {
+      const enrollmentDate = new Date(student.enrollmentDate || student.createdAt)
+      return enrollmentDate >= firstDayOfMonth
+    }).length
 
-  const studentsByGender = students.reduce((acc, student) => {
-    const gender = student.gender || '未知'
-    acc[gender] = (acc[gender] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
+    return {
+      total,
+      primary,
+      secondary,
+      hasPhone,
+      hasAddress,
+      byCenter,
+      byGrade,
+      byGender,
+      byAgeRange,
+      recent,
+      newThisMonth,
+      percentage: totalStudents > 0 ? Math.round((total / totalStudents) * 100) : 0
+    }
+  }, [students, totalStudents])
 
-  const studentsWithAge = students.filter(s => s.age || s.birthDate)
-  const totalAge = studentsWithAge.reduce((sum, student) => {
-    return sum + (student.age || calculateAge(student.birthDate!))
-  }, 0)
-  const averageAge = studentsWithAge.length > 0 ? Math.round(totalAge / studentsWithAge.length) : 0
+  if (students.length === 0) {
+    return (
+      <Card className={className}>
+        <CardContent className="p-4">
+          <div className="text-center text-gray-500">
+            <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p>没有找到匹配的学生</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">总学生数</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalStudents}</div>
-            <p className="text-xs text-muted-foreground">所有注册学生</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">在读学生</CardTitle>
-            <UserCheck className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{activeStudents}</div>
-            <p className="text-xs text-muted-foreground">
-              {totalStudents > 0 ? `${Math.round((activeStudents / totalStudents) * 100)}%` : '0%'} 在读率
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">离校学生</CardTitle>
-            <UserX className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{inactiveStudents}</div>
-            <p className="text-xs text-muted-foreground">
-              {totalStudents > 0 ? `${Math.round((inactiveStudents / totalStudents) * 100)}%` : '0%'} 离校率
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">平均年龄</CardTitle>
-            <Calendar className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{averageAge}</div>
-            <p className="text-xs text-muted-foreground">
-              {studentsWithAge.length} 名学生有年龄信息
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <GraduationCap className="h-5 w-5" />
-              年级分布
-            </CardTitle>
-            <CardDescription>各年级学生人数统计</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {Object.entries(studentsByGrade).map(([grade, count]) => (
-                <div key={grade} className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{count}</div>
-                  <div className="text-sm text-gray-600">{convertGradeToChinese(grade)}</div>
-                </div>
-              ))}
+    <Card className={className}>
+      <CardContent className="p-4">
+        <div className="space-y-4">
+          {/* 主要统计 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Users className="h-4 w-4 text-blue-500" />
+                <span className="text-lg font-semibold">{stats.total}</span>
+              </div>
+              <p className="text-xs text-gray-600">筛选结果</p>
+              {stats.percentage < 100 && (
+                <Badge variant="secondary" className="text-xs mt-1">
+                  {stats.percentage}% 的总数
+                </Badge>
+              )}
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users2 className="h-5 w-5" />
-              性别分布
-            </CardTitle>
-            <CardDescription>学生性别比例</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              {Object.entries(studentsByGender).map(([gender, count]) => (
-                <div key={gender} className="flex items-center gap-2">
-                  <Badge variant="outline">
-                    {gender}
-                  </Badge>
-                  <span className="text-lg font-semibold">{count}</span>
-                  <span className="text-sm text-gray-500">
-                    ({totalStudents > 0 ? Math.round((count / totalStudents) * 100) : 0}%)
-                  </span>
-                </div>
-              ))}
+            
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <GraduationCap className="h-4 w-4 text-green-500" />
+                <span className="text-lg font-semibold">{stats.primary}</span>
+              </div>
+              <p className="text-xs text-gray-600">小学生</p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+            
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <GraduationCap className="h-4 w-4 text-purple-500" />
+                <span className="text-lg font-semibold">{stats.secondary}</span>
+              </div>
+              <p className="text-xs text-gray-600">中学生</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Phone className="h-4 w-4 text-orange-500" />
+                <span className="text-lg font-semibold">{stats.hasPhone}</span>
+              </div>
+              <p className="text-xs text-gray-600">有电话</p>
+            </div>
+          </div>
+
+                     {/* 详细信息 */}
+           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* 按中心分布 */}
+            {Object.keys(stats.byCenter).length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  按中心分布
+                </h4>
+                <div className="space-y-1">
+                  {Object.entries(stats.byCenter)
+                    .sort(([,a], [,b]) => b - a)
+                    .map(([center, count]) => (
+                      <div key={center} className="flex justify-between items-center text-xs">
+                        <span>{center}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {count}
+                        </Badge>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* 按年级分布 */}
+            {Object.keys(stats.byGrade).length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                  <GraduationCap className="h-3 w-3" />
+                  按年级分布
+                </h4>
+                <div className="space-y-1">
+                  {Object.entries(stats.byGrade)
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 5)
+                    .map(([grade, count]) => (
+                      <div key={grade} className="flex justify-between items-center text-xs">
+                        <span>{grade}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {count}
+                        </Badge>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+                         {/* 年龄范围统计 */}
+             {Object.keys(stats.byAgeRange).length > 0 && (
+               <div>
+                 <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                   <TrendingUp className="h-3 w-3" />
+                   年龄分布
+                 </h4>
+                 <div className="space-y-1">
+                   {Object.entries(stats.byAgeRange)
+                     .sort(([,a], [,b]) => b - a)
+                     .map(([ageRange, count]) => (
+                       <div key={ageRange} className="flex justify-between items-center text-xs">
+                         <span>{ageRange}</span>
+                         <Badge variant="outline" className="text-xs">
+                           {count}
+                         </Badge>
+                       </div>
+                     ))}
+                 </div>
+               </div>
+             )}
+
+             {/* 其他统计 */}
+             <div>
+               <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                 <TrendingUp className="h-3 w-3" />
+                 其他统计
+               </h4>
+               <div className="space-y-1">
+                 <div className="flex justify-between items-center text-xs">
+                   <span>有地址</span>
+                   <Badge variant="outline" className="text-xs">
+                     {stats.hasAddress}
+                   </Badge>
+                 </div>
+                 <div className="flex justify-between items-center text-xs">
+                   <span>最近入学</span>
+                   <Badge variant="outline" className="text-xs">
+                     {stats.recent}
+                   </Badge>
+                 </div>
+                 <div className="flex justify-between items-center text-xs">
+                   <span>本月新生</span>
+                   <Badge variant="outline" className="text-xs">
+                     {stats.newThisMonth}
+                   </Badge>
+                 </div>
+               </div>
+             </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 } 

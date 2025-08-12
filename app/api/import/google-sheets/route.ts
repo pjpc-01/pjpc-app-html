@@ -1,460 +1,135 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleAuth } from 'google-auth-library'
-import { google } from 'googleapis'
-import { addStudent, updateStudent } from '@/lib/pocketbase-students'
-import { StudentData } from '@/lib/google-sheets'
+import PocketBase from 'pocketbase'
 
-class GoogleSheetsAPI {
-  private auth: any
-  private sheets: any
+// 创建服务器端 PocketBase 实例
+const pb = new PocketBase('http://pjpc.tplinkdns.com:8090')
 
-  constructor(credentials: any) {
-    this.auth = new GoogleAuth({
-      credentials,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-    })
-    this.sheets = google.sheets({ version: 'v4', auth: this.auth })
-  }
-
-  // 年级映射函数：将英文年级转换为华文年级
-  private mapGradeToChinese(grade: string): string {
-    if (!grade) return '未知年级'
-    
-    const gradeStr = grade.toString().toLowerCase().trim()
-    
-    // 英文年级映射
-    const englishGradeMap: Record<string, string> = {
-      // Standard格式（Google Sheets中的标准格式）
-      'standard 1': '一年级',
-      'standard1': '一年级',
-      'std 1': '一年级',
-      'std1': '一年级',
-      's1': '一年级',
-      '1': '一年级',
-      
-      'standard 2': '二年级',
-      'standard2': '二年级',
-      'std 2': '二年级',
-      'std2': '二年级',
-      's2': '二年级',
-      '2': '二年级',
-      
-      'standard 3': '三年级',
-      'standard3': '三年级',
-      'std 3': '三年级',
-      'std3': '三年级',
-      's3': '三年级',
-      '3': '三年级',
-      
-      'standard 4': '四年级',
-      'standard4': '四年级',
-      'std 4': '四年级',
-      'std4': '四年级',
-      's4': '四年级',
-      '4': '四年级',
-      
-      'standard 5': '五年级',
-      'standard5': '五年级',
-      'std 5': '五年级',
-      'std5': '五年级',
-      's5': '五年级',
-      '5': '五年级',
-      
-      'standard 6': '六年级',
-      'standard6': '六年级',
-      'std 6': '六年级',
-      'std6': '六年级',
-      's6': '六年级',
-      '6': '六年级',
-      
-      // Grade格式
-      'grade 1': '一年级',
-      'grade1': '一年级',
-      '1st grade': '一年级',
-      '1st': '一年级',
-      'first grade': '一年级',
-      'first': '一年级',
-      
-      'grade 2': '二年级',
-      'grade2': '二年级',
-      '2nd grade': '二年级',
-      '2nd': '二年级',
-      'second grade': '二年级',
-      'second': '二年级',
-      
-      'grade 3': '三年级',
-      'grade3': '三年级',
-      '3rd grade': '三年级',
-      '3rd': '三年级',
-      'third grade': '三年级',
-      'third': '三年级',
-      
-      'grade 4': '四年级',
-      'grade4': '四年级',
-      '4th grade': '四年级',
-      '4th': '四年级',
-      'fourth grade': '四年级',
-      'fourth': '四年级',
-      
-      'grade 5': '五年级',
-      'grade5': '五年级',
-      '5th grade': '五年级',
-      '5th': '五年级',
-      'fifth grade': '五年级',
-      'fifth': '五年级',
-      
-      'grade 6': '六年级',
-      'grade6': '六年级',
-      '6th grade': '六年级',
-      '6th': '六年级',
-      'sixth grade': '六年级',
-      'sixth': '六年级',
-      
-      // 中学年级
-      'form 1': '初一',
-      'form1': '初一',
-      'form 2': '初二',
-      'form2': '初二',
-      'form 3': '初三',
-      'form3': '初三',
-      
-      'year 1': '初一',
-      'year1': '初一',
-      'year 2': '初二',
-      'year2': '初二',
-      'year 3': '初三',
-      'year3': '初三',
-      
-      'secondary 1': '初一',
-      'secondary1': '初一',
-      'secondary 2': '初二',
-      'secondary2': '初二',
-      'secondary 3': '初三',
-      'secondary3': '初三',
-      
-      // 华文年级（保持不变）
-      '一年级': '一年级',
-      '二年级': '二年级',
-      '三年级': '三年级',
-      '四年级': '四年级',
-      '五年级': '五年级',
-      '六年级': '六年级',
-      '初一': '初一',
-      '初二': '初二',
-      '初三': '初三',
-    }
-    
-    // 尝试精确匹配
-    if (englishGradeMap[gradeStr]) {
-      return englishGradeMap[gradeStr]
-    }
-    
-    // 尝试部分匹配
-    for (const [english, chinese] of Object.entries(englishGradeMap)) {
-      if (gradeStr.includes(english) || english.includes(gradeStr)) {
-        return chinese
-      }
-    }
-    
-    // 尝试数字匹配（如果输入只是数字）
-    const numericMatch = gradeStr.match(/^(\d+)$/)
-    if (numericMatch) {
-      const num = parseInt(numericMatch[1])
-      if (num >= 1 && num <= 6) {
-        const chineseGrades = ['一年级', '二年级', '三年级', '四年级', '五年级', '六年级']
-        return chineseGrades[num - 1]
-      }
-    }
-    
-    // 如果无法匹配，返回原值
-    console.log(`无法映射年级: "${grade}"，使用原值`)
-    return grade
-  }
-
-  async getStudentData(spreadsheetId: string, range: string = 'A:Z', sheetName?: string): Promise<StudentData[]> {
-    try {
-      // If sheetName is provided, use it in the range
-      const fullRange = sheetName ? `${sheetName}!${range}` : range
-      
-      const response = await this.sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: fullRange,
-      })
-
-      const rows = response.data.values || []
-      if (rows.length === 0) {
-        return []
-      }
-
-      const headers = rows[0]
-      const dataRows = rows.slice(1)
-
-      return dataRows.map((row: any[], index: number) => {
-        const student: any = { id: (index + 1).toString() }
-        
-        headers.forEach((header: string, colIndex: number) => {
-          if (row[colIndex] !== undefined) {
-            const cleanHeader = header.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')
-            
-            // Map your column names to our expected format
-            switch (cleanHeader) {
-              case 'studentname':
-              case 'name':
-              case '姓名':
-                student.name = row[colIndex]
-                break
-              case 'standard':
-              case 'grade':
-              case '年级':
-                // 使用年级映射函数转换年级
-                student.grade = this.mapGradeToChinese(row[colIndex])
-                break
-              case 'parentphonenumberfather':
-              case 'fatherphone':
-              case '父亲电话':
-                student.parentPhone = row[colIndex]
-                break
-              case 'parentphonenumbermother':
-              case 'motherphone':
-              case '母亲电话':
-                student.parentPhone = student.parentPhone ? `${student.parentPhone}, ${row[colIndex]}` : row[colIndex]
-                break
-              case 'homeaddress':
-              case 'address':
-              case '地址':
-                student.address = row[colIndex]
-                break
-              case 'parentname':
-              case 'fathername':
-              case '父亲姓名':
-                student.parentName = row[colIndex]
-                break
-              case 'parentemail':
-              case 'mothername':
-              case '母亲姓名':
-                student.parentEmail = row[colIndex]
-                break
-              // Birth date field mappings
-              case 'dob':
-              case 'birthdate':
-              case 'birth':
-              case 'dateofbirth':
-              case 'birthday':
-              case '生日':
-              case '出生日期':
-              case '出生':
-                student.dateOfBirth = row[colIndex]
-                break
-              case 'score':
-              case '成绩':
-                student.score = row[colIndex]
-                break
-              case 'gender':
-              case '性别':
-                student.gender = row[colIndex]
-                break
-              case 'food':
-              case '食物':
-                student.food = row[colIndex]
-                break
-                             case 'drink':
-               case '饮料':
-                 student.drink = row[colIndex]
-                 break
-               case 'center':
-               case '中心':
-               case 'centre':
-                 student.center = row[colIndex]
-                 break
-               default:
-                 student[cleanHeader] = row[colIndex]
-            }
-          }
-        })
-
-        // Set default values for required fields if missing
-        if (!student.name) student.name = `Student ${index + 1}`
-        if (!student.grade) student.grade = '未知年级'
-        if (!student.parentName) student.parentName = '家长'
-        if (!student.parentEmail) student.parentEmail = 'parent@example.com'
-
-        return student as StudentData
-      })
-    } catch (error) {
-      console.error('Error fetching data from Google Sheets:', error)
-      throw error
-    }
-  }
-
-  async validateSpreadsheet(spreadsheetId: string, sheetName?: string): Promise<{ isValid: boolean; headers: string[] }> {
-    try {
-      // If sheetName is provided, use it in the range
-      const fullRange = sheetName ? `${sheetName}!A1:Z1` : 'A1:Z1'
-      
-      const response = await this.sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: fullRange,
-      })
-
-      const headers = response.data.values?.[0] || []
-      const headerLower = headers.map((h: string) => h.toLowerCase().replace(/\s+/g, ''))
-      
-      // Check for required fields in your format
-      const hasStudentName = headerLower.includes('studentname') || headerLower.includes('name') || headerLower.includes('姓名')
-      const hasStandard = headerLower.includes('standard') || headerLower.includes('grade') || headerLower.includes('年级')
-      const hasParentPhone = headerLower.includes('parentphonenumber') || headerLower.includes('phone') || headerLower.includes('电话')
-      
-      const isValid = hasStudentName && hasStandard
-
-      return { isValid, headers }
-    } catch (error) {
-      console.error('Error validating spreadsheet:', error)
-      return { isValid: false, headers: [] }
-    }
-  }
-}
-
+// 简单的 Google Sheets 数据导入
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { spreadsheetId, spreadsheetRange, credentials, dataType = 'primary', action, sheetName } = body
-
-    // For stats action, we don't need spreadsheetId and credentials
-    if (action !== 'stats' && (!spreadsheetId || !credentials)) {
-      return NextResponse.json(
-        { error: 'Missing required fields: spreadsheetId and credentials' },
-        { status: 400 }
-      )
-    }
-
-    let creds
-    try {
-      if (credentials === 'env') {
-        // Use environment variable for credentials
-        const envCredentials = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
-        if (!envCredentials) {
-          return NextResponse.json(
-            { error: 'Environment credentials not configured. Please set GOOGLE_SERVICE_ACCOUNT_JSON.' },
-            { status: 400 }
-          )
-        }
-        creds = JSON.parse(envCredentials)
-      } else {
-        creds = JSON.parse(credentials)
+    // 确保 PocketBase 认证
+    if (!pb.authStore.isValid) {
+      try {
+        await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        console.log('✅ API 路由中认证成功')
+      } catch (authError) {
+        console.error('❌ API 路由中认证失败:', authError)
+        return NextResponse.json({ error: 'PocketBase 认证失败' }, { status: 401 })
       }
-    } catch (error) {
-      return NextResponse.json(
-        { error: 'Invalid JSON credentials format. Please check your service account key.' },
-        { status: 400 }
-      )
     }
-    const sheetsAPI = new GoogleSheetsAPI(creds)
+
+    const body = await request.json()
+    const { action, data } = body
 
     switch (action) {
-      case 'validate':
-        const validation = await sheetsAPI.validateSpreadsheet(spreadsheetId, sheetName)
-        return NextResponse.json(validation)
+      case 'import-csv':
+        // 直接导入 CSV 数据
+        if (!data || !Array.isArray(data)) {
+          return NextResponse.json({ error: 'Invalid data format' }, { status: 400 })
+        }
 
-      case 'preview':
-        const previewData = await sheetsAPI.getStudentData(spreadsheetId, spreadsheetRange, sheetName)
-        return NextResponse.json({ data: previewData.slice(0, 5) })
-
-      case 'import':
-        try {
-          console.log(`Starting import process for dataType: ${dataType}`)
-          console.log(`Spreadsheet ID: ${spreadsheetId}, Sheet Name: ${sheetName || 'default'}`)
-          
-          const data = await sheetsAPI.getStudentData(spreadsheetId, spreadsheetRange, sheetName)
-          console.log(`Retrieved ${data.length} students from Google Sheets`)
-          
-          if (data.length === 0) {
-            return NextResponse.json({
-              error: 'No data found to import',
-              suggestion: 'Please check your spreadsheet data and sheet name'
-            }, { status: 400 })
-          }
-          
-          console.log('Sample data:', data.slice(0, 2))
-          
-          // Import to PocketBase
           const importResults = {
             success: 0,
             failed: 0,
+          skipped: 0,
             errors: [] as string[]
           }
 
-          for (const studentData of data) {
-            try {
-              // Convert Google Sheets data to PocketBase format
-              const pocketbaseStudent = {
-                student_id: studentData.studentId || `STU${Date.now()}${Math.random().toString(36).substr(2, 5)}`,
-                student_name: studentData.name,
-                standard: studentData.grade,
-                father_phone: studentData.phone || studentData.parentPhone || '',
-                mother_phone: studentData.phone || studentData.parentPhone || '',
-                home_address: studentData.address || '',
-                gender: studentData.gender || '',
-                dob: studentData.dateOfBirth || '',
-                                 Center: studentData.center || 'WX 01', // 使用导入的中心或默认值
-                                 level: (() => {
-                   // 根据年级自动设置level
-                   if (studentData.grade) {
-                     // 处理中文年级格式
-                     if (studentData.grade.includes('一年级') || studentData.grade.includes('二年级') || 
-                         studentData.grade.includes('三年级') || studentData.grade.includes('四年级') || 
-                         studentData.grade.includes('五年级') || studentData.grade.includes('六年级')) {
-                       return 'primary'
-                     }
-                     if (studentData.grade.includes('初一') || studentData.grade.includes('初二') || 
-                         studentData.grade.includes('初三')) {
-                       return 'secondary'
-                     }
-                     
-                     // 处理Standard格式
-                     const gradeMatch = studentData.grade.match(/Standard\s*(\d+)/i)
-                     if (gradeMatch) {
-                       const gradeNum = parseInt(gradeMatch[1])
-                       return gradeNum <= 6 ? 'primary' : 'secondary'
-                     }
-                     
-                     // 尝试直接解析数字
-                     const gradeNum = parseInt(studentData.grade)
-                     if (!isNaN(gradeNum)) {
-                       return gradeNum <= 6 ? 'primary' : 'secondary'
-                     }
-                   }
-                   return 'primary' // 默认值
-                 })()
-              }
+                 for (const row of data) {
+           try {
+             // 获取学生姓名
+             const studentName = row.name || row.姓名 || row['Student Name'] || ''
+             
+             // 忽略空姓名或只包含空格的数据
+             if (!studentName || studentName.trim() === '') {
+               console.log(`⏭️ 跳过空姓名数据`)
+               importResults.skipped++
+               continue
+             }
+             
+             
+            
+                         // 获取出生日期
+             const dob = row.dob || row.生日 || row.birthday || row['D.O.B'] || ''
+             
+             // 获取原始年级信息
+             const originalGrade = row.grade || row.年级 || row.standard || row.Standard || ''
+             
+             // 根据出生日期自动计算年级
+             let calculatedGrade = originalGrade
+             if (dob) {
+               const birthYear = parseBirthYear(dob)
+               if (birthYear) {
+                 const autoGrade = getGradeFromBirthYear(birthYear)
+                 console.log(`📅 ${studentName}: 出生年份 ${birthYear}, 自动计算年级: ${autoGrade}`)
+                 calculatedGrade = autoGrade
+               } else {
+                 console.log(`⚠️ ${studentName}: 无法解析出生日期 "${dob}", 使用原始年级: ${originalGrade}`)
+                 // 转换原始年级格式
+                 calculatedGrade = convertGradeFormat(originalGrade)
+               }
+             } else {
+               console.log(`⚠️ ${studentName}: 无出生日期信息, 使用原始年级: ${originalGrade}`)
+               // 转换原始年级格式
+               calculatedGrade = convertGradeFormat(originalGrade)
+             }
+             
+             // 映射 CSV 数据到 PocketBase 格式
+             const student = {
+               student_id: row.id || row.ID || row.student_id || `STU${Date.now()}${Math.random().toString(36).substr(2, 5)}`,
+               student_name: studentName,
+               standard: calculatedGrade || '未知年级',
+               father_phone: row.father_phone || row.父亲电话 || row['Parents Phone Number (Father)'] || '',
+               mother_phone: row.mother_phone || row.母亲电话 || row['Parents Phone Number (Mother)'] || '',
+               home_address: row.address || row.地址 || row['Home Address'] || '',
+               gender: row.gender || row.性别 || row.Gender || '',
+               dob: dob || '',
+               Center: (row.center || row.中心 || row.Center || 'WX 01') as 'WX 01' | 'WX 02' | 'WX 03' | 'WX 04',
+               level: getLevelFromGrade(calculatedGrade)
+             }
+             
+             // 检查是否已存在相同student_id和Center的学生
+             try {
+               const existingStudent = await pb.collection('students').getFirstListItem(`student_id = "${student.student_id}" && Center = "${student.Center}"`)
+               if (existingStudent) {
+                 console.log(`⚠️ 学生ID ${student.student_id} 在中心 ${student.Center} 已存在，跳过导入`)
+                 importResults.skipped++
+                 continue
+               }
+             } catch (error) {
+               // 如果找不到，说明不存在，可以继续导入
+             }
 
-              await addStudent(pocketbaseStudent)
+                         // 直接使用 PocketBase 添加学生
+             console.log(`📝 准备导入学生: ${studentName}`)
+             console.log(`   数据:`, JSON.stringify(student, null, 2))
+             
+             await pb.collection('students').create(student)
+             console.log(`✅ 成功导入: ${studentName}`)
               importResults.success++
-            } catch (error) {
-              importResults.failed++
-              importResults.errors.push(`Failed to import ${studentData.name}: ${error instanceof Error ? error.message : 'Unknown error'}`)
-            }
+                         } catch (error) {
+               importResults.failed++
+               const studentName = row.name || row.姓名 || row['Student Name'] || '未知学生'
+               const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+               console.error(`❌ 导入失败 ${studentName}:`, error)
+               if (error instanceof Error && (error as any).data) {
+                 console.error('PocketBase验证错误:', (error as any).data)
+               }
+               importResults.errors.push(`Failed to import ${studentName}: ${errorMessage}`)
+             }
           }
-
-          console.log('Import result:', importResults)
           
           return NextResponse.json({
             success: true,
-            message: `Successfully imported ${importResults.success} students, ${importResults.failed} failed`,
+          message: `Successfully imported ${importResults.success} students, ${importResults.failed} failed${importResults.skipped > 0 ? `, ${importResults.skipped} skipped` : ''}`,
             details: importResults
           })
-        } catch (error) {
-          console.error('Import error:', error)
-          return NextResponse.json({
-            error: error instanceof Error ? error.message : 'Unknown import error',
-            suggestion: 'Check PocketBase configuration and permissions'
-          }, { status: 500 })
-        }
 
       case 'stats':
-        // Return basic stats for PocketBase
+        // 获取统计数据
         try {
-          const { getAllStudents } = await import('@/lib/pocketbase-students')
-          const students = await getAllStudents()
+          const studentsResponse = await pb.collection('students').getList(1, 500)
+          const students = studentsResponse.items
           
           const byGrade = students.reduce((acc: Record<string, number>, student: any) => {
             const grade = student.standard || '未知年级'
@@ -476,77 +151,8 @@ export async function POST(request: NextRequest) {
           })
         }
 
-      case 'check-environment':
-        // Check environment configuration
-        const envCheck = {
-          hasCredentials: !!process.env.GOOGLE_SERVICE_ACCOUNT_JSON,
-          hasPocketBaseUrl: !!process.env.NEXT_PUBLIC_POCKETBASE_URL,
-          message: '环境检查完成'
-        }
-        return NextResponse.json(envCheck)
-
-      case 'check-permissions':
-        // Check Google Sheets permissions
-        try {
-          const testResponse = await sheetsAPI.sheets.spreadsheets.get({
-            spreadsheetId: spreadsheetId || 'test',
-            ranges: ['A1:A1']
-          })
-          return NextResponse.json({
-            success: true,
-            message: 'Google Sheets权限正常'
-          })
-        } catch (error) {
-          return NextResponse.json({
-            success: false,
-            message: 'Google Sheets权限检查失败',
-            error: error instanceof Error ? error.message : '未知错误'
-          })
-        }
-
-      case 'test-pocketbase':
-        // Test PocketBase connection
-        try {
-          const { getAllStudents } = await import('@/lib/pocketbase-students')
-          await getAllStudents()
-          return NextResponse.json({
-            success: true,
-            message: 'PocketBase连接正常'
-          })
-        } catch (error) {
-          return NextResponse.json({
-            success: false,
-            message: 'PocketBase连接失败',
-            error: error instanceof Error ? error.message : '未知错误'
-          })
-        }
-
-      case 'check-columns':
-        // Check spreadsheet columns
-        try {
-          const response = await sheetsAPI.sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range: 'A1:Z1'
-          })
-          const headers = response.data.values?.[0] || []
-          return NextResponse.json({
-            success: true,
-            columns: headers,
-            message: `找到 ${headers.length} 个列`
-          })
-        } catch (error) {
-          return NextResponse.json({
-            success: false,
-            message: '无法获取列信息',
-            error: error instanceof Error ? error.message : '未知错误'
-          })
-        }
-
       default:
-        return NextResponse.json(
-          { error: 'Invalid action. Use: validate, preview, import, or stats' },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
   } catch (error) {
     console.error('API Error:', error)
@@ -555,4 +161,126 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+// 根据出生年份计算年级
+function getGradeFromBirthYear(birthYear: number): string {
+  // 使用2024年作为基准学年（当前学年）
+  const baseYear = 2024
+  const age = baseYear - birthYear
+  
+  // 根据年龄计算年级
+  if (age === 6) return '一年级'
+  if (age === 7) return '二年级'
+  if (age === 8) return '三年级'
+  if (age === 9) return '四年级'
+  if (age === 10) return '五年级'
+  if (age === 11) return '六年级'
+  if (age === 12) return '初一'
+  if (age === 13) return '初二'
+  if (age === 14) return '初三'
+  if (age === 15) return '高一'
+  if (age === 16) return '高二'
+  if (age === 17) return '高三'
+  if (age === 18) return '高三'
+  
+  // 如果年龄不在正常范围内，返回未知年级
+  return '未知年级'
+}
+
+// 解析出生日期并提取年份
+function parseBirthYear(dob: string): number | null {
+  if (!dob || dob === '0' || dob === '#N/A' || dob.trim() === '') return null
+  
+  // 尝试不同的日期格式
+  const dateFormats = [
+    /(\d{4})/, // 直接年份
+    /(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i, // 12 July 2013
+    /(\d{4})-(\d{1,2})-(\d{1,2})/, // 2013-07-12
+    /(\d{1,2})\/(\d{1,2})\/(\d{4})/, // 12/07/2013
+    /(\d{4})\/(\d{1,2})\/(\d{1,2})/ // 2013/07/12
+  ]
+  
+  for (const format of dateFormats) {
+    const match = dob.match(format)
+    if (match) {
+      if (match.length === 2) {
+        // 直接年份格式
+        return parseInt(match[1])
+      } else if (match.length === 4) {
+        // 完整日期格式，取年份
+        return parseInt(match[3] || match[1])
+      }
+    }
+  }
+  
+  return null
+}
+
+// 将马来西亚年级格式转换为中文格式
+function convertGradeFormat(grade: string): string {
+  if (!grade) return '未知年级'
+  
+  const gradeStr = grade.toString().toLowerCase().trim()
+  
+  // 马来西亚格式转换
+  if (gradeStr === 'standard 1' || gradeStr === 'std 1') return '一年级'
+  if (gradeStr === 'standard 2' || gradeStr === 'std 2') return '二年级'
+  if (gradeStr === 'standard 3' || gradeStr === 'std 3') return '三年级'
+  if (gradeStr === 'standard 4' || gradeStr === 'std 4') return '四年级'
+  if (gradeStr === 'standard 5' || gradeStr === 'std 5') return '五年级'
+  if (gradeStr === 'standard 6' || gradeStr === 'std 6') return '六年级'
+  if (gradeStr === 'form 1') return '初一'
+  if (gradeStr === 'form 2') return '初二'
+  if (gradeStr === 'form 3') return '初三'
+  if (gradeStr === 'form 4') return '高一'
+  if (gradeStr === 'form 5') return '高二'
+  if (gradeStr === 'form 6') return '高三'
+  
+  // 如果已经是中文格式，直接返回
+  if (gradeStr.includes('一年级') || gradeStr.includes('二年级') || 
+      gradeStr.includes('三年级') || gradeStr.includes('四年级') || 
+      gradeStr.includes('五年级') || gradeStr.includes('六年级') ||
+      gradeStr.includes('初一') || gradeStr.includes('初二') || gradeStr.includes('初三') ||
+      gradeStr.includes('高一') || gradeStr.includes('高二') || gradeStr.includes('高三')) {
+    return grade
+  }
+  
+  return grade // 返回原始值
+}
+
+// 根据年级确定级别
+function getLevelFromGrade(grade: string): 'primary' | 'secondary' {
+  if (!grade) return 'primary'
+  
+  const gradeStr = grade.toString().toLowerCase()
+  
+  // 小学年级
+  if (gradeStr.includes('一年级') || gradeStr.includes('二年级') || 
+      gradeStr.includes('三年级') || gradeStr.includes('四年级') || 
+      gradeStr.includes('五年级') || gradeStr.includes('六年级') ||
+      gradeStr.includes('standard 1') || gradeStr.includes('standard 2') ||
+      gradeStr.includes('standard 3') || gradeStr.includes('standard 4') ||
+      gradeStr.includes('standard 5') || gradeStr.includes('standard 6') ||
+      gradeStr.includes('grade 1') || gradeStr.includes('grade 2') ||
+      gradeStr.includes('grade 3') || gradeStr.includes('grade 4') ||
+      gradeStr.includes('grade 5') || gradeStr.includes('grade 6')) {
+    return 'primary'
+  }
+  
+  // 中学年级
+  if (gradeStr.includes('初一') || gradeStr.includes('初二') || gradeStr.includes('初三') ||
+      gradeStr.includes('高一') || gradeStr.includes('高二') || gradeStr.includes('高三') ||
+      gradeStr.includes('form 1') || gradeStr.includes('form 2') || gradeStr.includes('form 3') ||
+      gradeStr.includes('form 4') || gradeStr.includes('form 5') || gradeStr.includes('form 6')) {
+    return 'secondary'
+  }
+  
+  // 数字年级判断
+  const gradeNum = parseInt(gradeStr)
+  if (!isNaN(gradeNum)) {
+    return gradeNum <= 6 ? 'primary' : 'secondary'
+  }
+  
+  return 'primary' // 默认
 } 
