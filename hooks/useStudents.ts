@@ -188,7 +188,7 @@ const convertPocketBaseStudent = (pbStudent: PocketBaseStudent): Student => {
 
 export const useStudents = (options: UseStudentsOptions = {}) => {
   const {
-    dataType = 'primary',
+    dataType = undefined,
     enableCache = true,
     cacheTimeout = 5 * 60 * 1000, // 5 minutes
     pageSize = 50
