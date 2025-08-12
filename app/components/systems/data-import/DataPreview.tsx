@@ -75,9 +75,9 @@ export function DataPreview({ previewData, stats }: DataPreviewProps) {
                 <TableRow>
                   <TableHead>姓名</TableHead>
                   <TableHead>年级</TableHead>
-                  <TableHead>家长姓名</TableHead>
+                  <TableHead>性别</TableHead>
                   <TableHead>联系电话</TableHead>
-                  <TableHead>邮箱</TableHead>
+                  <TableHead>中心</TableHead>
                   <TableHead>地址</TableHead>
                 </TableRow>
               </TableHeader>
@@ -86,9 +86,9 @@ export function DataPreview({ previewData, stats }: DataPreviewProps) {
                   <TableRow key={index}>
                     <TableCell className="font-medium">{student.name}</TableCell>
                     <TableCell>{student.grade}</TableCell>
-                    <TableCell>{student.parentName}</TableCell>
-                    <TableCell>{student.phone}</TableCell>
-                    <TableCell>{student.email}</TableCell>
+                    <TableCell>{student.gender}</TableCell>
+                    <TableCell>{student.phone || student.parentPhone}</TableCell>
+                    <TableCell>{student.center || 'WX 01'}</TableCell>
                     <TableCell>{student.address}</TableCell>
                   </TableRow>
                 ))}

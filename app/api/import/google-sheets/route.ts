@@ -257,12 +257,17 @@ class GoogleSheetsAPI {
               case '食物':
                 student.food = row[colIndex]
                 break
-              case 'drink':
-              case '饮料':
-                student.drink = row[colIndex]
-                break
-              default:
-                student[cleanHeader] = row[colIndex]
+                             case 'drink':
+               case '饮料':
+                 student.drink = row[colIndex]
+                 break
+               case 'center':
+               case '中心':
+               case 'centre':
+                 student.center = row[colIndex]
+                 break
+               default:
+                 student[cleanHeader] = row[colIndex]
             }
           }
         })
@@ -390,23 +395,36 @@ export async function POST(request: NextRequest) {
                 home_address: studentData.address || '',
                 gender: studentData.gender || '',
                 dob: studentData.dateOfBirth || '',
-                Center: 'WX 01', // 默认中心
-                level: (() => {
-                  // 根据年级自动设置level
-                  if (studentData.grade) {
-                    const gradeMatch = studentData.grade.match(/Standard\s*(\d+)/i)
-                    if (gradeMatch) {
-                      const gradeNum = parseInt(gradeMatch[1])
-                      return gradeNum <= 6 ? 'primary' : 'secondary'
-                    }
-                    // 尝试直接解析数字
-                    const gradeNum = parseInt(studentData.grade)
-                    if (!isNaN(gradeNum)) {
-                      return gradeNum <= 6 ? 'primary' : 'secondary'
-                    }
-                  }
-                  return 'primary' // 默认值
-                })()
+                                 Center: studentData.center || 'WX 01', // 使用导入的中心或默认值
+                                 level: (() => {
+                   // 根据年级自动设置level
+                   if (studentData.grade) {
+                     // 处理中文年级格式
+                     if (studentData.grade.includes('一年级') || studentData.grade.includes('二年级') || 
+                         studentData.grade.includes('三年级') || studentData.grade.includes('四年级') || 
+                         studentData.grade.includes('五年级') || studentData.grade.includes('六年级')) {
+                       return 'primary'
+                     }
+                     if (studentData.grade.includes('初一') || studentData.grade.includes('初二') || 
+                         studentData.grade.includes('初三')) {
+                       return 'secondary'
+                     }
+                     
+                     // 处理Standard格式
+                     const gradeMatch = studentData.grade.match(/Standard\s*(\d+)/i)
+                     if (gradeMatch) {
+                       const gradeNum = parseInt(gradeMatch[1])
+                       return gradeNum <= 6 ? 'primary' : 'secondary'
+                     }
+                     
+                     // 尝试直接解析数字
+                     const gradeNum = parseInt(studentData.grade)
+                     if (!isNaN(gradeNum)) {
+                       return gradeNum <= 6 ? 'primary' : 'secondary'
+                     }
+                   }
+                   return 'primary' // 默认值
+                 })()
               }
 
               await addStudent(pocketbaseStudent)
@@ -434,11 +452,95 @@ export async function POST(request: NextRequest) {
 
       case 'stats':
         // Return basic stats for PocketBase
-        return NextResponse.json({
-          total: 0, // This would need to be implemented with PocketBase queries
-          byGrade: {},
-          message: 'Stats feature not yet implemented for PocketBase'
-        })
+        try {
+          const { getAllStudents } = await import('@/lib/pocketbase-students')
+          const students = await getAllStudents()
+          
+          const byGrade = students.reduce((acc: Record<string, number>, student: any) => {
+            const grade = student.standard || '未知年级'
+            acc[grade] = (acc[grade] || 0) + 1
+            return acc
+          }, {})
+          
+          return NextResponse.json({
+            total: students.length,
+            byGrade,
+            message: `当前数据库中有 ${students.length} 个学生`
+          })
+        } catch (error) {
+          return NextResponse.json({
+            total: 0,
+            byGrade: {},
+            message: '无法获取统计数据',
+            error: error instanceof Error ? error.message : '未知错误'
+          })
+        }
+
+      case 'check-environment':
+        // Check environment configuration
+        const envCheck = {
+          hasCredentials: !!process.env.GOOGLE_SERVICE_ACCOUNT_JSON,
+          hasPocketBaseUrl: !!process.env.NEXT_PUBLIC_POCKETBASE_URL,
+          message: '环境检查完成'
+        }
+        return NextResponse.json(envCheck)
+
+      case 'check-permissions':
+        // Check Google Sheets permissions
+        try {
+          const testResponse = await sheetsAPI.sheets.spreadsheets.get({
+            spreadsheetId: spreadsheetId || 'test',
+            ranges: ['A1:A1']
+          })
+          return NextResponse.json({
+            success: true,
+            message: 'Google Sheets权限正常'
+          })
+        } catch (error) {
+          return NextResponse.json({
+            success: false,
+            message: 'Google Sheets权限检查失败',
+            error: error instanceof Error ? error.message : '未知错误'
+          })
+        }
+
+      case 'test-pocketbase':
+        // Test PocketBase connection
+        try {
+          const { getAllStudents } = await import('@/lib/pocketbase-students')
+          await getAllStudents()
+          return NextResponse.json({
+            success: true,
+            message: 'PocketBase连接正常'
+          })
+        } catch (error) {
+          return NextResponse.json({
+            success: false,
+            message: 'PocketBase连接失败',
+            error: error instanceof Error ? error.message : '未知错误'
+          })
+        }
+
+      case 'check-columns':
+        // Check spreadsheet columns
+        try {
+          const response = await sheetsAPI.sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: 'A1:Z1'
+          })
+          const headers = response.data.values?.[0] || []
+          return NextResponse.json({
+            success: true,
+            columns: headers,
+            message: `找到 ${headers.length} 个列`
+          })
+        } catch (error) {
+          return NextResponse.json({
+            success: false,
+            message: '无法获取列信息',
+            error: error instanceof Error ? error.message : '未知错误'
+          })
+        }
 
       default:
         return NextResponse.json(
