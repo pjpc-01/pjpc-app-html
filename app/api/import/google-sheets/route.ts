@@ -332,9 +332,19 @@ export async function POST(request: NextRequest) {
       if (credentials === 'env') {
         // Use environment variable for credentials
         const envCredentials = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
-        if (!envCredentials) {
+        if (!envCredentials || envCredentials === 'your-json-here') {
           return NextResponse.json(
-            { error: 'Environment credentials not configured. Please set GOOGLE_SERVICE_ACCOUNT_JSON.' },
+            { 
+              error: 'Google Sheets API not configured. Please set up Google Service Account credentials.',
+              setup_guide: {
+                step1: 'Go to Google Cloud Console (https://console.cloud.google.com/)',
+                step2: 'Create a new project or select existing one',
+                step3: 'Enable Google Sheets API',
+                step4: 'Create a Service Account',
+                step5: 'Download JSON key file',
+                step6: 'Add the JSON content to GOOGLE_SERVICE_ACCOUNT_JSON in .env.local'
+              }
+            },
             { status: 400 }
           )
         }
