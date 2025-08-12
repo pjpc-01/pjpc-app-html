@@ -136,17 +136,30 @@ const convertPocketBaseStudent = (pbStudent: PocketBaseStudent): Student => {
     image: '', // PocketBase doesn't have image field
     calculatedGrade: convertGradeFormat(pbStudent.standard || ''),
       level: (() => {
-    // 改进level计算逻辑
+    // 改进level计算逻辑 - 支持中文年级格式
     let calculatedLevel = pbStudent.level
+    
     if (!calculatedLevel && pbStudent.standard) {
+      const standard = pbStudent.standard.trim()
+      
+      // 处理中文年级格式
+      if (standard.includes('初一') || standard.includes('初二') || standard.includes('初三') ||
+          standard.includes('高一') || standard.includes('高二') || standard.includes('高三') ||
+          standard.includes('Form 1') || standard.includes('Form 2') || standard.includes('Form 3') ||
+          standard.includes('Form 4') || standard.includes('Form 5')) {
+        calculatedLevel = 'secondary'
+      }
       // 处理 "Standard 1", "Standard 2" 等格式
-      const standardMatch = pbStudent.standard.match(/Standard\s*(\d+)/i)
-      if (standardMatch) {
-        const gradeNum = parseInt(standardMatch[1])
-        calculatedLevel = gradeNum <= 6 ? 'primary' : 'secondary'
-      } else {
-        // 尝试直接解析数字
-        const gradeNum = parseInt(pbStudent.standard)
+      else if (standard.match(/Standard\s*(\d+)/i)) {
+        const standardMatch = standard.match(/Standard\s*(\d+)/i)
+        if (standardMatch) {
+          const gradeNum = parseInt(standardMatch[1])
+          calculatedLevel = gradeNum <= 6 ? 'primary' : 'secondary'
+        }
+      }
+      // 处理数字年级格式
+      else {
+        const gradeNum = parseInt(standard)
         if (!isNaN(gradeNum)) {
           calculatedLevel = gradeNum <= 6 ? 'primary' : 'secondary'
         } else {

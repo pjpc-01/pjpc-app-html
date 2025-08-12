@@ -48,6 +48,10 @@ export default function StudentManagement({
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null)
+  
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(15)
 
   // Default values based on dataType
   const defaultTitle = dataType === 'primary' ? '小学生管理' : 
@@ -171,8 +175,42 @@ export default function StudentManagement({
       }
     })
 
-    return filtered
-  }, [students, searchTerm, selectedGrade, selectedCenter, selectedGender, selectedLevel, 
+         return filtered
+   }, [students, searchTerm, selectedGrade, selectedCenter, selectedGender, selectedLevel, 
+       enrollmentYear, ageRange, hasPhone, hasAddress, sortBy, sortOrder])
+
+  // 分页逻辑
+  const paginatedStudents = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize
+    const endIndex = startIndex + pageSize
+    return filteredStudents.slice(startIndex, endIndex)
+  }, [filteredStudents, currentPage, pageSize])
+
+  const totalPages = Math.ceil(filteredStudents.length / pageSize)
+  const hasNextPage = currentPage < totalPages
+  const hasPrevPage = currentPage > 1
+
+  // 分页处理函数
+  const handleNextPage = () => {
+    if (hasNextPage) {
+      setCurrentPage(prev => prev + 1)
+    }
+  }
+
+  const handlePrevPage = () => {
+    if (hasPrevPage) {
+      setCurrentPage(prev => prev - 1)
+    }
+  }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  // 当筛选条件改变时重置到第一页
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, selectedGrade, selectedCenter, selectedGender, selectedLevel, 
       enrollmentYear, ageRange, hasPhone, hasAddress, sortBy, sortOrder])
 
   const handleAddStudent = async (studentData: Partial<Student>) => {
@@ -315,7 +353,7 @@ export default function StudentManagement({
 
       {/* Statistics */}
       <div>
-        <StudentStats students={filteredStudents} />
+        <StudentStats students={filteredStudents} totalStudents={students.length} />
       </div>
 
       {/* Bulk Actions */}
@@ -332,7 +370,7 @@ export default function StudentManagement({
       {/* Student List */}
       <div>
         <StudentList
-          students={filteredStudents}
+          students={paginatedStudents}
           loading={loading}
           selectedStudents={selectedStudents}
           onSelectStudent={handleSelectStudent}
@@ -342,6 +380,63 @@ export default function StudentManagement({
           onDeleteStudent={handleDeleteStudent}
         />
       </div>
+
+      {/* 分页控件 */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            显示第 {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredStudents.length)} 条，
+            共 {filteredStudents.length} 条记录
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrevPage}
+              disabled={!hasPrevPage}
+            >
+              上一页
+            </Button>
+            
+            {/* 页码显示 */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum
+                if (totalPages <= 5) {
+                  pageNum = i + 1
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i
+                } else {
+                  pageNum = currentPage - 2 + i
+                }
+                
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(pageNum)}
+                    className="w-8 h-8 p-0"
+                  >
+                    {pageNum}
+                  </Button>
+                )
+              })}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextPage}
+              disabled={!hasNextPage}
+            >
+              下一页
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Add/Edit Student Dialog */}
       <StudentForm
