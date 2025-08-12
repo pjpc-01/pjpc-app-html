@@ -71,11 +71,38 @@ export const StudentFeeMatrix = () => {
     const grades = [...new Set(students
       .filter(student => student.grade !== '已毕业')
       .map(s => s.grade))]
+    
     return grades.sort((a, b) => {
-      // Extract numbers from grade strings (e.g., "Standard 3" -> 3)
+      // Handle Chinese grade names (一年级, 二年级, etc.)
+      const chineseGradeOrder: Record<string, number> = {
+        '一年级': 1, '二年级': 2, '三年级': 3, '四年级': 4, '五年级': 5, '六年级': 6,
+        '初一': 7, '初二': 8, '初三': 9,
+        '高一': 10, '高二': 11, '高三': 12
+      }
+      
+      // Check if both grades are Chinese grades
+      if (chineseGradeOrder[a] !== undefined && chineseGradeOrder[b] !== undefined) {
+        return chineseGradeOrder[a] - chineseGradeOrder[b]
+      }
+      
+      // Check if only one is Chinese grade
+      if (chineseGradeOrder[a] !== undefined) {
+        return -1 // Chinese grades come first
+      }
+      if (chineseGradeOrder[b] !== undefined) {
+        return 1 // Chinese grades come first
+      }
+      
+      // Handle English grade names (Standard 1, Standard 2, etc.)
       const numA = parseInt(a.match(/\d+/)?.[0] || '0')
       const numB = parseInt(b.match(/\d+/)?.[0] || '0')
-      return numA - numB
+      
+      if (numA !== 0 && numB !== 0) {
+        return numA - numB
+      }
+      
+      // If no numbers found, sort alphabetically
+      return a.localeCompare(b)
     })
   }, [students])
 
@@ -147,14 +174,14 @@ export const StudentFeeMatrix = () => {
     if (!student) return
 
     // Calculate total amount for the student
-    const studentTotal = calculateStudentTotal(Number(studentId), activeFees)
+    const studentTotal = calculateStudentTotal(studentId, activeFees)
     
     // Create invoice items based on assigned fees
     const invoiceItems = activeFees
-      .filter(fee => isAssigned(Number(studentId), fee.id))
+      .filter(fee => isAssigned(studentId, fee.id))
       .flatMap(fee => 
         fee.subItems
-          .filter(subItem => getStudentSubItemState(Number(studentId), fee.id, subItem.id))
+          .filter(subItem => getStudentSubItemState(studentId, fee.id, subItem.id))
           .map(subItem => ({ name: `${fee.name} - ${subItem.name}`, amount: subItem.amount }))
       )
 
@@ -285,11 +312,11 @@ export const StudentFeeMatrix = () => {
       // Use selected sub-items
       targetStudents.forEach(studentId => {
         selectedSubItems.forEach(({ feeId, subItemId }) => {
-          const currentState = getStudentSubItemState(Number(studentId), feeId, subItemId)
+          const currentState = getStudentSubItemState(studentId, feeId, subItemId)
           if (action === 'enable' && !currentState) {
-            toggleStudentSubItem(Number(studentId), feeId, subItemId)
+            toggleStudentSubItem(studentId, feeId, subItemId)
           } else if (action === 'disable' && currentState) {
-            toggleStudentSubItem(Number(studentId), feeId, subItemId)
+            toggleStudentSubItem(studentId, feeId, subItemId)
           }
         })
       })
@@ -302,11 +329,11 @@ export const StudentFeeMatrix = () => {
       targetStudents.forEach(studentId => {
         targetFees.forEach(fee => {
           fee.subItems.forEach(subItem => {
-            const currentState = getStudentSubItemState(Number(studentId), fee.id, subItem.id)
+            const currentState = getStudentSubItemState(studentId, fee.id, subItem.id)
             if (action === 'enable' && !currentState) {
-              toggleStudentSubItem(Number(studentId), fee.id, subItem.id)
+              toggleStudentSubItem(studentId, fee.id, subItem.id)
             } else if (action === 'disable' && currentState) {
-              toggleStudentSubItem(Number(studentId), fee.id, subItem.id)
+              toggleStudentSubItem(studentId, fee.id, subItem.id)
             }
           })
         })
@@ -321,13 +348,24 @@ export const StudentFeeMatrix = () => {
     setSelectedGrades([])
   }
 
+  // New function to handle batch toggling from individual student cards
+  const handleBatchToggleSubItem = (feeId: number, subItemId: number, targetState: boolean) => {
+    if (!editMode || !batchMode) return
+
+    // Toggle the same sub-item for all filtered students
+    filteredStudents.forEach(student => {
+      const currentState = getStudentSubItemState(student.id, feeId, subItemId)
+      if (currentState !== targetState) {
+        toggleStudentSubItem(student.id, feeId, subItemId)
+      }
+    })
+  }
+
   return (
     <div className="space-y-6">
       <StudentFeeMatrixHeader
         editMode={editMode}
         onToggleEditMode={toggleEditMode}
-        batchDialogOpen={batchDialogOpen}
-        onBatchDialogOpenChange={setBatchDialogOpen}
         batchMode={batchMode}
         onToggleBatchMode={toggleBatchMode}
       />
@@ -373,7 +411,7 @@ export const StudentFeeMatrix = () => {
           filteredStudents.map(student => {
             const studentId = student.id
             const isExpanded = expandedStudents.includes(studentId)
-            const studentTotal = calculateStudentTotal(Number(studentId), activeFees)
+                         const studentTotal = calculateStudentTotal(studentId, activeFees)
             
             return (
               <StudentCard
@@ -395,6 +433,8 @@ export const StudentFeeMatrix = () => {
                 toggleStudentSubItem={toggleStudentSubItem}
                 getStudentSubItemState={getStudentSubItemState}
                 hasInvoiceThisMonth={hasInvoiceThisMonth}
+                batchMode={batchMode}
+                onBatchToggleSubItem={handleBatchToggleSubItem}
               />
             )
           })

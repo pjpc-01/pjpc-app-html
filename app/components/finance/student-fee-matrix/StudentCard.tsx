@@ -39,6 +39,7 @@ interface FeeItem {
 interface Student {
   id: string
   name: string
+  studentId: string
   grade: string
   parentName: string
 }
@@ -57,10 +58,12 @@ interface StudentCardProps {
   expandedFees: Map<string, boolean>
   onToggleFeeExpansion: (studentId: string, feeId: number) => void
   isFeeExpanded: (studentId: string, feeId: number) => boolean
-  isAssigned: (studentId: number, feeId: number) => boolean
-  toggleStudentSubItem: (studentId: number, feeId: number, subItemId: number) => void
-  getStudentSubItemState: (studentId: number, feeId: number, subItemId: number) => boolean
+  isAssigned: (studentId: string, feeId: number) => boolean
+  toggleStudentSubItem: (studentId: string, feeId: number, subItemId: number) => void
+  getStudentSubItemState: (studentId: string, feeId: number, subItemId: number) => boolean
   hasInvoiceThisMonth: (studentId: string) => boolean
+  batchMode: boolean
+  onBatchToggleSubItem: (feeId: number, subItemId: number, targetState: boolean) => void
 }
 
 export const StudentCard = ({
@@ -80,15 +83,24 @@ export const StudentCard = ({
   isAssigned,
   toggleStudentSubItem,
   getStudentSubItemState,
-  hasInvoiceThisMonth
+  hasInvoiceThisMonth,
+  batchMode,
+  onBatchToggleSubItem
 }: StudentCardProps) => {
   const studentId = student.id
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
   const toggleSubItemActive = (studentId: string, feeId: number, subItemId: number) => {
     if (editMode) {
-      console.log(`Toggling sub-item for student ${studentId}, fee ${feeId}, subItem ${subItemId}`)
-      toggleStudentSubItem(Number(studentId), feeId, subItemId)
+      if (batchMode) {
+        // In batch mode, toggle the same sub-item for all students
+        const currentState = getStudentSubItemState(studentId, feeId, subItemId)
+        const targetState = !currentState
+        onBatchToggleSubItem(feeId, subItemId, targetState)
+      } else {
+        // Normal mode - toggle only for this student
+        toggleStudentSubItem(studentId, feeId, subItemId)
+      }
     }
   }
 
@@ -119,12 +131,12 @@ export const StudentCard = ({
                 ) : (
                   <ChevronRight className="h-4 w-4 text-gray-500" />
                 )}
-                <div>
-                  <h3 className="font-medium text-gray-900">{student.name}</h3>
-                  <p className="text-sm text-gray-600">
-                    {student.grade} • {student.parentName} • ID: {student.id}
-                  </p>
-                </div>
+                                 <div>
+                   <h3 className="font-medium text-gray-900">{student.name}</h3>
+                   <p className="text-sm text-gray-600">
+                     {student.grade} • 学号: {student.studentId}
+                   </p>
+                 </div>
               </div>
               <div className="text-right">
                 <div className="flex items-center justify-end gap-4">
@@ -175,37 +187,37 @@ export const StudentCard = ({
                 {activeFees.map(fee => {
                   const feeExpanded = isFeeExpanded(studentId, fee.id)
                   const feeTotal = fee.subItems
-                    .filter(subItem => getStudentSubItemState(Number(studentId), fee.id, subItem.id))
+                    .filter(subItem => getStudentSubItemState(studentId, fee.id, subItem.id))
                     .reduce((total, subItem) => total + subItem.amount, 0)
                   
                   return (
                     <div key={fee.id} className="space-y-2">
-                      <FeeCard
-                        fee={fee}
-                        isAssigned={isAssigned(Number(studentId), fee.id)}
-                        onToggle={() => onToggleFeeExpansion(studentId, fee.id)}
-                        isExpanded={feeExpanded}
-                        calculateAmount={() => feeTotal}
-                      />
-                      
-                      {/* Sub-items - Only show when fee is expanded */}
-                      {feeExpanded && fee.subItems && (
-                        <div className="pl-8 space-y-2">
-                          {fee.subItems.map((subItem) => (
-                            <div key={subItem.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border-l-2 border-blue-200">
-                              <div className="flex items-center gap-4">
-                                <span className="text-sm font-medium min-w-[120px]">{subItem.name}</span>
-                                <ToggleSwitch
-                                  checked={getStudentSubItemState(Number(studentId), fee.id, subItem.id)}
-                                  onChange={() => toggleSubItemActive(studentId, fee.id, subItem.id)}
-                                  className={!editMode ? "opacity-50 cursor-not-allowed" : ""}
-                                />
-                              </div>
-                              <span className="text-sm font-medium text-blue-600">RM {subItem.amount}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                                             <FeeCard
+                         fee={fee}
+                         isAssigned={isAssigned(studentId, fee.id)}
+                         onToggle={() => onToggleFeeExpansion(studentId, fee.id)}
+                         isExpanded={feeExpanded}
+                         calculateAmount={() => feeTotal}
+                       />
+                       
+                       {/* Sub-items - Only show when fee is expanded */}
+                       {feeExpanded && fee.subItems && (
+                         <div className="pl-8 space-y-2">
+                           {fee.subItems.map((subItem) => (
+                             <div key={subItem.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border-l-2 border-blue-200">
+                               <div className="flex items-center gap-4">
+                                 <span className="text-sm font-medium min-w-[120px]">{subItem.name}</span>
+                                 <ToggleSwitch
+                                   checked={getStudentSubItemState(studentId, fee.id, subItem.id)}
+                                   onChange={() => toggleSubItemActive(studentId, fee.id, subItem.id)}
+                                   className={!editMode ? "opacity-50 cursor-not-allowed" : ""}
+                                 />
+                               </div>
+                               <span className="text-sm font-medium text-blue-600">RM {subItem.amount}</span>
+                             </div>
+                           ))}
+                         </div>
+                       )}
                     </div>
                   )
                 })}
