@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FileText, Download, Printer, Send, CheckCircle, AlertCircle, Loader2, Eye, Edit } from "lucide-react"
+import { FileText, Download, Printer, Send, CheckCircle, AlertCircle, Loader2, Eye } from "lucide-react"
 
 interface InvoiceListProps {
   invoices: any[]
@@ -18,7 +18,6 @@ interface InvoiceListProps {
   onPrint: (invoice: any) => void
   onSend: (invoice: any) => void
   onView: (invoice: any) => void
-  onEdit: (invoice: any) => void
   onDelete: (invoice: any) => void
   payments?: any[] // Add payments to show payment status
 }
@@ -31,7 +30,6 @@ export function InvoiceList({
   onPrint,
   onSend,
   onView,
-  onEdit,
   onDelete,
   payments = []
 }: InvoiceListProps) {
@@ -86,14 +84,14 @@ export function InvoiceList({
               id="search"
               placeholder="搜索发票号码、学生姓名..."
               value={filters.search || ""}
-              onChange={(e) => setFilters((prev: any) => ({ ...prev, search: e.target.value }))}
+              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
             />
           </div>
           <div className="w-48">
             <Label>缴费状态</Label>
             <Select 
               value={filters.status || "all"} 
-              onValueChange={(value) => setFilters((prev: any) => ({ ...prev, status: value }))}
+              onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -109,7 +107,7 @@ export function InvoiceList({
             <Label>年级</Label>
             <Select 
               value={filters.grade || "all"} 
-              onValueChange={(value) => setFilters((prev: any) => ({ ...prev, grade: value }))}
+              onValueChange={(value) => setFilters(prev => ({ ...prev, grade: value }))}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -189,13 +187,6 @@ export function InvoiceList({
                         onClick={() => onSend(invoice)}
                       >
                         <Send className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => onEdit(invoice)}
-                      >
-                        <Edit className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>

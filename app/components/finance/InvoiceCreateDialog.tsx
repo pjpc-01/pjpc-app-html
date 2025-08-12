@@ -150,14 +150,14 @@ export function InvoiceCreateDialog({
                     id="dueDate"
                     type="date"
                     value={invoiceFormData.dueDate}
-                    onChange={(e) => setInvoiceFormData((prev: any) => ({ ...prev, dueDate: e.target.value }))}
+                    onChange={(e) => setInvoiceFormData(prev => ({ ...prev, dueDate: e.target.value }))}
                   />
                 </div>
                 <div>
                   <Label htmlFor="paymentMethod">支付方式</Label>
                   <Select 
                     value={invoiceFormData.paymentMethod} 
-                    onValueChange={(value) => setInvoiceFormData((prev: any) => ({ ...prev, paymentMethod: value }))}
+                    onValueChange={(value) => setInvoiceFormData(prev => ({ ...prev, paymentMethod: value }))}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -175,7 +175,7 @@ export function InvoiceCreateDialog({
                   <Textarea
                     id="notes"
                     value={invoiceFormData.notes}
-                    onChange={(e) => setInvoiceFormData((prev: any) => ({ ...prev, notes: e.target.value }))}
+                    onChange={(e) => setInvoiceFormData(prev => ({ ...prev, notes: e.target.value }))}
                     placeholder="输入发票备注信息..."
                   />
                 </div>
