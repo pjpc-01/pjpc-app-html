@@ -38,16 +38,32 @@
 - 浏览器会自动下载JSON密钥文件
 
 ### 6. 配置环境变量
-- 打开项目根目录下的 `.env.local` 文件
-- 找到 `# GOOGLE_SERVICE_ACCOUNT_JSON=your-json-here` 这一行
-- 删除 `#` 注释符号
-- 将下载的JSON文件内容复制粘贴到等号后面
-- 确保JSON格式正确（所有引号都需要保留）
 
-### 7. 示例配置
+#### 方法A：使用文件路径（推荐）
+1. 将下载的JSON文件保存到项目根目录（例如：`google-service-account.json`）
+2. 在 `.env.local` 文件中添加：
 ```env
-# 在 .env.local 文件中
-GOOGLE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"your-project-id","private_key_id":"abc123","private_key":"-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC...\n-----END PRIVATE KEY-----\n","client_email":"your-service@your-project.iam.gserviceaccount.com","client_id":"123456789","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"https://www.googleapis.com/robot/v1/metadata/x509/your-service%40your-project.iam.gserviceaccount.com"}
+GOOGLE_SERVICE_ACCOUNT_KEY_PATH=./google-service-account.json
+```
+
+#### 方法B：使用环境变量
+1. 打开项目根目录下的 `.env.local` 文件
+2. 将下载的JSON文件内容复制粘贴到 `GOOGLE_SERVICE_ACCOUNT_JSON` 变量中
+
+### 7. 完整的 .env.local 配置示例
+
+```env
+# PocketBase Configuration
+NEXT_PUBLIC_POCKETBASE_URL=http://pjpc.tplinkdns.com:8090
+PORT=3001
+NODE_ENV=development
+
+# Google Sheets API Configuration
+# 方法A：使用文件路径（推荐）
+GOOGLE_SERVICE_ACCOUNT_KEY_PATH=./google-service-account.json
+
+# 方法B：使用环境变量（备选）
+# GOOGLE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"your-project-id",...}
 ```
 
 ### 8. 重启开发服务器
@@ -92,8 +108,37 @@ A: 检查：
 - 服务账户是否有正确的权限
 - Google Sheets API是否已启用
 
+### Q: 文件路径配置失败怎么办？
+A: 检查：
+- 文件路径是否正确
+- 文件是否存在
+- 文件权限是否正确
+- 可以尝试使用绝对路径
+
 ## 安全注意事项
 
-- 不要将包含真实凭据的 `.env.local` 文件提交到Git
+- 不要将包含真实凭据的文件提交到Git
+- 将JSON文件添加到 `.gitignore` 中
 - 定期轮换服务账户密钥
 - 只给服务账户必要的最小权限
+
+## 推荐的文件结构
+
+```
+pjpc-app-html/
+├── .env.local                    # 环境变量配置
+├── google-service-account.json   # Google Service Account 密钥文件
+├── .gitignore                    # 确保包含 *.json
+└── ...
+```
+
+在 `.gitignore` 中添加：
+```
+# Google Service Account keys
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!components.json
+!next.config.mjs
+```
