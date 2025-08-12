@@ -33,6 +33,21 @@ export default function StudentStats({
     const hasPhone = students.filter(s => s.father_phone || s.mother_phone || s.phone).length
     const hasAddress = students.filter(s => s.home_address || s.address).length
     
+    // 按年龄范围分组
+    const byAgeRange = students.reduce((acc, student) => {
+      const age = student.age || 0
+      if (age >= 7 && age <= 12) {
+        acc['7-12岁'] = (acc['7-12岁'] || 0) + 1
+      } else if (age >= 13 && age <= 18) {
+        acc['13-18岁'] = (acc['13-18岁'] || 0) + 1
+      } else if (age > 0) {
+        acc['其他年龄'] = (acc['其他年龄'] || 0) + 1
+      } else {
+        acc['年龄未知'] = (acc['年龄未知'] || 0) + 1
+      }
+      return acc
+    }, {} as Record<string, number>)
+    
     // 按中心分组
     const byCenter = students.reduce((acc, student) => {
       const center = student.center || '未知中心'
@@ -79,6 +94,7 @@ export default function StudentStats({
       byCenter,
       byGrade,
       byGender,
+      byAgeRange,
       recent,
       newThisMonth,
       percentage: totalStudents > 0 ? Math.round((total / totalStudents) * 100) : 0
@@ -142,8 +158,8 @@ export default function StudentStats({
             </div>
           </div>
 
-          {/* 详细信息 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                     {/* 详细信息 */}
+           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* 按中心分布 */}
             {Object.keys(stats.byCenter).length > 0 && (
               <div>
@@ -189,33 +205,55 @@ export default function StudentStats({
               </div>
             )}
 
-            {/* 其他统计 */}
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                <TrendingUp className="h-3 w-3" />
-                其他统计
-              </h4>
-              <div className="space-y-1">
-                <div className="flex justify-between items-center text-xs">
-                  <span>有地址</span>
-                  <Badge variant="outline" className="text-xs">
-                    {stats.hasAddress}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span>最近入学</span>
-                  <Badge variant="outline" className="text-xs">
-                    {stats.recent}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span>本月新生</span>
-                  <Badge variant="outline" className="text-xs">
-                    {stats.newThisMonth}
-                  </Badge>
-                </div>
-              </div>
-            </div>
+                         {/* 年龄范围统计 */}
+             {Object.keys(stats.byAgeRange).length > 0 && (
+               <div>
+                 <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                   <TrendingUp className="h-3 w-3" />
+                   年龄分布
+                 </h4>
+                 <div className="space-y-1">
+                   {Object.entries(stats.byAgeRange)
+                     .sort(([,a], [,b]) => b - a)
+                     .map(([ageRange, count]) => (
+                       <div key={ageRange} className="flex justify-between items-center text-xs">
+                         <span>{ageRange}</span>
+                         <Badge variant="outline" className="text-xs">
+                           {count}
+                         </Badge>
+                       </div>
+                     ))}
+                 </div>
+               </div>
+             )}
+
+             {/* 其他统计 */}
+             <div>
+               <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                 <TrendingUp className="h-3 w-3" />
+                 其他统计
+               </h4>
+               <div className="space-y-1">
+                 <div className="flex justify-between items-center text-xs">
+                   <span>有地址</span>
+                   <Badge variant="outline" className="text-xs">
+                     {stats.hasAddress}
+                   </Badge>
+                 </div>
+                 <div className="flex justify-between items-center text-xs">
+                   <span>最近入学</span>
+                   <Badge variant="outline" className="text-xs">
+                     {stats.recent}
+                   </Badge>
+                 </div>
+                 <div className="flex justify-between items-center text-xs">
+                   <span>本月新生</span>
+                   <Badge variant="outline" className="text-xs">
+                     {stats.newThisMonth}
+                   </Badge>
+                 </div>
+               </div>
+             </div>
           </div>
         </div>
       </CardContent>
