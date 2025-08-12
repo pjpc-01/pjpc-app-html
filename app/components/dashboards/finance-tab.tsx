@@ -54,6 +54,43 @@ export default function FinanceTab({ financialStats, financialLoading, setActive
         <p className="text-gray-600">全面的财务数据管理和分析</p>
       </div>
 
+      {/* Navigation Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                 <Card className={`cursor-pointer hover:shadow-lg transition-all duration-200 border-2 ${
+           financeSubTab === "financial-overview" 
+             ? "border-blue-300 bg-blue-50 shadow-lg" 
+             : "hover:border-blue-200"
+         }`}>
+           <CardContent className="p-6 text-center" onClick={() => handleCardClick("financial-overview")}>
+             <TrendingUp className="h-12 w-12 mx-auto mb-4 text-blue-600" />
+             <h3 className="font-semibold mb-2">财务概览</h3>
+             <p className="text-sm text-gray-600 mb-3">收入、支出和利润跟踪</p>
+             {!financialLoading && (
+               <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                 RM {financialStats?.netProfit?.toLocaleString() || 0}
+               </Badge>
+             )}
+           </CardContent>
+         </Card>
+
+         <Card className={`cursor-pointer hover:shadow-lg transition-all duration-200 border-2 ${
+           financeSubTab === "student-fees" 
+             ? "border-green-300 bg-green-50 shadow-lg" 
+             : "hover:border-green-200"
+         }`}>
+           <CardContent className="p-6 text-center" onClick={() => handleCardClick("student-fees")}>
+             <Users className="h-12 w-12 mx-auto mb-4 text-green-600" />
+             <h3 className="font-semibold mb-2">学生费用分配</h3>
+             <p className="text-sm text-gray-600 mb-3">学生费用分配和跟踪</p>
+             {!financialLoading && (
+               <Badge variant="secondary" className="bg-green-100 text-green-800">
+                 学生管理
+               </Badge>
+             )}
+           </CardContent>
+         </Card>
+      </div>
+
       {/* Finance Sub-tab Content */}
       {financeSubTab && (
         <div className="mt-8">
@@ -299,43 +336,6 @@ export default function FinanceTab({ financialStats, financialLoading, setActive
           )}
         </div>
       )}
-
-      {/* Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                 <Card className={`cursor-pointer hover:shadow-lg transition-all duration-200 border-2 ${
-           financeSubTab === "financial-overview" 
-             ? "border-blue-300 bg-blue-50 shadow-lg" 
-             : "hover:border-blue-200"
-         }`}>
-           <CardContent className="p-6 text-center" onClick={() => handleCardClick("financial-overview")}>
-             <TrendingUp className="h-12 w-12 mx-auto mb-4 text-blue-600" />
-             <h3 className="font-semibold mb-2">财务概览</h3>
-             <p className="text-sm text-gray-600 mb-3">收入、支出和利润跟踪</p>
-             {!financialLoading && (
-               <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                 RM {financialStats?.netProfit?.toLocaleString() || 0}
-               </Badge>
-             )}
-           </CardContent>
-         </Card>
-
-         <Card className={`cursor-pointer hover:shadow-lg transition-all duration-200 border-2 ${
-           financeSubTab === "student-fees" 
-             ? "border-green-300 bg-green-50 shadow-lg" 
-             : "hover:border-green-200"
-         }`}>
-           <CardContent className="p-6 text-center" onClick={() => handleCardClick("student-fees")}>
-             <Users className="h-12 w-12 mx-auto mb-4 text-green-600" />
-             <h3 className="font-semibold mb-2">学生费用分配</h3>
-             <p className="text-sm text-gray-600 mb-3">学生费用分配和跟踪</p>
-             {!financialLoading && (
-               <Badge variant="secondary" className="bg-green-100 text-green-800">
-                 学生管理
-               </Badge>
-             )}
-           </CardContent>
-         </Card>
-      </div>
     </div>
   )
 }
