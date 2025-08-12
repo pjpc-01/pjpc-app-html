@@ -134,6 +134,53 @@ export default function ReminderManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Reminder Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">本月提醒</CardTitle>
+            <Bell className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{reminders.length}</div>
+            <p className="text-xs text-muted-foreground">发送提醒数量</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">成功发送</CardTitle>
+            <Send className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{reminders.filter(r => r.status === 'sent').length}</div>
+            <p className="text-xs text-muted-foreground">成功发送数量</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">发送失败</CardTitle>
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{reminders.filter(r => r.status === 'failed').length}</div>
+            <p className="text-xs text-muted-foreground">发送失败数量</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">模板数量</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{templates.length}</div>
+            <p className="text-xs text-muted-foreground">提醒模板数量</p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Overdue Invoices */}
       <Card>
         <CardHeader>
@@ -313,53 +360,6 @@ export default function ReminderManagement() {
           </Table>
         </CardContent>
       </Card>
-
-      {/* Reminder Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">本月提醒</CardTitle>
-            <Bell className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{reminders.length}</div>
-            <p className="text-xs text-muted-foreground">发送提醒数量</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">成功发送</CardTitle>
-            <Send className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{reminders.filter(r => r.status === 'sent').length}</div>
-            <p className="text-xs text-muted-foreground">成功发送数量</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">发送失败</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{reminders.filter(r => r.status === 'failed').length}</div>
-            <p className="text-xs text-muted-foreground">发送失败数量</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">模板数量</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{templates.length}</div>
-            <p className="text-xs text-muted-foreground">提醒模板数量</p>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Add Template Dialog */}
       <Dialog open={isAddTemplateDialogOpen} onOpenChange={setIsAddTemplateDialogOpen}>
