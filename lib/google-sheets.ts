@@ -20,6 +20,7 @@ export interface StudentData {
   gender?: string
   food?: string
   drink?: string
+  center?: string
   [key: string]: any // Allow additional fields
 }
 
