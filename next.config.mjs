@@ -1,5 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // 解决 OpenSSL 兼容性问题
+  experimental: {
+    serverComponentsExternalPackages: ['googleapis'],
+  },
+  // 设置 Node.js 选项
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // 为服务器端添加 Node.js 选项
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        crypto: require.resolve('crypto-browserify'),
+        stream: require.resolve('stream-browserify'),
+        buffer: require.resolve('buffer'),
+      };
+    }
+    return config;
+  },
+
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -9,9 +27,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // 优化HMR配置 - 减少连接时间
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {
-      // 优化HMR配置 - 减少连接时间
       config.watchOptions = {
         poll: 1000, // 增加轮询间隔到1秒
         aggregateTimeout: 500, // 增加聚合超时到500ms
