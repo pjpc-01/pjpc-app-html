@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
@@ -17,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { FileText, Plus, Eye, Edit } from "lucide-react"
+import { FileText, Plus, Eye, Edit, Users } from "lucide-react"
 import { InvoiceTemplate } from "./InvoiceTemplateManager"
 
 interface InvoiceCreateDialogProps {
@@ -25,8 +26,7 @@ interface InvoiceCreateDialogProps {
   onOpenChange: (open: boolean) => void
   students: any[]
   onCreateInvoice: (student: any, formData: any) => void
-  selectedStudent: any
-  setSelectedStudent: (student: any) => void
+  onBulkCreate: (selectedGrades: string[], formData: any) => void
   invoiceFormData: any
   setInvoiceFormData: (data: any) => void
   availableTemplates: InvoiceTemplate[]
@@ -41,8 +41,7 @@ export function InvoiceCreateDialog({
   onOpenChange,
   students,
   onCreateInvoice,
-  selectedStudent,
-  setSelectedStudent,
+  onBulkCreate,
   invoiceFormData,
   setInvoiceFormData,
   availableTemplates,
@@ -51,20 +50,78 @@ export function InvoiceCreateDialog({
   isTemplateSelectDialogOpen,
   setIsTemplateSelectDialogOpen
 }: InvoiceCreateDialogProps) {
+  const [selectedGrades, setSelectedGrades] = useState<string[]>([])
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([])
+  
+  // Sort grades in ascending order (primary and secondary school)
+  const gradeOrder = [
+    '一年级', '二年级', '三年级', '四年级', '五年级', '六年级',
+    '初一', '初二', '初三',
+    '高一', '高二', '高三'
+  ]
+  const availableGrades = [...new Set(students.map(student => student.grade))]
+    .sort((a, b) => {
+      const aIndex = gradeOrder.indexOf(a)
+      const bIndex = gradeOrder.indexOf(b)
+      return aIndex - bIndex
+    })
+
   const studentsWithAmounts = students.map(student => ({
     ...student,
     amount: 1200 // This should be calculated from actual fee data
   }))
 
-  const handleCreateInvoiceForStudent = (student: any) => {
-    setSelectedStudent(student)
-    onOpenChange(false)
+  // Filter students by selected grades (show all if no grades selected)
+  const filteredStudents = students
+    .filter(student => selectedGrades.length === 0 || selectedGrades.includes(student.grade))
+    .map(student => ({
+      ...student,
+      amount: 1200 // This should be calculated from actual fee data
+    }))
+
+  // Get selected student objects
+  const selectedStudentObjects = studentsWithAmounts.filter(student => 
+    selectedStudents.includes(student.id.toString())
+  )
+
+
+
+  const handleGradeToggle = (grade: string) => {
+    setSelectedGrades(prev => 
+      prev.includes(grade) 
+        ? prev.filter(g => g !== grade)
+        : [...prev, grade]
+    )
+    // Clear selected students when grade filter changes
+    setSelectedStudents([])
   }
 
-  const handleSubmitInvoice = () => {
-    if (selectedStudent) {
-      onCreateInvoice(selectedStudent, invoiceFormData)
+  const handleStudentToggle = (studentId: string) => {
+    setSelectedStudents(prev => 
+      prev.includes(studentId) 
+        ? prev.filter(id => id !== studentId)
+        : [...prev, studentId]
+    )
+  }
+
+  const handleUnifiedCreate = () => {
+    if (selectedStudents.length === 0) return
+    
+    if (selectedStudents.length === 1) {
+      // Single student - use individual create
+      const student = filteredStudents.find(s => s.id.toString() === selectedStudents[0])
+      if (student) {
+        onCreateInvoice(student, invoiceFormData)
+      }
+    } else {
+      // Multiple students - use bulk create
+      const selectedGrades = [...new Set(selectedStudentObjects.map(s => s.grade))]
+      onBulkCreate(selectedGrades, invoiceFormData)
     }
+    
+    onOpenChange(false)
+    setSelectedStudents([])
+    setSelectedGrades([])
   }
 
   return (
@@ -76,159 +133,136 @@ export function InvoiceCreateDialog({
             <DialogDescription>为学生创建发票</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Grade Filter */}
             <div>
-              <Label>选择学生</Label>
+              <Label>选择年级</Label>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {availableGrades.map(grade => (
+                  <div key={grade} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`grade-${grade}`}
+                      checked={selectedGrades.includes(grade)}
+                      onCheckedChange={() => handleGradeToggle(grade)}
+                    />
+                    <Label htmlFor={`grade-${grade}`} className="text-sm">{grade}</Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+                         {/* Student Selection */}
+             <div>
+               <Label>选择学生</Label>
+               <div className="mb-2 text-sm text-gray-600">
+                 {selectedGrades.length > 0 
+                   ? `已选择 ${selectedGrades.length} 个年级，共 ${filteredStudents.length} 个学生`
+                   : `显示所有学生，共 ${filteredStudents.length} 个学生`
+                 }
+               </div>
               <div className="max-h-64 overflow-y-auto border rounded-md mt-2">
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox 
+                          checked={filteredStudents.length > 0 && selectedStudents.length === filteredStudents.length}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedStudents(filteredStudents.map(s => s.id.toString()))
+                            } else {
+                              setSelectedStudents([])
+                            }
+                          }}
+                        />
+                      </TableHead>
                       <TableHead>学生姓名</TableHead>
                       <TableHead>年级</TableHead>
                       <TableHead>家长姓名</TableHead>
                       <TableHead>应缴费金额</TableHead>
-                      <TableHead>操作</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
-                    {studentsWithAmounts.map(student => (
-                      <TableRow key={student.id}>
-                        <TableCell className="font-medium">{student.name}</TableCell>
-                        <TableCell>{student.grade}</TableCell>
-                        <TableCell>{student.parentName}</TableCell>
-                        <TableCell className="font-semibold text-green-600">
-                          RM {student.amount}
-                        </TableCell>
-                        <TableCell>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleCreateInvoiceForStudent(student)}
+                                     <TableBody>
+                     {filteredStudents.length === 0 ? (
+                       <TableRow>
+                         <TableCell colSpan={5} className="text-center text-sm text-gray-500">
+                           暂无学生数据
+                         </TableCell>
+                       </TableRow>
+                     ) : (
+                                               filteredStudents.map(student => (
+                          <TableRow 
+                            key={student.id}
+                            className={`cursor-pointer hover:bg-gray-50 ${
+                              selectedStudents.includes(student.id.toString()) ? 'bg-blue-50' : ''
+                            }`}
+                            onClick={() => handleStudentToggle(student.id.toString())}
                           >
-                            创建发票
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
+                            <TableCell onClick={(e) => e.stopPropagation()}>
+                              <Checkbox 
+                                checked={selectedStudents.includes(student.id.toString())}
+                                onCheckedChange={() => handleStudentToggle(student.id.toString())}
+                              />
+                            </TableCell>
+                            <TableCell className="font-medium">{student.name}</TableCell>
+                            <TableCell>{student.grade}</TableCell>
+                            <TableCell>{student.parentName}</TableCell>
+                            <TableCell className="font-semibold text-green-600">
+                              RM {student.amount}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                     )}
+                   </TableBody>
                 </Table>
               </div>
             </div>
+
+            {/* Invoice Details */}
+            <div>
+              <Label>到期日期</Label>
+              <Input 
+                type="date" 
+                value={invoiceFormData.dueDate}
+                onChange={(e) => setInvoiceFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+              />
+            </div>
+
+            {/* Selection Summary */}
+            {selectedStudents.length > 0 && (
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="text-sm text-blue-800">
+                  <span className="font-medium">已选择 {selectedStudents.length} 个学生</span>
+                  {selectedStudents.length === 1 && (
+                    <span className="ml-2">
+                      ({selectedStudentObjects[0]?.name})
+                    </span>
+                  )}
+                  {selectedStudents.length > 1 && (
+                    <span className="ml-2">
+                      (来自 {new Set(selectedStudentObjects.map(s => s.grade)).size} 个年级)
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 取消
+              </Button>
+              <Button 
+                onClick={handleUnifiedCreate}
+                disabled={selectedStudents.length === 0 || !invoiceFormData.dueDate}
+              >
+                {selectedStudents.length === 1 ? '创建发票' : '批量创建发票'}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Create Invoice Form Dialog */}
-      <Dialog open={!!selectedStudent} onOpenChange={(open) => !open && setSelectedStudent(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>创建发票 - {selectedStudent?.name}</DialogTitle>
-            <DialogDescription>为学生 {selectedStudent?.name} 创建发票</DialogDescription>
-          </DialogHeader>
-          {selectedStudent && (
-            <div className="space-y-4">
-              {/* Student Info */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold mb-2">学生信息</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div><span className="font-medium">姓名:</span> {selectedStudent.name}</div>
-                  <div><span className="font-medium">年级:</span> {selectedStudent.grade}</div>
-                  <div><span className="font-medium">家长:</span> {selectedStudent.parentName}</div>
-                  <div><span className="font-medium">学生ID:</span> {selectedStudent.id}</div>
-                </div>
-              </div>
-
-              {/* Invoice Details */}
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="dueDate">到期日期</Label>
-                  <Input
-                    id="dueDate"
-                    type="date"
-                    value={invoiceFormData.dueDate}
-                    onChange={(e) => setInvoiceFormData(prev => ({ ...prev, dueDate: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="paymentMethod">支付方式</Label>
-                  <Select 
-                    value={invoiceFormData.paymentMethod} 
-                    onValueChange={(value) => setInvoiceFormData(prev => ({ ...prev, paymentMethod: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="bank_transfer">银行转账</SelectItem>
-                      <SelectItem value="cash">现金</SelectItem>
-                      <SelectItem value="check">支票</SelectItem>
-                      <SelectItem value="online">在线支付</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="notes">备注</Label>
-                  <Textarea
-                    id="notes"
-                    value={invoiceFormData.notes}
-                    onChange={(e) => setInvoiceFormData(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="输入发票备注信息..."
-                  />
-                </div>
-              </div>
-
-              {/* Fee Breakdown */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold mb-2">费用明细</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>基础学费</span>
-                    <span>RM 800</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>特色课程费</span>
-                    <span>RM 400</span>
-                  </div>
-                  <div className="flex justify-between text-sm text-gray-500">
-                    <span>折扣</span>
-                    <span>-RM 0</span>
-                  </div>
-                  <div className="flex justify-between font-semibold border-t pt-1">
-                    <span>总计:</span>
-                    <span>RM {selectedStudent.amount}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setSelectedStudent(null)
-                    setInvoiceFormData({
-                      dueDate: '',
-                      notes: '',
-                      paymentMethod: 'bank_transfer'
-                    })
-                  }}
-                >
-                  取消
-                </Button>
-                <Button 
-                  onClick={handleSubmitInvoice}
-                  disabled={!invoiceFormData.dueDate}
-                >
-                  创建发票
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      
 
       {/* Template Management Dialog */}
       <Dialog open={isTemplateSelectDialogOpen} onOpenChange={setIsTemplateSelectDialogOpen}>
