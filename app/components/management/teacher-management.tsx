@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
@@ -16,10 +17,13 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { UserPlus, Search, Edit, Users, Trash2, Mail, Phone, Calendar, BookOpen } from "lucide-react"
+import { UserPlus, Search, Edit, Users, Trash2, Mail, Phone, Calendar, BookOpen, BarChart3, List } from "lucide-react"
 
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { getStatusBadge, getStatusText, formatDate } from "@/lib/utils"
+import AdvancedTeacherFilters, { TeacherFilterState } from "../teacher/AdvancedTeacherFilters"
+import TeacherAnalytics from "../teacher/TeacherAnalytics"
+import TeacherBulkOperations from "../teacher/TeacherBulkOperations"
 
 // Types
 interface Teacher {
@@ -56,7 +60,6 @@ export default function TeacherManagement() {
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState("")
   const [selectedTeachers, setSelectedTeachers] = useState<string[]>([])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null)
@@ -68,6 +71,25 @@ export default function TeacherManagement() {
     department: "",
     experience: ""
   })
+  
+  // Enterprise-level state
+  const [viewMode, setViewMode] = useState<'list' | 'analytics'>('list')
+  const [filters, setFilters] = useState<TeacherFilterState>({
+    searchTerm: "",
+    selectedSubject: "",
+    selectedDepartment: "",
+    selectedStatus: "",
+    selectedExperience: "",
+    experienceRange: [0, 30],
+    hasPhone: false,
+    hasEmail: false,
+    emailVerified: false,
+    sortBy: "name",
+    sortOrder: 'asc',
+    dateRange: { from: undefined, to: undefined },
+    quickFilters: []
+  })
+  const [savedFilters, setSavedFilters] = useState<{ name: string; filters: TeacherFilterState }[]>([])
 
   // Data fetching
   const fetchTeachers = useCallback(async () => {
@@ -126,13 +148,133 @@ export default function TeacherManagement() {
     }
   }, [selectedTeachers, fetchTeachers])
 
-  // Filtering and selection
-  const filteredTeachers = teachers.filter(teacher =>
-    teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    teacher.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    teacher.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    teacher.department?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // Advanced filtering and sorting
+  const filteredTeachers = useMemo(() => {
+    let filtered = teachers
+
+    // Search term filtering
+    if (filters.searchTerm) {
+      filtered = filtered.filter(teacher =>
+        teacher.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        teacher.email.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        teacher.subject?.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        teacher.department?.toLowerCase().includes(filters.searchTerm.toLowerCase())
+      )
+    }
+
+    // Subject filtering
+    if (filters.selectedSubject) {
+      filtered = filtered.filter(teacher => teacher.subject === filters.selectedSubject)
+    }
+
+    // Department filtering
+    if (filters.selectedDepartment) {
+      filtered = filtered.filter(teacher => teacher.department === filters.selectedDepartment)
+    }
+
+    // Status filtering
+    if (filters.selectedStatus) {
+      filtered = filtered.filter(teacher => teacher.status === filters.selectedStatus)
+    }
+
+    // Experience range filtering
+    filtered = filtered.filter(teacher => {
+      const experience = teacher.experience || 0
+      return experience >= filters.experienceRange[0] && experience <= filters.experienceRange[1]
+    })
+
+    // Contact info filtering
+    if (filters.hasPhone) {
+      filtered = filtered.filter(teacher => teacher.phone)
+    }
+    if (filters.hasEmail) {
+      filtered = filtered.filter(teacher => teacher.email)
+    }
+    if (filters.emailVerified) {
+      filtered = filtered.filter(teacher => teacher.emailVerified)
+    }
+
+    // Date range filtering
+    if (filters.dateRange.from || filters.dateRange.to) {
+      filtered = filtered.filter(teacher => {
+        if (!teacher.createdAt) return false
+        const createdDate = new Date(teacher.createdAt)
+        if (filters.dateRange.from && createdDate < filters.dateRange.from) return false
+        if (filters.dateRange.to && createdDate > filters.dateRange.to) return false
+        return true
+      })
+    }
+
+    // Quick filters
+    filters.quickFilters.forEach(filterId => {
+      switch (filterId) {
+        case 'approved':
+          filtered = filtered.filter(teacher => teacher.status === 'approved')
+          break
+        case 'pending':
+          filtered = filtered.filter(teacher => teacher.status === 'pending')
+          break
+        case 'suspended':
+          filtered = filtered.filter(teacher => teacher.status === 'suspended')
+          break
+        case 'experienced':
+          filtered = filtered.filter(teacher => (teacher.experience || 0) >= 10)
+          break
+        case 'new':
+          filtered = filtered.filter(teacher => (teacher.experience || 0) < 3)
+          break
+        case 'verified':
+          filtered = filtered.filter(teacher => teacher.emailVerified)
+          break
+        case 'has-phone':
+          filtered = filtered.filter(teacher => teacher.phone)
+          break
+        case 'department-heads':
+          filtered = filtered.filter(teacher => teacher.department?.includes('组'))
+          break
+      }
+    })
+
+    // Sorting
+    filtered.sort((a, b) => {
+      let aValue: any
+      let bValue: any
+
+      switch (filters.sortBy) {
+        case 'name':
+          aValue = a.name
+          bValue = b.name
+          break
+        case 'experience':
+          aValue = a.experience || 0
+          bValue = b.experience || 0
+          break
+        case 'subject':
+          aValue = a.subject || ''
+          bValue = b.subject || ''
+          break
+        case 'department':
+          aValue = a.department || ''
+          bValue = b.department || ''
+          break
+        case 'createdAt':
+          aValue = new Date(a.createdAt || 0)
+          bValue = new Date(b.createdAt || 0)
+          break
+        default:
+          aValue = a.name
+          bValue = b.name
+      }
+
+      if (filters.sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1
+      } else {
+        return aValue < bValue ? 1 : -1
+      }
+    })
+
+    return filtered
+  }, [teachers, filters])
 
   const handleBulkSelect = (uid: string, checked: boolean) => {
     if (checked) {
@@ -148,6 +290,43 @@ export default function TeacherManagement() {
     } else {
       setSelectedTeachers([])
     }
+  }
+
+  // Enterprise-level handlers
+  const handleSaveFilter = (name: string, filterData: TeacherFilterState) => {
+    setSavedFilters(prev => [...prev, { name, filters: filterData }])
+  }
+
+  const handleLoadFilter = (name: string) => {
+    const savedFilter = savedFilters.find(f => f.name === name)
+    if (savedFilter) {
+      setFilters(savedFilter.filters)
+    }
+  }
+
+  const handleBulkUpdate = (updates: Partial<Teacher>) => {
+    console.log('Bulk update teachers:', updates)
+    // TODO: Implement bulk update logic
+  }
+
+  const handleBulkDelete = () => {
+    console.log('Bulk delete teachers')
+    // TODO: Implement bulk delete logic
+  }
+
+  const handleBulkExport = (format: 'csv' | 'excel' | 'pdf') => {
+    console.log('Bulk export teachers:', format)
+    // TODO: Implement bulk export logic
+  }
+
+  const handleBulkImport = (file: File) => {
+    console.log('Bulk import teachers:', file)
+    // TODO: Implement bulk import logic
+  }
+
+  const handleBulkMessage = (message: { subject: string; content: string; type: 'email' | 'sms' }) => {
+    console.log('Bulk message teachers:', message)
+    // TODO: Implement bulk message logic
   }
 
   // Form handling
@@ -220,92 +399,85 @@ export default function TeacherManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600">总老师数</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-600">已批准</p>
-                <p className="text-2xl font-bold">{stats.approved}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-yellow-600" />
-              <div>
-                <p className="text-sm text-gray-600">待审核</p>
-                <p className="text-2xl font-bold">{stats.pending}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Mail className="h-5 w-5 text-purple-600" />
-              <div>
-                <p className="text-sm text-gray-600">已验证邮箱</p>
-                <p className="text-2xl font-bold">{stats.verified}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* View Mode Toggle */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">教师管理</h2>
+          <p className="text-gray-600">管理学校教师信息和状态</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('list')}
+          >
+            <List className="h-4 w-4 mr-1" />
+            列表视图
+          </Button>
+          <Button
+            variant={viewMode === 'analytics' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('analytics')}
+          >
+            <BarChart3 className="h-4 w-4 mr-1" />
+            数据分析
+          </Button>
+        </div>
       </div>
 
-      {/* Main Content */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div>
-              <CardTitle>老师管理</CardTitle>
-              <CardDescription>管理学校教师信息和状态</CardDescription>
-            </div>
-            
-            <div className="flex gap-2">
-              {selectedTeachers.length > 0 && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleBulkDelete}
-                >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  删除选中 ({selectedTeachers.length})
-                </Button>
-              )}
-              
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <UserPlus className="h-4 w-4 mr-1" />
-                    添加老师
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>编辑老师信息</DialogTitle>
-                    <DialogDescription>
-                      更新老师的个人信息和教学信息
-                    </DialogDescription>
-                  </DialogHeader>
+      {/* Advanced Filters */}
+      <AdvancedTeacherFilters
+        filters={filters}
+        onFiltersChange={setFilters}
+        onSaveFilter={handleSaveFilter}
+        onLoadFilter={handleLoadFilter}
+        savedFilters={savedFilters}
+      />
+
+      {/* Bulk Operations */}
+      <TeacherBulkOperations
+        selectedTeachers={teachers.filter(teacher => selectedTeachers.includes(teacher.uid))}
+        onClearSelection={() => setSelectedTeachers([])}
+        onBulkUpdate={handleBulkUpdate}
+        onBulkDelete={handleBulkDelete}
+        onBulkExport={handleBulkExport}
+        onBulkImport={handleBulkImport}
+        onBulkMessage={handleBulkMessage}
+      />
+
+      {/* Analytics View */}
+      {viewMode === 'analytics' && (
+        <TeacherAnalytics 
+          teachers={teachers}
+          filteredTeachers={filteredTeachers}
+        />
+      )}
+
+              {/* Main Content - List View */}
+        {viewMode === 'list' && (
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                <div>
+                  <CardTitle>教师列表</CardTitle>
+                  <CardDescription>显示 {filteredTeachers.length} 位教师，共 {teachers.length} 位</CardDescription>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm">
+                        <UserPlus className="h-4 w-4 mr-1" />
+                        添加教师
+                      </Button>
+                    </DialogTrigger>
+                                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>编辑教师信息</DialogTitle>
+                      <DialogDescription>
+                        更新教师的个人信息和教学信息
+                      </DialogDescription>
+                    </DialogHeader>
                   
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
@@ -383,18 +555,6 @@ export default function TeacherManagement() {
         </CardHeader>
         
         <CardContent>
-          {/* Search */}
-          <div className="flex gap-2 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="搜索老师姓名、邮箱、科目或部门..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
 
           {/* Table */}
           <div className="rounded-md border">
@@ -503,11 +663,12 @@ export default function TeacherManagement() {
 
           {filteredTeachers.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              {searchTerm ? '没有找到匹配的老师' : '暂无老师数据'}
+              {filters.searchTerm || filters.selectedSubject || filters.selectedDepartment || filters.selectedStatus || filters.quickFilters.length > 0 ? '没有找到匹配的教师' : '暂无教师数据'}
             </div>
           )}
         </CardContent>
       </Card>
+        )}
     </div>
   )
 }
