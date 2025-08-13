@@ -11,15 +11,10 @@ import { Badge } from '@/components/ui/badge'
 import { Edit, Save, X, Calendar, GraduationCap } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { Student } from '@/hooks/useStudents'
+
 interface StudentGradeOverrideProps {
-  student: {
-    id: string
-    student_name: string
-    standard: string
-    dob: string
-    manual_grade_override?: string
-    grade_override_reason?: string
-  }
+  student: Student
   onUpdate: (studentId: string, updates: any) => Promise<void>
 }
 
@@ -40,8 +35,8 @@ const GRADE_OPTIONS = [
 
 export default function StudentGradeOverride({ student, onUpdate }: StudentGradeOverrideProps) {
   const [isEditing, setIsEditing] = useState(false)
-  const [manualGrade, setManualGrade] = useState(student.manual_grade_override || '')
-  const [overrideReason, setOverrideReason] = useState(student.grade_override_reason || '')
+  const [manualGrade, setManualGrade] = useState('')
+  const [overrideReason, setOverrideReason] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   // 计算基于出生日期的年级
@@ -70,8 +65,8 @@ export default function StudentGradeOverride({ student, onUpdate }: StudentGrade
     return '未知年级'
   }
 
-  const calculatedGrade = calculateGradeFromDOB(student.dob)
-  const hasOverride = !!student.manual_grade_override
+  const calculatedGrade = student.grade
+  const hasOverride = false
 
   const handleSave = async () => {
     if (!manualGrade.trim()) {
@@ -82,9 +77,7 @@ export default function StudentGradeOverride({ student, onUpdate }: StudentGrade
     setIsLoading(true)
     try {
       await onUpdate(student.id, {
-        standard: manualGrade,
-        manual_grade_override: manualGrade,
-        grade_override_reason: overrideReason
+        grade: manualGrade
       })
       
       toast.success('年级调整已保存')
@@ -97,8 +90,8 @@ export default function StudentGradeOverride({ student, onUpdate }: StudentGrade
   }
 
   const handleCancel = () => {
-    setManualGrade(student.manual_grade_override || '')
-    setOverrideReason(student.grade_override_reason || '')
+    setManualGrade('')
+    setOverrideReason('')
     setIsEditing(false)
   }
 
@@ -138,7 +131,7 @@ export default function StudentGradeOverride({ student, onUpdate }: StudentGrade
           <Label>当前年级</Label>
           <div className="flex items-center gap-2">
             <Badge variant={hasOverride ? "destructive" : "default"}>
-              {student.standard}
+              {student.grade}
             </Badge>
             {hasOverride && (
               <Badge variant="outline" className="text-xs">
@@ -155,11 +148,7 @@ export default function StudentGradeOverride({ student, onUpdate }: StudentGrade
             基于出生日期计算的年级
           </Label>
           <div className="text-sm text-muted-foreground">
-            {student.dob ? (
-              <span>出生日期: {student.dob} → {calculatedGrade}</span>
-            ) : (
-              <span>无出生日期信息</span>
-            )}
+            <span>当前年级: {student.grade}</span>
           </div>
         </div>
 
@@ -235,15 +224,7 @@ export default function StudentGradeOverride({ student, onUpdate }: StudentGrade
           </div>
         )}
 
-        {/* 显示调整原因 */}
-        {student.grade_override_reason && (
-          <div className="space-y-2">
-            <Label>调整原因</Label>
-            <div className="text-sm text-muted-foreground p-2 bg-muted rounded">
-              {student.grade_override_reason}
-            </div>
-          </div>
-        )}
+
       </CardContent>
     </Card>
   )

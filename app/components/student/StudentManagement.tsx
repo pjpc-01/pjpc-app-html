@@ -37,12 +37,6 @@ export default function StudentManagement({
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedGrade, setSelectedGrade] = useState<string>("")
   const [selectedCenter, setSelectedCenter] = useState<string>("")
-  const [selectedGender, setSelectedGender] = useState<string>("")
-  const [selectedLevel, setSelectedLevel] = useState<string>("")
-  const [ageRange, setAgeRange] = useState<[number, number]>([0, 25])
-  const [enrollmentYear, setEnrollmentYear] = useState<string>("")
-  const [hasPhone, setHasPhone] = useState(false)
-  const [hasAddress, setHasAddress] = useState(false)
   const [sortBy, setSortBy] = useState("name")
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -78,59 +72,21 @@ export default function StudentManagement({
       filtered = filtered.filter(student => 
         student.name?.toLowerCase().includes(lowerSearchTerm) ||
         student.studentId?.toLowerCase().includes(lowerSearchTerm) ||
-        student.standard?.toLowerCase().includes(lowerSearchTerm) ||
-        student.center?.toLowerCase().includes(lowerSearchTerm) ||
-        student.gender?.toLowerCase().includes(lowerSearchTerm)
+        student.grade?.toLowerCase().includes(lowerSearchTerm) ||
+        student.parentName?.toLowerCase().includes(lowerSearchTerm) ||
+        student.parentEmail?.toLowerCase().includes(lowerSearchTerm) ||
+        student.status?.toLowerCase().includes(lowerSearchTerm)
       )
     }
 
     // 年级筛选
     if (selectedGrade) {
-      filtered = filtered.filter(student => 
-        student.standard === selectedGrade || student.grade === selectedGrade
-      )
+      filtered = filtered.filter(student => student.grade === selectedGrade)
     }
 
-    // 中心筛选
+    // 状态筛选
     if (selectedCenter) {
-      filtered = filtered.filter(student => student.center === selectedCenter)
-    }
-
-    // 性别筛选
-    if (selectedGender) {
-      filtered = filtered.filter(student => student.gender === selectedGender)
-    }
-
-    // 级别筛选
-    if (selectedLevel) {
-      filtered = filtered.filter(student => student.level === selectedLevel)
-    }
-
-    // 入学年份筛选
-    if (enrollmentYear) {
-      filtered = filtered.filter(student => student.enrollmentYear === enrollmentYear)
-    }
-
-    // 年龄范围筛选
-    if (ageRange[0] > 0 || ageRange[1] < 25) {
-      filtered = filtered.filter(student => {
-        const age = student.age || 0
-        return age >= ageRange[0] && age <= ageRange[1]
-      })
-    }
-
-    // 有电话筛选
-    if (hasPhone) {
-      filtered = filtered.filter(student => 
-        student.father_phone || student.mother_phone || student.phone
-      )
-    }
-
-    // 有地址筛选
-    if (hasAddress) {
-      filtered = filtered.filter(student => 
-        student.home_address || student.address
-      )
+      filtered = filtered.filter(student => student.status === selectedCenter)
     }
 
     // 排序
@@ -148,20 +104,16 @@ export default function StudentManagement({
           bValue = b.studentId || ''
           break
         case 'grade':
-          aValue = a.standard || a.grade || ''
-          bValue = b.standard || b.grade || ''
+          aValue = a.grade || ''
+          bValue = b.grade || ''
           break
-        case 'age':
-          aValue = a.age || 0
-          bValue = b.age || 0
+        case 'status':
+          aValue = a.status || ''
+          bValue = b.status || ''
           break
-        case 'enrollmentYear':
-          aValue = a.enrollmentYear || ''
-          bValue = b.enrollmentYear || ''
-          break
-        case 'createdAt':
-          aValue = new Date(a.createdAt || '').getTime()
-          bValue = new Date(b.createdAt || '').getTime()
+        case 'parentName':
+          aValue = a.parentName || ''
+          bValue = b.parentName || ''
           break
         default:
           aValue = a.name || ''
@@ -176,8 +128,7 @@ export default function StudentManagement({
     })
 
          return filtered
-   }, [students, searchTerm, selectedGrade, selectedCenter, selectedGender, selectedLevel, 
-       enrollmentYear, ageRange, hasPhone, hasAddress, sortBy, sortOrder])
+   }, [students, searchTerm, selectedGrade, selectedCenter, sortBy, sortOrder])
 
   // 分页逻辑
   const paginatedStudents = useMemo(() => {
@@ -210,8 +161,7 @@ export default function StudentManagement({
   // 当筛选条件改变时重置到第一页
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm, selectedGrade, selectedCenter, selectedGender, selectedLevel, 
-      enrollmentYear, ageRange, hasPhone, hasAddress, sortBy, sortOrder])
+  }, [searchTerm, selectedGrade, selectedCenter, sortBy, sortOrder])
 
   const handleAddStudent = async (studentData: Partial<Student>) => {
     try {
@@ -339,12 +289,6 @@ export default function StudentManagement({
             setSearchTerm(filters.searchTerm)
             setSelectedGrade(filters.selectedGrade)
             setSelectedCenter(filters.selectedCenter)
-            setSelectedGender(filters.selectedGender)
-            setSelectedLevel(filters.selectedLevel)
-            setAgeRange(filters.ageRange)
-            setEnrollmentYear(filters.enrollmentYear)
-            setHasPhone(filters.hasPhone)
-            setHasAddress(filters.hasAddress)
             setSortBy(filters.sortBy)
             setSortOrder(filters.sortOrder)
           }}

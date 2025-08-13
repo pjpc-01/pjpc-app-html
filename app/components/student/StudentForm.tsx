@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { UserPlus, Edit, AlertTriangle } from "lucide-react"
 import { Student } from "@/hooks/useStudents"
-import { validateStudentId, validatePhone, validateEmail, calculateAge } from "./utils"
+import { validateEmail } from "./utils"
 import { Badge } from "@/components/ui/badge"
 
 interface StudentFormProps {
@@ -29,18 +29,11 @@ export default function StudentForm({
 }: StudentFormProps) {
   const [formData, setFormData] = useState<Partial<Student>>({
     name: '',
+    studentId: '',
     grade: '',
-    gender: '',
-    birthDate: '',
-    phone: '',
-    email: '',
-    address: '',
     parentName: '',
-    parentPhone: '',
-    status: 'active',
-    enrollmentDate: new Date().toISOString().split('T')[0],
-    notes: '',
-    center: 'WX 01'
+    parentEmail: '',
+    status: 'active'
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -51,33 +44,20 @@ export default function StudentForm({
     if (student) {
       setFormData({
         name: student.name || '',
+        studentId: student.studentId || '',
         grade: student.grade || '',
-        gender: student.gender || '',
-        birthDate: student.birthDate || '',
-        phone: student.phone || '',
-        email: student.email || '',
-        address: student.address || '',
         parentName: student.parentName || '',
-        parentPhone: student.parentPhone || '',
-        status: student.status || 'active',
-        enrollmentDate: student.enrollmentDate || new Date().toISOString().split('T')[0],
-        notes: student.notes || ''
+        parentEmail: student.parentEmail || '',
+        status: student.status || 'active'
       })
     } else {
       setFormData({
         name: '',
+        studentId: '',
         grade: '',
-        gender: '',
-        birthDate: '',
-        phone: '',
-        email: '',
-        address: '',
         parentName: '',
-        parentPhone: '',
-        status: 'active',
-        enrollmentDate: new Date().toISOString().split('T')[0],
-        notes: '',
-        center: 'WX 01'
+        parentEmail: '',
+        status: 'active'
       })
     }
     setErrors({})
@@ -90,16 +70,16 @@ export default function StudentForm({
       newErrors.name = '姓名是必填项'
     }
 
+    if (!formData.studentId?.trim()) {
+      newErrors.studentId = '学号是必填项'
+    }
+
     if (!formData.grade?.trim()) {
       newErrors.grade = '年级是必填项'
     }
 
-    if (formData.phone && !validatePhone(formData.phone)) {
-      newErrors.phone = '电话号码格式不正确'
-    }
-
-    if (formData.email && !validateEmail(formData.email)) {
-      newErrors.email = '邮箱格式不正确'
+    if (formData.parentEmail && !validateEmail(formData.parentEmail)) {
+      newErrors.parentEmail = '家长邮箱格式不正确'
     }
 
     setErrors(newErrors)
@@ -161,6 +141,18 @@ export default function StudentForm({
             </div>
 
             <div>
+              <Label htmlFor="studentId">学号 *</Label>
+              <Input
+                id="studentId"
+                value={formData.studentId}
+                onChange={(e) => handleInputChange('studentId', e.target.value)}
+                placeholder="学号"
+                className={errors.studentId ? 'border-red-500' : ''}
+              />
+              {errors.studentId && <p className="text-red-500 text-sm mt-1">{errors.studentId}</p>}
+            </div>
+
+            <div>
               <Label htmlFor="grade">年级 *</Label>
               <Select value={formData.grade} onValueChange={(value) => handleInputChange('grade', value)}>
                 <SelectTrigger className={errors.grade ? 'border-red-500' : ''}>
@@ -178,51 +170,6 @@ export default function StudentForm({
             </div>
 
             <div>
-              <Label htmlFor="center">中心 *</Label>
-              <Select value={formData.center} onValueChange={(value) => handleInputChange('center', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="选择中心" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="WX 01">WX 01</SelectItem>
-                  <SelectItem value="WX 02">WX 02</SelectItem>
-                  <SelectItem value="WX 03">WX 03</SelectItem>
-                  <SelectItem value="WX 04">WX 04</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="gender">性别</Label>
-              <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="选择性别" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="男">男</SelectItem>
-                  <SelectItem value="女">女</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="birthDate">出生日期</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="birthDate"
-                  type="date"
-                  value={formData.birthDate}
-                  onChange={(e) => handleInputChange('birthDate', e.target.value)}
-                />
-                {formData.birthDate && (
-                  <Badge variant="secondary" className="whitespace-nowrap">
-                    {calculateAge(formData.birthDate)} 岁
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            <div>
               <Label htmlFor="status">状态</Label>
               <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
                 <SelectTrigger>
@@ -230,34 +177,11 @@ export default function StudentForm({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="active">在读</SelectItem>
-                  <SelectItem value="inactive">离校</SelectItem>
+                  <SelectItem value="graduated">已毕业</SelectItem>
+                  <SelectItem value="transferred">已转学</SelectItem>
+                  <SelectItem value="inactive">非活跃</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="phone">联系电话</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="电话号码"
-                className={errors.phone ? 'border-red-500' : ''}
-              />
-              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-            </div>
-
-            <div>
-              <Label htmlFor="email">邮箱地址</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder="邮箱地址"
-                className={errors.email ? 'border-red-500' : ''}
-              />
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
 
             <div>
@@ -271,36 +195,17 @@ export default function StudentForm({
             </div>
 
             <div>
-              <Label htmlFor="parentPhone">家长电话</Label>
+              <Label htmlFor="parentEmail">家长邮箱</Label>
               <Input
-                id="parentPhone"
-                value={formData.parentPhone}
-                onChange={(e) => handleInputChange('parentPhone', e.target.value)}
-                placeholder="家长电话号码"
+                id="parentEmail"
+                type="email"
+                value={formData.parentEmail}
+                onChange={(e) => handleInputChange('parentEmail', e.target.value)}
+                placeholder="家长邮箱地址"
+                className={errors.parentEmail ? 'border-red-500' : ''}
               />
+              {errors.parentEmail && <p className="text-red-500 text-sm mt-1">{errors.parentEmail}</p>}
             </div>
-          </div>
-
-          <div>
-            <Label htmlFor="address">地址</Label>
-            <Textarea
-              id="address"
-              value={formData.address}
-              onChange={(e) => handleInputChange('address', e.target.value)}
-              placeholder="详细地址"
-              rows={2}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="notes">备注</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="备注信息"
-              rows={2}
-            />
           </div>
 
           {Object.keys(errors).length > 0 && (

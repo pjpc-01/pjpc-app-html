@@ -1,104 +1,143 @@
 import { useState, useCallback } from 'react'
-import { createReceiptFromInvoice as createReceiptFromInvoiceUtil } from '@/lib/receipt-utils'
 
+// Receipt interface matching exact PocketBase field names
 export interface Receipt {
-  id: number
+  id: string
+  paymentId: string
   receiptNumber: string
-  invoiceNumber: string // Links to the corresponding invoice
-  student: string
-  studentId: number
-  amount: number
+  dateIssued: string
+  recipientName: string
   items: { name: string; amount: number }[]
-  status: 'pending' | 'issued' | 'sent' | 'cancelled'
-  issueDate: string
-  paymentDate: string
-  paymentMethod: string
+  totalPaid: number
+  status: 'draft' | 'issued' | 'sent' | 'acknowledged'
   notes: string
-  tax: number
-  discount: number
-  totalAmount: number
-  parentEmail: string
-  receiptTemplate: string
-  generatedBy: string
 }
 
 export interface ReceiptFilters {
   status: string
-  studentName: string
-  invoiceNumber: string
+  dateRange: { start: string; end: string }
 }
 
 export const useReceipts = () => {
-  const [receipts, setReceipts] = useState<Receipt[]>([])
+  const [receipts, setReceipts] = useState<Receipt[]>([
+    {
+      id: "1",
+      paymentId: "1",
+      receiptNumber: "RCP-2024-001",
+      dateIssued: "2024-01-20",
+      recipientName: "王小明家长",
+      items: [
+        { name: "基础学费", amount: 800 },
+        { name: "特色课程费", amount: 400 }
+      ],
+      totalPaid: 1200,
+      status: "issued",
+      notes: "1月学费收据"
+    },
+    {
+      id: "2",
+      paymentId: "2",
+      receiptNumber: "RCP-2024-002",
+      dateIssued: "2024-01-25",
+      recipientName: "李小红家长",
+      items: [
+        { name: "基础学费", amount: 1000 },
+        { name: "特色课程费", amount: 400 }
+      ],
+      totalPaid: 1400,
+      status: "issued",
+      notes: "1月学费收据"
+    }
+  ])
 
   const [filters, setFilters] = useState<ReceiptFilters>({
-    status: "all",
-    studentName: "",
-    invoiceNumber: ""
+    status: "",
+    dateRange: { start: "", end: "" }
   })
 
-  const generateReceiptNumber = useCallback((invoiceNumber: string) => {
-    // Receipt number should match the invoice number for linking
-    return invoiceNumber.replace('INV-', 'RCP-')
-  }, [])
-
-  const createReceiptFromInvoice = useCallback((invoice: any, paymentMethod: string, paymentDate: string) => {
-    const newReceipt = createReceiptFromInvoiceUtil(
-      invoice,
-      paymentMethod,
-      paymentDate,
-      Math.max(...receipts.map(rec => rec.id), 0) + 1
-    )
-    
-    setReceipts(prev => [...prev, newReceipt])
-    return newReceipt
+  const generateReceiptNumber = useCallback(() => {
+    const year = new Date().getFullYear()
+    const existingReceipts = receipts.filter(r => r.receiptNumber.startsWith(`RCP-${year}`))
+    const nextNumber = existingReceipts.length + 1
+    return `RCP-${year}-${nextNumber.toString().padStart(3, '0')}`
   }, [receipts])
 
-  const updateReceipt = useCallback((receiptId: number, updates: Partial<Receipt>) => {
+  const createReceipt = useCallback((receiptData: Omit<Receipt, 'id' | 'receiptNumber'>) => {
+    const receiptNumber = generateReceiptNumber()
+    
+    const newReceipt: Receipt = {
+      ...receiptData,
+      id: Math.max(...receipts.map(r => parseInt(r.id)), 0) + 1 + "",
+      receiptNumber
+    }
+    setReceipts(prev => [...prev, newReceipt])
+    return newReceipt
+  }, [receipts, generateReceiptNumber])
+
+  const updateReceipt = useCallback((receiptId: string, updates: Partial<Receipt>) => {
     setReceipts(prev => prev.map(receipt => 
       receipt.id === receiptId ? { ...receipt, ...updates } : receipt
     ))
   }, [])
 
-  const deleteReceipt = useCallback((receiptId: number) => {
+  const deleteReceipt = useCallback((receiptId: string) => {
     setReceipts(prev => prev.filter(receipt => receipt.id !== receiptId))
   }, [])
 
-  const getReceiptByInvoiceNumber = useCallback((invoiceNumber: string) => {
-    return receipts.find(receipt => receipt.invoiceNumber === invoiceNumber)
-  }, [receipts])
-
-  const getReceiptsByStudent = useCallback((studentId: number) => {
-    return receipts.filter(receipt => receipt.studentId === studentId)
-  }, [receipts])
+  const updateReceiptStatus = useCallback((receiptId: string, status: Receipt['status']) => {
+    updateReceipt(receiptId, { status })
+  }, [updateReceipt])
 
   const getFilteredReceipts = useCallback(() => {
     return receipts.filter(receipt => {
-      const matchesStatus = !filters.status || filters.status === "all" || receipt.status === filters.status
-      const matchesStudent = !filters.studentName || 
-        receipt.student.toLowerCase().includes(filters.studentName.toLowerCase())
-      const matchesInvoice = !filters.invoiceNumber || 
-        receipt.invoiceNumber.includes(filters.invoiceNumber)
-      return matchesStatus && matchesStudent && matchesInvoice
+      const matchesStatus = !filters.status || receipt.status === filters.status
+      
+      let matchesDateRange = true
+      if (filters.dateRange.start && filters.dateRange.end) {
+        const receiptDate = new Date(receipt.dateIssued)
+        const startDate = new Date(filters.dateRange.start)
+        const endDate = new Date(filters.dateRange.end)
+        matchesDateRange = receiptDate >= startDate && receiptDate <= endDate
+      }
+      
+      return matchesStatus && matchesDateRange
     })
   }, [receipts, filters])
 
+  const getReceiptByPayment = useCallback((paymentId: string): Receipt | undefined => {
+    return receipts.find(receipt => receipt.paymentId === paymentId)
+  }, [receipts])
+
+  const generateReceiptFromPayment = useCallback((paymentId: string, paymentData: any, invoiceData: any): Receipt => {
+    const currentDate = new Date().toISOString().split('T')[0]
+    
+    return createReceipt({
+      paymentId,
+      dateIssued: currentDate,
+      recipientName: invoiceData.studentName + "家长",
+      items: invoiceData.items || [],
+      totalPaid: paymentData.amountPaid,
+      status: 'issued',
+      notes: `收据 - ${invoiceData.invoiceNumber}`
+    })
+  }, [createReceipt])
+
   const getReceiptStatistics = useCallback(() => {
     const total = receipts.length
-    const issued = receipts.filter(rec => rec.status === 'issued').length
-    const pending = receipts.filter(rec => rec.status === 'pending').length
-    const totalAmount = receipts.reduce((sum, rec) => sum + rec.totalAmount, 0)
-    const issuedAmount = receipts
-      .filter(rec => rec.status === 'issued')
-      .reduce((sum, rec) => sum + rec.totalAmount, 0)
+    const draft = receipts.filter(r => r.status === 'draft').length
+    const issued = receipts.filter(r => r.status === 'issued').length
+    const sent = receipts.filter(r => r.status === 'sent').length
+    const acknowledged = receipts.filter(r => r.status === 'acknowledged').length
+    
+    const totalAmount = receipts.reduce((sum, r) => sum + r.totalPaid, 0)
     
     return {
       total,
+      draft,
       issued,
-      pending,
-      totalAmount,
-      issuedAmount,
-      issueRate: total > 0 ? (issued / total) * 100 : 0
+      sent,
+      acknowledged,
+      totalAmount
     }
   }, [receipts])
 
@@ -106,12 +145,13 @@ export const useReceipts = () => {
     receipts,
     filters,
     setFilters,
-    createReceiptFromInvoice,
+    createReceipt,
     updateReceipt,
     deleteReceipt,
-    getReceiptByInvoiceNumber,
-    getReceiptsByStudent,
+    updateReceiptStatus,
     getFilteredReceipts,
+    getReceiptByPayment,
+    generateReceiptFromPayment,
     getReceiptStatistics,
     generateReceiptNumber
   }

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Fee } from "@/hooks/useFees"
 
 interface SubItem {
   id: number
@@ -11,29 +12,17 @@ interface SubItem {
   active: boolean
 }
 
-interface FeeItem {
-  id: number
-  name: string
-  amount: number
-  type: string
-  description: string
-  applicableGrades: string[]
-  status: string
-  category: string
-  subItems: SubItem[]
-}
-
 interface BatchOperationsDialogProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   categories: string[]
-  activeFees: FeeItem[]
+  activeFees: Fee[]
   availableGrades: string[]
   selectedCategories: string[]
   onCategoryToggle: (category: string) => void
-  selectedSubItems: {feeId: number, subItemId: number}[]
-  onSubItemToggle: (feeId: number, subItemId: number) => void
-  isSubItemSelected: (feeId: number, subItemId: number) => boolean
+  selectedSubItems: {feeId: string, subItemId: number}[]
+  onSubItemToggle: (feeId: string, subItemId: number) => void
+  isSubItemSelected: (feeId: string, subItemId: number) => boolean
   selectedCriteria: 'grade' | null
   onCriteriaToggle: (criteria: 'grade') => void
   selectedGrades: string[]

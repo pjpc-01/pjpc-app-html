@@ -74,7 +74,6 @@ export default function InvoiceManagement() {
     updateInvoice,
     deleteInvoice,
     updateInvoiceStatus,
-    sendInvoiceReminder,
     getFilteredInvoices,
     generateInvoiceFromStudentFees,
     generateInvoicesForAllStudents,
@@ -87,9 +86,9 @@ export default function InvoiceManagement() {
   // Data hooks
   const { students } = useStudents()
   const { calculateStudentTotal } = useStudentFees()
-  const { feeItems } = useFees()
-  const { createReceiptFromInvoice } = useReceipts()
-  const { payments } = usePayments(invoices)
+  const { fees } = useFees()
+  const { createReceipt } = useReceipts()
+  const { payments } = usePayments()
 
   // State
   const [isCreateInvoiceDialogOpen, setIsCreateInvoiceDialogOpen] = useState(false)
@@ -225,13 +224,13 @@ export default function InvoiceManagement() {
   })
 
   // Computed values
-  const activeFees = feeItems.filter(fee => fee.status === 'active')
-  const availableStudents = students.filter(student => student.standard !== '已毕业')
+  const activeFees = fees.filter(fee => fee.status === 'active')
+  const availableStudents = students.filter(student => student.status !== 'graduated')
 
   const studentsWithAmounts = useMemo(() => {
     return availableStudents.map(student => ({
       ...student,
-      amount: calculateStudentTotal(Number(student.id), activeFees)
+      amount: calculateStudentTotal(student.id, activeFees)
     }))
   }, [availableStudents, calculateStudentTotal, activeFees])
 
@@ -263,7 +262,7 @@ export default function InvoiceManagement() {
       
       // Get student phone number from the invoice or student data
       const student = students.find(s => s.id === invoice.studentId)
-      const phoneNumber = student?.phone || student?.parentPhone || ''
+      const phoneNumber = student?.parentEmail || ''
       
       if (!phoneNumber) {
         throw new Error('无法找到学生或家长的电话号码')
@@ -301,7 +300,7 @@ export default function InvoiceManagement() {
       window.open(whatsappUrl, '_blank')
       
       // Update invoice status
-      updateInvoiceStatus(invoice.id, 'sent')
+      updateInvoiceStatus(invoice.id, 'issued')
       
       // Close dialog
       setIsSendMessageDialogOpen(false)
@@ -321,7 +320,7 @@ export default function InvoiceManagement() {
       
       // Get student email from the invoice or student data
       const student = students.find(s => s.id === invoice.studentId)
-      const email = invoice.parentEmail || student?.parentEmail || student?.email || ''
+      const email = student?.parentEmail || ''
       
       if (!email) {
         throw new Error('无法找到学生或家长的邮箱地址')
@@ -368,7 +367,7 @@ export default function InvoiceManagement() {
       window.open(mailtoUrl, '_blank')
       
       // Update invoice status
-      updateInvoiceStatus(invoice.id, 'sent')
+      updateInvoiceStatus(invoice.id, 'issued')
       
       // Close dialog
       setIsSendMessageDialogOpen(false)
@@ -432,23 +431,15 @@ export default function InvoiceManagement() {
     const renderedHtml = renderInvoiceTemplate(template.htmlContent, templateData)
 
          const newInvoice = {
-       student: selectedStudentForInvoice.name,
+       studentName: selectedStudentForInvoice.name,
        studentId: selectedStudentForInvoice.id,
-       grade: selectedStudentForInvoice.grade || selectedStudentForInvoice.standard,
-       amount: selectedStudentForInvoice.amount,
+       studentGrade: selectedStudentForInvoice.grade || selectedStudentForInvoice.standard,
        items: templateData.items,
        status: "issued" as const,
        issueDate: templateData.issueDate,
        dueDate: templateData.dueDate,
-       paidDate: null,
-       paymentMethod: templateData.paymentMethod || null,
        notes: templateData.notes || '',
-       tax: templateData.tax,
-       discount: templateData.discount,
-       totalAmount: selectedStudentForInvoice.amount,
-       parentEmail: selectedStudentForInvoice.parentEmail || "parent@example.com",
-       reminderSent: false,
-       lastReminderDate: null
+       totalAmount: selectedStudentForInvoice.amount
      }
 
     createInvoice(newInvoice)
@@ -527,7 +518,7 @@ export default function InvoiceManagement() {
               <div>
                 <p className="text-sm text-gray-600">待付款</p>
                 <p className="text-2xl font-bold">
-                  {invoices.filter(inv => inv.status === 'pending').length}
+                  {invoices.filter(inv => inv.status === 'issued').length}
                 </p>
               </div>
             </div>
@@ -1024,7 +1015,7 @@ export default function InvoiceManagement() {
                         <span className="font-medium">电话号码:</span> 
                         {(() => {
                           const student = students.find(s => s.id === selectedInvoice.studentId)
-                          const phoneNumber = student?.phone || student?.parentPhone || '未提供'
+                          const phoneNumber = student?.parentName || '未提供'
                           return ` ${phoneNumber}`
                         })()}
                       </p>
@@ -1035,7 +1026,7 @@ export default function InvoiceManagement() {
                         <span className="font-medium">邮箱地址:</span> 
                         {(() => {
                           const student = students.find(s => s.id === selectedInvoice.studentId)
-                          const email = selectedInvoice.parentEmail || student?.parentEmail || student?.email || '未提供'
+                          const email = student?.parentEmail || '未提供'
                           return ` ${email}`
                         })()}
                       </p>

@@ -1,127 +1,141 @@
 import { useState, useCallback } from 'react'
 
-export interface SubItem {
-  id: number
+// Fee interface matching exact PocketBase field names
+export interface Fee {
+  id: string
   name: string
+  category: string
   amount: number
-  description: string
-  active: boolean
-}
-
-export interface FeeItem {
-  id: number
-  name: string
-  amount: number
-  type: 'monthly' | 'one-time' | 'semester' | 'annual'
-  description: string
+  type: 'recurring' | 'one-time' | 'optional'
   applicableGrades: string[]
   status: 'active' | 'inactive'
+  subItems: { id: number; name: string; amount: number }[]
+  description: string
+}
+
+export interface FeeFilters {
   category: string
-  subItems: SubItem[]
+  status: string
+  type: string
 }
 
 export const useFees = () => {
-  const [feeItems, setFeeItems] = useState<FeeItem[]>([
-    { 
-      id: 1, 
-      name: "学费", 
-      amount: 1200, 
-      type: "monthly", 
-      description: "每月学费", 
-      applicableGrades: ["三年级", "四年级", "五年级"], 
+  const [fees, setFees] = useState<Fee[]>([
+    {
+      id: "1",
+      name: "基础学费",
+      category: "Academic",
+      amount: 800,
+      type: "recurring",
+      applicableGrades: ["一年级", "二年级", "三年级", "四年级", "五年级", "六年级"],
       status: "active",
-      category: "教育费用",
       subItems: [
-        { id: 1, name: "基础学费", amount: 800, description: "基础课程费用", active: true },
-        { id: 2, name: "特色课程费", amount: 400, description: "特色课程额外费用", active: true }
-      ]
+        { id: 1, name: "基础课程", amount: 600 },
+        { id: 2, name: "教材费", amount: 200 }
+      ],
+      description: "每月基础学费"
     },
-    { 
-      id: 2, 
-      name: "餐费", 
-      amount: 300, 
-      type: "monthly", 
-      description: "每月餐费", 
-      applicableGrades: ["三年级", "四年级", "五年级"], 
+    {
+      id: "2",
+      name: "特色课程费",
+      category: "Extracurricular",
+      amount: 400,
+      type: "recurring",
+      applicableGrades: ["一年级", "二年级", "三年级"],
       status: "active",
-      category: "生活费用",
       subItems: [
-        { id: 1, name: "午餐费", amount: 200, description: "每日午餐费用", active: true },
-        { id: 2, name: "点心费", amount: 100, description: "下午点心费用", active: true }
-      ]
+        { id: 1, name: "艺术课程", amount: 200 },
+        { id: 2, name: "体育课程", amount: 200 }
+      ],
+      description: "特色课程费用"
     },
-    { 
-      id: 3, 
-      name: "教材费", 
-      amount: 200, 
-      type: "one-time", 
-      description: "学期教材费用", 
-      applicableGrades: ["三年级", "四年级", "五年级"], 
+    {
+      id: "3",
+      name: "注册费",
+      category: "Administrative",
+      amount: 500,
+      type: "one-time",
+      applicableGrades: ["一年级", "二年级", "三年级", "四年级", "五年级", "六年级"],
       status: "active",
-      category: "教育费用",
       subItems: [
-        { id: 1, name: "课本费", amount: 120, description: "各科课本费用", active: true },
-        { id: 2, name: "练习册费", amount: 80, description: "练习册费用", active: true }
-      ]
-    },
-    { 
-      id: 4, 
-      name: "活动费", 
-      amount: 150, 
-      type: "one-time", 
-      description: "课外活动费用", 
-      applicableGrades: ["三年级", "四年级"], 
-      status: "active",
-      category: "活动费用",
-      subItems: [
-        { id: 1, name: "户外活动费", amount: 100, description: "户外活动费用", active: true },
-        { id: 2, name: "室内活动费", amount: 50, description: "室内活动费用", active: true }
-      ]
-    },
+        { id: 1, name: "注册手续费", amount: 300 },
+        { id: 2, name: "学生证费用", amount: 200 }
+      ],
+      description: "新生注册费用"
+    }
   ])
 
-  const addFeeItem = useCallback((item: Omit<FeeItem, 'id'>) => {
-    const newItem = { ...item, id: Date.now() }
-    setFeeItems(prev => [...prev, newItem])
-  }, [])
+  const [filters, setFilters] = useState<FeeFilters>({
+    category: "",
+    status: "",
+    type: ""
+  })
 
-  const updateFeeItem = useCallback((id: number, updates: Partial<FeeItem>) => {
-    setFeeItems(prev => prev.map(item => 
-      item.id === id ? { ...item, ...updates } : item
+  const createFee = useCallback((feeData: Omit<Fee, 'id'>) => {
+    const newFee: Fee = {
+      ...feeData,
+      id: Math.max(...fees.map(fee => parseInt(fee.id)), 0) + 1 + ""
+    }
+    setFees(prev => [...prev, newFee])
+    return newFee
+  }, [fees])
+
+  const updateFee = useCallback((feeId: string, updates: Partial<Fee>) => {
+    setFees(prev => prev.map(fee => 
+      fee.id === feeId ? { ...fee, ...updates } : fee
     ))
   }, [])
 
-  const deleteFeeItem = useCallback((id: number) => {
-    setFeeItems(prev => prev.filter(item => item.id !== id))
+  const deleteFee = useCallback((feeId: string) => {
+    setFees(prev => prev.filter(fee => fee.id !== feeId))
   }, [])
 
-  const calculateTotalAmount = useCallback((subItems: SubItem[]) => {
-    return subItems
-      .filter(subItem => subItem.active)
-      .reduce((total, subItem) => total + subItem.amount, 0)
-  }, [])
+  const getFilteredFees = useCallback(() => {
+    return fees.filter(fee => {
+      const matchesCategory = !filters.category || fee.category === filters.category
+      const matchesStatus = !filters.status || fee.status === filters.status
+      const matchesType = !filters.type || fee.type === filters.type
+      return matchesCategory && matchesStatus && matchesType
+    })
+  }, [fees, filters])
 
-  const updateSubItem = useCallback((feeId: number, subItemId: number, updates: Partial<SubItem>) => {
-    setFeeItems(prev => prev.map(fee => 
-      fee.id === feeId 
-        ? {
-            ...fee,
-            subItems: fee.subItems.map(subItem => 
-              subItem.id === subItemId 
-                ? { ...subItem, ...updates }
-                : subItem
-            )
-          }
-        : fee
-    ))
-  }, [])
+  const getFeesByGrade = useCallback((grade: string) => {
+    return fees.filter(fee => 
+      fee.status === 'active' && 
+      fee.applicableGrades.includes(grade)
+    )
+  }, [fees])
+
+  const getFeeStatistics = useCallback(() => {
+    const total = fees.length
+    const active = fees.filter(fee => fee.status === 'active').length
+    const inactive = fees.filter(fee => fee.status === 'inactive').length
+    const recurring = fees.filter(fee => fee.type === 'recurring').length
+    const oneTime = fees.filter(fee => fee.type === 'one-time').length
+    const optional = fees.filter(fee => fee.type === 'optional').length
+    
+    const totalAmount = fees.reduce((sum, fee) => sum + fee.amount, 0)
+    
+    return {
+      total,
+      active,
+      inactive,
+      recurring,
+      oneTime,
+      optional,
+      totalAmount
+    }
+  }, [fees])
 
   return {
-    feeItems,
-    addFeeItem,
-    updateFeeItem,
-    deleteFeeItem,
-    calculateTotalAmount,
-    updateSubItem
+    fees,
+    filters,
+    setFilters,
+    createFee,
+    updateFee,
+    deleteFee,
+    getFilteredFees,
+    getFeesByGrade,
+    getFeeStatistics
   }
 } 

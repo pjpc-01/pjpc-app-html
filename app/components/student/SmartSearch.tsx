@@ -15,7 +15,7 @@ interface SmartSearchProps {
 }
 
 interface SearchSuggestion {
-  type: 'name' | 'id' | 'grade' | 'center' | 'gender'
+  type: 'name' | 'id' | 'grade' | 'center' | 'gender' | 'status'
   value: string
   count: number
   icon: React.ReactNode
@@ -97,12 +97,12 @@ export default function SmartSearch({
       }
 
       // 年级匹配
-      if (student.standard?.toLowerCase().includes(lowerInput)) {
-        const key = `grade:${student.standard}`
+      if (student.grade?.toLowerCase().includes(lowerInput)) {
+        const key = `grade:${student.grade}`
         if (!suggestionsMap.has(key)) {
           suggestionsMap.set(key, {
             type: 'grade',
-            value: student.standard,
+            value: student.grade,
             count: 1,
             icon: <GraduationCap className="h-3 w-3" />
           })
@@ -111,13 +111,13 @@ export default function SmartSearch({
         }
       }
 
-      // 中心匹配
-      if (student.center?.toLowerCase().includes(lowerInput)) {
-        const key = `center:${student.center}`
+      // 状态匹配
+      if (student.status?.toLowerCase().includes(lowerInput)) {
+        const key = `status:${student.status}`
         if (!suggestionsMap.has(key)) {
           suggestionsMap.set(key, {
-            type: 'center',
-            value: student.center,
+            type: 'status',
+            value: student.status,
             count: 1,
             icon: <MapPin className="h-3 w-3" />
           })

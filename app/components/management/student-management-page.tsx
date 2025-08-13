@@ -92,7 +92,7 @@ export default function StudentManagementPage() {
         </TabsContent>
 
         <TabsContent value="stats">
-          <StudentStats students={students} />
+          <StudentStats students={students} totalStudents={students.length} />
         </TabsContent>
       </Tabs>
     </div>

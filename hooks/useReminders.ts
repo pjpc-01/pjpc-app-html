@@ -2,8 +2,8 @@ import { useState, useCallback } from 'react'
 import { Invoice } from './useInvoices'
 
 export interface Reminder {
-  id: number
-  invoiceId: number
+  id: string
+  invoiceId: string
   type: 'email' | 'sms' | 'system'
   status: 'scheduled' | 'sent' | 'failed'
   scheduledDate: string
@@ -26,8 +26,8 @@ export interface ReminderTemplate {
 export const useReminders = (invoices: Invoice[]) => {
   const [reminders, setReminders] = useState<Reminder[]>([
     {
-      id: 1,
-      invoiceId: 2,
+      id: "1",
+      invoiceId: "2",
       type: 'email',
       status: 'sent',
       scheduledDate: '2024-01-25',
@@ -38,8 +38,8 @@ export const useReminders = (invoices: Invoice[]) => {
       maxAttempts: 3
     },
     {
-      id: 2,
-      invoiceId: 3,
+      id: "2",
+      invoiceId: "3",
       type: 'sms',
       status: 'sent',
       scheduledDate: '2024-01-26',
@@ -78,7 +78,7 @@ export const useReminders = (invoices: Invoice[]) => {
     }
   ])
 
-  const scheduleReminder = useCallback((invoiceId: number, templateId: string, scheduledDate: string) => {
+  const scheduleReminder = useCallback((invoiceId: string, templateId: string, scheduledDate: string) => {
     const template = templates.find(t => t.id === templateId)
     if (!template) return null
 
@@ -90,14 +90,14 @@ export const useReminders = (invoices: Invoice[]) => {
       .replace('{dueDate}', invoice.dueDate)
 
     const newReminder: Reminder = {
-      id: Math.max(...reminders.map(r => r.id), 0) + 1,
+      id: Math.max(...reminders.map(r => parseInt(r.id)), 0) + 1 + "",
       invoiceId,
       type: template.type,
       status: 'scheduled',
       scheduledDate,
       sentDate: null,
       message,
-      recipient: template.type === 'email' ? invoice.parentEmail : '+86-138-0000-0000',
+      recipient: template.type === 'email' ? invoice.parentEmail || '' : '+86-138-0000-0000',
       attempts: 0,
       maxAttempts: 3
     }
@@ -106,7 +106,7 @@ export const useReminders = (invoices: Invoice[]) => {
     return newReminder
   }, [reminders, templates, invoices])
 
-  const sendReminder = useCallback((reminderId: number) => {
+  const sendReminder = useCallback((reminderId: string) => {
     setReminders(prev => prev.map(reminder => {
       if (reminder.id === reminderId) {
         return {
@@ -120,7 +120,7 @@ export const useReminders = (invoices: Invoice[]) => {
     }))
   }, [])
 
-  const markReminderFailed = useCallback((reminderId: number) => {
+  const markReminderFailed = useCallback((reminderId: string) => {
     setReminders(prev => prev.map(reminder => {
       if (reminder.id === reminderId) {
         return {
@@ -133,7 +133,7 @@ export const useReminders = (invoices: Invoice[]) => {
     }))
   }, [])
 
-  const getRemindersByInvoice = useCallback((invoiceId: number) => {
+  const getRemindersByInvoice = useCallback((invoiceId: string) => {
     return reminders.filter(reminder => reminder.invoiceId === invoiceId)
   }, [reminders])
 

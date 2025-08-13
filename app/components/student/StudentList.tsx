@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Edit, Eye, Trash2, User } from "lucide-react"
 import { Student } from "@/hooks/useStudents"
-import { convertGradeToChinese, calculateAge } from "./utils"
+import { convertGradeToChinese } from "./utils"
 
 interface StudentListProps {
   students: Student[]
@@ -112,9 +112,8 @@ export default function StudentList({
                 >
                   年级 {sortField === 'grade' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </TableHead>
-                <TableHead>年龄</TableHead>
-                <TableHead>性别</TableHead>
-                <TableHead>联系电话</TableHead>
+                <TableHead>家长姓名</TableHead>
+                <TableHead>家长邮箱</TableHead>
                 <TableHead>状态</TableHead>
                 <TableHead className="w-32">操作</TableHead>
               </TableRow>
@@ -135,11 +134,8 @@ export default function StudentList({
                       {convertGradeToChinese(student.grade)}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    {student.age ? student.age : (student.birthDate ? calculateAge(student.birthDate) : '-')}
-                  </TableCell>
-                  <TableCell>{student.gender || '-'}</TableCell>
-                  <TableCell>{student.phone || '-'}</TableCell>
+                  <TableCell>{student.parentName || '-'}</TableCell>
+                  <TableCell>{student.parentEmail || '-'}</TableCell>
                   <TableCell>
                     <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
                       {student.status === 'active' ? '在读' : '离校'}

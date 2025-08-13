@@ -83,13 +83,10 @@ export default function StudentFilters({
 
   // 获取筛选选项
   const filterOptions = useMemo(() => {
-    const centers = Array.from(new Set(students.map(s => s.center))).sort()
-    const grades = Array.from(new Set(students.map(s => s.standard || s.grade))).sort()
-    const genders = Array.from(new Set(students.map(s => s.gender))).filter(Boolean).sort()
-    const levels = Array.from(new Set(students.map(s => s.level))).sort()
-    const years = Array.from(new Set(students.map(s => s.enrollmentYear))).filter(Boolean).sort((a, b) => b.localeCompare(a))
+    const grades = Array.from(new Set(students.map(s => s.grade))).sort()
+    const statuses = Array.from(new Set(students.map(s => s.status))).sort()
 
-    return { centers, grades, genders, levels, years }
+    return { grades, statuses }
   }, [students])
 
   // 生成搜索建议
@@ -112,12 +109,12 @@ export default function StudentFilters({
         suggestions.add(student.studentId)
       }
       // 年级匹配
-      if (student.standard?.toLowerCase().includes(lowerInput)) {
-        suggestions.add(student.standard)
+      if (student.grade?.toLowerCase().includes(lowerInput)) {
+        suggestions.add(student.grade)
       }
-      // 中心匹配
-      if (student.center?.toLowerCase().includes(lowerInput)) {
-        suggestions.add(student.center)
+      // 状态匹配
+      if (student.status?.toLowerCase().includes(lowerInput)) {
+        suggestions.add(student.status)
       }
     })
 
@@ -138,38 +135,26 @@ export default function StudentFilters({
   const clearFilters = () => {
     setSearchTerm("")
     setSelectedGrade("")
-    setSelectedCenter("")
-    setSelectedGender("")
-    setSelectedLevel("")
-    setAgeRange([0, 25])
-    setEnrollmentYear("")
-    setHasPhone(false)
-    setHasAddress(false)
-    setSortBy("name")
-    setSortOrder('asc')
-    setDateRange({ from: undefined, to: undefined })
     setSearchSuggestions([])
     setShowSuggestions(false)
   }
 
-  const hasActiveFilters = searchTerm || selectedGrade || selectedCenter || 
-                          selectedGender || selectedLevel || enrollmentYear || 
-                          hasPhone || hasAddress || ageRange[0] > 0 || ageRange[1] < 25
+  const hasActiveFilters = searchTerm || selectedGrade
 
   // 应用筛选
   const applyFilters = () => {
     const filters: FilterState = {
       searchTerm,
       selectedGrade,
-      selectedCenter,
-      selectedGender,
-      selectedLevel,
-      ageRange,
-      enrollmentYear,
-      hasPhone,
-      hasAddress,
-      sortBy,
-      sortOrder
+      selectedCenter: "",
+      selectedGender: "",
+      selectedLevel: "",
+      ageRange: [0, 25],
+      enrollmentYear: "",
+      hasPhone: false,
+      hasAddress: false,
+      sortBy: "name",
+      sortOrder: 'asc'
     }
     onFiltersChange?.(filters)
   }
@@ -177,8 +162,7 @@ export default function StudentFilters({
   // 当筛选条件改变时自动应用
   useEffect(() => {
     applyFilters()
-  }, [searchTerm, selectedGrade, selectedCenter, selectedGender, selectedLevel, 
-      ageRange, enrollmentYear, hasPhone, hasAddress, sortBy, sortOrder])
+  }, [searchTerm, selectedGrade])
 
   return (
     <Card>
@@ -358,69 +342,21 @@ export default function StudentFilters({
                 </Select>
               </div>
 
-              {/* 中心筛选 */}
+              {/* 状态筛选 */}
               <div>
-                <Label htmlFor="center-filter">中心</Label>
+                <Label htmlFor="status-filter">状态</Label>
                 <Select value={selectedCenter} onValueChange={setSelectedCenter}>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择中心" />
+                    <SelectValue placeholder="选择状态" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">全部中心</SelectItem>
-                    {filterOptions.centers.map((center) => (
-                      <SelectItem key={center} value={center}>
-                        {center}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* 性别筛选 */}
-              <div>
-                <Label htmlFor="gender-filter">性别</Label>
-                <Select value={selectedGender} onValueChange={setSelectedGender}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择性别" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">全部性别</SelectItem>
-                    {filterOptions.genders.map((gender) => (
-                      <SelectItem key={gender} value={gender}>
-                        {gender}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* 级别筛选 */}
-              <div>
-                <Label htmlFor="level-filter">级别</Label>
-                <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择级别" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">全部级别</SelectItem>
-                    <SelectItem value="primary">小学</SelectItem>
-                    <SelectItem value="secondary">中学</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* 入学年份筛选 */}
-              <div>
-                <Label htmlFor="year-filter">入学年份</Label>
-                <Select value={enrollmentYear} onValueChange={setEnrollmentYear}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择年份" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">全部年份</SelectItem>
-                    {filterOptions.years.map((year) => (
-                      <SelectItem key={year} value={year}>
-                        {year}
+                    <SelectItem value="">全部状态</SelectItem>
+                    {filterOptions.statuses.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status === 'active' ? '在读' : 
+                         status === 'graduated' ? '已毕业' : 
+                         status === 'transferred' ? '已转学' : 
+                         status === 'inactive' ? '非活跃' : status}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -438,44 +374,9 @@ export default function StudentFilters({
                     <SelectItem value="name">姓名</SelectItem>
                     <SelectItem value="studentId">学号</SelectItem>
                     <SelectItem value="grade">年级</SelectItem>
-                    <SelectItem value="age">年龄</SelectItem>
-                    <SelectItem value="enrollmentYear">入学年份</SelectItem>
-                    <SelectItem value="createdAt">创建时间</SelectItem>
+                    <SelectItem value="status">状态</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-
-              {/* 年龄范围 */}
-              <div className="md:col-span-2">
-                <Label>年龄范围: {ageRange[0]} - {ageRange[1]} 岁</Label>
-                <Slider
-                  value={ageRange}
-                  onValueChange={setAgeRange}
-                  max={25}
-                  min={0}
-                  step={1}
-                  className="mt-2"
-                />
-              </div>
-
-              {/* 布尔筛选 */}
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="has-phone"
-                    checked={hasPhone}
-                    onCheckedChange={setHasPhone}
-                  />
-                  <Label htmlFor="has-phone">有联系电话</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="has-address"
-                    checked={hasAddress}
-                    onCheckedChange={setHasAddress}
-                  />
-                  <Label htmlFor="has-address">有地址信息</Label>
-                </div>
               </div>
 
               {/* 排序方向 */}

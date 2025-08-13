@@ -30,19 +30,14 @@ export default function PaymentManagement() {
     payments,
     filters: paymentFilters,
     setFilters: setPaymentFilters,
-    addPayment,
+    createPayment,
     updatePayment,
     deletePayment,
-    getPaymentByInvoice,
-    getInvoiceOutstandingBalance,
-    getInvoicePaymentHistory,
-    addPaymentToInvoice,
+    getPaymentsByInvoice,
     getFilteredPayments,
-    getPaymentStatistics,
-    reconcilePayments,
-    processPartialPayment
-  } = usePayments(invoices)
-  const { createReceiptFromInvoice } = useReceipts()
+    getPaymentStatistics
+  } = usePayments()
+  const { createReceipt } = useReceipts()
 
   const [isPaymentDetailDialogOpen, setIsPaymentDetailDialogOpen] = useState(false)
   const [selectedPayment, setSelectedPayment] = useState<any>(null)
@@ -82,16 +77,19 @@ export default function PaymentManagement() {
     }
 
     // Process the payment and trigger receipt generation when payment is completed
-    const { payment, isFullyPaid } = processPartialPayment(
-      selectedInvoiceForPayment.id, 
-      amount, 
-      paymentFormData.method as any,
-      paymentFormData.notes
-    )
+    const payment = createPayment({
+      invoiceId: selectedInvoiceForPayment.id,
+      amountPaid: amount,
+      method: paymentFormData.method as any,
+      notes: paymentFormData.notes,
+      datePaid: new Date().toISOString().split('T')[0],
+      status: 'completed',
+      referenceNo: `PAY-${Date.now()}`
+    })
 
     // Update invoice status if fully paid
-    if (isFullyPaid) {
-      updateInvoiceStatus(selectedInvoiceForPayment.id, 'paid', paymentFormData.method)
+    if (amount >= selectedInvoiceForPayment.totalAmount) {
+      updateInvoiceStatus(selectedInvoiceForPayment.id, 'paid')
     }
 
     // Reset form and close dialog
@@ -106,7 +104,7 @@ export default function PaymentManagement() {
     alert('缴费处理成功！')
   }
 
-  const handleRefundPayment = (paymentId: number) => {
+  const handleRefundPayment = (paymentId: string) => {
     if (confirm("确定要退款吗？")) {
       updatePayment(paymentId, { status: 'refunded' })
     }
@@ -123,7 +121,7 @@ export default function PaymentManagement() {
       totalAmountPaid: number;
       discrepancies: Array<{
         type: string;
-        invoiceId: number;
+        invoiceId: string;
         invoiceNumber: string;
         expected: number;
         actual: number;
@@ -134,23 +132,23 @@ export default function PaymentManagement() {
       totalPayments: payments.length,
       paidInvoices: invoices.filter(inv => {
         const invoicePayments = payments.filter(p => p.invoiceId === inv.id)
-        const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amount, 0)
+        const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amountPaid, 0)
         return totalPaid >= inv.totalAmount
       }).length,
       unpaidInvoices: invoices.filter(inv => {
         const invoicePayments = payments.filter(p => p.invoiceId === inv.id)
-        const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amount, 0)
+        const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amountPaid, 0)
         return totalPaid < inv.totalAmount
       }).length,
       totalAmountInvoiced: invoices.reduce((sum, inv) => sum + inv.totalAmount, 0),
-      totalAmountPaid: payments.reduce((sum, p) => sum + p.amount, 0),
+             totalAmountPaid: payments.reduce((sum, p) => sum + p.amountPaid, 0),
       discrepancies: []
     }
 
     // Check for discrepancies
     invoices.forEach(invoice => {
       const invoicePayments = payments.filter(p => p.invoiceId === invoice.id)
-      const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amount, 0)
+      const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amountPaid, 0)
       
       if (totalPaid > invoice.totalAmount) {
         reconciliationResults.discrepancies.push({
@@ -202,7 +200,7 @@ export default function PaymentManagement() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">RM {payments.reduce((sum, payment) => sum + payment.amount, 0)}</div>
+            <div className="text-2xl font-bold">RM {payments.reduce((sum, payment) => sum + payment.amountPaid, 0)}</div>
             <p className="text-xs text-muted-foreground">累计缴费金额</p>
           </CardContent>
         </Card>
@@ -270,8 +268,8 @@ export default function PaymentManagement() {
             
             <Input 
               placeholder="搜索学生姓名..." 
-              value={paymentFilters.studentName}
-              onChange={(e) => setPaymentFilters(prev => ({ ...prev, studentName: e.target.value }))}
+              value={paymentFilters.status}
+              onChange={(e) => setPaymentFilters(prev => ({ ...prev, status: e.target.value }))}
               className="w-[200px]"
             />
           </div>
@@ -308,11 +306,11 @@ export default function PaymentManagement() {
                 const invoice = invoices.find(inv => inv.id === payment.invoiceId)
                 return (
                   <TableRow key={payment.id}>
-                    <TableCell className="font-medium">{invoice?.student || '未知学生'}</TableCell>
-                    <TableCell>{payment.reference}</TableCell>
-                    <TableCell>RM {payment.amount}</TableCell>
+                    <TableCell className="font-medium">{invoice?.studentName || '未知学生'}</TableCell>
+                    <TableCell>{payment.referenceNo}</TableCell>
+                    <TableCell>RM {payment.amountPaid}</TableCell>
                     <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                    <TableCell>{payment.date}</TableCell>
+                    <TableCell>{payment.datePaid}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{payment.method}</Badge>
                     </TableCell>
@@ -383,7 +381,7 @@ export default function PaymentManagement() {
                   return invoice ? (
                     <div className="space-y-2 text-sm">
                       <div><span className="font-medium">发票号码:</span> {invoice.invoiceNumber}</div>
-                      <div><span className="font-medium">学生姓名:</span> {invoice.student}</div>
+                      <div><span className="font-medium">学生姓名:</span> {invoice.studentName}</div>
                       <div><span className="font-medium">发票金额:</span> RM {invoice.totalAmount}</div>
                       <div><span className="font-medium">发票状态:</span> {invoice.status}</div>
                     </div>
@@ -408,7 +406,7 @@ export default function PaymentManagement() {
             <div>
               <Label>选择发票</Label>
               <Select onValueChange={(value) => {
-                const invoice = invoices.find(inv => inv.id === parseInt(value))
+                const invoice = invoices.find(inv => inv.id === value)
                 setSelectedInvoiceForPayment(invoice)
                 if (invoice) {
                   setPaymentFormData(prev => ({
@@ -422,8 +420,8 @@ export default function PaymentManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   {invoices.filter(inv => inv.status !== 'paid').map(invoice => (
-                    <SelectItem key={invoice.id} value={invoice.id.toString()}>
-                      {invoice.invoiceNumber} - {invoice.student} (RM {invoice.totalAmount})
+                    <SelectItem key={invoice.id} value={invoice.id}>
+                      {invoice.invoiceNumber} - {invoice.studentName} (RM {invoice.totalAmount})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -443,7 +441,9 @@ export default function PaymentManagement() {
                   <p className="text-sm text-gray-500 mt-1">
                     发票总金额: RM {selectedInvoiceForPayment.totalAmount}
                     {(() => {
-                      const outstandingBalance = getInvoiceOutstandingBalance(selectedInvoiceForPayment.id)
+                      const invoicePayments = payments.filter(p => p.invoiceId === selectedInvoiceForPayment.id)
+                      const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amountPaid, 0)
+                      const outstandingBalance = selectedInvoiceForPayment.totalAmount - totalPaid
                       return outstandingBalance > 0 ? (
                         <span className="text-orange-600 ml-2">
                           (待缴余额: RM {outstandingBalance})
@@ -487,16 +487,16 @@ export default function PaymentManagement() {
                 <div>
                   <Label>缴费历史</Label>
                   <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
-                    {getInvoicePaymentHistory(selectedInvoiceForPayment.id).map((payment) => (
+                    {getPaymentsByInvoice(selectedInvoiceForPayment.id).map((payment) => (
                       <div key={payment.id} className="flex justify-between items-center p-2 bg-gray-50 rounded text-sm">
-                        <span>{payment.date}</span>
-                        <span className="font-medium">RM {payment.amount}</span>
+                        <span>{payment.datePaid}</span>
+                        <span className="font-medium">RM {payment.amountPaid}</span>
                         <Badge variant={payment.status === 'completed' ? 'default' : 'secondary'}>
                           {payment.status === 'completed' ? '已缴费' : '待处理'}
                         </Badge>
                       </div>
                     ))}
-                    {getInvoicePaymentHistory(selectedInvoiceForPayment.id).length === 0 && (
+                    {getPaymentsByInvoice(selectedInvoiceForPayment.id).length === 0 && (
                       <p className="text-gray-500 text-sm">暂无缴费记录</p>
                     )}
                   </div>
