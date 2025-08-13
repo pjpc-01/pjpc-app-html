@@ -1,4 +1,5 @@
 export { default as CheckinNavigation } from './checkin-navigation'
 export { default as ErrorBoundary } from './error-boundary'
-
-export { default as ThemeProvider } from './theme-provider'
+export { ThemeProvider } from './theme-provider'
+export { default as GlobalSearch } from '../../app/components/shared/GlobalSearch'
+export { default as QuickGlobalFilters } from '../../app/components/shared/QuickGlobalFilters'
