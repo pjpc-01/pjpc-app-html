@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -12,7 +12,6 @@ import TeacherDashboard from "./components/dashboards/teacher-dashboard"
 import ParentDashboard from "./components/dashboards/parent-dashboard"
 import AccountantDashboard from "./components/dashboards/accountant-dashboard"
 import ErrorBoundary from "@/components/shared/error-boundary"
-import { GlobalSearch } from "@/components/shared"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle as AlertTriangleIcon, Mail, Clock } from "lucide-react"
@@ -22,20 +21,6 @@ export default function Dashboard() {
   const { user, userProfile, loading, logout, resendVerification, error, connectionStatus, clearError } = useAuth()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
-
-  // 键盘快捷键处理
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Ctrl+K 或 Cmd+K 打开搜索
-      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
-        event.preventDefault()
-        router.push('/search')
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [router])
 
 
 
@@ -281,20 +266,6 @@ export default function Dashboard() {
               <GraduationCap className="h-8 w-8 text-blue-600" />
               <h1 className="ml-2 text-xl font-bold text-gray-900">{getRoleTitle()}</h1>
             </div>
-            
-            {/* Global Search */}
-            <div className="flex-1 max-w-md mx-8 relative">
-              <GlobalSearch 
-                placeholder="全局搜索：学生、费用、发票、收据..."
-                className="w-full"
-              />
-              <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                <kbd className="px-2 py-1 text-xs font-semibold text-gray-500 bg-gray-100 border border-gray-200 rounded">
-                  ⌘K
-                </kbd>
-              </div>
-            </div>
-            
             <div className="flex items-center space-x-4">
               {/* Quick Access to Check-in System */}
               <Button variant="outline" size="sm" asChild>
