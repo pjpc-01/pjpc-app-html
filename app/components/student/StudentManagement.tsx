@@ -127,8 +127,8 @@ export default function StudentManagement({
       }
     })
 
-         return filtered
-   }, [students, searchTerm, selectedGrade, selectedCenter, sortBy, sortOrder])
+    return filtered
+  }, [students, searchTerm, selectedGrade, selectedCenter, sortBy, sortOrder])
 
   // 分页逻辑
   const paginatedStudents = useMemo(() => {

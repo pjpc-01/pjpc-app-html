@@ -83,8 +83,8 @@ export default function StudentFilters({
 
   // 获取筛选选项
   const filterOptions = useMemo(() => {
-    const grades = Array.from(new Set(students.map(s => s.grade))).sort()
-    const statuses = Array.from(new Set(students.map(s => s.status))).sort()
+    const grades = Array.from(new Set(students.map(s => s.grade).filter(Boolean))).sort()
+    const statuses = Array.from(new Set(students.map(s => s.status).filter(Boolean))).sort()
 
     return { grades, statuses }
   }, [students])
@@ -116,6 +116,14 @@ export default function StudentFilters({
       if (student.status?.toLowerCase().includes(lowerInput)) {
         suggestions.add(student.status)
       }
+      // 家长姓名匹配
+      if (student.parentName?.toLowerCase().includes(lowerInput)) {
+        suggestions.add(student.parentName)
+      }
+      // 家长邮箱匹配
+      if (student.parentEmail?.toLowerCase().includes(lowerInput)) {
+        suggestions.add(student.parentEmail)
+      }
     })
 
     setSearchSuggestions(Array.from(suggestions).slice(0, 5))
@@ -135,26 +143,36 @@ export default function StudentFilters({
   const clearFilters = () => {
     setSearchTerm("")
     setSelectedGrade("")
+    setSelectedCenter("")
+    setSelectedGender("")
+    setSelectedLevel("")
+    setAgeRange([0, 25])
+    setEnrollmentYear("")
+    setHasPhone(false)
+    setHasAddress(false)
+    setDateRange({ from: undefined, to: undefined })
     setSearchSuggestions([])
     setShowSuggestions(false)
   }
 
-  const hasActiveFilters = searchTerm || selectedGrade
+  const hasActiveFilters = searchTerm || selectedGrade || selectedCenter || selectedGender || selectedLevel || 
+                          enrollmentYear || hasPhone || hasAddress || (ageRange[0] > 0 || ageRange[1] < 25) ||
+                          dateRange.from || dateRange.to
 
   // 应用筛选
   const applyFilters = () => {
     const filters: FilterState = {
       searchTerm,
       selectedGrade,
-      selectedCenter: "",
-      selectedGender: "",
-      selectedLevel: "",
-      ageRange: [0, 25],
-      enrollmentYear: "",
-      hasPhone: false,
-      hasAddress: false,
-      sortBy: "name",
-      sortOrder: 'asc'
+      selectedCenter,
+      selectedGender,
+      selectedLevel,
+      ageRange,
+      enrollmentYear,
+      hasPhone,
+      hasAddress,
+      sortBy,
+      sortOrder
     }
     onFiltersChange?.(filters)
   }
@@ -162,7 +180,7 @@ export default function StudentFilters({
   // 当筛选条件改变时自动应用
   useEffect(() => {
     applyFilters()
-  }, [searchTerm, selectedGrade])
+  }, [searchTerm, selectedGrade, selectedCenter, selectedGender, selectedLevel, ageRange, enrollmentYear, hasPhone, hasAddress, sortBy, sortOrder])
 
   return (
     <Card>
@@ -174,7 +192,7 @@ export default function StudentFilters({
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="智能搜索：姓名、学号、年级、中心..."
+                  placeholder="智能搜索：姓名、学号、年级、家长信息..."
                   value={searchTerm}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   onFocus={() => setShowSuggestions(true)}
@@ -375,6 +393,7 @@ export default function StudentFilters({
                     <SelectItem value="studentId">学号</SelectItem>
                     <SelectItem value="grade">年级</SelectItem>
                     <SelectItem value="status">状态</SelectItem>
+                    <SelectItem value="parentName">家长姓名</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
