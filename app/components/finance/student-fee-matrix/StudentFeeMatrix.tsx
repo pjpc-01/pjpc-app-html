@@ -11,16 +11,13 @@ import { BatchOperationsDialog } from "./BatchOperationsDialog"
 import { StudentCard } from "./StudentCard"
 
 export const StudentFeeMatrix = () => {
-  const { feeItems } = useFees()
+  const { fees } = useFees()
   const { students } = useStudents()
   const { 
-    toggleStudentFee, 
+    toggleStudentSubItem,
     isAssigned, 
     calculateStudentTotal, 
-    assignFeeToAllStudents,
-    toggleStudentSubItem,
-    getStudentSubItemState,
-    setStudentSubItemState
+    getStudentSubItemState
   } = useStudentFees()
   const { createInvoice: createInvoiceFromHook, invoices } = useInvoices()
   
@@ -33,13 +30,13 @@ export const StudentFeeMatrix = () => {
   const [selectedGradeFilter, setSelectedGradeFilter] = useState<string>("all")
   const [batchDialogOpen, setBatchDialogOpen] = useState(false)
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [selectedSubItems, setSelectedSubItems] = useState<{feeId: number, subItemId: number}[]>([])
+  const [selectedSubItems, setSelectedSubItems] = useState<{feeId: string, subItemId: number}[]>([])
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [selectedCriteria, setSelectedCriteria] = useState<'grade' | null>(null)
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
   const [batchMode, setBatchMode] = useState(false)
 
-  const activeFees = feeItems.filter(fee => fee.status === 'active')
+  const activeFees = fees.filter(fee => fee.status === 'active')
 
   // Get unique categories from active fees
   const categories = [...new Set(activeFees.map(fee => fee.category).filter(Boolean))]
@@ -48,7 +45,7 @@ export const StudentFeeMatrix = () => {
   const filteredStudents = useMemo(() => {
     return students.filter(student => {
       // Exclude graduated students
-      if (student.grade === '已毕业') return false
+      if (student.status === 'graduated') return false
       
       // Apply grade filter
       if (selectedGradeFilter !== "all" && student.grade !== selectedGradeFilter) return false
@@ -59,7 +56,7 @@ export const StudentFeeMatrix = () => {
       const searchLower = searchTerm.toLowerCase()
       return (
         student.name.toLowerCase().includes(searchLower) ||
-        student.id.toLowerCase().includes(searchLower) ||
+        student.studentId.toLowerCase().includes(searchLower) ||
         student.grade.toLowerCase().includes(searchLower) ||
         student.parentName.toLowerCase().includes(searchLower)
       )
@@ -69,7 +66,7 @@ export const StudentFeeMatrix = () => {
   // Get available grades from all students (excluding graduated) in ascending order
   const availableGrades = useMemo(() => {
     const grades = [...new Set(students
-      .filter(student => student.grade !== '已毕业')
+      .filter(student => student.status !== 'graduated')
       .map(s => s.grade))]
     
     return grades.sort((a, b) => {
@@ -118,7 +115,7 @@ export const StudentFeeMatrix = () => {
     })
   }
 
-  const toggleFeeExpansion = (studentId: string, feeId: number) => {
+  const toggleFeeExpansion = (studentId: string, feeId: string) => {
     const key = `${studentId}-${feeId}`
     setExpandedFees(prev => {
       const newMap = new Map(prev)
@@ -127,7 +124,7 @@ export const StudentFeeMatrix = () => {
     })
   }
 
-  const isFeeExpanded = (studentId: string, feeId: number) => {
+  const isFeeExpanded = (studentId: string, feeId: string) => {
     const key = `${studentId}-${feeId}`
     return expandedFees.get(key) || false
   }
@@ -187,22 +184,15 @@ export const StudentFeeMatrix = () => {
 
     // Create the actual invoice
     const newInvoice = createInvoiceFromHook({
-      studentId: Number(studentId),
-      student: student.name,
-      amount: studentTotal,
+      studentId: studentId,
+      studentName: student.name,
+      studentGrade: student.grade,
+      totalAmount: studentTotal,
       items: invoiceItems,
       status: 'issued',
       issueDate: new Date().toISOString().split('T')[0],
       dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 15 days from now
-      paidDate: null,
-      paymentMethod: null,
-      notes: `${new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}学费`,
-      tax: 0,
-      discount: 0,
-      totalAmount: studentTotal,
-      parentEmail: student.parentEmail || `${student.name}@example.com`,
-      reminderSent: false,
-      lastReminderDate: null
+      notes: `${new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}学费`
     })
 
     // Mark invoice as created for this student
@@ -220,7 +210,7 @@ export const StudentFeeMatrix = () => {
   const hasInvoiceThisMonth = (studentId: string) => {
     const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM format
     const studentInvoicesThisMonth = invoices.filter(invoice => 
-      invoice.studentId === Number(studentId) && 
+      invoice.studentId === studentId && 
       invoice.issueDate.startsWith(currentMonth)
     )
     return studentInvoicesThisMonth.length > 0
@@ -234,6 +224,7 @@ export const StudentFeeMatrix = () => {
   }
 
   const toggleBatchMode = () => {
+    console.log('toggleBatchMode called, current batchMode:', batchMode)
     setBatchMode(!batchMode)
   }
 
@@ -253,7 +244,7 @@ export const StudentFeeMatrix = () => {
     )
   }
 
-  const handleSubItemToggle = (feeId: number, subItemId: number) => {
+  const handleSubItemToggle = (feeId: string, subItemId: number) => {
     setSelectedSubItems(prev => {
       const existing = prev.find(item => item.feeId === feeId && item.subItemId === subItemId)
       if (existing) {
@@ -264,7 +255,7 @@ export const StudentFeeMatrix = () => {
     })
   }
 
-  const isSubItemSelected = (feeId: number, subItemId: number) => {
+  const isSubItemSelected = (feeId: string, subItemId: number) => {
     return selectedSubItems.some(item => item.feeId === feeId && item.subItemId === subItemId)
   }
 
@@ -348,14 +339,19 @@ export const StudentFeeMatrix = () => {
     setSelectedGrades([])
   }
 
-  // New function to handle batch toggling from individual student cards
-  const handleBatchToggleSubItem = (feeId: number, subItemId: number, targetState: boolean) => {
-    if (!editMode || !batchMode) return
-
+  // Handle batch toggle for sub-items
+  const handleBatchToggleSubItem = (feeId: string, subItemId: number, targetState: boolean) => {
+    console.log('handleBatchToggleSubItem called:', { feeId, subItemId, targetState, editMode, batchMode })
+    if (!editMode || !batchMode) {
+      console.log('Batch toggle blocked: editMode =', editMode, 'batchMode =', batchMode)
+      return
+    }
+    
     // Toggle the same sub-item for all filtered students
     filteredStudents.forEach(student => {
       const currentState = getStudentSubItemState(student.id, feeId, subItemId)
       if (currentState !== targetState) {
+        console.log('Toggling for student:', student.id, 'from', currentState, 'to', targetState)
         toggleStudentSubItem(student.id, feeId, subItemId)
       }
     })

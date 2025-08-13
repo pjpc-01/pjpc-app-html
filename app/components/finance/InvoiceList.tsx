@@ -60,7 +60,7 @@ export function InvoiceList({
     setIsDeleteDialogOpen(false)
     setInvoiceToDelete(null)
   }
-  const getPaymentStatusBadge = (invoiceId: number) => {
+  const getPaymentStatusBadge = (invoiceId: string) => {
     const invoicePayments = payments.filter(payment => payment.invoiceId === invoiceId)
     
     if (invoicePayments.length === 0) {
@@ -68,7 +68,7 @@ export function InvoiceList({
     }
     
     const completedPayments = invoicePayments.filter(p => p.status === 'completed')
-    const totalPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0)
+    const totalPaid = completedPayments.reduce((sum, p) => sum + p.amountPaid, 0)
     const invoice = invoices.find(inv => inv.id === invoiceId)
     
     if (!invoice) {
@@ -112,30 +112,30 @@ export function InvoiceList({
                 id="search"
                 placeholder="搜索发票号码、学生姓名..."
                 value={filters.search || ""}
-                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                onChange={(e) => setFilters((prev: any) => ({ ...prev, search: e.target.value }))}
               />
             </div>
             <div className="w-48">
               <Label>缴费状态</Label>
               <Select 
                 value={filters.status || "all"} 
-                onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+                onValueChange={(value) => setFilters((prev: any) => ({ ...prev, status: value }))}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                               <SelectContent>
-                   <SelectItem value="all">所有缴费状态</SelectItem>
-                   <SelectItem value="unpaid">未缴费</SelectItem>
-                   <SelectItem value="paid">已缴费</SelectItem>
-                 </SelectContent>
+                <SelectContent>
+                  <SelectItem value="all">所有缴费状态</SelectItem>
+                  <SelectItem value="unpaid">未缴费</SelectItem>
+                  <SelectItem value="paid">已缴费</SelectItem>
+                </SelectContent>
               </Select>
             </div>
             <div className="w-48">
               <Label>年级</Label>
               <Select 
                 value={filters.grade || "all"} 
-                onValueChange={(value) => setFilters(prev => ({ ...prev, grade: value }))}
+                onValueChange={(value) => setFilters((prev: any) => ({ ...prev, grade: value }))}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -254,7 +254,7 @@ export function InvoiceList({
                       {invoices.filter(invoice => {
                         const invoicePayments = payments.filter(payment => payment.invoiceId === invoice.id)
                         const completedPayments = invoicePayments.filter(p => p.status === 'completed')
-                        const totalPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0)
+                        const totalPaid = completedPayments.reduce((sum, p) => sum + p.amountPaid, 0)
                         return totalPaid === 0
                       }).length}
                     </p>
@@ -272,7 +272,7 @@ export function InvoiceList({
                       {invoices.filter(invoice => {
                         const invoicePayments = payments.filter(payment => payment.invoiceId === invoice.id)
                         const completedPayments = invoicePayments.filter(p => p.status === 'completed')
-                        const totalPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0)
+                        const totalPaid = completedPayments.reduce((sum, p) => sum + p.amountPaid, 0)
                         return totalPaid >= invoice.totalAmount
                       }).length}
                     </p>

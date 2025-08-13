@@ -1,9 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { FeeItem } from "../../hooks/useFees"
+import { Fee } from "@/hooks/useFees"
 
 interface FeeCardProps {
-  fee: FeeItem
+  fee: Fee
   isAssigned?: boolean
   onToggle?: () => void
   showAmount?: boolean
@@ -21,7 +21,6 @@ export const FeeCard = ({
 }: FeeCardProps) => {
   // Use provided calculateAmount function or fall back to global active sub-items
   const activeAmount = calculateAmount ? calculateAmount() : fee.subItems
-    .filter(subItem => subItem.active)
     .reduce((total, subItem) => total + subItem.amount, 0)
 
   return (
@@ -36,9 +35,8 @@ export const FeeCard = ({
             <p className="text-sm text-gray-600 font-medium">RM {activeAmount}</p>
           )}
           <Badge variant="outline" className="text-xs mt-1">
-            {fee.type === "monthly" ? "月费" : 
-             fee.type === "one-time" ? "一次性" :
-             fee.type === "semester" ? "学期" : "年费"}
+            {fee.type === "recurring" ? "月费" : 
+             fee.type === "one-time" ? "一次性" : "可选"}
           </Badge>
         </div>
 

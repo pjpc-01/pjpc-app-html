@@ -1,25 +1,18 @@
 import { useState, useCallback } from 'react'
 
+// Invoice interface matching exact PocketBase field names
 export interface Invoice {
-  id: number
-  invoiceNumber: string
-  receiptNumber?: string // Reserved receipt number (null until payment)
-  student: string
-  studentId: number
-  amount: number
-  items: { name: string; amount: number }[]
-  status: 'draft' | 'issued' | 'sent' | 'pending' | 'overdue' | 'paid' | 'cancelled'
+  id: string
+  studentId: string
+  studentName: string
+  studentGrade: string
   issueDate: string
   dueDate: string
-  paidDate: string | null
-  paymentMethod: string | null
-  notes: string
-  tax: number
-  discount: number
+  status: 'issued' | 'paid' | 'overdue' | 'cancelled'
+  items: { name: string; amount: number }[]
   totalAmount: number
-  parentEmail: string
-  reminderSent: boolean
-  lastReminderDate: string | null
+  notes: string
+  invoiceNumber: string
 }
 
 export interface InvoiceFilters {
@@ -30,11 +23,12 @@ export interface InvoiceFilters {
 export const useInvoices = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([
     { 
-      id: 1, 
+      id: "1", 
       invoiceNumber: "INV-2024-001", 
-      student: "王小明", 
-      studentId: 1,
-      amount: 1200, 
+      studentId: "1",
+      studentName: "王小明",
+      studentGrade: "二年级",
+      totalAmount: 1200, 
       items: [
         { name: "基础学费", amount: 800 },
         { name: "特色课程费", amount: 400 }
@@ -42,60 +36,38 @@ export const useInvoices = () => {
       status: "issued", 
       issueDate: "2024-01-15", 
       dueDate: "2024-01-30",
-      paidDate: "2024-01-20",
-      paymentMethod: "支付宝",
-      notes: "1月学费",
-      tax: 0,
-      discount: 0,
-      totalAmount: 1200,
-      parentEmail: "parent1@example.com",
-      reminderSent: false,
-      lastReminderDate: null
+      notes: "1月学费"
     },
     { 
-      id: 2, 
+      id: "2", 
       invoiceNumber: "INV-2024-002", 
-      student: "李小红", 
-      studentId: 2,
-      amount: 1500, 
+      studentId: "2",
+      studentName: "李小红",
+      studentGrade: "三年级",
+      totalAmount: 1500, 
       items: [
         { name: "基础学费", amount: 1000 },
         { name: "特色课程费", amount: 500 }
       ],
-      status: "pending", 
+      status: "issued", 
       issueDate: "2024-01-16", 
       dueDate: "2024-01-31",
-      paidDate: null,
-      paymentMethod: null,
-      notes: "1月学费",
-      tax: 0,
-      discount: 100,
-      totalAmount: 1400,
-      parentEmail: "parent2@example.com",
-      reminderSent: true,
-      lastReminderDate: "2024-01-25"
+      notes: "1月学费"
     },
     { 
-      id: 3, 
+      id: "3", 
       invoiceNumber: "INV-2024-003", 
-      student: "张小华", 
-      studentId: 3,
-      amount: 800, 
+      studentId: "3",
+      studentName: "张小华",
+      studentGrade: "一年级",
+      totalAmount: 800, 
       items: [
         { name: "基础学费", amount: 800 }
       ],
       status: "overdue", 
       issueDate: "2024-01-10", 
       dueDate: "2024-01-25",
-      paidDate: null,
-      paymentMethod: null,
-      notes: "1月学费",
-      tax: 0,
-      discount: 0,
-      totalAmount: 800,
-      parentEmail: "parent3@example.com",
-      reminderSent: true,
-      lastReminderDate: "2024-01-26"
+      notes: "1月学费"
     }
   ])
 
@@ -113,61 +85,43 @@ export const useInvoices = () => {
 
   const createInvoice = useCallback((invoiceData: Omit<Invoice, 'id' | 'invoiceNumber'>) => {
     const invoiceNumber = generateInvoiceNumber()
-    const receiptNumber = invoiceNumber.replace('INV-', 'RCP-') // Reserve receipt number
     
     const newInvoice: Invoice = {
       ...invoiceData,
-      id: Math.max(...invoices.map(inv => inv.id), 0) + 1,
-      invoiceNumber,
-      receiptNumber // Reserve the receipt number for this invoice
+      id: Math.max(...invoices.map(inv => parseInt(inv.id)), 0) + 1 + "",
+      invoiceNumber
     }
     setInvoices(prev => [...prev, newInvoice])
     return newInvoice
   }, [invoices, generateInvoiceNumber])
 
-  const updateInvoice = useCallback((invoiceId: number, updates: Partial<Invoice>) => {
+  const updateInvoice = useCallback((invoiceId: string, updates: Partial<Invoice>) => {
     setInvoices(prev => prev.map(invoice => 
       invoice.id === invoiceId ? { ...invoice, ...updates } : invoice
     ))
   }, [])
 
-  const deleteInvoice = useCallback((invoiceId: number) => {
+  const deleteInvoice = useCallback((invoiceId: string) => {
     setInvoices(prev => prev.filter(invoice => invoice.id !== invoiceId))
   }, [])
 
   const updateInvoiceStatus = useCallback((
-    invoiceId: number, 
-    status: Invoice['status'], 
-    paymentMethod?: string
+    invoiceId: string, 
+    status: Invoice['status']
   ) => {
-    const updates: Partial<Invoice> = { status }
-    if (status === 'paid') {
-      updates.paidDate = new Date().toISOString().split('T')[0]
-      if (paymentMethod) {
-        updates.paymentMethod = paymentMethod
-      }
-    }
-    updateInvoice(invoiceId, updates)
-  }, [updateInvoice])
-
-  const sendInvoiceReminder = useCallback((invoiceId: number) => {
-    const today = new Date().toISOString().split('T')[0]
-    updateInvoice(invoiceId, {
-      reminderSent: true,
-      lastReminderDate: today
-    })
+    updateInvoice(invoiceId, { status })
   }, [updateInvoice])
 
   const getFilteredInvoices = useCallback(() => {
     return invoices.filter(invoice => {
       const matchesStatus = !filters.status || invoice.status === filters.status
       const matchesStudent = !filters.studentName || 
-        invoice.student.toLowerCase().includes(filters.studentName.toLowerCase())
+        invoice.studentName.toLowerCase().includes(filters.studentName.toLowerCase())
       return matchesStatus && matchesStudent
     })
   }, [invoices, filters])
 
-  const generateInvoiceFromStudentFees = useCallback((studentId: number, studentName: string, month?: string): Invoice => {
+  const generateInvoiceFromStudentFees = useCallback((studentId: string, studentName: string, studentGrade: string, month?: string): Invoice => {
     const currentDate = new Date()
     const issueDate = currentDate.toISOString().split('T')[0]
     const dueDate = new Date(currentDate.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -178,37 +132,30 @@ export const useInvoices = () => {
       { name: "特色课程费", amount: 400 }
     ]
     
-    const amount = items.reduce((sum, item) => sum + item.amount, 0)
+    const totalAmount = items.reduce((sum, item) => sum + item.amount, 0)
     
     return createInvoice({
       studentId,
-      student: studentName,
-      amount,
+      studentName,
+      studentGrade,
+      totalAmount,
       items,
-      status: 'draft',
+      status: 'issued',
       issueDate,
       dueDate,
-      paidDate: null,
-      paymentMethod: null,
-      notes: month ? `${month}学费` : "学费",
-      tax: 0,
-      discount: 0,
-      totalAmount: amount,
-      parentEmail: `${studentName}@example.com`,
-      reminderSent: false,
-      lastReminderDate: null
+      notes: month ? `${month}学费` : "学费"
     })
   }, [createInvoice])
 
   const generateInvoicesForAllStudents = useCallback((month?: string) => {
     const students = [
-      { id: 1, name: "王小明" },
-      { id: 2, name: "李小红" },
-      { id: 3, name: "张小华" }
+      { id: "1", name: "王小明", grade: "二年级" },
+      { id: "2", name: "李小红", grade: "三年级" },
+      { id: "3", name: "张小华", grade: "一年级" }
     ]
     
     students.forEach(student => {
-      generateInvoiceFromStudentFees(student.id, student.name, month)
+      generateInvoiceFromStudentFees(student.id, student.name, student.grade, month)
     })
   }, [generateInvoiceFromStudentFees])
 
@@ -220,7 +167,7 @@ export const useInvoices = () => {
   const checkOverdueInvoices = useCallback(() => {
     const today = new Date().toISOString().split('T')[0]
     invoices.forEach(invoice => {
-      if (invoice.status === 'pending' && invoice.dueDate < today) {
+      if (invoice.status === 'issued' && invoice.dueDate < today) {
         updateInvoiceStatus(invoice.id, 'overdue')
       }
     })
@@ -229,7 +176,7 @@ export const useInvoices = () => {
   const getInvoiceStatistics = useCallback(() => {
     const total = invoices.length
     const paid = invoices.filter(inv => inv.status === 'paid').length
-    const pending = invoices.filter(inv => inv.status === 'pending').length
+    const issued = invoices.filter(inv => inv.status === 'issued').length
     const overdue = invoices.filter(inv => inv.status === 'overdue').length
     const totalAmount = invoices.reduce((sum, inv) => sum + inv.totalAmount, 0)
     const paidAmount = invoices
@@ -239,7 +186,7 @@ export const useInvoices = () => {
     return {
       total,
       paid,
-      pending,
+      issued,
       overdue,
       totalAmount,
       paidAmount,
@@ -255,7 +202,6 @@ export const useInvoices = () => {
     updateInvoice,
     deleteInvoice,
     updateInvoiceStatus,
-    sendInvoiceReminder,
     getFilteredInvoices,
     generateInvoiceFromStudentFees,
     generateInvoicesForAllStudents,

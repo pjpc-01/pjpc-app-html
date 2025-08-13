@@ -123,7 +123,7 @@ export const generateInvoicePDF = async (invoice: Invoice, options: PDFOptions):
           <div class="invoice-number">发票号码: ${invoice.invoiceNumber}</div>
           <div>开票日期: ${invoice.issueDate}</div>
           <div>到期日期: ${invoice.dueDate}</div>
-          <div>学生: ${invoice.student}</div>
+          <div>学生: ${invoice.studentName}</div>
         </div>
         <div>
           <span class="status ${invoice.status}">${getStatusText(invoice.status)}</span>
@@ -150,33 +150,15 @@ export const generateInvoicePDF = async (invoice: Invoice, options: PDFOptions):
       <div class="totals">
         <div class="total-row">
           <span>小计:</span>
-          <span>RM ${invoice.amount.toFixed(2)}</span>
+          <span>RM ${invoice.totalAmount.toFixed(2)}</span>
         </div>
-        ${invoice.tax > 0 ? `
-          <div class="total-row">
-            <span>税费:</span>
-            <span>RM ${invoice.tax.toFixed(2)}</span>
-          </div>
-        ` : ''}
-        ${invoice.discount > 0 ? `
-          <div class="total-row">
-            <span>折扣:</span>
-            <span>-RM ${invoice.discount.toFixed(2)}</span>
-          </div>
-        ` : ''}
         <div class="total-row total-amount">
           <span>总计:</span>
           <span>RM ${invoice.totalAmount.toFixed(2)}</span>
         </div>
       </div>
       
-      ${invoice.paymentMethod ? `
-        <div class="payment-info">
-          <h4>付款信息</h4>
-          <p>付款方式: ${invoice.paymentMethod}</p>
-          ${invoice.paidDate ? `<p>付款日期: ${invoice.paidDate}</p>` : ''}
-        </div>
-      ` : ''}
+
       
       ${invoice.notes ? `
         <div class="payment-info">

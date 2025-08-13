@@ -81,7 +81,7 @@ export function InvoiceCreateDialog({
 
   // Get selected student objects
   const selectedStudentObjects = studentsWithAmounts.filter(student => 
-    selectedStudents.includes(student.id.toString())
+    selectedStudents.includes(student.id)
   )
 
 
@@ -223,7 +223,7 @@ export function InvoiceCreateDialog({
               <Input 
                 type="date" 
                 value={invoiceFormData.dueDate}
-                onChange={(e) => setInvoiceFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+                onChange={(e) => setInvoiceFormData((prev: any) => ({ ...prev, dueDate: e.target.value }))}
               />
             </div>
 

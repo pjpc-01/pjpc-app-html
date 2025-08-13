@@ -41,11 +41,10 @@ export default function ReceiptManagement() {
     receipts,
     filters: receiptFilters,
     setFilters: setReceiptFilters,
-    createReceiptFromInvoice,
+    createReceipt,
     updateReceipt,
     deleteReceipt,
-    getReceiptByInvoiceNumber,
-    getReceiptsByStudent,
+    getReceiptByPayment,
     getFilteredReceipts,
     getReceiptStatistics,
     generateReceiptNumber
@@ -133,7 +132,7 @@ export default function ReceiptManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">待处理</p>
-                <p className="text-2xl font-bold text-orange-600">{receiptStats.pending}</p>
+                <p className="text-2xl font-bold text-orange-600">{receiptStats.draft}</p>
               </div>
               <AlertCircle className="h-8 w-8 text-orange-600" />
             </div>
@@ -184,8 +183,8 @@ export default function ReceiptManagement() {
               <Input
                 id="student-filter"
                 placeholder="搜索学生姓名..."
-                value={receiptFilters.studentName}
-                onChange={(e) => setReceiptFilters(prev => ({ ...prev, studentName: e.target.value }))}
+                value={receiptFilters.dateRange?.start || ''}
+                onChange={(e) => setReceiptFilters(prev => ({ ...prev, dateRange: { ...prev.dateRange, start: e.target.value } }))}
               />
             </div>
 
@@ -194,8 +193,8 @@ export default function ReceiptManagement() {
               <Input
                 id="invoice-filter"
                 placeholder="搜索发票号码..."
-                value={receiptFilters.invoiceNumber}
-                onChange={(e) => setReceiptFilters(prev => ({ ...prev, invoiceNumber: e.target.value }))}
+                value={receiptFilters.dateRange?.end || ''}
+                onChange={(e) => setReceiptFilters(prev => ({ ...prev, dateRange: { ...prev.dateRange, end: e.target.value } }))}
               />
             </div>
           </div>
@@ -231,11 +230,11 @@ export default function ReceiptManagement() {
                   <TableCell className="font-medium">{receipt.receiptNumber}</TableCell>
                   <TableCell className="flex items-center gap-1">
                     <Link className="h-3 w-3 text-blue-600" />
-                    {receipt.invoiceNumber}
+                    {receipt.paymentId}
                   </TableCell>
-                  <TableCell>{receipt.student}</TableCell>
-                  <TableCell>RM {receipt.totalAmount.toLocaleString()}</TableCell>
-                  <TableCell>{receipt.paymentDate}</TableCell>
+                  <TableCell>{receipt.recipientName}</TableCell>
+                  <TableCell>RM {receipt.totalPaid.toLocaleString()}</TableCell>
+                  <TableCell>{receipt.dateIssued}</TableCell>
                   <TableCell>{getReceiptStatusBadge(receipt.status)}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
@@ -280,28 +279,20 @@ export default function ReceiptManagement() {
                   <p className="text-lg font-semibold">{selectedReceipt.receiptNumber}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-600">发票号码</Label>
-                  <p className="text-lg font-semibold text-blue-600">{selectedReceipt.invoiceNumber}</p>
+                  <Label className="text-sm font-medium text-gray-600">付款ID</Label>
+                  <p className="text-lg font-semibold text-blue-600">{selectedReceipt.paymentId}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-600">学生姓名</Label>
-                  <p className="text-lg">{selectedReceipt.student}</p>
+                  <Label className="text-sm font-medium text-gray-600">收款人</Label>
+                  <p className="text-lg">{selectedReceipt.recipientName}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">总金额</Label>
-                  <p className="text-lg font-semibold text-green-600">RM {selectedReceipt.totalAmount.toLocaleString()}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">付款日期</Label>
-                  <p className="text-lg">{selectedReceipt.paymentDate}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">付款方式</Label>
-                  <p className="text-lg">{selectedReceipt.paymentMethod}</p>
+                  <p className="text-lg font-semibold text-green-600">RM {selectedReceipt.totalPaid.toLocaleString()}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">开具日期</Label>
-                  <p className="text-lg">{selectedReceipt.issueDate}</p>
+                  <p className="text-lg">{selectedReceipt.dateIssued}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">状态</Label>

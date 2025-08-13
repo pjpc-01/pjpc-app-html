@@ -24,7 +24,7 @@ import { usePayments } from "@/hooks/usePayments"
 export default function FinancialReports() {
   const { stats: financialStats, loading: financialLoading } = useFinancialStats()
   const { invoices } = useInvoices()
-  const { payments } = usePayments(invoices)
+  const { payments } = usePayments()
   const [selectedReportType, setSelectedReportType] = useState("monthly")
   const [selectedPeriod, setSelectedPeriod] = useState("2024")
 
@@ -74,7 +74,7 @@ export default function FinancialReports() {
   // Reconciliation functions
   const getReconciliationStatus = () => {
     const totalInvoiced = invoices.reduce((sum, inv) => sum + inv.totalAmount, 0)
-    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0)
+    const totalPaid = payments.reduce((sum, p) => sum + p.amountPaid, 0)
     const difference = totalPaid - totalInvoiced
     
     return {
@@ -86,12 +86,12 @@ export default function FinancialReports() {
       isBalanced: Math.abs(difference) < 0.01, // Allow for small rounding differences
       paidInvoices: invoices.filter(inv => {
         const invoicePayments = payments.filter(p => p.invoiceId === inv.id)
-        const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amount, 0)
+        const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amountPaid, 0)
         return totalPaid >= inv.totalAmount
       }).length,
       unpaidInvoices: invoices.filter(inv => {
         const invoicePayments = payments.filter(p => p.invoiceId === inv.id)
-        const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amount, 0)
+        const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amountPaid, 0)
         return totalPaid < inv.totalAmount
       }).length
     }
@@ -102,7 +102,7 @@ export default function FinancialReports() {
   // Calculate income and expenses
   const getFinancialSummary = () => {
     const successfulPayments = payments.filter(p => p.status === 'completed')
-    const totalIncome = successfulPayments.reduce((sum, p) => sum + p.amount, 0)
+    const totalIncome = successfulPayments.reduce((sum, p) => sum + p.amountPaid, 0)
     
     // Mock expenses data (in real app, this would come from expense management)
     const expenses = [

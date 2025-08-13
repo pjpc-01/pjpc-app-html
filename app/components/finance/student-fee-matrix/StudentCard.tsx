@@ -15,6 +15,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useState } from "react"
+import { Fee } from "@/hooks/useFees"
+import { Student } from "@/hooks/useStudents"
 
 interface SubItem {
   id: number
@@ -36,19 +38,11 @@ interface FeeItem {
   subItems: SubItem[]
 }
 
-interface Student {
-  id: string
-  name: string
-  studentId: string
-  grade: string
-  parentName: string
-}
-
 interface StudentCardProps {
   student: Student
   isExpanded: boolean
   onToggleExpansion: () => void
-  activeFees: FeeItem[]
+  activeFees: Fee[]
   studentTotal: number
   onUpdatePaymentStatus: (studentId: string, status: string) => void
   getPaymentStatus: (studentId: string) => { status: string; date: string }
@@ -56,14 +50,14 @@ interface StudentCardProps {
   onCreateInvoice: (studentId: string) => void
   editMode: boolean
   expandedFees: Map<string, boolean>
-  onToggleFeeExpansion: (studentId: string, feeId: number) => void
-  isFeeExpanded: (studentId: string, feeId: number) => boolean
-  isAssigned: (studentId: string, feeId: number) => boolean
-  toggleStudentSubItem: (studentId: string, feeId: number, subItemId: number) => void
-  getStudentSubItemState: (studentId: string, feeId: number, subItemId: number) => boolean
+  onToggleFeeExpansion: (studentId: string, feeId: string) => void
+  isFeeExpanded: (studentId: string, feeId: string) => boolean
+  isAssigned: (studentId: string, feeId: string) => boolean
+  toggleStudentSubItem: (studentId: string, feeId: string, subItemId: number) => void
+  getStudentSubItemState: (studentId: string, feeId: string, subItemId: number) => boolean
   hasInvoiceThisMonth: (studentId: string) => boolean
   batchMode: boolean
-  onBatchToggleSubItem: (feeId: number, subItemId: number, targetState: boolean) => void
+  onBatchToggleSubItem: (feeId: string, subItemId: number, targetState: boolean) => void
 }
 
 export const StudentCard = ({
@@ -90,7 +84,7 @@ export const StudentCard = ({
   const studentId = student.id
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
-  const toggleSubItemActive = (studentId: string, feeId: number, subItemId: number) => {
+  const toggleSubItemActive = (studentId: string, feeId: string, subItemId: number) => {
     if (editMode) {
       if (batchMode) {
         // In batch mode, toggle the same sub-item for all students
@@ -98,7 +92,7 @@ export const StudentCard = ({
         const targetState = !currentState
         onBatchToggleSubItem(feeId, subItemId, targetState)
       } else {
-        // Normal mode - toggle only for this student
+        // Normal mode, toggle just for this student
         toggleStudentSubItem(studentId, feeId, subItemId)
       }
     }

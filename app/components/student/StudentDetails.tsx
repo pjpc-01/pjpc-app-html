@@ -57,16 +57,12 @@ export default function StudentDetails({
                 </Badge>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">性别</label>
-                <p className="text-lg">{student.gender || '-'}</p>
+                <label className="text-sm font-medium text-gray-500">家长邮箱</label>
+                <p className="text-lg">{student.parentEmail || '-'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">出生日期</label>
-                <p className="text-lg">{student.birthDate ? formatBirthDate(student.birthDate) : '-'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">年龄</label>
-                <p className="text-lg">{student.age ? student.age : (student.birthDate ? calculateAge(student.birthDate) : '-')}</p>
+                <label className="text-sm font-medium text-gray-500">学号</label>
+                <p className="text-lg">{student.studentId || '-'}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">状态</label>
@@ -83,43 +79,17 @@ export default function StudentDetails({
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-500">联系电话</label>
-                <p className="text-lg">{student.phone || '-'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">邮箱地址</label>
-                <p className="text-lg">{student.email || '-'}</p>
-              </div>
-              <div className="md:col-span-2">
-                <label className="text-sm font-medium text-gray-500">地址</label>
-                <p className="text-lg">{student.address || '-'}</p>
-              </div>
-              <div>
                 <label className="text-sm font-medium text-gray-500">家长姓名</label>
                 <p className="text-lg">{student.parentName || '-'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">家长电话</label>
-                <p className="text-lg">{student.parentPhone || '-'}</p>
+                <label className="text-sm font-medium text-gray-500">家长邮箱</label>
+                <p className="text-lg">{student.parentEmail || '-'}</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>其他信息</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">入学日期</label>
-                <p className="text-lg">{student.enrollmentDate ? formatBirthDate(student.enrollmentDate) : '-'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">备注</label>
-                <p className="text-lg">{student.notes || '-'}</p>
-              </div>
-            </CardContent>
-          </Card>
+
 
           <div className="flex justify-end gap-2">
             <Button

@@ -124,11 +124,11 @@ export default function ReminderManagement() {
     }
   }
 
-  const handleSendReminder = (reminderId: number) => {
+  const handleSendReminder = (reminderId: string) => {
     sendReminder(reminderId)
   }
 
-  const handleScheduleReminder = (invoiceId: number, templateId: string) => {
+  const handleScheduleReminder = (invoiceId: string, templateId: string) => {
     scheduleReminder(invoiceId, templateId, new Date().toISOString().split('T')[0])
   }
 
@@ -331,9 +331,11 @@ export default function ReminderManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {getScheduledReminders().map((reminder) => (
+              {getScheduledReminders().map((reminder) => {
+                const invoice = invoices.find(inv => inv.id === reminder.invoiceId)
+                return (
                 <TableRow key={reminder.id}>
-                  <TableCell className="font-medium">{reminder.studentName}</TableCell>
+                  <TableCell className="font-medium">{invoice?.studentName || '未知学生'}</TableCell>
                   <TableCell>
                     <Badge variant="outline">
                       {reminder.type === "email" ? "邮件" : 
@@ -355,7 +357,8 @@ export default function ReminderManagement() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+                )
+              })}
             </TableBody>
           </Table>
         </CardContent>
@@ -380,14 +383,13 @@ export default function ReminderManagement() {
               </div>
               <div>
                 <Label>提醒类型</Label>
-                <Select value={newTemplate.type} onValueChange={(value) => setNewTemplate(prev => ({ ...prev, type: value }))}>
+                <Select value={newTemplate.type} onValueChange={(value) => setNewTemplate(prev => ({ ...prev, type: value as 'email' | 'sms' }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="email">邮件</SelectItem>
                     <SelectItem value="sms">短信</SelectItem>
-                    <SelectItem value="phone">电话</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -415,8 +417,8 @@ export default function ReminderManagement() {
             <div>
               <Label>邮件内容</Label>
               <Textarea
-                value={newTemplate.content}
-                onChange={(e) => setNewTemplate(prev => ({ ...prev, content: e.target.value }))}
+                value={newTemplate.body}
+                onChange={(e) => setNewTemplate(prev => ({ ...prev, body: e.target.value }))}
                 placeholder="尊敬的{家长姓名}，您好！{学生姓名}的{费用项目}即将到期，请及时缴费。"
                 rows={6}
               />
@@ -453,14 +455,13 @@ export default function ReminderManagement() {
               </div>
               <div>
                 <Label>提醒类型</Label>
-                <Select value={newTemplate.type} onValueChange={(value) => setNewTemplate(prev => ({ ...prev, type: value }))}>
+                <Select value={newTemplate.type} onValueChange={(value) => setNewTemplate(prev => ({ ...prev, type: value as 'email' | 'sms' }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="email">邮件</SelectItem>
                     <SelectItem value="sms">短信</SelectItem>
-                    <SelectItem value="phone">电话</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -488,8 +489,8 @@ export default function ReminderManagement() {
             <div>
               <Label>邮件内容</Label>
               <Textarea
-                value={newTemplate.content}
-                onChange={(e) => setNewTemplate(prev => ({ ...prev, content: e.target.value }))}
+                value={newTemplate.body}
+                onChange={(e) => setNewTemplate(prev => ({ ...prev, body: e.target.value }))}
                 placeholder="尊敬的{家长姓名}，您好！{学生姓名}的{费用项目}即将到期，请及时缴费。"
                 rows={6}
               />

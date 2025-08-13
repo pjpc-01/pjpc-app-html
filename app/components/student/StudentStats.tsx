@@ -28,75 +28,41 @@ export default function StudentStats({
 }: StudentStatsProps) {
   const stats = useMemo(() => {
     const total = students.length
-    const primary = students.filter(s => s.level === 'primary').length
-    const secondary = students.filter(s => s.level === 'secondary').length
-    const hasPhone = students.filter(s => s.father_phone || s.mother_phone || s.phone).length
-    const hasAddress = students.filter(s => s.home_address || s.address).length
-    
-    // 按年龄范围分组
-    const byAgeRange = students.reduce((acc, student) => {
-      const age = student.age || 0
-      if (age >= 7 && age <= 12) {
-        acc['7-12岁'] = (acc['7-12岁'] || 0) + 1
-      } else if (age >= 13 && age <= 18) {
-        acc['13-18岁'] = (acc['13-18岁'] || 0) + 1
-      } else if (age > 0) {
-        acc['其他年龄'] = (acc['其他年龄'] || 0) + 1
-      } else {
-        acc['年龄未知'] = (acc['年龄未知'] || 0) + 1
-      }
-      return acc
-    }, {} as Record<string, number>)
-    
-    // 按中心分组
-    const byCenter = students.reduce((acc, student) => {
-      const center = student.center || '未知中心'
-      acc[center] = (acc[center] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
+    const active = students.filter(s => s.status === 'active').length
+    const graduated = students.filter(s => s.status === 'graduated').length
+    const transferred = students.filter(s => s.status === 'transferred').length
+    const inactive = students.filter(s => s.status === 'inactive').length
     
     // 按年级分组
     const byGrade = students.reduce((acc, student) => {
-      const grade = student.standard || student.grade || '未知年级'
+      const grade = student.grade || '未知年级'
       acc[grade] = (acc[grade] || 0) + 1
       return acc
     }, {} as Record<string, number>)
     
-    // 按性别分组
-    const byGender = students.reduce((acc, student) => {
-      const gender = student.gender || '未知'
-      acc[gender] = (acc[gender] || 0) + 1
+    // 按状态分组
+    const byStatus = students.reduce((acc, student) => {
+      const status = student.status || '未知状态'
+      acc[status] = (acc[status] || 0) + 1
       return acc
     }, {} as Record<string, number>)
     
-    // 最近入学的学生（3个月内）
-    const threeMonthsAgo = new Date()
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
-    const recent = students.filter(student => {
-      const enrollmentDate = new Date(student.enrollmentDate || student.createdAt)
-      return enrollmentDate >= threeMonthsAgo
-    }).length
-    
-    // 本月新入学
-    const now = new Date()
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const newThisMonth = students.filter(student => {
-      const enrollmentDate = new Date(student.enrollmentDate || student.createdAt)
-      return enrollmentDate >= firstDayOfMonth
-    }).length
+    // 按家长邮箱分组
+    const byEmail = students.reduce((acc, student) => {
+      const hasEmail = student.parentEmail ? '有邮箱' : '无邮箱'
+      acc[hasEmail] = (acc[hasEmail] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
 
     return {
       total,
-      primary,
-      secondary,
-      hasPhone,
-      hasAddress,
-      byCenter,
+      active,
+      graduated,
+      transferred,
+      inactive,
       byGrade,
-      byGender,
-      byAgeRange,
-      recent,
-      newThisMonth,
+      byStatus,
+      byEmail,
       percentage: totalStudents > 0 ? Math.round((total / totalStudents) * 100) : 0
     }
   }, [students, totalStudents])
@@ -136,43 +102,43 @@ export default function StudentStats({
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <GraduationCap className="h-4 w-4 text-green-500" />
-                <span className="text-lg font-semibold">{stats.primary}</span>
+                <span className="text-lg font-semibold">{stats.active}</span>
               </div>
-              <p className="text-xs text-gray-600">小学生</p>
+              <p className="text-xs text-gray-600">在读学生</p>
             </div>
             
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <GraduationCap className="h-4 w-4 text-purple-500" />
-                <span className="text-lg font-semibold">{stats.secondary}</span>
+                <span className="text-lg font-semibold">{stats.graduated}</span>
               </div>
-              <p className="text-xs text-gray-600">中学生</p>
+              <p className="text-xs text-gray-600">已毕业</p>
             </div>
             
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Phone className="h-4 w-4 text-orange-500" />
-                <span className="text-lg font-semibold">{stats.hasPhone}</span>
+                <span className="text-lg font-semibold">{stats.transferred}</span>
               </div>
-              <p className="text-xs text-gray-600">有电话</p>
+              <p className="text-xs text-gray-600">已转学</p>
             </div>
           </div>
 
                      {/* 详细信息 */}
            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* 按中心分布 */}
-            {Object.keys(stats.byCenter).length > 0 && (
+            {/* 按状态分布 */}
+            {Object.keys(stats.byStatus).length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
-                  按中心分布
+                  按状态分布
                 </h4>
                 <div className="space-y-1">
-                  {Object.entries(stats.byCenter)
+                  {Object.entries(stats.byStatus)
                     .sort(([,a], [,b]) => b - a)
-                    .map(([center, count]) => (
-                      <div key={center} className="flex justify-between items-center text-xs">
-                        <span>{center}</span>
+                    .map(([status, count]) => (
+                      <div key={status} className="flex justify-between items-center text-xs">
+                        <span>{status}</span>
                         <Badge variant="outline" className="text-xs">
                           {count}
                         </Badge>
@@ -205,19 +171,19 @@ export default function StudentStats({
               </div>
             )}
 
-                         {/* 年龄范围统计 */}
-             {Object.keys(stats.byAgeRange).length > 0 && (
+                         {/* 邮箱统计 */}
+             {Object.keys(stats.byEmail).length > 0 && (
                <div>
                  <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
                    <TrendingUp className="h-3 w-3" />
-                   年龄分布
+                   邮箱分布
                  </h4>
                  <div className="space-y-1">
-                   {Object.entries(stats.byAgeRange)
+                   {Object.entries(stats.byEmail)
                      .sort(([,a], [,b]) => b - a)
-                     .map(([ageRange, count]) => (
-                       <div key={ageRange} className="flex justify-between items-center text-xs">
-                         <span>{ageRange}</span>
+                     .map(([emailStatus, count]) => (
+                       <div key={emailStatus} className="flex justify-between items-center text-xs">
+                         <span>{emailStatus}</span>
                          <Badge variant="outline" className="text-xs">
                            {count}
                          </Badge>
@@ -235,21 +201,15 @@ export default function StudentStats({
                </h4>
                <div className="space-y-1">
                  <div className="flex justify-between items-center text-xs">
-                   <span>有地址</span>
+                   <span>非活跃学生</span>
                    <Badge variant="outline" className="text-xs">
-                     {stats.hasAddress}
+                     {stats.inactive}
                    </Badge>
                  </div>
                  <div className="flex justify-between items-center text-xs">
-                   <span>最近入学</span>
+                   <span>总学生数</span>
                    <Badge variant="outline" className="text-xs">
-                     {stats.recent}
-                   </Badge>
-                 </div>
-                 <div className="flex justify-between items-center text-xs">
-                   <span>本月新生</span>
-                   <Badge variant="outline" className="text-xs">
-                     {stats.newThisMonth}
+                     {stats.total}
                    </Badge>
                  </div>
                </div>
