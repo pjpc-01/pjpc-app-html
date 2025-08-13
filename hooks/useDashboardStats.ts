@@ -62,23 +62,25 @@ export const useDashboardStats = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchAllStats = useCallback(() => {
+  useEffect(() => {
     setStats(prevStats => ({
       ...prevStats,
       totalStudents: students.length,
       totalParents: students.length,
     }))
-  }, [students])
-
-  useEffect(() => {
-    fetchAllStats()
-  }, [fetchAllStats])
+  }, [students.length])
 
   return {
     stats,
     loading: loading || studentsLoading,
     error: error || studentsError,
-    refetch: fetchAllStats
+    refetch: () => {
+      setStats(prevStats => ({
+        ...prevStats,
+        totalStudents: students.length,
+        totalParents: students.length,
+      }))
+    }
   }
 }
 

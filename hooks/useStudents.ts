@@ -89,20 +89,44 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
       setLoading(true)
       setError(null)
 
-      console.log('尝试获取学生数据...')
-      
       // Try PocketBase first, fallback to mock data
-      let allStudents = students
+      let allStudents: Student[] = []
       
       try {
-        console.log('尝试从PocketBase获取数据...')
         const pocketBaseStudents = await getAllStudents()
         const convertedStudents = pocketBaseStudents.map(convertPocketBaseStudent)
         allStudents = convertedStudents
-        console.log('✅ 成功从PocketBase获取学生数据:', convertedStudents.length, '个学生')
       } catch (pbError) {
-        console.warn('PocketBase连接失败，使用模拟数据:', pbError)
-        console.log('使用内置模拟数据:', students.length, '个学生')
+        // Use initial mock data instead of current students to avoid infinite loop
+        allStudents = [
+          {
+            id: "1",
+            name: "王小明",
+            studentId: "ST001",
+            grade: "一年级",
+            parentName: "王先生",
+            parentEmail: "wang@example.com",
+            status: "active"
+          },
+          {
+            id: "2",
+            name: "李小红",
+            studentId: "ST002",
+            grade: "二年级",
+            parentName: "李女士",
+            parentEmail: "li@example.com",
+            status: "active"
+          },
+          {
+            id: "3",
+            name: "张小华",
+            studentId: "ST003",
+            grade: "三年级",
+            parentName: "张先生",
+            parentEmail: "zhang@example.com",
+            status: "active"
+          }
+        ]
       }
       
       // Filter based on dataType
@@ -113,13 +137,11 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
           const gradeNum = parseInt(student.grade)
           return !isNaN(gradeNum) && gradeNum <= 6
         })
-        console.log('过滤后的primary学生:', filteredStudents.length, '个')
       } else if (dataType === 'secondary') {
         filteredStudents = allStudents.filter(student => {
           const gradeNum = parseInt(student.grade)
           return !isNaN(gradeNum) && gradeNum > 6
         })
-        console.log('过滤后的secondary学生:', filteredStudents.length, '个')
       }
       
       setStudents(filteredStudents)
@@ -130,11 +152,10 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
       const errorMessage = err instanceof Error ? err.message : '获取学生数据失败'
       setError(errorMessage)
       setHasMore(false)
-      console.error('❌ 获取学生数据失败:', err)
     } finally {
       setLoading(false)
     }
-  }, [dataType, pageSize, students])
+  }, [dataType, pageSize])
 
   const getStudentsByGradeHook = useCallback(async (grade: string): Promise<Student[]> => {
     try {
@@ -143,9 +164,37 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
     } catch (err) {
       console.warn('PocketBase获取年级学生失败，返回模拟数据:', err)
       // Return mock students filtered by grade
-      return students.filter(student => student.grade === grade)
+      return [
+        {
+          id: "1",
+          name: "王小明",
+          studentId: "ST001",
+          grade: "一年级",
+          parentName: "王先生",
+          parentEmail: "wang@example.com",
+          status: "active"
+        },
+        {
+          id: "2",
+          name: "李小红",
+          studentId: "ST002",
+          grade: "二年级",
+          parentName: "李女士",
+          parentEmail: "li@example.com",
+          status: "active"
+        },
+        {
+          id: "3",
+          name: "张小华",
+          studentId: "ST003",
+          grade: "三年级",
+          parentName: "张先生",
+          parentEmail: "zhang@example.com",
+          status: "active"
+        }
+      ].filter(student => student.grade === grade)
     }
-  }, [students])
+  }, [])
 
   const updateStudentHook = useCallback(async (studentId: string, updates: Partial<Student>) => {
     try {
@@ -253,7 +302,7 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
     } catch (err) {
       throw err
     }
-  }, [students])
+  }, [])
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
@@ -263,8 +312,9 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
 
   const refresh = useCallback(() => {
     setCurrentPage(1)
+    // Call fetchStudents directly without dependency
     fetchStudents(1, true)
-  }, [fetchStudents])
+  }, [])
 
   const clearError = useCallback(() => {
     setError(null)
@@ -283,7 +333,7 @@ export const useStudents = (options: UseStudentsOptions = {}) => {
 
   useEffect(() => {
     fetchStudents(currentPage)
-  }, [currentPage, dataType, fetchStudents])
+  }, [currentPage, dataType])
 
   return {
     students,

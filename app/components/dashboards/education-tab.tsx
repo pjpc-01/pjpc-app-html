@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -53,16 +53,14 @@ export default function EducationTab({
     setEducationSubTab(tab)
   }
 
-  // 获取教育数据统计
-  const getEducationStats = () => {
+  // 获取教育数据统计 - use useMemo to prevent unnecessary recalculations
+  const educationStats = useMemo(() => {
     return {
       primaryCount: students.length,
       secondaryCount: students.length,
       teachersCount: stats?.activeTeachers || 0
     }
-  }
-
-  const educationStats = getEducationStats()
+  }, [students.length, stats?.activeTeachers])
 
   return (
     <div className="space-y-6">
