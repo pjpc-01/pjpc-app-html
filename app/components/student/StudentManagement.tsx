@@ -35,8 +35,8 @@ export default function StudentManagement({
   const { students, loading, error, refetch, updateStudent, deleteStudent, addStudent } = useStudents({ dataType })
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedGrade, setSelectedGrade] = useState<string>("")
-  const [selectedCenter, setSelectedCenter] = useState<string>("")
+  const [selectedGrade, setSelectedGrade] = useState<string>("all")
+  const [selectedCenter, setSelectedCenter] = useState<string>("all")
   const [sortBy, setSortBy] = useState("name")
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -80,12 +80,12 @@ export default function StudentManagement({
     }
 
     // 年级筛选
-    if (selectedGrade) {
+    if (selectedGrade && selectedGrade !== "all") {
       filtered = filtered.filter(student => student.grade === selectedGrade)
     }
 
     // 状态筛选
-    if (selectedCenter) {
+    if (selectedCenter && selectedCenter !== "all") {
       filtered = filtered.filter(student => student.status === selectedCenter)
     }
 

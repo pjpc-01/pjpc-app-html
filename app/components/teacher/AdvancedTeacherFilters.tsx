@@ -309,7 +309,7 @@ export default function AdvancedTeacherFilters({
               <SelectValue placeholder="选择科目" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">全部科目</SelectItem>
+              <SelectItem value="all">全部科目</SelectItem>
               {subjectOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -323,7 +323,7 @@ export default function AdvancedTeacherFilters({
               <SelectValue placeholder="选择部门" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">全部部门</SelectItem>
+              <SelectItem value="all">全部部门</SelectItem>
               {departmentOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -337,7 +337,7 @@ export default function AdvancedTeacherFilters({
               <SelectValue placeholder="选择状态" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">全部状态</SelectItem>
+              <SelectItem value="all">全部状态</SelectItem>
               {statusOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}

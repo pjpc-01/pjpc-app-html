@@ -106,9 +106,9 @@ export default function TeacherBulkOperations({
 
   const handleBulkEdit = () => {
     const updates: Partial<Teacher> = {}
-    if (bulkEditData.status) updates.status = bulkEditData.status as any
-    if (bulkEditData.department) updates.department = bulkEditData.department
-    if (bulkEditData.subject) updates.subject = bulkEditData.subject
+    if (bulkEditData.status && bulkEditData.status !== "no-change") updates.status = bulkEditData.status as any
+    if (bulkEditData.department && bulkEditData.department !== "no-change") updates.department = bulkEditData.department
+    if (bulkEditData.subject && bulkEditData.subject !== "no-change") updates.subject = bulkEditData.subject
     if (bulkEditData.experience) updates.experience = parseInt(bulkEditData.experience)
     
     onBulkUpdate?.(updates)
@@ -212,7 +212,7 @@ export default function TeacherBulkOperations({
                       <SelectValue placeholder="选择状态" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">保持不变</SelectItem>
+                      <SelectItem value="no-change">保持不变</SelectItem>
                       <SelectItem value="approved">已批准</SelectItem>
                       <SelectItem value="pending">待审核</SelectItem>
                       <SelectItem value="suspended">已暂停</SelectItem>
@@ -227,7 +227,7 @@ export default function TeacherBulkOperations({
                       <SelectValue placeholder="选择部门" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">保持不变</SelectItem>
+                      <SelectItem value="no-change">保持不变</SelectItem>
                       <SelectItem value="数学组">数学组</SelectItem>
                       <SelectItem value="语文组">语文组</SelectItem>
                       <SelectItem value="英语组">英语组</SelectItem>
@@ -247,7 +247,7 @@ export default function TeacherBulkOperations({
                       <SelectValue placeholder="选择科目" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">保持不变</SelectItem>
+                      <SelectItem value="no-change">保持不变</SelectItem>
                       <SelectItem value="数学">数学</SelectItem>
                       <SelectItem value="语文">语文</SelectItem>
                       <SelectItem value="英语">英语</SelectItem>

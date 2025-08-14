@@ -84,7 +84,15 @@ export default function BulkOperations({
 
   const handleBulkUpdate = async () => {
     try {
-      await onBulkUpdate(updateData)
+      // 过滤掉 "no-change" 值
+      const filteredData = Object.entries(updateData).reduce((acc, [key, value]) => {
+        if (value !== "no-change" && value !== "") {
+          acc[key] = value
+        }
+        return acc
+      }, {} as Partial<Student>)
+      
+      await onBulkUpdate(filteredData)
       setIsUpdateDialogOpen(false)
       setUpdateData({})
     } catch (error) {
@@ -236,7 +244,7 @@ export default function BulkOperations({
                       <SelectValue placeholder="选择年级" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">不修改</SelectItem>
+                      <SelectItem value="no-change">不修改</SelectItem>
                       <SelectItem value="一年级">一年级</SelectItem>
                       <SelectItem value="二年级">二年级</SelectItem>
                       <SelectItem value="三年级">三年级</SelectItem>
@@ -260,7 +268,7 @@ export default function BulkOperations({
                       <SelectValue placeholder="选择状态" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">不修改</SelectItem>
+                      <SelectItem value="no-change">不修改</SelectItem>
                       <SelectItem value="active">在读</SelectItem>
                       <SelectItem value="graduated">已毕业</SelectItem>
                       <SelectItem value="transferred">已转学</SelectItem>

@@ -309,11 +309,6 @@ export default function TeacherManagement() {
     // TODO: Implement bulk update logic
   }
 
-  const handleBulkDelete = () => {
-    console.log('Bulk delete teachers')
-    // TODO: Implement bulk delete logic
-  }
-
   const handleBulkExport = (format: 'csv' | 'excel' | 'pdf') => {
     console.log('Bulk export teachers:', format)
     // TODO: Implement bulk export logic
