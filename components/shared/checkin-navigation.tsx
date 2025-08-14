@@ -21,7 +21,7 @@ export default function CheckInNavigation() {
         <p className="text-gray-600">选择对应的打卡设备页面</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* RFID Check-in */}
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
@@ -85,6 +85,42 @@ export default function CheckInNavigation() {
                 <div className="text-xs text-gray-500">现代智能系统</div>
               </div>
               <Link href="/nfc-checkin">
+                <Button className="flex items-center gap-2">
+                  进入系统
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Unified Attendance System */}
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-6 w-6 text-purple-600" />
+              统一打卡系统
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                  统一
+                </Badge>
+                <span className="text-sm text-gray-600">新系统</span>
+              </div>
+              <p className="text-sm text-gray-600">
+                统一的打卡系统，支持多设备、NFC读卡、实时数据同步。
+              </p>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-purple-600">统一</div>
+                <div className="text-xs text-gray-500">新打卡系统</div>
+              </div>
+              <Link href="/attendance?center=test-center">
                 <Button className="flex items-center gap-2">
                   进入系统
                   <ArrowRight className="h-4 w-4" />
