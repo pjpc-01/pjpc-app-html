@@ -2,51 +2,45 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Edit, Trash2, DollarSign } from "lucide-react"
-import { ToggleSwitch } from "./ToggleSwitch"
+import { Edit, Trash2, DollarSign, ChevronDown, ChevronRight } from "lucide-react"
+import { Fragment } from "react"
 
-interface SubItem {
-  id: number
-  name: string
-  amount: number
-  description: string
-  active: boolean
-}
 
 interface FeeItem {
-  id: number
+  id: string
   name: string
   amount: number
-  type: string
+  type: 'monthly' | 'one-time' | 'annual'
   description: string
   applicableGrades: string[]
-  status: string
+  status: 'active' | 'inactive'
   category: string
-  subItems: SubItem[]
 }
 
 interface FeeTableProps {
-  feeItems: FeeItem[]
-  isFeeEditMode: boolean
-  expandedItems: number[]
-  onToggleExpanded: (itemId: number) => void
-  onToggleSubItemActive: (itemId: number, subItemId: number) => void
+  // Grouped by category: { [category]: FeeItem[] }
+  groupedByCategory: Record<string, FeeItem[]>
+  // Expanded categories map
+  expandedCategories: Record<string, boolean>
+  onToggleCategory: (category: string) => void
+  // Item-level actions
   onEditFeeItem: (feeItem: FeeItem) => void
-  onDeleteFeeItem: (feeItemId: number) => void
+  onDeleteFeeItem: (feeItemId: string) => void
+  onToggleItemActive: (feeId: string, active: boolean) => void
+  // Toolbar
+  isFeeEditMode: boolean
   onFeeEditMode: () => void
-  calculateTotalAmount: (subItems: SubItem[]) => number
 }
 
 export const FeeTable = ({
-  feeItems,
-  isFeeEditMode,
-  expandedItems,
-  onToggleExpanded,
-  onToggleSubItemActive,
+  groupedByCategory,
+  expandedCategories,
+  onToggleCategory,
   onEditFeeItem,
   onDeleteFeeItem,
-  onFeeEditMode,
-  calculateTotalAmount
+  onToggleItemActive,
+  isFeeEditMode,
+  onFeeEditMode
 }: FeeTableProps) => {
   return (
     <Card>
@@ -71,72 +65,78 @@ export const FeeTable = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>分类</TableHead>
-              <TableHead>总金额</TableHead>
+              <TableHead>分类 / 项目</TableHead>
+              <TableHead>项目名称</TableHead>
+              <TableHead>金额</TableHead>
               <TableHead>收费类型</TableHead>
+              <TableHead>状态</TableHead>
               {isFeeEditMode && <TableHead>操作</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {feeItems.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">
-                  <div className="space-y-2">
-                    <div 
-                      className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
-                      onClick={() => onToggleExpanded(item.id)}
-                    >
-                      <span>{item.category}</span>
-                    </div>
-                    {expandedItems.includes(item.id) && (
-                      <div className="pl-8 space-y-2">
-                        {item.subItems.map((subItem) => (
-                          <div key={subItem.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border-l-2 border-blue-200">
-                            <div className="flex items-center gap-4">
-                              <span className="text-sm font-medium min-w-[120px]">{subItem.name}</span>
-                              <ToggleSwitch
-                                checked={subItem.active}
-                                onChange={() => onToggleSubItemActive(item.id, subItem.id)}
-                              />
-                            </div>
-                            <span className="text-sm font-medium text-blue-600">RM {subItem.amount}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="font-medium">RM {calculateTotalAmount(item.subItems)}</div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">
-                    {item.type === "monthly" ? "按月收费" : 
-                     item.type === "one-time" ? "一次性收费" :
-                     item.type === "semester" ? "学期收费" : "年度收费"}
-                  </Badge>
-                </TableCell>
-                {isFeeEditMode && (
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEditFeeItem(item)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onDeleteFeeItem(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+            {Object.entries(groupedByCategory).map(([category, items]) => (
+              <Fragment key={`cat-group-${category}`}>
+                <TableRow key={`cat-${category}`} onClick={() => onToggleCategory(category)}>
+                  <TableCell colSpan={6} className="font-medium cursor-pointer">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        {expandedCategories[category] ? (
+                          <ChevronDown className="h-4 w-4 text-gray-500" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-gray-500" />
+                        )}
+                        {category || '未分类'}
+                      </span>
+                      <span className="text-xs text-gray-500">{items.length} 项</span>
                     </div>
                   </TableCell>
-                )}
-              </TableRow>
+                </TableRow>
+                {expandedCategories[category] && items.map((item, idx) => (
+                  <TableRow key={`item-${category}-${item.id}-${idx}`}>
+                    <TableCell />
+                    <TableCell>
+                      <div className="font-medium">{item.name}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">RM {item.amount}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {item.type === 'monthly' ? '按月收费' : item.type === 'one-time' ? '一次性收费' : '年度收费'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant={item.status === 'active' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => onToggleItemActive(item.id, item.status !== 'active')}
+                      >
+                        {item.status === 'active' ? '已启用' : '已停用'}
+                      </Button>
+                    </TableCell>
+                    {isFeeEditMode && (
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onEditFeeItem(item)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onDeleteFeeItem(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </Fragment>
             ))}
           </TableBody>
         </Table>

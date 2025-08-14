@@ -44,12 +44,10 @@ export const calculateInvoicePaymentStatus = (
   }
   
   const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amountPaid, 0)
-  
-  if (totalPaid >= invoice.totalAmount) {
-    return "paid"
-  } else {
-    return "unpaid"
-  }
+  if (totalPaid > invoice.totalAmount) return "overpaid"
+  if (totalPaid === invoice.totalAmount) return "paid"
+  if (totalPaid > 0 && totalPaid < invoice.totalAmount) return "underpaid"
+  return "unpaid"
 }
 
 // Get payment status options for filters

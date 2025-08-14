@@ -82,6 +82,26 @@ export function InvoiceList({
     }).format(amount)
   }
 
+  const filteredInvoices = invoices.filter((invoice) => {
+    // Search by invoiceNumber or studentName
+    const search = (filters.search || '').toLowerCase()
+    const matchesSearch = !search || (
+      (invoice.invoiceNumber || '').toLowerCase().includes(search) ||
+      (invoice.studentName || '').toLowerCase().includes(search)
+    )
+
+    // Filter by grade
+    const gradeFilter = filters.grade || 'all'
+    const matchesGrade = gradeFilter === 'all' || invoice.studentGrade === gradeFilter
+
+    // Filter by payment badge status
+    const statusFilter = filters.status || 'all'
+    const badgeStatus = calculateInvoicePaymentStatus(invoice, payments)
+    const matchesStatus = statusFilter === 'all' || badgeStatus === statusFilter
+
+    return matchesSearch && matchesGrade && matchesStatus
+  })
+
   return (
     <>
       <Card>
@@ -161,14 +181,14 @@ export function InvoiceList({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoices.map((invoice) => (
+                {filteredInvoices.map((invoice) => (
                   <TableRow key={invoice.id}>
                     <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                     <TableCell className="text-blue-600 font-medium">
                       {invoice.receiptNumber || '待生成'}
                     </TableCell>
                     <TableCell>{invoice.studentName}</TableCell>
-                    <TableCell>{invoice.grade}</TableCell>
+                    <TableCell>{invoice.studentGrade}</TableCell>
                     <TableCell className="font-semibold text-green-600">
                       {formatCurrency(invoice.totalAmount)}
                     </TableCell>

@@ -10,25 +10,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { SubItemForm } from "./SubItemForm"
-
-interface SubItem {
-  id: number
-  name: string
-  amount: number
-  description: string
-  active: boolean
-}
 
 interface NewFeeItem {
   name: string
   amount: string
-  type: string
+  type: 'monthly' | 'one-time' | 'annual'
   description: string
   applicableGrades: string[]
-  status: string
+  status: 'active' | 'inactive'
   category: string
-  subItems: SubItem[]
 }
 
 interface EditFeeDialogProps {
@@ -36,9 +26,6 @@ interface EditFeeDialogProps {
   onOpenChange: (open: boolean) => void
   newFeeItem: NewFeeItem
   onFeeItemInputChange: (field: string, value: string) => void
-  onAddSubItem: () => void
-  onUpdateSubItem: (index: number, field: string, value: string | number | boolean) => void
-  onRemoveSubItem: (index: number) => void
   onUpdateFeeItem: () => void
 }
 
@@ -61,6 +48,16 @@ export const EditFeeDialog = ({
         </DialogHeader>
         <div className="space-y-4">
           <div>
+            <Label htmlFor="edit-name">项目名称</Label>
+            <Input
+              id="edit-name"
+              value={newFeeItem.name}
+              onChange={(e) => onFeeItemInputChange("name", e.target.value)}
+              placeholder="例如：学费、注册费"
+            />
+          </div>
+
+          <div>
             <Label htmlFor="edit-category">分类</Label>
             <Input
               id="edit-category"
@@ -80,7 +77,6 @@ export const EditFeeDialog = ({
                 <SelectContent>
                   <SelectItem value="monthly">按月收费</SelectItem>
                   <SelectItem value="one-time">一次性收费</SelectItem>
-                  <SelectItem value="semester">学期收费</SelectItem>
                   <SelectItem value="annual">年度收费</SelectItem>
                 </SelectContent>
               </Select>
@@ -99,6 +95,19 @@ export const EditFeeDialog = ({
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="edit-amount">金额</Label>
+              <Input
+                id="edit-amount"
+                type="number"
+                value={newFeeItem.amount}
+                onChange={(e) => onFeeItemInputChange("amount", e.target.value)}
+                placeholder="0"
+              />
+            </div>
+          </div>
+
           <div>
             <Label htmlFor="edit-description">项目描述</Label>
             <Textarea
@@ -108,13 +117,6 @@ export const EditFeeDialog = ({
               placeholder="详细描述收费项目"
             />
           </div>
-
-          <SubItemForm
-            subItems={newFeeItem.subItems}
-            onAddSubItem={onAddSubItem}
-            onUpdateSubItem={onUpdateSubItem}
-            onRemoveSubItem={onRemoveSubItem}
-          />
         </div>
         <div className="flex justify-end gap-2 mt-6">
           <Button variant="outline" onClick={() => onOpenChange(false)}>

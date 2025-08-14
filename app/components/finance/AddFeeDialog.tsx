@@ -12,25 +12,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Plus } from "lucide-react"
-import { SubItemForm } from "./SubItemForm"
-
-interface SubItem {
-  id: number
-  name: string
-  amount: number
-  description: string
-  active: boolean
-}
 
 interface NewFeeItem {
   name: string
   amount: string
-  type: string
+  type: 'monthly' | 'one-time' | 'annual'
   description: string
   applicableGrades: string[]
-  status: string
+  status: 'active' | 'inactive'
   category: string
-  subItems: SubItem[]
 }
 
 interface AddFeeDialogProps {
@@ -38,9 +28,6 @@ interface AddFeeDialogProps {
   onOpenChange: (open: boolean) => void
   newFeeItem: NewFeeItem
   onFeeItemInputChange: (field: string, value: string) => void
-  onAddSubItem: () => void
-  onUpdateSubItem: (index: number, field: string, value: string | number | boolean) => void
-  onRemoveSubItem: (index: number) => void
   onAddFeeItem: () => void
 }
 
@@ -49,9 +36,6 @@ export const AddFeeDialog = ({
   onOpenChange,
   newFeeItem,
   onFeeItemInputChange,
-  onAddSubItem,
-  onUpdateSubItem,
-  onRemoveSubItem,
   onAddFeeItem
 }: AddFeeDialogProps) => {
   return (
@@ -68,6 +52,16 @@ export const AddFeeDialog = ({
           <DialogDescription>创建新的收费项目</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          <div>
+            <Label htmlFor="name">项目名称</Label>
+            <Input
+              id="name"
+              value={newFeeItem.name}
+              onChange={(e) => onFeeItemInputChange("name", e.target.value)}
+              placeholder="例如：学费、注册费"
+            />
+          </div>
+
           <div>
             <Label htmlFor="category">分类</Label>
             <Input
@@ -87,10 +81,20 @@ export const AddFeeDialog = ({
               <SelectContent>
                 <SelectItem value="monthly">按月收费</SelectItem>
                 <SelectItem value="one-time">一次性收费</SelectItem>
-                <SelectItem value="semester">学期收费</SelectItem>
                 <SelectItem value="annual">年度收费</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="amount">金额</Label>
+            <Input
+              id="amount"
+              type="number"
+              value={newFeeItem.amount}
+              onChange={(e) => onFeeItemInputChange("amount", e.target.value)}
+              placeholder="0"
+            />
           </div>
 
           <div>
@@ -102,13 +106,6 @@ export const AddFeeDialog = ({
               placeholder="详细描述收费项目"
             />
           </div>
-
-          <SubItemForm
-            subItems={newFeeItem.subItems}
-            onAddSubItem={onAddSubItem}
-            onUpdateSubItem={onUpdateSubItem}
-            onRemoveSubItem={onRemoveSubItem}
-          />
         </div>
         <div className="flex justify-end gap-2 mt-6">
           <Button variant="outline" onClick={() => onOpenChange(false)}>

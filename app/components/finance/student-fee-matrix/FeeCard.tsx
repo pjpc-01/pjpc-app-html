@@ -19,9 +19,8 @@ export const FeeCard = ({
   isExpanded = false,
   calculateAmount
 }: FeeCardProps) => {
-  // Use provided calculateAmount function or fall back to global active sub-items
-  const activeAmount = calculateAmount ? calculateAmount() : fee.subItems
-    .reduce((total, subItem) => total + subItem.amount, 0)
+  // Use provided calculateAmount function or fall back to fee.amount
+  const activeAmount = calculateAmount ? calculateAmount() : fee.amount
 
   return (
     <Card className="p-3 hover:shadow-md transition-all duration-200 border-l-4 border-l-blue-500">
@@ -35,8 +34,8 @@ export const FeeCard = ({
             <p className="text-sm text-gray-600 font-medium">RM {activeAmount}</p>
           )}
           <Badge variant="outline" className="text-xs mt-1">
-            {fee.type === "recurring" ? "月费" : 
-             fee.type === "one-time" ? "一次性" : "可选"}
+            {fee.type === "monthly" ? "月费" : 
+             fee.type === "one-time" ? "一次性" : "年度"}
           </Badge>
         </div>
 

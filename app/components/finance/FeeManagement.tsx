@@ -1,138 +1,120 @@
 "use client"
 
 import { useState } from "react"
+import { useFees } from "@/hooks/useFees"
 import { FeeTable } from "./FeeTable"
 import { AddFeeDialog } from "./AddFeeDialog"
 import { EditFeeDialog } from "./EditFeeDialog"
 
-interface SubItem {
-  id: number
-  name: string
-  amount: number
-  description: string
-  active: boolean
-}
+interface SubItem {}
 
 interface FeeItem {
-  id: number
+  id: string
   name: string
   amount: number
-  type: string
+  type: 'monthly' | 'one-time' | 'annual'
   description: string
   applicableGrades: string[]
-  status: string
+  status: 'active' | 'inactive'
   category: string
-  subItems: SubItem[]
 }
 
 export default function FeeManagement() {
+  const { 
+    fees, 
+    loading, 
+    error, 
+    createFee, 
+    updateFee, 
+    deleteFee 
+  } = useFees()
+
   const [isAddFeeDialogOpen, setIsAddFeeDialogOpen] = useState(false)
   const [isEditFeeDialogOpen, setIsEditFeeDialogOpen] = useState(false)
   const [editingFeeItem, setEditingFeeItem] = useState<FeeItem | null>(null)
   const [isFeeEditMode, setIsFeeEditMode] = useState(false)
-  const [expandedItems, setExpandedItems] = useState<number[]>([])
+  const [expandedItems, setExpandedItems] = useState<string[]>([])
   const [newFeeItem, setNewFeeItem] = useState({
     name: "",
     amount: "",
-    type: "",
+    type: "monthly" as 'monthly' | 'one-time' | 'annual',
     description: "",
     applicableGrades: [] as string[],
-    status: "active",
-    category: "",
-    subItems: [] as SubItem[]
+    status: "active" as 'active' | 'inactive',
+    category: ""
   })
 
-  const [feeItems, setFeeItems] = useState<FeeItem[]>([
-    { 
-      id: 1, 
-      name: "学费", 
-      amount: 1200, 
-      type: "monthly", 
-      description: "每月学费", 
-      applicableGrades: ["三年级", "四年级", "五年级"], 
-      status: "active",
-      category: "教育费用",
-      subItems: [
-        { id: 1, name: "基础学费", amount: 800, description: "基础课程费用", active: true },
-        { id: 2, name: "特色课程费", amount: 400, description: "特色课程额外费用", active: true }
-      ]
-    },
-    { 
-      id: 2, 
-      name: "餐费", 
-      amount: 300, 
-      type: "monthly", 
-      description: "每月餐费", 
-      applicableGrades: ["三年级", "四年级", "五年级"], 
-      status: "active",
-      category: "生活费用",
-      subItems: [
-        { id: 1, name: "午餐费", amount: 200, description: "每日午餐费用", active: true },
-        { id: 2, name: "点心费", amount: 100, description: "下午点心费用", active: true }
-      ]
-    },
-    { 
-      id: 3, 
-      name: "教材费", 
-      amount: 200, 
-      type: "one-time", 
-      description: "学期教材费用", 
-      applicableGrades: ["三年级", "四年级", "五年级"], 
-      status: "active",
-      category: "教育费用",
-      subItems: [
-        { id: 1, name: "课本费", amount: 120, description: "各科课本费用", active: true },
-        { id: 2, name: "练习册费", amount: 80, description: "练习册费用", active: true }
-      ]
-    },
-    { 
-      id: 4, 
-      name: "活动费", 
-      amount: 150, 
-      type: "one-time", 
-      description: "课外活动费用", 
-      applicableGrades: ["三年级", "四年级"], 
-      status: "active",
-      category: "活动费用",
-      subItems: [
-        { id: 1, name: "户外活动费", amount: 100, description: "户外活动费用", active: true },
-        { id: 2, name: "室内活动费", amount: 50, description: "室内活动费用", active: true }
-      ]
-    },
-  ])
+  // Group fees by category for collapsible sections
+  const groupedByCategory = fees.reduce<Record<string, FeeItem[]>>((acc, fee) => {
+    const item: FeeItem = {
+      id: fee.id,
+      name: fee.name,
+      amount: fee.amount,
+      type: fee.type,
+      description: fee.description || "",
+      applicableGrades: fee.applicableLevels || [],
+      status: fee.status,
+      category: fee.category
+    }
+    const key = fee.category || '未分类'
+    acc[key] = acc[key] || []
+    acc[key].push(item)
+    return acc
+  }, {})
 
-  const handleAddFeeItem = () => {
-    if (!newFeeItem.name || !newFeeItem.type) {
-      alert("请填写完整信息")
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
+  const onToggleCategory = (category: string) => setExpandedCategories(prev => ({ ...prev, [category]: !prev[category] }))
+  const onToggleItemActive = async (feeId: string, active: boolean) => {
+    await updateFee(feeId, { status: active ? 'active' : 'inactive' } as any)
+  }
+
+  const handleAddFeeItem = async () => {
+    // Enhanced validation
+    if (!newFeeItem.name.trim()) {
+      alert("请填写收费项目名称")
+      return
+    }
+    if (!newFeeItem.type) {
+      alert("请选择收费类型")
+      return
+    }
+    if (!newFeeItem.category.trim()) {
+      alert("请填写收费类别")
+      return
+    }
+    if (!newFeeItem.amount || Number(newFeeItem.amount) <= 0) {
+      alert("请填写有效的金额")
       return
     }
 
-    const totalAmount = calculateTotalAmount(newFeeItem.subItems)
+    try {
+      const feeData = {
+        name: newFeeItem.name.trim(),
+        amount: Number(newFeeItem.amount),
+        type: newFeeItem.type,
+        description: newFeeItem.description.trim(),
+        applicableLevels: newFeeItem.applicableGrades,
+        status: newFeeItem.status,
+        category: newFeeItem.category.trim(),
+      }
 
-    const feeItem: FeeItem = {
-      id: Date.now(),
-      name: newFeeItem.name,
-      amount: totalAmount,
-      type: newFeeItem.type,
-      description: newFeeItem.description,
-      applicableGrades: newFeeItem.applicableGrades,
-      status: newFeeItem.status,
-      category: newFeeItem.category,
-      subItems: newFeeItem.subItems
+      await createFee(feeData)
+      
+      // Reset form
+      setNewFeeItem({
+        name: "",
+        amount: "",
+        type: "monthly",
+        description: "",
+        applicableGrades: [],
+        status: "active",
+        category: ""
+      })
+      setIsAddFeeDialogOpen(false)
+    } catch (error) {
+      console.error('Failed to create fee:', error)
+      alert('创建收费项目失败，请重试')
     }
-
-    setFeeItems([...feeItems, feeItem])
-    setNewFeeItem({
-      name: "",
-      amount: "",
-      type: "",
-      description: "",
-      applicableGrades: [],
-      status: "active",
-      category: "",
-      subItems: []
-    })
-    setIsAddFeeDialogOpen(false)
   }
 
   const handleEditFeeItem = (feeItem: FeeItem) => {
@@ -144,50 +126,70 @@ export default function FeeManagement() {
       description: feeItem.description,
       applicableGrades: feeItem.applicableGrades,
       status: feeItem.status,
-      category: feeItem.category,
-      subItems: feeItem.subItems
+      category: feeItem.category
     })
     setIsEditFeeDialogOpen(true)
   }
 
-  const handleUpdateFeeItem = () => {
-    if (!newFeeItem.name || !newFeeItem.type) {
-      alert("请填写完整信息")
+  const handleUpdateFeeItem = async () => {
+    if (!editingFeeItem) return
+
+    // Enhanced validation
+    if (!newFeeItem.name.trim()) {
+      alert("请填写收费项目名称")
+      return
+    }
+    if (!newFeeItem.type) {
+      alert("请选择收费类型")
+      return
+    }
+    if (!newFeeItem.category.trim()) {
+      alert("请填写收费类别")
+      return
+    }
+    if (!newFeeItem.amount || Number(newFeeItem.amount) <= 0) {
+      alert("请填写有效的金额")
       return
     }
 
-    const totalAmount = calculateTotalAmount(newFeeItem.subItems)
+    try {
+      const feeData = {
+        name: newFeeItem.name.trim(),
+        amount: Number(newFeeItem.amount),
+        type: newFeeItem.type,
+        description: newFeeItem.description.trim(),
+        applicableLevels: newFeeItem.applicableGrades,
+        status: newFeeItem.status,
+        category: newFeeItem.category.trim(),
+      }
 
-    const updatedFeeItem: FeeItem = {
-      ...editingFeeItem!,
-      name: newFeeItem.name,
-      amount: totalAmount,
-      type: newFeeItem.type,
-      description: newFeeItem.description,
-      applicableGrades: newFeeItem.applicableGrades,
-      status: newFeeItem.status,
-      category: newFeeItem.category,
-      subItems: newFeeItem.subItems
+      await updateFee(editingFeeItem.id, feeData)
+      
+      setEditingFeeItem(null)
+      setNewFeeItem({
+        name: "",
+        amount: "",
+        type: "monthly",
+        description: "",
+        applicableGrades: [],
+        status: "active",
+        category: ""
+      })
+      setIsEditFeeDialogOpen(false)
+    } catch (error) {
+      console.error('Failed to update fee:', error)
+      alert('更新收费项目失败，请重试')
     }
-
-    setFeeItems(feeItems.map(item => item.id === editingFeeItem!.id ? updatedFeeItem : item))
-    setEditingFeeItem(null)
-    setNewFeeItem({
-      name: "",
-      amount: "",
-      type: "",
-      description: "",
-      applicableGrades: [],
-      status: "active",
-      category: "",
-      subItems: []
-    })
-    setIsEditFeeDialogOpen(false)
   }
 
-  const handleDeleteFeeItem = (feeItemId: number) => {
+  const handleDeleteFeeItem = async (feeItemId: string) => {
     if (confirm("确定要删除这个收费项目吗？")) {
-      setFeeItems(feeItems.filter(item => item.id !== feeItemId))
+      try {
+        await deleteFee(feeItemId)
+      } catch (error) {
+        console.error('Failed to delete fee:', error)
+        alert('删除收费项目失败，请重试')
+      }
     }
   }
 
@@ -199,7 +201,7 @@ export default function FeeManagement() {
     setIsFeeEditMode(!isFeeEditMode)
   }
 
-  const toggleExpanded = (itemId: number) => {
+  const toggleExpanded = (itemId: string) => {
     setExpandedItems(prev => 
       prev.includes(itemId) 
         ? prev.filter(id => id !== itemId)
@@ -207,77 +209,40 @@ export default function FeeManagement() {
     )
   }
 
-  const addSubItem = () => {
-    const newSubItem: SubItem = {
-      id: Date.now(),
-      name: "",
-      amount: 0,
-      description: "",
-      active: true
-    }
-    setNewFeeItem(prev => ({
-      ...prev,
-      subItems: [...prev.subItems, newSubItem]
-    }))
+  const addSubItem = () => {}
+  const updateSubItem = (_index: number, _field: string, _value: string | number | boolean) => {}
+  const removeSubItem = (_index: number) => {}
+  const calculateTotalAmount = (_subItems: SubItem[]) => 0
+
+  const toggleSubItemActive = async (_itemId: string, _subItemId: number) => {}
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-lg">加载中...</div>
+      </div>
+    )
   }
 
-  const updateSubItem = (index: number, field: string, value: string | number | boolean) => {
-    setNewFeeItem(prev => ({
-      ...prev,
-      subItems: prev.subItems.map((item, i) => 
-        i === index ? { ...item, [field]: value } : item
-      )
-    }))
-  }
-
-  const removeSubItem = (index: number) => {
-    setNewFeeItem(prev => ({
-      ...prev,
-      subItems: prev.subItems.filter((_, i) => i !== index)
-    }))
-  }
-
-  const calculateTotalAmount = (subItems: SubItem[]) => {
-    return subItems
-      .filter(subItem => subItem.active)
-      .reduce((total, subItem) => total + subItem.amount, 0)
-  }
-
-  const toggleSubItemActive = (itemId: number, subItemId: number) => {
-    setFeeItems(prev => prev.map(item => {
-      if (item.id === itemId) {
-        return {
-          ...item,
-          subItems: item.subItems.map(subItem => 
-            subItem.id === subItemId 
-              ? { ...subItem, active: !subItem.active }
-              : subItem
-          ),
-          amount: calculateTotalAmount(
-            item.subItems.map(subItem => 
-              subItem.id === subItemId 
-                ? { ...subItem, active: !subItem.active }
-                : subItem
-            )
-          )
-        }
-      }
-      return item
-    }))
+  if (error) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-red-500">错误: {error}</div>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
       <FeeTable
-        feeItems={feeItems}
-        isFeeEditMode={isFeeEditMode}
-        expandedItems={expandedItems}
-        onToggleExpanded={toggleExpanded}
-        onToggleSubItemActive={toggleSubItemActive}
+        groupedByCategory={groupedByCategory}
+        expandedCategories={expandedCategories}
+        onToggleCategory={onToggleCategory}
         onEditFeeItem={handleEditFeeItem}
         onDeleteFeeItem={handleDeleteFeeItem}
+        onToggleItemActive={onToggleItemActive}
+        isFeeEditMode={isFeeEditMode}
         onFeeEditMode={handleFeeEditMode}
-        calculateTotalAmount={calculateTotalAmount}
       />
 
       <AddFeeDialog
@@ -285,9 +250,6 @@ export default function FeeManagement() {
         onOpenChange={setIsAddFeeDialogOpen}
         newFeeItem={newFeeItem}
         onFeeItemInputChange={handleFeeItemInputChange}
-        onAddSubItem={addSubItem}
-        onUpdateSubItem={updateSubItem}
-        onRemoveSubItem={removeSubItem}
         onAddFeeItem={handleAddFeeItem}
       />
 
@@ -296,9 +258,6 @@ export default function FeeManagement() {
         onOpenChange={setIsEditFeeDialogOpen}
         newFeeItem={newFeeItem}
         onFeeItemInputChange={handleFeeItemInputChange}
-        onAddSubItem={addSubItem}
-        onUpdateSubItem={updateSubItem}
-        onRemoveSubItem={removeSubItem}
         onUpdateFeeItem={handleUpdateFeeItem}
       />
     </div>

@@ -14,6 +14,7 @@ export const StudentFeeMatrix = () => {
   const { fees } = useFees()
   const { students } = useStudents()
   const { 
+    studentFees,
     toggleStudentSubItem,
     isAssigned, 
     calculateStudentTotal, 
@@ -37,6 +38,13 @@ export const StudentFeeMatrix = () => {
   const [batchMode, setBatchMode] = useState(false)
 
   const activeFees = fees.filter(fee => fee.status === 'active')
+
+  // Debug logging
+  useEffect(() => {
+    console.log('🎯 StudentFeeMatrix - All fees:', fees.length)
+    console.log('🎯 StudentFeeMatrix - Active fees:', activeFees.length)
+    console.log('🎯 StudentFeeMatrix - Active fees details:', activeFees.map(f => ({ id: f.id, name: f.name, status: f.status, category: f.category })))
+  }, [fees, activeFees])
 
   // Get unique categories from active fees
   const categories = [...new Set(activeFees.map(fee => fee.category).filter(Boolean))]
@@ -176,11 +184,18 @@ export const StudentFeeMatrix = () => {
     // Create invoice items based on assigned fees
     const invoiceItems = activeFees
       .filter(fee => isAssigned(studentId, fee.id))
-      .flatMap(fee => 
-        fee.subItems
+      .flatMap(fee => {
+        const assignment = studentFees.find(sf => sf.studentId === studentId && sf.feeId === fee.id && sf.status === 'active')
+        if (assignment && typeof assignment.assignedAmount === 'number') {
+          return [{ name: `${fee.name}`, amount: assignment.assignedAmount }]
+        }
+        return fee.subItems
           .filter(subItem => getStudentSubItemState(studentId, fee.id, subItem.id))
-          .map(subItem => ({ name: `${fee.name} - ${subItem.name}`, amount: subItem.amount }))
-      )
+          .map(subItem => {
+            const overrideAmount = assignment?.itemOverrides?.[String(subItem.id)]
+            return { name: `${fee.name} - ${subItem.name}`, amount: typeof overrideAmount === 'number' ? overrideAmount : subItem.amount }
+          })
+      })
 
     // Create the actual invoice
     const newInvoice = createInvoiceFromHook({

@@ -180,10 +180,7 @@ export const StudentCard = ({
               <div className="space-y-3">
                 {activeFees.map(fee => {
                   const feeExpanded = isFeeExpanded(studentId, fee.id)
-                  const feeTotal = fee.subItems
-                    .filter(subItem => getStudentSubItemState(studentId, fee.id, subItem.id))
-                    .reduce((total, subItem) => total + subItem.amount, 0)
-                  
+                  const feeTotal = fee.amount
                   return (
                     <div key={fee.id} className="space-y-2">
                                              <FeeCard
@@ -194,22 +191,14 @@ export const StudentCard = ({
                          calculateAmount={() => feeTotal}
                        />
                        
-                       {/* Sub-items - Only show when fee is expanded */}
-                       {feeExpanded && fee.subItems && (
+                       {feeExpanded && (
                          <div className="pl-8 space-y-2">
-                           {fee.subItems.map((subItem) => (
-                             <div key={subItem.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border-l-2 border-blue-200">
-                               <div className="flex items-center gap-4">
-                                 <span className="text-sm font-medium min-w-[120px]">{subItem.name}</span>
-                                 <ToggleSwitch
-                                   checked={getStudentSubItemState(studentId, fee.id, subItem.id)}
-                                   onChange={() => toggleSubItemActive(studentId, fee.id, subItem.id)}
-                                   className={!editMode ? "opacity-50 cursor-not-allowed" : ""}
-                                 />
-                               </div>
-                               <span className="text-sm font-medium text-blue-600">RM {subItem.amount}</span>
+                           <div className="flex items-center justify-between p-3 bg-gray-50 rounded border-l-2 border-blue-200">
+                             <div className="flex items-center gap-4">
+                               <span className="text-sm font-medium min-w-[120px]">{fee.name}</span>
                              </div>
-                           ))}
+                             <span className="text-sm font-medium text-blue-600">RM {fee.amount}</span>
+                           </div>
                          </div>
                        )}
                     </div>

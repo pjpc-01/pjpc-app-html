@@ -138,7 +138,8 @@ export default function PaymentManagement() {
       alert(`多缴金额: RM ${(totalPaidAfter - invoiceTotal).toFixed(2)}\n您可以选择结转到下月或退款。`);
     } else if (paymentStatus === "underpaid") {
       const outstanding = invoiceTotal - totalPaidAfter;
-      updateInvoiceStatus(selectedInvoiceForPayment.id, 'issued');
+      // Keep invoice pending when not fully paid
+      updateInvoiceStatus(selectedInvoiceForPayment.id, 'pending');
       alert(`少缴金额: RM ${outstanding.toFixed(2)}\n该金额将自动加入到下个月的发票中。`);
 
       // Auto-debt: Add outstanding balance to next month's invoice

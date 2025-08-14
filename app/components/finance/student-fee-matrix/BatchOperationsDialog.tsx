@@ -20,9 +20,9 @@ interface BatchOperationsDialogProps {
   availableGrades: string[]
   selectedCategories: string[]
   onCategoryToggle: (category: string) => void
-  selectedSubItems: {feeId: string, subItemId: number}[]
-  onSubItemToggle: (feeId: string, subItemId: number) => void
-  isSubItemSelected: (feeId: string, subItemId: number) => boolean
+  selectedSubItems?: never[]
+  onSubItemToggle?: (feeId: string, subItemId: number) => void
+  isSubItemSelected?: (feeId: string, subItemId: number) => boolean
   selectedCriteria: 'grade' | null
   onCriteriaToggle: (criteria: 'grade') => void
   selectedGrades: string[]
@@ -74,30 +74,7 @@ export const BatchOperationsDialog = ({
                     </Label>
                   </div>
                   
-                  {/* Show sub-items when category is selected */}
-                  {selectedCategories.includes(category) && (
-                    <div className="ml-6 mt-2 space-y-1">
-                      {activeFees
-                        .filter(fee => fee.category === category)
-                        .map(fee => 
-                          fee.subItems.map(subItem => (
-                            <div key={subItem.id} className="flex items-center justify-between text-xs">
-                              <div className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`subitem-${fee.id}-${subItem.id}`}
-                                  checked={isSubItemSelected(fee.id, subItem.id)}
-                                  onCheckedChange={() => onSubItemToggle(fee.id, subItem.id)}
-                                  className="h-3 w-3"
-                                />
-                                <span className="text-gray-600">{subItem.name}</span>
-                              </div>
-                              <span className="text-gray-600">RM {subItem.amount}</span>
-                            </div>
-                          ))
-                        )
-                      }
-                    </div>
-                  )}
+                  {/* 子项目已移除 */}
                 </div>
               ))}
               {categories.length === 0 && (

@@ -1,25 +1,9 @@
 import PocketBase from 'pocketbase'
 
-// 智能PocketBase URL检测和配置
+// PocketBase URL配置（硬编码LAN地址，确保数据一致性）
 const getPocketBaseUrl = () => {
-  // 优先使用环境变量
-  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POCKETBASE_URL) {
-    return process.env.NEXT_PUBLIC_POCKETBASE_URL
-  }
-  
-  // 浏览器环境 - 强制使用DDNS地址（因为现在在家）
-  if (typeof window !== 'undefined') {
-    return 'http://pjpc.tplinkdns.com:8090'
-  }
-  
-  // 服务器环境 - 智能检测网络环境
-  if (process.env.NODE_ENV === 'development') {
-    // 开发环境：优先尝试局域网，失败则使用DDNS
-    return process.env.LOCAL_POCKETBASE_URL || 'http://192.168.0.59:8090'
-  }
-  
-  // 生产环境使用DDNS
-  return 'http://pjpc.tplinkdns.com:8090'
+  // 强制使用LAN地址，确保与PocketBase数据一致
+  return 'http://192.168.0.59:8090'
 }
 
 // 创建PocketBase实例
