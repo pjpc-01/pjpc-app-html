@@ -98,8 +98,8 @@ export default function StudentManagementPage() {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [filters, setFilters] = useState<FilterState>({
     searchTerm: "",
-    selectedGrade: "",
-    selectedStatus: "",
+    selectedGrade: "all",
+    selectedStatus: "all",
     selectedCenter: "",
     selectedGender: "",
     ageRange: [0, 25],
@@ -147,12 +147,12 @@ export default function StudentManagementPage() {
     }
 
     // 年级筛选
-    if (filters.selectedGrade) {
+    if (filters.selectedGrade && filters.selectedGrade !== "all") {
       filtered = filtered.filter(student => student.grade === filters.selectedGrade)
     }
 
     // 状态筛选
-    if (filters.selectedStatus) {
+    if (filters.selectedStatus && filters.selectedStatus !== "all") {
       filtered = filtered.filter(student => student.status === filters.selectedStatus)
     }
 

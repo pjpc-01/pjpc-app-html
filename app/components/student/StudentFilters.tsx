@@ -21,7 +21,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { Filter, Search, X, Smartphone, MapPin, Calendar as CalendarIcon, Users, GraduationCap } from "lucide-react"
+import { Filter, Search, X, Smartphone, MapPin, Calendar as CalendarIcon, Users, GraduationCap, UserCheck } from "lucide-react"
 import { Student } from "@/hooks/useStudents"
 import { convertGradeToChinese } from "./utils"
 import { format } from "date-fns"
@@ -41,6 +41,7 @@ interface FilterState {
   searchTerm: string
   selectedGrade: string
   selectedCenter: string
+  selectedStatus: string
   selectedGender: string
   selectedLevel: string
   ageRange: [number, number]
@@ -60,7 +61,8 @@ export default function StudentFilters({
   onFiltersChange
 }: StudentFiltersProps) {
   const [showFilters, setShowFilters] = useState(false)
-  const [selectedCenter, setSelectedCenter] = useState("")
+  const [selectedCenter, setSelectedCenter] = useState("all")
+  const [selectedStatus, setSelectedStatus] = useState("all")
   const [selectedGender, setSelectedGender] = useState("")
   const [selectedLevel, setSelectedLevel] = useState("")
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 25])
@@ -142,8 +144,9 @@ export default function StudentFilters({
 
   const clearFilters = () => {
     setSearchTerm("")
-    setSelectedGrade("")
-    setSelectedCenter("")
+    setSelectedGrade("all")
+    setSelectedCenter("all")
+    setSelectedStatus("all")
     setSelectedGender("")
     setSelectedLevel("")
     setAgeRange([0, 25])
@@ -155,7 +158,7 @@ export default function StudentFilters({
     setShowSuggestions(false)
   }
 
-  const hasActiveFilters = searchTerm || selectedGrade || selectedCenter || selectedGender || selectedLevel || 
+  const hasActiveFilters = searchTerm || (selectedGrade && selectedGrade !== "all") || (selectedCenter && selectedCenter !== "all") || (selectedStatus && selectedStatus !== "all") || selectedGender || selectedLevel || 
                           enrollmentYear || hasPhone || hasAddress || (ageRange[0] > 0 || ageRange[1] < 25) ||
                           dateRange.from || dateRange.to
 
@@ -165,6 +168,7 @@ export default function StudentFilters({
       searchTerm,
       selectedGrade,
       selectedCenter,
+      selectedStatus,
       selectedGender,
       selectedLevel,
       ageRange,
@@ -180,7 +184,7 @@ export default function StudentFilters({
   // 当筛选条件改变时自动应用
   useEffect(() => {
     applyFilters()
-  }, [searchTerm, selectedGrade, selectedCenter, selectedGender, selectedLevel, ageRange, enrollmentYear, hasPhone, hasAddress, sortBy, sortOrder])
+  }, [searchTerm, selectedGrade, selectedCenter, selectedStatus, selectedGender, selectedLevel, ageRange, enrollmentYear, hasPhone, hasAddress, sortBy, sortOrder])
 
   return (
     <Card>
@@ -292,16 +296,25 @@ export default function StudentFilters({
                   {searchTerm}
                 </Badge>
               )}
-              {selectedGrade && (
+              {selectedGrade && selectedGrade !== "all" && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   <GraduationCap className="h-3 w-3" />
                   {convertGradeToChinese(selectedGrade)}
                 </Badge>
               )}
-              {selectedCenter && (
+              {selectedCenter && selectedCenter !== "all" && (
                 <Badge variant="secondary" className="flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
                   {selectedCenter}
+                </Badge>
+              )}
+              {selectedStatus && selectedStatus !== "all" && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <UserCheck className="h-3 w-3" />
+                  状态: {selectedStatus === 'active' ? '在读' : 
+                         selectedStatus === 'graduated' ? '已毕业' : 
+                         selectedStatus === 'transferred' ? '已转学' : 
+                         selectedStatus === 'inactive' ? '非活跃' : selectedStatus}
                 </Badge>
               )}
               {selectedGender && (
@@ -350,7 +363,7 @@ export default function StudentFilters({
                     <SelectValue placeholder="选择年级" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">全部年级</SelectItem>
+                    <SelectItem value="all">全部年级</SelectItem>
                     {filterOptions.grades.map((grade) => (
                       <SelectItem key={grade} value={grade}>
                         {convertGradeToChinese(grade)}
@@ -363,12 +376,12 @@ export default function StudentFilters({
               {/* 状态筛选 */}
               <div>
                 <Label htmlFor="status-filter">状态</Label>
-                <Select value={selectedCenter} onValueChange={setSelectedCenter}>
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                   <SelectTrigger>
                     <SelectValue placeholder="选择状态" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">全部状态</SelectItem>
+                    <SelectItem value="all">全部状态</SelectItem>
                     {filterOptions.statuses.map((status) => (
                       <SelectItem key={status} value={status}>
                         {status === 'active' ? '在读' : 

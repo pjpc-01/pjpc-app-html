@@ -99,8 +99,8 @@ export default function AdvancedFilters({
   const clearFilters = () => {
     onFiltersChange({
       searchTerm: "",
-      selectedGrade: "",
-      selectedStatus: "",
+      selectedGrade: "all",
+      selectedStatus: "all",
       selectedCenter: "",
       selectedGender: "",
       ageRange: [0, 25],
@@ -130,7 +130,10 @@ export default function AdvancedFilters({
     }
   }
 
-  const hasActiveFilters = Object.values(filters).some(value => {
+  const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
+    if (key === 'selectedGrade' || key === 'selectedStatus') {
+      return value !== "" && value !== "all"
+    }
     if (typeof value === 'string') return value !== ""
     if (typeof value === 'boolean') return value
     if (Array.isArray(value)) return value.length > 0
@@ -223,7 +226,7 @@ export default function AdvancedFilters({
                   <SelectValue placeholder="选择年级" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">全部年级</SelectItem>
+                  <SelectItem value="all">全部年级</SelectItem>
                   <SelectItem value="一年级">一年级</SelectItem>
                   <SelectItem value="二年级">二年级</SelectItem>
                   <SelectItem value="三年级">三年级</SelectItem>
@@ -247,7 +250,7 @@ export default function AdvancedFilters({
                   <SelectValue placeholder="选择状态" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">全部状态</SelectItem>
+                  <SelectItem value="all">全部状态</SelectItem>
                   <SelectItem value="active">在读</SelectItem>
                   <SelectItem value="graduated">已毕业</SelectItem>
                   <SelectItem value="transferred">已转学</SelectItem>
@@ -452,13 +455,13 @@ export default function AdvancedFilters({
               搜索: {filters.searchTerm}
             </Badge>
           )}
-          {filters.selectedGrade && (
+          {filters.selectedGrade && filters.selectedGrade !== "all" && (
             <Badge variant="secondary" className="flex items-center gap-1">
               <GraduationCap className="h-3 w-3" />
               年级: {filters.selectedGrade}
             </Badge>
           )}
-          {filters.selectedStatus && (
+          {filters.selectedStatus && filters.selectedStatus !== "all" && (
             <Badge variant="secondary" className="flex items-center gap-1">
               <UserCheck className="h-3 w-3" />
               状态: {filters.selectedStatus}
