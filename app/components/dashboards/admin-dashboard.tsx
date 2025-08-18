@@ -15,9 +15,6 @@ import OverviewTab from "./overview-tab"
 import FinanceTab from "./finance-tab"
 import EducationTab from "./education-tab"
 import SettingsTab from "./settings-tab"
-import EducationDropdown, { EducationDataType } from "../features/education-dropdown"
-
-
 interface AdminDashboardProps {
   activeTab: string
   setActiveTab: (tab: string) => void
@@ -27,7 +24,7 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
   const { user, userProfile, loading: authLoading, error: authError } = useAuth()
   const { stats, loading: statsLoading, error: statsError } = useDashboardStats()
   const { stats: financialStats, loading: financialLoading, error: financialError } = useFinancialStats()
-  const [educationDataType, setEducationDataType] = useState<EducationDataType>('primary')
+  const [educationDataType, setEducationDataType] = useState<string>('primary')
 
   return (
     <div className="space-y-6">
