@@ -3,89 +3,120 @@ import PocketBase from 'pocketbase'
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('=== 测试用户审核Hook逻辑 ===')
+    console.log('=== 测试用户审核组件数据获取 ===')
     
     const pb = new PocketBase('http://pjpc.tplinkdns.com:8090')
     
-    // 模拟hook中的fetchUsers逻辑
-    console.log('1. 检查认证状态...')
-    console.log('认证状态:', pb.authStore.isValid)
-    console.log('当前用户:', pb.authStore.model)
+    // 1. 尝试登录管理员账户
+    console.log('1. 尝试登录管理员账户...')
+    let authResult = { success: false, user: null, error: null }
+    try {
+      const authData = await pb.collection('users').authWithPassword(
+        'pjpcemerlang@gmail.com',
+        '0122270775Sw!'
+      )
+      authResult = { 
+        success: true, 
+        user: {
+          id: authData.record.id,
+          email: authData.record.email,
+          name: authData.record.name,
+          role: authData.record.role,
+          status: authData.record.status
+        }, 
+        error: null 
+      }
+      console.log('登录成功:', authData.record.email)
+    } catch (error) {
+      authResult = { 
+        success: false, 
+        user: null, 
+        error: error instanceof Error ? error.message : '未知错误'
+      }
+      console.log('登录失败:', error)
+    }
     
-    // 如果未认证，尝试使用管理员账户登录
-    if (!pb.authStore.isValid) {
-      console.log('2. 未认证，尝试使用管理员账户登录...')
+    // 2. 检查认证后的用户列表获取
+    console.log('2. 检查认证后的用户列表获取...')
+    let userListResult = { success: false, users: [], error: null }
+    if (pb.authStore.isValid) {
       try {
-        await pb.collection('users').authWithPassword(
-          'pjpcemerlang@gmail.com',
-          '0122270775Sw!'
-        )
-        console.log('管理员登录成功')
-      } catch (loginError) {
-        console.error('管理员登录失败:', loginError)
-        return NextResponse.json({
-          success: false,
-          error: '需要管理员权限才能访问用户数据，请先登录',
-          timestamp: new Date().toISOString()
-        }, { status: 401 })
+        const records = await pb.collection('users').getList(1, 100, {
+          sort: '-created'
+        })
+        
+        const users = records.items.map(item => ({
+          id: item.id,
+          email: item.email,
+          name: item.name,
+          role: item.role,
+          status: item.status,
+          created: item.created,
+          updated: item.updated,
+          emailVerified: item.emailVerified,
+          loginAttempts: item.loginAttempts
+        }))
+        
+        userListResult = { 
+          success: true, 
+          users: users,
+          error: null 
+        }
+        console.log('用户列表获取成功，用户数量:', users.length)
+        console.log('用户详情:', users)
+      } catch (error) {
+        userListResult = { 
+          success: false, 
+          users: [], 
+          error: error instanceof Error ? error.message : '未知错误'
+        }
+        console.log('用户列表获取失败:', error)
+      }
+    } else {
+      userListResult = { 
+        success: false, 
+        users: [], 
+        error: '未登录'
       }
     }
     
-    // 获取用户列表
-    console.log('3. 获取用户列表...')
-    const records = await pb.collection('users').getList(1, 50, {
-      sort: '-created'
-    })
+    // 3. 测试过滤逻辑
+    console.log('3. 测试过滤逻辑...')
+    let filterTest = { 
+      totalUsers: 0,
+      pendingUsers: 0,
+      approvedUsers: 0,
+      suspendedUsers: 0,
+      adminUsers: 0,
+      teacherUsers: 0,
+      parentUsers: 0,
+      accountantUsers: 0
+    }
     
-    console.log('获取到的记录数量:', records.items.length)
-    console.log('原始数据:', records.items)
-    
-    // 模拟hook中的数据处理逻辑
-    const userData = records.items.map((item: any) => ({
-      id: item.id,
-      email: item.email,
-      name: item.name || item.email?.split('@')[0] || '未设置',
-      role: item.role || 'user',
-      status: item.status,
-      created: item.created,
-      updated: item.updated,
-      emailVerified: item.emailVerified || false,
-      loginAttempts: item.loginAttempts || 0,
-      lockedUntil: item.lockedUntil,
-      approvedBy: item.approvedBy || undefined,
-      approvedAt: item.approvedAt || undefined
-    }))
-    
-    console.log('处理后的用户数据:', userData)
-    
-    // 计算统计信息
-    const total = userData.length
-    const pending = userData.filter(u => u.status === 'pending').length
-    const approved = userData.filter(u => u.status === 'approved').length
-    const rejected = userData.filter(u => u.status === 'suspended').length
-    
-    const stats = {
-      total,
-      pending,
-      approved,
-      rejected,
-      averageProcessingTime: Math.floor(Math.random() * 10) + 2
+    if (userListResult.success) {
+      const users = userListResult.users
+      filterTest = {
+        totalUsers: users.length,
+        pendingUsers: users.filter(u => u.status === 'pending').length,
+        approvedUsers: users.filter(u => u.status === 'approved').length,
+        suspendedUsers: users.filter(u => u.status === 'suspended').length,
+        adminUsers: users.filter(u => u.role === 'admin').length,
+        teacherUsers: users.filter(u => u.role === 'teacher').length,
+        parentUsers: users.filter(u => u.role === 'parent').length,
+        accountantUsers: users.filter(u => u.role === 'accountant').length
+      }
     }
     
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
-      pocketbaseUrl: pb.baseUrl,
-      authStatus: pb.authStore.isValid,
-      currentUser: pb.authStore.model,
-      userCount: userData.length,
-      users: userData,
-      stats,
-      rawData: records.items
+      authResult,
+      userListResult,
+      filterTest
     })
     
   } catch (error) {
-    console.error('用户审核Hook测试错误:', error)
+    console.error('用户审核组件测试API错误:', error)
     
     return NextResponse.json({
       success: false,

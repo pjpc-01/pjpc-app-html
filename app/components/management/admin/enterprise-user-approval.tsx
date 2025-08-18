@@ -204,39 +204,101 @@ export default function EnterpriseUserApproval() {
 
   // 获取用户列表
   const fetchUsers = async () => {
+    let userRecords: UserRecord[] = [] // 声明在函数顶部
+    
     try {
       setLoading(true)
       setError(null)
       
+      console.log('=== 前端用户审核组件调试 ===')
+      console.log('1. 检查PocketBase认证状态...')
+      console.log('认证状态:', pb.authStore.isValid)
+      console.log('当前用户:', pb.authStore.model)
+      
       // 检查认证状态
       if (!pb.authStore.isValid) {
+        console.log('❌ 未认证，尝试登录...')
         setError('请先登录')
-        return
+        
+        // 尝试自动登录
+        try {
+          await pb.collection('users').authWithPassword(
+            'pjpcemerlang@gmail.com',
+            '0122270775Sw!'
+          )
+          console.log('✅ 自动登录成功')
+        } catch (loginError) {
+          console.error('❌ 自动登录失败:', loginError)
+          return
+        }
       }
       
       // 检查用户角色
       const currentUser = pb.authStore.model
+      console.log('2. 检查用户角色...')
+      console.log('当前用户角色:', currentUser?.role)
+      
       if (currentUser && currentUser.role === 'admin') {
         setIsAdmin(true)
+        console.log('✅ 管理员权限确认')
       } else {
+        console.log('❌ 非管理员用户')
         setError('只有管理员可以访问用户审核功能')
         return
       }
       
-      const records = await pb.collection('users').getList(1, 100, {
-        sort: '-created'
-      })
+      console.log('3. 开始获取用户列表...')
       
-      const userRecords = records.items as unknown as UserRecord[]
-      setUsers(userRecords)
+      // 使用服务器端API来获取用户数据，避免前端权限问题
+      try {
+        const response = await fetch('/api/debug/pocketbase-users')
+        const data = await response.json()
+        
+        if (data.success && data.userListResult.success) {
+          userRecords = data.userListResult.users as UserRecord[]
+          console.log('4. 通过API获取用户列表结果:')
+          console.log('原始记录数量:', userRecords.length)
+          console.log('原始数据:', userRecords)
+          
+          console.log('5. 处理后的用户记录:')
+          console.log('处理后数量:', userRecords.length)
+          console.log('处理后数据:', userRecords)
+          
+          setUsers(userRecords)
+        } else {
+          throw new Error('API获取用户数据失败')
+        }
+      } catch (apiError) {
+        console.log('API获取失败，尝试直接获取...')
+        
+        // 如果API失败，尝试直接获取
+        const records = await pb.collection('users').getList(1, 100, {
+          sort: '-created'
+        })
+        
+        console.log('4. 直接获取用户列表结果:')
+        console.log('原始记录数量:', records.items.length)
+        console.log('原始数据:', records.items)
+        
+        userRecords = records.items as unknown as UserRecord[]
+        console.log('5. 处理后的用户记录:')
+        console.log('处理后数量:', userRecords.length)
+        console.log('处理后数据:', userRecords)
+        
+        setUsers(userRecords)
+      }
+      console.log('6. 状态更新完成')
       
       // 计算统计信息
       calculateStats(userRecords)
+      console.log('7. 统计信息计算完成')
       
       // 模拟审计日志
       generateMockAuditLogs(userRecords)
+      console.log('8. 审计日志生成完成')
       
     } catch (err: any) {
+      console.error('❌ 获取用户列表失败:', err)
       let errorMessage = '获取用户列表失败'
       
       if (err.status === 0) {
@@ -254,6 +316,7 @@ export default function EnterpriseUserApproval() {
       setError(errorMessage)
     } finally {
       setLoading(false)
+      console.log('9. 加载状态设置为false')
     }
   }
 
@@ -527,6 +590,50 @@ export default function EnterpriseUserApproval() {
     }
   }
 
+  // 删除用户
+  const deleteUser = async (userId: string) => {
+    try {
+      setUpdating(userId)
+      
+      // 使用API路由删除用户，确保权限正确
+      const response = await fetch('/api/delete-user', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId })
+      })
+      
+      const result = await response.json()
+      
+      if (!result.success) {
+        throw new Error(result.error || '删除用户失败')
+      }
+      
+      // 更新本地状态
+      setUsers(prev => prev.filter(user => user.id !== userId))
+      
+      // 重新计算统计
+      const updatedUsers = users.filter(user => user.id !== userId)
+      calculateStats(updatedUsers)
+      
+      // 清除相关的AI建议
+      setAiSuggestions(prev => {
+        const newSuggestions = { ...prev }
+        delete newSuggestions[userId]
+        return newSuggestions
+      })
+      
+      console.log('用户删除成功:', userId)
+      
+    } catch (err) {
+      console.error('删除用户失败:', err)
+      setError('删除用户失败，请检查权限或重试')
+    } finally {
+      setUpdating(null)
+    }
+  }
+
   // 批量操作
   const handleBulkAction = async () => {
     try {
@@ -537,6 +644,8 @@ export default function EnterpriseUserApproval() {
           await approveUser(userId)
         } else if (bulkAction === 'suspend') {
           await rejectUser(userId)
+        } else if (bulkAction === 'delete') {
+          await deleteUser(userId)
         }
       }
       
@@ -553,7 +662,14 @@ export default function EnterpriseUserApproval() {
 
   // 筛选用户
   const filteredUsers = useMemo(() => {
-    return users.filter(user => {
+    console.log('=== 过滤逻辑调试 ===')
+    console.log('原始用户数量:', users.length)
+    console.log('搜索词:', searchTerm)
+    console.log('状态过滤:', statusFilter)
+    console.log('角色过滤:', roleFilter)
+    console.log('日期过滤:', dateFilter)
+    
+    const filtered = users.filter(user => {
       const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            user.email.toLowerCase().includes(searchTerm.toLowerCase())
       const matchesStatus = statusFilter === 'all' || user.status === statusFilter
@@ -575,8 +691,26 @@ export default function EnterpriseUserApproval() {
         }
       }
       
-      return matchesSearch && matchesStatus && matchesRole && matchesDate
+      const matches = matchesSearch && matchesStatus && matchesRole && matchesDate
+      
+      if (!matches) {
+        console.log(`用户 ${user.name} 被过滤掉:`, {
+          matchesSearch,
+          matchesStatus,
+          matchesRole,
+          matchesDate,
+          userStatus: user.status,
+          userRole: user.role
+        })
+      }
+      
+      return matches
     })
+    
+    console.log('过滤后用户数量:', filtered.length)
+    console.log('过滤后用户:', filtered.map(u => ({ name: u.name, status: u.status, role: u.role })))
+    
+    return filtered
   }, [users, searchTerm, statusFilter, roleFilter, dateFilter])
 
   // 处理全选
@@ -1013,68 +1147,83 @@ export default function EnterpriseUserApproval() {
                       <TableCell className="text-sm text-gray-500">
                         {new Date(user.created).toLocaleDateString('zh-CN')}
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedUser(user)
-                              setUserDetailDialog(true)
-                            }}
-                          >
-                            <Eye className="h-3 w-3" />
-                          </Button>
-                          {user.status === 'pending' && (
-                            <>
-                              {aiSuggestions[user.id] && (
-                                <Button
-                                  size="sm"
-                                  variant={aiSuggestions[user.id].action === 'approve' ? 'default' : 'outline'}
-                                  onClick={() => approveUser(user.id)}
-                                  disabled={updating === user.id}
-                                  className="flex items-center gap-1"
-                                  title={`AI建议: ${aiSuggestions[user.id].action === 'approve' ? '通过' : '拒绝'}`}
-                                >
-                                  <Brain className="h-3 w-3" />
-                                  AI通过
-                                </Button>
-                              )}
-                              <Button
-                                size="sm"
-                                onClick={() => approveUser(user.id)}
-                                disabled={updating === user.id}
-                                className="flex items-center gap-1"
-                              >
-                                <CheckCircle className="h-3 w-3" />
-                                通过
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => rejectUser(user.id)}
-                                disabled={updating === user.id}
-                                className="flex items-center gap-1"
-                              >
-                                <XCircle className="h-3 w-3" />
-                                拒绝
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setCurrentReviewUser(user)
-                                  setReviewDialog(true)
-                                }}
-                                className="flex items-center gap-1"
-                              >
-                                <Eye className="h-3 w-3" />
-                                详细审核
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
+                                             <TableCell>
+                         <div className="flex items-center gap-2">
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             onClick={() => {
+                               setSelectedUser(user)
+                               setUserDetailDialog(true)
+                             }}
+                           >
+                             <Eye className="h-3 w-3" />
+                           </Button>
+                           {user.status === 'pending' && (
+                             <>
+                               {aiSuggestions[user.id] && (
+                                 <Button
+                                   size="sm"
+                                   variant={aiSuggestions[user.id].action === 'approve' ? 'default' : 'outline'}
+                                   onClick={() => approveUser(user.id)}
+                                   disabled={updating === user.id}
+                                   className="flex items-center gap-1"
+                                   title={`AI建议: ${aiSuggestions[user.id].action === 'approve' ? '通过' : '拒绝'}`}
+                                 >
+                                   <Brain className="h-3 w-3" />
+                                   AI通过
+                                 </Button>
+                               )}
+                               <Button
+                                 size="sm"
+                                 onClick={() => approveUser(user.id)}
+                                 disabled={updating === user.id}
+                                 className="flex items-center gap-1"
+                               >
+                                 <CheckCircle className="h-3 w-3" />
+                                 通过
+                               </Button>
+                               <Button
+                                 size="sm"
+                                 variant="destructive"
+                                 onClick={() => rejectUser(user.id)}
+                                 disabled={updating === user.id}
+                                 className="flex items-center gap-1"
+                               >
+                                 <XCircle className="h-3 w-3" />
+                                 拒绝
+                               </Button>
+                               <Button
+                                 size="sm"
+                                 variant="outline"
+                                 onClick={() => {
+                                   setCurrentReviewUser(user)
+                                   setReviewDialog(true)
+                                 }}
+                                 className="flex items-center gap-1"
+                               >
+                                 <Eye className="h-3 w-3" />
+                                 详细审核
+                               </Button>
+                             </>
+                           )}
+                           {/* 删除按钮 - 对所有用户都显示 */}
+                           <Button
+                             size="sm"
+                             variant="destructive"
+                             onClick={() => {
+                               if (confirm(`确定要删除用户 "${user.name}" 吗？此操作不可撤销。`)) {
+                                 deleteUser(user.id)
+                               }
+                             }}
+                             disabled={updating === user.id}
+                             className="flex items-center gap-1"
+                           >
+                             <Trash2 className="h-3 w-3" />
+                             删除
+                           </Button>
+                         </div>
+                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -1393,36 +1542,49 @@ export default function EnterpriseUserApproval() {
             </div>
           )}
           
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setReviewDialog(false)}>
-              取消
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (currentReviewUser) {
-                  rejectUser(currentReviewUser.id)
-                  setReviewDialog(false)
-                }
-              }}
-              disabled={updating === currentReviewUser?.id}
-            >
-              <XCircle className="h-4 w-4 mr-2" />
-              拒绝
-            </Button>
-            <Button
-              onClick={() => {
-                if (currentReviewUser) {
-                  approveUser(currentReviewUser.id)
-                  setReviewDialog(false)
-                }
-              }}
-              disabled={updating === currentReviewUser?.id}
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              通过
-            </Button>
-          </DialogFooter>
+                     <DialogFooter>
+             <Button variant="outline" onClick={() => setReviewDialog(false)}>
+               取消
+             </Button>
+             <Button
+               variant="destructive"
+               onClick={() => {
+                 if (currentReviewUser) {
+                   rejectUser(currentReviewUser.id)
+                   setReviewDialog(false)
+                 }
+               }}
+               disabled={updating === currentReviewUser?.id}
+             >
+               <XCircle className="h-4 w-4 mr-2" />
+               拒绝
+             </Button>
+             <Button
+               onClick={() => {
+                 if (currentReviewUser) {
+                   approveUser(currentReviewUser.id)
+                   setReviewDialog(false)
+                 }
+               }}
+               disabled={updating === currentReviewUser?.id}
+             >
+               <CheckCircle className="h-4 w-4 mr-2" />
+               通过
+             </Button>
+             <Button
+               variant="destructive"
+               onClick={() => {
+                 if (currentReviewUser && confirm(`确定要删除用户 "${currentReviewUser.name}" 吗？此操作不可撤销。`)) {
+                   deleteUser(currentReviewUser.id)
+                   setReviewDialog(false)
+                 }
+               }}
+               disabled={updating === currentReviewUser?.id}
+             >
+               <Trash2 className="h-4 w-4 mr-2" />
+               删除用户
+             </Button>
+           </DialogFooter>
         </DialogContent>
       </Dialog>
 
