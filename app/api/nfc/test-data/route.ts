@@ -16,7 +16,8 @@ export async function POST(request: NextRequest) {
           cardType: 'NFC' as const,
           status: 'active' as const,
           issuedDate: new Date(),
-          usageCount: 0
+          usageCount: 0,
+          studentUrl: 'https://school.com/student/G16'
         },
         {
           cardNumber: 'RFID_TEST_001',
@@ -25,7 +26,8 @@ export async function POST(request: NextRequest) {
           cardType: 'RFID' as const,
           status: 'active' as const,
           issuedDate: new Date(),
-          usageCount: 0
+          usageCount: 0,
+          studentUrl: 'https://school.com/student/G17'
         },
         {
           cardNumber: 'NFC_TEST_002',
@@ -34,7 +36,8 @@ export async function POST(request: NextRequest) {
           cardType: 'NFC' as const,
           status: 'active' as const,
           issuedDate: new Date(),
-          usageCount: 0
+          usageCount: 0,
+          studentUrl: 'https://school.com/student/G18'
         },
         {
           cardNumber: 'RFID_TEST_002',
@@ -43,7 +46,8 @@ export async function POST(request: NextRequest) {
           cardType: 'RFID' as const,
           status: 'active' as const,
           issuedDate: new Date(),
-          usageCount: 0
+          usageCount: 0,
+          studentUrl: 'https://school.com/student/G19'
         }
       ]
 

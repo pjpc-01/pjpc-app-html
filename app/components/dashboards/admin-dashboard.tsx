@@ -7,6 +7,9 @@ import {
   DollarSign,
   Settings,
   BookOpen,
+  Users,
+  UserPlus,
+  GraduationCap,
 } from "lucide-react"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useDashboardStats } from "@/hooks/useDashboardStats"
@@ -15,6 +18,10 @@ import OverviewTab from "./overview-tab"
 import FinanceTab from "./finance-tab"
 import EducationTab from "./education-tab"
 import SettingsTab from "./settings-tab"
+import StudentsTab from "./students-tab"
+import TeacherManagement from "../management/teacher-management"
+import CourseManagement from "../management/course-management"
+
 interface AdminDashboardProps {
   activeTab: string
   setActiveTab: (tab: string) => void
@@ -30,7 +37,7 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className={`grid w-full h-12 ${
-          userProfile?.role === "admin" ? "grid-cols-4" : "grid-cols-3"
+          userProfile?.role === "admin" ? "grid-cols-7" : "grid-cols-3"
         }`}>
           <TabsTrigger value="overview" className="flex items-center gap-2 text-sm">
             <BarChart3 className="h-4 w-4" />
@@ -46,6 +53,24 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
             <BookOpen className="h-4 w-4" />
             教育
           </TabsTrigger>
+          {userProfile?.role === "admin" && (
+            <TabsTrigger value="students" className="flex items-center gap-2 text-sm">
+              <Users className="h-4 w-4" />
+              学生管理
+            </TabsTrigger>
+          )}
+          {userProfile?.role === "admin" && (
+            <TabsTrigger value="teachers" className="flex items-center gap-2 text-sm">
+              <UserPlus className="h-4 w-4" />
+              教师管理
+            </TabsTrigger>
+          )}
+          {userProfile?.role === "admin" && (
+            <TabsTrigger value="courses" className="flex items-center gap-2 text-sm">
+              <GraduationCap className="h-4 w-4" />
+              课程管理
+            </TabsTrigger>
+          )}
           {userProfile?.role === "admin" && (
             <TabsTrigger value="settings" className="flex items-center gap-2 text-sm">
               <Settings className="h-4 w-4" />
@@ -81,6 +106,28 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
             setActiveTab={setActiveTab}
           />
         </TabsContent>
+
+        {userProfile?.role === "admin" && (
+          <TabsContent value="students" className="mt-6">
+            <StudentsTab 
+              stats={stats}
+              statsLoading={statsLoading}
+              setActiveTab={setActiveTab}
+            />
+          </TabsContent>
+        )}
+
+        {userProfile?.role === "admin" && (
+          <TabsContent value="teachers" className="mt-6">
+            <TeacherManagement />
+          </TabsContent>
+        )}
+
+        {userProfile?.role === "admin" && (
+          <TabsContent value="courses" className="mt-6">
+            <CourseManagement />
+          </TabsContent>
+        )}
 
         {userProfile?.role === "admin" && (
           <TabsContent value="settings" className="mt-6">
