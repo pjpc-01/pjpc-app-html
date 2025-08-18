@@ -1,7 +1,13 @@
-import { pb } from './pocketbase'
+import PocketBase from 'pocketbase'
 
+// PocketBase 实例
+const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL || 'http://pjpc.tplinkdns.com:8090')
+
+// 融合的学生数据接口 - 包含基本信息和打卡信息
 export interface Student {
   id: string
+  
+  // 基本信息 (来自 students 集合)
   student_id?: string
   student_name?: string
   dob?: string
@@ -13,11 +19,34 @@ export interface Student {
   standard?: string
   level?: 'primary' | 'secondary'
   Center?: 'WX 01' | 'WX 02' | 'WX 03' | 'WX 04'
+  
+  // 打卡信息 (来自 students_card 集合)
+  cardNumber?: string
+  cardType?: 'NFC' | 'RFID'
+  studentUrl?: string
+  balance?: number
+  status?: 'active' | 'inactive' | 'lost' | 'graduated'
+  issuedDate?: string
+  expiryDate?: string
+  enrollmentDate?: string
+  phone?: string
+  email?: string
+  parentName?: string
+  parentPhone?: string
+  address?: string
+  emergencyContact?: string
+  medicalInfo?: string
+  notes?: string
+  usageCount?: number
+  lastUsed?: string
+  
+  // 系统字段
   created: string
   updated: string
 }
 
 export interface StudentCreateData {
+  // 基本信息
   student_id?: string
   student_name?: string
   dob?: string
@@ -29,62 +58,120 @@ export interface StudentCreateData {
   standard?: string
   level?: 'primary' | 'secondary'
   Center?: 'WX 01' | 'WX 02' | 'WX 03' | 'WX 04'
+  
+  // 打卡信息
+  cardNumber?: string
+  cardType?: 'NFC' | 'RFID'
+  studentUrl?: string
+  balance?: number
+  status?: 'active' | 'inactive' | 'lost' | 'graduated'
+  issuedDate?: string
+  expiryDate?: string
+  enrollmentDate?: string
+  phone?: string
+  email?: string
+  parentName?: string
+  parentPhone?: string
+  address?: string
+  emergencyContact?: string
+  medicalInfo?: string
+  notes?: string
 }
 
 export interface StudentUpdateData extends Partial<StudentCreateData> {
   id: string
 }
 
-// 获取所有学生
+// 获取所有学生 - 融合 students 和 students_card 数据
 export const getAllStudents = async (): Promise<Student[]> => {
   try {
-    console.log('开始获取所有学生...')
-    console.log('当前认证状态:', pb.authStore.isValid)
-    console.log('当前认证用户:', pb.authStore.model)
-    console.log('PocketBase URL:', pb.baseUrl)
+    console.log('开始获取融合的学生数据...')
     
-    // 检查认证状态 - 如果未认证，尝试用户认证
+        // 确保认证
     if (!pb.authStore.isValid) {
       console.log('用户未认证，尝试用户认证...')
       try {
-        const authResult = await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-        console.log('用户认证成功:', authResult)
-        console.log('认证后状态:', pb.authStore.isValid)
+        await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        console.log('用户认证成功')
       } catch (authError) {
         console.error('用户认证失败:', authError)
         throw new Error('无法认证访问学生数据')
       }
-    } else {
-      console.log('用户已认证，跳过认证步骤')
     }
     
-    console.log('从students集合获取数据...')
-    // 从统一的students集合获取所有学生
-    const response = await pb.collection('students').getList(1, 500, {
+    // 获取 students 集合数据
+    console.log('从 students 集合获取基本数据...')
+    const studentsResponse = await pb.collection('students').getList(1, 500, {
       sort: 'student_name',
       $autoCancel: false
     })
     
-    console.log('PocketBase响应详情:', response)
-    console.log('PocketBase响应items:', response.items)
-    console.log('PocketBase响应items长度:', response.items.length)
-    console.log('PocketBase响应data:', (response as any).data)
+    // 获取 students_card 集合数据
+    console.log('从 students_card 集合获取打卡数据...')
+    const cardsResponse = await pb.collection('students_card').getList(1, 500, {
+      sort: 'studentName',
+      $autoCancel: false
+    })
     
-    // 从response.data中获取items数组
-    const students = (response as any).data?.items || response.items || []
+    const students = studentsResponse.items || []
+    const cards = cardsResponse.items || []
     
-    console.log('获取到的学生数据:', students)
+    console.log(`获取到 ${students.length} 个学生基本数据`)
+    console.log(`获取到 ${cards.length} 个学生打卡数据`)
     
-    // 确保返回的是数组
-    if (!Array.isArray(students)) {
-      console.log('返回的数据不是数组，返回空数组')
-      return []
-    }
+    // 融合数据：以 students_card 为基础，合并 students 数据
+    const mergedStudents: Student[] = cards.map((card: any) => {
+      // 查找对应的学生基本数据（通过姓名匹配）
+      const student = students.find((s: any) => 
+        s.student_name === card.studentName
+      )
+      
+      console.log(`匹配学生: ${card.studentName} - 找到基本数据: ${!!student}`)
+      
+      // 融合数据
+      return {
+        id: card.id,
+        // 基本信息（优先使用 students 集合的数据，如果没有则使用 students_card 的数据）
+        student_id: card.studentId,
+        student_name: card.studentName,
+        dob: student?.dob,
+        father_phone: student?.father_phone,
+        mother_phone: student?.mother_phone,
+        home_address: student?.home_address,
+        gender: student?.gender,
+        register_form_url: student?.register_form_url,
+        standard: student?.standard,
+        level: student?.level,
+        Center: card.center || student?.center,
+        // 打卡信息（来自 students_card）
+        cardNumber: card.cardNumber,
+        cardType: card.cardType,
+        studentUrl: card.studentUrl,
+        balance: card.balance,
+        status: card.status,
+        issuedDate: card.issuedDate,
+        expiryDate: card.expiryDate,
+        enrollmentDate: card.enrollmentDate,
+        phone: card.phone,
+        email: card.email,
+        parentName: card.parentName,
+        parentPhone: card.parentPhone,
+        address: card.address,
+        emergencyContact: card.emergencyContact,
+        medicalInfo: card.medicalInfo,
+        notes: card.notes,
+        usageCount: card.usageCount,
+        lastUsed: card.lastUsed,
+        // 系统字段
+        created: card.created,
+        updated: card.updated
+      }
+    })
     
-    console.log(`成功获取到 ${students.length} 个学生`)
-    return students as unknown as Student[]
+    console.log(`成功融合 ${mergedStudents.length} 个学生数据`)
+    return mergedStudents
   } catch (error: any) {
-    console.error('获取所有学生失败:', error)
+    console.error('获取融合学生数据失败:', error)
     throw error
   }
 }

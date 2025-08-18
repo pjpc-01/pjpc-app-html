@@ -4,9 +4,8 @@ import { useState, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+
+
 import {
   GraduationCap,
   Users,
@@ -17,21 +16,11 @@ import {
   Activity,
   TrendingUp,
   RefreshCw,
-  Search,
-  Plus,
-  Edit,
-  Eye,
-  Trash2,
   UserPlus,
-  Mail,
-  Phone,
-  MapPin,
 } from "lucide-react"
 import { useStudents } from "@/hooks/useStudents"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
-import SimpleStudentManagement from "../management/simple-student-management"
-import SimpleTeacherManagement from "../management/simple-teacher-management"
-import SimpleCourseManagement from "../management/simple-course-management"
+
 
 interface EducationTabProps {
   stats: any
@@ -51,10 +40,7 @@ export default function EducationTab({
   const { students, loading: studentsLoading } = useStudents()
   const { userProfile } = useAuth()
   
-  // 简化的状态管理
-  const [educationActiveTab, setEducationActiveTab] = useState('overview')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedGrade, setSelectedGrade] = useState('all')
+
 
   // 获取教育数据统计
   const educationStats = useMemo(() => {
@@ -82,30 +68,7 @@ export default function EducationTab({
     }
   }, [students, stats])
 
-  // 筛选学生
-  const filteredStudents = useMemo(() => {
-    let filtered = students
 
-    if (searchTerm) {
-      filtered = filtered.filter(student => 
-        student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.grade?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    }
-
-    if (selectedGrade !== 'all') {
-      filtered = filtered.filter(student => student.grade === selectedGrade)
-    }
-
-    return filtered.slice(0, 10) // 只显示前10个
-  }, [students, searchTerm, selectedGrade])
-
-  // 获取年级选项
-  const gradeOptions = useMemo(() => {
-    const grades = Array.from(new Set(students.map(s => s.grade).filter(Boolean))).sort()
-    return grades
-  }, [students])
 
   return (
     <div className="space-y-6">
@@ -218,87 +181,70 @@ export default function EducationTab({
         </Card>
       </div>
 
-      {/* 主要功能标签页 */}
-      <Tabs value={educationActiveTab} onValueChange={setEducationActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">概览</TabsTrigger>
-          <TabsTrigger value="students">学生管理</TabsTrigger>
-          <TabsTrigger value="teachers">教师管理</TabsTrigger>
-          <TabsTrigger value="courses">课程管理</TabsTrigger>
-        </TabsList>
+      {/* 快速操作 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Users className="h-5 w-5 mr-2" />
+              学生管理
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 mb-4">
+              管理学生信息、查看打卡状态、配置专属网址
+            </p>
+            <Button 
+              onClick={() => setActiveTab('students')}
+              className="w-full"
+            >
+              进入学生管理
+            </Button>
+          </CardContent>
+        </Card>
 
-        {/* 概览标签页 */}
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* 学生分布 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <GraduationCap className="h-5 w-5 mr-2" />
-                  学生分布
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">小学生</span>
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">
-                      {educationStats.primaryCount} 人
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">中学生</span>
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                      {educationStats.secondaryCount} 人
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <UserPlus className="h-5 w-5 mr-2" />
+              教师管理
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 mb-4">
+              管理教师信息、课程分配、教学安排
+            </p>
+            <Button 
+              onClick={() => setActiveTab('teachers')}
+              variant="outline"
+              className="w-full"
+            >
+              进入教师管理
+            </Button>
+          </CardContent>
+        </Card>
 
-            {/* 快速操作 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Activity className="h-5 w-5 mr-2" />
-                  快速操作
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Button className="w-full justify-start" variant="outline">
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    添加学生
-                  </Button>
-                  <Button className="w-full justify-start" variant="outline">
-                    <Users className="h-4 w-4 mr-2" />
-                    添加教师
-                  </Button>
-                  <Button className="w-full justify-start" variant="outline">
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    创建课程
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* 学生管理标签页 */}
-        <TabsContent value="students" className="space-y-6">
-          <SimpleStudentManagement />
-        </TabsContent>
-
-        {/* 教师管理标签页 */}
-        <TabsContent value="teachers" className="space-y-6">
-          <SimpleTeacherManagement />
-        </TabsContent>
-
-        {/* 课程管理标签页 */}
-        <TabsContent value="courses" className="space-y-6">
-          <SimpleCourseManagement />
-        </TabsContent>
-      </Tabs>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <BookOpen className="h-5 w-5 mr-2" />
+              课程管理
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 mb-4">
+              管理课程信息、课程安排、教学资源
+            </p>
+            <Button 
+              onClick={() => setActiveTab('courses')}
+              variant="outline"
+              className="w-full"
+            >
+              进入课程管理
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

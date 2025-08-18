@@ -224,6 +224,57 @@ export const useNFC = () => {
     setError(null)
   }, [])
 
+  // URL访问功能
+  const accessStudentUrl = useCallback(async (studentId: string) => {
+    try {
+      setLoading(true)
+      setError(null)
+      const result = await nfcManager.accessStudentUrl(studentId)
+      return result
+    } catch (err) {
+      console.error('Error accessing student URL:', err)
+      setError(err instanceof Error ? err.message : 'Failed to access student URL')
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  const getStudentUrl = useCallback(async (studentId: string) => {
+    try {
+      setError(null)
+      const url = await nfcManager.getStudentUrl(studentId)
+      return url
+    } catch (err) {
+      console.error('Error getting student URL:', err)
+      setError(err instanceof Error ? err.message : 'Failed to get student URL')
+      throw err
+    }
+  }, [])
+
+  const updateStudentUrl = useCallback(async (studentId: string, newUrl: string) => {
+    try {
+      setLoading(true)
+      setError(null)
+      const result = await nfcManager.updateStudentUrl(studentId, newUrl)
+      if (result) {
+        // 更新本地卡片数据
+        setCards(prev => prev.map(card => 
+          card.studentId === studentId 
+            ? { ...card, studentUrl: newUrl, updatedAt: new Date() }
+            : card
+        ))
+      }
+      return result
+    } catch (err) {
+      console.error('Error updating student URL:', err)
+      setError(err instanceof Error ? err.message : 'Failed to update student URL')
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   // 初始化数据
   useEffect(() => {
     const initializeData = async () => {
@@ -263,5 +314,10 @@ export const useNFC = () => {
     processAttendance,
     simulateAttendance,
     clearError,
+    
+    // URL功能
+    accessStudentUrl,
+    getStudentUrl,
+    updateStudentUrl,
   }
 } 
