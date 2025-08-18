@@ -58,7 +58,8 @@ export const detectNetworkEnvironment = async () => {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 3000)
       
-      const response = await fetch(testUrl.url, {
+      // 测试PocketBase的API健康检查端点
+      const response = await fetch(`${testUrl.url}/api/health`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
