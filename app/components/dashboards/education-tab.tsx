@@ -4,7 +4,7 @@ import { useState, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 import {
   GraduationCap,
@@ -17,10 +17,12 @@ import {
   TrendingUp,
   RefreshCw,
   UserPlus,
+  ArrowLeft,
 } from "lucide-react"
 import { useStudents } from "@/hooks/useStudents"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
-
+import TeacherManagement from "../management/teacher-management"
+import CourseManagement from "../management/course-management"
 
 interface EducationTabProps {
   stats: any
@@ -39,8 +41,7 @@ export default function EducationTab({
 }: EducationTabProps) {
   const { students, loading: studentsLoading } = useStudents()
   const { userProfile } = useAuth()
-  
-
+  const [activeView, setActiveView] = useState<'overview' | 'teachers' | 'courses'>('overview')
 
   // 获取教育数据统计
   const educationStats = useMemo(() => {
@@ -68,9 +69,8 @@ export default function EducationTab({
     }
   }, [students, stats])
 
-
-
-  return (
+  // 渲染概览界面
+  const renderOverview = () => (
     <div className="space-y-6">
       {/* 标题和概览 */}
       <div className="mb-6">
@@ -215,7 +215,7 @@ export default function EducationTab({
               管理教师信息、课程分配、教学安排
             </p>
             <Button 
-              onClick={() => setActiveTab('teachers')}
+              onClick={() => setActiveView('teachers')}
               variant="outline"
               className="w-full"
             >
@@ -236,7 +236,7 @@ export default function EducationTab({
               管理课程信息、课程安排、教学资源
             </p>
             <Button 
-              onClick={() => setActiveTab('courses')}
+              onClick={() => setActiveView('courses')}
               variant="outline"
               className="w-full"
             >
@@ -245,6 +245,56 @@ export default function EducationTab({
           </CardContent>
         </Card>
       </div>
+    </div>
+  )
+
+  // 渲染教师管理界面
+  const renderTeachers = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold mb-2">教师管理</h2>
+          <p className="text-gray-600">管理教师信息、课程分配、教学安排</p>
+        </div>
+        <Button 
+          onClick={() => setActiveView('overview')}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          返回教育概览
+        </Button>
+      </div>
+      <TeacherManagement />
+    </div>
+  )
+
+  // 渲染课程管理界面
+  const renderCourses = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold mb-2">课程管理</h2>
+          <p className="text-gray-600">管理课程信息、课程安排、教学资源</p>
+        </div>
+        <Button 
+          onClick={() => setActiveView('overview')}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          返回教育概览
+        </Button>
+      </div>
+      <CourseManagement />
+    </div>
+  )
+
+  return (
+    <div>
+      {activeView === 'overview' && renderOverview()}
+      {activeView === 'teachers' && renderTeachers()}
+      {activeView === 'courses' && renderCourses()}
     </div>
   )
 }
