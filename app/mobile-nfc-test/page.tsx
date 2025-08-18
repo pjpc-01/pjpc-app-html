@@ -204,7 +204,7 @@ export default function MobileNFCTestPage() {
             <div className="space-y-2">
               <h4 className="font-semibold">3. 权限授权</h4>
               <p className="text-sm text-gray-600">
-                首次使用时，浏览器会请求NFC权限，请点击"允许"
+                首次使用时，浏览器会请求NFC权限，请点击&quot;允许&quot;
               </p>
             </div>
             <div className="space-y-2">

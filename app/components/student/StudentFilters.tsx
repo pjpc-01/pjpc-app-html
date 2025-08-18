@@ -184,7 +184,7 @@ export default function StudentFilters({
   // 当筛选条件改变时自动应用
   useEffect(() => {
     applyFilters()
-  }, [searchTerm, selectedGrade, selectedCenter, selectedStatus, selectedGender, selectedLevel, ageRange, enrollmentYear, hasPhone, hasAddress, sortBy, sortOrder])
+  }, [searchTerm, selectedGrade, selectedCenter, selectedStatus, selectedGender, selectedLevel, ageRange, enrollmentYear, hasPhone, hasAddress, sortBy, sortOrder, applyFilters])
 
   return (
     <Card>

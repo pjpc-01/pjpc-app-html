@@ -575,7 +575,7 @@ export default function StudentManagementPage() {
           显示 {filteredStudents.length} 个学生
           {filters.searchTerm && (
             <span className="ml-2">
-              (搜索: "{filters.searchTerm}")
+              (搜索: &quot;{filters.searchTerm}&quot;)
             </span>
           )}
         </div>

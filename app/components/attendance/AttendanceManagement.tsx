@@ -52,12 +52,12 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
   })
 
   // 刷新数据
-  const refreshData = () => {
+  const refreshData = useCallback(() => {
     fetchAttendanceRecords({ 
       centerId, 
       date: selectedDate 
     })
-  }
+  }, [centerId, selectedDate, fetchAttendanceRecords])
 
   // 导出数据
   const exportData = () => {
@@ -87,7 +87,7 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
 
   useEffect(() => {
     refreshData()
-  }, [selectedDate, centerId])
+  }, [selectedDate, centerId, refreshData])
 
   return (
     <div className="space-y-6">

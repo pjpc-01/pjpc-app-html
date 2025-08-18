@@ -12,35 +12,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Plus } from "lucide-react"
-import { SubItemForm } from "./SubItemForm"
-
-interface SubItem {
-  id: number
-  name: string
-  amount: number
-  description: string
-  active: boolean
-}
-
-interface NewFeeItem {
-  name: string
-  amount: string
-  type: string
-  description: string
-  applicableGrades: string[]
-  status: string
-  category: string
-  subItems: SubItem[]
-}
+import type { Fee } from "@/types/fees"
 
 interface AddFeeDialogProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  newFeeItem: NewFeeItem
-  onFeeItemInputChange: (field: string, value: string) => void
-  onAddSubItem: () => void
-  onUpdateSubItem: (index: number, field: string, value: string | number | boolean) => void
-  onRemoveSubItem: (index: number) => void
+  newFeeItem: Omit<Fee, "id">
+  onFeeItemInputChange: (field: keyof Omit<Fee, "id">, value: any) => void
   onAddFeeItem: () => void
 }
 
@@ -49,9 +27,6 @@ export const AddFeeDialog = ({
   onOpenChange,
   newFeeItem,
   onFeeItemInputChange,
-  onAddSubItem,
-  onUpdateSubItem,
-  onRemoveSubItem,
   onAddFeeItem
 }: AddFeeDialogProps) => {
   return (
@@ -82,7 +57,7 @@ export const AddFeeDialog = ({
               <Label htmlFor="name">项目名称</Label>
               <Input
                 id="name"
-                value={newFeeItem.name}
+                value={newFeeItem.name || ""}
                 onChange={(e) => onFeeItemInputChange("name", e.target.value)}
                 placeholder="例如：学费、餐费"
               />
@@ -91,14 +66,13 @@ export const AddFeeDialog = ({
           
           <div>
             <Label htmlFor="type">收费类型</Label>
-            <Select value={newFeeItem.type} onValueChange={(value) => onFeeItemInputChange("type", value)}>
+            <Select value={newFeeItem.type || ""} onValueChange={(value) => onFeeItemInputChange("type", value)}>
               <SelectTrigger>
                 <SelectValue placeholder="选择收费类型" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="monthly">按月收费</SelectItem>
                 <SelectItem value="one-time">一次性收费</SelectItem>
-                <SelectItem value="semester">学期收费</SelectItem>
                 <SelectItem value="annual">年度收费</SelectItem>
               </SelectContent>
             </Select>
@@ -108,18 +82,11 @@ export const AddFeeDialog = ({
             <Label htmlFor="description">项目描述</Label>
             <Textarea
               id="description"
-              value={newFeeItem.description}
+              value={newFeeItem.description || ""}
               onChange={(e) => onFeeItemInputChange("description", e.target.value)}
               placeholder="详细描述收费项目"
             />
           </div>
-
-          <SubItemForm
-            subItems={newFeeItem.subItems}
-            onAddSubItem={onAddSubItem}
-            onUpdateSubItem={onUpdateSubItem}
-            onRemoveSubItem={onRemoveSubItem}
-          />
         </div>
         <div className="flex justify-end gap-2 mt-6">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
