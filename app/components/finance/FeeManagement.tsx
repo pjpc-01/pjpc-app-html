@@ -13,7 +13,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Edit, Trash2, DollarSign, Plus, ChevronDown, ChevronRight } from "lucide-react"
 import { AddFeeDialog } from "./AddFeeDialog"
 import { EditFeeDialog } from "./EditFeeDialog"
-import { FeeDebugger } from "./FeeDebugger"
 
 export default function FeeManagement() {
   const {
@@ -26,8 +25,8 @@ export default function FeeManagement() {
   } = useFees()
 
   // Debug logging
-  console.log("🔧 FeeManagement render:", { fees: fees.length, loading, error })
-  console.log("🔧 FeeManagement hook values:", { 
+  console.log("🔍 FeeManagement render:", { fees: fees.length, loading, error })
+  console.log("🔍 FeeManagement hook values:", { 
     feesLength: fees.length, 
     loading, 
     error: error?.substring(0, 50),
@@ -45,7 +44,7 @@ export default function FeeManagement() {
     type: "monthly",
     description: "",
     status: "active",
-    category: undefined,
+    category: "",
     applicableCenters: [],
     applicableLevels: [],
   })
@@ -56,7 +55,7 @@ export default function FeeManagement() {
 
   const handleAddFeeItem = async () => {
     if (!newFeeItem.name.trim() || newFeeItem.amount <= 0) {
-      alert("请填写费用名称和金额")
+      alert("请完整填写收费项目信息")
       return
     }
 
@@ -68,14 +67,14 @@ export default function FeeManagement() {
         type: "monthly",
         description: "",
         status: "active",
-        category: undefined,
+        category: "",
         applicableCenters: [],
         applicableLevels: [],
       })
       setIsAddFeeDialogOpen(false)
     } catch (error) {
       console.error("Fee creation failed:", error)
-      alert("创建费用项目失败，请重试")
+      alert("创建收费项目失败，请重试")
     }
   }
 
@@ -87,7 +86,7 @@ export default function FeeManagement() {
       type: fee.type,
       description: fee.description || "",
       status: fee.status,
-      category: fee.category,
+      category: fee.category || "",
       applicableCenters: fee.applicableCenters || [],
       applicableLevels: fee.applicableLevels || [],
     })
@@ -98,189 +97,256 @@ export default function FeeManagement() {
     if (!editingFeeItem) return
 
     if (!newFeeItem.name.trim() || newFeeItem.amount <= 0) {
-      alert("请填写费用名称和金额")
+      alert("请完整填写收费项目信息")
       return
     }
 
     try {
       await updateFee(editingFeeItem.id, newFeeItem)
-      setIsEditFeeDialogOpen(false)
       setEditingFeeItem(null)
+      setIsEditFeeDialogOpen(false)
     } catch (error) {
-      console.error("Fee update failed:", error)
-      alert("更新费用项目失败，请重试")
+      console.error("Failed to update fee:", error)
+      alert("更新收费项目失败，请重试")
     }
   }
 
   const handleDeleteFeeItem = async (feeId: string) => {
-    if (!confirm("确定要删除这个费用项目吗？")) return
-
-    try {
-      await deleteFee(feeId)
-    } catch (error) {
-      console.error("Fee deletion failed:", error)
-      alert("删除费用项目失败，请重试")
+    if (confirm("确定要删除这个收费项目吗？")) {
+      try {
+        await deleteFee(feeId)
+      } catch (error) {
+        console.error("Failed to delete fee:", error)
+        alert("删除收费项目失败，请重试")
+      }
     }
   }
 
-  const toggleCategoryExpansion = (category: string) => {
-    const newExpanded = new Set(expandedCategories)
-    if (newExpanded.has(category)) {
-      newExpanded.delete(category)
-    } else {
-      newExpanded.add(category)
-    }
-    setExpandedCategories(newExpanded)
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">加载费用数据中...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="text-red-600">加载失败</CardTitle>
-          <CardDescription>无法加载费用数据</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-red-500">{error}</p>
-        </CardContent>
-      </Card>
-    )
+  const handleFeeItemInputChange = (field: keyof Omit<Fee, "id">, value: any) => {
+    setNewFeeItem((prev) => ({ ...prev, [field]: value }))
   }
 
   // Group fees by category
-  const feesByCategory = fees.reduce((acc, fee) => {
+  const groupedFees = fees.reduce((groups, fee) => {
     const category = fee.category || "未分类"
-    if (!acc[category]) {
-      acc[category] = []
+    if (!groups[category]) {
+      groups[category] = []
     }
-    acc[category].push(fee)
-    return acc
+    groups[category].push(fee)
+    return groups
   }, {} as Record<string, Fee[]>)
+
+  // Toggle category expansion
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(category)) {
+        newSet.delete(category)
+      } else {
+        newSet.add(category)
+      }
+      return newSet
+    })
+  }
+
+  // Expand/collapse all categories
+  const toggleAllCategories = () => {
+    const allCategories = Object.keys(groupedFees)
+    const allExpanded = allCategories.every(cat => expandedCategories.has(cat))
+    
+    if (allExpanded) {
+      setExpandedCategories(new Set())
+    } else {
+      setExpandedCategories(new Set(allCategories))
+    }
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">费用管理</h2>
-          <p className="text-gray-600">管理学校的各种费用项目</p>
-        </div>
-        <Button onClick={() => setIsAddFeeDialogOpen(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          添加费用
-        </Button>
-      </div>
 
-      <FeeDebugger />
-
-      <div className="space-y-4">
-        {Object.entries(feesByCategory).map(([category, categoryFees]) => (
-          <Collapsible
-            key={category}
-            open={expandedCategories.has(category)}
-            onOpenChange={() => toggleCategoryExpansion(category)}
-          >
-            <Card>
-              <CardHeader className="pb-3">
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-between p-0 h-auto">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-5 w-5" />
-                      <span className="font-semibold">{category}</span>
-                      <Badge variant="secondary">{categoryFees.length}</Badge>
-                    </div>
-                    {expandedCategories.has(category) ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </Button>
-                </CollapsibleTrigger>
-              </CardHeader>
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>费用名称</TableHead>
-                        <TableHead>金额</TableHead>
-                        <TableHead>类型</TableHead>
-                        <TableHead>状态</TableHead>
-                        <TableHead>操作</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {categoryFees.map((fee) => (
-                        <TableRow key={fee.id}>
-                          <TableCell className="font-medium">{fee.name}</TableCell>
-                          <TableCell>¥{fee.amount.toLocaleString()}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {fee.type === "monthly" ? "月费" : 
-                               fee.type === "semester" ? "学期费" : 
-                               fee.type === "annual" ? "年费" : "一次性"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={fee.status === "active" ? "default" : "secondary"}>
-                              {fee.status === "active" ? "启用" : "禁用"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditFeeItem(fee)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteFeeItem(fee.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+      {/* Fee Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                收费项目管理
+                {!loading && !error && fees.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {fees.length} 个项目
+                  </Badge>
+                )}
+              </CardTitle>
+              <CardDescription>管理所有收费项目</CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={toggleAllCategories}>
+                {Object.keys(groupedFees).every(cat => expandedCategories.has(cat)) ? (
+                  <>
+                    <ChevronDown className="h-4 w-4 mr-2" />
+                    收起全部
+                  </>
+                ) : (
+                  <>
+                    <ChevronRight className="h-4 w-4 mr-2" />
+                    展开全部
+                  </>
+                )}
+              </Button>
+              <Button variant="outline" onClick={() => setIsFeeEditMode(!isFeeEditMode)}>
+                <Edit className="h-4 w-4 mr-2" />
+                {isFeeEditMode ? "完成编辑" : "编辑"}
+              </Button>
+              <Button onClick={() => setIsAddFeeDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                添加收费项目
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">
+              加载中...
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-500">
+              错误: {error}
+            </div>
+          ) : fees.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              暂无收费项目
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(groupedFees).map(([category, categoryFees]) => {
+                const isExpanded = expandedCategories.has(category)
+                const totalAmount = categoryFees.reduce((sum, fee) => sum + fee.amount, 0)
+                const activeFees = categoryFees.filter(fee => fee.status === "active")
+                const activeCount = activeFees.length
+                const activeAmount = activeFees.reduce((sum, fee) => sum + fee.amount, 0)
+                
+                return (
+                  <Collapsible
+                    key={category}
+                    open={isExpanded}
+                    onOpenChange={() => toggleCategory(category)}
+                  >
+                    <Card className="border-2">
+                      <CollapsibleTrigger asChild>
+                        <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              {isExpanded ? (
+                                <ChevronDown className="h-5 w-5 text-gray-500" />
+                              ) : (
+                                <ChevronRight className="h-5 w-5 text-gray-500" />
+                              )}
+                              <div>
+                                <CardTitle className="text-lg">{category}</CardTitle>
+                                <CardDescription>
+                                  {categoryFees.length} 个项目 • {activeCount} 个启用
+                                </CardDescription>
+                              </div>
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-        ))}
-      </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <div className="text-right">
+                                <div className="text-lg font-bold text-green-600">
+                                  RM {activeAmount}
+                                </div>
+                              </div>
+                              <Badge variant="outline" className="text-sm">
+                                {categoryFees.length} 项
+                              </Badge>
+                            </div>
+                          </div>
+                        </CardHeader>
+                      </CollapsibleTrigger>
+                      
+                      <CollapsibleContent>
+                        <CardContent className="pt-0">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>项目名称</TableHead>
+                                <TableHead>金额</TableHead>
+                                <TableHead>收费类型</TableHead>
+                                <TableHead>状态</TableHead>
+                                {isFeeEditMode && <TableHead>操作</TableHead>}
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {categoryFees.map((item) => (
+                                <TableRow key={item.id}>
+                                  <TableCell>
+                                    <div className="font-medium">{item.name}</div>
+                                    {item.description && (
+                                      <div className="text-sm text-gray-500">{item.description}</div>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="font-medium">RM {item.amount}</div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline">
+                                      {item.type === "monthly"
+                                        ? "按月收费"
+                                        : item.type === "one-time"
+                                        ? "一次性收费"
+                                        : "年度收费"}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button
+                                      variant={item.status === "active" ? "default" : "outline"}
+                                      size="sm"
+                                      onClick={() => onToggleItemActive(item.id, item.status !== "active")}
+                                    >
+                                      {item.status === "active" ? "已启用" : "已停用"}
+                                    </Button>
+                                  </TableCell>
+                                  {isFeeEditMode && (
+                                    <TableCell>
+                                      <div className="flex gap-2">
+                                        <Button variant="ghost" size="sm" onClick={() => handleEditFeeItem(item)}>
+                                          <Edit className="h-4 w-4" />
+                                        </Button>
+                                        <Button variant="ghost" size="sm" onClick={() => handleDeleteFeeItem(item.id)}>
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  )}
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <AddFeeDialog
-        open={isAddFeeDialogOpen}
+        isOpen={isAddFeeDialogOpen}
         onOpenChange={setIsAddFeeDialogOpen}
-        onAdd={handleAddFeeItem}
-        feeItem={newFeeItem}
-        setFeeItem={setNewFeeItem}
+        newFeeItem={newFeeItem}
+        onFeeItemInputChange={handleFeeItemInputChange}
+        onAddFeeItem={handleAddFeeItem}
       />
 
       <EditFeeDialog
-        open={isEditFeeDialogOpen}
+        isOpen={isEditFeeDialogOpen}
         onOpenChange={setIsEditFeeDialogOpen}
-        onUpdate={handleUpdateFeeItem}
-        feeItem={newFeeItem}
-        setFeeItem={setNewFeeItem}
-        editingFee={editingFeeItem}
+        newFeeItem={newFeeItem}
+        onFeeItemInputChange={handleFeeItemInputChange}
+        onUpdateFeeItem={handleUpdateFeeItem}
       />
     </div>
   )

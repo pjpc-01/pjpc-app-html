@@ -73,7 +73,7 @@ export const AddFeeDialog = ({
               <Label htmlFor="category">分类</Label>
               <Input
                 id="category"
-                value={newFeeItem.category}
+                value={newFeeItem.category || ""}
                 onChange={(e) => onFeeItemInputChange("category", e.target.value)}
                 placeholder="例如：教育费用、生活费用"
               />
