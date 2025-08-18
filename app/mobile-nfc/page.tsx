@@ -310,7 +310,7 @@ export default function MobileNFCPage() {
           <CardContent className="space-y-2 text-sm text-gray-600">
             <p>1. 确保在手机设备上访问此页面</p>
             <p>2. 使用HTTPS连接（已自动配置）</p>
-            <p>3. 点击"开始NFC签到"按钮</p>
+            <p>3. 点击&quot;开始NFC签到&quot;按钮</p>
             <p>4. 将NFC卡片靠近手机背面</p>
             <p>5. 等待读取成功提示</p>
           </CardContent>

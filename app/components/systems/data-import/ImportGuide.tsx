@@ -45,7 +45,7 @@ export function ImportGuide() {
             <div>
               <h4 className="font-medium">验证数据</h4>
               <p className="text-sm text-muted-foreground">
-                点击"验证表格"检查数据格式是否正确，确保包含必需的字段。
+                点击&quot;验证表格&quot;检查数据格式是否正确，确保包含必需的字段。
               </p>
             </div>
           </div>
@@ -55,7 +55,7 @@ export function ImportGuide() {
             <div>
               <h4 className="font-medium">预览数据</h4>
               <p className="text-sm text-muted-foreground">
-                点击"预览数据"查看导入的数据内容，确认无误后再进行导入。
+                点击&quot;预览数据&quot;查看导入的数据内容，确认无误后再进行导入。
               </p>
             </div>
           </div>
@@ -65,7 +65,7 @@ export function ImportGuide() {
             <div>
               <h4 className="font-medium">开始导入</h4>
               <p className="text-sm text-muted-foreground">
-                点击"开始导入"将数据导入到PocketBase数据库。
+                点击&quot;开始导入&quot;将数据导入到PocketBase数据库。
               </p>
             </div>
           </div>
@@ -97,7 +97,7 @@ export function ImportGuide() {
             <div className="flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-orange-500 mt-0.5" />
               <div>
-                <strong>权限错误：</strong>确保Google Sheets已设置为"任何人都可以查看"
+                <strong>权限错误：</strong>确保Google Sheets已设置为&quot;任何人都可以查看&quot;
               </div>
             </div>
             <div className="flex items-start gap-2">

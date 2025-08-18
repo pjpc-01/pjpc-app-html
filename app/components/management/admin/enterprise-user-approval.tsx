@@ -761,7 +761,7 @@ export default function EnterpriseUserApproval() {
 
   useEffect(() => {
     fetchUsers()
-  }, [])
+  }, [fetchUsers])
 
   if (loading) {
     return (

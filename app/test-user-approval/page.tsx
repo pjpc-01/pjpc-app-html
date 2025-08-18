@@ -48,7 +48,7 @@ export default function TestUserApproval() {
 
   useEffect(() => {
     runTest()
-  }, [])
+  }, [runTest])
 
   return (
     <div className="container mx-auto p-6 space-y-6">

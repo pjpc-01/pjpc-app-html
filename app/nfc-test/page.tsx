@@ -29,7 +29,7 @@ export default function NFCTestPage() {
 
   useEffect(() => {
     runDiagnostics()
-  }, [])
+  }, [runDiagnostics])
 
   const runDiagnostics = () => {
     const info: any = {

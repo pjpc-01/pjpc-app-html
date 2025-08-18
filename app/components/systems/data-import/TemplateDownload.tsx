@@ -49,7 +49,7 @@ STU003,王五,Standard 3,0123456791,0987654323,槟城,王先生,陈女士,2013-0
                      <ul className="text-sm text-muted-foreground space-y-1">
              <li>• <strong>ID</strong>：学生学号（可选，系统会自动生成）</li>
              <li>• <strong>姓名</strong>：学生姓名（必填）</li>
-             <li>• <strong>年级</strong>：年级信息，如 "Standard 1"（必填）</li>
+             <li>• <strong>年级</strong>：年级信息，如 &quot;Standard 1&quot;（必填）</li>
              <li>• <strong>性别</strong>：男/女（可选）</li>
              <li>• <strong>出生日期</strong>：YYYY-MM-DD格式（可选）</li>
              <li>• <strong>父亲电话</strong>：父亲联系电话（可选）</li>
@@ -78,7 +78,7 @@ STU003,王五,Standard 3,0123456791,0987654323,槟城,王先生,陈女士,2013-0
             <li>• 日期格式：YYYY-MM-DD</li>
             <li>• 电话号码格式：数字，如 0123456789</li>
             <li>• 中心格式：WX 01, WX 02, WX 03, WX 04</li>
-            <li>• 创建Google Sheets后，设置为"任何人都可以查看"</li>
+            <li>• 创建Google Sheets后，设置为&quot;任何人都可以查看&quot;</li>
             <li>• 复制Spreadsheet ID（URL中的长字符串）</li>
           </ul>
         </div>
