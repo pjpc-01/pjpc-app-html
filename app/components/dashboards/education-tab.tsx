@@ -23,6 +23,7 @@ import { useStudents } from "@/hooks/useStudents"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import TeacherManagement from "../management/teacher-management"
 import CourseManagement from "../management/course-management"
+import StudentsTab from "./students-tab"
 
 interface EducationTabProps {
   stats: any
@@ -41,7 +42,7 @@ export default function EducationTab({
 }: EducationTabProps) {
   const { students, loading: studentsLoading } = useStudents()
   const { userProfile } = useAuth()
-  const [activeView, setActiveView] = useState<'overview' | 'teachers' | 'courses'>('overview')
+  const [activeView, setActiveView] = useState<'overview' | 'students' | 'teachers' | 'courses'>('overview')
 
   // 获取教育数据统计
   const educationStats = useMemo(() => {
@@ -195,7 +196,7 @@ export default function EducationTab({
               管理学生信息、查看打卡状态、配置专属网址
             </p>
             <Button 
-              onClick={() => setActiveTab('students')}
+              onClick={() => setActiveView('students')}
               className="w-full"
             >
               进入学生管理
@@ -248,6 +249,31 @@ export default function EducationTab({
     </div>
   )
 
+  // 渲染学生管理界面
+  const renderStudents = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold mb-2">学生管理</h2>
+          <p className="text-gray-600">管理学生信息、查看打卡状态、配置专属网址</p>
+        </div>
+        <Button 
+          onClick={() => setActiveView('overview')}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          返回教育概览
+        </Button>
+      </div>
+      <StudentsTab 
+        stats={stats}
+        statsLoading={statsLoading}
+        setActiveTab={setActiveTab}
+      />
+    </div>
+  )
+
   // 渲染教师管理界面
   const renderTeachers = () => (
     <div className="space-y-6">
@@ -293,6 +319,7 @@ export default function EducationTab({
   return (
     <div>
       {activeView === 'overview' && renderOverview()}
+      {activeView === 'students' && renderStudents()}
       {activeView === 'teachers' && renderTeachers()}
       {activeView === 'courses' && renderCourses()}
     </div>
