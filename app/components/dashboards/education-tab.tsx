@@ -3,6 +3,10 @@
 import { useState, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Input } from "@/components/ui/input"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   GraduationCap,
   Users,
@@ -13,24 +17,27 @@ import {
   Activity,
   TrendingUp,
   RefreshCw,
+  Search,
+  Plus,
+  Edit,
+  Eye,
+  Trash2,
+  UserPlus,
+  Mail,
+  Phone,
+  MapPin,
 } from "lucide-react"
-import EducationDropdown, { EducationDataType } from "../features/education-dropdown"
-import StudentManagementPage from "../management/student-management-page"
-import TeacherManagement from "../management/teacher-management"
-import AssignmentManagement from "../management/assignment-management"
-import CourseManagement from "../management/course-management"
-import AttendanceSystem from "../systems/attendance-system"
-import ExamSystem from "../systems/exam-system"
-import ResourceLibrary from "../features/resource-library"
-import ScheduleManagement from "../features/schedule-management"
-import LearningAnalytics from "../features/learning-analytics"
 import { useStudents } from "@/hooks/useStudents"
+import { useAuth } from "@/contexts/pocketbase-auth-context"
+import SimpleStudentManagement from "../management/simple-student-management"
+import SimpleTeacherManagement from "../management/simple-teacher-management"
+import SimpleCourseManagement from "../management/simple-course-management"
 
 interface EducationTabProps {
   stats: any
   statsLoading: boolean
-  educationDataType: EducationDataType
-  setEducationDataType: (type: EducationDataType) => void
+  educationDataType: string
+  setEducationDataType: (type: string) => void
   setActiveTab: (tab: string) => void
 }
 
@@ -41,44 +48,74 @@ export default function EducationTab({
   setEducationDataType, 
   setActiveTab 
 }: EducationTabProps) {
-  const [educationSubTab, setEducationSubTab] = useState<string>('')
+  const { students, loading: studentsLoading } = useStudents()
+  const { userProfile } = useAuth()
   
-  // Use the actual student data from useStudents hook
-  // Map educationDataType to student dataType (teachers is not a student type)
-  const studentDataType = educationDataType === 'teachers' ? 'primary' : educationDataType
-  const { students, loading: studentsLoading } = useStudents({ dataType: studentDataType })
+  // 简化的状态管理
+  const [educationActiveTab, setEducationActiveTab] = useState('overview')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedGrade, setSelectedGrade] = useState('all')
 
-  const handleCardClick = (tab: string) => {
-    console.log('Education card clicked, setting educationSubTab to:', tab)
-    setEducationSubTab(tab)
-  }
-
-  // 获取教育数据统计 - use useMemo to prevent unnecessary recalculations
+  // 获取教育数据统计
   const educationStats = useMemo(() => {
+    const primaryStudents = students.filter(s => {
+      const grade = s.grade || ''
+      return grade.includes('一年级') || grade.includes('二年级') || grade.includes('三年级') || 
+             grade.includes('四年级') || grade.includes('五年级') || grade.includes('六年级') ||
+             grade === '1' || grade === '2' || grade === '3' || grade === '4' || grade === '5' || grade === '6'
+    })
+    
+    const secondaryStudents = students.filter(s => {
+      const grade = s.grade || ''
+      return grade.includes('初一') || grade.includes('初二') || grade.includes('初三') || 
+             grade.includes('高一') || grade.includes('高二') || grade.includes('高三') ||
+             grade === '7' || grade === '8' || grade === '9' || grade === '10' || grade === '11' || grade === '12'
+    })
+
     return {
-      primaryCount: students.length,
-      secondaryCount: students.length,
-      teachersCount: stats?.activeTeachers || 0
+      primaryCount: primaryStudents.length,
+      secondaryCount: secondaryStudents.length,
+      totalStudents: students.length,
+      teachersCount: stats?.activeTeachers || 0,
+      coursesCount: stats?.totalCourses || 0,
+      attendanceCount: stats?.todayAttendance || 0
     }
-  }, [students.length, stats?.activeTeachers])
+  }, [students, stats])
+
+  // 筛选学生
+  const filteredStudents = useMemo(() => {
+    let filtered = students
+
+    if (searchTerm) {
+      filtered = filtered.filter(student => 
+        student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.grade?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    if (selectedGrade !== 'all') {
+      filtered = filtered.filter(student => student.grade === selectedGrade)
+    }
+
+    return filtered.slice(0, 10) // 只显示前10个
+  }, [students, searchTerm, selectedGrade])
+
+  // 获取年级选项
+  const gradeOptions = useMemo(() => {
+    const grades = Array.from(new Set(students.map(s => s.grade).filter(Boolean))).sort()
+    return grades
+  }, [students])
 
   return (
     <div className="space-y-6">
-      {/* 教育管理概览 */}
+      {/* 标题和概览 */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold mb-2">教育管理</h2>
-        <p className="text-gray-600">全面的教育数据管理和分析</p>
+        <p className="text-gray-600">统一的教育数据管理平台</p>
       </div>
 
-      {/* 教育数据选择器 */}
-      <div className="mb-6">
-        <EducationDropdown
-          selectedType={educationDataType}
-          onTypeChange={setEducationDataType}
-        />
-      </div>
-
-      {/* 关键教育指标 */}
+      {/* 关键指标卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card>
           <CardContent className="p-6">
@@ -92,7 +129,7 @@ export default function EducationTab({
                   </div>
                 ) : (
                   <>
-                    <p className="text-2xl font-bold text-green-600">{educationStats.primaryCount}</p>
+                    <p className="text-2xl font-bold text-green-600">{educationStats.totalStudents}</p>
                     <p className="text-xs text-green-600 flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" />
                       实时数据
@@ -142,7 +179,7 @@ export default function EducationTab({
                   </div>
                 ) : (
                   <>
-                    <p className="text-2xl font-bold text-purple-600">{stats?.totalCourses || 0}</p>
+                    <p className="text-2xl font-bold text-purple-600">{educationStats.coursesCount}</p>
                     <p className="text-xs text-purple-600 flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" />
                       实时数据
@@ -167,7 +204,7 @@ export default function EducationTab({
                   </div>
                 ) : (
                   <>
-                    <p className="text-2xl font-bold text-orange-600">{stats?.todayAttendance || 0}</p>
+                    <p className="text-2xl font-bold text-orange-600">{educationStats.attendanceCount}</p>
                     <p className="text-xs text-orange-600 flex items-center mt-1">
                       <Activity className="h-3 w-3 mr-1" />
                       实时数据
@@ -181,140 +218,87 @@ export default function EducationTab({
         </Card>
       </div>
 
-      {/* 教育子标签内容 */}
-      {educationSubTab && (
-        <div className="mt-8">
-          {educationSubTab === "student-management" && <StudentManagementPage />}
-          {educationSubTab === "teacher-management" && <TeacherManagement />}
-          {educationSubTab === "course-management" && <CourseManagement />}
-          {educationSubTab === "assignment-management" && <AssignmentManagement />}
-          {educationSubTab === "attendance-system" && <AttendanceSystem />}
-          {educationSubTab === "exam-system" && <ExamSystem />}
-          {educationSubTab === "resource-library" && <ResourceLibrary />}
-          {educationSubTab === "schedule-management" && <ScheduleManagement />}
-          {educationSubTab === "learning-analytics" && <LearningAnalytics />}
-        </div>
-      )}
+      {/* 主要功能标签页 */}
+      <Tabs value={educationActiveTab} onValueChange={setEducationActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">概览</TabsTrigger>
+          <TabsTrigger value="students">学生管理</TabsTrigger>
+          <TabsTrigger value="teachers">教师管理</TabsTrigger>
+          <TabsTrigger value="courses">课程管理</TabsTrigger>
+        </TabsList>
 
-      {/* 教育功能卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-green-200">
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("student-management")}>
-            <GraduationCap className="h-12 w-12 mx-auto mb-4 text-green-600" />
-            <h3 className="font-semibold mb-2">学生管理</h3>
-            <p className="text-sm text-gray-600 mb-3">学生信息管理</p>
-            {!statsLoading && (
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                {educationStats.primaryCount} 学生
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
+        {/* 概览标签页 */}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 学生分布 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <GraduationCap className="h-5 w-5 mr-2" />
+                  学生分布
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">小学生</span>
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      {educationStats.primaryCount} 人
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">中学生</span>
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                      {educationStats.secondaryCount} 人
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-blue-200">
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("teacher-management")}>
-            <Users className="h-12 w-12 mx-auto mb-4 text-blue-600" />
-            <h3 className="font-semibold mb-2">教师管理</h3>
-            <p className="text-sm text-gray-600 mb-3">教师信息管理</p>
-            {!statsLoading && (
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                {educationStats.teachersCount} 教师
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
+            {/* 快速操作 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Activity className="h-5 w-5 mr-2" />
+                  快速操作
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <Button className="w-full justify-start" variant="outline">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    添加学生
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline">
+                    <Users className="h-4 w-4 mr-2" />
+                    添加教师
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    创建课程
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-purple-200">
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("course-management")}>
-            <BookOpen className="h-12 w-12 mx-auto mb-4 text-purple-600" />
-            <h3 className="font-semibold mb-2">课程管理</h3>
-            <p className="text-sm text-gray-600 mb-3">课程设置和管理</p>
-            {!statsLoading && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-                {stats?.totalCourses || 0} 课程
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
+        {/* 学生管理标签页 */}
+        <TabsContent value="students" className="space-y-6">
+          <SimpleStudentManagement />
+        </TabsContent>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-orange-200">
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("assignment-management")}>
-            <FileText className="h-12 w-12 mx-auto mb-4 text-orange-600" />
-            <h3 className="font-semibold mb-2">作业管理</h3>
-            <p className="text-sm text-gray-600 mb-3">作业分配和跟踪</p>
-            {!statsLoading && (
-              <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                {stats?.totalAssignments || 0} 作业
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
+        {/* 教师管理标签页 */}
+        <TabsContent value="teachers" className="space-y-6">
+          <SimpleTeacherManagement />
+        </TabsContent>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-red-200">
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("attendance-system")}>
-            <Clock className="h-12 w-12 mx-auto mb-4 text-red-600" />
-            <h3 className="font-semibold mb-2">出勤系统</h3>
-            <p className="text-sm text-gray-600 mb-3">学生出勤记录</p>
-            {!statsLoading && (
-              <Badge variant="secondary" className="bg-red-100 text-red-800">
-                {stats?.todayAttendance || 0} 今日出勤
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-indigo-200">
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("exam-system")}>
-            <FileText className="h-12 w-12 mx-auto mb-4 text-indigo-600" />
-            <h3 className="font-semibold mb-2">考试系统</h3>
-            <p className="text-sm text-gray-600 mb-3">考试安排和成绩</p>
-            {!statsLoading && (
-              <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
-                {stats?.totalExams || 0} 考试
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-emerald-200">
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("resource-library")}>
-            <BookOpen className="h-12 w-12 mx-auto mb-4 text-emerald-600" />
-            <h3 className="font-semibold mb-2">资源库</h3>
-            <p className="text-sm text-gray-600 mb-3">教学资源管理</p>
-            {!statsLoading && (
-              <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">
-                {stats?.totalResources || 0} 资源
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-teal-200">
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("schedule-management")}>
-            <Calendar className="h-12 w-12 mx-auto mb-4 text-teal-600" />
-            <h3 className="font-semibold mb-2">课程安排</h3>
-            <p className="text-sm text-gray-600 mb-3">课程时间表管理</p>
-            {!statsLoading && (
-              <Badge variant="secondary" className="bg-teal-100 text-teal-800">
-                {stats?.totalSchedules || 0} 安排
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-pink-200">
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("learning-analytics")}>
-            <Activity className="h-12 w-12 mx-auto mb-4 text-pink-600" />
-            <h3 className="font-semibold mb-2">学习分析</h3>
-            <p className="text-sm text-gray-600 mb-3">学习数据和分析</p>
-            {!statsLoading && (
-              <Badge variant="secondary" className="bg-pink-100 text-pink-800">
-                实时数据
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+        {/* 课程管理标签页 */}
+        <TabsContent value="courses" className="space-y-6">
+          <SimpleCourseManagement />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
