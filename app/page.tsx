@@ -267,11 +267,19 @@ export default function Dashboard() {
               <h1 className="ml-2 text-xl font-bold text-gray-900">{getRoleTitle()}</h1>
             </div>
             <div className="flex items-center space-x-4">
-              {/* Quick Access to Check-in System */}
+              {/* Quick Access to Systems */}
+              {userProfile.role === 'admin' && (
+                <Button variant="outline" size="sm" asChild>
+                  <a href="/admin-dashboard" className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden sm:inline">管理面板</span>
+                  </a>
+                </Button>
+              )}
               <Button variant="outline" size="sm" asChild>
-                <a href="/checkin" className="flex items-center gap-2">
+                <a href="/unified-attendance" className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4" />
-                  <span className="hidden sm:inline">打卡系统</span>
+                  <span className="hidden sm:inline">统一打卡</span>
                 </a>
               </Button>
               

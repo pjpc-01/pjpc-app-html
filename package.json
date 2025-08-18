@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "dev": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=4096\" next dev",
+    "dev": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=4096\" next dev -H 0.0.0.0",
+    "dev:https": "node server.js",
+    "https": "powershell -ExecutionPolicy Bypass -File start-https-simple.ps1",
     "dev:optimized": "node dev-optimized.js",
     "dev:fast": "next dev --turbo --experimental-turbo",
     "lint": "next lint",
