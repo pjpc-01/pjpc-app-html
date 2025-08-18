@@ -87,24 +87,110 @@ export default function SettingsTab({ stats, statsLoading, setActiveTab }: Setti
           {settingsSubTab === "security-monitoring" && <SecurityMonitoring />}
           {settingsSubTab === "communication-system" && <CommunicationSystem />}
           {settingsSubTab === "data-import" && (
-            <div className="text-center py-12">
-              <Database className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">数据导入</h3>
-              <p className="text-gray-500">批量数据导入功能开发中...</p>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">数据导入</h3>
+                  <p className="text-sm text-gray-500">直接导入 CSV 数据到 PocketBase</p>
+                </div>
+                <Button
+                  onClick={() => window.open('/data-import', '_blank')}
+                  className="flex items-center gap-2"
+                >
+                  <Database className="h-4 w-4" />
+                  打开数据导入页面
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* 左侧：指南和模板 */}
+                <div className="lg:col-span-1 space-y-6">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">导入指南</h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• 支持 CSV 文件格式</li>
+                      <li>• 可直接粘贴数据</li>
+                      <li>• 自动字段映射</li>
+                      <li>• 实时预览功能</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">模板下载</h4>
+                    <p className="text-sm text-gray-600 mb-3">下载标准模板文件</p>
+                    <Button variant="outline" size="sm" className="w-full">
+                      下载模板
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* 右侧：导入功能预览 */}
+                <div className="lg:col-span-2">
+                  <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                    <Database className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <h4 className="font-medium mb-2">数据导入功能</h4>
+                    <p className="text-sm text-gray-500 mb-4">
+                      点击上方按钮打开完整的数据导入页面
+                    </p>
+                    <Button
+                      onClick={() => window.open('/data-import', '_blank')}
+                      variant="outline"
+                    >
+                      在新窗口打开
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
           {settingsSubTab === "system-logs" && (
-            <div className="text-center py-12">
-              <Activity className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">系统日志</h3>
-              <p className="text-gray-500">系统操作日志查看功能开发中...</p>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">系统日志</h3>
+                  <p className="text-sm text-gray-500">查看系统操作和审计日志</p>
+                </div>
+                <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                  即将推出
+                </Badge>
+              </div>
+              
+              <div className="text-center py-12">
+                <Activity className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                <h4 className="text-lg font-medium text-gray-900 mb-2">系统日志功能</h4>
+                <p className="text-gray-500 mb-4">系统操作日志查看功能正在开发中</p>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <p>• 用户操作审计</p>
+                  <p>• 系统事件记录</p>
+                  <p>• 错误日志追踪</p>
+                  <p>• 实时日志监控</p>
+                </div>
+              </div>
             </div>
           )}
           {settingsSubTab === "backup-restore" && (
-            <div className="text-center py-12">
-              <Settings className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">备份恢复</h3>
-              <p className="text-gray-500">数据备份和恢复功能开发中...</p>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">备份恢复</h3>
+                  <p className="text-sm text-gray-500">数据备份和恢复管理</p>
+                </div>
+                <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
+                  即将推出
+                </Badge>
+              </div>
+              
+              <div className="text-center py-12">
+                <Settings className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                <h4 className="text-lg font-medium text-gray-900 mb-2">备份恢复功能</h4>
+                <p className="text-gray-500 mb-4">数据备份和恢复功能正在开发中</p>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <p>• 自动数据备份</p>
+                  <p>• 手动备份创建</p>
+                  <p>• 数据恢复功能</p>
+                  <p>• 备份历史管理</p>
+                </div>
+              </div>
             </div>
           )}
         </div>
