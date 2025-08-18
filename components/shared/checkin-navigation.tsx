@@ -94,6 +94,46 @@ export default function CheckInNavigation() {
           </CardContent>
         </Card>
 
+        {/* Mobile NFC Check-in */}
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Smartphone className="h-6 w-6 text-orange-600" />
+              手机NFC签到
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-orange-50 text-orange-700">
+                  手机NFC
+                </Badge>
+                <span className="text-sm text-gray-600">移动端</span>
+              </div>
+              <p className="text-sm text-gray-600">
+                使用手机内置NFC功能进行签到，支持HTTPS安全连接。
+              </p>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-orange-600">手机</div>
+                <div className="text-xs text-gray-500">移动NFC系统</div>
+              </div>
+                          <Link href="/mobile-nfc">
+              <Button className="flex items-center gap-2">
+                进入系统
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <div className="text-xs text-gray-500 mt-2">
+              <div>HTTPS: https://192.168.0.72:3000/mobile-nfc</div>
+              <div>测试: https://192.168.0.72:3000/mobile-nfc-test</div>
+            </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Unified Attendance System */}
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
@@ -140,7 +180,7 @@ export default function CheckInNavigation() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600 mb-2">RFID</div>
               <div className="text-sm text-gray-600">125KHz 传统门禁</div>
@@ -150,6 +190,11 @@ export default function CheckInNavigation() {
               <div className="text-2xl font-bold text-green-600 mb-2">NFC</div>
               <div className="text-sm text-gray-600">13.56MHz 智能系统</div>
               <div className="text-xs text-gray-500 mt-1">侧入口设备</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600 mb-2">手机NFC</div>
+              <div className="text-sm text-gray-600">移动端签到</div>
+              <div className="text-xs text-gray-500 mt-1">HTTPS安全</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600 mb-2">统一</div>

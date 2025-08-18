@@ -4,6 +4,9 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['googleapis'],
   },
+  
+  // HTTPS 配置 - 移除不支持的配置
+  // 注意：Next.js 15 不支持 server.https 配置，需要使用自定义服务器
   // 设置 Node.js 选项
   webpack: (config, { isServer }) => {
     if (isServer) {

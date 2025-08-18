@@ -12,10 +12,16 @@ import {
   Database,
   Bell,
   RefreshCw,
+  UserCheck,
+  CreditCard,
+  Brain,
+  Zap,
 } from "lucide-react"
 import UserApproval from "../management/admin/user-approval"
 import SecurityMonitoring from "../systems/security-monitoring"
 import CommunicationSystem from "../systems/communication-system"
+import EnterpriseUserApproval from "../management/admin/enterprise-user-approval"
+import UnifiedAttendanceSystem from "../systems/unified-attendance-system"
 
 interface SettingsTabProps {
   stats: any
@@ -157,6 +163,32 @@ export default function SettingsTab({ stats, statsLoading, setActiveTab }: Setti
           </CardContent>
         </Card>
 
+        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-purple-200">
+          <CardContent className="p-6 text-center" onClick={() => handleCardClick("enterprise-user-approval")}>
+            <Brain className="h-12 w-12 mx-auto mb-4 text-purple-600" />
+            <h3 className="font-semibold mb-2">AI智能审核</h3>
+            <p className="text-sm text-gray-600 mb-3">企业级AI增强用户审批</p>
+            {!statsLoading && (
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                AI增强
+              </Badge>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-green-200">
+          <CardContent className="p-6 text-center" onClick={() => handleCardClick("unified-attendance")}>
+            <UserCheck className="h-12 w-12 mx-auto mb-4 text-green-600" />
+            <h3 className="font-semibold mb-2">统一打卡系统</h3>
+            <p className="text-sm text-gray-600 mb-3">NFC/RFID统一出勤管理</p>
+            {!statsLoading && (
+              <Badge variant="secondary" className="bg-green-100 text-green-800">
+                实时监控
+              </Badge>
+            )}
+          </CardContent>
+        </Card>
+
         <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-red-200">
           <CardContent className="p-6 text-center" onClick={() => handleCardClick("security-monitoring")}>
             <Shield className="h-12 w-12 mx-auto mb-4 text-red-600" />
@@ -227,6 +259,8 @@ export default function SettingsTab({ stats, statsLoading, setActiveTab }: Setti
       {settingsSubTab && (
         <div className="mt-8">
           {settingsSubTab === "user-approval" && <UserApproval />}
+          {settingsSubTab === "enterprise-user-approval" && <EnterpriseUserApproval />}
+          {settingsSubTab === "unified-attendance" && <UnifiedAttendanceSystem />}
           {settingsSubTab === "security-monitoring" && <SecurityMonitoring />}
           {settingsSubTab === "communication-system" && <CommunicationSystem />}
           {settingsSubTab === "data-import" && (
