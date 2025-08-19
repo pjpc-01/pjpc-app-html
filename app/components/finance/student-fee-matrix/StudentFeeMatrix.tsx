@@ -1,42 +1,84 @@
 import { useState, useEffect, useMemo } from "react"
 import { Badge } from "@/components/ui/badge"
-import { Search } from "lucide-react"
+import { Search, ChevronDown, ChevronRight } from "lucide-react"
 import { useFees } from "@/hooks/useFees"
 import { useStudents } from "@/hooks/useStudents"
 import { useStudentFees } from "@/hooks/useStudentFees"
 import { useInvoices } from "@/hooks/useInvoices"
 import { StudentFeeMatrixHeader } from "./StudentFeeMatrixHeader"
 import { SearchAndFilter } from "./SearchAndFilter"
-import { BatchOperationsDialog } from "./BatchOperationsDialog"
 import { StudentCard } from "./StudentCard"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export const StudentFeeMatrix = () => {
   const { fees } = useFees()
   const { students } = useStudents()
   const { 
-    toggleStudentSubItem,
+    studentFees,
+    loading: studentFeesLoading,
+    error: studentFeesError,
     isAssigned, 
-    calculateStudentTotal, 
-    getStudentSubItemState
+    calculateStudentTotal,
+    assignFeeToStudent,
+    removeFeeFromStudent,
+    isEditMode: hookEditMode,
+    enterEditMode,
+    exitEditMode
   } = useStudentFees()
   const { createInvoice: createInvoiceFromHook, invoices } = useInvoices()
   
   const [expandedStudents, setExpandedStudents] = useState<string[]>([])
-  const [expandedFees, setExpandedFees] = useState<Map<string, boolean>>(new Map())
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const [studentPayments, setStudentPayments] = useState<Map<string, { status: string; date: string }>>(new Map())
   const [studentInvoices, setStudentInvoices] = useState<Map<string, boolean>>(new Map())
   const [editMode, setEditMode] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedGradeFilter, setSelectedGradeFilter] = useState<string>("all")
-  const [batchDialogOpen, setBatchDialogOpen] = useState(false)
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [selectedSubItems, setSelectedSubItems] = useState<{feeId: string, subItemId: number}[]>([])
-  const [selectedStudents, setSelectedStudents] = useState<string[]>([])
-  const [selectedCriteria, setSelectedCriteria] = useState<'grade' | null>(null)
-  const [selectedGrades, setSelectedGrades] = useState<string[]>([])
   const [batchMode, setBatchMode] = useState(false)
 
+  // Show loading state if student fees are loading
+  if (studentFeesLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">正在加载学生费用分配数据...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state if there's an error
+  if (studentFeesError) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <p className="text-gray-800 font-medium mb-2">加载失败</p>
+          <p className="text-gray-600 text-sm">{studentFeesError}</p>
+        </div>
+      </div>
+    )
+  }
+
   const activeFees = fees.filter(fee => fee.status === 'active')
+
+  // Group fees by category
+  const groupedFees = useMemo(() => {
+    return activeFees.reduce((groups, fee) => {
+      const category = fee.category || "未分类"
+      if (!groups[category]) {
+        groups[category] = []
+      }
+      groups[category].push(fee)
+      return groups
+    }, {} as Record<string, typeof activeFees>)
+  }, [activeFees])
 
   // Get unique categories from active fees
   const categories = [...new Set(activeFees.map(fee => fee.category).filter(Boolean))]
@@ -115,18 +157,29 @@ export const StudentFeeMatrix = () => {
     })
   }
 
-  const toggleFeeExpansion = (studentId: string, feeId: string) => {
-    const key = `${studentId}-${feeId}`
-    setExpandedFees(prev => {
-      const newMap = new Map(prev)
-      newMap.set(key, !prev.get(key))
-      return newMap
+  // Toggle category expansion
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(category)) {
+        newSet.delete(category)
+      } else {
+        newSet.add(category)
+      }
+      return newSet
     })
   }
 
-  const isFeeExpanded = (studentId: string, feeId: string) => {
-    const key = `${studentId}-${feeId}`
-    return expandedFees.get(key) || false
+  // Expand/collapse all categories
+  const toggleAllCategories = () => {
+    const allCategories = Object.keys(groupedFees)
+    const allExpanded = allCategories.every(cat => expandedCategories.has(cat))
+    
+    if (allExpanded) {
+      setExpandedCategories(new Set())
+    } else {
+      setExpandedCategories(new Set(allCategories))
+    }
   }
 
   const getPaymentStatus = (studentId: string) => {
@@ -176,11 +229,7 @@ export const StudentFeeMatrix = () => {
     // Create invoice items based on assigned fees
     const invoiceItems = activeFees
       .filter(fee => isAssigned(studentId, fee.id))
-      .flatMap(fee => 
-        fee.subItems
-          .filter(subItem => getStudentSubItemState(studentId, fee.id, subItem.id))
-          .map(subItem => ({ name: `${fee.name} - ${subItem.name}`, amount: subItem.amount }))
-      )
+      .map(fee => ({ name: fee.name, amount: fee.amount }))
 
     // Create the actual invoice
     const newInvoice = createInvoiceFromHook({
@@ -216,10 +265,18 @@ export const StudentFeeMatrix = () => {
     return studentInvoicesThisMonth.length > 0
   }
 
-  const toggleEditMode = () => {
-    setEditMode(!editMode)
+  const toggleEditMode = async () => {
     if (!editMode) {
+      // Entering edit mode
+      console.log('🔄 [StudentFeeMatrix] Entering edit mode')
+      setEditMode(true)
+      enterEditMode()
       setBatchMode(false) // Reset batch mode when entering edit mode
+    } else {
+      // Exiting edit mode
+      console.log('🔄 [StudentFeeMatrix] Exiting edit mode')
+      setEditMode(false)
+      await exitEditMode()
     }
   }
 
@@ -234,127 +291,6 @@ export const StudentFeeMatrix = () => {
 
   const clearGradeFilter = () => {
     setSelectedGradeFilter("all")
-  }
-
-  const handleCategoryToggle = (category: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(category) 
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    )
-  }
-
-  const handleSubItemToggle = (feeId: string, subItemId: number) => {
-    setSelectedSubItems(prev => {
-      const existing = prev.find(item => item.feeId === feeId && item.subItemId === subItemId)
-      if (existing) {
-        return prev.filter(item => !(item.feeId === feeId && item.subItemId === subItemId))
-      } else {
-        return [...prev, { feeId, subItemId }]
-      }
-    })
-  }
-
-  const isSubItemSelected = (feeId: string, subItemId: number) => {
-    return selectedSubItems.some(item => item.feeId === feeId && item.subItemId === subItemId)
-  }
-
-  const handleCriteriaToggle = (criteria: 'grade') => {
-    if (selectedCriteria === criteria) {
-      setSelectedCriteria(null)
-      setSelectedStudents([])
-      setSelectedGrades([])
-    } else {
-      setSelectedCriteria(criteria)
-      // Initialize with all available grades selected
-      setSelectedGrades([...availableGrades])
-      setSelectedStudents([])
-    }
-  }
-
-  const handleGradeToggle = (grade: string) => {
-    setSelectedGrades(prev => 
-      prev.includes(grade) 
-        ? prev.filter(g => g !== grade)
-        : [...prev, grade]
-    )
-  }
-
-  const executeBatchToggle = (action: 'enable' | 'disable') => {
-    if (!editMode) {
-      alert('请先进入编辑模式')
-      return
-    }
-
-    let targetStudents: string[]
-    
-    if (selectedCriteria === 'grade' && selectedGrades.length > 0) {
-      // Filter students by selected grades
-      targetStudents = filteredStudents
-        .filter(student => selectedGrades.includes(student.grade))
-        .map(student => student.id)
-    } else {
-      // Use all filtered students
-      targetStudents = filteredStudents.map(s => s.id)
-    }
-
-    // If specific sub-items are selected, use those; otherwise use categories
-    if (selectedSubItems.length > 0) {
-      // Use selected sub-items
-      targetStudents.forEach(studentId => {
-        selectedSubItems.forEach(({ feeId, subItemId }) => {
-          const currentState = getStudentSubItemState(studentId, feeId, subItemId)
-          if (action === 'enable' && !currentState) {
-            toggleStudentSubItem(studentId, feeId, subItemId)
-          } else if (action === 'disable' && currentState) {
-            toggleStudentSubItem(studentId, feeId, subItemId)
-          }
-        })
-      })
-    } else {
-      // Use selected categories (fallback to all if none selected)
-      const targetFees = activeFees.filter(fee => 
-        selectedCategories.length === 0 || selectedCategories.includes(fee.category)
-      )
-
-      targetStudents.forEach(studentId => {
-        targetFees.forEach(fee => {
-          fee.subItems.forEach(subItem => {
-            const currentState = getStudentSubItemState(studentId, fee.id, subItem.id)
-            if (action === 'enable' && !currentState) {
-              toggleStudentSubItem(studentId, fee.id, subItem.id)
-            } else if (action === 'disable' && currentState) {
-              toggleStudentSubItem(studentId, fee.id, subItem.id)
-            }
-          })
-        })
-      })
-    }
-
-    setBatchDialogOpen(false)
-    setSelectedCategories([])
-    setSelectedSubItems([])
-    setSelectedStudents([])
-    setSelectedCriteria(null)
-    setSelectedGrades([])
-  }
-
-  // Handle batch toggle for sub-items
-  const handleBatchToggleSubItem = (feeId: string, subItemId: number, targetState: boolean) => {
-    console.log('handleBatchToggleSubItem called:', { feeId, subItemId, targetState, editMode, batchMode })
-    if (!editMode || !batchMode) {
-      console.log('Batch toggle blocked: editMode =', editMode, 'batchMode =', batchMode)
-      return
-    }
-    
-    // Toggle the same sub-item for all filtered students
-    filteredStudents.forEach(student => {
-      const currentState = getStudentSubItemState(student.id, feeId, subItemId)
-      if (currentState !== targetState) {
-        console.log('Toggling for student:', student.id, 'from', currentState, 'to', targetState)
-        toggleStudentSubItem(student.id, feeId, subItemId)
-      }
-    })
   }
 
   return (
@@ -377,23 +313,25 @@ export const StudentFeeMatrix = () => {
         totalStudentsCount={students.length}
       />
 
-      <BatchOperationsDialog
-        isOpen={batchDialogOpen}
-        onOpenChange={setBatchDialogOpen}
-        categories={categories}
-        activeFees={activeFees}
-        availableGrades={availableGrades}
-        selectedCategories={selectedCategories}
-        onCategoryToggle={handleCategoryToggle}
-        selectedSubItems={selectedSubItems}
-        onSubItemToggle={handleSubItemToggle}
-        isSubItemSelected={isSubItemSelected}
-        selectedCriteria={selectedCriteria}
-        onCriteriaToggle={handleCriteriaToggle}
-        selectedGrades={selectedGrades}
-        onGradeToggle={handleGradeToggle}
-        onExecuteBatchToggle={executeBatchToggle}
-      />
+      {/* Category Controls */}
+      <div className="flex justify-end">
+        <button
+          onClick={toggleAllCategories}
+          className="flex items-center gap-2 px-3 py-2 text-sm border rounded hover:bg-gray-50"
+        >
+          {Object.keys(groupedFees).every(cat => expandedCategories.has(cat)) ? (
+            <>
+              <ChevronDown className="h-4 w-4" />
+              收起全部
+            </>
+          ) : (
+            <>
+              <ChevronRight className="h-4 w-4" />
+              展开全部
+            </>
+          )}
+        </button>
+      </div>
 
       {/* Student Fee Matrix */}
       <div className="grid gap-4">
@@ -407,7 +345,7 @@ export const StudentFeeMatrix = () => {
           filteredStudents.map(student => {
             const studentId = student.id
             const isExpanded = expandedStudents.includes(studentId)
-                         const studentTotal = calculateStudentTotal(studentId, activeFees)
+            const studentTotal = calculateStudentTotal(studentId, activeFees)
             
             return (
               <StudentCard
@@ -416,21 +354,20 @@ export const StudentFeeMatrix = () => {
                 isExpanded={isExpanded}
                 onToggleExpansion={() => toggleStudentExpansion(studentId)}
                 activeFees={activeFees}
+                groupedFees={groupedFees}
+                expandedCategories={expandedCategories}
+                onToggleCategory={toggleCategory}
                 studentTotal={studentTotal}
                 onUpdatePaymentStatus={updatePaymentStatus}
                 getPaymentStatus={getPaymentStatus}
                 getStatusBadge={getStatusBadge}
                 onCreateInvoice={createInvoice}
                 editMode={editMode}
-                expandedFees={expandedFees}
-                onToggleFeeExpansion={toggleFeeExpansion}
-                isFeeExpanded={isFeeExpanded}
                 isAssigned={isAssigned}
-                toggleStudentSubItem={toggleStudentSubItem}
-                getStudentSubItemState={getStudentSubItemState}
+                assignFeeToStudent={assignFeeToStudent}
+                removeFeeFromStudent={removeFeeFromStudent}
                 hasInvoiceThisMonth={hasInvoiceThisMonth}
                 batchMode={batchMode}
-                onBatchToggleSubItem={handleBatchToggleSubItem}
               />
             )
           })
