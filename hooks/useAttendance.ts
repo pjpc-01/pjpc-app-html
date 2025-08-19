@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import PocketBase from 'pocketbase'
 
-const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL || 'http://localhost:8090')
+const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL || 'http://192.168.0.59:8090')
 
 export interface AttendanceRecord {
   id: string

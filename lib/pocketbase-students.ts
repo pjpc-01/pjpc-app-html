@@ -1,7 +1,8 @@
 import PocketBase from 'pocketbase'
+import { getPocketBase } from './pocketbase'
 
-// PocketBase 实例
-const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL || 'http://pjpc.tplinkdns.com:8090')
+// 获取智能PocketBase实例
+const getPb = async () => await getPocketBase()
 
 // 融合的学生数据接口 - 包含基本信息和打卡信息
 export interface Student {
@@ -88,6 +89,7 @@ export const getAllStudents = async (): Promise<Student[]> => {
     console.log('开始获取融合的学生数据...')
     
         // 确保认证
+    const pb = await getPb()
     if (!pb.authStore.isValid) {
       console.log('用户未认证，尝试用户认证...')
       try {
@@ -180,6 +182,7 @@ export const getAllStudents = async (): Promise<Student[]> => {
 export const getStudentsByGrade = async (standard: string): Promise<Student[]> => {
   try {
     // 检查认证状态
+    const pb = await getPb()
     if (!pb.authStore.isValid) {
       console.log('用户未认证，尝试用户认证...')
       try {
@@ -212,6 +215,7 @@ export const addStudent = async (studentData: StudentCreateData): Promise<Studen
     console.log('准备添加学生数据:', studentData)
     
     // 检查认证状态
+    const pb = await getPb()
     if (!pb.authStore.isValid) {
       console.log('用户未认证，尝试用户认证...')
       try {
@@ -271,6 +275,7 @@ export const updateStudent = async (studentData: StudentUpdateData): Promise<Stu
     const { id, ...updateData } = studentData
     
     // 检查认证状态
+    const pb = await getPb()
     if (!pb.authStore.isValid) {
       console.log('用户未认证，尝试用户认证...')
       try {
@@ -306,6 +311,7 @@ export const updateStudent = async (studentData: StudentUpdateData): Promise<Stu
 export const deleteStudent = async (studentId: string): Promise<void> => {
   try {
     // 检查认证状态
+    const pb = await getPb()
     if (!pb.authStore.isValid) {
       console.log('用户未认证，尝试用户认证...')
       try {
@@ -329,6 +335,7 @@ export const deleteStudent = async (studentId: string): Promise<void> => {
 export const searchStudents = async (query: string): Promise<Student[]> => {
   try {
     // 检查认证状态
+    const pb = await getPb()
     if (!pb.authStore.isValid) {
       console.log('用户未认证，尝试用户认证...')
       try {
@@ -359,6 +366,7 @@ export const searchStudents = async (query: string): Promise<Student[]> => {
 export const getStudentStats = async () => {
   try {
     // 检查认证状态
+    const pb = await getPb()
     if (!pb.authStore.isValid) {
       console.log('用户未认证，尝试用户认证...')
       try {
