@@ -12,12 +12,23 @@ A comprehensive school management system built with Next.js, TypeScript, and Poc
 - ✅ Student statistics and analytics
 
 ### Financial Management
-- ✅ Fee management and tracking
+- ✅ **Student Fee Matrix**: Category-based fee allocation system
+- ✅ Fee management and tracking with category organization
 - ✅ Invoice generation and management
 - ✅ Payment processing and reconciliation
 - ✅ Receipt generation
 - ✅ Financial reports and analytics
 - ✅ Reminder system for overdue payments
+
+### Student Fee Allocation System
+- ✅ **Category-based Display**: Fees organized by categories with collapsible sections
+- ✅ **Individual Fee Toggles**: Toggle switches for each fee item assignment
+- ✅ **Edit Mode**: Toggle switches only active in edit mode
+- ✅ **Batch Mode**: Support for batch operations across multiple students
+- ✅ **Real-time Updates**: Fee assignments sync with PocketBase immediately
+- ✅ **Search & Filter**: Student search and grade filtering
+- ✅ **Invoice Creation**: Generate invoices from assigned fees
+- ✅ **Payment Status Tracking**: Track payment status for each student
 
 ### User Management
 - ✅ Role-based access control (Admin, Teacher, Parent, Accountant)
@@ -29,6 +40,7 @@ A comprehensive school management system built with Next.js, TypeScript, and Poc
 - ✅ Data import from Google Sheets
 - ✅ Responsive design for mobile and desktop
 - ✅ Real-time data synchronization with PocketBase
+- ✅ Smart network detection for PocketBase connections
 
 ## 🛠️ Tech Stack
 
@@ -92,6 +104,7 @@ pjpc-app-html/
 │   ├── components/        # React components
 │   │   ├── dashboards/    # Dashboard components
 │   │   ├── finance/       # Financial management
+│   │   │   └── student-fee-matrix/  # Student fee allocation system
 │   │   ├── management/    # Admin management
 │   │   ├── student/       # Student management
 │   │   └── systems/       # System components
@@ -112,7 +125,8 @@ pjpc-app-html/
 3. Create collections for:
    - `students` - Student records
    - `users` - User accounts
-   - `fees` - Fee records
+   - `fees_items` - Fee items with categories
+   - `student_fees` - Student fee assignments
    - `invoices` - Invoice records
    - `payments` - Payment records
    - `receipts` - Receipt records
@@ -142,6 +156,27 @@ The system supports importing student data from Google Sheets:
 - **父亲电话** / **Father Phone** - Father's phone number
 - **母亲电话** / **Mother Phone** - Mother's phone number
 - **家庭地址** / **Address** - Home address
+
+## 🎯 Student Fee Matrix Usage
+
+### Accessing the Fee Matrix
+1. Navigate to Finance Management
+2. Click on "Student Fee Allocation" tab
+3. The matrix displays all students with their assigned fees
+
+### Managing Fee Assignments
+1. **Enable Edit Mode**: Click the "编辑" (Edit) button
+2. **Expand Categories**: Click on category headers to expand/collapse
+3. **Assign Fees**: Toggle switches to assign/unassign fees to students
+4. **Batch Operations**: Use batch mode for multiple students
+5. **Create Invoices**: Click the invoice button to generate invoices
+
+### Features
+- **Category Organization**: Fees are grouped by categories (e.g., "学费", "杂费")
+- **Real-time Updates**: Changes sync immediately with PocketBase
+- **Search & Filter**: Find students by name, grade, or other criteria
+- **Payment Tracking**: View payment status for each student
+- **Invoice Generation**: Create invoices from assigned fees
 
 ## 🚀 Deployment
 
@@ -178,7 +213,16 @@ For support and questions:
 
 ## 🔄 Changelog
 
-### v1.0.0 (Current)
+### v1.1.0 (Latest)
+- ✅ **Student Fee Matrix Refactoring**: Removed sub-item complexity
+- ✅ **Category-based Display**: Fees organized by categories with collapsible sections
+- ✅ **Individual Fee Toggles**: Toggle switches for each fee item
+- ✅ **Clean Interface**: Streamlined UI without sub-item complexity
+- ✅ **Real-time Sync**: Fee assignments sync with PocketBase immediately
+- ✅ **Smart Network Detection**: Automatic PocketBase URL detection
+- ✅ **AbortController Integration**: Improved request handling and cancellation
+
+### v1.0.0
 - ✅ Initial release
 - ✅ Student management system
 - ✅ Financial management
