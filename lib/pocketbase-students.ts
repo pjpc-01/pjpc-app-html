@@ -6,7 +6,8 @@ const getPb = async () => await getPocketBase()
 
 // 融合的学生数据接口 - 包含基本信息和打卡信息
 export interface Student {
-  id: string
+  id: string // students_card 的 ID
+  studentRecordId?: string // students 的 ID，用于更新操作
   
   // 基本信息 (来自 students 集合)
   student_id?: string
@@ -16,6 +17,7 @@ export interface Student {
   mother_phone?: string
   home_address?: string
   gender?: string
+  serviceType?: 'afterschool' | 'tuition'
   register_form_url?: string
   standard?: string
   level?: 'primary' | 'secondary'
@@ -55,6 +57,7 @@ export interface StudentCreateData {
   mother_phone?: string
   home_address?: string
   gender?: string
+  serviceType?: 'afterschool' | 'tuition'
   register_form_url?: string
   standard?: string
   level?: 'primary' | 'secondary'
@@ -129,10 +132,14 @@ export const getAllStudents = async (): Promise<Student[]> => {
       )
       
       console.log(`匹配学生: ${card.studentName} - 找到基本数据: ${!!student}`)
+      if (student) {
+        console.log(`学生 ${card.studentName} 的serviceType:`, student.serviceType)
+      }
       
       // 融合数据
       return {
-        id: card.id,
+        id: card.id, // 这是 students_card 的 ID
+        studentRecordId: student?.id, // 这是 students 的 ID，用于更新操作
         // 基本信息（优先使用 students 集合的数据，如果没有则使用 students_card 的数据）
         student_id: card.studentId,
         student_name: card.studentName,
@@ -141,6 +148,7 @@ export const getAllStudents = async (): Promise<Student[]> => {
         mother_phone: student?.mother_phone,
         home_address: student?.home_address,
         gender: student?.gender,
+        serviceType: student?.serviceType,
         register_form_url: student?.register_form_url,
         standard: student?.standard,
         level: student?.level,
@@ -238,9 +246,37 @@ export const addStudent = async (studentData: StudentCreateData): Promise<Studen
     
     console.log(`添加到students集合`)
     
-    const record = await pb.collection('students').create(completeStudentData)
-    console.log('添加学生成功:', record)
-    return record as unknown as Student
+    // 首先在students集合中创建记录
+    const studentRecord = await pb.collection('students').create(completeStudentData)
+    console.log('在students集合中添加学生成功:', studentRecord)
+    
+    // 然后在students_card集合中创建对应的记录
+    const cardData = {
+      studentName: studentRecord.student_name,
+      studentId: studentRecord.student_id,
+      center: studentRecord.Center,
+      cardNumber: studentRecord.student_id, // 使用学号作为卡号
+      cardType: 'NFC',
+      status: 'active',
+      balance: 0,
+      enrollmentDate: new Date().toISOString().split('T')[0],
+      phone: studentRecord.father_phone || studentRecord.mother_phone,
+      email: studentRecord.email,
+      parentName: studentRecord.parentName,
+      parentPhone: studentRecord.father_phone || studentRecord.mother_phone,
+      address: studentRecord.home_address
+    }
+    
+    console.log(`添加到students_card集合`)
+    const cardRecord = await pb.collection('students_card').create(cardData)
+    console.log('在students_card集合中添加学生成功:', cardRecord)
+    
+    // 返回融合后的数据
+    return {
+      ...studentRecord,
+      id: cardRecord.id, // 使用card的ID作为主ID
+      studentRecordId: studentRecord.id // 保存student的ID
+    } as unknown as Student
   } catch (error: any) {
     console.error('添加学生失败:', error)
     console.error('错误详情:', {
@@ -271,8 +307,10 @@ export const addStudent = async (studentData: StudentCreateData): Promise<Studen
 
 // 更新学生信息
 export const updateStudent = async (studentData: StudentUpdateData): Promise<Student> => {
+  const { id, ...updateData } = studentData
+  
   try {
-    const { id, ...updateData } = studentData
+    console.log('准备更新学生，ID:', id, '数据:', updateData)
     
     // 检查认证状态
     const pb = await getPb()
@@ -287,23 +325,69 @@ export const updateStudent = async (studentData: StudentUpdateData): Promise<Stu
       }
     }
     
-    // 从统一的students集合更新学生
-    const record = await pb.collection('students').update(id, updateData)
+    // 确定要更新的集合和ID
+    // 如果这是融合数据中的ID（来自students_card），我们需要找到对应的students记录
+    let targetId = id
+    let targetCollection = 'students'
+    
+    // 检查这个ID是否存在于students_card集合中
+    try {
+      const cardRecord = await pb.collection('students_card').getOne(id)
+      console.log('找到students_card记录:', cardRecord)
+      
+      // 通过姓名查找对应的students记录
+      const studentsResponse = await pb.collection('students').getList(1, 1, {
+        filter: `student_name = "${cardRecord.studentName}"`,
+        $autoCancel: false
+      })
+      
+      if (studentsResponse.items.length > 0) {
+        targetId = studentsResponse.items[0].id
+        console.log('找到对应的students记录ID:', targetId)
+      } else {
+        throw new Error(`找不到对应的students记录 (姓名: ${cardRecord.studentName})`)
+      }
+    } catch (cardError: any) {
+      // 如果ID不在students_card中，假设它在students中
+      console.log('ID不在students_card中，假设在students中:', id)
+    }
+    
+    // 首先检查学生是否存在
+    try {
+      const existingRecord = await pb.collection(targetCollection).getOne(targetId)
+      console.log('找到现有学生记录:', existingRecord)
+    } catch (getError: any) {
+      console.error('学生记录不存在:', getError)
+      throw new Error(`学生记录不存在 (ID: ${targetId})`)
+    }
+    
+    // 更新学生记录
+    const record = await pb.collection(targetCollection).update(targetId, updateData)
     
     return record as unknown as Student
   } catch (error: any) {
     console.error('更新学生信息失败:', error)
     
+    // 简化错误处理，只显示主要错误信息
     if (error.data) {
       const data = error.data
-      if (data.student_name) {
-        throw new Error(`姓名错误: ${data.student_name.message}`)
-      } else if (data.student_id) {
-        throw new Error(`学号错误: ${data.student_id.message}`)
+      const errorMessages = []
+      
+      if (data.student_name?.message) errorMessages.push(`姓名: ${data.student_name.message}`)
+      if (data.student_id?.message) errorMessages.push(`学号: ${data.student_id.message}`)
+      if (data.standard?.message) errorMessages.push(`年级: ${data.standard.message}`)
+      if (data.Center?.message) errorMessages.push(`中心: ${data.Center.message}`)
+      if (data.serviceType?.message) errorMessages.push(`服务类型: ${data.serviceType.message}`)
+      if (data.gender?.message) errorMessages.push(`性别: ${data.gender.message}`)
+      if (data.dob?.message) errorMessages.push(`出生日期: ${data.dob.message}`)
+      if (data.message) errorMessages.push(data.message)
+      
+      if (errorMessages.length > 0) {
+        throw new Error(`更新失败: ${errorMessages.join(', ')}`)
       }
     }
     
-    throw new Error('更新学生信息失败')
+    throw new Error(`更新学生信息失败: ${error.message || '未知错误'}`)
   }
 }
 

@@ -57,21 +57,21 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
     
     // 年级分布
     const gradeDistribution = students.reduce((acc, student) => {
-      const grade = student.grade || '未知年级'
+      const grade = student.standard || '未知年级'
       acc[grade] = (acc[grade] || 0) + 1
       return acc
     }, {} as Record<string, number>)
 
     // 小学/中学分布
     const primaryCount = students.filter(student => {
-      const grade = student.grade || ''
+      const grade = student.standard || ''
       return grade.includes('一年级') || grade.includes('二年级') || grade.includes('三年级') || 
              grade.includes('四年级') || grade.includes('五年级') || grade.includes('六年级') ||
              grade === '1' || grade === '2' || grade === '3' || grade === '4' || grade === '5' || grade === '6'
     }).length
 
     const secondaryCount = students.filter(student => {
-      const grade = student.grade || ''
+      const grade = student.standard || ''
       return grade.includes('初一') || grade.includes('初二') || grade.includes('初三') || 
              grade.includes('高一') || grade.includes('高二') || grade.includes('高三') ||
              grade === '7' || grade === '8' || grade === '9' || grade === '10' || grade === '11' || grade === '12'
@@ -79,7 +79,7 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
 
     // 联系信息统计
     const hasPhone = students.filter(s => s.parentName && s.parentName.trim() !== '').length
-    const hasEmail = students.filter(s => s.parentEmail && s.parentEmail.trim() !== '').length
+    const hasEmail = students.filter(s => s.email && s.email.trim() !== '').length
 
     // 中心分布
     const centerDistribution = students.reduce((acc, student) => {
