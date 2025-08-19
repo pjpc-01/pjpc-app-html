@@ -65,7 +65,7 @@ const detectNetworkEnvironment = async () => {
 // PocketBase URL配置（智能检测网络环境）
 const getPocketBaseUrl = async () => {
   // 优先使用环境变量
-  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POCKETBASE_URL) {
+  if (process.env.NEXT_PUBLIC_POCKETBASE_URL) {
     console.log('🔧 使用环境变量配置的PocketBase URL:', process.env.NEXT_PUBLIC_POCKETBASE_URL)
     return process.env.NEXT_PUBLIC_POCKETBASE_URL
   }
