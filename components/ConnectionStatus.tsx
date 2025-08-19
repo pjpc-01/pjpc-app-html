@@ -1,214 +1,167 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Wifi, WifiOff, RefreshCw, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
-import { checkPocketBaseConnection, detectNetworkEnvironment, updatePocketBaseUrl } from '@/lib/pocketbase'
+import { Wifi, WifiOff, Globe, Home, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react'
+import { getPocketBase, reinitializePocketBase } from '@/lib/pocketbase'
 
 interface NetworkStatus {
-  connected: boolean
-  type: 'local' | 'ddns' | 'unknown'
   url: string
+  type: 'local' | 'ddns'
+  name: string
   latency: number
-  error?: string
+  status: 'connected' | 'disconnected' | 'checking'
 }
 
 export default function ConnectionStatus() {
-  const [status, setStatus] = useState<NetworkStatus>({
-    connected: false,
-    type: 'unknown',
-    url: '',
-    latency: 0
-  })
-  const [loading, setLoading] = useState(true)
+  const [networkStatus, setNetworkStatus] = useState<NetworkStatus | null>(null)
+  const [isChecking, setIsChecking] = useState(true)
   const [lastCheck, setLastCheck] = useState<Date>(new Date())
 
-  const checkConnection = async () => {
-    setLoading(true)
+  const checkNetworkStatus = async () => {
+    setIsChecking(true)
     try {
-      console.log('开始检查网络连接...')
+      const pb = await getPocketBase()
+      const url = pb.baseUrl
       
-      // 检测网络环境
-      const networkInfo = await detectNetworkEnvironment()
+      // 确定网络类型
+      let type: 'local' | 'ddns' = 'ddns'
+      let name = 'DDNS'
       
-      // 检查连接状态
-      const connectionResult = await checkPocketBaseConnection()
+      if (url.includes('192.168.0.59')) {
+        type = 'local'
+        name = '局域网'
+      } else if (url.includes('pjpc.tplinkdns.com')) {
+        type = 'ddns'
+        name = 'DDNS'
+      }
       
-      setStatus({
-        connected: connectionResult.connected,
-        type: networkInfo.type,
-        url: networkInfo.url,
-        latency: networkInfo.latency,
-        error: connectionResult.error || undefined
+      // 测试延迟
+      const startTime = Date.now()
+      await fetch(`${url}/api/health`)
+      const latency = Date.now() - startTime
+      
+      setNetworkStatus({
+        url,
+        type,
+        name,
+        latency,
+        status: 'connected'
       })
-      
-      setLastCheck(new Date())
     } catch (error) {
-      console.error('连接检查失败:', error)
-      setStatus({
-        connected: false,
-        type: 'unknown',
-        url: '',
+      setNetworkStatus({
+        url: '未知',
+        type: 'ddns',
+        name: '连接失败',
         latency: 0,
-        error: error instanceof Error ? error.message : '未知错误'
+        status: 'disconnected'
       })
     } finally {
-      setLoading(false)
+      setIsChecking(false)
+      setLastCheck(new Date())
     }
   }
 
-  const handleRefresh = async () => {
-    await checkConnection()
-  }
-
-  const handleUpdateUrl = async () => {
-    setLoading(true)
+  const handleReconnect = async () => {
     try {
-      const result = await updatePocketBaseUrl()
-      if (result.success) {
-        await checkConnection()
-      } else {
-        console.error('更新URL失败:', result.error)
-      }
+      await reinitializePocketBase()
+      await checkNetworkStatus()
     } catch (error) {
-      console.error('更新URL时出错:', error)
-    } finally {
-      setLoading(false)
+      console.error('重新连接失败:', error)
     }
   }
 
   useEffect(() => {
-    checkConnection()
+    checkNetworkStatus()
     
-    // 每5分钟自动检查一次
-    const interval = setInterval(checkConnection, 5 * 60 * 1000)
+    // 每30秒检查一次网络状态
+    const interval = setInterval(checkNetworkStatus, 30000)
     
     return () => clearInterval(interval)
   }, [])
 
+  if (!networkStatus) {
+    return (
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+        <span className="text-xs text-blue-700">检测中...</span>
+      </div>
+    )
+  }
+
   const getStatusIcon = () => {
-    if (loading) return <RefreshCw className="h-4 w-4 animate-spin" />
-    if (status.connected) return <CheckCircle className="h-4 w-4 text-green-500" />
-    if (status.error) return <XCircle className="h-4 w-4 text-red-500" />
-    return <AlertCircle className="h-4 w-4 text-yellow-500" />
+    if (isChecking) {
+      return <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+    }
+    
+    switch (networkStatus.status) {
+      case 'connected':
+        return <CheckCircle className="h-3 w-3 text-green-600" />
+      case 'disconnected':
+        return <WifiOff className="h-3 w-3 text-red-600" />
+      default:
+        return <AlertTriangle className="h-3 w-3 text-yellow-600" />
+    }
   }
 
-  const getStatusText = () => {
-    if (loading) return '检查中...'
-    if (status.connected) return '已连接'
-    if (status.error) return '连接失败'
-    return '未知状态'
-  }
-
-  const getNetworkTypeText = () => {
-    switch (status.type) {
-      case 'local': return '局域网'
-      case 'ddns': return 'DDNS'
-      default: return '未知'
+  const getNetworkIcon = () => {
+    switch (networkStatus.type) {
+      case 'local':
+        return <Home className="h-3 w-3 text-blue-600" />
+      case 'ddns':
+        return <Globe className="h-3 w-3 text-purple-600" />
+      default:
+        return <Wifi className="h-3 w-3 text-gray-600" />
     }
   }
 
   const getStatusColor = () => {
-    if (loading) return 'bg-gray-100 text-gray-600'
-    if (status.connected) return 'bg-green-100 text-green-800'
-    if (status.error) return 'bg-red-100 text-red-800'
-    return 'bg-yellow-100 text-yellow-800'
+    if (isChecking) return 'bg-blue-100 text-blue-800'
+    switch (networkStatus.status) {
+      case 'connected':
+        return 'bg-green-100 text-green-800'
+      case 'disconnected':
+        return 'bg-red-100 text-red-800'
+      default:
+        return 'bg-yellow-100 text-yellow-800'
+    }
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Wifi className="h-5 w-5" />
-          网络连接状态
-        </CardTitle>
-        <CardDescription>
-          智能检测局域网和DDNS连接
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* 连接状态 */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">连接状态:</span>
-          <div className="flex items-center gap-2">
-            {getStatusIcon()}
-            <Badge className={getStatusColor()}>
-              {getStatusText()}
-            </Badge>
-          </div>
-        </div>
-
-        {/* 网络类型 */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">网络类型:</span>
-          <Badge variant="outline">
-            {getNetworkTypeText()}
-          </Badge>
-        </div>
-
-        {/* 服务器地址 */}
-        {status.url && (
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">服务器地址:</span>
-            <span className="text-xs text-gray-600 font-mono">
-              {status.url.replace('http://', '')}
-            </span>
-          </div>
-        )}
-
-        {/* 延迟 */}
-        {status.latency > 0 && (
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">响应延迟:</span>
-            <span className="text-xs text-gray-600">
-              {status.latency}ms
-            </span>
-          </div>
-        )}
-
-        {/* 错误信息 */}
-        {status.error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-700">
-              <strong>错误:</strong> {status.error}
-            </p>
-          </div>
-        )}
-
-        {/* 最后检查时间 */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">最后检查:</span>
-          <span className="text-xs text-gray-600">
-            {lastCheck.toLocaleTimeString()}
-          </span>
-        </div>
-
-        {/* 操作按钮 */}
-        <div className="flex gap-2 pt-2">
-          <Button 
-            onClick={handleRefresh} 
-            disabled={loading}
-            size="sm"
-            variant="outline"
-            className="flex-1"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            刷新
-          </Button>
-          <Button 
-            onClick={handleUpdateUrl} 
-            disabled={loading}
-            size="sm"
-            variant="outline"
-            className="flex-1"
-          >
-            <Wifi className="h-4 w-4 mr-2" />
-            切换网络
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+      {/* 状态图标 */}
+      {getStatusIcon()}
+      
+      {/* 网络类型图标 */}
+      {getNetworkIcon()}
+      
+      {/* 网络类型名称 */}
+      <span className="text-xs font-medium text-gray-700">
+        {networkStatus.name}
+      </span>
+      
+      {/* 连接状态徽章 */}
+      <Badge className={`text-xs px-1.5 py-0.5 ${getStatusColor()}`}>
+        {isChecking ? '检测中' : networkStatus.status === 'connected' ? '已连接' : '未连接'}
+      </Badge>
+      
+      {/* 延迟显示（仅在连接成功时显示） */}
+      {networkStatus.status === 'connected' && !isChecking && (
+        <span className="text-xs text-gray-500">
+          {networkStatus.latency}ms
+        </span>
+      )}
+      
+      {/* 重新检测按钮 */}
+      <button
+        onClick={handleReconnect}
+        disabled={isChecking}
+        className="p-1 text-gray-400 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        title="重新检测网络"
+      >
+        <RefreshCw className={`h-3 w-3 ${isChecking ? 'animate-spin' : ''}`} />
+      </button>
+    </div>
   )
 }
+

@@ -1,187 +1,26 @@
-// 年级转换函数：将英文年级转换为华文年级
+// 年级转换函数：将数字年级转换为马来西亚教育体系年级
 export const convertGradeToChinese = (grade: string): string => {
   if (!grade) return '未知年级'
   
-  const gradeStr = grade.toString().toLowerCase().trim()
+  const gradeNum = parseInt(grade.toString())
   
-  // 英文年级映射
-  const englishGradeMap: Record<string, string> = {
-    // Standard格式（Google Sheets中的标准格式）
-    'standard 1': '一年级',
-    'standard1': '一年级',
-    'std 1': '一年级',
-    'std1': '一年级',
-    's1': '一年级',
-    '1': '一年级',
-    
-    'standard 2': '二年级',
-    'standard2': '二年级',
-    'std 2': '二年级',
-    'std2': '二年级',
-    's2': '二年级',
-    '2': '二年级',
-    
-    'standard 3': '三年级',
-    'standard3': '三年级',
-    'std 3': '三年级',
-    'std3': '三年级',
-    's3': '三年级',
-    '3': '三年级',
-    
-    'standard 4': '四年级',
-    'standard4': '四年级',
-    'std 4': '四年级',
-    'std4': '四年级',
-    's4': '四年级',
-    '4': '四年级',
-    
-    'standard 5': '五年级',
-    'standard5': '五年级',
-    'std 5': '五年级',
-    'std5': '五年级',
-    's5': '五年级',
-    '5': '五年级',
-    
-    'standard 6': '六年级',
-    'standard6': '六年级',
-    'std 6': '六年级',
-    'std6': '六年级',
-    's6': '六年级',
-    '6': '六年级',
-    
-    // Grade格式
-    'grade 1': '一年级',
-    'grade1': '一年级',
-    '1st grade': '一年级',
-    '1st': '一年级',
-    'first grade': '一年级',
-    'first': '一年级',
-    
-    'grade 2': '二年级',
-    'grade2': '二年级',
-    '2nd grade': '二年级',
-    '2nd': '二年级',
-    'second grade': '二年级',
-    'second': '二年级',
-    
-    'grade 3': '三年级',
-    'grade3': '三年级',
-    '3rd grade': '三年级',
-    '3rd': '三年级',
-    'third grade': '三年级',
-    'third': '三年级',
-    
-    'grade 4': '四年级',
-    'grade4': '四年级',
-    '4th grade': '四年级',
-    '4th': '四年级',
-    'fourth grade': '四年级',
-    'fourth': '四年级',
-    
-    'grade 5': '五年级',
-    'grade5': '五年级',
-    '5th grade': '五年级',
-    '5th': '五年级',
-    'fifth grade': '五年级',
-    'fifth': '五年级',
-    
-    'grade 6': '六年级',
-    'grade6': '六年级',
-    '6th grade': '六年级',
-    '6th': '六年级',
-    'sixth grade': '六年级',
-    'sixth': '六年级',
-    
-    // 中学年级
-    'grade 7': '初一',
-    'grade7': '初一',
-    '7th grade': '初一',
-    '7th': '初一',
-    'seventh grade': '初一',
-    'seventh': '初一',
-    '7': '初一',
-    
-    'grade 8': '初二',
-    'grade8': '初二',
-    '8th grade': '初二',
-    '8th': '初二',
-    'eighth grade': '初二',
-    'eighth': '初二',
-    '8': '初二',
-    
-    'grade 9': '初三',
-    'grade9': '初三',
-    '9th grade': '初三',
-    '9th': '初三',
-    'ninth grade': '初三',
-    'ninth': '初三',
-    '9': '初三',
-    
-    'grade 10': '高一',
-    'grade10': '高一',
-    '10th grade': '高一',
-    '10th': '高一',
-    'tenth grade': '高一',
-    'tenth': '高一',
-    '10': '高一',
-    
-    'grade 11': '高二',
-    'grade11': '高二',
-    '11th grade': '高二',
-    '11th': '高二',
-    'eleventh grade': '高二',
-    'eleventh': '高二',
-    '11': '高二',
-    
-    'grade 12': '高三',
-    'grade12': '高三',
-    '12th grade': '高三',
-    '12th': '高三',
-    'twelfth grade': '高三',
-    'twelfth': '高三',
-    '12': '高三',
-    
-    // Form格式（马来西亚中学）
-    'form 1': '初一',
-    'form1': '初一',
-    'f1': '初一',
-    
-    'form 2': '初二',
-    'form2': '初二',
-    'f2': '初二',
-    
-    'form 3': '初三',
-    'form3': '初三',
-    'f3': '初三',
-    
-    'form 4': '高一',
-    'form4': '高一',
-    'f4': '高一',
-    
-    'form 5': '高二',
-    'form5': '高二',
-    'f5': '高二',
-    
-    'form 6': '高三',
-    'form6': '高三',
-    'f6': '高三',
-    
-    // 华文年级
-    '一年级': '一年级',
-    '二年级': '二年级',
-    '三年级': '三年级',
-    '四年级': '四年级',
-    '五年级': '五年级',
-    '六年级': '六年级',
-    '初一': '初一',
-    '初二': '初二',
-    '初三': '初三',
-    '高一': '高一',
-    '高二': '高二',
-    '高三': '高三',
+  // 马来西亚教育体系年级映射（根据年龄对应关系）
+  const gradeMap: Record<number, string> = {
+    1: 'Standard 1（一年级）', // 7岁
+    2: 'Standard 2（二年级）', // 8岁
+    3: 'Standard 3（三年级）', // 9岁
+    4: 'Standard 4（四年级）', // 10岁
+    5: 'Standard 5（五年级）', // 11岁
+    6: 'Standard 6（六年级）', // 12岁
+    7: 'Form 1（初一）',      // 13岁
+    8: 'Form 2（初二）',      // 14岁
+    9: 'Form 3（初三）',      // 15岁
+    10: 'Form 4（高一）',     // 16岁
+    11: 'Form 5（高二）',     // 17岁
+    12: 'Form 6（高三）'      // 18-19岁
   }
   
-  return englishGradeMap[gradeStr] || grade
+  return gradeMap[gradeNum] || grade
 }
 
 // 格式化出生日期
@@ -265,15 +104,15 @@ export const generateCSV = (studentData: any[]): string => {
   const csvContent = [
     headers.join(','),
     ...studentData.map(student => [
-      `"${student.name || ''}"`,
-      `"${student.studentId || ''}"`,
-      `"${convertGradeToChinese(student.grade) || ''}"`,
+      `"${student.student_name || ''}"`,
+      `"${student.student_id || ''}"`,
+      `"${convertGradeToChinese(student.standard) || ''}"`,
       `"${student.gender || ''}"`,
-      `"${formatBirthDate(student.birthDate) || ''}"`,
-      `"${calculateAge(student.birthDate) || ''}"`,
+      `"${formatBirthDate(student.dob) || ''}"`,
+      `"${calculateAge(student.dob) || ''}"`,
       `"${student.phone || ''}"`,
       `"${student.email || ''}"`,
-      `"${student.address || ''}"`,
+      `"${student.home_address || ''}"`,
       `"${student.parentName || ''}"`,
       `"${student.parentPhone || ''}"`,
       `"${student.status || ''}"`,

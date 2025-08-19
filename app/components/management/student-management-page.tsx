@@ -122,7 +122,7 @@ export default function StudentManagementPage() {
 
   // 获取筛选选项
   const filterOptions = useMemo(() => {
-    const grades = Array.from(new Set(students.map(s => s.grade).filter(Boolean))).sort()
+    const grades = Array.from(new Set(students.map(s => s.standard).filter(Boolean))).sort()
     const statuses = Array.from(new Set(students.map(s => s.status).filter(Boolean))).sort()
     const centers = Array.from(new Set(students.map(s => s.parentName).filter(Boolean))).sort()
     
@@ -137,18 +137,18 @@ export default function StudentManagementPage() {
     if (filters.searchTerm) {
       const lowerSearchTerm = filters.searchTerm.toLowerCase()
       filtered = filtered.filter(student => 
-        student.name?.toLowerCase().includes(lowerSearchTerm) ||
-        student.studentId?.toLowerCase().includes(lowerSearchTerm) ||
-        student.grade?.toLowerCase().includes(lowerSearchTerm) ||
+        student.student_name?.toLowerCase().includes(lowerSearchTerm) ||
+        student.student_id?.toLowerCase().includes(lowerSearchTerm) ||
+        student.standard?.toLowerCase().includes(lowerSearchTerm) ||
         student.parentName?.toLowerCase().includes(lowerSearchTerm) ||
-        student.parentEmail?.toLowerCase().includes(lowerSearchTerm) ||
+        student.email?.toLowerCase().includes(lowerSearchTerm) ||
         student.status?.toLowerCase().includes(lowerSearchTerm)
       )
     }
 
     // 年级筛选
     if (filters.selectedGrade && filters.selectedGrade !== "all") {
-      filtered = filtered.filter(student => student.grade === filters.selectedGrade)
+      filtered = filtered.filter(student => student.standard === filters.selectedGrade)
     }
 
     // 状态筛选
@@ -166,7 +166,7 @@ export default function StudentManagementPage() {
       switch (filterId) {
         case 'primary':
           filtered = filtered.filter(student => {
-            const grade = student.grade || ''
+            const grade = student.standard || ''
             return grade.includes('一年级') || grade.includes('二年级') || grade.includes('三年级') || 
                    grade.includes('四年级') || grade.includes('五年级') || grade.includes('六年级') ||
                    grade === '1' || grade === '2' || grade === '3' || grade === '4' || grade === '5' || grade === '6'
@@ -174,7 +174,7 @@ export default function StudentManagementPage() {
           break
         case 'secondary':
           filtered = filtered.filter(student => {
-            const grade = student.grade || ''
+            const grade = student.standard || ''
             return grade.includes('初一') || grade.includes('初二') || grade.includes('初三') || 
                    grade.includes('高一') || grade.includes('高二') || grade.includes('高三') ||
                    grade === '7' || grade === '8' || grade === '9' || grade === '10' || grade === '11' || grade === '12'
@@ -190,7 +190,7 @@ export default function StudentManagementPage() {
           filtered = filtered.filter(student => student.parentName && student.parentName.trim() !== '')
           break
         case 'has-email':
-          filtered = filtered.filter(student => student.parentEmail && student.parentEmail.trim() !== '')
+          filtered = filtered.filter(student => student.email && student.email.trim() !== '')
           break
       }
     })
@@ -202,16 +202,16 @@ export default function StudentManagementPage() {
 
       switch (filters.sortBy) {
         case 'name':
-          aValue = a.name || ''
-          bValue = b.name || ''
+          aValue = a.student_name || ''
+          bValue = b.student_name || ''
           break
         case 'studentId':
-          aValue = a.studentId || ''
-          bValue = b.studentId || ''
+          aValue = a.student_id || ''
+          bValue = b.student_id || ''
           break
         case 'grade':
-          aValue = a.grade || ''
-          bValue = b.grade || ''
+          aValue = a.standard || ''
+          bValue = b.standard || ''
           break
         case 'status':
           aValue = a.status || ''
@@ -222,8 +222,8 @@ export default function StudentManagementPage() {
           bValue = b.parentName || ''
           break
         default:
-          aValue = a.name || ''
-          bValue = b.name || ''
+          aValue = a.student_name || ''
+          bValue = b.student_name || ''
       }
 
       if (filters.sortOrder === 'asc') {
@@ -253,21 +253,21 @@ export default function StudentManagementPage() {
     
     // 年级分布
     const gradeDistribution = students.reduce((acc, student) => {
-      const grade = student.grade || '未知年级'
+      const grade = student.standard || '未知年级'
       acc[grade] = (acc[grade] || 0) + 1
       return acc
     }, {} as Record<string, number>)
 
     // 小学/中学分布
     const primaryCount = students.filter(student => {
-      const grade = student.grade || ''
+      const grade = student.standard || ''
       return grade.includes('一年级') || grade.includes('二年级') || grade.includes('三年级') || 
              grade.includes('四年级') || grade.includes('五年级') || grade.includes('六年级') ||
              grade === '1' || grade === '2' || grade === '3' || grade === '4' || grade === '5' || grade === '6'
     }).length
 
     const secondaryCount = students.filter(student => {
-      const grade = student.grade || ''
+      const grade = student.standard || ''
       return grade.includes('初一') || grade.includes('初二') || grade.includes('初三') || 
              grade.includes('高一') || grade.includes('高二') || grade.includes('高三') ||
              grade === '7' || grade === '8' || grade === '9' || grade === '10' || grade === '11' || grade === '12'
@@ -613,19 +613,19 @@ export default function StudentManagementPage() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{student.name}</div>
-                          <div className="text-sm text-gray-500">{student.studentId}</div>
+                          <div className="font-medium">{student.student_name}</div>
+                          <div className="text-sm text-gray-500">{student.student_id}</div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {convertGradeToChinese(student.grade)}
+                          {convertGradeToChinese(student.standard || '')}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div>
                           <div className="text-sm">{student.parentName}</div>
-                          <div className="text-xs text-gray-500">{student.parentEmail}</div>
+                          <div className="text-xs text-gray-500">{student.email}</div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -675,8 +675,8 @@ export default function StudentManagementPage() {
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{student.name}</h3>
-                    <p className="text-sm text-gray-500">{student.studentId}</p>
+                    <h3 className="font-semibold text-lg">{student.student_name}</h3>
+                    <p className="text-sm text-gray-500">{student.student_id}</p>
                   </div>
                   <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
                     {student.status === 'active' ? '在读' : '离校'}
@@ -686,7 +686,7 @@ export default function StudentManagementPage() {
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm">
                     <GraduationCap className="h-4 w-4 text-gray-400" />
-                    <span>{convertGradeToChinese(student.grade)}</span>
+                    <span>{convertGradeToChinese(student.standard || '')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Users className="h-4 w-4 text-gray-400" />
@@ -694,7 +694,7 @@ export default function StudentManagementPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Mail className="h-4 w-4 text-gray-400" />
-                    <span>{student.parentEmail}</span>
+                    <span>{student.email}</span>
                   </div>
                 </div>
 
