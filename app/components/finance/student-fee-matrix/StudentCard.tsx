@@ -2,8 +2,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ChevronDown, ChevronRight, DollarSign, FileText, CheckCircle } from "lucide-react"
-import { FeeCard } from "./FeeCard"
 import { ToggleSwitch } from "../ToggleSwitch"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,49 +15,28 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useState } from "react"
-import { Fee } from "@/hooks/useFees"
+import { Fee } from "@/types/fees"
 import { Student } from "@/hooks/useStudents"
-
-interface SubItem {
-  id: number
-  name: string
-  amount: number
-  description: string
-  active: boolean
-}
-
-interface FeeItem {
-  id: number
-  name: string
-  amount: number
-  type: string
-  description: string
-  applicableGrades: string[]
-  status: string
-  category: string
-  subItems: SubItem[]
-}
 
 interface StudentCardProps {
   student: Student
   isExpanded: boolean
   onToggleExpansion: () => void
   activeFees: Fee[]
+  groupedFees: Record<string, Fee[]>
+  expandedCategories: Set<string>
+  onToggleCategory: (category: string) => void
   studentTotal: number
   onUpdatePaymentStatus: (studentId: string, status: string) => void
   getPaymentStatus: (studentId: string) => { status: string; date: string }
   getStatusBadge: (status: string) => React.ReactNode
   onCreateInvoice: (studentId: string) => void
   editMode: boolean
-  expandedFees: Map<string, boolean>
-  onToggleFeeExpansion: (studentId: string, feeId: string) => void
-  isFeeExpanded: (studentId: string, feeId: string) => boolean
   isAssigned: (studentId: string, feeId: string) => boolean
-  toggleStudentSubItem: (studentId: string, feeId: string, subItemId: number) => void
-  getStudentSubItemState: (studentId: string, feeId: string, subItemId: number) => boolean
+  assignFeeToStudent: (studentId: string, feeId: string, subItemStates?: Record<string, boolean>) => void
+  removeFeeFromStudent: (studentId: string, feeId: string) => void
   hasInvoiceThisMonth: (studentId: string) => boolean
   batchMode: boolean
-  onBatchToggleSubItem: (feeId: string, subItemId: number, targetState: boolean) => void
 }
 
 export const StudentCard = ({
@@ -65,35 +44,50 @@ export const StudentCard = ({
   isExpanded,
   onToggleExpansion,
   activeFees,
+  groupedFees,
+  expandedCategories,
+  onToggleCategory,
   studentTotal,
   onUpdatePaymentStatus,
   getPaymentStatus,
   getStatusBadge,
   onCreateInvoice,
   editMode,
-  expandedFees,
-  onToggleFeeExpansion,
-  isFeeExpanded,
   isAssigned,
-  toggleStudentSubItem,
-  getStudentSubItemState,
+  assignFeeToStudent,
+  removeFeeFromStudent,
   hasInvoiceThisMonth,
-  batchMode,
-  onBatchToggleSubItem
+  batchMode
 }: StudentCardProps) => {
   const studentId = student.id
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
-  const toggleSubItemActive = (studentId: string, feeId: string, subItemId: number) => {
-    if (editMode) {
-      if (batchMode) {
-        // In batch mode, toggle the same sub-item for all students
-        const currentState = getStudentSubItemState(studentId, feeId, subItemId)
-        const targetState = !currentState
-        onBatchToggleSubItem(feeId, subItemId, targetState)
+  const toggleFeeAssignment = (feeId: string) => {
+    if (!editMode) return
+
+    console.log('👤 [费用分配] Student name:', student.name)
+    
+    if (batchMode) {
+      console.log('🔄 [费用分配] Batch mode - toggling for all students')
+      // In batch mode, toggle the same fee for all students
+      const currentState = isAssigned(studentId, feeId)
+      const targetState = !currentState
+      
+      if (targetState) {
+        assignFeeToStudent(studentId, feeId)
       } else {
-        // Normal mode, toggle just for this student
-        toggleStudentSubItem(studentId, feeId, subItemId)
+        removeFeeFromStudent(studentId, feeId)
+      }
+    } else {
+      console.log('🔄 [费用分配] Normal mode - toggling for this student only')
+      // Normal mode, toggle just for this student
+      const currentState = isAssigned(studentId, feeId)
+      const targetState = !currentState
+      
+      if (targetState) {
+        assignFeeToStudent(studentId, feeId)
+      } else {
+        removeFeeFromStudent(studentId, feeId)
       }
     }
   }
@@ -106,8 +100,6 @@ export const StudentCard = ({
     onCreateInvoice(studentId)
     setShowConfirmDialog(false)
   }
-
-
 
   return (
     <>
@@ -125,12 +117,12 @@ export const StudentCard = ({
                 ) : (
                   <ChevronRight className="h-4 w-4 text-gray-500" />
                 )}
-                                 <div>
-                   <h3 className="font-medium text-gray-900">{student.name}</h3>
-                   <p className="text-sm text-gray-600">
-                     {student.grade} • 学号: {student.studentId}
-                   </p>
-                 </div>
+                <div>
+                  <h3 className="font-medium text-gray-900">{student.name}</h3>
+                  <p className="text-sm text-gray-600">
+                    {student.grade} • 学号: {student.studentId}
+                  </p>
+                </div>
               </div>
               <div className="text-right">
                 <div className="flex items-center justify-end gap-4">
@@ -177,42 +169,78 @@ export const StudentCard = ({
           {/* Fee Assignment Grid - Only show when expanded */}
           {isExpanded && (
             <div className="p-6">
-              <div className="space-y-3">
-                {activeFees.map(fee => {
-                  const feeExpanded = isFeeExpanded(studentId, fee.id)
-                  const feeTotal = fee.subItems
-                    .filter(subItem => getStudentSubItemState(studentId, fee.id, subItem.id))
-                    .reduce((total, subItem) => total + subItem.amount, 0)
+              <div className="space-y-4">
+                {Object.entries(groupedFees).map(([category, categoryFees]) => {
+                  const isCategoryExpanded = expandedCategories.has(category)
+                  const totalAmount = categoryFees.reduce((sum, fee) => sum + fee.amount, 0)
+                  const assignedFees = categoryFees.filter(fee => isAssigned(studentId, fee.id))
+                  const assignedCount = assignedFees.length
+                  const assignedAmount = assignedFees.reduce((sum, fee) => sum + fee.amount, 0)
                   
                   return (
-                    <div key={fee.id} className="space-y-2">
-                                             <FeeCard
-                         fee={fee}
-                         isAssigned={isAssigned(studentId, fee.id)}
-                         onToggle={() => onToggleFeeExpansion(studentId, fee.id)}
-                         isExpanded={feeExpanded}
-                         calculateAmount={() => feeTotal}
-                       />
-                       
-                       {/* Sub-items - Only show when fee is expanded */}
-                       {feeExpanded && fee.subItems && (
-                         <div className="pl-8 space-y-2">
-                           {fee.subItems.map((subItem) => (
-                             <div key={subItem.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border-l-2 border-blue-200">
-                               <div className="flex items-center gap-4">
-                                 <span className="text-sm font-medium min-w-[120px]">{subItem.name}</span>
-                                 <ToggleSwitch
-                                   checked={getStudentSubItemState(studentId, fee.id, subItem.id)}
-                                   onChange={() => toggleSubItemActive(studentId, fee.id, subItem.id)}
-                                   className={!editMode ? "opacity-50 cursor-not-allowed" : ""}
-                                 />
-                               </div>
-                               <span className="text-sm font-medium text-blue-600">RM {subItem.amount}</span>
-                             </div>
-                           ))}
-                         </div>
-                       )}
-                    </div>
+                    <Collapsible
+                      key={category}
+                      open={isCategoryExpanded}
+                      onOpenChange={() => onToggleCategory(category)}
+                    >
+                      <Card className="border-2">
+                        <CollapsibleTrigger asChild>
+                          <CardContent className="cursor-pointer hover:bg-gray-50 transition-colors p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                {isCategoryExpanded ? (
+                                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                                ) : (
+                                  <ChevronRight className="h-5 w-5 text-gray-500" />
+                                )}
+                                <div>
+                                  <h4 className="text-lg font-medium">{category}</h4>
+                                  <p className="text-sm text-gray-600">
+                                    {categoryFees.length} 个项目 • {assignedCount} 个已分配
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end gap-1">
+                                <div className="text-right">
+                                  <div className="text-lg font-bold text-green-600">
+                                    RM {assignedAmount}
+                                  </div>
+                                </div>
+                                <Badge variant="outline" className="text-sm">
+                                  {categoryFees.length} 项
+                                </Badge>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </CollapsibleTrigger>
+                        
+                        <CollapsibleContent>
+                          <CardContent className="pt-0">
+                            <div className="space-y-2">
+                              {categoryFees.map((fee) => (
+                                <div key={fee.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border-l-2 border-blue-200">
+                                  <div className="flex items-center gap-4">
+                                    <div>
+                                      <span className="text-sm font-medium">{fee.name}</span>
+                                      {fee.description && (
+                                        <div className="text-xs text-gray-500">{fee.description}</div>
+                                      )}
+                                    </div>
+                                    <ToggleSwitch
+                                      checked={isAssigned(studentId, fee.id)}
+                                      onChange={() => toggleFeeAssignment(fee.id)}
+                                      disabled={!editMode}
+                                      className={!editMode ? "opacity-50 cursor-not-allowed" : ""}
+                                    />
+                                  </div>
+                                  <span className="text-sm font-medium text-blue-600">RM {fee.amount}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </CollapsibleContent>
+                      </Card>
+                    </Collapsible>
                   )
                 })}
               </div>
