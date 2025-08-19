@@ -1,191 +1,370 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useEffect, useRef } from "react";
+import { pb } from "@/lib/pocketbase";
 
-// StudentFee interface matching exact PocketBase field names
 export interface StudentFee {
-  id: string
-  studentId: string
-  feeId: string
-  subItemStates: Record<string, boolean>
-  assignedDate: string
-  status: 'active' | 'inactive' | 'removed'
+  id: string;
+  students: string;      // student id (relation)
+  fee_items: any;        // fee items as JSON (only active items)
+  amount: number;
+  expand?: {
+    students?: {
+      id: string;
+      student_name: string;
+    };
+  };
 }
 
-// StudentSubItemState interface for tracking individual sub-item states
-export interface StudentSubItemState {
-  studentId: string
-  feeId: string
-  subItemId: number
-  active: boolean
-}
+export function useStudentFees() {
+  const [studentFees, setStudentFees] = useState<StudentFee[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Local state for editing - this won't be saved to PocketBase until edit mode is exited
+  const [localFeeAssignments, setLocalFeeAssignments] = useState<Map<string, Set<string>>>(new Map());
+  const [isEditMode, setIsEditMode] = useState(false);
+  
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const isMountedRef = useRef(true);
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-export const useStudentFees = () => {
-  const [studentFees, setStudentFees] = useState<StudentFee[]>([])
-  const [studentSubItemStates, setStudentSubItemStates] = useState<Map<string, StudentSubItemState>>(new Map())
+  // Safe state setter to prevent updates on unmounted component
+  const safeSetState = useCallback((updater: (prev: StudentFee[]) => StudentFee[]) => {
+    if (isMountedRef.current) {
+      setStudentFees(updater);
+    }
+  }, []);
 
-  // Helper function to generate state key
-  const getStateKey = useCallback((studentId: string, feeId: string, subItemId: number) => {
-    return `${studentId}-${feeId}-${subItemId}`
-  }, [])
-
-  // Get the state of a specific sub-item for a student
-  const getStudentSubItemState = useCallback((studentId: string, feeId: string, subItemId: number): boolean => {
-    const key = getStateKey(studentId, feeId, subItemId)
-    const state = studentSubItemStates.get(key)
-    return state?.active || false
-  }, [studentSubItemStates, getStateKey])
-
-  // Toggle a sub-item state for a student
-  const toggleStudentSubItem = useCallback((studentId: string, feeId: string, subItemId: number) => {
-    console.log('toggleStudentSubItem called:', { studentId, feeId, subItemId })
+  // 🔹 Load all student fee records
+  const fetchStudentFees = useCallback(async () => {
+    console.log('🔄 [StudentFees] fetchStudentFees called');
     
-    const key = getStateKey(studentId, feeId, subItemId)
-    const currentState = studentSubItemStates.get(key)
-    const newActive = !(currentState?.active || false)
-
-    console.log('Current state:', currentState?.active, 'New state:', newActive)
-
-    setStudentSubItemStates(prev => {
-      const newMap = new Map(prev)
-      newMap.set(key, {
-        studentId,
-        feeId,
-        subItemId,
-        active: newActive
-      })
-      return newMap
-    })
-
-    // Update the student_fees record
-    setStudentFees(prev => prev.map(sf => {
-      if (sf.studentId === studentId && sf.feeId === feeId) {
-        const newSubItemStates = { ...sf.subItemStates }
-        newSubItemStates[subItemId.toString()] = newActive
-        return { ...sf, subItemStates: newSubItemStates }
+    // Clear any existing timeout
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current);
+    }
+    
+    // Cancel any existing request
+    if (abortControllerRef.current) {
+      console.log('🔄 [StudentFees] Cancelling previous request');
+      abortControllerRef.current.abort();
+    }
+    
+    // Add a small delay to prevent rapid successive calls
+    fetchTimeoutRef.current = setTimeout(async () => {
+      if (!isMountedRef.current) {
+        console.log('🔄 [StudentFees] Component unmounted, skipping fetch');
+        return;
       }
-      return sf
-    }))
-  }, [studentSubItemStates, getStateKey])
-
-  // Check if a fee is assigned to a student
-  const isAssigned = useCallback((studentId: string, feeId: string): boolean => {
-    // Check if any sub-item is active for this student and fee
-    return true // For now, assume all fees are assigned since we're using sub-item states
-  }, [])
-
-  // Calculate total amount for a student based on active sub-items
-  const calculateStudentTotal = useCallback((studentId: string, fees: any[]): number => {
-    let total = 0
-    
-    console.log('calculateStudentTotal called for student:', studentId, 'with fees:', fees.length)
-    
-    // Calculate total based on current sub-item states
-    fees.forEach(fee => {
-      if (fee.subItems) {
-        fee.subItems.forEach((subItem: any) => {
-          const isActive = getStudentSubItemState(studentId, fee.id, subItem.id)
-          if (isActive) {
-            total += subItem.amount
-            console.log('Active sub-item:', subItem.name, 'amount:', subItem.amount)
+      
+      abortControllerRef.current = new AbortController();
+      
+      console.log('🔄 [StudentFees] Starting fetch with signal:', abortControllerRef.current.signal);
+      
+      if (isMountedRef.current) {
+        setLoading(true);
+        setError(null);
+      }
+      
+      try {
+        console.log('🔄 [StudentFees] Making PocketBase request...');
+        const records = await pb.collection("student_fees").getFullList<StudentFee>({
+          sort: "-updated",
+          expand: "students",   // 🔑 expand related data
+          fields: "id,students,fee_items,amount,updated,expand",
+          signal: abortControllerRef.current.signal,
+        });
+        
+        console.log('✅ [StudentFees] Successfully fetched', records.length, 'records');
+        console.log('📊 [StudentFees] Records from PocketBase:', records);
+        
+        if (isMountedRef.current) {
+          setStudentFees(records);
+          
+          // Initialize local assignments from PocketBase data
+          const initialAssignments = new Map<string, Set<string>>();
+          
+          // Process existing records from PocketBase
+          records.forEach(record => {
+            console.log('📊 [StudentFees] Processing record for student:', record.students);
+            console.log('📊 [StudentFees] Fee items:', record.fee_items);
+            
+            if (record.fee_items && Array.isArray(record.fee_items)) {
+              const activeFees = new Set<string>();
+              record.fee_items.forEach((item: any) => {
+                if (item.active === true) {
+                  activeFees.add(item.id);
+                  console.log('✅ [StudentFees] Added active fee:', item.id, 'for student:', record.students);
+                }
+              });
+              initialAssignments.set(record.students, activeFees);
+            }
+          });
+          
+          // Preserve any existing local assignments for students not in PocketBase
+          // This prevents losing changes for students who haven't been saved yet
+          if (isEditMode) {
+            localFeeAssignments.forEach((assignedFees, studentId) => {
+              if (!initialAssignments.has(studentId)) {
+                console.log('📊 [StudentFees] Preserving local assignments for student:', studentId);
+                initialAssignments.set(studentId, new Set(assignedFees));
+              }
+            });
           }
-        })
+          
+          console.log('📊 [StudentFees] Final initial assignments:', initialAssignments);
+          setLocalFeeAssignments(initialAssignments);
+        }
+      } catch (err: any) {
+        console.log('❌ [StudentFees] Error caught:', err);
+        
+        // Don't set error if request was cancelled or component unmounted
+        if (err.name === 'AbortError' || err.message?.includes('autocancelled')) {
+          console.log('🔄 [StudentFees] Request was cancelled - ignoring error');
+          return;
+        }
+        
+        console.error("❌ Failed to fetch student fees:", err);
+        if (isMountedRef.current) {
+          setError(err.message || "Failed to fetch student fees");
+        }
+      } finally {
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
       }
-    })
-    
-    console.log('Total calculated for student', studentId, ':', total)
-    return total
-  }, [getStudentSubItemState])
+    }, 100); // 100ms delay
+  }, []);
 
-  // Assign a fee to a student
-  const assignFeeToStudent = useCallback((studentId: string, feeId: string, subItemStates: Record<string, boolean> = {}) => {
-    const existingAssignment = studentFees.find(sf => 
-      sf.studentId === studentId && sf.feeId === feeId
-    )
+  // 🔹 Update a student fee record
+  const updateStudentFee = useCallback(async (id: string, data: Partial<StudentFee>) => {
+    try {
+      console.log('🔄 [StudentFees] Updating student fee:', id, data);
+      const record = await pb.collection("student_fees").update<StudentFee>(id, data);
+      
+      safeSetState(prev => prev.map(sf => 
+        sf.id === id ? { ...sf, ...record } : sf
+      ));
+      
+      console.log('✅ [StudentFees] Successfully updated student fee');
+      return record;
+    } catch (err: any) {
+      console.error("❌ Failed to update student fee:", err);
+      throw err;
+    }
+  }, [safeSetState]);
 
-    if (existingAssignment) {
-      // Update existing assignment
-      setStudentFees(prev => prev.map(sf => 
-        sf.id === existingAssignment.id 
-          ? { ...sf, status: 'active', subItemStates: { ...sf.subItemStates, ...subItemStates } }
-          : sf
-      ))
+  // 🔹 Create a new student fee record
+  const createStudentFee = useCallback(async (data: Partial<StudentFee>) => {
+    try {
+      console.log('🔄 [StudentFees] Creating student fee:', data);
+      const record = await pb.collection("student_fees").create<StudentFee>(data);
+      
+      safeSetState(prev => [...prev, record]);
+      
+      console.log('✅ [StudentFees] Successfully created student fee');
+      return record;
+    } catch (err: any) {
+      console.error("❌ Failed to create student fee:", err);
+      throw err;
+    }
+  }, [safeSetState]);
+
+  // 🔹 Delete a student fee record
+  const deleteStudentFee = useCallback(async (id: string) => {
+    try {
+      console.log('🔄 [StudentFees] Deleting student fee:', id);
+      await pb.collection("student_fees").delete(id);
+      
+      safeSetState(prev => prev.filter(sf => sf.id !== id));
+      
+      console.log('✅ [StudentFees] Successfully deleted student fee');
+    } catch (err: any) {
+      console.error("❌ Failed to delete student fee:", err);
+      throw err;
+    }
+  }, [safeSetState]);
+
+  // 🔹 Check if a fee is assigned to a student (uses local state during edit mode)
+  const isAssigned = useCallback((studentId: string, feeId: string): boolean => {
+    if (isEditMode) {
+      // Use local state during edit mode
+      const studentAssignments = localFeeAssignments.get(studentId);
+      const result = studentAssignments ? studentAssignments.has(feeId) : false;
+      console.log(`🔍 [isAssigned] Edit mode - Student: ${studentId}, Fee: ${feeId}, Result: ${result}`);
+      return result;
     } else {
-      // Create new assignment
-      const newAssignment: StudentFee = {
-        id: Math.max(...studentFees.map(sf => parseInt(sf.id)), 0) + 1 + "",
-        studentId,
-        feeId,
-        subItemStates,
-        assignedDate: new Date().toISOString().split('T')[0],
-        status: 'active'
+      // Use PocketBase data when not in edit mode
+      const assignment = studentFees.find(sf => 
+        sf.students === studentId && 
+        sf.fee_items && 
+        Array.isArray(sf.fee_items) &&
+        sf.fee_items.some((item: any) => item.id === feeId && item.active === true)
+      );
+      const result = !!assignment;
+      console.log(`🔍 [isAssigned] View mode - Student: ${studentId}, Fee: ${feeId}, Result: ${result}`);
+      return result;
+    }
+  }, [studentFees, localFeeAssignments, isEditMode]);
+
+  // 🔹 Calculate total amount for a student (uses local state during edit mode)
+  const calculateStudentTotal = useCallback((studentId: string, fees: any[]): number => {
+    if (isEditMode) {
+      // Use local state during edit mode
+      const studentAssignments = localFeeAssignments.get(studentId);
+      if (!studentAssignments) return 0;
+      
+      return fees
+        .filter(fee => studentAssignments.has(fee.id))
+        .reduce((total, fee) => total + (fee.amount || 0), 0);
+    } else {
+      // Use PocketBase data when not in edit mode
+      const assignment = studentFees.find(sf => sf.students === studentId);
+      if (!assignment || !assignment.fee_items || !Array.isArray(assignment.fee_items)) {
+        return 0;
       }
-      setStudentFees(prev => [...prev, newAssignment])
+      
+      return assignment.fee_items
+        .filter((item: any) => item.active === true)
+        .reduce((total, item: any) => total + (item.amount || 0), 0);
     }
-  }, [studentFees])
+  }, [studentFees, localFeeAssignments, isEditMode]);
 
-  // Remove a fee assignment from a student
-  const removeFeeFromStudent = useCallback((studentId: string, feeId: string) => {
-    setStudentFees(prev => prev.map(sf => 
-      sf.studentId === studentId && sf.feeId === feeId
-        ? { ...sf, status: 'removed' }
-        : sf
-    ))
-  }, [])
+  // 🔹 Assign a fee to a student (local state only during edit mode)
+  const assignFeeToStudent = useCallback(async (studentId: string, feeId: string) => {
+    console.log('🔄 [StudentFees] Assigning fee to student (local):', { studentId, feeId });
+    
+    setLocalFeeAssignments(prev => {
+      const newMap = new Map(prev);
+      const studentAssignments = new Set(newMap.get(studentId) || []);
+      studentAssignments.add(feeId);
+      newMap.set(studentId, studentAssignments);
+      return newMap;
+    });
+  }, []);
 
-  // Get all fee assignments for a student
-  const getStudentFeeAssignments = useCallback((studentId: string): StudentFee[] => {
-    return studentFees.filter(sf => 
-      sf.studentId === studentId && sf.status === 'active'
-    )
-  }, [studentFees])
+  // 🔹 Remove a fee assignment from a student (local state only during edit mode)
+  const removeFeeFromStudent = useCallback(async (studentId: string, feeId: string) => {
+    console.log('🔄 [StudentFees] Removing fee from student (local):', { studentId, feeId });
+    
+    setLocalFeeAssignments(prev => {
+      const newMap = new Map(prev);
+      const studentAssignments = new Set(newMap.get(studentId) || []);
+      studentAssignments.delete(feeId);
+      newMap.set(studentId, studentAssignments);
+      return newMap;
+    });
+  }, []);
 
-  // Get all students assigned to a fee
-  const getStudentsForFee = useCallback((feeId: string): string[] => {
-    return studentFees
-      .filter(sf => sf.feeId === feeId && sf.status === 'active')
-      .map(sf => sf.studentId)
-  }, [studentFees])
-
-  // Batch assign fee to multiple students
-  const batchAssignFee = useCallback((feeId: string, studentIds: string[], subItemStates: Record<string, boolean> = {}) => {
-    studentIds.forEach(studentId => {
-      assignFeeToStudent(studentId, feeId, subItemStates)
-    })
-  }, [assignFeeToStudent])
-
-  // Batch remove fee from multiple students
-  const batchRemoveFee = useCallback((feeId: string, studentIds: string[]) => {
-    studentIds.forEach(studentId => {
-      removeFeeFromStudent(studentId, feeId)
-    })
-  }, [removeFeeFromStudent])
-
-  // Get statistics
-  const getStatistics = useCallback(() => {
-    const totalAssignments = studentFees.filter(sf => sf.status === 'active').length
-    const activeAssignments = studentFees.filter(sf => sf.status === 'active').length
-    const inactiveAssignments = studentFees.filter(sf => sf.status === 'inactive').length
-    const removedAssignments = studentFees.filter(sf => sf.status === 'removed').length
-
-    return {
-      totalAssignments,
-      activeAssignments,
-      inactiveAssignments,
-      removedAssignments
+  // 🔹 Save all local changes to PocketBase
+  const saveChangesToPocketBase = useCallback(async () => {
+    console.log('🔄 [StudentFees] Saving changes to PocketBase...');
+    console.log('📊 [StudentFees] Local assignments to save:', localFeeAssignments);
+    
+    try {
+      // Get all fees to calculate amounts
+      const allFees = await pb.collection("fees_items").getFullList();
+      
+      // Process each student's assignments
+      for (const [studentId, assignedFeeIds] of localFeeAssignments) {
+        console.log('📊 [StudentFees] Processing student:', studentId, 'with fees:', Array.from(assignedFeeIds));
+        
+        const activeFees = allFees.filter(fee => assignedFeeIds.has(fee.id));
+        const totalAmount = activeFees.reduce((sum, fee) => sum + (fee.amount || 0), 0);
+        
+        // Create fee_items array with only active items
+        const feeItems = activeFees.map(fee => ({
+          id: fee.id,
+          name: fee.name,
+          amount: fee.amount || 0,
+          active: true
+        }));
+        
+        console.log('📊 [StudentFees] Fee items to save:', feeItems);
+        console.log('📊 [StudentFees] Total amount:', totalAmount);
+        
+        // Check if student already has a record
+        const existingAssignment = studentFees.find(sf => sf.students === studentId);
+        
+        if (existingAssignment) {
+          console.log('📊 [StudentFees] Updating existing record for student:', studentId);
+          // Update existing record
+          await updateStudentFee(existingAssignment.id, {
+            fee_items: feeItems,
+            amount: totalAmount
+          });
+        } else {
+          console.log('📊 [StudentFees] Creating new record for student:', studentId);
+          // Create new record
+          await createStudentFee({
+            students: studentId,
+            fee_items: feeItems,
+            amount: totalAmount
+          });
+        }
+      }
+      
+      console.log('✅ [StudentFees] Successfully saved all changes to PocketBase');
+    } catch (err: any) {
+      console.error("❌ Failed to save changes to PocketBase:", err);
+      throw err;
     }
-  }, [studentFees])
+  }, [localFeeAssignments, studentFees, updateStudentFee, createStudentFee]);
+
+  // 🔹 Enter edit mode
+  const enterEditMode = useCallback(() => {
+    console.log('🔄 [StudentFees] Entering edit mode');
+    setIsEditMode(true);
+  }, []);
+
+  // 🔹 Exit edit mode and save changes
+  const exitEditMode = useCallback(async () => {
+    console.log('🔄 [StudentFees] Exiting edit mode and saving changes');
+    console.log('📊 [StudentFees] Current local assignments before save:', localFeeAssignments);
+    
+    setIsEditMode(false);
+    await saveChangesToPocketBase();
+    
+    // Refresh data from PocketBase after saving
+    console.log('🔄 [StudentFees] Refreshing data from PocketBase');
+    await fetchStudentFees();
+    
+    console.log('📊 [StudentFees] Data refresh completed');
+  }, [saveChangesToPocketBase, fetchStudentFees, localFeeAssignments]);
+
+  // load on mount
+  useEffect(() => {
+    console.log('🔄 [StudentFees] useEffect triggered - fetching data');
+    fetchStudentFees();
+  }, [fetchStudentFees]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      console.log('🔄 [StudentFees] Component unmounting - cleaning up');
+      isMountedRef.current = false;
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   return {
     studentFees,
-    getStudentSubItemState,
-    toggleStudentSubItem,
+    loading,
+    error,
+    fetchStudentFees,
+    updateStudentFee,
+    createStudentFee,
+    deleteStudentFee,
     isAssigned,
     calculateStudentTotal,
     assignFeeToStudent,
     removeFeeFromStudent,
-    getStudentFeeAssignments,
-    getStudentsForFee,
-    batchAssignFee,
-    batchRemoveFee,
-    getStatistics
-  }
+    isEditMode,
+    enterEditMode,
+    exitEditMode,
+  };
 } 
