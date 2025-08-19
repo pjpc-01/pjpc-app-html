@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS代理服务</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 CORS代理服务</h1>
+        <p>这个页面可以帮助解决GitHub Pages的CORS问题。</p>
+        
+        <div class="status warning">
+            <strong>注意：</strong> 由于浏览器的安全限制，GitHub Pages无法直接访问HTTP服务器。
+            这个代理页面可以帮助你测试连接。
+        </div>
+
+        <h3>测试PocketBase连接</h3>
+        <input type="text" id="pbUrl" value="http://pjpc.tplinkdns.com:8090/api/health" placeholder="输入PocketBase URL">
+        <button onclick="testConnection()">测试连接</button>
+        
+        <div id="result" class="result" style="display: none;"></div>
+
+        <h3>解决方案</h3>
+        <div class="status success">
+            <strong>推荐方案：</strong>
+            <ol>
+                <li>为你的PocketBase服务器配置HTTPS</li>
+                <li>在PocketBase服务器上配置CORS头</li>
+                <li>使用反向代理（如Nginx）</li>
+                <li>使用云函数作为代理</li>
+            </ol>
+        </div>
+
+        <h3>临时解决方案</h3>
+        <div class="status warning">
+            <strong>临时方案：</strong>
+            <ol>
+                <li>在手机浏览器中直接访问：<code>http://pjpc.tplinkdns.com:8090/_/</code></li>
+                <li>使用支持混合内容的浏览器</li>
+                <li>在本地网络中使用HTTP版本</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        async function testConnection() {
+            const url = document.getElementById('pbUrl').value;
+            const resultDiv = document.getElementById('result');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '测试中...';
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.text();
+                
+                resultDiv.innerHTML = `
+<strong>✅ 连接成功！</strong>
+状态码: ${response.status}
+响应数据: ${data}
+                `;
+                resultDiv.className = 'result success';
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+<strong>❌ 连接失败</strong>
+错误信息: ${error.message}
+错误类型: ${error.name}
+                `;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // 页面加载时自动测试
+        window.onload = function() {
+            testConnection();
+        };
+    </script>
+</body>
+</html>

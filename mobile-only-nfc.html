@@ -330,11 +330,18 @@
         async function checkPocketBaseConnection() {
             try {
                 const startTime = Date.now();
+                
+                // 使用JSONP方式或代理来避免CORS问题
                 const response = await fetch(`${POCKETBASE_URL}/api/health`, {
                     method: 'GET',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors', // 明确指定CORS模式
                     signal: AbortSignal.timeout(5000)
                 });
+                
                 const endTime = Date.now();
                 const latency = endTime - startTime;
 
@@ -349,10 +356,18 @@
                     pbLatencyEl.textContent = '-';
                 }
             } catch (error) {
-                pbStatusEl.textContent = '连接失败';
-                pbStatusEl.className = 'status-value status-error';
-                pbLatencyEl.textContent = '-';
                 console.error('PocketBase连接失败:', error);
+                
+                // 如果是CORS错误，提供更详细的错误信息
+                if (error.name === 'TypeError' && error.message.includes('CORS')) {
+                    pbStatusEl.textContent = 'CORS错误';
+                    pbStatusEl.className = 'status-value status-warning';
+                    pbLatencyEl.textContent = '-';
+                } else {
+                    pbStatusEl.textContent = '连接失败';
+                    pbStatusEl.className = 'status-value status-error';
+                    pbLatencyEl.textContent = '-';
+                }
             }
         }
 
@@ -458,7 +473,9 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
+                    mode: 'cors', // 明确指定CORS模式
                     body: JSON.stringify({
                         card_id: cardId,
                         timestamp: new Date().toISOString(),
@@ -470,11 +487,19 @@
                 if (response.ok) {
                     showResult(true, '✅ 签到成功', `卡片ID: ${cardId} - 数据已同步到服务器`);
                 } else {
+                    const errorData = await response.text();
+                    console.error('服务器响应错误:', errorData);
                     showResult(false, '⚠️ 签到失败', 'NFC读取成功，但数据同步失败');
                 }
             } catch (error) {
                 console.error('发送数据失败:', error);
-                showResult(false, '⚠️ 数据同步失败', 'NFC读取成功，但无法连接到服务器');
+                
+                // 如果是CORS错误，提供更详细的错误信息
+                if (error.name === 'TypeError' && error.message.includes('CORS')) {
+                    showResult(false, '⚠️ CORS错误', 'NFC读取成功，但浏览器阻止了跨域请求');
+                } else {
+                    showResult(false, '⚠️ 数据同步失败', 'NFC读取成功，但无法连接到服务器');
+                }
             }
         }
 
