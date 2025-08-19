@@ -26,7 +26,9 @@ export default function SimpleMobileNFCTest() {
   // 检查NFC支持
   useEffect(() => {
     const checkNFC = () => {
-      const hasNDEFReader = typeof window !== 'undefined' && 'NDEFReader' in window
+      if (typeof window === 'undefined') return
+      
+      const hasNDEFReader = 'NDEFReader' in window
       const isSecure = window.location.protocol === 'https:'
       
       if (hasNDEFReader && isSecure) {
@@ -160,8 +162,8 @@ export default function SimpleMobileNFCTest() {
               </div>
               <div className="flex justify-between">
                 <span>连接:</span>
-                <Badge variant={window.location.protocol === 'https:' ? "default" : "destructive"}>
-                  {window.location.protocol === 'https:' ? "HTTPS" : "HTTP"}
+                <Badge variant={typeof window !== 'undefined' && window.location.protocol === 'https:' ? "default" : "destructive"}>
+                  {typeof window !== 'undefined' && window.location.protocol === 'https:' ? "HTTPS" : "HTTP"}
                 </Badge>
               </div>
             </div>

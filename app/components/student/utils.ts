@@ -1,26 +1,49 @@
-// 年级转换函数：将数字年级转换为马来西亚教育体系年级
+// 年级转换函数：统一年级显示格式
 export const convertGradeToChinese = (grade: string): string => {
   if (!grade) return '未知年级'
   
-  const gradeNum = parseInt(grade.toString())
-  
-  // 马来西亚教育体系年级映射（根据年龄对应关系）
-  const gradeMap: Record<number, string> = {
-    1: 'Standard 1（一年级）', // 7岁
-    2: 'Standard 2（二年级）', // 8岁
-    3: 'Standard 3（三年级）', // 9岁
-    4: 'Standard 4（四年级）', // 10岁
-    5: 'Standard 5（五年级）', // 11岁
-    6: 'Standard 6（六年级）', // 12岁
-    7: 'Form 1（初一）',      // 13岁
-    8: 'Form 2（初二）',      // 14岁
-    9: 'Form 3（初三）',      // 15岁
-    10: 'Form 4（高一）',     // 16岁
-    11: 'Form 5（高二）',     // 17岁
-    12: 'Form 6（高三）'      // 18-19岁
+  // 如果已经是标准格式，直接返回
+  if (grade.includes('Standard') || grade.includes('Form')) {
+    return grade
   }
   
-  return gradeMap[gradeNum] || grade
+  // 处理数字年级
+  const gradeNum = parseInt(grade.toString())
+  if (!isNaN(gradeNum)) {
+    const gradeMap: Record<number, string> = {
+      1: 'Standard 1（一年级）',
+      2: 'Standard 2（二年级）',
+      3: 'Standard 3（三年级）',
+      4: 'Standard 4（四年级）',
+      5: 'Standard 5（五年级）',
+      6: 'Standard 6（六年级）',
+      7: 'Form 1（初一）',
+      8: 'Form 2（初二）',
+      9: 'Form 3（初三）',
+      10: 'Form 4（高一）',
+      11: 'Form 5（高二）',
+      12: 'Form 6（高三）'
+    }
+    return gradeMap[gradeNum] || grade
+  }
+  
+  // 处理中文年级名称
+  const chineseGradeMap: Record<string, string> = {
+    '一年级': 'Standard 1（一年级）',
+    '二年级': 'Standard 2（二年级）',
+    '三年级': 'Standard 3（三年级）',
+    '四年级': 'Standard 4（四年级）',
+    '五年级': 'Standard 5（五年级）',
+    '六年级': 'Standard 6（六年级）',
+    '初一': 'Form 1（初一）',
+    '初二': 'Form 2（初二）',
+    '初三': 'Form 3（初三）',
+    '高一': 'Form 4（高一）',
+    '高二': 'Form 5（高二）',
+    '高三': 'Form 6（高三）'
+  }
+  
+  return chineseGradeMap[grade] || grade
 }
 
 // 格式化出生日期
