@@ -23,7 +23,9 @@
     "test:sheets": "cross-env NODE_OPTIONS=--openssl-legacy-provider node scripts/test-google-sheets.js",
     "test:ports": "node test-port-detection.js",
     "test:network": "node test-network-ip.js",
-    "test:connection": "node test-connection.js"
+    "test:connection": "node test-connection.js",
+    "export": "next build && next export",
+    "deploy": "npm run build && touch out/.nojekyll && git add out/ && git commit -m \"Deploy to GitHub Pages\" && git subtree push --prefix out origin gh-pages"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

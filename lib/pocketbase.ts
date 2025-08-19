@@ -1,65 +1,20 @@
 import PocketBase from 'pocketbase'
-// 智能网络环境检测
+import { networkDetector } from './network-config'
+
+// 智能网络环境检测 - 使用新的网络检测器
 const detectNetworkEnvironment = async () => {
-  const testUrls = [
-    { url: 'http://192.168.0.59:8090', type: 'local', name: '局域网' },
-    { url: 'http://pjpc.tplinkdns.com:8090', type: 'ddns', name: 'DDNS' }
-  ]
-  
-  // 并行测试所有URL
-  const testPromises = testUrls.map(async (testUrl) => {
-    try {
-      const startTime = Date.now()
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 3000)
-      
-      // 测试PocketBase的API健康检查端点
-      const response = await fetch(`${testUrl.url}/api/health`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-      })
-      
-      clearTimeout(timeoutId)
-      const endTime = Date.now()
-      const latency = endTime - startTime
-      
-      if (response.ok) {
-        return {
-          url: testUrl.url,
-          type: testUrl.type,
-          name: testUrl.name,
-          latency,
-          success: true
-        }
-      }
-    } catch (error) {
-      console.log(`${testUrl.name}连接失败:`, error)
-      return {
-        url: testUrl.url,
-        type: testUrl.type,
-        name: testUrl.name,
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }
+  try {
+    const networkStatus = await networkDetector.detectNetwork()
+    
+    if (!networkStatus.connected) {
+      throw new Error(networkStatus.error || '网络连接失败')
     }
-  })
-  
-  const testResults = await Promise.all(testPromises)
-  const successfulResults = testResults.filter((r): r is NonNullable<typeof r> & { success: true; latency: number } => r?.success === true)
-  
-  if (successfulResults.length === 0) {
-    throw new Error('无法连接到PocketBase服务器')
+    
+    return networkStatus.url
+  } catch (error) {
+    console.error('❌ 网络环境检测失败:', error)
+    throw error
   }
-  
-  // 选择延迟最低的连接
-  const bestConnection = successfulResults.reduce((best, current) => 
-    current.latency < best.latency ? current : best
-  )
-  
-  console.log(`🌐 网络环境检测完成: 选择 ${bestConnection.name} (${bestConnection.url}) - 延迟: ${bestConnection.latency}ms`)
-  
-  return bestConnection.url
 }
 
 // PocketBase URL配置（智能检测网络环境）
@@ -76,8 +31,8 @@ const getPocketBaseUrl = async () => {
     return bestUrl
   } catch (error) {
     console.error('❌ 网络环境检测失败，使用默认配置:', error)
-    // 默认使用局域网地址
-    return 'http://192.168.0.59:8090'
+    // 默认使用本地地址
+    return 'http://localhost:8090'
   }
 }
 

@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { Wifi, WifiOff, Globe, Home, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react'
+import { Wifi, WifiOff, Globe, Home, AlertTriangle, CheckCircle, RefreshCw, Server, Router } from 'lucide-react'
 import { getPocketBase, reinitializePocketBase } from '@/lib/pocketbase'
+import { networkDetector, NetworkStatus as DetectedNetworkStatus } from '@/lib/network-config'
 
 interface NetworkStatus {
   url: string
-  type: 'local' | 'ddns'
+  type: 'local' | 'lan' | 'ddns'
   name: string
   latency: number
   status: 'connected' | 'disconnected' | 'checking'
@@ -21,34 +22,52 @@ export default function ConnectionStatus() {
   const checkNetworkStatus = async () => {
     setIsChecking(true)
     try {
-      const pb = await getPocketBase()
-      const url = pb.baseUrl
+      // 使用新的网络检测器
+      const detectedStatus = await networkDetector.detectNetwork()
       
-      // 确定网络类型
-      let type: 'local' | 'ddns' = 'ddns'
-      let name = 'DDNS'
-      
-      if (url.includes('192.168.0.59')) {
-        type = 'local'
-        name = '局域网'
-      } else if (url.includes('pjpc.tplinkdns.com')) {
-        type = 'ddns'
-        name = 'DDNS'
+      if (detectedStatus.connected) {
+        // 确定网络类型和名称
+        let type: 'local' | 'lan' | 'ddns' = 'ddns'
+        let name = 'DDNS'
+        
+        if (detectedStatus.url.includes('localhost') || detectedStatus.url.includes('127.0.0.1')) {
+          type = 'local'
+          name = '本地主机'
+        } else if (detectedStatus.url.includes('192.168.0.59')) {
+          type = 'lan'
+          name = '内网服务器1'
+        } else if (detectedStatus.url.includes('192.168.0.1')) {
+          type = 'lan'
+          name = '路由器'
+        } else if (detectedStatus.url.includes('192.168.0.100')) {
+          type = 'lan'
+          name = '内网服务器2'
+        } else if (detectedStatus.url.includes('pjpc.tplinkdns.com')) {
+          type = 'ddns'
+          name = 'DDNS'
+        } else if (detectedStatus.url.includes('192.168.')) {
+          type = 'lan'
+          name = '内网'
+        }
+        
+        setNetworkStatus({
+          url: detectedStatus.url,
+          type,
+          name,
+          latency: detectedStatus.latency,
+          status: 'connected'
+        })
+      } else {
+        setNetworkStatus({
+          url: '未知',
+          type: 'ddns',
+          name: '连接失败',
+          latency: 0,
+          status: 'disconnected'
+        })
       }
-      
-      // 测试延迟
-      const startTime = Date.now()
-      await fetch(`${url}/api/health`)
-      const latency = Date.now() - startTime
-      
-      setNetworkStatus({
-        url,
-        type,
-        name,
-        latency,
-        status: 'connected'
-      })
     } catch (error) {
+      console.error('网络检测失败:', error)
       setNetworkStatus({
         url: '未知',
         type: 'ddns',
@@ -64,6 +83,8 @@ export default function ConnectionStatus() {
 
   const handleReconnect = async () => {
     try {
+      // 清除网络检测器缓存，强制重新检测
+      networkDetector.clearCache()
       await reinitializePocketBase()
       await checkNetworkStatus()
     } catch (error) {
@@ -107,7 +128,9 @@ export default function ConnectionStatus() {
   const getNetworkIcon = () => {
     switch (networkStatus.type) {
       case 'local':
-        return <Home className="h-3 w-3 text-blue-600" />
+        return <Server className="h-3 w-3 text-blue-600" />
+      case 'lan':
+        return <Router className="h-3 w-3 text-green-600" />
       case 'ddns':
         return <Globe className="h-3 w-3 text-purple-600" />
       default:
