@@ -250,7 +250,7 @@ import {
 } from "lucide-react"
 import { useStudents } from "@/hooks/useStudents"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
-import TeacherManagement from "../management/teacher-management"
+import TeachersTab from "./teachers-tab"
 import CourseManagement from "../management/course-management"
 import StudentsTab from "./students-tab"
 
@@ -786,7 +786,7 @@ export default function EducationTab({
           返回教育概览
         </Button>
       </div>
-      <TeacherManagement />
+      <TeachersTab setActiveTab={setActiveTab} />
     </div>
   )
 

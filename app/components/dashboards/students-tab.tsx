@@ -8,24 +8,11 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  GraduationCap,
-  Users,
-  TrendingUp,
-  RefreshCw,
   Search,
-  Plus,
   Edit,
   Eye,
   Trash2,
-  MapPin,
-  CreditCard,
-  Link,
-  CheckCircle,
-  AlertCircle,
-  WifiOff,
   FileSpreadsheet,
-  Mail,
-  Phone,
   UserPlus,
 } from "lucide-react"
 import { useStudents } from "@/hooks/useStudents"
@@ -35,73 +22,16 @@ import StudentDetails from "../student/StudentDetails"
 import { convertGradeToChinese } from "../student/utils"
 
 interface StudentsTabProps {
-  stats: any
-  statsLoading: boolean
   setActiveTab: (tab: string) => void
 }
 
-// 模拟数据 - 融合的学生数据
-const mockStudents = [
-  { 
-    id: '1', 
-    student_id: 'B1', 
-    student_name: '张三', 
-    standard: '一年级', 
-    Center: 'WX 01', 
-    gender: 'male',
-    serviceType: 'afterschool',
-    father_phone: '0123456789', 
-    mother_phone: '0123456790',
-    studentUrl: 'https://example.com/student1',
-    status: 'active',
-    cardNumber: 'CARD001',
-    cardType: 'NFC',
-    lastUsed: '2024-01-15'
-  },
-  { 
-    id: '2', 
-    student_id: 'G1', 
-    student_name: '李四', 
-    standard: '二年级', 
-    Center: 'WX 02', 
-    gender: 'female',
-    serviceType: 'afterschool',
-    father_phone: '0123456791', 
-    mother_phone: '0123456792',
-    studentUrl: 'https://example.com/student2',
-    status: 'active',
-    cardNumber: 'CARD002',
-    cardType: 'RFID',
-    lastUsed: '2024-01-14'
-  },
-  { 
-    id: '3', 
-    student_id: 'T1', 
-    student_name: '王五', 
-    standard: '三年级', 
-    Center: 'WX 01', 
-    gender: 'male',
-    serviceType: 'tuition',
-    father_phone: '0123456793', 
-    mother_phone: '0123456794',
-    status: 'inactive',
-    cardNumber: 'CARD003',
-    cardType: 'NFC',
-    lastUsed: null
-  },
-]
+
 
 export default function StudentsTab({ 
-  stats, 
-  statsLoading, 
   setActiveTab 
 }: StudentsTabProps) {
-  const { students: realStudents, loading: studentsLoading, refetch: refetchStudents, addStudent, updateStudent, deleteStudent } = useStudents()
+  const { students, loading: studentsLoading, refetch: refetchStudents, addStudent, updateStudent, deleteStudent } = useStudents()
   const { userProfile } = useAuth()
-  
-  // 使用模拟数据或真实数据
-  const students: any[] = realStudents.length > 0 ? realStudents : mockStudents
-  const isUsingMockData = realStudents.length === 0
   
   // 状态管理
   const [searchTerm, setSearchTerm] = useState('')
@@ -113,43 +43,7 @@ export default function StudentsTab({
   const [editingStudent, setEditingStudent] = useState<any>(null)
   const [viewingStudent, setViewingStudent] = useState<any>(null)
 
-  // 获取学生数据统计
-  const studentsStats = useMemo(() => {
-    const totalStudents = students.length
-    
-    // 按中心统计
-    const centerStats = students.reduce((acc, student) => {
-      const center = student.Center || '未知中心'
-      acc[center] = (acc[center] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
 
-    // 按年级统计
-    const gradeStats = students.reduce((acc, student) => {
-      const grade = student.standard || '未知年级'
-      acc[grade] = (acc[grade] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
-
-    // 有打卡卡的学生数量
-    const studentsWithCards = students.filter(student => 
-      student.cardNumber && student.status === 'active'
-    ).length
-
-    // 有专属网址的学生数量
-    const studentsWithUrls = students.filter(student => 
-      student.studentUrl
-    ).length
-
-    return {
-      totalStudents,
-      studentsWithCards,
-      studentsWithoutCards: totalStudents - studentsWithCards,
-      studentsWithUrls,
-      centerStats,
-      gradeStats
-    }
-  }, [students])
 
   // 筛选学生
   const filteredStudents = useMemo(() => {
@@ -251,21 +145,6 @@ export default function StudentsTab({
 
   return (
     <div className="space-y-6">
-      {/* 连接状态提示 */}
-      {isUsingMockData && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <WifiOff className="h-5 w-5 text-orange-600" />
-              <div>
-                <p className="text-sm font-medium text-orange-800">使用模拟数据</p>
-                <p className="text-xs text-orange-600">PocketBase 连接失败，正在使用模拟数据进行演示</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* 标题和概览 */}
       <div className="mb-6">
         <div className="flex justify-between items-center">
@@ -273,133 +152,7 @@ export default function StudentsTab({
             <h2 className="text-2xl font-bold mb-2">学生管理</h2>
             <p className="text-gray-600">统一管理学生基本资料和打卡数据</p>
           </div>
-          <Button
-            onClick={async () => {
-              try {
-                const response = await fetch('/api/update-service-types', {
-                  method: 'POST'
-                })
-                const result = await response.json()
-                if (result.success) {
-                  alert(`批量更新完成！\n成功更新: ${result.stats.updated} 个学生\n跳过: ${result.stats.skipped} 个学生`)
-                  refetchStudents()
-                } else {
-                  alert('批量更新失败: ' + result.message)
-                }
-              } catch (error) {
-                alert('批量更新失败: ' + error)
-              }
-            }}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            批量更新服务类型
-          </Button>
         </div>
-      </div>
-
-      {/* 关键指标卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">学生总数</p>
-                {statsLoading || studentsLoading ? (
-                  <div className="flex items-center mt-2">
-                    <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                    <span className="text-sm text-gray-500">加载中...</span>
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-2xl font-bold text-green-600">{studentsStats.totalStudents}</p>
-                    <p className="text-xs text-green-600 flex items-center mt-1">
-                      <TrendingUp className="h-3 w-3 mr-1" />
-                      {isUsingMockData ? '模拟数据' : '实时数据'}
-                    </p>
-                  </>
-                )}
-              </div>
-              <GraduationCap className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">有卡学生</p>
-                {statsLoading || studentsLoading ? (
-                  <div className="flex items-center mt-2">
-                    <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                    <span className="text-sm text-gray-500">加载中...</span>
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-2xl font-bold text-blue-600">{studentsStats.studentsWithCards}</p>
-                    <p className="text-xs text-blue-600 flex items-center mt-1">
-                      <CreditCard className="h-3 w-3 mr-1" />
-                      已配置打卡
-                    </p>
-                  </>
-                )}
-              </div>
-              <CreditCard className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">无卡学生</p>
-                {statsLoading || studentsLoading ? (
-                  <div className="flex items-center mt-2">
-                    <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                    <span className="text-sm text-gray-500">加载中...</span>
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-2xl font-bold text-orange-600">{studentsStats.studentsWithoutCards}</p>
-                    <p className="text-xs text-orange-600 flex items-center mt-1">
-                      <AlertCircle className="h-3 w-3 mr-1" />
-                      需配置打卡
-                    </p>
-                  </>
-                )}
-              </div>
-              <AlertCircle className="h-8 w-8 text-orange-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">专属网址</p>
-                {statsLoading || studentsLoading ? (
-                  <div className="flex items-center mt-2">
-                    <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                    <span className="text-sm text-gray-500">加载中...</span>
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-2xl font-bold text-purple-600">{studentsStats.studentsWithUrls}</p>
-                    <p className="text-xs text-purple-600 flex items-center mt-1">
-                      <Link className="h-3 w-3 mr-1" />
-                      已配置网址
-                    </p>
-                  </>
-                )}
-              </div>
-              <Link className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* 学生列表 */}
@@ -445,7 +198,7 @@ export default function StudentsTab({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">所有中心</SelectItem>
-                {centerOptions.map((center) => (
+                {centerOptions.map((center: string) => (
                   <SelectItem key={center} value={center}>{center}</SelectItem>
                 ))}
               </SelectContent>
@@ -459,13 +212,12 @@ export default function StudentsTab({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">所有年级</SelectItem>
-                {gradeOptions.map((grade) => (
+                {gradeOptions.map((grade: string) => (
                   <SelectItem key={grade} value={grade}>{grade}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Button variant="outline" onClick={() => refetchStudents()}>
-              <RefreshCw className="h-4 w-4 mr-2" />
               刷新
             </Button>
           </div>
@@ -486,7 +238,7 @@ export default function StudentsTab({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedStudents.map((student) => (
+                {paginatedStudents.map((student: any) => (
                   <TableRow key={student.id}>
                     <TableCell>
                       <div>
@@ -509,21 +261,16 @@ export default function StudentsTab({
                       <Badge variant="outline">
                         {student.serviceType === 'afterschool' ? '安亲' : student.serviceType === 'tuition' ? '补习' : `未知(${student.serviceType})`}
                       </Badge>
-                      <div className="text-xs text-gray-400 mt-1">
-                        学号: {student.student_id} | 服务类型: {student.serviceType}
-                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
                         {student.father_phone && (
                           <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3 text-gray-400" />
                             <span className="text-xs">父: {student.father_phone}</span>
                           </div>
                         )}
                         {student.mother_phone && (
                           <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3 text-gray-400" />
                             <span className="text-xs">母: {student.mother_phone}</span>
                           </div>
                         )}
