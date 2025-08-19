@@ -30,6 +30,9 @@ import {
 } from "lucide-react"
 import { useStudents } from "@/hooks/useStudents"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
+import StudentForm from "../student/StudentForm"
+import StudentDetails from "../student/StudentDetails"
+import { convertGradeToChinese } from "../student/utils"
 
 interface StudentsTabProps {
   stats: any
@@ -41,10 +44,12 @@ interface StudentsTabProps {
 const mockStudents = [
   { 
     id: '1', 
-    student_id: 'S001', 
+    student_id: 'B1', 
     student_name: '张三', 
     standard: '一年级', 
     Center: 'WX 01', 
+    gender: 'male',
+    serviceType: 'afterschool',
     father_phone: '0123456789', 
     mother_phone: '0123456790',
     studentUrl: 'https://example.com/student1',
@@ -55,10 +60,12 @@ const mockStudents = [
   },
   { 
     id: '2', 
-    student_id: 'S002', 
+    student_id: 'G1', 
     student_name: '李四', 
     standard: '二年级', 
     Center: 'WX 02', 
+    gender: 'female',
+    serviceType: 'afterschool',
     father_phone: '0123456791', 
     mother_phone: '0123456792',
     studentUrl: 'https://example.com/student2',
@@ -69,10 +76,12 @@ const mockStudents = [
   },
   { 
     id: '3', 
-    student_id: 'S003', 
+    student_id: 'T1', 
     student_name: '王五', 
     standard: '三年级', 
     Center: 'WX 01', 
+    gender: 'male',
+    serviceType: 'tuition',
     father_phone: '0123456793', 
     mother_phone: '0123456794',
     status: 'inactive',
@@ -87,7 +96,7 @@ export default function StudentsTab({
   statsLoading, 
   setActiveTab 
 }: StudentsTabProps) {
-  const { students: realStudents, loading: studentsLoading, refetch: refetchStudents } = useStudents()
+  const { students: realStudents, loading: studentsLoading, refetch: refetchStudents, addStudent, updateStudent, deleteStudent } = useStudents()
   const { userProfile } = useAuth()
   
   // 使用模拟数据或真实数据
@@ -100,6 +109,9 @@ export default function StudentsTab({
   const [selectedGrade, setSelectedGrade] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(10)
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [editingStudent, setEditingStudent] = useState<any>(null)
+  const [viewingStudent, setViewingStudent] = useState<any>(null)
 
   // 获取学生数据统计
   const studentsStats = useMemo(() => {
@@ -148,6 +160,9 @@ export default function StudentsTab({
         student.student_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.student_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.standard?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.Center?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.gender?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.serviceType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.father_phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.mother_phone?.toLowerCase().includes(searchTerm.toLowerCase())
       )
@@ -195,6 +210,45 @@ export default function StudentsTab({
     setCurrentPage(1)
   }
 
+  // 处理添加学生
+  const handleAddStudent = async (studentData: any) => {
+    try {
+      console.log('StudentsTab 接收到的数据:', studentData)
+      await addStudent(studentData)
+      setIsAddDialogOpen(false)
+      refetchStudents()
+    } catch (error) {
+      console.error("Error adding student:", error)
+    }
+  }
+
+  // 处理更新学生
+  const handleUpdateStudent = async (studentData: any) => {
+    if (!editingStudent) return
+    try {
+      console.log('准备更新学生:', {
+        studentId: editingStudent.id,
+        studentData: studentData,
+        editingStudent: editingStudent
+      })
+      await updateStudent(editingStudent.id, studentData)
+      setEditingStudent(null)
+      refetchStudents()
+    } catch (error) {
+      console.error("Error updating student:", error)
+    }
+  }
+
+  // 处理删除学生
+  const handleDeleteStudent = async (studentId: string) => {
+    try {
+      await deleteStudent(studentId)
+      refetchStudents()
+    } catch (error) {
+      console.error("Error deleting student:", error)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* 连接状态提示 */}
@@ -214,8 +268,35 @@ export default function StudentsTab({
 
       {/* 标题和概览 */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">学生管理</h2>
-        <p className="text-gray-600">统一管理学生基本资料和打卡数据</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">学生管理</h2>
+            <p className="text-gray-600">统一管理学生基本资料和打卡数据</p>
+          </div>
+          <Button
+            onClick={async () => {
+              try {
+                const response = await fetch('/api/update-service-types', {
+                  method: 'POST'
+                })
+                const result = await response.json()
+                if (result.success) {
+                  alert(`批量更新完成！\n成功更新: ${result.stats.updated} 个学生\n跳过: ${result.stats.skipped} 个学生`)
+                  refetchStudents()
+                } else {
+                  alert('批量更新失败: ' + result.message)
+                }
+              } catch (error) {
+                alert('批量更新失败: ' + error)
+              }
+            }}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            批量更新服务类型
+          </Button>
+        </div>
       </div>
 
       {/* 关键指标卡片 */}
@@ -334,7 +415,7 @@ export default function StudentsTab({
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
                 批量导入
               </Button>
-              <Button>
+              <Button onClick={() => setIsAddDialogOpen(true)}>
                 <UserPlus className="h-4 w-4 mr-2" />
                 添加学生
               </Button>
@@ -348,7 +429,7 @@ export default function StudentsTab({
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="搜索学生姓名、学号、年级或家长电话..."
+                  placeholder="搜索学生姓名、学号、年级、中心、性别、服务类型或家长电话..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -397,6 +478,8 @@ export default function StudentsTab({
                   <TableHead>学生信息</TableHead>
                   <TableHead>年级</TableHead>
                   <TableHead>中心</TableHead>
+                  <TableHead>性别</TableHead>
+                  <TableHead>服务类型</TableHead>
                   <TableHead>家长联系方式</TableHead>
                   <TableHead>打卡信息</TableHead>
                   <TableHead>操作</TableHead>
@@ -412,10 +495,23 @@ export default function StudentsTab({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{student.standard}</Badge>
+                      <Badge variant="outline">{convertGradeToChinese(student.standard || '')}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">{student.Center || '未知'}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {student.gender === 'male' ? '男' : student.gender === 'female' ? '女' : '未知'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {student.serviceType === 'afterschool' ? '安亲' : student.serviceType === 'tuition' ? '补习' : `未知(${student.serviceType})`}
+                      </Badge>
+                      <div className="text-xs text-gray-400 mt-1">
+                        学号: {student.student_id} | 服务类型: {student.serviceType}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
@@ -457,10 +553,23 @@ export default function StudentsTab({
 
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setViewingStudent(student)}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            console.log('点击编辑学生:', student)
+                            console.log('学生serviceType:', student.serviceType)
+                            console.log('学生完整数据:', JSON.stringify(student, null, 2))
+                            setEditingStudent(student)
+                          }}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                       </div>
@@ -526,6 +635,40 @@ export default function StudentsTab({
           )}
         </CardContent>
       </Card>
+
+      {/* Add/Edit Student Dialog */}
+      <StudentForm
+        open={isAddDialogOpen || !!editingStudent}
+        onOpenChange={(open: boolean) => {
+          if (!open) {
+            setIsAddDialogOpen(false)
+            setEditingStudent(null)
+          }
+        }}
+        student={editingStudent}
+        onSubmit={editingStudent ? handleUpdateStudent : handleAddStudent}
+        existingStudents={students}
+      />
+
+      {/* Student Details Dialog */}
+      {viewingStudent && (
+        <StudentDetails
+          student={viewingStudent}
+          onOpenChange={(open: boolean) => {
+            if (!open) setViewingStudent(null)
+          }}
+          onEdit={() => {
+            setViewingStudent(null)
+            setEditingStudent(viewingStudent)
+          }}
+          onDelete={() => {
+            if (viewingStudent) {
+              handleDeleteStudent(viewingStudent.id)
+              setViewingStudent(null)
+            }
+          }}
+        />
+      )}
     </div>
   )
 }

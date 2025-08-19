@@ -32,7 +32,7 @@ export default function StudentManagement({
   buttonText,
   buttonColor = 'default'
 }: StudentManagementProps) {
-  const { students, loading, error, refetch } = useStudents()
+  const { students, loading, error, refetch, addStudent, updateStudent, deleteStudent } = useStudents()
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedGrade, setSelectedGrade] = useState<string>("all")
@@ -70,18 +70,18 @@ export default function StudentManagement({
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase()
       filtered = filtered.filter(student => 
-        student.name?.toLowerCase().includes(lowerSearchTerm) ||
-        student.studentId?.toLowerCase().includes(lowerSearchTerm) ||
-        student.grade?.toLowerCase().includes(lowerSearchTerm) ||
+        student.student_name?.toLowerCase().includes(lowerSearchTerm) ||
+        student.student_id?.toLowerCase().includes(lowerSearchTerm) ||
+        student.standard?.toLowerCase().includes(lowerSearchTerm) ||
         student.parentName?.toLowerCase().includes(lowerSearchTerm) ||
-        student.parentEmail?.toLowerCase().includes(lowerSearchTerm) ||
+        student.email?.toLowerCase().includes(lowerSearchTerm) ||
         student.status?.toLowerCase().includes(lowerSearchTerm)
       )
     }
 
     // 年级筛选
     if (selectedGrade && selectedGrade !== "all") {
-      filtered = filtered.filter(student => student.grade === selectedGrade)
+      filtered = filtered.filter(student => student.standard === selectedGrade)
     }
 
     // 状态筛选
@@ -96,16 +96,16 @@ export default function StudentManagement({
 
       switch (sortBy) {
         case 'name':
-          aValue = a.name || ''
-          bValue = b.name || ''
+          aValue = a.student_name || ''
+          bValue = b.student_name || ''
           break
         case 'studentId':
-          aValue = a.studentId || ''
-          bValue = b.studentId || ''
+          aValue = a.student_id || ''
+          bValue = b.student_id || ''
           break
         case 'grade':
-          aValue = a.grade || ''
-          bValue = b.grade || ''
+          aValue = a.standard || ''
+          bValue = b.standard || ''
           break
         case 'status':
           aValue = a.status || ''
@@ -116,8 +116,8 @@ export default function StudentManagement({
           bValue = b.parentName || ''
           break
         default:
-          aValue = a.name || ''
-          bValue = b.name || ''
+          aValue = a.student_name || ''
+          bValue = b.student_name || ''
       }
 
       if (sortOrder === 'asc') {
@@ -396,17 +396,24 @@ export default function StudentManagement({
       />
 
       {/* Student Details Dialog */}
-      <StudentDetails
-        student={viewingStudent}
-        onOpenChange={(open: boolean) => {
-          if (!open) setViewingStudent(null)
-        }}
-        onEdit={(student: Student) => {
-          setViewingStudent(null)
-          setEditingStudent(student)
-        }}
-        onDelete={handleDeleteStudent}
-      />
+      {viewingStudent && (
+        <StudentDetails
+          student={viewingStudent}
+          onOpenChange={(open: boolean) => {
+            if (!open) setViewingStudent(null)
+          }}
+          onEdit={() => {
+            setViewingStudent(null)
+            setEditingStudent(viewingStudent)
+          }}
+          onDelete={() => {
+            if (viewingStudent) {
+              handleDeleteStudent(viewingStudent.id)
+              setViewingStudent(null)
+            }
+          }}
+        />
+      )}
     </div>
   )
 } 
