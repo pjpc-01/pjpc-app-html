@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -80,7 +80,7 @@ import {
   Minus,
   Percent,
 } from 'lucide-react'
-import { pb } from '@/lib/pocketbase'
+import { getPocketBase } from '@/lib/pocketbase'
 
 interface UserRecord {
   id: string
@@ -203,12 +203,15 @@ export default function EnterpriseUserApproval() {
   const [currentReviewUser, setCurrentReviewUser] = useState<UserRecord | null>(null)
 
   // 获取用户列表
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     let userRecords: UserRecord[] = [] // 声明在函数顶部
     
     try {
       setLoading(true)
       setError(null)
+      
+      // 获取智能PocketBase实例
+      const pb = await getPocketBase()
       
       console.log('=== 前端用户审核组件调试 ===')
       console.log('1. 检查PocketBase认证状态...')
@@ -525,7 +528,7 @@ export default function EnterpriseUserApproval() {
       setLoading(false)
       console.log('9. 加载状态设置为false')
     }
-  }
+  }, [])
 
   // 计算统计信息
   const calculateStats = (userRecords: UserRecord[]) => {
@@ -748,6 +751,7 @@ export default function EnterpriseUserApproval() {
   const approveUser = async (userId: string) => {
     try {
       setUpdating(userId)
+      const pb = await getPocketBase()
       await pb.collection('users').update(userId, {
         status: 'approved',
         approvedBy: pb.authStore.model?.id,
@@ -778,6 +782,7 @@ export default function EnterpriseUserApproval() {
   const rejectUser = async (userId: string) => {
     try {
       setUpdating(userId)
+      const pb = await getPocketBase()
       await pb.collection('users').update(userId, {
         status: 'suspended'
       })

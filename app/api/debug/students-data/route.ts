@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import PocketBase from 'pocketbase'
 
-const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL || 'http://pjpc.tplinkdns.com:8090')
+const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL || 'http://192.168.0.59:8090')
 
 export async function GET() {
   try {

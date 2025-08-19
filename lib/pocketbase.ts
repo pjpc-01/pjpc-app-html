@@ -1,55 +1,10 @@
 import PocketBase from 'pocketbase'
-
-// PocketBase URL配置（智能检测网络环境）
-const getPocketBaseUrl = () => {
-  // 优先使用环境变量
-  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POCKETBASE_URL) {
-    return process.env.NEXT_PUBLIC_POCKETBASE_URL
-  }
-  
-  // 默认使用DDNS地址，但会在运行时动态检测
-  return 'http://pjpc.tplinkdns.com:8090'
-}
-
-// 创建PocketBase实例
-export const pb = new PocketBase(getPocketBaseUrl())
-
-// 移除所有拦截器以避免数据修改问题
-
-// 用户类型定义
-export interface UserProfile {
-  id: string
-  email: string
-  name: string
-  role: "admin" | "teacher" | "parent" | "accountant"
-  status: "pending" | "approved" | "suspended"
-  emailVerified: boolean
-  createdAt: string
-  updatedAt: string
-  lastLogin?: string
-  loginAttempts: number
-  lockedUntil?: string
-  approvedBy?: string
-  approvedAt?: string
-}
-
-// 认证状态类型
-export interface AuthState {
-  user: any | null
-  userProfile: UserProfile | null
-  loading: boolean
-  error: string | null
-  connectionStatus: 'connected' | 'disconnected' | 'checking'
-}
-
 // 智能网络环境检测
-export const detectNetworkEnvironment = async () => {
+const detectNetworkEnvironment = async () => {
   const testUrls = [
     { url: 'http://192.168.0.59:8090', type: 'local', name: '局域网' },
     { url: 'http://pjpc.tplinkdns.com:8090', type: 'ddns', name: 'DDNS' }
   ]
-  
-  const results = []
   
   // 并行测试所有URL
   const testPromises = testUrls.map(async (testUrl) => {
@@ -102,84 +57,109 @@ export const detectNetworkEnvironment = async () => {
     current.latency < best.latency ? current : best
   )
   
-  console.log(`✅ 选择最佳连接: ${bestConnection.name} (${bestConnection.latency}ms)`)
-  return bestConnection
+  console.log(`🌐 网络环境检测完成: 选择 ${bestConnection.name} (${bestConnection.url}) - 延迟: ${bestConnection.latency}ms`)
+  
+  return bestConnection.url
 }
 
-// 智能连接检查函数
+// PocketBase URL配置（智能检测网络环境）
+const getPocketBaseUrl = async () => {
+  // 优先使用环境变量
+  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POCKETBASE_URL) {
+    console.log('🔧 使用环境变量配置的PocketBase URL:', process.env.NEXT_PUBLIC_POCKETBASE_URL)
+    return process.env.NEXT_PUBLIC_POCKETBASE_URL
+  }
+  
+  // 智能检测网络环境
+  try {
+    const bestUrl = await detectNetworkEnvironment()
+    return bestUrl
+  } catch (error) {
+    console.error('❌ 网络环境检测失败，使用默认配置:', error)
+    // 默认使用局域网地址
+    return 'http://192.168.0.59:8090'
+  }
+}
+
+// 创建PocketBase实例
+let pbInstance: PocketBase | null = null
+
+// 获取PocketBase实例（单例模式）
+export const getPocketBase = async (): Promise<PocketBase> => {
+  if (!pbInstance) {
+    const url = await getPocketBaseUrl()
+    pbInstance = new PocketBase(url)
+    console.log('✅ PocketBase实例已创建:', url)
+  }
+  return pbInstance
+}
+
+// 重新初始化PocketBase实例（用于网络环境变化时）
+export const reinitializePocketBase = async () => {
+  pbInstance = null
+  return await getPocketBase()
+}
+
+// 检查PocketBase连接状态
 export const checkPocketBaseConnection = async () => {
   try {
-    console.log('检查PocketBase连接...')
+    const pb = await getPocketBase()
     
-    // 使用本地API代理进行健康检查，避免直接访问PocketBase内部路径
-    const healthUrl = '/api/pocketbase/health'
-    
-    const response = await fetch(healthUrl, {
+    // 测试连接
+    const response = await fetch(`${pb.baseUrl}/api/health`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     })
-    console.log('PocketBase健康检查响应:', response.status, response.statusText)
     
     if (response.ok) {
-      const data = await response.json()
-      console.log('PocketBase健康检查数据:', data)
-      return { connected: true, error: null }
-    } else {
-      console.error('PocketBase健康检查失败:', response.status, response.statusText)
-      return { connected: false, error: `HTTP ${response.status}: ${response.statusText}` }
-    }
-  } catch (error) {
-    console.error('PocketBase连接错误:', error)
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        return { connected: false, error: '连接超时' }
+      return {
+        connected: true,
+        url: pb.baseUrl,
+        error: null
       }
-      return { connected: false, error: error.message }
+    } else {
+      return {
+        connected: false,
+        url: pb.baseUrl,
+        error: `HTTP ${response.status}: ${response.statusText}`
+      }
     }
-    return { connected: false, error: '未知错误' }
-  }
-}
-
-// 动态更新PocketBase URL
-export const updatePocketBaseUrl = async () => {
-  try {
-    const networkInfo = await detectNetworkEnvironment()
-    const newUrl = networkInfo.url
-    
-    // 更新PocketBase实例的baseURL（修复已弃用的 baseUrl 属性）
-    pb.baseURL = newUrl
-    console.log(`PocketBase URL已更新为: ${newUrl} (${networkInfo.type})`)
-    
-    return { success: true, url: newUrl, type: networkInfo.type }
   } catch (error) {
-    console.error('更新PocketBase URL失败:', error)
-    return { success: false, error: error instanceof Error ? error.message : '未知错误' }
-  }
-}
-
-// 健康检查函数（兼容性）
-export const checkPocketBaseHealth = async () => {
-  return await checkPocketBaseConnection()
-}
-
-// 初始化连接
-export const initializePocketBase = async () => {
-  try {
-    const result = await updatePocketBaseUrl()
-    if (result.success) {
-      // 执行健康检查
-      const healthCheck = await checkPocketBaseHealth()
-      console.log('PocketBase健康状态:', healthCheck)
-      return { ...result, health: healthCheck }
-    }
-    return result
-  } catch (error) {
-    console.error('PocketBase初始化失败:', error)
     return {
-      success: false,
-      error: error instanceof Error ? error.message : '未知错误'
+      connected: false,
+      url: 'unknown',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }
   }
+}
+
+// 兼容性导出（保持向后兼容）
+export const pb = new PocketBase('http://192.168.0.59:8090') // 临时实例，会被智能检测覆盖
+
+// 用户类型定义
+export interface UserProfile {
+  id: string
+  email: string
+  name: string
+  role: "admin" | "teacher" | "parent" | "accountant"
+  status: "pending" | "approved" | "suspended"
+  emailVerified: boolean
+  createdAt: string
+  updatedAt: string
+  lastLogin?: string
+  loginAttempts: number
+  lockedUntil?: string
+  approvedBy?: string
+  approvedAt?: string
+}
+
+// 认证状态类型
+export interface AuthState {
+  user: any | null
+  userProfile: UserProfile | null
+  loading: boolean
+  error: string | null
+  connectionStatus: 'connected' | 'disconnected' | 'checking'
 }
 
 // 导出默认实例
