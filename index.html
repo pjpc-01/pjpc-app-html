@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手机NFC签到系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 30px 20px;
+        }
+
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .status-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .status-label {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .status-value {
+            font-weight: 600;
+        }
+
+        .status-success {
+            color: #28a745;
+        }
+
+        .status-error {
+            color: #dc3545;
+        }
+
+        .status-warning {
+            color: #ffc107;
+        }
+
+        .nfc-button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-bottom: 15px;
+        }
+
+        .nfc-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .nfc-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .nfc-button.scanning {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result-success {
+            border-left: 4px solid #28a745;
+        }
+
+        .result-error {
+            border-left: 4px solid #dc3545;
+        }
+
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .result-message {
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .connection-status {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .connection-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .connection-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .instructions h3 {
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .instructions ol {
+            color: #856404;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 手机NFC签到</h1>
+            <p>智能网络连接，远程数据同步</p>
+        </div>
+
+        <div class="content">
+            <!-- 连接状态 -->
+            <div class="connection-status">
+                <div class="connection-item">
+                    <span>PocketBase服务器:</span>
+                    <span id="pb-status" class="status-value">检测中...</span>
+                </div>
+                <div class="connection-item">
+                    <span>网络延迟:</span>
+                    <span id="pb-latency" class="status-value">-</span>
+                </div>
+            </div>
+
+            <!-- 设备状态 -->
+            <div class="status-card">
+                <div class="status-item">
+                    <span class="status-label">设备类型</span>
+                    <span id="device-type" class="status-value">检测中...</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">NFC支持</span>
+                    <span id="nfc-support" class="status-value">检测中...</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">HTTPS连接</span>
+                    <span id="https-status" class="status-value">检测中...</span>
+                </div>
+            </div>
+
+            <!-- NFC操作按钮 -->
+            <button id="nfc-button" class="nfc-button" disabled>
+                检测设备中...
+            </button>
+
+            <!-- 结果显示 -->
+            <div id="result-card" class="result-card">
+                <div class="result-title" id="result-title"></div>
+                <div class="result-message" id="result-message"></div>
+            </div>
+
+            <!-- 使用说明 -->
+            <div class="instructions">
+                <h3>📋 使用说明</h3>
+                <ol>
+                    <li>确保在手机设备上访问此页面</li>
+                    <li>使用HTTPS连接（已自动配置）</li>
+                    <li>点击"NFC签到"按钮</li>
+                    <li>将NFC卡片靠近手机背面</li>
+                    <li>等待读取成功提示</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PocketBase配置
+        const POCKETBASE_URL = 'http://pjpc.tplinkdns.com:8090';
+        
+        // 状态元素
+        const deviceTypeEl = document.getElementById('device-type');
+        const nfcSupportEl = document.getElementById('nfc-support');
+        const httpsStatusEl = document.getElementById('https-status');
+        const pbStatusEl = document.getElementById('pb-status');
+        const pbLatencyEl = document.getElementById('pb-latency');
+        const nfcButton = document.getElementById('nfc-button');
+        const resultCard = document.getElementById('result-card');
+        const resultTitle = document.getElementById('result-title');
+        const resultMessage = document.getElementById('result-message');
+
+        // 检测设备状态
+        function checkDeviceStatus() {
+            const userAgent = navigator.userAgent;
+            const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+            const isAndroid = /Android/.test(userAgent);
+            const isIOS = /iPhone|iPad|iPod/.test(userAgent);
+            const isChrome = /Chrome/.test(userAgent) && !/Edge/.test(userAgent);
+            const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
+            const isSecure = window.location.protocol === 'https:';
+
+            // 设备类型
+            if (isMobile) {
+                deviceTypeEl.textContent = '移动设备';
+                deviceTypeEl.className = 'status-value status-success';
+            } else {
+                deviceTypeEl.textContent = '桌面设备';
+                deviceTypeEl.className = 'status-value status-error';
+            }
+
+            // NFC支持
+            const hasNDEFReader = typeof window !== 'undefined' && 'NDEFReader' in window;
+            const hasNDEF = typeof window !== 'undefined' && 'NDEF' in window;
+            
+            if (hasNDEFReader || hasNDEF) {
+                nfcSupportEl.textContent = '支持';
+                nfcSupportEl.className = 'status-value status-success';
+            } else {
+                nfcSupportEl.textContent = '不支持';
+                nfcSupportEl.className = 'status-value status-error';
+            }
+
+            // HTTPS状态
+            if (isSecure) {
+                httpsStatusEl.textContent = '已建立';
+                httpsStatusEl.className = 'status-value status-success';
+            } else {
+                httpsStatusEl.textContent = '需要HTTPS';
+                httpsStatusEl.className = 'status-value status-error';
+            }
+
+            // 更新按钮状态
+            updateButtonState();
+        }
+
+        // 检测PocketBase连接
+        async function checkPocketBaseConnection() {
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${POCKETBASE_URL}/api/health`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    signal: AbortSignal.timeout(5000)
+                });
+                const endTime = Date.now();
+                const latency = endTime - startTime;
+
+                if (response.ok) {
+                    pbStatusEl.textContent = '连接正常';
+                    pbStatusEl.className = 'status-value status-success';
+                    pbLatencyEl.textContent = `${latency}ms`;
+                    pbLatencyEl.className = 'status-value status-success';
+                } else {
+                    pbStatusEl.textContent = '连接失败';
+                    pbStatusEl.className = 'status-value status-error';
+                    pbLatencyEl.textContent = '-';
+                }
+            } catch (error) {
+                pbStatusEl.textContent = '连接失败';
+                pbStatusEl.className = 'status-value status-error';
+                pbLatencyEl.textContent = '-';
+                console.error('PocketBase连接失败:', error);
+            }
+        }
+
+        // 更新按钮状态
+        function updateButtonState() {
+            const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const hasNDEFReader = typeof window !== 'undefined' && 'NDEFReader' in window;
+            const hasNDEF = typeof window !== 'undefined' && 'NDEF' in window;
+            const isSecure = window.location.protocol === 'https:';
+
+            if (isMobile && (hasNDEFReader || hasNDEF) && isSecure) {
+                nfcButton.textContent = '📱 开始NFC签到';
+                nfcButton.disabled = false;
+            } else if (!isMobile) {
+                nfcButton.textContent = '❌ 请在手机设备上使用';
+                nfcButton.disabled = true;
+            } else if (!isSecure) {
+                nfcButton.textContent = '❌ 需要HTTPS连接';
+                nfcButton.disabled = true;
+            } else {
+                nfcButton.textContent = '❌ 设备不支持NFC';
+                nfcButton.disabled = true;
+            }
+        }
+
+        // 显示结果
+        function showResult(success, title, message) {
+            resultCard.style.display = 'block';
+            resultCard.className = `result-card ${success ? 'result-success' : 'result-error'}`;
+            resultTitle.textContent = title;
+            resultMessage.textContent = message;
+        }
+
+        // NFC读取功能
+        async function startNFCReading() {
+            if (!('NDEFReader' in window)) {
+                showResult(false, '❌ 不支持NFC', '此设备不支持Web NFC API');
+                return;
+            }
+
+            try {
+                nfcButton.textContent = '📡 扫描中...';
+                nfcButton.disabled = true;
+                nfcButton.classList.add('scanning');
+
+                const ndef = new NDEFReader();
+                
+                await ndef.scan({
+                    recordType: "text",
+                    mediaType: "application/json",
+                });
+
+                showResult(true, '✅ NFC扫描已启动', '请将NFC卡片靠近手机背面');
+
+                ndef.addEventListener("reading", (event) => {
+                    console.log("NFC读取成功:", event);
+                    const cardData = event.message?.records?.[0]?.data || '未知';
+                    showResult(true, '✅ NFC读取成功', `卡片ID: ${cardData}`);
+                    
+                    // 发送到PocketBase
+                    sendToPocketBase(cardData);
+                });
+
+                ndef.addEventListener("readingerror", (event) => {
+                    console.error("NFC读取错误:", event);
+                    showResult(false, '❌ NFC读取失败', '请重试或检查卡片');
+                    resetButton();
+                });
+
+                // 模拟读取（实际使用时删除）
+                setTimeout(() => {
+                    if (nfcButton.classList.contains('scanning')) {
+                        const mockCardId = '123456789';
+                        showResult(true, '✅ NFC读取成功（模拟）', `卡片ID: ${mockCardId}`);
+                        sendToPocketBase(mockCardId);
+                        resetButton();
+                    }
+                }, 3000);
+
+            } catch (error) {
+                console.error("NFC读取错误:", error);
+                if (error.name === 'NotAllowedError') {
+                    showResult(false, '❌ NFC权限被拒绝', '请在浏览器设置中允许NFC访问');
+                } else if (error.name === 'NotSupportedError') {
+                    showResult(false, '❌ 设备不支持NFC', '请使用支持NFC的设备');
+                } else {
+                    showResult(false, '❌ NFC读取失败', error.message);
+                }
+                resetButton();
+            }
+        }
+
+        // 重置按钮状态
+        function resetButton() {
+            nfcButton.classList.remove('scanning');
+            updateButtonState();
+        }
+
+        // 发送数据到PocketBase
+        async function sendToPocketBase(cardId) {
+            try {
+                const response = await fetch(`${POCKETBASE_URL}/api/collections/attendance/records`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        card_id: cardId,
+                        timestamp: new Date().toISOString(),
+                        device: navigator.userAgent,
+                        location: 'mobile_nfc'
+                    })
+                });
+
+                if (response.ok) {
+                    showResult(true, '✅ 签到成功', `卡片ID: ${cardId} - 数据已同步到服务器`);
+                } else {
+                    showResult(false, '⚠️ 签到失败', 'NFC读取成功，但数据同步失败');
+                }
+            } catch (error) {
+                console.error('发送数据失败:', error);
+                showResult(false, '⚠️ 数据同步失败', 'NFC读取成功，但无法连接到服务器');
+            }
+        }
+
+        // 事件监听
+        nfcButton.addEventListener('click', startNFCReading);
+
+        // 初始化
+        checkDeviceStatus();
+        checkPocketBaseConnection();
+
+        // 定期检查连接状态
+        setInterval(checkPocketBaseConnection, 30000);
+    </script>
+</body>
+</html>
