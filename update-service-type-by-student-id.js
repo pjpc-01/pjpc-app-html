@@ -1,3 +1,4 @@
+
 import PocketBase from 'pocketbase';
 
 async function updateServiceTypeByStudentId() {
