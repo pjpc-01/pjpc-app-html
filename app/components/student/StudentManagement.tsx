@@ -32,7 +32,7 @@ export default function StudentManagement({
   buttonText,
   buttonColor = 'default'
 }: StudentManagementProps) {
-  const { students, loading, error, refetch, updateStudent, deleteStudent, addStudent } = useStudents({ dataType })
+  const { students, loading, error, refetch } = useStudents()
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedGrade, setSelectedGrade] = useState<string>("all")

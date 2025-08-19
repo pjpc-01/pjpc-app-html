@@ -24,7 +24,7 @@ export interface DashboardStats {
 
 export const useDashboardStats = () => {
   const { user, userProfile } = useAuth()
-  const { students, loading: studentsLoading, error: studentsError } = useStudents({ dataType: undefined })
+  const { students, loading: studentsLoading, error: studentsError } = useStudents()
   
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 156,

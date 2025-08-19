@@ -19,6 +19,13 @@ import {
   Zap,
   ArrowLeft,
   X,
+  CheckCircle,
+  Target,
+  Sparkles,
+  BarChart3,
+  Clock,
+  MessageSquare,
+  Upload,
 } from "lucide-react"
 import SecurityMonitoring from "../systems/security-monitoring"
 import CommunicationSystem from "../systems/communication-system"
@@ -285,93 +292,219 @@ export default function SettingsTab({ stats, statsLoading, setActiveTab }: Setti
         </Card>
       </div>
 
-      {/* 系统功能卡片 */}
+      {/* 系统功能卡片 - 企业级设计 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-purple-200 group">
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("enterprise-user-approval")}>
-            <Brain className="h-12 w-12 mx-auto mb-4 text-purple-600 group-hover:scale-110 transition-transform" />
+        <Card className="cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-100 rounded-full -translate-y-16 translate-x-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <CardContent className="p-6 text-center relative" onClick={() => handleCardClick("enterprise-user-approval")}>
+            <div className="p-3 bg-purple-100 rounded-lg w-16 h-16 mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
+              <Brain className="h-10 w-10 text-purple-600 group-hover:scale-110 transition-transform" />
+            </div>
             <h3 className="text-xl font-bold mb-2 text-purple-700">AI智能审核</h3>
-            <p className="text-sm text-gray-600 mb-3">企业级AI增强用户审批</p>
+            <p className="text-sm text-purple-600 mb-3">企业级AI增强用户审批系统</p>
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center justify-center text-xs text-purple-700">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                智能风险评估
+              </div>
+              <div className="flex items-center justify-center text-xs text-purple-700">
+                <Target className="h-3 w-3 mr-1" />
+                自动审批流程
+              </div>
+              <div className="flex items-center justify-center text-xs text-purple-700">
+                <Shield className="h-3 w-3 mr-1" />
+                安全防护
+              </div>
+            </div>
             {!statsLoading && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+              <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white group-hover:scale-105 transition-transform">
+                <Sparkles className="h-3 w-3 mr-1" />
                 AI增强
               </Badge>
             )}
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-green-200 group">
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("unified-attendance")}>
-            <UserCheck className="h-12 w-12 mx-auto mb-4 text-green-600 group-hover:scale-110 transition-transform" />
+        <Card className="cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-green-100 rounded-full -translate-y-16 translate-x-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <CardContent className="p-6 text-center relative" onClick={() => handleCardClick("unified-attendance")}>
+            <div className="p-3 bg-green-100 rounded-lg w-16 h-16 mx-auto mb-4 group-hover:bg-green-200 transition-colors">
+              <UserCheck className="h-10 w-10 text-green-600 group-hover:scale-110 transition-transform" />
+            </div>
             <h3 className="text-xl font-bold mb-2 text-green-700">统一打卡系统</h3>
-            <p className="text-sm text-gray-600 mb-3">NFC/RFID统一出勤管理</p>
+            <p className="text-sm text-green-600 mb-3">NFC/RFID统一出勤管理</p>
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center justify-center text-xs text-green-700">
+                <Activity className="h-3 w-3 mr-1" />
+                实时监控
+              </div>
+              <div className="flex items-center justify-center text-xs text-green-700">
+                <Clock className="h-3 w-3 mr-1" />
+                自动记录
+              </div>
+              <div className="flex items-center justify-center text-xs text-green-700">
+                <BarChart3 className="h-3 w-3 mr-1" />
+                数据分析
+              </div>
+            </div>
             {!statsLoading && (
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
+              <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white group-hover:scale-105 transition-transform">
+                <Activity className="h-3 w-3 mr-1" />
                 实时监控
               </Badge>
             )}
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-red-200 group">
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("security-monitoring")}>
-            <Shield className="h-12 w-12 mx-auto mb-4 text-red-600 group-hover:scale-110 transition-transform" />
+        <Card className="cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-red-300 bg-gradient-to-br from-red-50 to-orange-50 overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-red-100 rounded-full -translate-y-16 translate-x-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <CardContent className="p-6 text-center relative" onClick={() => handleCardClick("security-monitoring")}>
+            <div className="p-3 bg-red-100 rounded-lg w-16 h-16 mx-auto mb-4 group-hover:bg-red-200 transition-colors">
+              <Shield className="h-10 w-10 text-red-600 group-hover:scale-110 transition-transform" />
+            </div>
             <h3 className="text-xl font-bold mb-2 text-red-700">安全监控</h3>
-            <p className="text-sm text-gray-600 mb-3">系统安全状态监控</p>
+            <p className="text-sm text-red-600 mb-3">系统安全状态监控</p>
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center justify-center text-xs text-red-700">
+                <Shield className="h-3 w-3 mr-1" />
+                实时防护
+              </div>
+              <div className="flex items-center justify-center text-xs text-red-700">
+                <Activity className="h-3 w-3 mr-1" />
+                威胁检测
+              </div>
+              <div className="flex items-center justify-center text-xs text-red-700">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                安全审计
+              </div>
+            </div>
             {!statsLoading && (
-              <Badge variant="secondary" className="bg-red-100 text-red-800">
+              <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white group-hover:scale-105 transition-transform">
+                <Shield className="h-3 w-3 mr-1" />
                 安全
               </Badge>
             )}
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-green-200 group">
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("communication-system")}>
-            <Bell className="h-12 w-12 mx-auto mb-4 text-green-600 group-hover:scale-110 transition-transform" />
-            <h3 className="text-xl font-bold mb-2 text-green-700">通信系统</h3>
-            <p className="text-sm text-gray-600 mb-3">消息和通知管理</p>
+        <Card className="cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-blue-300 bg-gradient-to-br from-blue-50 to-cyan-50 overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-full -translate-y-16 translate-x-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <CardContent className="p-6 text-center relative" onClick={() => handleCardClick("communication-system")}>
+            <div className="p-3 bg-blue-100 rounded-lg w-16 h-16 mx-auto mb-4 group-hover:bg-blue-200 transition-colors">
+              <Bell className="h-10 w-10 text-blue-600 group-hover:scale-110 transition-transform" />
+            </div>
+            <h3 className="text-xl font-bold mb-2 text-blue-700">通信系统</h3>
+            <p className="text-sm text-blue-600 mb-3">消息和通知管理</p>
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center justify-center text-xs text-blue-700">
+                <Bell className="h-3 w-3 mr-1" />
+                实时通知
+              </div>
+              <div className="flex items-center justify-center text-xs text-blue-700">
+                <MessageSquare className="h-3 w-3 mr-1" />
+                消息管理
+              </div>
+              <div className="flex items-center justify-center text-xs text-blue-700">
+                <Users className="h-3 w-3 mr-1" />
+                用户沟通
+              </div>
+            </div>
             {!statsLoading && (
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
+              <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white group-hover:scale-105 transition-transform">
+                <Bell className="h-3 w-3 mr-1" />
                 {stats?.totalMessages || 0} 消息
               </Badge>
             )}
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-purple-200 group">
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("data-import")}>
-            <Database className="h-12 w-12 mx-auto mb-4 text-purple-600 group-hover:scale-110 transition-transform" />
+        <Card className="cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-indigo-50 overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-100 rounded-full -translate-y-16 translate-x-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <CardContent className="p-6 text-center relative" onClick={() => handleCardClick("data-import")}>
+            <div className="p-3 bg-purple-100 rounded-lg w-16 h-16 mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
+              <Database className="h-10 w-10 text-purple-600 group-hover:scale-110 transition-transform" />
+            </div>
             <h3 className="text-xl font-bold mb-2 text-purple-700">数据导入</h3>
-            <p className="text-sm text-gray-600 mb-3">批量数据导入工具</p>
+            <p className="text-sm text-purple-600 mb-3">批量数据导入工具</p>
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center justify-center text-xs text-purple-700">
+                <Database className="h-3 w-3 mr-1" />
+                CSV导入
+              </div>
+              <div className="flex items-center justify-center text-xs text-purple-700">
+                <Upload className="h-3 w-3 mr-1" />
+                批量处理
+              </div>
+              <div className="flex items-center justify-center text-xs text-purple-700">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                数据验证
+              </div>
+            </div>
             {!statsLoading && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+              <Badge className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white group-hover:scale-105 transition-transform">
+                <Database className="h-3 w-3 mr-1" />
                 可用
               </Badge>
             )}
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-orange-200 group">
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("system-logs")}>
-            <Activity className="h-12 w-12 mx-auto mb-4 text-orange-600 group-hover:scale-110 transition-transform" />
+        <Card className="cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-orange-300 bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100 rounded-full -translate-y-16 translate-x-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <CardContent className="p-6 text-center relative" onClick={() => handleCardClick("system-logs")}>
+            <div className="p-3 bg-orange-100 rounded-lg w-16 h-16 mx-auto mb-4 group-hover:bg-orange-200 transition-colors">
+              <Activity className="h-10 w-10 text-orange-600 group-hover:scale-110 transition-transform" />
+            </div>
             <h3 className="text-xl font-bold mb-2 text-orange-700">系统日志</h3>
-            <p className="text-sm text-gray-600 mb-3">系统操作日志查看</p>
+            <p className="text-sm text-orange-600 mb-3">系统操作日志查看</p>
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center justify-center text-xs text-orange-700">
+                <Activity className="h-3 w-3 mr-1" />
+                实时监控
+              </div>
+              <div className="flex items-center justify-center text-xs text-orange-700">
+                <FileText className="h-3 w-3 mr-1" />
+                操作审计
+              </div>
+              <div className="flex items-center justify-center text-xs text-orange-700">
+                <BarChart3 className="h-3 w-3 mr-1" />
+                数据分析
+              </div>
+            </div>
             {!statsLoading && (
-              <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+              <Badge className="bg-gradient-to-r from-orange-500 to-amber-500 text-white group-hover:scale-105 transition-transform">
+                <Activity className="h-3 w-3 mr-1" />
                 实时
               </Badge>
             )}
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-indigo-200 group">
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("backup-restore")}>
-            <Settings className="h-12 w-12 mx-auto mb-4 text-indigo-600 group-hover:scale-110 transition-transform" />
+        <Card className="cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-indigo-300 bg-gradient-to-br from-indigo-50 to-blue-50 overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-100 rounded-full -translate-y-16 translate-x-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <CardContent className="p-6 text-center relative" onClick={() => handleCardClick("backup-restore")}>
+            <div className="p-3 bg-indigo-100 rounded-lg w-16 h-16 mx-auto mb-4 group-hover:bg-indigo-200 transition-colors">
+              <Settings className="h-10 w-10 text-indigo-600 group-hover:scale-110 transition-transform" />
+            </div>
             <h3 className="text-xl font-bold mb-2 text-indigo-700">备份恢复</h3>
-            <p className="text-sm text-gray-600 mb-3">数据备份和恢复</p>
+            <p className="text-sm text-indigo-600 mb-3">数据备份和恢复</p>
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center justify-center text-xs text-indigo-700">
+                <Database className="h-3 w-3 mr-1" />
+                自动备份
+              </div>
+              <div className="flex items-center justify-center text-xs text-indigo-700">
+                <Shield className="h-3 w-3 mr-1" />
+                数据保护
+              </div>
+              <div className="flex items-center justify-center text-xs text-indigo-700">
+                <RefreshCw className="h-3 w-3 mr-1" />
+                快速恢复
+              </div>
+            </div>
             {!statsLoading && (
-              <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
+              <Badge className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white group-hover:scale-105 transition-transform">
+                <Settings className="h-3 w-3 mr-1" />
                 自动
               </Badge>
             )}

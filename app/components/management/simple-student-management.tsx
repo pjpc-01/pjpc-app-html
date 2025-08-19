@@ -40,7 +40,7 @@ export default function SimpleStudentManagement({
   title = "学生管理", 
   description = "管理学生信息和学习进度" 
 }: SimpleStudentManagementProps) {
-  const { students, loading, error, addStudent, updateStudent, deleteStudent } = useStudents()
+  const { students, loading, error, refetch } = useStudents()
   
   // 简化的状态管理
   const [searchTerm, setSearchTerm] = useState('')
@@ -51,12 +51,11 @@ export default function SimpleStudentManagement({
   
   // 新学生表单数据
   const [newStudent, setNewStudent] = useState({
-    name: '',
-    studentId: '',
-    grade: '',
-    parentName: '',
-    parentPhone: '',
-    parentEmail: '',
+    student_name: '',
+    student_id: '',
+    standard: '',
+    father_phone: '',
+    mother_phone: '',
     status: 'active'
   })
 
@@ -66,14 +65,14 @@ export default function SimpleStudentManagement({
 
     if (searchTerm) {
       filtered = filtered.filter(student => 
-        student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.grade?.toLowerCase().includes(searchTerm.toLowerCase())
+        student.student_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.student_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.standard?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
 
     if (selectedGrade !== 'all') {
-      filtered = filtered.filter(student => student.grade === selectedGrade)
+      filtered = filtered.filter(student => student.standard === selectedGrade)
     }
 
     return filtered
@@ -81,7 +80,7 @@ export default function SimpleStudentManagement({
 
   // 获取年级选项
   const gradeOptions = useMemo(() => {
-    const grades = Array.from(new Set(students.map(s => s.grade).filter(Boolean))).sort()
+    const grades = Array.from(new Set(students.map(s => s.standard).filter(Boolean))).sort()
     return grades
   }, [students])
 
