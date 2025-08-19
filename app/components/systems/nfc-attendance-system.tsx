@@ -42,11 +42,14 @@ import {
   Zap,
   Database,
   BarChart3,
+  Usb,
+  ArrowRight,
 } from "lucide-react"
 import { useNFC } from "@/hooks/useNFC"
 import { NFCCard, AttendanceRecord, NFCDevice } from "@/lib/nfc-rfid"
 import NFCOverviewTab from "./nfc-overview-tab"
 import NFCCardsTab from "./nfc-cards-tab"
+import Link from "next/link"
 
 export default function NFCAttendanceSystem() {
   const [activeTab, setActiveTab] = useState("overview")
@@ -74,6 +77,9 @@ export default function NFCAttendanceSystem() {
     updateDevice,
     simulateAttendance,
     clearError,
+    accessStudentUrl,
+    getStudentUrl,
+    updateStudentUrl,
   } = useNFC()
 
   // 新卡表单状态
@@ -85,6 +91,7 @@ export default function NFCAttendanceSystem() {
     status: "active" as "active" | "inactive" | "lost" | "replaced",
     issuedDate: new Date().toISOString().split('T')[0],
     expiryDate: "",
+    studentUrl: "",
     notes: "",
   })
 
@@ -113,6 +120,7 @@ export default function NFCAttendanceSystem() {
         status: "active",
         issuedDate: new Date().toISOString().split('T')[0],
         expiryDate: "",
+        studentUrl: "",
         notes: "",
       })
     } catch (error) {
@@ -279,6 +287,32 @@ export default function NFCAttendanceSystem() {
 
   return (
     <div className="space-y-6">
+      {/* 设备选择提示 */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <Smartphone className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-blue-900">选择打卡设备</h3>
+                <p className="text-blue-700 text-sm">
+                  您可以选择使用USB读卡器或手机NFC进行打卡
+                </p>
+              </div>
+            </div>
+            <Link href="/device-selection">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Usb className="h-4 w-4 mr-2" />
+                选择设备
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* 错误提示 */}
       {error && (
         <Alert variant="destructive">

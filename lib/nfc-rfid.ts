@@ -15,6 +15,7 @@ export interface NFCCard {
   lastUsed?: Date // 最后使用时间
   usageCount: number // 使用次数
   balance?: number // 余额（如果支持）
+  studentUrl?: string // 学生专属网址
   notes?: string // 备注
   createdAt: Date
   updatedAt: Date
@@ -35,6 +36,8 @@ export interface AttendanceRecord {
   status: 'success' | 'failed' | 'duplicate' | 'unauthorized' // 打卡状态
   frequency?: string // 读取频率
   signalStrength?: number // 信号强度
+  studentUrl?: string // 学生专属网址
+  urlAccessed?: boolean // 是否访问了URL
   notes?: string // 备注
 }
 
@@ -135,6 +138,7 @@ export class UnifiedCardSystem {
         issuedDate: new Date('2024-01-01'),
         usageCount: 45,
         balance: 100,
+        studentUrl: 'https://school.com/student/STU001',
         createdAt: new Date('2024-01-01'),
         updatedAt: new Date()
       },
@@ -148,6 +152,7 @@ export class UnifiedCardSystem {
         status: 'active',
         issuedDate: new Date('2024-01-15'),
         usageCount: 32,
+        studentUrl: 'https://school.com/student/STU002',
         createdAt: new Date('2024-01-15'),
         updatedAt: new Date()
       }
@@ -157,6 +162,11 @@ export class UnifiedCardSystem {
   // ==================== 卡片管理 ====================
   
   async addCard(cardData: Omit<NFCCard, 'id' | 'createdAt' | 'updatedAt'>): Promise<NFCCard> {
+    // 如果没有提供URL，自动生成
+    if (!cardData.studentUrl && cardData.studentId) {
+      cardData.studentUrl = `https://school.com/student/${cardData.studentId}`
+    }
+    
     const newCard: NFCCard = {
       ...cardData,
       id: `card-${Date.now()}`,
@@ -300,6 +310,8 @@ export class UnifiedCardSystem {
       status: 'success',
       frequency: deviceInfo?.frequency,
       signalStrength: Math.floor(Math.random() * 30) + 70, // 模拟信号强度
+      studentUrl: card.studentUrl,
+      urlAccessed: false, // 初始状态为未访问
       notes: '打卡成功'
     }
 
@@ -489,6 +501,72 @@ export class UnifiedCardSystem {
     device.lastActivity = new Date()
     
     return randomCard.cardNumber
+  }
+
+  // ==================== URL访问管理 ====================
+  
+  async accessStudentUrl(studentId: string): Promise<{
+    success: boolean
+    url: string | null
+    studentName: string | null
+    accessTime: Date
+    message: string
+  }> {
+    const card = await this.getCardByStudentId(studentId)
+    if (!card) {
+      return {
+        success: false,
+        url: null,
+        studentName: null,
+        accessTime: new Date(),
+        message: '学生不存在'
+      }
+    }
+
+    if (!card.studentUrl) {
+      return {
+        success: false,
+        url: null,
+        studentName: card.studentName,
+        accessTime: new Date(),
+        message: '该学生没有配置专属网址'
+      }
+    }
+
+    // 更新最近的打卡记录，标记URL已访问
+    const recentRecord = this.attendanceRecords.find(record => 
+      record.studentId === studentId && 
+      record.timestamp > new Date(Date.now() - 24 * 60 * 60 * 1000) // 24小时内
+    )
+    
+    if (recentRecord) {
+      recentRecord.urlAccessed = true
+      recentRecord.notes = recentRecord.notes + ' | URL已访问'
+    }
+
+    return {
+      success: true,
+      url: card.studentUrl,
+      studentName: card.studentName,
+      accessTime: new Date(),
+      message: 'URL访问成功'
+    }
+  }
+
+  async getStudentUrl(studentId: string): Promise<string | null> {
+    const card = await this.getCardByStudentId(studentId)
+    return card?.studentUrl || null
+  }
+
+  async updateStudentUrl(studentId: string, newUrl: string): Promise<boolean> {
+    const card = await this.getCardByStudentId(studentId)
+    if (!card) {
+      return false
+    }
+
+    card.studentUrl = newUrl
+    card.updatedAt = new Date()
+    return true
   }
 
   // ==================== 设备健康检查 ====================

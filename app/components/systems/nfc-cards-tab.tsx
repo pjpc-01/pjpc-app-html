@@ -23,6 +23,9 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
+  Globe,
+  Zap,
+  ExternalLink,
 } from "lucide-react"
 import { NFCCard } from "@/lib/nfc-rfid"
 
@@ -110,10 +113,20 @@ export default function NFCCardsTab({
               <CreditCard className="h-5 w-5" />
               卡片管理
             </CardTitle>
-            <Button onClick={() => setNewCardDialog(true)} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              添加卡片
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => setNewCardDialog(true)} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                添加卡片
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setNewCardDialog(true)} 
+                className="flex items-center gap-2"
+              >
+                <Globe className="h-4 w-4" />
+                快速添加（带网址）
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -125,6 +138,7 @@ export default function NFCCardsTab({
                 <TableHead>学生姓名</TableHead>
                 <TableHead>卡片类型</TableHead>
                 <TableHead>状态</TableHead>
+                <TableHead>专属网址</TableHead>
                 <TableHead>发行日期</TableHead>
                 <TableHead>到期日期</TableHead>
                 <TableHead>操作</TableHead>
@@ -146,6 +160,20 @@ export default function NFCCardsTab({
                        card.status === 'inactive' ? '停用' : 
                        card.status === 'lost' ? '丢失' : '已替换'}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {card.studentUrl ? (
+                      <a 
+                        href={card.studentUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline text-sm"
+                      >
+                        访问网址
+                      </a>
+                    ) : (
+                      <span className="text-gray-400 text-sm">未设置</span>
+                    )}
                   </TableCell>
                   <TableCell>{card.issuedDate}</TableCell>
                   <TableCell>{card.expiryDate}</TableCell>
@@ -252,7 +280,34 @@ export default function NFCCardsTab({
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="status">状态</Label>
+                <Label htmlFor="issuedDate">发行日期</Label>
+                <Input
+                  id="issuedDate"
+                  type="date"
+                  value={editingCard ? editingCard.issuedDate : newCard.issuedDate}
+                  onChange={(e) => editingCard 
+                    ? setEditingCard({...editingCard, issuedDate: e.target.value})
+                    : setNewCard({...newCard, issuedDate: e.target.value})
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="expiryDate">到期日期</Label>
+                <Input
+                  id="expiryDate"
+                  type="date"
+                  value={editingCard ? editingCard.expiryDate : newCard.expiryDate}
+                  onChange={(e) => editingCard 
+                    ? setEditingCard({...editingCard, expiryDate: e.target.value})
+                    : setNewCard({...newCard, expiryDate: e.target.value})
+                  }
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="status">卡片状态</Label>
                 <Select 
                   value={editingCard ? editingCard.status : newCard.status}
                   onValueChange={(value: "active" | "inactive" | "lost" | "replaced") => editingCard 
@@ -272,44 +327,98 @@ export default function NFCCardsTab({
                 </Select>
               </div>
               <div>
-                <Label htmlFor="issuedDate">发行日期</Label>
+                <Label htmlFor="balance">余额</Label>
                 <Input
-                  id="issuedDate"
-                  type="date"
-                  value={editingCard ? editingCard.issuedDate : newCard.issuedDate}
+                  id="balance"
+                  type="number"
+                  value={editingCard ? editingCard.balance : newCard.balance}
                   onChange={(e) => editingCard 
-                    ? setEditingCard({...editingCard, issuedDate: e.target.value})
-                    : setNewCard({...newCard, issuedDate: e.target.value})
+                    ? setEditingCard({...editingCard, balance: parseFloat(e.target.value) || 0})
+                    : setNewCard({...newCard, balance: parseFloat(e.target.value) || 0})
                   }
+                  placeholder="0.00"
                 />
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="expiryDate">到期日期</Label>
-                <Input
-                  id="expiryDate"
-                  type="date"
-                  value={editingCard ? editingCard.expiryDate : newCard.expiryDate}
-                  onChange={(e) => editingCard 
-                    ? setEditingCard({...editingCard, expiryDate: e.target.value})
-                    : setNewCard({...newCard, expiryDate: e.target.value})
-                  }
-                />
+            {/* 学生专属网址 - 突出显示 */}
+            <div className="border-2 border-blue-200 bg-blue-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <Globe className="h-5 w-5 text-blue-600" />
+                <Label htmlFor="studentUrl" className="text-blue-800 font-semibold">
+                  学生专属网址
+                </Label>
+                <Badge variant="outline" className="text-blue-600 border-blue-300">
+                  重要
+                </Badge>
               </div>
-              <div>
-                <Label htmlFor="notes">备注</Label>
+              <div className="space-y-2">
                 <Input
-                  id="notes"
-                  value={editingCard ? editingCard.notes : newCard.notes}
+                  id="studentUrl"
+                  type="url"
+                  value={editingCard ? editingCard.studentUrl || '' : newCard.studentUrl || ''}
                   onChange={(e) => editingCard 
-                    ? setEditingCard({...editingCard, notes: e.target.value})
-                    : setNewCard({...newCard, notes: e.target.value})
+                    ? setEditingCard({...editingCard, studentUrl: e.target.value})
+                    : setNewCard({...newCard, studentUrl: e.target.value})
                   }
-                  placeholder="输入备注信息"
+                  placeholder="https://school.com/student/STU001"
+                  className="border-blue-300 focus:border-blue-500"
                 />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const studentId = editingCard ? editingCard.studentId : newCard.studentId
+                      if (studentId) {
+                        const autoUrl = `https://school.com/student/${studentId}`
+                        if (editingCard) {
+                          setEditingCard({...editingCard, studentUrl: autoUrl})
+                        } else {
+                          setNewCard({...newCard, studentUrl: autoUrl})
+                        }
+                      }
+                    }}
+                    className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                  >
+                    <Zap className="h-3 w-3 mr-1" />
+                    自动生成
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const url = editingCard ? editingCard.studentUrl : newCard.studentUrl
+                      if (url) {
+                        window.open(url, '_blank')
+                      }
+                    }}
+                    disabled={!editingCard?.studentUrl && !newCard.studentUrl}
+                    className="text-green-600 border-green-300 hover:bg-green-50"
+                  >
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    测试链接
+                  </Button>
+                </div>
+                <p className="text-xs text-blue-600">
+                  每个学生都有专属的网址，用于访问个人信息和相关资源
+                </p>
               </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="notes">备注</Label>
+              <Input
+                id="notes"
+                value={editingCard ? editingCard.notes : newCard.notes}
+                onChange={(e) => editingCard 
+                  ? setEditingCard({...editingCard, notes: e.target.value})
+                  : setNewCard({...newCard, notes: e.target.value})
+                }
+                placeholder="输入备注信息"
+              />
             </div>
             
             <div className="flex justify-end gap-2">

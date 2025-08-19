@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import PocketBase from 'pocketbase'
+import { getPocketBase } from '@/lib/pocketbase'
 
-// 创建服务器端 PocketBase 实例
-const pb = new PocketBase('http://pjpc.tplinkdns.com:8090')
+// 获取智能PocketBase实例
+const getPb = async () => await getPocketBase()
 
 // 简单的 Google Sheets 数据导入
 export async function POST(request: NextRequest) {
   try {
+    // 获取智能PocketBase实例
+    const pb = await getPb()
+    
     // 确保 PocketBase 认证
     if (!pb.authStore.isValid) {
       try {

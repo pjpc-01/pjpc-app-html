@@ -256,7 +256,11 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Connection Status */}
-      <ConnectionStatus />
+      <div className="bg-blue-50 border-b border-blue-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+          <ConnectionStatus />
+        </div>
+      </div>
       
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
@@ -282,18 +286,6 @@ export default function Dashboard() {
                   <span className="hidden sm:inline">统一打卡</span>
                 </a>
               </Button>
-              
-              {/* Connection Status */}
-              <div className="flex items-center gap-1">
-                {connectionStatus === 'connected' ? (
-                  <Wifi className="h-4 w-4 text-green-500" />
-                ) : (
-                  <WifiOff className="h-4 w-4 text-red-500" />
-                )}
-                <span className="text-xs text-gray-500">
-                  {connectionStatus === 'connected' ? '已连接' : '未连接'}
-                </span>
-              </div>
               
               {/* User Info */}
               <div className="flex items-center gap-2">

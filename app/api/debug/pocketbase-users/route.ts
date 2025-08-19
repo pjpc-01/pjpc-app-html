@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import PocketBase from 'pocketbase'
+import { getPocketBase } from '@/lib/pocketbase'
 
 export async function GET(request: NextRequest) {
   try {
     console.log('=== PocketBase Debug API ===')
     
-    // 创建新的PocketBase实例用于调试
-    const pb = new PocketBase('http://pjpc.tplinkdns.com:8090')
+    // 获取智能PocketBase实例
+    const pb = await getPocketBase()
     
     // 1. 检查PocketBase连接
     console.log('1. 检查PocketBase连接...')
@@ -17,41 +17,31 @@ export async function GET(request: NextRequest) {
     console.log('认证状态:', pb.authStore.isValid)
     console.log('当前用户:', pb.authStore.model)
     
-    // 3. 尝试登录管理员账户
-    console.log('3. 尝试登录管理员账户...')
-    let authResult: { success: boolean, user: any, error: string | null } = { success: false, user: null, error: null }
-    try {
-      const authData = await pb.collection('users').authWithPassword(
-        'pjpcemerlang@gmail.com',
-        '0122270775Sw!'
-      )
-      authResult = { 
-        success: true, 
-        user: {
-          id: authData.record.id,
-          email: authData.record.email,
-          name: authData.record.name,
-          role: authData.record.role,
-          status: authData.record.status
-        }, 
-        error: null 
+    let authResult: { success: boolean, error: string | null } = { success: false, error: null }
+    
+    // 3. 尝试认证
+    if (!pb.authStore.isValid) {
+      console.log('3. 尝试认证...')
+      try {
+        await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        authResult = { success: true, error: null }
+        console.log('✅ 认证成功')
+      } catch (authError) {
+        authResult = { success: false, error: authError instanceof Error ? authError.message : '认证失败' }
+        console.log('❌ 认证失败:', authError)
       }
-      console.log('登录成功:', authData.record.email)
-    } catch (error) {
-      authResult = { 
-        success: false, 
-        user: null, 
-        error: error instanceof Error ? error.message : '未知错误'
-      }
-      console.log('登录失败:', error)
+    } else {
+      authResult = { success: true, error: null }
+      console.log('✅ 已认证')
     }
     
-    // 4. 尝试获取用户列表
-    console.log('4. 尝试获取用户列表...')
+    // 4. 获取用户列表
+    console.log('4. 获取用户列表...')
     let userListResult: { success: boolean, users: any[], error: string | null, rawResponse: any } = { success: false, users: [], error: null, rawResponse: null }
+    
     if (pb.authStore.isValid) {
       try {
-        const records = await pb.collection('users').getList(1, 50, {
+        const records = await pb.collection('users').getList(1, 100, {
           sort: '-created'
         })
         
@@ -104,38 +94,6 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // 5. 检查集合信息
-    console.log('5. 检查集合信息...')
-    let collectionInfo: { success: boolean, info: any, error: string | null } = { success: false, info: null, error: null }
-    try {
-      const collections = await pb.collections.getList()
-      const usersCollection = collections.items.find(col => col.name === 'users')
-      if (usersCollection) {
-        collectionInfo = {
-          success: true,
-          info: {
-            name: usersCollection.name,
-            type: usersCollection.type,
-            listRule: usersCollection.listRule,
-            viewRule: usersCollection.viewRule,
-            createRule: usersCollection.createRule,
-            updateRule: usersCollection.updateRule,
-            deleteRule: usersCollection.deleteRule
-          },
-          error: null
-        }
-      } else {
-        collectionInfo = { success: false, info: null, error: '未找到users集合' }
-      }
-    } catch (error) {
-      collectionInfo = { 
-        success: false, 
-        info: null, 
-        error: error instanceof Error ? error.message : '未知错误'
-      }
-      console.log('获取集合信息失败:', error)
-    }
-    
     return NextResponse.json({
       success: true,
       pocketbaseUrl: pb.baseUrl,
@@ -143,7 +101,6 @@ export async function GET(request: NextRequest) {
       currentUser: pb.authStore.model,
       authResult,
       userListResult,
-      collectionInfo,
       timestamp: new Date().toISOString()
     })
     

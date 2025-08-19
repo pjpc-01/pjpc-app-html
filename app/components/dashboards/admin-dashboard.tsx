@@ -15,6 +15,7 @@ import OverviewTab from "./overview-tab"
 import FinanceTab from "./finance-tab"
 import EducationTab from "./education-tab"
 import SettingsTab from "./settings-tab"
+
 interface AdminDashboardProps {
   activeTab: string
   setActiveTab: (tab: string) => void
