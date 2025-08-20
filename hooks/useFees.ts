@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react"
-import { pb } from "@/lib/pocketbase"
+import { getPocketBase } from "@/lib/pocketbase"
 import type { Fee } from "@/types/fees"
 
 export const useFees = () => {
@@ -28,6 +28,7 @@ export const useFees = () => {
     setError(null)
     
     try {
+      const pb = await getPocketBase()
       const records = await pb.collection("fees_items").getFullList(200, {
         sort: "category",
         requestKey: null, // ✅ prevent auto-cancel
@@ -51,6 +52,7 @@ export const useFees = () => {
 
   const createFee = useCallback(async (feeData: Omit<Fee, "id">) => {
     try {
+      const pb = await getPocketBase()
       const created = await pb.collection("fees_items").create(feeData, {
         requestKey: null, // ✅ prevent auto-cancel
       })
@@ -65,6 +67,7 @@ export const useFees = () => {
 
   const updateFee = useCallback(async (id: string, updates: Partial<Fee>) => {
     try {
+      const pb = await getPocketBase()
       const updated = await pb.collection("fees_items").update(id, updates, {
         requestKey: null, // ✅ prevent auto-cancel
       })
@@ -78,6 +81,7 @@ export const useFees = () => {
 
   const deleteFee = useCallback(async (id: string) => {
     try {
+      const pb = await getPocketBase()
       await pb.collection("fees_items").delete(id, {
         requestKey: null, // ✅ prevent auto-cancel
       })
