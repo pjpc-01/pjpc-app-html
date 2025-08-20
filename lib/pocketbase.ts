@@ -133,8 +133,35 @@ export const checkPocketBaseConnection = async () => {
   }
 }
 
-// 兼容性导出（保持向后兼容）
-export const pb = new PocketBase('http://192.168.0.59:8090') // 临时实例，会被智能检测覆盖
+// 兼容性导出（保持向后兼容）- 使用智能检测
+export const pb = new Proxy({} as PocketBase, {
+  get(target, prop) {
+    if (!pbInstance) {
+      // 如果实例不存在，创建一个默认实例
+      pbInstance = new PocketBase('http://pjpc.tplinkdns.com:8090')
+      console.log('🔧 创建兼容性PocketBase实例:', pbInstance.baseUrl)
+    }
+    return (pbInstance as any)[prop]
+  }
+})
+
+// 初始化兼容性实例
+const initCompatibilityInstance = async () => {
+  try {
+    const url = await getPocketBaseUrl()
+    pbInstance = new PocketBase(url)
+    console.log('✅ 兼容性PocketBase实例已初始化:', url)
+  } catch (error) {
+    console.error('❌ 兼容性PocketBase实例初始化失败:', error)
+    // 使用默认URL
+    pbInstance = new PocketBase('http://pjpc.tplinkdns.com:8090')
+  }
+}
+
+// 在模块加载时初始化
+if (typeof window !== 'undefined') {
+  initCompatibilityInstance()
+}
 
 // 用户类型定义
 export interface UserProfile {

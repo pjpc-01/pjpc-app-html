@@ -1,7 +1,7 @@
-import { pb } from './pocketbase'
+import { getPocketBase } from './pocketbase'
 
 // 检查认证状态
-const checkAuth = () => {
+const checkAuth = async (pb: any) => {
   if (!pb.authStore.isValid) {
     console.warn('PocketBase 未认证，尝试匿名访问...')
     // 对于公开的集合，可能不需要认证
@@ -40,7 +40,8 @@ export interface StudentCard {
 // 创建学生卡片
 export const createStudentCard = async (data: Omit<StudentCard, 'id' | 'created' | 'updated'>): Promise<StudentCard> => {
   try {
-    checkAuth()
+    const pb = await getPocketBase()
+    await checkAuth(pb)
     
     // 清理和验证数据
     const cleanData = {
@@ -77,7 +78,6 @@ export const createStudentCard = async (data: Omit<StudentCard, 'id' | 'created'
   } catch (error) {
     console.error('创建学生卡片失败:', error)
     console.error('失败的数据:', data)
-    console.error('PocketBase认证状态:', pb.authStore.isValid)
     throw error
   }
 }
@@ -85,7 +85,8 @@ export const createStudentCard = async (data: Omit<StudentCard, 'id' | 'created'
 // 获取所有学生卡片
 export const getAllStudentCards = async (): Promise<StudentCard[]> => {
   try {
-    checkAuth()
+    const pb = await getPocketBase()
+    await checkAuth(pb)
     console.log('PocketBase认证状态:', pb.authStore.isValid)
     
     const records = await pb.collection('students_card').getFullList({
@@ -94,7 +95,6 @@ export const getAllStudentCards = async (): Promise<StudentCard[]> => {
     return records as StudentCard[]
   } catch (error) {
     console.error('获取学生卡片列表失败:', error)
-    console.error('PocketBase认证状态:', pb.authStore.isValid)
     throw error
   }
 }
