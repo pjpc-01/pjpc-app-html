@@ -22,7 +22,7 @@ interface StudentCardProps {
   student: Student
   isExpanded: boolean
   onToggleExpansion: () => void
-  activeFees: Fee[]
+  activeFees: Fee[] // This prop name is kept for compatibility, but now contains all fees
   groupedFees: Record<string, Fee[]>
   expandedCategories: Set<string>
   onToggleCategory: (category: string) => void
@@ -33,7 +33,7 @@ interface StudentCardProps {
   onCreateInvoice: (studentId: string) => void
   editMode: boolean
   isAssigned: (studentId: string, feeId: string) => boolean
-  assignFeeToStudent: (studentId: string, feeId: string, subItemStates?: Record<string, boolean>) => void
+  assignFeeToStudent: (studentId: string, feeId: string) => void
   removeFeeFromStudent: (studentId: string, feeId: string) => void
   hasInvoiceThisMonth: (studentId: string) => boolean
   batchMode: boolean
@@ -65,7 +65,7 @@ export const StudentCard = ({
   const toggleFeeAssignment = (feeId: string) => {
     if (!editMode) return
 
-    console.log('👤 [费用分配] Student name:', student.name)
+    console.log('👤 [费用分配] Student name:', student.student_name)
     
     if (batchMode) {
       console.log('🔄 [费用分配] Batch mode - toggling for all students')
@@ -118,9 +118,9 @@ export const StudentCard = ({
                   <ChevronRight className="h-4 w-4 text-gray-500" />
                 )}
                 <div>
-                  <h3 className="font-medium text-gray-900">{student.name}</h3>
+                  <h3 className="font-medium text-gray-900">{student.student_name}</h3>
                   <p className="text-sm text-gray-600">
-                    {student.grade} • 学号: {student.studentId}
+                    {student.standard} • 学号: {student.student_id}
                   </p>
                 </div>
               </div>
@@ -215,25 +215,33 @@ export const StudentCard = ({
                         </CollapsibleTrigger>
                         
                         <CollapsibleContent>
-                          <CardContent className="pt-0">
-                            <div className="space-y-2">
+                          <CardContent className="pt-0 px-4 pb-4">
+                            <div className="space-y-3">
                               {categoryFees.map((fee) => (
-                                <div key={fee.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border-l-2 border-blue-200">
-                                  <div className="flex items-center gap-4">
-                                    <div>
-                                      <span className="text-sm font-medium">{fee.name}</span>
+                                <div key={fee.id} className="flex items-center justify-between p-4 rounded-lg border bg-white hover:bg-gray-50 transition-colors">
+                                  <div className="flex items-center gap-6 flex-1">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-sm font-medium text-gray-900 truncate">
+                                        {fee.name}
+                                      </div>
                                       {fee.description && (
-                                        <div className="text-xs text-gray-500">{fee.description}</div>
+                                        <div className="text-xs text-gray-500 mt-1 truncate">
+                                          {fee.description}
+                                        </div>
                                       )}
                                     </div>
-                                    <ToggleSwitch
-                                      checked={isAssigned(studentId, fee.id)}
-                                      onChange={() => toggleFeeAssignment(fee.id)}
-                                      disabled={!editMode}
-                                      className={!editMode ? "opacity-50 cursor-not-allowed" : ""}
-                                    />
+                                    <div className="flex items-center gap-4">
+                                      <span className="text-sm font-medium text-blue-600 whitespace-nowrap">
+                                        RM {fee.amount}
+                                      </span>
+                                      <ToggleSwitch
+                                        checked={isAssigned(studentId, fee.id)}
+                                        onChange={() => toggleFeeAssignment(fee.id)}
+                                        disabled={!editMode}
+                                        className={!editMode ? "opacity-50 cursor-not-allowed" : ""}
+                                      />
+                                    </div>
                                   </div>
-                                  <span className="text-sm font-medium text-blue-600">RM {fee.amount}</span>
                                 </div>
                               ))}
                             </div>
@@ -262,7 +270,7 @@ export const StudentCard = ({
           <AlertDialogHeader>
             <AlertDialogTitle>确认开具发票</AlertDialogTitle>
             <AlertDialogDescription>
-              您确定要为 {student.name} 开具发票吗？这将创建一个新的发票记录。
+                                您确定要为 {student.student_name} 开具发票吗？这将创建一个新的发票记录。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
