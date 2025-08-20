@@ -583,82 +583,138 @@ export default function StudentManagementPage() {
 
       {/* 学生列表 */}
       {viewMode === 'table' && (
-        <Card>
+        <>
+          {loading && (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-2 text-gray-600">加载学生数据中...</p>
+              </div>
+            </div>
+          )}
+                    {!loading && (
+            <>
+              {paginatedStudents.length === 0 ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center">
+                    <div className="text-gray-400 mb-4">
+                      <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-gray-600">暂无学生数据</p>
+                    <p className="text-sm text-gray-400 mt-1">请添加学生或调整筛选条件</p>
+                  </div>
+                </div>
+              ) : (
+                <Card className="border-0 shadow-sm">
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto min-w-full">
+              <Table className="border-collapse w-full">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
+                  <TableRow className="bg-gray-50 border-b-2 border-gray-200">
+                    <TableHead className="w-12 px-4 py-3">
                       <Checkbox
                         checked={selectedStudents.length === filteredStudents.length && filteredStudents.length > 0}
                         onCheckedChange={handleSelectAll}
                       />
                     </TableHead>
-                    <TableHead>学生信息</TableHead>
-                    <TableHead>年级</TableHead>
-                    <TableHead>中心</TableHead>
-                    <TableHead>家长信息</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead className="font-semibold px-4 py-3">学生信息</TableHead>
+                    <TableHead className="font-semibold px-4 py-3">年级</TableHead>
+                    <TableHead className="font-semibold px-4 py-3">中心</TableHead>
+                    <TableHead className="font-semibold px-4 py-3">服务类型</TableHead>
+                    <TableHead className="font-semibold px-4 py-3">家长联系方式</TableHead>
+                    <TableHead className="font-semibold px-4 py-3">学费状态</TableHead>
+                    <TableHead className="font-semibold px-4 py-3">操作</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedStudents.map((student) => (
-                    <TableRow key={student.id}>
-                      <TableCell>
+                    <TableRow key={student.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100">
+                      <TableCell className="px-4 py-3">
                         <Checkbox
                           checked={selectedStudents.includes(student.id)}
                           onCheckedChange={(checked) => handleSelectStudent(student.id, checked as boolean)}
                         />
                       </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{student.student_name}</div>
-                          <div className="text-sm text-gray-500">{student.student_id}</div>
+                      <TableCell className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1">
+                            <div className="font-semibold text-base">{student.student_name}</div>
+                            <div className="text-sm text-gray-600 font-medium">学号: {student.student_id}</div>
+                          </div>
+                          {student.status && (
+                            <Badge 
+                              variant={student.status === 'active' ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {student.status === 'active' ? '在读' : '离校'}
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
+                      <TableCell className="px-4 py-3">
+                        <Badge variant="outline" className="font-medium">
                           {convertGradeToChinese(student.standard || '')}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">
+                      <TableCell className="px-4 py-3">
+                        <Badge variant="secondary" className="font-medium">
                           {student.center || '未设置'}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="text-sm">{student.parentName}</div>
-                          <div className="text-xs text-gray-500">{student.email}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
-                          {student.status === 'active' ? '在读' : '离校'}
+                      <TableCell className="px-4 py-3">
+                        <Badge variant="outline" className="text-gray-600">
+                          {student.serviceType === 'afterschool' ? '课后班' : 
+                           student.serviceType === 'tuition' ? '补习班' : 
+                           student.serviceType || '未知'}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                      <TableCell className="px-4 py-3">
+                        <div className="font-medium text-sm">
+                          {student.parentPhone || student.father_phone || student.mother_phone || '-'}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
+                        <Badge 
+                          variant={student.tuitionStatus === 'paid' ? 'default' : 
+                                  student.tuitionStatus === 'overdue' ? 'destructive' : 
+                                  'outline'}
+                          className="text-xs"
+                        >
+                          {student.tuitionStatus === 'paid' ? '已缴费' : 
+                           student.tuitionStatus === 'pending' ? '待缴费' : 
+                           student.tuitionStatus === 'partial' ? '部分缴费' : 
+                           student.tuitionStatus === 'overdue' ? '逾期' : 
+                           '-'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
+                        <div className="flex items-center gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
                             onClick={() => setViewingStudent(student)}
+                            title="查看详情"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600"
                             onClick={() => setEditingStudent(student)}
+                            title="编辑学生"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
                             onClick={() => handleDeleteStudent(student.id)}
+                            title="删除学生"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -671,6 +727,10 @@ export default function StudentManagementPage() {
             </div>
           </CardContent>
         </Card>
+              )}
+            </>
+          )}
+        </>
       )}
 
       {/* 网格视图 */}
