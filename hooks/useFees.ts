@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react"
-import { pb } from "@/lib/pocketbase"
+import { getPocketBase } from "@/lib/pocketbase"
 import type { Fee } from "@/types/fees"
 
 export const useFees = () => {
@@ -8,7 +8,7 @@ export const useFees = () => {
   const [error, setError] = useState<string | null>(null)
   const isMounted = useRef(true)
 
-  // Map PB -> Fee (matches PocketBase fees_items schema exactly)
+  // Map PB → Fee (matches PocketBase fees_items schema exactly)
   const mapRecordToFee = (r: any): Fee => ({
     id: r.id,
     name: r.name ?? "Unnamed",
@@ -22,78 +22,74 @@ export const useFees = () => {
   })
 
   const loadFees = useCallback(async () => {
-    console.log("loadFees STARTED (before try block)")
-    console.log("Current state before loadFees:", { fees: fees.length, loading, error })
+    if (!isMounted.current) return
     
     setLoading(true)
     setError(null)
-    console.log("setLoading(true) called")
     
     try {
-      console.log("About to call pb.collection('fees_items').getFullList")
-      console.log("PocketBase URL:", pb.baseUrl)
-      console.log("Auth status:", pb.authStore.isValid)
-      
+      const pb = await getPocketBase()
       const records = await pb.collection("fees_items").getFullList(200, {
         sort: "category",
-        requestKey: null, // prevent auto-cancel
+        requestKey: null, // ✅ prevent auto-cancel
       })
-      
-      console.log("Raw PocketBase response:", records)
-      console.log("Records length:", records?.length || 0)
       
       if (isMounted.current) {
         const mappedFees = records.map(mapRecordToFee)
-        console.log("Mapped fees:", mappedFees)
         setFees(mappedFees)
-        console.log("setFees called with", mappedFees.length, "items")
-      } else {
-        console.log("Component unmounted, skipping setFees")
       }
     } catch (err: any) {
-      console.error("Load fees failed:", err)
-      console.error("Error details:", {
-        name: err.name,
-        message: err.message,
-        stack: err.stack
-      })
+      console.error("❌ Load fees failed:", err)
       if (isMounted.current) {
         setError(err.message ?? "Failed to load fees")
-        console.log("setError called with:", err.message ?? "Failed to load fees")
       }
     } finally {
-      console.log("Finally block reached")
       if (isMounted.current) {
         setLoading(false)
-        console.log("setLoading(false) called")
-      } else {
-        console.log("Component unmounted, skipping setLoading(false)")
       }
     }
   }, [])
 
   const createFee = useCallback(async (feeData: Omit<Fee, "id">) => {
-    const created = await pb.collection("fees_items").create(feeData, {
-      requestKey: null, // prevent auto-cancel
-    })
-    const mapped = mapRecordToFee(created)
-    setFees(prev => [...prev, mapped])
-    return mapped
+    try {
+      const pb = await getPocketBase()
+      const created = await pb.collection("fees_items").create(feeData, {
+        requestKey: null, // ✅ prevent auto-cancel
+      })
+      const mapped = mapRecordToFee(created)
+      setFees(prev => [...prev, mapped])
+      return mapped
+    } catch (err: any) {
+      console.error("❌ Create fee failed:", err)
+      throw err
+    }
   }, [])
 
   const updateFee = useCallback(async (id: string, updates: Partial<Fee>) => {
-    const updated = await pb.collection("fees_items").update(id, updates, {
-      requestKey: null, // prevent auto-cancel
-    })
-    const mapped = mapRecordToFee(updated)
-    setFees(prev => prev.map(f => (f.id === id ? mapped : f)))
+    try {
+      const pb = await getPocketBase()
+      const updated = await pb.collection("fees_items").update(id, updates, {
+        requestKey: null, // ✅ prevent auto-cancel
+      })
+      const mapped = mapRecordToFee(updated)
+      setFees(prev => prev.map(f => (f.id === id ? mapped : f)))
+    } catch (err: any) {
+      console.error("❌ Update fee failed:", err)
+      throw err
+    }
   }, [])
 
   const deleteFee = useCallback(async (id: string) => {
-    await pb.collection("fees_items").delete(id, {
-      requestKey: null, // prevent auto-cancel
-    })
-    setFees(prev => prev.filter(f => f.id !== id))
+    try {
+      const pb = await getPocketBase()
+      await pb.collection("fees_items").delete(id, {
+        requestKey: null, // ✅ prevent auto-cancel
+      })
+      setFees(prev => prev.filter(f => f.id !== id))
+    } catch (err: any) {
+      console.error("❌ Delete fee failed:", err)
+      throw err
+    }
   }, [])
 
   const filterFees = useCallback(
@@ -106,21 +102,16 @@ export const useFees = () => {
   )
 
   useEffect(() => {
-    console.log("useFees useEffect triggered")
-    console.log("Initial state:", { fees: fees.length, loading, error })
-    
-    // Mark component as mounted
+    // ✅ Mark component as mounted
     isMounted.current = true
     
     // Load the fees
     loadFees()
     
     return () => {
-      console.log("useFees cleanup - setting isMounted to false")
       isMounted.current = false
     }
-  }, []) // Remove loadFees from dependency array
+  }, []) // Remove loadFees from dependency array to prevent infinite loop
 
-  console.log("useFees hook returning:", { fees: fees.length, loading, error: error?.substring(0, 50) })
   return { fees, loading, error, createFee, updateFee, deleteFee, loadFees, filterFees }
-}
+} 

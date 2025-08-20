@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { pb } from '@/lib/pocketbase'
+import { getPocketBase } from '@/lib/pocketbase'
 
 export interface UserRecord {
   id: string
@@ -42,6 +42,7 @@ export function useUserApproval() {
       setLoading(true)
       setError(null)
       
+      const pb = await getPocketBase()
       console.log('开始获取用户数据...')
       console.log('PocketBase URL:', pb.baseUrl)
       console.log('认证状态:', pb.authStore.isValid)
@@ -144,6 +145,7 @@ export function useUserApproval() {
     try {
       setError(null)
       
+      const pb = await getPocketBase()
       const updateData: any = {
         status: 'approved',
         approvedAt: new Date().toISOString()
@@ -185,6 +187,7 @@ export function useUserApproval() {
     try {
       setError(null)
       
+      const pb = await getPocketBase()
       const updateData: any = {
         status: 'suspended',
         approvedAt: new Date().toISOString()

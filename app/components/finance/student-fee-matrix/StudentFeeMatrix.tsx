@@ -19,7 +19,7 @@ export const StudentFeeMatrix = () => {
     loading: studentFeesLoading,
     error: studentFeesError,
     isAssigned, 
-    calculateStudentTotal,
+    getStudentAmount,
     assignFeeToStudent,
     removeFeeFromStudent,
     isEditMode: hookEditMode,
@@ -37,51 +37,23 @@ export const StudentFeeMatrix = () => {
   const [selectedGradeFilter, setSelectedGradeFilter] = useState<string>("all")
   const [batchMode, setBatchMode] = useState(false)
 
-  // Show loading state if student fees are loading
-  if (studentFeesLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">正在加载学生费用分配数据...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Show error state if there's an error
-  if (studentFeesError) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="text-red-600 mb-4">
-            <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <p className="text-gray-800 font-medium mb-2">加载失败</p>
-          <p className="text-gray-600 text-sm">{studentFeesError}</p>
-        </div>
-      </div>
-    )
-  }
-
-  const activeFees = fees.filter(fee => fee.status === 'active')
+  // Show all fees regardless of status - status is just for display in fee management
+  const allFees = fees
 
   // Group fees by category
   const groupedFees = useMemo(() => {
-    return activeFees.reduce((groups, fee) => {
+    return allFees.reduce((groups, fee) => {
       const category = fee.category || "未分类"
       if (!groups[category]) {
         groups[category] = []
       }
       groups[category].push(fee)
       return groups
-    }, {} as Record<string, typeof activeFees>)
-  }, [activeFees])
+    }, {} as Record<string, typeof allFees>)
+  }, [allFees])
 
-  // Get unique categories from active fees
-  const categories = [...new Set(activeFees.map(fee => fee.category).filter(Boolean))]
+  // Get unique categories from all fees
+  const categories = [...new Set(allFees.map(fee => fee.category).filter(Boolean))]
 
   // Filter students based on search term, grade filter, and exclude graduated students
   const filteredStudents = useMemo(() => {
@@ -90,17 +62,17 @@ export const StudentFeeMatrix = () => {
       if (student.status === 'graduated') return false
       
       // Apply grade filter
-      if (selectedGradeFilter !== "all" && student.grade !== selectedGradeFilter) return false
+      if (selectedGradeFilter !== "all" && student.standard !== selectedGradeFilter) return false
       
       // Apply search term filter
       if (!searchTerm.trim()) return true
       
       const searchLower = searchTerm.toLowerCase()
       return (
-        student.name.toLowerCase().includes(searchLower) ||
-        student.studentId.toLowerCase().includes(searchLower) ||
-        student.grade.toLowerCase().includes(searchLower) ||
-        student.parentName.toLowerCase().includes(searchLower)
+        student.student_name?.toLowerCase().includes(searchLower) ||
+        student.student_id?.toLowerCase().includes(searchLower) ||
+        student.standard?.toLowerCase().includes(searchLower) ||
+        student.parentName?.toLowerCase().includes(searchLower)
       )
     })
   }, [students, searchTerm, selectedGradeFilter])
@@ -108,8 +80,8 @@ export const StudentFeeMatrix = () => {
   // Get available grades from all students (excluding graduated) in ascending order
   const availableGrades = useMemo(() => {
     const grades = [...new Set(students
-      .filter(student => student.status !== 'graduated')
-      .map(s => s.grade))]
+      .filter(student => student.status !== 'graduated' && student.standard)
+      .map(s => s.standard!))]
     
     return grades.sort((a, b) => {
       // Handle Chinese grade names (一年级, 二年级, etc.)
@@ -144,6 +116,35 @@ export const StudentFeeMatrix = () => {
       return a.localeCompare(b)
     })
   }, [students])
+
+  // Show loading state if student fees are loading
+  if (studentFeesLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">正在加载学生费用分配数据...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state if there's an error
+  if (studentFeesError) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <p className="text-gray-800 font-medium mb-2">加载失败</p>
+          <p className="text-gray-600 text-sm">{studentFeesError}</p>
+        </div>
+      </div>
+    )
+  }
 
   const toggleStudentExpansion = (studentId: string) => {
     setExpandedStudents(prev => {
@@ -223,19 +224,19 @@ export const StudentFeeMatrix = () => {
     const student = students.find(s => s.id === studentId)
     if (!student) return
 
-    // Calculate total amount for the student
-    const studentTotal = calculateStudentTotal(studentId, activeFees)
+    // Get the actual amount from PocketBase
+    const studentTotal = getStudentAmount(studentId, allFees)
     
     // Create invoice items based on assigned fees
-    const invoiceItems = activeFees
+    const invoiceItems = allFees
       .filter(fee => isAssigned(studentId, fee.id))
       .map(fee => ({ name: fee.name, amount: fee.amount }))
 
     // Create the actual invoice
     const newInvoice = createInvoiceFromHook({
       studentId: studentId,
-      studentName: student.name,
-      studentGrade: student.grade,
+      studentName: student.student_name || '',
+      studentGrade: student.standard || '',
       totalAmount: studentTotal,
       items: invoiceItems,
       status: 'issued',
@@ -345,7 +346,7 @@ export const StudentFeeMatrix = () => {
           filteredStudents.map(student => {
             const studentId = student.id
             const isExpanded = expandedStudents.includes(studentId)
-            const studentTotal = calculateStudentTotal(studentId, activeFees)
+            const studentTotal = getStudentAmount(studentId, allFees)
             
             return (
               <StudentCard
@@ -353,7 +354,7 @@ export const StudentFeeMatrix = () => {
                 student={student}
                 isExpanded={isExpanded}
                 onToggleExpansion={() => toggleStudentExpansion(studentId)}
-                activeFees={activeFees}
+                activeFees={allFees}
                 groupedFees={groupedFees}
                 expandedCategories={expandedCategories}
                 onToggleCategory={toggleCategory}

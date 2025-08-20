@@ -49,21 +49,26 @@ export default function StudentsTab({
   const filteredStudents = useMemo(() => {
     let filtered = students
 
-    if (searchTerm) {
-      filtered = filtered.filter(student => 
-        student.student_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.student_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.standard?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.Center?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.gender?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.serviceType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.father_phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.mother_phone?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    }
+         if (searchTerm) {
+       filtered = filtered.filter(student => 
+         student.student_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         student.student_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         student.standard?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         student.center?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         student.gender?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         student.serviceType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         student.nric?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         student.school?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         student.parentPhone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         student.emergencyContact?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         student.emergencyPhone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         student.father_phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         student.mother_phone?.toLowerCase().includes(searchTerm.toLowerCase())
+       )
+     }
 
     if (selectedCenter !== 'all') {
-      filtered = filtered.filter(student => student.Center === selectedCenter)
+      filtered = filtered.filter(student => student.center === selectedCenter)
     }
 
     if (selectedGrade !== 'all') {
@@ -181,12 +186,12 @@ export default function StudentsTab({
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="搜索学生姓名、学号、年级、中心、性别、服务类型或家长电话..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+                                 <Input
+                   placeholder="搜索学生姓名、学号、NRIC、学校、年级、中心、服务类型或联系方式..."
+                   value={searchTerm}
+                   onChange={(e) => setSearchTerm(e.target.value)}
+                   className="pl-10"
+                 />
               </div>
             </div>
             <Select value={selectedCenter} onValueChange={(value) => {
@@ -229,11 +234,11 @@ export default function StudentsTab({
                 <TableRow>
                   <TableHead>学生信息</TableHead>
                   <TableHead>年级</TableHead>
+                  <TableHead>学校</TableHead>
                   <TableHead>中心</TableHead>
-                  <TableHead>性别</TableHead>
                   <TableHead>服务类型</TableHead>
                   <TableHead>家长联系方式</TableHead>
-                  <TableHead>打卡信息</TableHead>
+                  <TableHead>学费状态</TableHead>
                   <TableHead>操作</TableHead>
                 </TableRow>
               </TableHeader>
@@ -250,12 +255,10 @@ export default function StudentsTab({
                       <Badge variant="outline">{convertGradeToChinese(student.standard || '')}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{student.Center || '未知'}</Badge>
+                      <div className="text-sm">{student.school || '-'}</div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">
-                        {student.gender === 'male' ? '男' : student.gender === 'female' ? '女' : '未知'}
-                      </Badge>
+                      <Badge variant="secondary">{student.center || '未知'}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">
@@ -264,38 +267,29 @@ export default function StudentsTab({
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        {student.father_phone && (
+                        {student.parentPhone && (
                           <div className="flex items-center gap-1">
-                            <span className="text-xs">父: {student.father_phone}</span>
+                            <span className="text-xs">{student.parentPhone}</span>
                           </div>
                         )}
-                        {student.mother_phone && (
+                        {student.emergencyPhone && (
                           <div className="flex items-center gap-1">
-                            <span className="text-xs">母: {student.mother_phone}</span>
+                            <span className="text-xs">紧急: {student.emergencyPhone}</span>
                           </div>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="space-y-1">
-                        {student.cardNumber ? (
-                          <>
-                            <Badge variant={student.status === 'active' ? 'default' : 'destructive'}>
-                              {student.status === 'active' ? '激活' : student.status}
-                            </Badge>
-                            <div className="text-xs text-gray-500">
-                              {student.cardType} - {student.cardNumber}
-                            </div>
-                            {student.lastUsed && (
-                              <div className="text-xs text-gray-400">
-                                最后使用: {new Date(student.lastUsed).toLocaleDateString()}
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <Badge variant="destructive">无卡</Badge>
-                        )}
-                      </div>
+                      <Badge variant={
+                        student.tuitionStatus === 'paid' ? 'default' : 
+                        student.tuitionStatus === 'partial' ? 'secondary' : 
+                        student.tuitionStatus === 'overdue' ? 'destructive' : 'outline'
+                      }>
+                        {student.tuitionStatus === 'pending' ? '待付款' : 
+                         student.tuitionStatus === 'paid' ? '已付款' : 
+                         student.tuitionStatus === 'partial' ? '部分付款' : 
+                         student.tuitionStatus === 'overdue' ? '逾期' : '-'}
+                      </Badge>
                     </TableCell>
 
                     <TableCell>
