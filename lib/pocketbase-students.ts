@@ -21,7 +21,29 @@ export interface Student {
   register_form_url?: string
   standard?: string
   level?: 'primary' | 'secondary'
-  Center?: 'WX 01' | 'WX 02' | 'WX 03' | 'WX 04'
+  center?: 'WX 01' | 'WX 02' | 'WX 03' | 'WX 04'
+  // 新增字段
+  nric?: string
+  school?: string
+  parentPhone?: string
+  emergencyContact?: string
+  emergencyPhone?: string
+  healthInfo?: string
+  pickupMethod?: 'parent' | 'guardian' | 'authorized' | 'public' | 'walking'
+  // 接送安排 - 方式A：固定字段（最多3个授权接送人）
+  authorizedPickup1Name?: string
+  authorizedPickup1Phone?: string
+  authorizedPickup1Relation?: string
+  authorizedPickup2Name?: string
+  authorizedPickup2Phone?: string
+  authorizedPickup2Relation?: string
+  authorizedPickup3Name?: string
+  authorizedPickup3Phone?: string
+  authorizedPickup3Relation?: string
+  registrationDate?: string
+  tuitionStatus?: 'pending' | 'paid' | 'partial' | 'overdue'
+  birthCertificate?: string | null // 对应PocketBase的birthCert字段
+  avatar?: string | null // 对应PocketBase的photo字段
   
   // 打卡信息 (来自 students_card 集合)
   cardNumber?: string
@@ -35,9 +57,7 @@ export interface Student {
   phone?: string
   email?: string
   parentName?: string
-  parentPhone?: string
   address?: string
-  emergencyContact?: string
   medicalInfo?: string
   notes?: string
   usageCount?: number
@@ -61,7 +81,29 @@ export interface StudentCreateData {
   register_form_url?: string
   standard?: string
   level?: 'primary' | 'secondary'
-  Center?: 'WX 01' | 'WX 02' | 'WX 03' | 'WX 04'
+  center?: 'WX 01' | 'WX 02' | 'WX 03' | 'WX 04'
+  // 新增字段
+  nric?: string
+  school?: string
+  parentPhone?: string
+  emergencyContact?: string
+  emergencyPhone?: string
+  healthInfo?: string
+  pickupMethod?: 'parent' | 'guardian' | 'authorized' | 'public' | 'walking'
+  // 接送安排 - 方式A：固定字段（最多3个授权接送人）
+  authorizedPickup1Name?: string
+  authorizedPickup1Phone?: string
+  authorizedPickup1Relation?: string
+  authorizedPickup2Name?: string
+  authorizedPickup2Phone?: string
+  authorizedPickup2Relation?: string
+  authorizedPickup3Name?: string
+  authorizedPickup3Phone?: string
+  authorizedPickup3Relation?: string
+  registrationDate?: string
+  tuitionStatus?: 'pending' | 'paid' | 'partial' | 'overdue'
+  birthCertificate?: string | null // 对应PocketBase的birthCert字段
+  avatar?: string | null // 对应PocketBase的photo字段
   
   // 打卡信息
   cardNumber?: string
@@ -75,9 +117,7 @@ export interface StudentCreateData {
   phone?: string
   email?: string
   parentName?: string
-  parentPhone?: string
   address?: string
-  emergencyContact?: string
   medicalInfo?: string
   notes?: string
 }
@@ -140,19 +180,40 @@ export const getAllStudents = async (): Promise<Student[]> => {
       return {
         id: card.id, // 这是 students_card 的 ID
         studentRecordId: student?.id, // 这是 students 的 ID，用于更新操作
-        // 基本信息（优先使用 students 集合的数据，如果没有则使用 students_card 的数据）
-        student_id: card.studentId,
-        student_name: card.studentName,
-        dob: student?.dob,
-        father_phone: student?.father_phone,
-        mother_phone: student?.mother_phone,
-        home_address: student?.home_address,
-        gender: student?.gender,
-        serviceType: student?.serviceType,
-        register_form_url: student?.register_form_url,
-        standard: student?.standard,
-        level: student?.level,
-        Center: card.center || student?.center,
+                 // 基本信息（优先使用 students 集合的数据，如果没有则使用 students_card 的数据）
+         student_id: card.studentId,
+         student_name: card.studentName,
+         dob: student?.dob,
+         father_phone: student?.father_phone,
+         mother_phone: student?.mother_phone,
+         home_address: student?.home_address,
+         gender: student?.gender,
+         serviceType: student?.serviceType,
+         register_form_url: student?.register_form_url,
+         standard: student?.standard,
+         level: student?.level,
+         center: card.center || student?.center,
+         // 新增字段
+         nric: student?.nric,
+         school: student?.school,
+         parentPhone: student?.parents_phone, // 映射PocketBase的parents_phone字段
+         emergencyContact: student?.emergencyContact,
+         emergencyPhone: student?.emergencyPhone,
+         healthInfo: student?.healthInfo,
+         pickupMethod: student?.pickupMethod,
+         authorizedPickup1Name: student?.authorizedPickup1Name,
+         authorizedPickup1Phone: student?.authorizedPickup1Phone,
+         authorizedPickup1Relation: student?.authorizedPickup1Relation,
+         authorizedPickup2Name: student?.authorizedPickup2Name,
+         authorizedPickup2Phone: student?.authorizedPickup2Phone,
+         authorizedPickup2Relation: student?.authorizedPickup2Relation,
+         authorizedPickup3Name: student?.authorizedPickup3Name,
+         authorizedPickup3Phone: student?.authorizedPickup3Phone,
+         authorizedPickup3Relation: student?.authorizedPickup3Relation,
+         registrationDate: student?.registrationDate,
+         tuitionStatus: student?.tuitionStatus,
+         birthCertificate: student?.birthCert, // 映射PocketBase的birthCert字段
+         avatar: student?.photo, // 映射PocketBase的photo字段
         // 打卡信息（来自 students_card）
         cardNumber: card.cardNumber,
         cardType: card.cardType,
@@ -164,10 +225,8 @@ export const getAllStudents = async (): Promise<Student[]> => {
         enrollmentDate: card.enrollmentDate,
         phone: card.phone,
         email: card.email,
-        parentName: card.parentName,
-        parentPhone: card.parentPhone,
+        parentName: student?.parents_name || card.parentName, // 优先使用students集合的parents_name
         address: card.address,
-        emergencyContact: card.emergencyContact,
         medicalInfo: card.medicalInfo,
         notes: card.notes,
         usageCount: card.usageCount,
@@ -235,14 +294,35 @@ export const addStudent = async (studentData: StudentCreateData): Promise<Studen
       }
     }
     
-    // 准备完整的学生数据
-    const completeStudentData = {
-      ...studentData,
-      // 确保有默认的Center值
-      Center: studentData.Center || 'WX 01',
-      // 根据年级自动设置level
-      level: studentData.level || (parseInt(studentData.standard || '0') <= 6 ? 'primary' : 'secondary')
-    }
+         // 准备完整的学生数据
+     const completeStudentData = {
+       ...studentData,
+       // 确保有默认的center值
+       center: studentData.center || 'WX 01',
+       // 根据年级自动设置level
+       level: studentData.level || (parseInt(studentData.standard || '0') <= 6 ? 'primary' : 'secondary'),
+       // 确保有默认的注册日期
+       registrationDate: studentData.registrationDate || new Date().toISOString().split('T')[0],
+       // 确保有默认的学费状态
+       tuitionStatus: studentData.tuitionStatus || 'pending',
+                // 字段映射：将前端字段映射到PocketBase字段
+       birthCert: studentData.birthCertificate, // birthCertificate -> birthCert
+       photo: studentData.avatar, // avatar -> photo
+       // 家长信息字段映射
+       parents_name: studentData.parentName, // parentName -> parents_name
+       parents_phone: studentData.parentPhone, // parentPhone -> parents_phone
+       // 其他字段映射
+       school: studentData.school, // school -> school
+       gender: studentData.gender, // gender -> gender
+       nric: studentData.nric, // nric -> nric
+       pickupMethod: studentData.pickupMethod // pickupMethod -> pickupMethod
+     } as any
+     
+     // 移除前端字段，避免PocketBase错误
+     delete completeStudentData.birthCertificate
+     delete completeStudentData.avatar
+     delete completeStudentData.parentName
+     delete completeStudentData.parentPhone
     
     console.log(`添加到students集合`)
     
@@ -254,7 +334,7 @@ export const addStudent = async (studentData: StudentCreateData): Promise<Studen
     const cardData = {
       studentName: studentRecord.student_name,
       studentId: studentRecord.student_id,
-      center: studentRecord.Center,
+      center: studentRecord.center,
       cardNumber: studentRecord.student_id, // 使用学号作为卡号
       cardType: 'NFC',
       status: 'active',
@@ -361,8 +441,42 @@ export const updateStudent = async (studentData: StudentUpdateData): Promise<Stu
       throw new Error(`学生记录不存在 (ID: ${targetId})`)
     }
     
+    // 字段映射：将前端字段映射到PocketBase字段
+    const mappedUpdateData = { ...updateData } as any
+    if (updateData.birthCertificate !== undefined) {
+      mappedUpdateData.birthCert = updateData.birthCertificate
+      delete mappedUpdateData.birthCertificate
+    }
+    if (updateData.avatar !== undefined) {
+      mappedUpdateData.photo = updateData.avatar
+      delete mappedUpdateData.avatar
+    }
+    if (updateData.parentName !== undefined) {
+      mappedUpdateData.parents_name = updateData.parentName
+      delete mappedUpdateData.parentName
+    }
+    if (updateData.parentPhone !== undefined) {
+      mappedUpdateData.parents_phone = updateData.parentPhone
+      delete mappedUpdateData.parentPhone
+    }
+    // 其他字段映射（这些字段名称相同，但确保类型正确）
+    if (updateData.school !== undefined) {
+      mappedUpdateData.school = updateData.school
+    }
+    if (updateData.gender !== undefined) {
+      mappedUpdateData.gender = updateData.gender
+    }
+    if (updateData.nric !== undefined) {
+      mappedUpdateData.nric = updateData.nric
+    }
+    if (updateData.pickupMethod !== undefined) {
+      mappedUpdateData.pickupMethod = updateData.pickupMethod
+    }
+    
+    console.log('映射后的更新数据:', mappedUpdateData)
+    
     // 更新学生记录
-    const record = await pb.collection(targetCollection).update(targetId, updateData)
+    const record = await pb.collection(targetCollection).update(targetId, mappedUpdateData)
     
     return record as unknown as Student
   } catch (error: any) {
@@ -373,14 +487,19 @@ export const updateStudent = async (studentData: StudentUpdateData): Promise<Stu
       const data = error.data
       const errorMessages = []
       
-      if (data.student_name?.message) errorMessages.push(`姓名: ${data.student_name.message}`)
-      if (data.student_id?.message) errorMessages.push(`学号: ${data.student_id.message}`)
-      if (data.standard?.message) errorMessages.push(`年级: ${data.standard.message}`)
-      if (data.Center?.message) errorMessages.push(`中心: ${data.Center.message}`)
-      if (data.serviceType?.message) errorMessages.push(`服务类型: ${data.serviceType.message}`)
-      if (data.gender?.message) errorMessages.push(`性别: ${data.gender.message}`)
-      if (data.dob?.message) errorMessages.push(`出生日期: ${data.dob.message}`)
-      if (data.message) errorMessages.push(data.message)
+             if (data.student_name?.message) errorMessages.push(`姓名: ${data.student_name.message}`)
+       if (data.student_id?.message) errorMessages.push(`学号: ${data.student_id.message}`)
+       if (data.standard?.message) errorMessages.push(`年级: ${data.standard.message}`)
+       if (data.center?.message) errorMessages.push(`中心: ${data.center.message}`)
+       if (data.serviceType?.message) errorMessages.push(`服务类型: ${data.serviceType.message}`)
+       if (data.gender?.message) errorMessages.push(`性别: ${data.gender.message}`)
+       if (data.dob?.message) errorMessages.push(`出生日期: ${data.dob.message}`)
+       if (data.nric?.message) errorMessages.push(`NRIC/护照: ${data.nric.message}`)
+       if (data.school?.message) errorMessages.push(`学校: ${data.school.message}`)
+       if (data.parentPhone?.message) errorMessages.push(`父母电话: ${data.parentPhone.message}`)
+       if (data.emergencyContact?.message) errorMessages.push(`紧急联络人: ${data.emergencyContact.message}`)
+       if (data.emergencyPhone?.message) errorMessages.push(`紧急联络电话: ${data.emergencyPhone.message}`)
+       if (data.message) errorMessages.push(data.message)
       
       if (errorMessages.length > 0) {
         throw new Error(`更新失败: ${errorMessages.join(', ')}`)
