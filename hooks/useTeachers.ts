@@ -1,8 +1,40 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getAllTeachers, Teacher as PocketBaseTeacher, addTeacher as addTeacherToPb, updateTeacher as updateTeacherInPb, deleteTeacher as deleteTeacherFromPb } from '@/lib/pocketbase-teachers'
 
-// 使用与 lib/pocketbase-teachers.ts 相同的 Teacher 接口
-export interface Teacher extends PocketBaseTeacher {}
+// 使用应用格式的 Teacher 接口
+export interface Teacher {
+  id: string
+  teacher_name?: string
+  teacher_id?: string
+  email?: string
+  phone?: string
+  department?: string
+  position?: string
+  epfNo?: string
+  socsoNo?: string
+  subjects?: string[]
+  experience?: number
+  status?: 'active' | 'inactive' | 'on_leave'
+  joinDate?: string
+  lastActive?: string
+  courses?: number
+  students?: number
+  address?: string
+  emergencyContact?: string
+  notes?: string
+  // 新增字段
+  taxNo?: string
+  isCitizen?: boolean
+  marriedStatus?: boolean
+  totalChild?: number
+  accountNo?: string
+  // 银行信息
+  bankName?: string
+  bankAccountName?: string
+  bankAccountNo?: string
+  created?: string
+  updated?: string
+}
 
 export const useTeachers = () => {
   const [teachers, setTeachers] = useState<Teacher[]>([])
