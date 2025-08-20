@@ -597,6 +597,7 @@ export default function StudentManagementPage() {
                     </TableHead>
                     <TableHead>学生信息</TableHead>
                     <TableHead>年级</TableHead>
+                    <TableHead>中心</TableHead>
                     <TableHead>家长信息</TableHead>
                     <TableHead>状态</TableHead>
                     <TableHead>操作</TableHead>
@@ -620,6 +621,11 @@ export default function StudentManagementPage() {
                       <TableCell>
                         <Badge variant="outline">
                           {convertGradeToChinese(student.standard || '')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          {student.center || '未设置'}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -687,6 +693,10 @@ export default function StudentManagementPage() {
                   <div className="flex items-center gap-2 text-sm">
                     <GraduationCap className="h-4 w-4 text-gray-400" />
                     <span>{convertGradeToChinese(student.standard || '')}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-gray-400" />
+                    <span>{student.center || '未设置'}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Users className="h-4 w-4 text-gray-400" />
