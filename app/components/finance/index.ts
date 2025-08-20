@@ -1,15 +1,24 @@
-export { default as FeeManagement } from './FeeManagement'
-export { default as InvoiceManagement } from './InvoiceManagement'
-export { default as PaymentManagement } from './PaymentManagement'
-export { default as FinancialReports } from './FinancialReports'
-export { default as ReminderManagement } from './ReminderManagement'
-export { default as InvoiceTemplateManager } from './InvoiceTemplateManager'
-export { default as FinanceManagementPage } from './finance-management-page'
+// Fee Management Components
+export * from './fee-management'
+
+// Invoice Management Components  
+export * from './invoice-management'
+
+// Payment Management Components
+export * from './payment-management'
+
+// Reports & Overview Components
+export * from './reports-overview'
 
 // Student Fee Matrix Components
 export { StudentFeeMatrix } from './student-fee-matrix'
-export { BatchOperationsDialog } from './student-fee-matrix'
 export { StudentCard } from './student-fee-matrix'
 export { SearchAndFilter } from './student-fee-matrix'
 export { StudentFeeMatrixHeader } from './student-fee-matrix'
 export { FeeCard } from './student-fee-matrix'
+
+// Shared Components
+export * from './shared'
+
+// Utility Components
+export { ToggleSwitch } from './ToggleSwitch'
