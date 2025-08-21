@@ -2,7 +2,16 @@ import PocketBase from 'pocketbase'
 import { getPocketBase } from './pocketbase'
 
 // 获取智能PocketBase实例
-const getPb = async () => await getPocketBase()
+const getPb = async () => {
+  try {
+    const pb = await getPocketBase()
+    console.log('✅ PocketBase实例获取成功:', pb.baseUrl)
+    return pb
+  } catch (error) {
+    console.error('❌ PocketBase实例获取失败:', error)
+    throw error
+  }
+}
 
 // 教师数据接口 - 匹配 PocketBase 实际字段
 export interface Teacher {
@@ -29,6 +38,7 @@ export interface TeacherCreateData {
   // 基本表单字段
   teacher_name?: string
   teacher_id?: string
+  nric?: string
   email?: string
   phone?: string
   department?: string
@@ -109,7 +119,8 @@ export const getAllTeachers = async (): Promise<Teacher[]> => {
       return {
         id: item.id,
         teacher_name: item.name,
-        teacher_id: item.epfNo?.toString(),
+        teacher_id: item.idNumber?.toString(),
+        nric: item.nric || '',
         email: item.email,
         phone: item.phone,
         department: item.department,
@@ -191,7 +202,8 @@ export const addTeacher = async (teacherData: TeacherCreateData): Promise<Teache
     if (teacherData.phone) cleanData.phone = teacherData.phone
     if (teacherData.department) cleanData.department = teacherData.department
     if (teacherData.position) cleanData.position = teacherData.position
-    if (teacherData.teacher_id) cleanData.epfNo = parseInt(teacherData.teacher_id) || 0
+    if (teacherData.teacher_id) cleanData.idNumber = parseInt(teacherData.teacher_id) || 0
+    if (teacherData.nric) cleanData.nric = teacherData.nric
     if (teacherData.address) cleanData.address = teacherData.address
     if (teacherData.emergencyContact) cleanData.emergencyContact = teacherData.emergencyContact
     if (teacherData.notes) cleanData.notes = teacherData.notes
@@ -314,7 +326,8 @@ export const updateTeacher = async (teacherData: TeacherUpdateData): Promise<Tea
     if (updateData.phone) mappedUpdateData.phone = updateData.phone
     if (updateData.department) mappedUpdateData.department = updateData.department
     if (updateData.position) mappedUpdateData.position = updateData.position
-    if (updateData.teacher_id) mappedUpdateData.epfNo = parseInt(updateData.teacher_id) || 0
+    if (updateData.teacher_id) mappedUpdateData.idNumber = parseInt(updateData.teacher_id) || 0
+    if (updateData.nric) mappedUpdateData.nric = updateData.nric
     if (updateData.address) mappedUpdateData.address = updateData.address
     if (updateData.emergencyContact) mappedUpdateData.emergencyContact = updateData.emergencyContact
     if (updateData.notes) mappedUpdateData.notes = updateData.notes

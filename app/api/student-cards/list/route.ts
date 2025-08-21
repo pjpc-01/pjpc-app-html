@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
-import { pb } from '@/lib/pocketbase'
+import { getPocketBase } from '@/lib/pocketbase'
 import { StudentCard } from '@/lib/pocketbase-students-card'
 
 export async function GET() {
   try {
     console.log('获取学生卡片列表...')
+    
+    const pb = await getPocketBase()
     console.log('PocketBase 认证状态:', pb.authStore.isValid)
     
     // 检查认证状态，如果未认证则尝试使用默认管理员账户

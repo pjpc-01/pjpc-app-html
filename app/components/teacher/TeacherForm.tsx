@@ -144,6 +144,7 @@ export default function TeacherForm({
   const [formData, setFormData] = useState<Partial<Teacher>>({
     teacher_name: '',
     teacher_id: '',
+    nric: '',
     email: '',
     phone: '',
     department: '',
@@ -174,6 +175,7 @@ export default function TeacherForm({
       setFormData({
         teacher_name: teacher.teacher_name || '',
         teacher_id: teacher.teacher_id || '',
+        nric: teacher.nric || '',
         email: teacher.email || '',
         phone: teacher.phone || '',
         department: teacher.department || '',
@@ -197,6 +199,7 @@ export default function TeacherForm({
       setFormData({
         teacher_name: '',
         teacher_id: '',
+        nric: '',
         email: '',
         phone: '',
         department: '',
@@ -303,6 +306,16 @@ export default function TeacherForm({
                 value={formData.teacher_id}
                 onChange={(e) => handleInputChange('teacher_id', e.target.value)}
                 placeholder="请输入教师工号"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="nric">NRIC 身份证号码</Label>
+              <Input
+                id="nric"
+                value={formData.nric}
+                onChange={(e) => handleInputChange('nric', e.target.value)}
+                placeholder="例如: 880101-01-1234"
               />
             </div>
 

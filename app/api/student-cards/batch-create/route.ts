@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { pb } from '@/lib/pocketbase'
+import { getPocketBase } from '@/lib/pocketbase'
 import { StudentCard } from '@/lib/pocketbase-students-card'
 
 export async function POST(request: NextRequest) {
@@ -14,24 +14,26 @@ export async function POST(request: NextRequest) {
     }
     
     console.log(`开始批量创建 ${cards.length} 个学生卡片...`)
+    
+    const pb = await getPocketBase()
     console.log('PocketBase URL:', pb.baseURL)
     console.log('PocketBase 认证状态:', pb.authStore.isValid)
     
-         // 始终重新认证以确保认证状态
-     console.log('重新认证 PocketBase...')
-     try {
-       const adminEmail = 'pjpcemerlang@gmail.com'
-       const adminPassword = '0122270775Sw!'
-       
-       await pb.admins.authWithPassword(adminEmail, adminPassword)
-       console.log('✅ PocketBase 认证成功')
-     } catch (authError) {
-       console.error('❌ PocketBase 认证失败:', authError)
-       return NextResponse.json({
-         error: 'PocketBase 认证失败，请检查管理员账户配置',
-         details: authError instanceof Error ? authError.message : '未知错误'
-       }, { status: 401 })
-     }
+    // 始终重新认证以确保认证状态
+    console.log('重新认证 PocketBase...')
+    try {
+      const adminEmail = 'pjpcemerlang@gmail.com'
+      const adminPassword = '0122270775Sw!'
+      
+      await pb.admins.authWithPassword(adminEmail, adminPassword)
+      console.log('✅ PocketBase 认证成功')
+    } catch (authError) {
+      console.error('❌ PocketBase 认证失败:', authError)
+      return NextResponse.json({
+        error: 'PocketBase 认证失败，请检查管理员账户配置',
+        details: authError instanceof Error ? authError.message : '未知错误'
+      }, { status: 401 })
+    }
     
     const createdCards: StudentCard[] = []
     const errors: string[] = []

@@ -46,6 +46,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
       filtered = filtered.filter(teacher => 
         teacher.teacher_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         teacher.teacher_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        teacher.nric?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         teacher.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         teacher.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         teacher.position?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -167,7 +168,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="搜索教师姓名、工号、邮箱、部门、职位或电话..."
+                  placeholder="搜索教师姓名、工号、NRIC、邮箱、部门、职位或电话..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -240,6 +241,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
                         <div>
                           <div className="font-medium">{teacher.teacher_name || '未设置'}</div>
                           <div className="text-sm text-gray-500">工号: {teacher.teacher_id || '未设置'}</div>
+                          <div className="text-sm text-gray-500">NRIC: {teacher.nric || '未设置'}</div>
                         </div>
                       </TableCell>
                       <TableCell>

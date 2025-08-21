@@ -56,6 +56,10 @@ export default function TeacherDetails({ open, onOpenChange, teacher }: TeacherD
                 <p className="text-base">{teacher.teacher_id || '未设置'}</p>
               </div>
               <div>
+                <label className="text-sm font-medium text-gray-500">NRIC 身份证号码</label>
+                <p className="text-base">{teacher.nric || '未设置'}</p>
+              </div>
+              <div>
                 <label className="text-sm font-medium text-gray-500">邮箱</label>
                 <p className="text-base">{teacher.email || '未设置'}</p>
               </div>

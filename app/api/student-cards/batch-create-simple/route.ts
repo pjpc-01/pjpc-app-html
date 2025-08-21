@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { pb } from '@/lib/pocketbase'
+import { getPocketBase } from '@/lib/pocketbase'
 import { StudentCard } from '@/lib/pocketbase-students-card'
 
 export async function POST(request: NextRequest) {
@@ -14,6 +14,8 @@ export async function POST(request: NextRequest) {
     }
     
     console.log(`开始批量创建 ${cards.length} 个学生卡片...`)
+    
+    const pb = await getPocketBase()
     
     // 认证
     await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')

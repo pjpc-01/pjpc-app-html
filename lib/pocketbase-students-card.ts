@@ -102,6 +102,7 @@ export const getAllStudentCards = async (): Promise<StudentCard[]> => {
 // 根据级别获取学生卡片
 export const getStudentCardsByLevel = async (level: 'primary' | 'secondary'): Promise<StudentCard[]> => {
   try {
+    const pb = await getPocketBase()
     const records = await pb.collection('students_card').getFullList({
       filter: `level = "${level}"`,
       sort: 'studentId'
@@ -116,6 +117,7 @@ export const getStudentCardsByLevel = async (level: 'primary' | 'secondary'): Pr
 // 根据学号和级别获取学生卡片
 export const getStudentCardById = async (studentId: string, level: 'primary' | 'secondary'): Promise<StudentCard | null> => {
   try {
+    const pb = await getPocketBase()
     const record = await pb.collection('students_card').getFirstListItem(
       `studentId = "${studentId}" && level = "${level}"`
     )
@@ -129,6 +131,7 @@ export const getStudentCardById = async (studentId: string, level: 'primary' | '
 // 根据卡号获取学生卡片
 export const getStudentCardByCardNumber = async (cardNumber: string): Promise<StudentCard | null> => {
   try {
+    const pb = await getPocketBase()
     const record = await pb.collection('students_card').getFirstListItem(
       `cardNumber = "${cardNumber}"`
     )
@@ -142,6 +145,7 @@ export const getStudentCardByCardNumber = async (cardNumber: string): Promise<St
 // 更新学生卡片
 export const updateStudentCard = async (id: string, data: Partial<StudentCard>): Promise<StudentCard> => {
   try {
+    const pb = await getPocketBase()
     const record = await pb.collection('students_card').update(id, data)
     return record as StudentCard
   } catch (error) {
@@ -153,6 +157,7 @@ export const updateStudentCard = async (id: string, data: Partial<StudentCard>):
 // 删除学生卡片
 export const deleteStudentCard = async (id: string): Promise<void> => {
   try {
+    const pb = await getPocketBase()
     await pb.collection('students_card').delete(id)
   } catch (error) {
     console.error('删除学生卡片失败:', error)
@@ -163,6 +168,7 @@ export const deleteStudentCard = async (id: string): Promise<void> => {
 // 搜索学生卡片
 export const searchStudentCards = async (query: string): Promise<StudentCard[]> => {
   try {
+    const pb = await getPocketBase()
     const records = await pb.collection('students_card').getFullList({
       filter: `studentName ~ "${query}" || studentId ~ "${query}"`,
       sort: 'studentId'
@@ -214,6 +220,7 @@ export const batchCreateStudentCards = async (cards: Omit<StudentCard, 'id' | 'c
           throw new Error(`缺少必填字段: studentId=${cleanCard.studentId}, studentName=${cleanCard.studentName}, studentUrl=${cleanCard.studentUrl}`)
         }
         
+        const pb = await getPocketBase()
         const record = await pb.collection('students_card').create(cleanCard)
         createdCards.push(record as StudentCard)
         console.log(`成功创建学生卡片: ${cleanCard.studentId}`)
@@ -239,6 +246,7 @@ export const batchCreateStudentCards = async (cards: Omit<StudentCard, 'id' | 'c
 // 更新卡片使用记录
 export const updateCardUsage = async (id: string, usageCount: number): Promise<StudentCard> => {
   try {
+    const pb = await getPocketBase()
     const record = await pb.collection('students_card').update(id, {
       lastUsed: new Date().toISOString(),
       usageCount: usageCount + 1
