@@ -6,6 +6,7 @@ export interface Teacher {
   id: string
   teacher_name?: string
   teacher_id?: string
+  nric?: string
   email?: string
   phone?: string
   department?: string

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { pb } from '@/lib/pocketbase'
+import { getPocketBase } from '@/lib/pocketbase'
 
 export async function POST(request: NextRequest) {
   try {
     console.log('测试完整导入流程...')
+    
+    const pb = await getPocketBase()
     
     // 认证
     await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
