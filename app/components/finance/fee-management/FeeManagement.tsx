@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { ToggleSwitch } from "@/components/ui/ToggleSwitch"
 import { Edit, Trash2, DollarSign, Plus, ChevronDown, ChevronRight } from "lucide-react"
 import { AddFeeDialog } from "./AddFeeDialog"
 import { EditFeeDialog } from "./EditFeeDialog"
@@ -103,40 +104,29 @@ export default function FeeManagement() {
 
     try {
       await updateFee(editingFeeItem.id, newFeeItem)
-      setEditingFeeItem(null)
       setIsEditFeeDialogOpen(false)
+      setEditingFeeItem(null)
     } catch (error) {
-      console.error("Failed to update fee:", error)
+      console.error("Fee update failed:", error)
       alert("更新收费项目失败，请重试")
     }
   }
 
   const handleDeleteFeeItem = async (feeId: string) => {
-    if (confirm("确定要删除这个收费项目吗？")) {
-      try {
-        await deleteFee(feeId)
-      } catch (error) {
-        console.error("Failed to delete fee:", error)
-        alert("删除收费项目失败，请重试")
-      }
+    if (!confirm("确定要删除这个收费项目吗？")) return
+
+    try {
+      await deleteFee(feeId)
+    } catch (error) {
+      console.error("Fee deletion failed:", error)
+      alert("删除收费项目失败，请重试")
     }
   }
 
   const handleFeeItemInputChange = (field: keyof Omit<Fee, "id">, value: any) => {
-    setNewFeeItem((prev) => ({ ...prev, [field]: value }))
+    setNewFeeItem(prev => ({ ...prev, [field]: value }))
   }
 
-  // Group fees by category
-  const groupedFees = fees.reduce((groups, fee) => {
-    const category = fee.category || "未分类"
-    if (!groups[category]) {
-      groups[category] = []
-    }
-    groups[category].push(fee)
-    return groups
-  }, {} as Record<string, Fee[]>)
-
-  // Toggle category expansion
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => {
       const newSet = new Set(prev)
@@ -149,22 +139,38 @@ export default function FeeManagement() {
     })
   }
 
-  // Expand/collapse all categories
-  const toggleAllCategories = () => {
-    const allCategories = Object.keys(groupedFees)
-    const allExpanded = allCategories.every(cat => expandedCategories.has(cat))
-    
-    if (allExpanded) {
-      setExpandedCategories(new Set())
-    } else {
-      setExpandedCategories(new Set(allCategories))
+  // Group fees by category
+  const groupedFees = fees.reduce((groups, fee) => {
+    const category = fee.category || "未分类"
+    if (!groups[category]) {
+      groups[category] = []
     }
+    groups[category].push(fee)
+    return groups
+  }, {} as Record<string, Fee[]>)
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">加载中...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600 mb-4">加载失败: {error}</p>
+        <Button onClick={() => window.location.reload()}>重试</Button>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
-
-      {/* Fee Table */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -172,28 +178,10 @@ export default function FeeManagement() {
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5" />
                 收费项目管理
-                {!loading && !error && fees.length > 0 && (
-                  <Badge variant="secondary" className="ml-2">
-                    {fees.length} 个项目
-                  </Badge>
-                )}
               </CardTitle>
-              <CardDescription>管理所有收费项目</CardDescription>
+              <CardDescription>管理所有收费项目，按分类组织</CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={toggleAllCategories}>
-                {Object.keys(groupedFees).every(cat => expandedCategories.has(cat)) ? (
-                  <>
-                    <ChevronDown className="h-4 w-4 mr-2" />
-                    收起全部
-                  </>
-                ) : (
-                  <>
-                    <ChevronRight className="h-4 w-4 mr-2" />
-                    展开全部
-                  </>
-                )}
-              </Button>
               <Button variant="outline" onClick={() => setIsFeeEditMode(!isFeeEditMode)}>
                 <Edit className="h-4 w-4 mr-2" />
                 {isFeeEditMode ? "完成编辑" : "编辑"}
@@ -206,42 +194,32 @@ export default function FeeManagement() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">
-              加载中...
-            </div>
-          ) : error ? (
-            <div className="text-center py-8 text-red-500">
-              错误: {error}
-            </div>
-          ) : fees.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              暂无收费项目
+          {fees.length === 0 ? (
+            <div className="text-center py-8">
+              <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">暂无收费项目</h3>
+              <p className="text-gray-500 mb-4">点击"添加收费项目"开始创建</p>
             </div>
           ) : (
             <div className="space-y-4">
               {Object.entries(groupedFees).map(([category, categoryFees]) => {
                 const isExpanded = expandedCategories.has(category)
-                const totalAmount = categoryFees.reduce((sum, fee) => sum + fee.amount, 0)
-                const activeFees = categoryFees.filter(fee => fee.status === "active")
-                const activeCount = activeFees.length
-                const activeAmount = activeFees.reduce((sum, fee) => sum + fee.amount, 0)
-                
+                const activeCount = categoryFees.filter(fee => fee.status === "active").length
+                const activeAmount = categoryFees
+                  .filter(fee => fee.status === "active")
+                  .reduce((sum, fee) => sum + fee.amount, 0)
+
                 return (
-                  <Collapsible
-                    key={category}
-                    open={isExpanded}
-                    onOpenChange={() => toggleCategory(category)}
-                  >
-                    <Card className="border-2">
+                  <Collapsible key={category} open={isExpanded} onOpenChange={() => toggleCategory(category)}>
+                    <Card>
                       <CollapsibleTrigger asChild>
                         <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                               {isExpanded ? (
-                                <ChevronDown className="h-5 w-5 text-gray-500" />
+                                <ChevronDown className="h-4 w-4 text-gray-500" />
                               ) : (
-                                <ChevronRight className="h-5 w-5 text-gray-500" />
+                                <ChevronRight className="h-4 w-4 text-gray-500" />
                               )}
                               <div>
                                 <CardTitle className="text-lg">{category}</CardTitle>
@@ -291,14 +269,16 @@ export default function FeeManagement() {
                                         ? "一次性收费"
                                         : "年度收费"}
                                     </Badge>
-                                    <Button
-                                      variant={item.status === "active" ? "default" : "outline"}
-                                      size="sm"
-                                      onClick={() => onToggleItemActive(item.id, item.status !== "active")}
-                                      className="text-xs"
-                                    >
-                                      {item.status === "active" ? "已启用" : "已停用"}
-                                    </Button>
+                                    <div className="flex items-center gap-2">
+                                      <ToggleSwitch
+                                        checked={item.status === "active"}
+                                        onChange={() => onToggleItemActive(item.id, item.status !== "active")}
+                                        size="sm"
+                                      />
+                                      <span className="text-xs text-gray-600">
+                                        {item.status === "active" ? "已启用" : "已停用"}
+                                      </span>
+                                    </div>
                                     {isFeeEditMode && (
                                       <div className="flex gap-1">
                                         <Button variant="ghost" size="sm" onClick={() => handleEditFeeItem(item)}>

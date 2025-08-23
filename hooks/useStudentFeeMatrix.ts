@@ -603,6 +603,7 @@ export function useStudentFeeMatrix() {
     assignments: [],
     loading: false,
     error: null,
+    loadingState: 'idle',
     editMode: false,
     expandedStudents: new Set(),
     expandedCategories: new Set(),

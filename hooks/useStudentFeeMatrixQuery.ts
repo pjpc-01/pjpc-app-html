@@ -33,7 +33,7 @@ const fetchStudents = async (): Promise<StudentNameCard[]> => {
   return students
 }
 
-// Fetch fees
+// Fetch fees (all active fees, regardless of individual assignments)
 const fetchFees = async (): Promise<FeeItem[]> => {
   console.log('[useStudentFeeMatrixQuery] Fetching fees...')
   const records = await pb.collection('fee_items').getFullList(200, {
@@ -55,23 +55,66 @@ const fetchFees = async (): Promise<FeeItem[]> => {
   return fees
 }
 
-// Fetch student fee assignments
+// Fetch student fee assignments (NEW STRUCTURE: one record per student with JSON array of fee IDs)
 const fetchStudentFees = async (): Promise<StudentFeeAssignment[]> => {
   console.log('[useStudentFeeMatrixQuery] Fetching student fee assignments...')
-  const records = await pb.collection('student_fee_matrix').getFullList(200, {
-    expand: 'student_id,fee_item_id'
-  })
   
-  const assignments: StudentFeeAssignment[] = records.map(record => ({
-    id: record.id,
-    students: record.student_id,
-    fee_items: record.expand?.fee_item_id ? [record.expand.fee_item_id] : [],
-    totalAmount: record.totalAmount || 0,
-    expand: record.expand
-  }))
-  
-  console.log(`[useStudentFeeMatrixQuery] Fetched ${assignments.length} assignments`)
-  return assignments
+  try {
+    // Get all student_fee_matrix records
+    const records = await pb.collection('student_fee_matrix').getFullList(200)
+    console.log(`[useStudentFeeMatrixQuery] Found ${records.length} student fee matrix records`)
+    
+    const assignments: StudentFeeAssignment[] = records.map(record => {
+      console.log('[useStudentFeeMatrixQuery] Processing record:', record)
+      
+      // Extract student ID from the complex students field
+      let studentId = record.students
+      if (typeof record.students === 'string' && record.students.length > 50) {
+        // Extract ID from complex string using regex
+        const idPattern = /[a-zA-Z0-9]{8,20}/g
+        const matches = record.students.match(idPattern)
+        if (matches && matches.length > 0) {
+          studentId = matches[0]
+        }
+      }
+      
+      // Parse the fee_items field (could be JSON string or array)
+      let assignedFeeIds: string[] = []
+      try {
+        if (record.fee_items) {
+          if (typeof record.fee_items === 'string') {
+            // Try to parse as JSON
+            const parsed = JSON.parse(record.fee_items)
+            assignedFeeIds = Array.isArray(parsed) ? parsed : []
+          } else if (Array.isArray(record.fee_items)) {
+            assignedFeeIds = record.fee_items
+          }
+        }
+      } catch (error) {
+        console.error('[useStudentFeeMatrixQuery] Error parsing fee_items:', error)
+        assignedFeeIds = []
+      }
+      
+      console.log('[useStudentFeeMatrixQuery] Parsed assigned fee IDs:', assignedFeeIds)
+      
+      const assignment: StudentFeeAssignment = {
+        id: record.id,
+        students: studentId, // Use extracted student ID
+        fee_items: assignedFeeIds.map(feeId => ({ id: feeId } as FeeItem)), // Convert IDs to FeeItem objects
+        totalAmount: record.total_amount || 0,
+        assigned_fee_ids: assignedFeeIds // Store the raw array for easy access
+      }
+      
+      console.log('[useStudentFeeMatrixQuery] Created assignment:', assignment)
+      return assignment
+    })
+    
+    console.log(`[useStudentFeeMatrixQuery] Fetched ${assignments.length} assignments`)
+    return assignments
+  } catch (error) {
+    console.error('[useStudentFeeMatrixQuery] Error fetching student fees:', error)
+    return []
+  }
 }
 
 // Main hook that combines all queries
@@ -102,84 +145,72 @@ export const useStudentFeeMatrixQuery = () => {
     gcTime: 10 * 60 * 1000, // 10 minutes
   })
 
-  // Mutation for updating student fee assignments
-  const updateAssignmentMutation = useMutation({
-    mutationFn: async ({ studentId, feeId, paymentStatus }: {
+  // NEW: Mutation for saving all student assignments at once (batch save)
+  const saveAllAssignmentsMutation = useMutation({
+    mutationFn: async (studentAssignments: Array<{
       studentId: string
-      feeId: string
-      paymentStatus: string
-    }) => {
-      console.log(`[useStudentFeeMatrixQuery] Updating assignment: ${studentId} - ${feeId} - ${paymentStatus}`)
+      assignedFeeIds: string[]
+    }>) => {
+      console.log(`[useStudentFeeMatrixQuery] Saving ${studentAssignments.length} student assignments`)
       
-      // Check if assignment exists
-      const existingAssignments = await pb.collection('student_fee_matrix').getFullList(1, {
-        filter: `student_id = "${studentId}" && fee_item_id = "${feeId}"`
-      })
-
-      if (existingAssignments.length > 0) {
-        // Update existing assignment
-        const assignment = existingAssignments[0]
-        return await pb.collection('student_fee_matrix').update(assignment.id, {
-          paymentStatus
-        })
-      } else {
-        // Create new assignment
-        return await pb.collection('student_fee_matrix').create({
-          student_id: studentId,
-          fee_item_id: feeId,
-          paymentStatus,
-          assignedDate: new Date().toISOString()
-        })
+      try {
+        const results = []
+        
+        for (const { studentId, assignedFeeIds } of studentAssignments) {
+          console.log(`[useStudentFeeMatrixQuery] Processing student ${studentId} with ${assignedFeeIds.length} fee assignments`)
+          
+          // Calculate total amount for this student
+          const totalAmount = assignedFeeIds.reduce((sum, feeId) => {
+            const fee = feesQuery.data?.find(f => f.id === feeId)
+            return sum + (fee?.amount || 0)
+          }, 0)
+          
+          console.log(`[useStudentFeeMatrixQuery] Calculated total amount for student ${studentId}: ¥${totalAmount}`)
+          
+          // Check if student already has a record
+          const existingRecords = await pb.collection('student_fee_matrix').getFullList(1, {
+            filter: `students = "${studentId}"`
+          })
+          
+          if (existingRecords.length > 0) {
+            // Update existing record
+            const existingRecord = existingRecords[0]
+            console.log(`[useStudentFeeMatrixQuery] Updating existing record for student ${studentId}`)
+            
+            const result = await pb.collection('student_fee_matrix').update(existingRecord.id, {
+              fee_items: JSON.stringify(assignedFeeIds), // Use fee_items field (not assigned_fee_ids)
+              total_amount: totalAmount, // Save calculated total amount
+              updated: new Date().toISOString()
+            })
+            results.push(result)
+          } else {
+            // Create new record
+            console.log(`[useStudentFeeMatrixQuery] Creating new record for student ${studentId}`)
+            
+            const result = await pb.collection('student_fee_matrix').create({
+              students: studentId,
+              fee_items: JSON.stringify(assignedFeeIds), // Use fee_items field (not assigned_fee_ids)
+              total_amount: totalAmount, // Save calculated total amount
+              created: new Date().toISOString(),
+              updated: new Date().toISOString()
+            })
+            results.push(result)
+          }
+        }
+        
+        console.log(`[useStudentFeeMatrixQuery] Successfully saved ${results.length} student assignments`)
+        return results
+      } catch (error) {
+        console.error(`[useStudentFeeMatrixQuery] Error saving assignments:`, error)
+        throw error
       }
     },
     onSuccess: () => {
-      // Invalidate and refetch student fees
       queryClient.invalidateQueries({ queryKey: queryKeys.studentFees })
-      console.log('[useStudentFeeMatrixQuery] Assignment updated successfully')
+      console.log('[useStudentFeeMatrixQuery] ✅ All assignments saved successfully')
     },
     onError: (error) => {
-      console.error('[useStudentFeeMatrixQuery] Error updating assignment:', error)
-    }
-  })
-
-  // Mutation for batch operations
-  const batchUpdateMutation = useMutation({
-    mutationFn: async (assignments: Array<{
-      studentId: string
-      feeId: string
-      paymentStatus: string
-    }>) => {
-      console.log(`[useStudentFeeMatrixQuery] Batch updating ${assignments.length} assignments`)
-      
-      const results = await Promise.all(
-        assignments.map(async ({ studentId, feeId, paymentStatus }) => {
-          const existingAssignments = await pb.collection('student_fee_matrix').getFullList(1, {
-            filter: `student_id = "${studentId}" && fee_item_id = "${feeId}"`
-          })
-
-          if (existingAssignments.length > 0) {
-            return await pb.collection('student_fee_matrix').update(existingAssignments[0].id, {
-              paymentStatus
-            })
-          } else {
-            return await pb.collection('student_fee_matrix').create({
-              student_id: studentId,
-              fee_item_id: feeId,
-              paymentStatus,
-              assignedDate: new Date().toISOString()
-            })
-          }
-        })
-      )
-      
-      return results
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.studentFees })
-      console.log('[useStudentFeeMatrixQuery] Batch update completed successfully')
-    },
-    onError: (error) => {
-      console.error('[useStudentFeeMatrixQuery] Error in batch update:', error)
+      console.error('[useStudentFeeMatrixQuery] ❌ Error saving assignments:', error)
     }
   })
 
@@ -204,6 +235,12 @@ export const useStudentFeeMatrixQuery = () => {
     loading: isLoading,
     error: error ? (error as Error).message : null,
     loadingState: isLoading ? 'loading' : 'idle',
+    editMode: false,
+    expandedStudents: new Set(),
+    expandedCategories: new Set(),
+    searchTerm: '',
+    selectedGradeFilter: 'all',
+    batchMode: false
   }
 
   return {
@@ -220,11 +257,9 @@ export const useStudentFeeMatrixQuery = () => {
     error: error ? (error as Error).message : null,
     isError,
     
-    // Mutations
-    updateAssignment: updateAssignmentMutation.mutate,
-    batchUpdate: batchUpdateMutation.mutate,
-    isUpdating: updateAssignmentMutation.isPending,
-    isBatchUpdating: batchUpdateMutation.isPending,
+    // NEW: Only batch save mutation (no individual updates)
+    saveAllAssignments: saveAllAssignmentsMutation.mutate,
+    isSaving: saveAllAssignmentsMutation.isPending,
     
     // Actions
     refetch,

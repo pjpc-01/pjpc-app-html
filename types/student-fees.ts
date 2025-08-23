@@ -22,6 +22,7 @@ export interface StudentFeeAssignment {
   students: string // student id (relation)
   fee_items: FeeItem[]
   totalAmount: number
+  assigned_fee_ids?: string[] // NEW: Raw array of fee IDs for easy access
   expand?: {
     students?: {
       id: string
@@ -73,6 +74,7 @@ export interface StudentFeeMatrixState {
   assignments: StudentFeeAssignment[]
   loading: boolean
   error: string | null
+  loadingState: 'idle' | 'loading' | 'error' // NEW: Added loadingState
   editMode: boolean
   expandedStudents: Set<string>
   expandedCategories: Set<string>

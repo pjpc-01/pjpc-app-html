@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { ToggleSwitch } from "@/components/ui/ToggleSwitch"
 import { Edit, Trash2, DollarSign, Plus } from "lucide-react"
 import { Fee } from "@/types/fees"
 
@@ -89,13 +90,16 @@ export const FeeTable = ({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant={item.status === 'active' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => onToggleItemActive(item.id, item.status !== 'active')}
-                    >
-                      {item.status === 'active' ? '已启用' : '已停用'}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <ToggleSwitch
+                        checked={item.status === 'active'}
+                        onChange={() => onToggleItemActive(item.id, item.status !== 'active')}
+                        size="sm"
+                      />
+                      <span className="text-sm text-gray-600">
+                        {item.status === 'active' ? '已启用' : '已停用'}
+                      </span>
+                    </div>
                   </TableCell>
                   {isFeeEditMode && (
                     <TableCell>
