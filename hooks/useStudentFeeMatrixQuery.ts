@@ -118,7 +118,7 @@ const fetchStudentFees = async (): Promise<StudentFeeAssignment[]> => {
 }
 
 // Main hook that combines all queries
-export const useStudentFeeMatrixQuery = () => {
+export const useStudentFeeMatrixQuery = (feeItems: Array<{ id: string; name: string; amount: number; active: boolean; category?: string; description?: string; status?: 'active' | 'inactive' }> = []) => {
   const queryClient = useQueryClient()
 
   // Fetch students
@@ -129,13 +129,7 @@ export const useStudentFeeMatrixQuery = () => {
     gcTime: 10 * 60 * 1000, // 10 minutes
   })
 
-  // Fetch fees
-  const feesQuery = useQuery({
-    queryKey: queryKeys.fees,
-    queryFn: fetchFees,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  })
+  // Note: fees are now passed as parameter instead of fetched internally
 
   // Fetch student fee assignments
   const studentFeesQuery = useQuery({
@@ -161,7 +155,7 @@ export const useStudentFeeMatrixQuery = () => {
           
           // Calculate total amount for this student
           const totalAmount = assignedFeeIds.reduce((sum, feeId) => {
-            const fee = feesQuery.data?.find(f => f.id === feeId)
+            const fee = feeItems.find(f => f.id === feeId)
             return sum + (fee?.amount || 0)
           }, 0)
           
@@ -218,19 +212,18 @@ export const useStudentFeeMatrixQuery = () => {
   const refetch = () => {
     console.log('[useStudentFeeMatrixQuery] Refetching all data...')
     queryClient.invalidateQueries({ queryKey: queryKeys.students })
-    queryClient.invalidateQueries({ queryKey: queryKeys.fees })
     queryClient.invalidateQueries({ queryKey: queryKeys.studentFees })
   }
 
   // Determine overall loading state
-  const isLoading = studentsQuery.isLoading || feesQuery.isLoading || studentFeesQuery.isLoading
-  const isError = studentsQuery.isError || feesQuery.isError || studentFeesQuery.isError
-  const error = studentsQuery.error || feesQuery.error || studentFeesQuery.error
+  const isLoading = studentsQuery.isLoading || studentFeesQuery.isLoading
+  const isError = studentsQuery.isError || studentFeesQuery.isError
+  const error = studentsQuery.error || studentFeesQuery.error
 
   // Prepare the state object
   const state: StudentFeeMatrixState = {
     students: studentsQuery.data || [],
-    fees: feesQuery.data || [],
+    fees: feeItems, // Use passed feeItems instead of fetched fees
     assignments: studentFeesQuery.data || [],
     loading: isLoading,
     error: error ? (error as Error).message : null,
@@ -246,7 +239,7 @@ export const useStudentFeeMatrixQuery = () => {
   return {
     // Data
     students: studentsQuery.data || [],
-    fees: feesQuery.data || [],
+    fees: feeItems, // Use passed feeItems instead of fetched fees
     assignments: studentFeesQuery.data || [],
     
     // Loading states
@@ -267,7 +260,6 @@ export const useStudentFeeMatrixQuery = () => {
     
     // Raw queries for debugging
     studentsQuery,
-    feesQuery,
     studentFeesQuery,
     
     // State object (for compatibility)

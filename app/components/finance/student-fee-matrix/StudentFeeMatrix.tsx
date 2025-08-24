@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle, Users, FileText, ChevronDown, ChevronRight, Edit, Save, X } from "lucide-react"
 import { ToggleSwitch } from "@/components/ui/ToggleSwitch"
 import { useStudentFeeMatrixQuery } from "@/hooks/useStudentFeeMatrixQuery"
+import { useFeeItems } from "@/hooks/useFeeItems"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 /**
@@ -20,7 +21,17 @@ export const StudentFeeMatrix: React.FC = () => {
   // ========================================
   // Core Data Only
   // ========================================
-  const { students, fees, assignments, loading, error, refetch, saveAllAssignments, isSaving } = useStudentFeeMatrixQuery()
+  const { feeItems, loading: feesLoading, error: feesError, refetch: refetchFees } = useFeeItems()
+  const { students, assignments, loading: studentsLoading, error: studentsError, refetch: refetchStudents, saveAllAssignments, isSaving } = useStudentFeeMatrixQuery(feeItems)
+  
+  // Combine loading states
+  const loading = studentsLoading || feesLoading
+  const error = studentsError || feesError
+  
+  const refetch = () => {
+    refetchStudents()
+    refetchFees()
+  }
 
   // ========================================
   // Edit Mode State Management
@@ -158,7 +169,7 @@ export const StudentFeeMatrix: React.FC = () => {
   // Calculate total for a specific student based on their assignments (including pending changes)
   const getStudentTotal = (studentId: string) => {
     const assignedFeeIds = getAssignedFees(studentId)
-    return fees
+    return feeItems
       .filter(fee => assignedFeeIds.includes(fee.id))
       .reduce((sum, fee) => sum + fee.amount, 0)
   }
@@ -305,7 +316,7 @@ export const StudentFeeMatrix: React.FC = () => {
             <StudentFeeRow
               key={student.id}
               student={student}
-              fees={fees}
+              fees={feeItems}
               assignedFees={assignedFees}
               total={total}
               onAssignFee={assignFee}
