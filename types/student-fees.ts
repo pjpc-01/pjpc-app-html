@@ -36,6 +36,21 @@ export interface StudentFeeAssignment {
 }
 
 /**
+ * Save Assignment Parameter Interface - 保存分配参数
+ */
+export interface SaveAssignmentParams {
+  studentId: string
+  assignedFeeIds: string[]
+  assignedFeeItems?: Array<{
+    id: string
+    name: string
+    status: string
+    amount: number
+    category?: string
+  }>
+}
+
+/**
  * Student Name Card Interface - 学生姓名卡片信息
  */
 export interface StudentNameCard {

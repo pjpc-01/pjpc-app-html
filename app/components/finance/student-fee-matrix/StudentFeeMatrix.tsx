@@ -9,6 +9,7 @@ import { ToggleSwitch } from "@/components/ui/ToggleSwitch"
 import { useStudentFeeMatrixQuery } from "@/hooks/useStudentFeeMatrixQuery"
 import { useFeeItems } from "@/hooks/useFeeItems"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { SaveAssignmentParams } from "@/types/student-fees"
 
 /**
  * Student Fee Matrix - Core Purpose Only
@@ -46,12 +47,17 @@ export const StudentFeeMatrix: React.FC = () => {
   const enterEditMode = () => {
     // Store current assignments as original state
     const currentAssignments = new Map<string, Set<string>>()
+    const initialPendingChanges = new Map<string, Set<string>>()
+    
     assignments.forEach(assignment => {
       const assignedFeeIds = assignment.assigned_fee_ids || assignment.fee_items.map(fee => fee.id)
       currentAssignments.set(assignment.students, new Set(assignedFeeIds))
+      // Initialize pending changes with current assignments
+      initialPendingChanges.set(assignment.students, new Set(assignedFeeIds))
     })
+    
     setOriginalAssignments(currentAssignments)
-    setPendingChanges(new Map()) // Start with no pending changes
+    setPendingChanges(initialPendingChanges) // Start with current assignments as pending
     setIsEditMode(true)
   }
 
@@ -69,12 +75,24 @@ export const StudentFeeMatrix: React.FC = () => {
 
     try {
       // Convert pending changes to the format expected by the mutation
-      const studentAssignments: Array<{ studentId: string; assignedFeeIds: string[] }> = []
+      const studentAssignments: SaveAssignmentParams[] = []
       
       pendingChanges.forEach((assignedFeeIds, studentId) => {
+        // Get the fee items for this student to include name and status
+        const assignedFeeItems = feeItems
+          .filter(fee => assignedFeeIds.has(fee.id))
+          .map(fee => ({
+            id: fee.id,
+            name: fee.name,
+            status: (fee as any).status || 'active',
+            amount: fee.amount,
+            category: fee.category
+          }))
+
         studentAssignments.push({
           studentId,
-          assignedFeeIds: Array.from(assignedFeeIds)
+          assignedFeeIds: Array.from(assignedFeeIds),
+          assignedFeeItems // Add the detailed fee items data
         })
       })
 
@@ -93,18 +111,13 @@ export const StudentFeeMatrix: React.FC = () => {
   // Core Functions Only
   // ========================================
   const assignFee = (studentId: string, feeId: string) => {
-    console.log(`🔍 DEBUG [assignFee]: Called with studentId: ${studentId}, feeId: ${feeId}`)
-    console.log(`🔍 DEBUG [assignFee]: isEditMode: ${isEditMode}`)
-    
     if (isEditMode) {
       // In edit mode, update pending changes
-      console.log(`🔍 DEBUG [assignFee]: Updating pending changes for student ${studentId}`)
       setPendingChanges(prev => {
         const newChanges = new Map(prev)
         const currentAssigned = newChanges.get(studentId) || new Set()
         currentAssigned.add(feeId)
         newChanges.set(studentId, currentAssigned)
-        console.log(`🔍 DEBUG [assignFee]: New pending changes for student ${studentId}:`, Array.from(currentAssigned))
         return newChanges
       })
     } else {
@@ -114,12 +127,8 @@ export const StudentFeeMatrix: React.FC = () => {
   }
 
   const removeFee = (studentId: string, feeId: string) => {
-    console.log(`🔍 DEBUG [removeFee]: Called with studentId: ${studentId}, feeId: ${feeId}`)
-    console.log(`🔍 DEBUG [removeFee]: isEditMode: ${isEditMode}`)
-    
     if (isEditMode) {
       // In edit mode, update pending changes
-      console.log(`🔍 DEBUG [removeFee]: Updating pending changes for student ${studentId}`)
       setPendingChanges(prev => {
         const newChanges = new Map(prev)
         const currentAssigned = newChanges.get(studentId) || new Set()
@@ -129,7 +138,6 @@ export const StudentFeeMatrix: React.FC = () => {
         } else {
           newChanges.set(studentId, currentAssigned)
         }
-        console.log(`🔍 DEBUG [removeFee]: New pending changes for student ${studentId}:`, Array.from(currentAssigned))
         return newChanges
       })
     } else {
@@ -140,29 +148,39 @@ export const StudentFeeMatrix: React.FC = () => {
 
   // Get assigned fees for a specific student (including pending changes)
   const getAssignedFees = (studentId: string) => {
-    console.log(`[getAssignedFees] Getting assigned fees for student: ${studentId}`)
     
     // Get current assignments from database
     const currentAssignment = assignments.find(assignment => assignment.students === studentId)
-    const currentAssignedFeeIds = currentAssignment?.assigned_fee_ids || currentAssignment?.fee_items.map(fee => fee.id) || []
     
-    console.log(`[getAssignedFees] Current assigned fee IDs from DB:`, currentAssignedFeeIds)
-
+    // Handle both old format (assigned_fee_ids) and new format (fee_items with objects)
+    let currentAssignedFeeIds: string[] = []
+    if (currentAssignment) {
+      
+      if (currentAssignment.assigned_fee_ids && currentAssignment.assigned_fee_ids.length > 0) {
+        // Old format: use assigned_fee_ids
+        currentAssignedFeeIds = currentAssignment.assigned_fee_ids
+      } else if (currentAssignment.fee_items && currentAssignment.fee_items.length > 0) {
+        // New format: extract IDs from fee_items objects
+        currentAssignedFeeIds = currentAssignment.fee_items.map(fee => fee.id)
+      } else {
+      }
+    } else {
+    }
+    
     if (!isEditMode) {
-      console.log(`[getAssignedFees] Not in edit mode, returning:`, currentAssignedFeeIds)
       return currentAssignedFeeIds
     }
 
     // In edit mode, check if there are pending changes for this student
     const pendingAssigned = pendingChanges.get(studentId)
+    
     if (pendingAssigned) {
+      // If there are pending changes, use them as the current state
       const result = Array.from(pendingAssigned)
-      console.log(`[getAssignedFees] Found pending changes, returning:`, result)
       return result
     }
 
     // No pending changes, return current assignments
-    console.log(`[getAssignedFees] No pending changes, returning current:`, currentAssignedFeeIds)
     return currentAssignedFeeIds
   }
 
@@ -515,14 +533,9 @@ const StudentFeeRow: React.FC<StudentFeeRowProps> = ({
                                   <ToggleSwitch
                                     checked={isAssigned}
                                     onChange={() => {
-                                      console.log(`🔍 DEBUG [ToggleSwitch]: Clicked for student ${student.id}, fee ${fee.id}`)
-                                      console.log(`🔍 DEBUG [ToggleSwitch]: Current state - isAssigned: ${isAssigned}, isEditMode: ${isEditMode}, isInactive: ${isInactive}`)
-                                      
                                       if (isAssigned) {
-                                        console.log(`🔍 DEBUG [ToggleSwitch]: Calling onRemoveFee for student ${student.id}, fee ${fee.id}`)
                                         onRemoveFee(student.id, fee.id)
                                       } else {
-                                        console.log(`🔍 DEBUG [ToggleSwitch]: Calling onAssignFee for student ${student.id}, fee ${fee.id}`)
                                         onAssignFee(student.id, fee.id)
                                       }
                                     }}

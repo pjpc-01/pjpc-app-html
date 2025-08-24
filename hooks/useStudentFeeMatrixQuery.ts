@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { pb } from '@/lib/pocketbase'
-import { StudentNameCard, FeeItem, StudentFeeAssignment, StudentFeeMatrixState } from '@/types/student-fees'
+import { StudentNameCard, FeeItem, StudentFeeAssignment, StudentFeeMatrixState, SaveAssignmentParams } from '@/types/student-fees'
 
 // Query keys for React Query
 export const queryKeys = {
@@ -80,27 +80,56 @@ const fetchStudentFees = async (): Promise<StudentFeeAssignment[]> => {
       
       // Parse the fee_items field (could be JSON string or array)
       let assignedFeeIds: string[] = []
+      let feeItemsData: any[] = []
       try {
         if (record.fee_items) {
           if (typeof record.fee_items === 'string') {
             // Try to parse as JSON
             const parsed = JSON.parse(record.fee_items)
-            assignedFeeIds = Array.isArray(parsed) ? parsed : []
+            if (Array.isArray(parsed)) {
+              // Check if it's an array of objects (new format) or just IDs (old format)
+              if (parsed.length > 0 && typeof parsed[0] === 'object' && parsed[0].id) {
+                // New format: array of objects with id, name, status, etc.
+                feeItemsData = parsed
+                assignedFeeIds = parsed.map(item => item.id)
+              } else {
+                // Old format: array of IDs
+                assignedFeeIds = parsed
+                feeItemsData = parsed.map(id => ({ id }))
+              }
+            }
           } else if (Array.isArray(record.fee_items)) {
-            assignedFeeIds = record.fee_items
+            // Check if it's an array of objects (new format) or just IDs (old format)
+            if (record.fee_items.length > 0 && typeof record.fee_items[0] === 'object' && record.fee_items[0].id) {
+              // New format: array of objects with id, name, status, etc.
+              feeItemsData = record.fee_items
+              assignedFeeIds = record.fee_items.map(item => item.id)
+            } else {
+              // Old format: array of IDs
+              assignedFeeIds = record.fee_items
+              feeItemsData = record.fee_items.map(id => ({ id }))
+            }
           }
         }
       } catch (error) {
         console.error('[useStudentFeeMatrixQuery] Error parsing fee_items:', error)
         assignedFeeIds = []
+        feeItemsData = []
       }
       
       console.log('[useStudentFeeMatrixQuery] Parsed assigned fee IDs:', assignedFeeIds)
+      console.log('[useStudentFeeMatrixQuery] Parsed fee items data:', feeItemsData)
       
       const assignment: StudentFeeAssignment = {
         id: record.id,
         students: studentId, // Use extracted student ID
-        fee_items: assignedFeeIds.map(feeId => ({ id: feeId } as FeeItem)), // Convert IDs to FeeItem objects
+        fee_items: feeItemsData.map(item => ({
+          id: item.id,
+          name: item.name || 'Unknown',
+          status: item.status || 'active',
+          amount: item.amount || 0,
+          category: item.category || '未分类'
+        } as FeeItem)), // Convert to FeeItem objects with full data
         totalAmount: record.total_amount || 0,
         assigned_fee_ids: assignedFeeIds // Store the raw array for easy access
       }
@@ -141,16 +170,13 @@ export const useStudentFeeMatrixQuery = (feeItems: Array<{ id: string; name: str
 
   // NEW: Mutation for saving all student assignments at once (batch save)
   const saveAllAssignmentsMutation = useMutation({
-    mutationFn: async (studentAssignments: Array<{
-      studentId: string
-      assignedFeeIds: string[]
-    }>) => {
+    mutationFn: async (studentAssignments: SaveAssignmentParams[]) => {
       console.log(`[useStudentFeeMatrixQuery] Saving ${studentAssignments.length} student assignments`)
       
       try {
         const results = []
         
-        for (const { studentId, assignedFeeIds } of studentAssignments) {
+        for (const { studentId, assignedFeeIds, assignedFeeItems } of studentAssignments) {
           console.log(`[useStudentFeeMatrixQuery] Processing student ${studentId} with ${assignedFeeIds.length} fee assignments`)
           
           // Calculate total amount for this student
@@ -166,13 +192,18 @@ export const useStudentFeeMatrixQuery = (feeItems: Array<{ id: string; name: str
             filter: `students = "${studentId}"`
           })
           
+          // Prepare fee_items data - use detailed objects if available, otherwise use IDs
+          const feeItemsData = assignedFeeItems && assignedFeeItems.length > 0 
+            ? assignedFeeItems 
+            : assignedFeeIds
+          
           if (existingRecords.length > 0) {
             // Update existing record
             const existingRecord = existingRecords[0]
             console.log(`[useStudentFeeMatrixQuery] Updating existing record for student ${studentId}`)
             
             const result = await pb.collection('student_fee_matrix').update(existingRecord.id, {
-              fee_items: JSON.stringify(assignedFeeIds), // Use fee_items field (not assigned_fee_ids)
+              fee_items: JSON.stringify(feeItemsData), // Store detailed fee items or IDs
               total_amount: totalAmount, // Save calculated total amount
               updated: new Date().toISOString()
             })
@@ -183,7 +214,7 @@ export const useStudentFeeMatrixQuery = (feeItems: Array<{ id: string; name: str
             
             const result = await pb.collection('student_fee_matrix').create({
               students: studentId,
-              fee_items: JSON.stringify(assignedFeeIds), // Use fee_items field (not assigned_fee_ids)
+              fee_items: JSON.stringify(feeItemsData), // Store detailed fee items or IDs
               total_amount: totalAmount, // Save calculated total amount
               created: new Date().toISOString(),
               updated: new Date().toISOString()

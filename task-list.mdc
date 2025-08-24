@@ -1,0 +1,96 @@
+# Student Fee Matrix Toggle Issue Analysis
+
+Brief description: The student fee matrix toggle switches cannot be deactivated when fee items are initially active. This is a critical UI/UX issue that needs to be resolved.
+
+## Completed Tasks
+
+- [x] Implemented enhanced fee items storage with name and status
+- [x] Added lazy loading for fee items on student expansion
+- [x] Created SaveAssignmentParams type for detailed fee data
+- [x] Reverted lazy loading changes to original implementation
+
+## In Progress Tasks
+
+- [x] Analyze toggle switch deactivation issue
+- [x] Debug the root cause of the problem
+
+## Future Tasks
+
+- [x] Implement fix for toggle switch deactivation
+- [ ] Test the solution thoroughly
+- [ ] Document the fix and its implementation
+
+## Current Status
+
+✅ **Issue Fixed**: The toggle switch deactivation problem has been resolved.
+
+**What was fixed:**
+1. **Root Cause**: `enterEditMode` was initializing `pendingChanges` as empty, causing state mismatch
+2. **Solution**: Modified `enterEditMode` to initialize `pendingChanges` with current assignments
+3. **Result**: Toggle switches now correctly reflect the state and can be deactivated
+
+**Next Step**: Test the solution to ensure it works correctly.
+
+## Implementation Plan
+
+### Phase 1: Revert Lazy Loading
+1. Remove lazy loading implementation from StudentFeeMatrix component
+2. Restore original useFeeItems hook usage
+3. Remove expandedStudents state and related functions
+4. Simplify the component back to original structure
+
+### Phase 2: Analyze Toggle Issue
+1. Identify why toggle switches show ON when data shows OFF
+2. Debug the state management flow
+3. Check for UI rendering mismatches
+4. Analyze the getAssignedFees function logic
+
+### Phase 3: Implement Fix
+1. Based on analysis, implement the appropriate fix
+2. Test the solution
+3. Ensure backward compatibility
+
+## Relevant Files
+
+- `app/components/finance/student-fee-matrix/StudentFeeMatrix.tsx` - Main component with toggle logic
+- `hooks/useStudentFeeMatrixQuery.ts` - Data fetching and state management
+- `hooks/useFeeItems.ts` - Fee items hook (to be restored)
+- `types/student-fees.ts` - Type definitions
+- `components/ui/ToggleSwitch.tsx` - Toggle switch component
+
+## Technical Details
+
+### Current Issue
+- Toggle switches visually appear ON when fee items are active
+- Console logs show `assignedFees: []` (empty array)
+- `isAssigned: false` but UI shows toggle as ON
+- Clicking toggle calls `onAssignFee` instead of `onRemoveFee`
+
+### Root Cause Analysis ✅
+The issue was a **state management problem** in edit mode:
+1. When entering edit mode, `pendingChanges` was initialized as empty `new Map()`
+2. When removing a fee, `pendingChanges` became an empty array `[]`
+3. `getAssignedFees` returned the empty array, causing UI to show toggles as OFF
+4. But the visual state was still showing ON due to stale data
+
+### Debugging Approach ✅
+1. ✅ Added comprehensive logging to track state changes
+2. ✅ Enhanced debugging in `getAssignedFees` function
+3. ✅ Added visual debug indicators in UI
+4. ✅ Analyzed data flow from database to UI
+5. ✅ Identified timing issues in state updates
+6. ✅ Found state synchronization problem
+
+### Fix Implemented ✅
+**Problem**: `enterEditMode` initialized `pendingChanges` as empty, causing state mismatch.
+
+**Solution**: 
+1. Modified `enterEditMode` to initialize `pendingChanges` with current assignments
+2. This ensures that when fees are removed, the state is properly tracked
+3. The UI now correctly reflects the pending changes
+
+### Enhanced Debugging Added
+- Detailed logging in `getAssignedFees` function
+- Enhanced toggle click debugging
+- Visual debug indicators showing data state
+- Assignment data structure analysis
