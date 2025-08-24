@@ -311,12 +311,12 @@ export function useStudentFeeMatrix() {
       await initializePocketBase()
       validateAuth()
 
-      log('info', 'Fetching fee items from fees_items collection...')
+      log('info', 'Fetching all fee items from fee_items collection (including inactive ones)...')
       
-      const requestKey = `fees_items_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      const requestKey = `fee_items_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       
-      const response = await pbRef.current.collection('fees_items').getFullList({
-        filter: 'status = "active"',
+      const response = await pbRef.current.collection('fee_items').getFullList({
+        // Removed status filter - show all fee items for Student Fee Matrix
         sort: 'name',
         requestKey: requestKey
       })
@@ -325,12 +325,13 @@ export function useStudentFeeMatrix() {
         id: item.id,
         name: item.name,
         amount: item.amount,
-        active: true,
+        active: item.status === 'active', // Keep track of status for UI purposes
         category: item.category,
-        description: item.description
+        description: item.description,
+        status: item.status // Include status for visual distinction
       }))
 
-      log('info', `Successfully fetched ${feeItems.length} active fee items`)
+      log('info', `Successfully fetched ${feeItems.length} fee items (active and inactive)`)
       
       return {
         success: true,
@@ -1224,19 +1225,25 @@ export function useStudentFeeMatrix() {
       await initializePocketBase()
       validateAuth()
       
-      const collectionsKey = `diagnostics_collections_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      const collections = await pbRef.current.collections.getFullList({
-        requestKey: collectionsKey
-      })
+      // Check if collections exist
+      const collections = await pbRef.current.collections.getFullList()
       const collectionNames = collections.map((c: any) => c.name)
       
-      log('info', 'Available collections:', collectionNames)
-      
       const diagnostics = {
-        collections: collectionNames,
+        connectionStatus,
+        hasUser: !!user,
+        userId: user?.id,
+        userRole: user?.role,
+        collectionsCount: collections.length,
+        collectionNames,
         hasStudents: collectionNames.includes('students'),
-        hasFeesItems: collectionNames.includes('fees_items'),
+        hasFeeItems: collectionNames.includes('fee_items'),
+        hasStudentFeeMatrix: collectionNames.includes('student_fee_matrix'),
         hasStudentFees: collectionNames.includes('student_fees'),
+        hasFeesItems: collectionNames.includes('fees_items'),
+        hasStudentCards: collectionNames.includes('student_cards'),
+        hasCenters: collectionNames.includes('centers'),
+        hasLevels: collectionNames.includes('levels'),
         studentsCount: 0,
         feesCount: 0,
         assignmentsCount: 0
@@ -1257,7 +1264,7 @@ export function useStudentFeeMatrix() {
 
       try {
         const feesKey = `diagnostics_fees_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-        const feesResponse = await pbRef.current.collection('fees_items').getList(1, 1, {
+        const feesResponse = await pbRef.current.collection('fee_items').getList(1, 1, {
           requestKey: feesKey
         })
         diagnostics.feesCount = feesResponse.totalItems

@@ -39,16 +39,22 @@ export const AddFeeDialog = ({
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="category">分类</Label>
-              <Input
-                id="category"
-                value={newFeeItem.category || ""}
-                onChange={(e) => onFeeItemInputChange("category", e.target.value)}
-                placeholder="例如：教育费用、生活费用"
-              />
+              <Label htmlFor="category">分类 *</Label>
+              <Select value={newFeeItem.category || ""} onValueChange={(value) => onFeeItemInputChange("category", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择分类" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="学费">学费</SelectItem>
+                  <SelectItem value="住宿">住宿</SelectItem>
+                  <SelectItem value="餐饮">餐饮</SelectItem>
+                  <SelectItem value="材料费">材料费</SelectItem>
+                  <SelectItem value="其他">其他</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
-              <Label htmlFor="name">项目名称</Label>
+              <Label htmlFor="name">项目名称 *</Label>
               <Input
                 id="name"
                 value={newFeeItem.name || ""}
@@ -58,16 +64,42 @@ export const AddFeeDialog = ({
             </div>
           </div>
           
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="amount">金额 *</Label>
+              <Input
+                id="amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={newFeeItem.amount || ""}
+                onChange={(e) => onFeeItemInputChange("amount", parseFloat(e.target.value) || 0)}
+                placeholder="输入金额"
+              />
+            </div>
+            <div>
+              <Label htmlFor="frequency">收费频率 *</Label>
+              <Select value={newFeeItem.frequency || ""} onValueChange={(value) => onFeeItemInputChange("frequency", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择收费频率" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="one-time">一次性收费</SelectItem>
+                  <SelectItem value="recurring">定期收费</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div>
-            <Label htmlFor="type">收费类型</Label>
-            <Select value={newFeeItem.type || ""} onValueChange={(value) => onFeeItemInputChange("type", value)}>
+            <Label htmlFor="status">状态 *</Label>
+            <Select value={newFeeItem.status || "active"} onValueChange={(value) => onFeeItemInputChange("status", value)}>
               <SelectTrigger>
-                <SelectValue placeholder="选择收费类型" />
+                <SelectValue placeholder="选择状态" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="monthly">按月收费</SelectItem>
-                <SelectItem value="one-time">一次性收费</SelectItem>
-                <SelectItem value="annual">年度收费</SelectItem>
+                <SelectItem value="active">启用</SelectItem>
+                <SelectItem value="inactive">禁用</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -79,6 +111,7 @@ export const AddFeeDialog = ({
               value={newFeeItem.description || ""}
               onChange={(e) => onFeeItemInputChange("description", e.target.value)}
               placeholder="详细描述收费项目"
+              rows={3}
             />
           </div>
         </div>

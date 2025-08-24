@@ -42,10 +42,10 @@ export default function FeeManagement() {
   const [newFeeItem, setNewFeeItem] = useState<Omit<Fee, "id">>({
     name: "",
     amount: 0,
-    type: "monthly",
+    frequency: "recurring",  // Changed from "type": "monthly"
     description: "",
     status: "active",
-    category: "",
+    category: "学费",  // Set default category
     applicableCenters: [],
     applicableLevels: [],
   })
@@ -65,10 +65,10 @@ export default function FeeManagement() {
       setNewFeeItem({
         name: "",
         amount: 0,
-        type: "monthly",
+        frequency: "recurring",
         description: "",
         status: "active",
-        category: "",
+        category: "学费",
         applicableCenters: [],
         applicableLevels: [],
       })
@@ -84,10 +84,10 @@ export default function FeeManagement() {
     setNewFeeItem({
       name: fee.name,
       amount: fee.amount,
-      type: fee.type,
+      frequency: fee.frequency || "recurring",
       description: fee.description || "",
       status: fee.status,
-      category: fee.category || "",
+      category: fee.category || "学费",
       applicableCenters: fee.applicableCenters || [],
       applicableLevels: fee.applicableLevels || [],
     })
@@ -263,9 +263,9 @@ export default function FeeManagement() {
                                       RM {item.amount}
                                     </span>
                                     <Badge variant="outline" className="text-xs">
-                                      {item.type === "monthly"
+                                      {item.frequency === "recurring"
                                         ? "按月收费"
-                                        : item.type === "one-time"
+                                        : item.frequency === "one-time"
                                         ? "一次性收费"
                                         : "年度收费"}
                                     </Badge>

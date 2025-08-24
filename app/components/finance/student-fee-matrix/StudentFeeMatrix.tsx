@@ -82,13 +82,18 @@ export const StudentFeeMatrix: React.FC = () => {
   // Core Functions Only
   // ========================================
   const assignFee = (studentId: string, feeId: string) => {
+    console.log(`🔍 DEBUG [assignFee]: Called with studentId: ${studentId}, feeId: ${feeId}`)
+    console.log(`🔍 DEBUG [assignFee]: isEditMode: ${isEditMode}`)
+    
     if (isEditMode) {
       // In edit mode, update pending changes
+      console.log(`🔍 DEBUG [assignFee]: Updating pending changes for student ${studentId}`)
       setPendingChanges(prev => {
         const newChanges = new Map(prev)
         const currentAssigned = newChanges.get(studentId) || new Set()
         currentAssigned.add(feeId)
         newChanges.set(studentId, currentAssigned)
+        console.log(`🔍 DEBUG [assignFee]: New pending changes for student ${studentId}:`, Array.from(currentAssigned))
         return newChanges
       })
     } else {
@@ -98,8 +103,12 @@ export const StudentFeeMatrix: React.FC = () => {
   }
 
   const removeFee = (studentId: string, feeId: string) => {
+    console.log(`🔍 DEBUG [removeFee]: Called with studentId: ${studentId}, feeId: ${feeId}`)
+    console.log(`🔍 DEBUG [removeFee]: isEditMode: ${isEditMode}`)
+    
     if (isEditMode) {
       // In edit mode, update pending changes
+      console.log(`🔍 DEBUG [removeFee]: Updating pending changes for student ${studentId}`)
       setPendingChanges(prev => {
         const newChanges = new Map(prev)
         const currentAssigned = newChanges.get(studentId) || new Set()
@@ -109,6 +118,7 @@ export const StudentFeeMatrix: React.FC = () => {
         } else {
           newChanges.set(studentId, currentAssigned)
         }
+        console.log(`🔍 DEBUG [removeFee]: New pending changes for student ${studentId}:`, Array.from(currentAssigned))
         return newChanges
       })
     } else {
@@ -459,6 +469,7 @@ const StudentFeeRow: React.FC<StudentFeeRowProps> = ({
                           {categoryFees.map(fee => {
                             const isAssigned = assignedFees.includes(fee.id)
                             const hasChange = hasPendingChange(student.id, fee.id)
+                            const isInactive = (fee as any).status === 'inactive' || (fee as any).active === false
                             
                             return (
                               <div 
@@ -466,13 +477,20 @@ const StudentFeeRow: React.FC<StudentFeeRowProps> = ({
                                 className={`flex items-center justify-between p-2 rounded transition-colors ${
                                   hasChange 
                                     ? 'bg-blue-50 border border-blue-200' 
+                                    : isInactive
+                                    ? 'bg-gray-50 border border-gray-200'
                                     : 'bg-gray-50'
                                 } ${!isEditMode ? 'opacity-60' : ''}`}
                               >
                                 <div className="flex items-center gap-3">
-                                  <span className={`text-sm font-medium ${!isEditMode ? 'text-gray-500' : ''}`}>
+                                  <span className={`text-sm font-medium ${!isEditMode ? 'text-gray-500' : isInactive ? 'text-gray-400' : ''}`}>
                                     {fee.name}
                                   </span>
+                                  {isInactive && (
+                                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
+                                      已停用
+                                    </span>
+                                  )}
                                   {hasChange && (
                                     <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
                                       待保存
@@ -480,15 +498,20 @@ const StudentFeeRow: React.FC<StudentFeeRowProps> = ({
                                   )}
                                 </div>
                                 <div className="flex items-center gap-3">
-                                  <span className={`text-sm ${!isEditMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  <span className={`text-sm ${!isEditMode ? 'text-gray-400' : isInactive ? 'text-gray-400' : 'text-gray-600'}`}>
                                     ¥{fee.amount.toLocaleString()}
                                   </span>
                                   <ToggleSwitch
                                     checked={isAssigned}
                                     onChange={() => {
+                                      console.log(`🔍 DEBUG [ToggleSwitch]: Clicked for student ${student.id}, fee ${fee.id}`)
+                                      console.log(`🔍 DEBUG [ToggleSwitch]: Current state - isAssigned: ${isAssigned}, isEditMode: ${isEditMode}, isInactive: ${isInactive}`)
+                                      
                                       if (isAssigned) {
+                                        console.log(`🔍 DEBUG [ToggleSwitch]: Calling onRemoveFee for student ${student.id}, fee ${fee.id}`)
                                         onRemoveFee(student.id, fee.id)
                                       } else {
+                                        console.log(`🔍 DEBUG [ToggleSwitch]: Calling onAssignFee for student ${student.id}, fee ${fee.id}`)
                                         onAssignFee(student.id, fee.id)
                                       }
                                     }}

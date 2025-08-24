@@ -3,10 +3,10 @@ export interface Fee {
   id: string
   name: string
   amount: number
-  type: 'monthly' | 'one-time' | 'annual'
+  frequency: 'one-time' | 'recurring'  // Changed from 'type' to match PocketBase schema
   description?: string
   status: 'active' | 'inactive'
-  category?: string
+  category: string  // Made required to match PocketBase schema
   applicableCenters?: string[]
   applicableLevels?: string[]
 }

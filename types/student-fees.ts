@@ -12,6 +12,7 @@ export interface FeeItem {
   active: boolean
   category?: string
   description?: string
+  status?: 'active' | 'inactive' // Added status field for visual distinction
 }
 
 /**

@@ -8,13 +8,13 @@ export const useFees = () => {
   const [error, setError] = useState<string | null>(null)
   const isMounted = useRef(true)
 
-  // Map PB → Fee (matches PocketBase fees_items schema exactly)
+  // Map PB → Fee (matches PocketBase fee_items schema exactly)
   const mapRecordToFee = (r: any): Fee => ({
     id: r.id,
     name: r.name ?? "Unnamed",
-    category: r.category, // Optional, can be undefined
+    category: r.category ?? "学费", // Required field with default
     amount: Number(r.amount ?? 0),
-    type: (r.type as Fee["type"]) ?? "monthly",
+    frequency: (r.frequency as Fee["frequency"]) ?? "recurring", // Changed from type to frequency
     status: (r.status as Fee["status"]) ?? "active",
     description: r.description ?? "",
     applicableCenters: r.applicableCenters ?? [],
@@ -53,7 +53,7 @@ export const useFees = () => {
   const createFee = useCallback(async (feeData: Omit<Fee, "id">) => {
     try {
       const pb = await getPocketBase()
-      const created = await pb.collection("fees_items").create(feeData, {
+      const created = await pb.collection("fee_items").create(feeData, {
         requestKey: null, // ✅ prevent auto-cancel
       })
       const mapped = mapRecordToFee(created)
@@ -93,7 +93,7 @@ export const useFees = () => {
   }, [])
 
   const filterFees = useCallback(
-    (criteria: Partial<Pick<Fee, "status" | "type" | "category">>) => {
+    (criteria: Partial<Pick<Fee, "status" | "frequency" | "category">>) => {
       return fees.filter(f =>
         Object.entries(criteria).every(([key, value]) => (f as any)[key] === value)
       )
