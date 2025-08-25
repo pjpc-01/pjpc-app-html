@@ -1,52 +1,95 @@
-const { spawn } = require('child_process');
+const { createServer } = require('https');
+const { parse } = require('url');
+const next = require('next');
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
 
-// 检查证书文件是否存在
-const certDir = path.join(__dirname, '..', 'certs');
-const keyPath = path.join(certDir, 'localhost-key.pem');
-const certPath = path.join(certDir, 'localhost.pem');
+const dev = process.env.NODE_ENV !== 'production';
+const hostname = 'localhost';
+const port = 3000;
 
-if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
-    console.log('❌ SSL 证书文件不存在！');
-    console.log('请先运行: powershell -ExecutionPolicy Bypass -File scripts/generate-ssl-cert.ps1');
+// 生成自签名SSL证书
+const generateSelfSignedCert = () => {
+  const { execSync } = require('child_process');
+  
+  try {
+    // 检查是否已有证书
+    if (fs.existsSync('./certs/localhost.crt') && fs.existsSync('./certs/localhost.key')) {
+      console.log('✅ SSL证书已存在');
+      return;
+    }
+    
+    // 创建certs目录
+    if (!fs.existsSync('./certs')) {
+      fs.mkdirSync('./certs');
+    }
+    
+    console.log('🔐 生成自签名SSL证书...');
+    
+    // 生成私钥
+    execSync('openssl genrsa -out ./certs/localhost.key 2048', { stdio: 'inherit' });
+    
+    // 生成证书签名请求
+    execSync('openssl req -new -key ./certs/localhost.key -out ./certs/localhost.csr -subj "/C=CN/ST=State/L=City/O=Organization/CN=localhost"', { stdio: 'inherit' });
+    
+    // 生成自签名证书
+    execSync('openssl x509 -req -in ./certs/localhost.csr -signkey ./certs/localhost.key -out ./certs/localhost.crt -days 365', { stdio: 'inherit' });
+    
+    // 清理CSR文件
+    fs.unlinkSync('./certs/localhost.csr');
+    
+    console.log('✅ SSL证书生成完成');
+  } catch (error) {
+    console.error('❌ SSL证书生成失败:', error.message);
+    console.log('请确保已安装OpenSSL，或手动创建证书文件');
     process.exit(1);
-}
+  }
+};
 
-console.log('🔐 启动 HTTPS 开发服务器...');
-console.log('📁 使用证书:', certPath);
-console.log('🔑 使用私钥:', keyPath);
-
-// 设置环境变量
-process.env.NODE_OPTIONS = '--openssl-legacy-provider --max-old-space-size=4096';
-process.env.HTTPS = 'true';
-process.env.SSL_CRT_FILE = certPath;
-process.env.SSL_KEY_FILE = keyPath;
-
-// 启动 Next.js 开发服务器
-const nextDev = spawn('node', ['node_modules/.bin/next', 'dev', '-H', '0.0.0.0', '-p', '3000'], {
-    stdio: 'inherit',
-    env: process.env
-});
-
-nextDev.on('error', (error) => {
-    console.error('❌ 启动失败:', error);
+// 启动HTTPS服务器
+const startHttpsServer = async () => {
+  try {
+    // 生成SSL证书
+    generateSelfSignedCert();
+    
+    // 准备Next.js应用
+    const app = next({ dev, hostname, port });
+    const handle = app.getRequestHandler();
+    
+    await app.prepare();
+    
+    // 读取SSL证书
+    const httpsOptions = {
+      key: fs.readFileSync('./certs/localhost.key'),
+      cert: fs.readFileSync('./certs/localhost.crt'),
+    };
+    
+    // 创建HTTPS服务器
+    const server = createServer(httpsOptions, async (req, res) => {
+      try {
+        const parsedUrl = parse(req.url, true);
+        await handle(req, res, parsedUrl);
+      } catch (err) {
+        console.error('Error occurred handling request:', err);
+        res.statusCode = 500;
+        res.end('Internal Server Error');
+      }
+    });
+    
+    server.listen(port, (err) => {
+      if (err) throw err;
+      console.log(`🚀 HTTPS开发服务器启动成功!`);
+      console.log(`📍 访问地址: https://${hostname}:${port}`);
+      console.log(`🔐 SSL证书: 自签名证书 (浏览器会显示安全警告，这是正常的)`);
+      console.log(`📱 NFC功能: 现在可以在HTTPS环境下使用NFC功能了!`);
+      console.log(`⚠️  注意: 首次访问时浏览器会显示安全警告，点击"高级"→"继续访问"即可`);
+    });
+    
+  } catch (error) {
+    console.error('❌ HTTPS服务器启动失败:', error);
     process.exit(1);
-});
+  }
+};
 
-nextDev.on('close', (code) => {
-    console.log(`🚪 开发服务器已关闭，退出码: ${code}`);
-    process.exit(code);
-});
-
-// 处理进程退出
-process.on('SIGINT', () => {
-    console.log('\n🛑 正在关闭开发服务器...');
-    nextDev.kill('SIGINT');
-});
-
-process.on('SIGTERM', () => {
-    console.log('\n🛑 正在关闭开发服务器...');
-    nextDev.kill('SIGTERM');
-});
+// 启动服务器
+startHttpsServer();

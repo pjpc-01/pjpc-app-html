@@ -1,28 +1,34 @@
-# HTTPS 开发服务器启动脚本
-# 用于支持 NFC 功能的本地开发
+# HTTPS开发服务器启动脚本
+Write-Host "🚀 启动HTTPS开发服务器..." -ForegroundColor Green
 
-Write-Host "🔐 启动 PJPC HTTPS 开发服务器..." -ForegroundColor Green
-
-# 检查证书是否存在
-$certDir = "certs"
-$keyPath = "$certDir/localhost-key.pem"
-$certPath = "$certDir/localhost.pem"
-
-if (!(Test-Path $keyPath) -or !(Test-Path $certPath)) {
-    Write-Host "❌ SSL 证书文件不存在！" -ForegroundColor Red
-    Write-Host "🔧 正在生成 SSL 证书..." -ForegroundColor Yellow
-    
-    # 运行证书生成脚本
-    & "powershell" "-ExecutionPolicy" "Bypass" "-File" "scripts/generate-ssl-cert.ps1"
-    
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ 证书生成失败！" -ForegroundColor Red
-        exit 1
-    }
+# 检查Node.js是否安装
+try {
+    $nodeVersion = node --version
+    Write-Host "✅ Node.js版本: $nodeVersion" -ForegroundColor Green
+} catch {
+    Write-Host "❌ 未找到Node.js，请先安装Node.js" -ForegroundColor Red
+    exit 1
 }
 
-Write-Host "✅ SSL 证书检查通过" -ForegroundColor Green
-Write-Host "🚀 启动 HTTPS 开发服务器..." -ForegroundColor Cyan
+# 检查OpenSSL是否安装
+try {
+    $opensslVersion = openssl version
+    Write-Host "✅ OpenSSL版本: $opensslVersion" -ForegroundColor Green
+} catch {
+    Write-Host "⚠️  未找到OpenSSL，将尝试使用内置证书生成" -ForegroundColor Yellow
+}
 
-# 启动 HTTPS 开发服务器
-npm run dev:https
+# 安装依赖（如果需要）
+if (-not (Test-Path "node_modules")) {
+    Write-Host "📦 安装项目依赖..." -ForegroundColor Yellow
+    npm install
+}
+
+# 启动HTTPS开发服务器
+Write-Host "🔐 启动HTTPS开发服务器..." -ForegroundColor Cyan
+Write-Host "📍 访问地址: https://localhost:3000" -ForegroundColor Cyan
+Write-Host "📱 NFC功能: 现在可以在HTTPS环境下使用NFC功能了!" -ForegroundColor Green
+Write-Host "⚠️  注意: 首次访问时浏览器会显示安全警告，点击'高级'→'继续访问'即可" -ForegroundColor Yellow
+
+# 启动服务器
+node scripts/dev-https.js

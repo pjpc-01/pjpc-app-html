@@ -5,7 +5,7 @@
   "scripts": {
     "build": "next build",
     "dev": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=4096\" next dev -H 0.0.0.0",
-    "dev:https": "node server.js",
+    "dev:https": "node scripts/dev-https.js",
     "dev:nfc": "node simple-https-nfc.js",
     "https": "powershell -ExecutionPolicy Bypass -File start-https-simple.ps1",
     "smart": "node smart-https-server.js",
