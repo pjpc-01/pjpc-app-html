@@ -394,6 +394,7 @@ export default function StudentsTab({
       {/* Student Details Dialog */}
       {viewingStudent && (
         <StudentDetails
+          open={!!viewingStudent}
           student={viewingStudent}
           onOpenChange={(open: boolean) => {
             if (!open) setViewingStudent(null)

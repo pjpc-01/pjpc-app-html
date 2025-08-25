@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
         console.log(`尝试创建学生卡片: ${cleanCard.studentId}`)
         console.log('创建数据:', cleanCard)
         
-        const record = await pb.collection('students_card').create(cleanCard)
+        const record = await pb.collection('students').create(cleanCard)
         createdCards.push(record as unknown as StudentCard)
         console.log(`✅ 成功创建学生卡片: ${cleanCard.studentId}`)
         

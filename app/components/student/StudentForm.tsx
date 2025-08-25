@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -148,6 +148,9 @@ export default function StudentForm({
     setErrors({})
     setSubmitError('')
     setBirthCertificateFile(null)
+    
+    // 重置学号生成标志
+    hasGeneratedStudentId.current = false
   }, [student, open])
 
   const validateForm = (): boolean => {
@@ -308,8 +311,8 @@ export default function StudentForm({
     setFormData(prev => ({ ...prev, avatar: null }))
   }
 
-  // 自动生成学号
-  const generateStudentId = () => {
+  // 自动生成学号 - 使用 useCallback 优化性能
+  const generateStudentId = useCallback(() => {
     const { gender, serviceType, center } = formData
     
     let prefix = ''
@@ -349,16 +352,58 @@ export default function StudentForm({
     const newStudentId = `${prefix}${nextNumber}`
     console.log(`生成的新学号: ${newStudentId}`)
     return newStudentId
-  }
+  }, [formData.gender, formData.serviceType, formData.center, existingStudents])
 
+  // 使用 useRef 来跟踪是否已经生成过学号，避免重复生成
+  const hasGeneratedStudentId = useRef(false)
+  const generateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
   // 当性别、服务类型或中心改变时，自动生成学号（仅在添加模式下）
   useEffect(() => {
     if (!isEditing && formData.gender && formData.serviceType && formData.center) {
-      console.log('触发学号重新生成')
-      const newStudentId = generateStudentId()
-      setFormData(prev => ({ ...prev, student_id: newStudentId }))
+      // 如果已经生成过学号，则跳过
+      if (hasGeneratedStudentId.current) {
+        console.log('学号已经生成过，跳过自动生成')
+        return
+      }
+      
+      // 清除之前的定时器
+      if (generateTimeoutRef.current) {
+        clearTimeout(generateTimeoutRef.current)
+      }
+      
+      // 使用防抖机制，延迟500ms后生成学号
+      generateTimeoutRef.current = setTimeout(() => {
+        // 避免重复生成相同的学号
+        const currentStudentId = formData.student_id
+        
+        // 如果已经有学号且不是空字符串，则跳过生成
+        if (currentStudentId && currentStudentId.trim() !== '') {
+          console.log('学号已存在，跳过生成:', currentStudentId)
+          hasGeneratedStudentId.current = true
+          return
+        }
+        
+        const newStudentId = generateStudentId()
+        
+        // 只有当新生成的学号与当前学号不同时才更新
+        if (newStudentId !== currentStudentId) {
+          console.log('触发学号重新生成:', { 旧学号: currentStudentId, 新学号: newStudentId })
+          setFormData(prev => ({ ...prev, student_id: newStudentId }))
+          hasGeneratedStudentId.current = true
+        } else {
+          console.log('学号无需更新，保持:', currentStudentId)
+        }
+      }, 500)
     }
-  }, [formData.gender, formData.serviceType, formData.center, isEditing, existingStudents])
+    
+    // 清理函数
+    return () => {
+      if (generateTimeoutRef.current) {
+        clearTimeout(generateTimeoutRef.current)
+      }
+    }
+  }, [formData.gender, formData.serviceType, formData.center, isEditing, generateStudentId])
 
   // 根据出生日期计算年级（马来西亚完整教育体系）
   const calculateGradeFromDob = (dob: string) => {
@@ -488,20 +533,42 @@ export default function StudentForm({
                 {errors.student_name && <p className="text-red-500 text-sm mt-1">{errors.student_name}</p>}
               </div>
 
-              <div>
-                <Label htmlFor="student_id">学号 *</Label>
-                <Input
-                  id="student_id"
-                  value={formData.student_id || ''}
-                  onChange={(e) => handleInputChange('student_id', e.target.value)}
-                  placeholder="学号"
-                  className={errors.student_id ? 'border-red-500' : ''}
-                  readOnly={isEditing}
-                />
-                {!isEditing && <p className="text-xs text-gray-500 mt-1">学号将根据性别、服务类型和中心自动生成</p>}
-                {isEditing && <p className="text-xs text-gray-500 mt-1">编辑模式下学号不可修改</p>}
-                {errors.student_id && <p className="text-red-500 text-sm mt-1">{errors.student_id}</p>}
-              </div>
+                             <div>
+                 <Label htmlFor="student_id">学号 *</Label>
+                 <div className="flex gap-2">
+                   <Input
+                     id="student_id"
+                     value={formData.student_id || ''}
+                     onChange={(e) => handleInputChange('student_id', e.target.value)}
+                     placeholder="学号"
+                     className={errors.student_id ? 'border-red-500' : ''}
+                     readOnly={isEditing}
+                   />
+                   {!isEditing && (
+                     <Button
+                       type="button"
+                       variant="outline"
+                       size="sm"
+                                               onClick={() => {
+                          if (formData.gender && formData.serviceType && formData.center) {
+                            const newStudentId = generateStudentId()
+                            setFormData(prev => ({ ...prev, student_id: newStudentId }))
+                            hasGeneratedStudentId.current = true
+                            console.log('手动生成学号:', newStudentId)
+                          } else {
+                            alert('请先选择性别、服务类型和中心')
+                          }
+                        }}
+                       className="whitespace-nowrap"
+                     >
+                       生成学号
+                     </Button>
+                   )}
+                 </div>
+                 {!isEditing && <p className="text-xs text-gray-500 mt-1">学号将根据性别、服务类型和中心自动生成，或点击"生成学号"按钮手动生成</p>}
+                 {isEditing && <p className="text-xs text-gray-500 mt-1">编辑模式下学号不可修改</p>}
+                 {errors.student_id && <p className="text-red-500 text-sm mt-1">{errors.student_id}</p>}
+               </div>
 
               <div>
                 <Label htmlFor="nric">NRIC/护照 *</Label>

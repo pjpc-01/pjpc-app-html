@@ -8,6 +8,7 @@ import { UserPlus, Search, Edit, Users, Trash2, Download, Upload } from "lucide-
 import { useStudents } from "@/hooks/useStudents"
 import { Student } from "@/hooks/useStudents"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
+import { checkDataHealth } from "@/lib/pocketbase-students"
 import StudentList from "./StudentList"
 import StudentForm from "./StudentForm"
 import StudentDetails from "./StudentDetails"
@@ -42,6 +43,53 @@ export default function StudentManagement({
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null)
+  
+  // 调试：显示学生数据状态
+  useEffect(() => {
+    console.log('StudentManagement: 学生数据状态:', {
+      totalStudents: students.length,
+      loading,
+      error,
+      firstStudent: students[0] ? {
+        id: students[0].id,
+        name: students[0].student_name,
+        avatar: students[0].avatar,
+        hasAvatar: !!students[0].avatar,
+        studentObject: students[0]
+      } : null
+    })
+    
+    // 如果有学生数据，显示前3个学生的详细信息
+    if (students.length > 0) {
+      console.log('前3个学生的详细信息:')
+      students.slice(0, 3).forEach((student, index) => {
+        console.log(`学生 ${index + 1}:`, {
+          id: student.id,
+          name: student.student_name,
+          avatar: student.avatar,
+          hasAvatar: !!student.avatar,
+          studentRecordId: student.studentRecordId,
+          center: student.center,
+          serviceType: student.serviceType,
+          gender: student.gender
+        })
+      })
+    }
+  }, [students, loading, error])
+  
+  // 调试：显示viewingStudent状态变化
+  useEffect(() => {
+    console.log('StudentManagement: viewingStudent状态变化:', {
+      hasViewingStudent: !!viewingStudent,
+      viewingStudent: viewingStudent ? {
+        id: viewingStudent.id,
+        name: viewingStudent.student_name,
+        avatar: viewingStudent.avatar,
+        hasAvatar: !!viewingStudent.avatar,
+        studentObject: viewingStudent
+      } : null
+    })
+  }, [viewingStudent])
   
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1)
@@ -207,6 +255,20 @@ export default function StudentManagement({
     }
   }
 
+  const handleDataHealthCheck = async () => {
+    try {
+      console.log('🔍 开始数据健康检查...')
+      const healthReport = await checkDataHealth()
+      console.log('📊 数据健康检查完成:', healthReport)
+      
+      // 显示检查结果
+      alert(`数据健康检查完成！\n\n匹配率: ${healthReport.matchRate}\n总学生: ${healthReport.totalStudents}\n总卡片: ${healthReport.totalCards}\n不匹配: ${healthReport.unmatchedCount}\n\n详细报告请查看控制台。`)
+    } catch (error) {
+      console.error('数据健康检查失败:', error)
+      alert('数据健康检查失败，请查看控制台了解详情。')
+    }
+  }
+
   const handleSelectStudent = (studentId: string, checked: boolean) => {
     if (checked) {
       setSelectedStudents(prev => [...prev, studentId])
@@ -267,13 +329,22 @@ export default function StudentManagement({
             </h3>
             <p className="text-sm text-gray-600">{finalDescription}</p>
           </div>
-          <Button 
-            onClick={() => setIsAddDialogOpen(true)} 
-            className={getButtonColorClass(finalButtonColor)}
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            {finalButtonText}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline"
+              onClick={handleDataHealthCheck}
+              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+            >
+              🔍 数据检查
+            </Button>
+            <Button 
+              onClick={() => setIsAddDialogOpen(true)} 
+              className={getButtonColorClass(finalButtonColor)}
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              {finalButtonText}
+            </Button>
+          </div>
         </div>
       )}
 
@@ -398,6 +469,7 @@ export default function StudentManagement({
       {/* Student Details Dialog */}
       {viewingStudent && (
         <StudentDetails
+          open={!!viewingStudent}
           student={viewingStudent}
           onOpenChange={(open: boolean) => {
             if (!open) setViewingStudent(null)

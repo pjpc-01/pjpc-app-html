@@ -190,7 +190,9 @@ export default function Dashboard() {
       case "admin":
         return <AdminDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
       case "teacher":
-        return <TeacherDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
+        // 直接导入并使用优化后的教师工作台
+        const TeacherWorkspace = require('./teacher-workspace/page').default
+        return <TeacherWorkspace />
       case "parent":
         return <ParentDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
       case "accountant":

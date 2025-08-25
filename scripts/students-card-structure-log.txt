@@ -1,0 +1,52 @@
+[2025-08-25T09:44:24.511Z] 🔍 开始检查 students_card 集合结构...
+[2025-08-25T09:44:24.519Z] 📝 正在登录...
+[2025-08-25T09:44:24.679Z] ✅ 登录成功
+[2025-08-25T09:44:24.680Z] 📊 获取 students_card 集合信息...
+[2025-08-25T09:44:24.747Z] ✅ 找到 students_card 集合
+[2025-08-25T09:44:24.748Z] 📝 集合名称: students_card
+[2025-08-25T09:44:24.749Z] 📝 集合类型: base
+[2025-08-25T09:44:24.750Z] 
+📊 获取记录样本...
+[2025-08-25T09:44:24.762Z] ✅ 获取到 3 条记录样本
+[2025-08-25T09:44:24.763Z] 
+📝 记录 1:
+[2025-08-25T09:44:24.763Z]    ID: vpo3e1hxz33eo7m
+[2025-08-25T09:44:24.764Z]    cardType: (空值)
+[2025-08-25T09:44:24.765Z]    center: WX 02
+[2025-08-25T09:44:24.765Z]    collectionId: pbc_1516005737
+[2025-08-25T09:44:24.766Z]    collectionName: students_card
+[2025-08-25T09:44:24.767Z]    grade: (空值)
+[2025-08-25T09:44:24.767Z]    level: (空值)
+[2025-08-25T09:44:24.768Z]    status: (空值)
+[2025-08-25T09:44:24.769Z]    studentId: B1
+[2025-08-25T09:44:24.769Z]    studentUrl: https://docs.google.com/forms/d/e/1FAIpQLSc05w6sa742nS8mLMLFfBmQSpnQij_djz8USeR15LOQk_LTzw/viewform
+[2025-08-25T09:44:24.770Z]    student_name: Jayden Ng Junn Kyle 黄俊凯
+[2025-08-25T09:44:24.770Z] 
+📝 记录 2:
+[2025-08-25T09:44:24.771Z]    ID: 1j7bcd0lnqc5c2m
+[2025-08-25T09:44:24.771Z]    cardType: (空值)
+[2025-08-25T09:44:24.772Z]    center: WX 02
+[2025-08-25T09:44:24.772Z]    collectionId: pbc_1516005737
+[2025-08-25T09:44:24.772Z]    collectionName: students_card
+[2025-08-25T09:44:24.773Z]    grade: (空值)
+[2025-08-25T09:44:24.773Z]    level: (空值)
+[2025-08-25T09:44:24.773Z]    status: (空值)
+[2025-08-25T09:44:24.774Z]    studentId: B2
+[2025-08-25T09:44:24.774Z]    studentUrl: https://docs.google.com/forms/d/e/1FAIpQLSdA6i6NpoCx7yOz0sLexLquKBYmZ0gA1eu829kctXC9RNejog/viewform
+[2025-08-25T09:44:24.774Z]    student_name: Wong Zhi Xuan 黄智轩
+[2025-08-25T09:44:24.775Z] 
+📝 记录 3:
+[2025-08-25T09:44:24.775Z]    ID: o9e4ly2mzi4lafl
+[2025-08-25T09:44:24.776Z]    cardType: (空值)
+[2025-08-25T09:44:24.776Z]    center: WX 02
+[2025-08-25T09:44:24.776Z]    collectionId: pbc_1516005737
+[2025-08-25T09:44:24.777Z]    collectionName: students_card
+[2025-08-25T09:44:24.777Z]    grade: (空值)
+[2025-08-25T09:44:24.777Z]    level: (空值)
+[2025-08-25T09:44:24.778Z]    status: (空值)
+[2025-08-25T09:44:24.778Z]    studentId: B3
+[2025-08-25T09:44:24.779Z]    studentUrl: https://docs.google.com/forms/d/e/1FAIpQLSenTMWPdZu_IMksVMz-2BXJeFHL5ENCEg6FHJ_d9qfHYXpQng/viewform
+[2025-08-25T09:44:24.779Z]    student_name: Ivan Lee Kai Wen 李凯文
+[2025-08-25T09:44:24.780Z] 
+🏁 检查完成
+[2025-08-25T09:44:24.780Z] 日志已保存到: C:\Users\munpo\OneDrive\Desktop\pjpc-app-html\scripts\students-card-structure-log.txt

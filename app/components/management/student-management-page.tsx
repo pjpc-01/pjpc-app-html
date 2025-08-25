@@ -870,6 +870,7 @@ export default function StudentManagementPage() {
       />
 
       <StudentDetails
+        open={!!viewingStudent}
         student={viewingStudent}
         onOpenChange={(open: boolean) => {
           if (!open) setViewingStudent(null)
