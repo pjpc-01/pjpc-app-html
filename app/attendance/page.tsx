@@ -105,37 +105,20 @@ export default function AttendancePage() {
   const fetchStudents = async () => {
     try {
       setLoading(true)
-      // 这里应该调用API获取学生数据
-      // 暂时使用模拟数据
-      const mockStudents: Student[] = [
-        {
-          id: "1",
-          student_id: "ST001",
-          student_name: "张三",
-          studentUrl: "https://center1.com/B1",
-          center: "WX 01",
-          status: "active"
-        },
-        {
-          id: "2",
-          student_id: "ST002",
-          student_name: "李四",
-          studentUrl: "https://center1.com/B2",
-          center: "WX 01",
-          status: "active"
-        },
-        {
-          id: "3",
-          student_id: "ST003",
-          student_name: "王五",
-          studentUrl: "https://center1.com/B3",
-          center: "WX 01",
-          status: "active"
-        }
-      ]
-      setStudents(mockStudents)
+      
+      // 调用真实的PocketBase API获取学生数据
+      const response = await fetch('/api/students/list')
+      if (response.ok) {
+        const data = await response.json()
+        setStudents(data.students || [])
+      } else {
+        console.error('获取学生数据失败:', response.statusText)
+        // 如果API失败，使用备用数据
+        setStudents([])
+      }
     } catch (err) {
       console.error('获取学生数据失败:', err)
+      setStudents([])
     } finally {
       setLoading(false)
     }
@@ -158,17 +141,90 @@ export default function AttendancePage() {
     setSuccess(null)
 
     try {
-      // 这里应该实现真实的NFC读取
-      // 暂时使用模拟数据
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // 模拟读取到的学生ID
-      const mockStudentId = "ST001"
-      await processAttendance(mockStudentId, 'nfc')
+      // 使用真实的Web NFC API
+      if ('NDEFReader' in window) {
+        const ndef = new (window as any).NDEFReader()
+        
+        // 开始扫描NFC
+        await ndef.scan()
+        
+        // 监听NFC读取事件
+        ndef.addEventListener('reading', async (event: any) => {
+          try {
+            console.log('NFC读取成功:', event)
+            
+            // 调用NFC API记录考勤
+            const response = await fetch('/api/nfc/read', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                nfcData: event,
+                deviceInfo: {
+                  deviceId: navigator.userAgent,
+                  deviceName: `${navigator.platform} - ${window.location.hostname}`
+                },
+                centerId: centerId || 'unknown'
+              })
+            })
+
+            if (response.ok) {
+              const result = await response.json()
+              if (result.success) {
+                setSuccess(`${result.student.name} NFC打卡成功！`)
+                
+                // 添加到本地考勤记录
+                const newRecord: AttendanceRecord = {
+                  id: result.attendance.id,
+                  studentId: result.student.studentId,
+                  studentName: result.student.name,
+                  studentUrl: result.student.studentUrl,
+                  timestamp: result.attendance.timestamp,
+                  deviceInfo: `${navigator.userAgent} - ${window.location.hostname}`,
+                  center: result.student.center || centerId || 'unknown',
+                  type: "checkin",
+                  status: "success",
+                  method: "nfc"
+                }
+                
+                setAttendanceRecords(prev => [newRecord, ...prev])
+              } else {
+                setError(result.error || 'NFC打卡失败')
+              }
+            } else {
+              const errorData = await response.json()
+              setError(errorData.error || 'NFC打卡失败')
+            }
+          } catch (error: any) {
+            setError(`处理NFC数据失败: ${error.message}`)
+          } finally {
+            setIsReading(false)
+          }
+        })
+
+        // 监听NFC读取错误
+        ndef.addEventListener('readingerror', (error: any) => {
+          console.error('NFC读取错误:', error)
+          setError('NFC读取失败，请重试')
+          setIsReading(false)
+        })
+
+        // 设置超时
+        setTimeout(() => {
+          if (isReading) {
+            setError('NFC读取超时，请将卡片贴近设备')
+            setIsReading(false)
+          }
+        }, 30000) // 30秒超时
+        
+      } else {
+        throw new Error('NDEFReader不可用')
+      }
       
     } catch (err: any) {
+      console.error('NFC读取失败:', err)
       setError(`NFC读取失败: ${err.message}`)
-    } finally {
       setIsReading(false)
     }
   }

@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // 启用HTTPS开发环境
+  experimental: {
+    https: true,
+  },
   // 解决 OpenSSL 兼容性问题
   experimental: {
     serverComponentsExternalPackages: ['googleapis'],
@@ -29,6 +33,7 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
+    domains: ['localhost', '127.0.0.1'],
   },
   // 优化HMR配置 - 减少连接时间
   webpack: (config, { dev, isServer }) => {
