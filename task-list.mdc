@@ -1,0 +1,110 @@
+# Student Fee Matrix System Simplification
+
+Brief description: Simplified the complex PocketBase configuration and hooks to resolve autocancelled errors and improve system stability.
+
+## Completed Tasks
+
+- [x] Implemented enhanced fee items storage with name and status
+- [x] Added lazy loading for fee items on student expansion
+- [x] Created SaveAssignmentParams type for detailed fee data
+- [x] Reverted lazy loading changes to original implementation
+- [x] Analyze toggle switch deactivation issue
+- [x] Debug the root cause of the problem
+- [x] Implement fix for toggle switch deactivation
+- [x] Simplified PocketBase configuration
+- [x] Removed complex error handling and retry logic
+- [x] Fixed import inconsistencies
+- [x] Removed duplicate functions and unused code
+- [x] Fixed InvoiceManagement default export
+- [x] Fixed InvoiceTemplateManager import
+- [x] Fixed ConnectionStatus imports
+- [x] Fixed all pb imports to use pocketbase-instance
+- [x] Fixed InvoiceList component props mismatch
+- [x] Fixed SelectItem empty value errors
+- [x] Fixed InvoiceCreateDialog dueDate error
+
+## In Progress Tasks
+
+- [ ] Test the simplified solution thoroughly
+- [ ] Verify all components work correctly
+
+## Future Tasks
+
+- [ ] Document the simplification and its benefits
+- [ ] Monitor system performance after simplification
+
+## Current Status
+
+✅ **System Simplified**: Removed complex configurations and duplicate code.
+✅ **Import Errors Fixed**: All module import/export errors resolved.
+✅ **InvoiceList Fixed**: Component props mismatch resolved.
+✅ **SelectItem Errors Fixed**: Empty value props resolved.
+✅ **InvoiceCreateDialog Fixed**: Simplified and fixed dueDate error.
+
+**What was fixed:**
+1. **PocketBase Configuration**: Removed complex network detection and request interceptors
+2. **Error Handling**: Simplified error handling in hooks
+3. **Imports**: Fixed import inconsistencies across files
+4. **Duplicate Code**: Removed unused functions and duplicate logic
+5. **Request Logic**: Removed complex retry and deduplication logic
+6. **Module Exports**: Fixed InvoiceManagement default export
+7. **Import Paths**: Updated all pb imports to use pocketbase-instance
+8. **Missing Functions**: Removed references to non-existent functions
+9. **InvoiceList Props**: Fixed component interface to match actual usage
+10. **SelectItem Values**: Fixed empty string values in Select components
+11. **InvoiceCreateDialog**: Simplified component and fixed dueDate error
+
+## Implementation Plan
+
+### Phase 1: Simplify PocketBase Configuration ✅
+1. ✅ Remove complex network detection logic
+2. ✅ Create simple PocketBase instance
+3. ✅ Remove request interceptors and deduplication
+4. ✅ Fix import inconsistencies
+
+### Phase 2: Simplify Hooks ✅
+1. ✅ Remove complex error handling in useFeeItems
+2. ✅ Remove complex error handling in useStudentFeeMatrixQuery
+3. ✅ Remove complex error handling in useFees
+4. ✅ Remove retry logic and autocancelled error detection
+
+### Phase 3: Fix Imports ✅
+1. ✅ Update auth context imports
+2. ✅ Add UserProfile type to pocketbase-instance
+3. ✅ Remove unused functions and imports
+
+### Phase 4: Testing
+1. Test all components work correctly
+2. Verify no autocancelled errors
+3. Ensure data fetching works properly
+
+## Relevant Files
+
+- `lib/pocketbase-instance.ts` - ✅ Simple PocketBase instance
+- `lib/pocketbase.ts` - ✅ Simplified configuration
+- `hooks/useFeeItems.ts` - ✅ Simplified error handling
+- `hooks/useStudentFeeMatrixQuery.ts` - ✅ Simplified error handling
+- `hooks/useFees.ts` - ✅ Simplified error handling
+- `contexts/pocketbase-auth-context.tsx` - ✅ Fixed imports
+- `app/components/finance/student-fee-matrix/StudentFeeMatrix.tsx` - Main component
+- `types/student-fees.ts` - Type definitions
+
+## Technical Details
+
+### Simplification Summary
+- **Removed**: Complex network detection, request interceptors, retry logic
+- **Simplified**: Error handling, PocketBase configuration
+- **Fixed**: Import inconsistencies, duplicate functions
+- **Result**: Cleaner, more maintainable codebase
+
+### Key Changes
+1. **Single PocketBase Instance**: All hooks now use the same simple instance
+2. **Simple Error Handling**: Removed complex autocancelled error detection
+3. **Clean Imports**: Fixed all import paths and removed unused imports
+4. **No Duplicates**: Removed duplicate functions and logic
+
+### Expected Results
+- No more autocancelled errors
+- Better performance
+- Easier debugging
+- More stable system
