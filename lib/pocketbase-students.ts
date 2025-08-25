@@ -4,12 +4,11 @@ import { getPocketBase } from './pocketbase'
 // 获取智能PocketBase实例
 const getPb = async () => await getPocketBase()
 
-// 融合的学生数据接口 - 包含基本信息和打卡信息
+// 统一的学生数据接口 - 所有数据来自 students 集合
 export interface Student {
-  id: string // students_card 的 ID
-  studentRecordId?: string // students 的 ID，用于更新操作
+  id: string
   
-  // 基本信息 (来自 students 集合)
+  // 基本信息
   student_id?: string
   student_name?: string
   dob?: string
@@ -22,7 +21,8 @@ export interface Student {
   standard?: string
   level?: 'primary' | 'secondary'
   center?: 'WX 01' | 'WX 02' | 'WX 03' | 'WX 04'
-  // 新增字段
+  
+  // 扩展信息
   nric?: string
   school?: string
   parentPhone?: string
@@ -30,7 +30,8 @@ export interface Student {
   emergencyPhone?: string
   healthInfo?: string
   pickupMethod?: 'parent' | 'guardian' | 'authorized' | 'public' | 'walking'
-  // 接送安排 - 方式A：固定字段（最多3个授权接送人）
+  
+  // 接送安排
   authorizedPickup1Name?: string
   authorizedPickup1Phone?: string
   authorizedPickup1Relation?: string
@@ -40,12 +41,14 @@ export interface Student {
   authorizedPickup3Name?: string
   authorizedPickup3Phone?: string
   authorizedPickup3Relation?: string
+  
+  // 注册和费用信息
   registrationDate?: string
   tuitionStatus?: 'pending' | 'paid' | 'partial' | 'overdue'
-  birthCertificate?: string | null // 对应PocketBase的birthCert字段
-  avatar?: string | null // 对应PocketBase的photo字段
+  birthCertificate?: string | null
+  avatar?: string | null
   
-  // 打卡信息 (来自 students_card 集合)
+  // 考勤相关字段（新增到students集合）
   cardNumber?: string
   cardType?: 'NFC' | 'RFID'
   studentUrl?: string
@@ -82,7 +85,8 @@ export interface StudentCreateData {
   standard?: string
   level?: 'primary' | 'secondary'
   center?: 'WX 01' | 'WX 02' | 'WX 03' | 'WX 04'
-  // 新增字段
+  
+  // 扩展信息
   nric?: string
   school?: string
   parentPhone?: string
@@ -90,7 +94,8 @@ export interface StudentCreateData {
   emergencyPhone?: string
   healthInfo?: string
   pickupMethod?: 'parent' | 'guardian' | 'authorized' | 'public' | 'walking'
-  // 接送安排 - 方式A：固定字段（最多3个授权接送人）
+  
+  // 接送安排
   authorizedPickup1Name?: string
   authorizedPickup1Phone?: string
   authorizedPickup1Relation?: string
@@ -100,12 +105,14 @@ export interface StudentCreateData {
   authorizedPickup3Name?: string
   authorizedPickup3Phone?: string
   authorizedPickup3Relation?: string
+  
+  // 注册和费用信息
   registrationDate?: string
   tuitionStatus?: 'pending' | 'paid' | 'partial' | 'overdue'
-  birthCertificate?: string | null // 对应PocketBase的birthCert字段
-  avatar?: string | null // 对应PocketBase的photo字段
+  birthCertificate?: string | null
+  avatar?: string | null
   
-  // 打卡信息
+  // 考勤相关字段
   cardNumber?: string
   cardType?: 'NFC' | 'RFID'
   studentUrl?: string
@@ -120,16 +127,18 @@ export interface StudentCreateData {
   address?: string
   medicalInfo?: string
   notes?: string
+  usageCount?: number
+  lastUsed?: string
 }
 
 export interface StudentUpdateData extends Partial<StudentCreateData> {
   id: string
 }
 
-// 获取所有学生 - 融合 students 和 students_card 数据
+// 获取所有学生 - 直接从 students 集合获取
 export const getAllStudents = async (): Promise<Student[]> => {
   try {
-    console.log('开始获取融合的学生数据...')
+    console.log('开始获取学生数据...')
     
         // 确保认证
     const pb = await getPb()
@@ -144,463 +153,561 @@ export const getAllStudents = async (): Promise<Student[]> => {
       }
     }
     
-    // 获取 students 集合数据
-    console.log('从 students 集合获取基本数据...')
+    // 直接从 students 集合获取所有数据
+    console.log('从 students 集合获取学生数据...')
     const studentsResponse = await pb.collection('students').getList(1, 500, {
       sort: 'student_name',
       $autoCancel: false
     })
     
-    // 获取 students_card 集合数据
-    console.log('从 students_card 集合获取打卡数据...')
-    const cardsResponse = await pb.collection('students_card').getList(1, 500, {
-      sort: 'studentName',
-      $autoCancel: false
-    })
-    
     const students = studentsResponse.items || []
-    const cards = cardsResponse.items || []
+    console.log(`获取到 ${students.length} 个学生数据`)
     
-    console.log(`获取到 ${students.length} 个学生基本数据`)
-    console.log(`获取到 ${cards.length} 个学生打卡数据`)
-    
-    // 融合数据：以 students_card 为基础，合并 students 数据
-    const mergedStudents: Student[] = cards.map((card: any) => {
-      // 查找对应的学生基本数据（通过姓名匹配）
-      const student = students.find((s: any) => 
-        s.student_name === card.studentName
-      )
-      
-      console.log(`匹配学生: ${card.studentName} - 找到基本数据: ${!!student}`)
-      if (student) {
-        console.log(`学生 ${card.studentName} 的serviceType:`, student.serviceType)
-      }
-      
-      // 融合数据
-      return {
-        id: card.id, // 这是 students_card 的 ID
-        studentRecordId: student?.id, // 这是 students 的 ID，用于更新操作
-                 // 基本信息（优先使用 students 集合的数据，如果没有则使用 students_card 的数据）
-         student_id: card.studentId,
-         student_name: card.studentName,
-         dob: student?.dob,
-         father_phone: student?.father_phone,
-         mother_phone: student?.mother_phone,
-         home_address: student?.home_address,
-         gender: student?.gender,
-         serviceType: student?.serviceType,
-         register_form_url: student?.register_form_url,
-         standard: student?.standard,
-         level: student?.level,
-         center: card.center || student?.center,
-         // 新增字段
-         nric: student?.nric,
-         school: student?.school,
-         parentPhone: student?.parents_phone, // 映射PocketBase的parents_phone字段
-         emergencyContact: student?.emergencyContact,
-         emergencyPhone: student?.emergencyPhone,
-         healthInfo: student?.healthInfo,
-         pickupMethod: student?.pickupMethod,
-         authorizedPickup1Name: student?.authorizedPickup1Name,
-         authorizedPickup1Phone: student?.authorizedPickup1Phone,
-         authorizedPickup1Relation: student?.authorizedPickup1Relation,
-         authorizedPickup2Name: student?.authorizedPickup2Name,
-         authorizedPickup2Phone: student?.authorizedPickup2Phone,
-         authorizedPickup2Relation: student?.authorizedPickup2Relation,
-         authorizedPickup3Name: student?.authorizedPickup3Name,
-         authorizedPickup3Phone: student?.authorizedPickup3Phone,
-         authorizedPickup3Relation: student?.authorizedPickup3Relation,
-         registrationDate: student?.registrationDate,
-         tuitionStatus: student?.tuitionStatus,
-         birthCertificate: student?.birthCert, // 映射PocketBase的birthCert字段
-         avatar: student?.photo, // 映射PocketBase的photo字段
-        // 打卡信息（来自 students_card）
-        cardNumber: card.cardNumber,
-        cardType: card.cardType,
-        studentUrl: card.studentUrl,
-        balance: card.balance,
-        status: card.status,
-        issuedDate: card.issuedDate,
-        expiryDate: card.expiryDate,
-        enrollmentDate: card.enrollmentDate,
-        phone: card.phone,
-        email: card.email,
-        parentName: student?.parents_name || card.parentName, // 优先使用students集合的parents_name
-        address: card.address,
-        medicalInfo: card.medicalInfo,
-        notes: card.notes,
-        usageCount: card.usageCount,
-        lastUsed: card.lastUsed,
-        // 系统字段
-        created: card.created,
-        updated: card.updated
-      }
-    })
-    
-    console.log(`成功融合 ${mergedStudents.length} 个学生数据`)
-    return mergedStudents
-  } catch (error: any) {
-    console.error('获取融合学生数据失败:', error)
-    throw error
-  }
-}
-
-// 根据年级获取学生
-export const getStudentsByGrade = async (standard: string): Promise<Student[]> => {
-  try {
-    // 检查认证状态
-    const pb = await getPb()
-    if (!pb.authStore.isValid) {
-      console.log('用户未认证，尝试用户认证...')
-      try {
-        await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-        console.log('用户认证成功')
-      } catch (authError) {
-        console.error('用户认证失败:', authError)
-        throw new Error('无法认证访问学生数据')
-      }
+    // 数据验证
+    if (students.length === 0) {
+      console.warn('⚠️ 警告: students 集合为空')
+      return []
     }
     
-    // 从统一的students集合中查找学生
-    const records = await pb.collection('students').getList(1, 1000, {
-      filter: `standard = "${standard}"`,
-      sort: 'student_name',
-      $autoCancel: false
-    })
+    // 转换数据格式，确保所有字段都正确映射
+    const formattedStudents: Student[] = students.map((student: any) => ({
+      id: student.id,
+      
+      // 基本信息
+      student_id: student.student_id,
+      student_name: student.student_name,
+      dob: student.dob,
+      father_phone: student.father_phone,
+      mother_phone: student.mother_phone,
+      home_address: student.home_address,
+      gender: student.gender,
+      serviceType: student.serviceType,
+      register_form_url: student.register_form_url,
+      standard: student.standard,
+      level: student.level,
+      center: student.center,
+      
+      // 扩展信息
+      nric: student.nric,
+      school: student.school,
+      parentPhone: student.parentPhone,
+      emergencyContact: student.emergencyContact,
+      emergencyPhone: student.emergencyPhone,
+      healthInfo: student.healthInfo,
+      pickupMethod: student.pickupMethod,
+      
+      // 接送安排
+      authorizedPickup1Name: student.authorizedPickup1Name,
+      authorizedPickup1Phone: student.authorizedPickup1Phone,
+      authorizedPickup1Relation: student.authorizedPickup1Relation,
+      authorizedPickup2Name: student.authorizedPickup2Name,
+      authorizedPickup2Phone: student.authorizedPickup2Phone,
+      authorizedPickup2Relation: student.authorizedPickup2Relation,
+      authorizedPickup3Name: student.authorizedPickup3Name,
+      authorizedPickup3Phone: student.authorizedPickup3Phone,
+      authorizedPickup3Relation: student.authorizedPickup3Relation,
+      
+      // 注册和费用信息
+      registrationDate: student.registrationDate,
+      tuitionStatus: student.tuitionStatus,
+      birthCertificate: student.birthCert || student.birthCertificate,
+      avatar: student.photo || student.avatar,
+      
+      // 考勤相关字段
+      cardNumber: student.cardNumber,
+      cardType: student.cardType,
+      studentUrl: student.studentUrl,
+      balance: student.balance,
+      status: student.status || 'active',
+      issuedDate: student.issuedDate,
+      expiryDate: student.expiryDate,
+      enrollmentDate: student.enrollmentDate,
+      phone: student.phone,
+      email: student.email,
+      parentName: student.parentName,
+      address: student.address,
+      medicalInfo: student.medicalInfo,
+      notes: student.notes,
+      usageCount: student.usageCount || 0,
+      lastUsed: student.lastUsed,
+      
+      // 系统字段
+      created: student.created,
+      updated: student.updated,
+    }))
     
-    console.log(`✅ 根据年级 "${standard}" 获取到 ${records.items.length} 个学生`)
-    return records.items as unknown as Student[]
-  } catch (error) {
-    console.error('❌ 根据年级获取学生失败:', error)
-    throw new Error('根据年级获取学生失败')
+    console.log('学生数据格式化完成')
+    return formattedStudents
+    
+  } catch (error: any) {
+    console.error('获取学生数据失败:', error)
+    throw new Error(`获取学生数据失败: ${error.message}`)
   }
 }
 
 // 添加学生
 export const addStudent = async (studentData: StudentCreateData): Promise<Student> => {
   try {
-    console.log('准备添加学生数据:', studentData)
+    console.log('开始添加学生...')
     
-    // 检查认证状态
     const pb = await getPb()
     if (!pb.authStore.isValid) {
-      console.log('用户未认证，尝试用户认证...')
-      try {
-        await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-        console.log('用户认证成功')
-      } catch (authError) {
-        console.error('用户认证失败:', authError)
-        throw new Error('无法认证访问学生数据')
-      }
+      throw new Error('用户未认证')
     }
     
-         // 准备完整的学生数据
-     const completeStudentData = {
+    // 准备要保存的数据
+    const dataToSave = {
        ...studentData,
-       // 确保有默认的center值
-       center: studentData.center || 'WX 01',
-       // 根据年级自动设置level
-       level: studentData.level || (parseInt(studentData.standard || '0') <= 6 ? 'primary' : 'secondary'),
-       // 确保有默认的注册日期
-       registrationDate: studentData.registrationDate || new Date().toISOString().split('T')[0],
-       // 确保有默认的学费状态
-       tuitionStatus: studentData.tuitionStatus || 'pending',
-                // 字段映射：将前端字段映射到PocketBase字段
-       birthCert: studentData.birthCertificate, // birthCertificate -> birthCert
-       photo: studentData.avatar, // avatar -> photo
-       // 家长信息字段映射
-       parents_name: studentData.parentName, // parentName -> parents_name
-       parents_phone: studentData.parentPhone, // parentPhone -> parents_phone
-       // 其他字段映射
-       school: studentData.school, // school -> school
-       gender: studentData.gender, // gender -> gender
-       nric: studentData.nric, // nric -> nric
-       pickupMethod: studentData.pickupMethod // pickupMethod -> pickupMethod
-     } as any
-     
-     // 移除前端字段，避免PocketBase错误
-     delete completeStudentData.birthCertificate
-     delete completeStudentData.avatar
-     delete completeStudentData.parentName
-     delete completeStudentData.parentPhone
-    
-    console.log(`添加到students集合`)
-    
-    // 首先在students集合中创建记录
-    const studentRecord = await pb.collection('students').create(completeStudentData)
-    console.log('在students集合中添加学生成功:', studentRecord)
-    
-    // 然后在students_card集合中创建对应的记录
-    const cardData = {
-      studentName: studentRecord.student_name,
-      studentId: studentRecord.student_id,
-      center: studentRecord.center,
-      cardNumber: studentRecord.student_id, // 使用学号作为卡号
-      cardType: 'NFC',
-      status: 'active',
-      balance: 0,
-      enrollmentDate: new Date().toISOString().split('T')[0],
-      phone: studentRecord.father_phone || studentRecord.mother_phone,
-      email: studentRecord.email,
-      parentName: studentRecord.parentName,
-      parentPhone: studentRecord.father_phone || studentRecord.mother_phone,
-      address: studentRecord.home_address
+      // 确保必填字段存在
+      student_name: studentData.student_name || '未命名学生',
+      status: studentData.status || 'active',
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
     }
     
-    console.log(`添加到students_card集合`)
-    const cardRecord = await pb.collection('students_card').create(cardData)
-    console.log('在students_card集合中添加学生成功:', cardRecord)
+    console.log('保存学生数据:', dataToSave)
     
-    // 返回融合后的数据
-    return {
-      ...studentRecord,
-      id: cardRecord.id, // 使用card的ID作为主ID
-      studentRecordId: studentRecord.id // 保存student的ID
-    } as unknown as Student
+    const record = await pb.collection('students').create(dataToSave)
+    console.log('学生添加成功:', record.id)
+    
+    // 返回添加后的学生数据
+    const newStudent = await getStudentById(record.id)
+    if (!newStudent) {
+      throw new Error('无法获取新添加的学生数据')
+    }
+    return newStudent
+    
   } catch (error: any) {
     console.error('添加学生失败:', error)
-    console.error('错误详情:', {
-      status: error?.status,
-      message: error?.message,
-      data: error?.data,
-      name: error?.name
-    })
-    
-    if (error.data) {
-      const data = error.data
-      console.error('验证错误详情:', data)
-      
-      if (data.student_name) {
-        throw new Error(`姓名错误: ${data.student_name.message}`)
-      } else if (data.student_id) {
-        throw new Error(`学号错误: ${data.student_id.message}`)
-      } else if (data.standard) {
-        throw new Error(`年级错误: ${data.standard.message}`)
-      } else if (data.message) {
-        throw new Error(`添加失败: ${data.message}`)
-      }
-    }
-    
-    throw new Error(`添加学生失败: ${error.message || '未知错误'}`)
+    throw new Error(`添加学生失败: ${error.message}`)
   }
 }
 
-// 更新学生信息
-export const updateStudent = async (studentData: StudentUpdateData): Promise<Student> => {
-  const { id, ...updateData } = studentData
-  
+// 更新学生
+export const updateStudent = async (id: string, studentData: StudentUpdateData): Promise<Student> => {
   try {
-    console.log('准备更新学生，ID:', id, '数据:', updateData)
+    console.log(`开始更新学生 ${id}...`)
     
-    // 检查认证状态
     const pb = await getPb()
     if (!pb.authStore.isValid) {
-      console.log('用户未认证，尝试用户认证...')
-      try {
-        await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-        console.log('用户认证成功')
-      } catch (authError) {
-        console.error('用户认证失败:', authError)
-        throw new Error('无法认证访问学生数据')
-      }
+      throw new Error('用户未认证')
     }
     
-    // 确定要更新的集合和ID
-    // 如果这是融合数据中的ID（来自students_card），我们需要找到对应的students记录
-    let targetId = id
-    let targetCollection = 'students'
-    
-    // 检查这个ID是否存在于students_card集合中
-    try {
-      const cardRecord = await pb.collection('students_card').getOne(id)
-      console.log('找到students_card记录:', cardRecord)
-      
-      // 通过姓名查找对应的students记录
-      const studentsResponse = await pb.collection('students').getList(1, 1, {
-        filter: `student_name = "${cardRecord.studentName}"`,
-        $autoCancel: false
-      })
-      
-      if (studentsResponse.items.length > 0) {
-        targetId = studentsResponse.items[0].id
-        console.log('找到对应的students记录ID:', targetId)
-      } else {
-        throw new Error(`找不到对应的students记录 (姓名: ${cardRecord.studentName})`)
-      }
-    } catch (cardError: any) {
-      // 如果ID不在students_card中，假设它在students中
-      console.log('ID不在students_card中，假设在students中:', id)
+    // 准备更新数据
+    const updateData = {
+      ...studentData,
+      updated: new Date().toISOString(),
     }
     
-    // 首先检查学生是否存在
-    try {
-      const existingRecord = await pb.collection(targetCollection).getOne(targetId)
-      console.log('找到现有学生记录:', existingRecord)
-    } catch (getError: any) {
-      console.error('学生记录不存在:', getError)
-      throw new Error(`学生记录不存在 (ID: ${targetId})`)
-    }
+    console.log('更新学生数据:', updateData)
     
-    // 字段映射：将前端字段映射到PocketBase字段
-    const mappedUpdateData = { ...updateData } as any
-    if (updateData.birthCertificate !== undefined) {
-      mappedUpdateData.birthCert = updateData.birthCertificate
-      delete mappedUpdateData.birthCertificate
-    }
-    if (updateData.avatar !== undefined) {
-      mappedUpdateData.photo = updateData.avatar
-      delete mappedUpdateData.avatar
-    }
-    if (updateData.parentName !== undefined) {
-      mappedUpdateData.parents_name = updateData.parentName
-      delete mappedUpdateData.parentName
-    }
-    if (updateData.parentPhone !== undefined) {
-      mappedUpdateData.parents_phone = updateData.parentPhone
-      delete mappedUpdateData.parentPhone
-    }
-    // 其他字段映射（这些字段名称相同，但确保类型正确）
-    if (updateData.school !== undefined) {
-      mappedUpdateData.school = updateData.school
-    }
-    if (updateData.gender !== undefined) {
-      mappedUpdateData.gender = updateData.gender
-    }
-    if (updateData.nric !== undefined) {
-      mappedUpdateData.nric = updateData.nric
-    }
-    if (updateData.pickupMethod !== undefined) {
-      mappedUpdateData.pickupMethod = updateData.pickupMethod
-    }
+    await pb.collection('students').update(id, updateData)
+    console.log('学生更新成功')
     
-    console.log('映射后的更新数据:', mappedUpdateData)
+    // 返回更新后的学生数据
+    const updatedStudent = await getStudentById(id)
+    if (!updatedStudent) {
+      throw new Error('无法获取更新后的学生数据')
+    }
+    return updatedStudent
     
-    // 更新学生记录
-    const record = await pb.collection(targetCollection).update(targetId, mappedUpdateData)
-    
-    return record as unknown as Student
   } catch (error: any) {
-    console.error('更新学生信息失败:', error)
-    
-    // 简化错误处理，只显示主要错误信息
-    if (error.data) {
-      const data = error.data
-      const errorMessages = []
-      
-             if (data.student_name?.message) errorMessages.push(`姓名: ${data.student_name.message}`)
-       if (data.student_id?.message) errorMessages.push(`学号: ${data.student_id.message}`)
-       if (data.standard?.message) errorMessages.push(`年级: ${data.standard.message}`)
-       if (data.center?.message) errorMessages.push(`中心: ${data.center.message}`)
-       if (data.serviceType?.message) errorMessages.push(`服务类型: ${data.serviceType.message}`)
-       if (data.gender?.message) errorMessages.push(`性别: ${data.gender.message}`)
-       if (data.dob?.message) errorMessages.push(`出生日期: ${data.dob.message}`)
-       if (data.nric?.message) errorMessages.push(`NRIC/护照: ${data.nric.message}`)
-       if (data.school?.message) errorMessages.push(`学校: ${data.school.message}`)
-       if (data.parentPhone?.message) errorMessages.push(`父母电话: ${data.parentPhone.message}`)
-       if (data.emergencyContact?.message) errorMessages.push(`紧急联络人: ${data.emergencyContact.message}`)
-       if (data.emergencyPhone?.message) errorMessages.push(`紧急联络电话: ${data.emergencyPhone.message}`)
-       if (data.message) errorMessages.push(data.message)
-      
-      if (errorMessages.length > 0) {
-        throw new Error(`更新失败: ${errorMessages.join(', ')}`)
-      }
-    }
-    
-    throw new Error(`更新学生信息失败: ${error.message || '未知错误'}`)
+    console.error('更新学生失败:', error)
+    throw new Error(`更新学生失败: ${error.message}`)
   }
 }
 
 // 删除学生
-export const deleteStudent = async (studentId: string): Promise<void> => {
+export const deleteStudent = async (id: string): Promise<void> => {
   try {
-    // 检查认证状态
+    console.log(`开始删除学生 ${id}...`)
+    
     const pb = await getPb()
     if (!pb.authStore.isValid) {
-      console.log('用户未认证，尝试用户认证...')
-      try {
-        await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-        console.log('用户认证成功')
-      } catch (authError) {
-        console.error('用户认证失败:', authError)
-        throw new Error('无法认证访问学生数据')
-      }
+      throw new Error('用户未认证')
     }
     
-    // 从统一的students集合删除学生
-    await pb.collection('students').delete(studentId)
-  } catch (error) {
+    await pb.collection('students').delete(id)
+    console.log('学生删除成功')
+    
+  } catch (error: any) {
     console.error('删除学生失败:', error)
-    throw new Error('删除学生失败')
+    throw new Error(`删除学生失败: ${error.message}`)
+  }
+}
+
+// 根据ID获取学生
+export const getStudentById = async (id: string): Promise<Student | null> => {
+  try {
+    console.log(`获取学生 ${id}...`)
+    
+    const pb = await getPb()
+    if (!pb.authStore.isValid) {
+      throw new Error('用户未认证')
+    }
+    
+    const record = await pb.collection('students').getOne(id)
+    
+    if (!record) {
+      console.log('学生不存在')
+      return null
+    }
+    
+    // 转换数据格式
+    const student: Student = {
+      id: record.id,
+      
+      // 基本信息
+      student_id: record.student_id,
+      student_name: record.student_name,
+      dob: record.dob,
+      father_phone: record.father_phone,
+      mother_phone: record.mother_phone,
+      home_address: record.home_address,
+      gender: record.gender,
+      serviceType: record.serviceType,
+      register_form_url: record.register_form_url,
+      standard: record.standard,
+      level: record.level,
+      center: record.center,
+      
+      // 扩展信息
+      nric: record.nric,
+      school: record.school,
+      parentPhone: record.parentPhone,
+      emergencyContact: record.emergencyContact,
+      emergencyPhone: record.emergencyPhone,
+      healthInfo: record.healthInfo,
+      pickupMethod: record.pickupMethod,
+      
+      // 接送安排
+      authorizedPickup1Name: record.authorizedPickup1Name,
+      authorizedPickup1Phone: record.authorizedPickup1Phone,
+      authorizedPickup1Relation: record.authorizedPickup1Relation,
+      authorizedPickup2Name: record.authorizedPickup2Name,
+      authorizedPickup2Phone: record.authorizedPickup2Phone,
+      authorizedPickup2Relation: record.authorizedPickup2Relation,
+      authorizedPickup3Name: record.authorizedPickup3Name,
+      authorizedPickup3Phone: record.authorizedPickup3Phone,
+      authorizedPickup3Relation: record.authorizedPickup3Relation,
+      
+      // 注册和费用信息
+      registrationDate: record.registrationDate,
+      tuitionStatus: record.tuitionStatus,
+      birthCertificate: record.birthCert || record.birthCertificate,
+      avatar: record.photo || record.avatar,
+      
+      // 考勤相关字段
+      cardNumber: record.cardNumber,
+      cardType: record.cardType,
+      studentUrl: record.studentUrl,
+      balance: record.balance,
+      status: record.status || 'active',
+      issuedDate: record.issuedDate,
+      expiryDate: record.expiryDate,
+      enrollmentDate: record.enrollmentDate,
+      phone: record.phone,
+      email: record.email,
+      parentName: record.parentName,
+      address: record.address,
+      medicalInfo: record.medicalInfo,
+      notes: record.notes,
+      usageCount: record.usageCount || 0,
+      lastUsed: record.lastUsed,
+      
+      // 系统字段
+      created: record.created,
+      updated: record.updated,
+    }
+    
+    console.log('学生数据获取成功')
+    return student
+    
+  } catch (error: any) {
+    console.error('获取学生失败:', error)
+    throw new Error(`获取学生失败: ${error.message}`)
   }
 }
 
 // 搜索学生
 export const searchStudents = async (query: string): Promise<Student[]> => {
   try {
-    // 检查认证状态
+    console.log(`搜索学生: ${query}`)
+    
     const pb = await getPb()
     if (!pb.authStore.isValid) {
-      console.log('用户未认证，尝试用户认证...')
-      try {
-        await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-        console.log('用户认证成功')
-      } catch (authError) {
-        console.error('用户认证失败:', authError)
-        throw new Error('无法认证访问学生数据')
-      }
+      throw new Error('用户未认证')
     }
     
-    // 从统一的students集合搜索学生
-    const records = await pb.collection('students').getList(1, 100, {
-      filter: `student_name ~ "${query}" || student_id ~ "${query}"`,
+    // 使用PocketBase的搜索功能
+    const records = await pb.collection('students').getList(1, 50, {
+      filter: `student_name ~ "${query}" || student_id ~ "${query}" || school ~ "${query}"`,
       sort: 'student_name',
       $autoCancel: false
     })
     
-    console.log(`✅ 搜索 "${query}" 找到 ${records.items.length} 个学生`)
-    return records.items as unknown as Student[]
-  } catch (error) {
-    console.error('❌ 搜索学生失败:', error)
-    throw new Error('搜索学生失败')
+    const students = records.items || []
+    console.log(`搜索到 ${students.length} 个学生`)
+    
+    // 转换数据格式
+    const formattedStudents: Student[] = students.map((record: any) => ({
+      id: record.id,
+      
+      // 基本信息
+      student_id: record.student_id,
+      student_name: record.student_name,
+      dob: record.dob,
+      father_phone: record.father_phone,
+      mother_phone: record.mother_phone,
+      home_address: record.home_address,
+      gender: record.gender,
+      serviceType: record.serviceType,
+      register_form_url: record.register_form_url,
+      standard: record.standard,
+      level: record.level,
+      center: record.center,
+      
+      // 扩展信息
+      nric: record.nric,
+      school: record.school,
+      parentPhone: record.parentPhone,
+      emergencyContact: record.emergencyContact,
+      emergencyPhone: record.emergencyPhone,
+      healthInfo: record.healthInfo,
+      pickupMethod: record.pickupMethod,
+      
+      // 接送安排
+      authorizedPickup1Name: record.authorizedPickup1Name,
+      authorizedPickup1Phone: record.authorizedPickup1Phone,
+      authorizedPickup1Relation: record.authorizedPickup1Relation,
+      authorizedPickup2Name: record.authorizedPickup2Name,
+      authorizedPickup2Phone: record.authorizedPickup2Phone,
+      authorizedPickup2Relation: record.authorizedPickup2Relation,
+      authorizedPickup3Name: record.authorizedPickup3Name,
+      authorizedPickup3Phone: record.authorizedPickup3Phone,
+      authorizedPickup3Relation: record.authorizedPickup3Relation,
+      
+      // 注册和费用信息
+      registrationDate: record.registrationDate,
+      tuitionStatus: record.tuitionStatus,
+      birthCertificate: record.birthCert || record.birthCertificate,
+      avatar: record.photo || record.avatar,
+      
+      // 考勤相关字段
+      cardNumber: record.cardNumber,
+      cardType: record.cardType,
+      studentUrl: record.studentUrl,
+      balance: record.balance,
+      status: record.status || 'active',
+      issuedDate: record.issuedDate,
+      expiryDate: record.expiryDate,
+      enrollmentDate: record.enrollmentDate,
+      phone: record.phone,
+      email: record.email,
+      parentName: record.parentName,
+      address: record.address,
+      medicalInfo: record.medicalInfo,
+      notes: record.notes,
+      usageCount: record.usageCount || 0,
+      lastUsed: record.lastUsed,
+      
+      // 系统字段
+      created: record.created,
+      updated: record.updated,
+    }))
+    
+    return formattedStudents
+    
+  } catch (error: any) {
+    console.error('搜索学生失败:', error)
+    throw new Error(`搜索学生失败: ${error.message}`)
   }
 }
 
-// 获取学生统计信息
-export const getStudentStats = async () => {
+// 根据中心获取学生
+export const getStudentsByCenter = async (center: string): Promise<Student[]> => {
   try {
-    // 检查认证状态
+    console.log(`获取中心 ${center} 的学生...`)
+    
     const pb = await getPb()
     if (!pb.authStore.isValid) {
-      console.log('用户未认证，尝试用户认证...')
-      try {
-        await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-        console.log('用户认证成功')
-      } catch (authError) {
-        console.error('用户认证失败:', authError)
-        throw new Error('无法认证访问学生数据')
-      }
+      throw new Error('用户未认证')
     }
     
-    const allStudents = await getAllStudents()
-    
-    const stats = {
-      total: allStudents.length,
-      byStandard: {} as Record<string, number>
-    }
-    
-    // 按年级统计
-    allStudents.forEach(student => {
-      const standard = student.standard || '未知年级'
-      if (stats.byStandard[standard]) {
-        stats.byStandard[standard]++
-      } else {
-        stats.byStandard[standard] = 1
-      }
+    const records = await pb.collection('students').getList(1, 500, {
+      filter: `center = "${center}"`,
+      sort: 'student_name',
+      $autoCancel: false
     })
     
-    return stats
-  } catch (error) {
-    console.error('获取学生统计失败:', error)
-    throw new Error('获取学生统计失败')
+    const students = records.items || []
+    console.log(`中心 ${center} 有 ${students.length} 个学生`)
+    
+    // 转换数据格式
+    const formattedStudents: Student[] = students.map((record: any) => ({
+      id: record.id,
+      
+      // 基本信息
+      student_id: record.student_id,
+      student_name: record.student_name,
+      dob: record.dob,
+      father_phone: record.father_phone,
+      mother_phone: record.mother_phone,
+      home_address: record.home_address,
+      gender: record.gender,
+      serviceType: record.serviceType,
+      register_form_url: record.register_form_url,
+      standard: record.standard,
+      level: record.level,
+      center: record.center,
+      
+      // 扩展信息
+      nric: record.nric,
+      school: record.school,
+      parentPhone: record.parentPhone,
+      emergencyContact: record.emergencyContact,
+      emergencyPhone: record.emergencyPhone,
+      healthInfo: record.healthInfo,
+      pickupMethod: record.pickupMethod,
+      
+      // 接送安排
+      authorizedPickup1Name: record.authorizedPickup1Name,
+      authorizedPickup1Phone: record.authorizedPickup1Phone,
+      authorizedPickup1Relation: record.authorizedPickup1Relation,
+      authorizedPickup2Name: record.authorizedPickup2Name,
+      authorizedPickup2Phone: record.authorizedPickup2Phone,
+      authorizedPickup2Relation: record.authorizedPickup2Relation,
+      authorizedPickup3Name: record.authorizedPickup3Name,
+      authorizedPickup3Phone: record.authorizedPickup3Phone,
+      authorizedPickup3Relation: record.authorizedPickup3Relation,
+      
+      // 注册和费用信息
+      registrationDate: record.registrationDate,
+      tuitionStatus: record.tuitionStatus,
+      birthCertificate: record.birthCert || record.birthCertificate,
+      avatar: record.photo || record.avatar,
+      
+      // 考勤相关字段
+      cardNumber: record.cardNumber,
+      cardType: record.cardType,
+      studentUrl: record.studentUrl,
+      balance: record.balance,
+      status: record.status || 'active',
+      issuedDate: record.issuedDate,
+      expiryDate: record.expiryDate,
+      enrollmentDate: record.enrollmentDate,
+      phone: record.phone,
+      email: record.email,
+      parentName: record.parentName,
+      address: record.address,
+      medicalInfo: record.medicalInfo,
+      notes: record.notes,
+      usageCount: record.usageCount || 0,
+      lastUsed: record.lastUsed,
+      
+      // 系统字段
+      created: record.created,
+      updated: record.updated,
+    }))
+    
+    return formattedStudents
+    
+  } catch (error: any) {
+    console.error('获取中心学生失败:', error)
+    throw new Error(`获取中心学生失败: ${error.message}`)
+  }
+}
+
+// 根据状态获取学生
+export const getStudentsByStatus = async (status: string): Promise<Student[]> => {
+  try {
+    console.log(`获取状态为 ${status} 的学生...`)
+    
+    const pb = await getPb()
+    if (!pb.authStore.isValid) {
+      throw new Error('用户未认证')
+    }
+    
+    const records = await pb.collection('students').getList(1, 500, {
+      filter: `status = "${status}"`,
+      sort: 'student_name',
+      $autoCancel: false
+    })
+    
+    const students = records.items || []
+    console.log(`状态为 ${status} 的学生有 ${students.length} 个`)
+    
+    // 转换数据格式
+    const formattedStudents: Student[] = students.map((record: any) => ({
+      id: record.id,
+      
+      // 基本信息
+      student_id: record.student_id,
+      student_name: record.student_name,
+      dob: record.dob,
+      father_phone: record.father_phone,
+      mother_phone: record.mother_phone,
+      home_address: record.home_address,
+      gender: record.gender,
+      serviceType: record.serviceType,
+      register_form_url: record.register_form_url,
+      standard: record.standard,
+      level: record.level,
+      center: record.center,
+      
+      // 扩展信息
+      nric: record.nric,
+      school: record.school,
+      parentPhone: record.parentPhone,
+      emergencyContact: record.emergencyContact,
+      emergencyPhone: record.emergencyPhone,
+      healthInfo: record.healthInfo,
+      pickupMethod: record.pickupMethod,
+      
+      // 接送安排
+      authorizedPickup1Name: record.authorizedPickup1Name,
+      authorizedPickup1Phone: record.authorizedPickup1Phone,
+      authorizedPickup1Relation: record.authorizedPickup1Relation,
+      authorizedPickup2Name: record.authorizedPickup2Name,
+      authorizedPickup2Phone: record.authorizedPickup2Phone,
+      authorizedPickup2Relation: record.authorizedPickup2Relation,
+      authorizedPickup3Name: record.authorizedPickup3Name,
+      authorizedPickup3Phone: record.authorizedPickup3Phone,
+      authorizedPickup3Relation: record.authorizedPickup3Relation,
+      
+      // 注册和费用信息
+      registrationDate: record.registrationDate,
+      tuitionStatus: record.tuitionStatus,
+      birthCertificate: record.birthCert || record.birthCertificate,
+      avatar: record.photo || record.avatar,
+      
+      // 考勤相关字段
+      cardNumber: record.cardNumber,
+      cardType: record.cardType,
+      studentUrl: record.studentUrl,
+      balance: record.balance,
+      status: record.status || 'active',
+      issuedDate: record.issuedDate,
+      expiryDate: record.expiryDate,
+      enrollmentDate: record.enrollmentDate,
+      phone: record.phone,
+      email: record.email,
+      parentName: record.parentName,
+      address: record.address,
+      medicalInfo: record.medicalInfo,
+      notes: record.notes,
+      usageCount: record.usageCount || 0,
+      lastUsed: record.lastUsed,
+      
+      // 系统字段
+      created: record.created,
+      updated: record.updated,
+    }))
+    
+    return formattedStudents
+    
+  } catch (error: any) {
+    console.error('获取状态学生失败:', error)
+    throw new Error(`获取状态学生失败: ${error.message}`)
   }
 }

@@ -9,6 +9,7 @@ import { Student } from "@/hooks/useStudents"
 import { convertGradeToChinese } from "./utils"
 
 interface StudentDetailsProps {
+  open: boolean
   student: Student
   onOpenChange: (open: boolean) => void
   onEdit: () => void
@@ -16,13 +17,65 @@ interface StudentDetailsProps {
 }
 
 export default function StudentDetails({
+  open,
   student,
   onOpenChange,
   onEdit,
   onDelete
 }: StudentDetailsProps) {
+  // 调试：显示接收到的student数据
+  console.log('StudentDetails: 接收到的student数据:', {
+    hasStudent: !!student,
+    student: student ? {
+      id: student.id,
+      name: student.student_name,
+      avatar: student.avatar,
+      hasAvatar: !!student.avatar,
+      studentObject: student
+    } : null
+  })
+  
+  // 安全检查：确保student对象存在
+  if (!student) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <User className="h-6 w-6" />
+              学生详细信息
+            </DialogTitle>
+            <DialogDescription className="text-base">
+              查看学生的完整信息和学习记录
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-8 text-center">
+            <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">学生数据加载失败</h3>
+            <p className="text-gray-600 mb-4">无法获取学生信息，请检查以下可能的原因：</p>
+            <div className="text-left max-w-md mx-auto bg-gray-50 p-4 rounded-lg">
+              <ul className="text-sm text-gray-600 space-y-2">
+                <li>• 学生记录在数据库中不完整</li>
+                <li>• 数据同步出现问题</li>
+                <li>• 网络连接异常</li>
+              </ul>
+            </div>
+            <div className="mt-6 space-x-3">
+              <Button onClick={() => window.location.reload()} variant="outline">
+                刷新页面
+              </Button>
+              <Button onClick={onOpenChange.bind(null, false)}>
+                关闭
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
   return (
-    <Dialog open={true} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
@@ -50,10 +103,10 @@ export default function StudentDetails({
                   <div className="flex items-center gap-4">
                     {/* 学生头像 */}
                     <div className="relative">
-                      {student.avatar ? (
+                      {student?.avatar && student.avatar !== 'null' && student.avatar !== 'undefined' ? (
                         <img 
                           src={student.avatar} 
-                          alt={`${student.student_name}的头像`}
+                          alt={`${student?.student_name || '学生'}的头像`}
                           className="w-16 h-16 rounded-full border-3 border-white/30 object-cover shadow-lg"
                           onError={(e) => {
                             // 如果头像加载失败，显示默认图标
@@ -63,7 +116,7 @@ export default function StudentDetails({
                           }}
                         />
                       ) : null}
-                      <div className={`w-16 h-16 bg-white/20 rounded-full flex items-center justify-center border-3 border-white/30 shadow-lg ${student.avatar ? 'hidden' : ''}`}>
+                      <div className={`w-16 h-16 bg-white/20 rounded-full flex items-center justify-center border-3 border-white/30 shadow-lg ${student?.avatar && student.avatar !== 'null' && student.avatar !== 'undefined' ? 'hidden' : ''}`}>
                         <User className="h-8 w-8" />
                       </div>
                       {/* 上传头像按钮 - 悬停时显示 */}
@@ -75,9 +128,9 @@ export default function StudentDetails({
                     {/* 学生信息 */}
                     <div className="flex-1">
                       <p className="text-sm font-medium opacity-90">学生姓名</p>
-                      <h2 className="text-2xl font-semibold mb-1">{student.student_name}</h2>
+                      <h2 className="text-2xl font-semibold mb-1">{student?.student_name || '未知学生'}</h2>
                       {/* 添加学号显示，更紧凑 */}
-                      {student.student_id && (
+                      {student?.student_id && (
                         <div className="flex items-center gap-2">
                           <span className="text-xs bg-white/20 px-2 py-1 rounded-full">学号: {student.student_id}</span>
                         </div>

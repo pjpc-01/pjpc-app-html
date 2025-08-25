@@ -173,7 +173,16 @@ export default function StudentList({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onViewStudent(student)}
+                    onClick={() => {
+                      console.log('StudentList: 点击查看学生:', {
+                        id: student.id,
+                        name: student.student_name,
+                        avatar: student.avatar,
+                        hasAvatar: !!student.avatar,
+                        studentObject: student
+                      })
+                      onViewStudent(student)
+                    }}
                   >
                     <Eye className="h-4 w-4" />
                   </Button>

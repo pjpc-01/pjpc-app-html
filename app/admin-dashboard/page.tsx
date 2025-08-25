@@ -16,6 +16,7 @@ import {
   UserX,
   Clock,
   Database,
+  Globe,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -94,6 +95,43 @@ export default function AdminDashboard() {
                   <div className="text-xs text-gray-500">NFC + RFID</div>
                 </div>
                 <Link href="/unified-attendance">
+                  <Button className="flex items-center gap-2">
+                    进入系统
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* URL考勤系统 */}
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-6 w-6 text-blue-600" />
+                URL考勤系统
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                    <Users className="h-3 w-3 mr-1" />
+                    有URL: 25
+                  </Badge>
+                  <span className="text-sm text-gray-600">学生状态</span>
+                </div>
+                <p className="text-sm text-gray-600">
+                  基于学生专属URL的智能考勤系统，支持移动设备NFC打卡
+                </p>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="text-2xl font-bold text-blue-600">URL识别</div>
+                  <div className="text-xs text-gray-500">移动 + NFC</div>
+                </div>
+                <Link href="/url-attendance">
                   <Button className="flex items-center gap-2">
                     进入系统
                     <ArrowRight className="h-4 w-4" />

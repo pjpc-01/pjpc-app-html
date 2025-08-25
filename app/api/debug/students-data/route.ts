@@ -25,7 +25,7 @@ export async function GET() {
     try {
       const studentsResponse = await pb.collection('students').getList(1, 10)
       studentsData = studentsResponse.items || []
-      console.log(`获取到 ${studentsData.length} 个 students 记录`)
+      console.log(`获取到 ${studentsResponse.totalItems} 个 students 记录`)
       if (studentsData.length > 0) {
         console.log('第一个 students 记录:', JSON.stringify(studentsData[0], null, 2))
       }
@@ -33,27 +33,27 @@ export async function GET() {
       console.error('获取 students 数据失败:', error)
     }
     
-    // 获取 students_card 集合数据
-    console.log('获取 students_card 集合数据...')
+    // 获取 students 集合数据（重复检查）
+    console.log('获取 students 集合数据（重复检查）...')
     let cardsData: any[] = []
     try {
-      const cardsResponse = await pb.collection('students_card').getList(1, 10)
+      const cardsResponse = await pb.collection('students').getList(1, 10)
       cardsData = cardsResponse.items || []
-      console.log(`获取到 ${cardsResponse.totalItems} 个 students_card 记录`)
+      console.log(`获取到 ${cardsResponse.totalItems} 个 students 记录`)
       if (cardsData.length > 0) {
-        console.log('第一个 students_card 记录:', JSON.stringify(cardsData[0], null, 2))
+        console.log('第一个 students 记录:', JSON.stringify(cardsData[0], null, 2))
       }
     } catch (error) {
-      console.error('获取 students_card 数据失败:', error)
+      console.error('获取 students 数据失败:', error)
     }
     
     return NextResponse.json({
       success: true,
       students: {
-        count: studentsData.length,
+        total: studentsData.length,
         sample: studentsData.slice(0, 3)
       },
-      students_card: {
+      students_duplicate: {
         count: cardsData.length,
         total: cardsData.length > 0 ? '更多数据' : 0,
         sample: cardsData.slice(0, 3)

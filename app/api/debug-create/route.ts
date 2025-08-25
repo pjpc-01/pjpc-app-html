@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     
     try {
       console.log('尝试创建记录...')
-      const record = await pb.collection('students_card').create(testData)
+      const record = await pb.collection('students').create(testData)
       console.log('✅ 创建成功:', record)
       
       return NextResponse.json({

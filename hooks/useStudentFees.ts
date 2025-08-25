@@ -123,8 +123,8 @@ export function useStudentFees() {
     debugLog('🔄 loadStudentNameMapping called');
     
     try {
-      debugLog('🔄 Making PocketBase request for students_card...');
-      const studentsCard = await pb.collection("students_card").getFullList();
+      debugLog('🔄 Making PocketBase request for students...');
+      const studentsCard = await pb.collection("students").getFullList();
       
       const mapping = new Map<string, string>();
       studentsCard.forEach((card: any) => {

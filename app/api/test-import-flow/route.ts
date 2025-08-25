@@ -83,7 +83,8 @@ export async function POST(request: NextRequest) {
         }
         
         console.log(`尝试创建: ${cleanCard.studentId}`)
-        const record = await pb.collection('students_card').create(cleanCard)
+        // 创建学生记录
+        const record = await pb.collection('students').create(cleanCard)
         createdCards.push(record)
         console.log(`✅ 创建成功: ${cleanCard.studentId}`)
         
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
     }
     
     // 验证数据是否真的保存了
-    const allRecords = await pb.collection('students_card').getFullList()
+    const allRecords = await pb.collection('students').getFullList()
     console.log(`数据库中总共有 ${allRecords.length} 条记录`)
     
     return NextResponse.json({

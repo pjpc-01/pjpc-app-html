@@ -16,13 +16,12 @@
     "dev:optimized": "node dev-optimized.js",
     "dev:fast": "next dev --turbo --experimental-turbo",
     "lint": "next lint",
-    "test:network": "node scripts/test-network.js",
+    "test:network": "node test-network-ip.js",
     "test:auth": "node scripts/test-pocketbase-auth.js",
     "test:permissions": "node scripts/test-pocketbase-permissions.js",
     "test:ddns": "node scripts/test-ddns.js",
     "test:sheets": "cross-env NODE_OPTIONS=--openssl-legacy-provider node scripts/test-google-sheets.js",
     "test:ports": "node test-port-detection.js",
-    "test:network": "node test-network-ip.js",
     "test:connection": "node test-connection.js"
   },
   "dependencies": {

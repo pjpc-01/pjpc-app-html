@@ -27,7 +27,7 @@ export async function GET() {
       }
     }
     
-    const records = await pb.collection('students_card').getFullList({
+    const records = await pb.collection('students').getFullList({
       sort: 'studentId'
     })
     
