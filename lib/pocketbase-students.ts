@@ -140,17 +140,12 @@ export const getAllStudents = async (): Promise<Student[]> => {
   try {
     console.log('开始获取学生数据...')
     
-        // 确保认证
     const pb = await getPb()
+    
+    // 检查认证状态
     if (!pb.authStore.isValid) {
-      console.log('用户未认证，尝试用户认证...')
-      try {
-        await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-        console.log('用户认证成功')
-      } catch (authError) {
-        console.error('用户认证失败:', authError)
-        throw new Error('无法认证访问学生数据')
-      }
+      console.log('用户未认证，需要先登录')
+      throw new Error('用户未认证，请先登录系统')
     }
     
     // 直接从 students 集合获取所有数据
