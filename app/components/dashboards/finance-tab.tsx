@@ -13,14 +13,14 @@ import {
   TrendingUp,
   RefreshCw,
 } from "lucide-react"
-import FinanceOverview from "../finance/FinanceOverview"
-import FeeManagement from "../finance/FeeManagement"
-import InvoiceManagement from "../finance/InvoiceManagement"
-import PaymentManagement from "../finance/PaymentManagement"
-import ReminderManagement from "../finance/ReminderManagement"
-import FinancialReports from "../finance/FinancialReports"
+import FinanceOverview from "../finance/reports-overview/FinanceOverview"
+import FeeManagement from "../finance/fee-management/FeeManagement"
+import InvoiceManagement from "../finance/invoice-management/InvoiceManagement"
+import PaymentManagement from "../finance/payment-management/PaymentManagement"
+import ReminderManagement from "../finance/payment-management/ReminderManagement"
+import FinancialReports from "../finance/reports-overview/FinancialReports"
 import { StudentFeeMatrix } from "../finance/student-fee-matrix/StudentFeeMatrix"
-import ReceiptManagement from "../finance/ReceiptManagement"
+import ReceiptManagement from "../finance/payment-management/ReceiptManagement"
 
 interface FinanceTabProps {
   financialStats: any
@@ -50,45 +50,45 @@ export default function FinanceTab({ financialStats, financialLoading, setActive
     <div className="space-y-6">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">Finance Management</h2>
-        <p className="text-gray-600">Manage your financial data and reports</p>
+        <h2 className="text-2xl font-bold mb-2">财务管理</h2>
+        <p className="text-gray-600">全面的财务数据管理和分析</p>
       </div>
 
       {/* Navigation Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Card className={`cursor-pointer hover:shadow-lg transition-all duration-200 border-2 ${
-          financeSubTab === "financial-overview" 
-            ? "border-blue-300 bg-blue-50 shadow-lg" 
-            : "hover:border-blue-200"
-        }`}>
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("financial-overview")}>
-            <TrendingUp className="h-12 w-12 mx-auto mb-4 text-blue-600" />
-            <h3 className="font-semibold mb-2">Financial Overview</h3>
-            <p className="text-sm text-gray-600 mb-3">Revenue, expenses and profit</p>
-            {!financialLoading && (
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                RM {financialStats?.netProfit?.toLocaleString() || 0}
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
+                 <Card className={`cursor-pointer hover:shadow-lg transition-all duration-200 border-2 ${
+           financeSubTab === "financial-overview" 
+             ? "border-blue-300 bg-blue-50 shadow-lg" 
+             : "hover:border-blue-200"
+         }`}>
+           <CardContent className="p-6 text-center" onClick={() => handleCardClick("financial-overview")}>
+             <TrendingUp className="h-12 w-12 mx-auto mb-4 text-blue-600" />
+             <h3 className="font-semibold mb-2">财务概览</h3>
+             <p className="text-sm text-gray-600 mb-3">收入、支出和利润跟踪</p>
+             {!financialLoading && (
+               <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                 RM {financialStats?.netProfit?.toLocaleString() || 0}
+               </Badge>
+             )}
+           </CardContent>
+         </Card>
 
-        <Card className={`cursor-pointer hover:shadow-lg transition-all duration-200 border-2 ${
-          financeSubTab === "student-fees" 
-            ? "border-green-300 bg-green-50 shadow-lg" 
-            : "hover:border-green-200"
-        }`}>
-          <CardContent className="p-6 text-center" onClick={() => handleCardClick("student-fees")}>
-            <Users className="h-12 w-12 mx-auto mb-4 text-green-600" />
-            <h3 className="font-semibold mb-2">Student Fee Management</h3>
-            <p className="text-sm text-gray-600 mb-3">Student fees and payments</p>
-            {!financialLoading && (
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                Student Management
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
+         <Card className={`cursor-pointer hover:shadow-lg transition-all duration-200 border-2 ${
+           financeSubTab === "student-fees" 
+             ? "border-green-300 bg-green-50 shadow-lg" 
+             : "hover:border-green-200"
+         }`}>
+           <CardContent className="p-6 text-center" onClick={() => handleCardClick("student-fees")}>
+             <Users className="h-12 w-12 mx-auto mb-4 text-green-600" />
+             <h3 className="font-semibold mb-2">学生费用分配</h3>
+             <p className="text-sm text-gray-600 mb-3">学生费用分配和跟踪</p>
+             {!financialLoading && (
+               <Badge variant="secondary" className="bg-green-100 text-green-800">
+                 学生管理
+               </Badge>
+             )}
+           </CardContent>
+         </Card>
       </div>
 
       {/* Finance Sub-tab Content */}
@@ -103,7 +103,7 @@ export default function FinanceTab({ financialStats, financialLoading, setActive
                   }`}
                   onClick={() => setFinancialOverviewSubTab("overview")}
                 >
-                  Overview
+                  概览
                 </button>
                 <button 
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -111,7 +111,7 @@ export default function FinanceTab({ financialStats, financialLoading, setActive
                   }`}
                   onClick={() => setFinancialOverviewSubTab("fee-items")}
                 >
-                  Fee Items
+                  收费项目
                 </button>
                 <button 
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -119,30 +119,30 @@ export default function FinanceTab({ financialStats, financialLoading, setActive
                   }`}
                   onClick={() => setFinancialOverviewSubTab("reports")}
                 >
-                  Financial Reports
+                  财务报表
                 </button>
               </div>
               
               {financialOverviewSubTab === "overview" && (
                 <div className="space-y-6">
-                  {/* Financial Summary Cards */}
+                  {/* 关键财务指标 */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <Card>
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-gray-600">Cash Balance</p>
+                            <p className="text-sm font-medium text-gray-600">现金余额</p>
                             {financialLoading ? (
                               <div className="flex items-center mt-2">
                                 <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                                <span className="text-sm text-gray-500">Loading...</span>
+                                <span className="text-sm text-gray-500">加载中...</span>
                               </div>
                             ) : (
                               <>
                                 <p className="text-2xl font-bold text-green-600">RM {financialStats?.cashBalance?.toLocaleString() || 0}</p>
                                 <p className="text-xs text-green-600 flex items-center mt-1">
                                   <TrendingUp className="h-3 w-3 mr-1" />
-                                  Current Balance
+                                  实时数据
                                 </p>
                               </>
                             )}
@@ -156,18 +156,18 @@ export default function FinanceTab({ financialStats, financialLoading, setActive
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-gray-600">Monthly Revenue</p>
+                            <p className="text-sm font-medium text-gray-600">月度收入</p>
                             {financialLoading ? (
                               <div className="flex items-center mt-2">
                                 <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                                <span className="text-sm text-gray-500">Loading...</span>
+                                <span className="text-sm text-gray-500">加载中...</span>
                               </div>
                             ) : (
                               <>
                                 <p className="text-2xl font-bold text-blue-600">RM {financialStats?.monthlyRevenue?.toLocaleString() || 0}</p>
                                 <p className="text-xs text-blue-600 flex items-center mt-1">
                                   <TrendingUp className="h-3 w-3 mr-1" />
-                                  Current Month
+                                  实时数据
                                 </p>
                               </>
                             )}
@@ -181,18 +181,18 @@ export default function FinanceTab({ financialStats, financialLoading, setActive
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-gray-600">Monthly Expenses</p>
+                            <p className="text-sm font-medium text-gray-600">月度支出</p>
                             {financialLoading ? (
                               <div className="flex items-center mt-2">
                                 <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                                <span className="text-sm text-gray-500">Loading...</span>
+                                <span className="text-sm text-gray-500">加载中...</span>
                               </div>
                             ) : (
                               <>
                                 <p className="text-2xl font-bold text-red-600">RM {financialStats?.monthlyExpenses?.toLocaleString() || 0}</p>
                                 <p className="text-xs text-red-600 flex items-center mt-1">
                                   <TrendingUp className="h-3 w-3 mr-1 rotate-180" />
-                                  Current Month
+                                  实时数据
                                 </p>
                               </>
                             )}
@@ -206,18 +206,18 @@ export default function FinanceTab({ financialStats, financialLoading, setActive
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-gray-600">Net Profit</p>
+                            <p className="text-sm font-medium text-gray-600">净利润</p>
                             {financialLoading ? (
                               <div className="flex items-center mt-2">
                                 <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                                <span className="text-sm text-gray-500">Loading...</span>
+                                <span className="text-sm text-gray-500">加载中...</span>
                               </div>
                             ) : (
                               <>
                                 <p className="text-2xl font-bold text-purple-600">RM {financialStats?.netProfit?.toLocaleString() || 0}</p>
                                 <p className="text-xs text-purple-600 flex items-center mt-1">
                                   <BarChart3 className="h-3 w-3 mr-1" />
-                                  Current Month
+                                  实时数据
                                 </p>
                               </>
                             )}
@@ -228,23 +228,23 @@ export default function FinanceTab({ financialStats, financialLoading, setActive
                     </Card>
                   </div>
 
-                  {/* Financial Summary Section */}
+                  {/* 财务跟踪详情 */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Card>
                       <CardContent className="p-6">
-                        <h3 className="text-lg font-semibold mb-4">Revenue Summary</h3>
+                        <h3 className="text-lg font-semibold mb-4">收入分析</h3>
                         <div className="space-y-3">
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Student Fees</span>
+                            <span className="text-gray-600">学费收入</span>
                             <span className="font-medium">RM 12,000</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Other Revenue</span>
+                            <span className="text-gray-600">其他收入</span>
                             <span className="font-medium">RM 3,000</span>
                           </div>
                           <div className="border-t pt-2">
                             <div className="flex justify-between font-semibold">
-                              <span>Total Revenue</span>
+                              <span>总收入</span>
                               <span className="text-blue-600">RM 15,000</span>
                             </div>
                           </div>
@@ -254,19 +254,19 @@ export default function FinanceTab({ financialStats, financialLoading, setActive
 
                     <Card>
                       <CardContent className="p-6">
-                        <h3 className="text-lg font-semibold mb-4">Expense Summary</h3>
+                        <h3 className="text-lg font-semibold mb-4">支出分析</h3>
                         <div className="space-y-3">
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Staff Salaries</span>
+                            <span className="text-gray-600">人员工资</span>
                             <span className="font-medium">RM 8,000</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Operating Costs</span>
+                            <span className="text-gray-600">运营费用</span>
                             <span className="font-medium">RM 4,000</span>
                           </div>
                           <div className="border-t pt-2">
                             <div className="flex justify-between font-semibold">
-                              <span>Total Expenses</span>
+                              <span>总支出</span>
                               <span className="text-red-600">RM 12,000</span>
                             </div>
                           </div>
@@ -284,52 +284,52 @@ export default function FinanceTab({ financialStats, financialLoading, setActive
           
           {financeSubTab === "student-fees" && (
             <div className="space-y-6">
-              <div className="flex gap-2 mb-4">
-                <button 
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    studentFeesSubTab === "overview" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                  onClick={() => setStudentFeesSubTab("overview")}
-                >
-                  Fee Matrix
-                </button>
-                <button 
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    studentFeesSubTab === "invoices" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                  onClick={() => setStudentFeesSubTab("invoices")}
-                >
-                  Invoice Management
-                </button>
-                <button 
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    studentFeesSubTab === "payments" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                  onClick={() => setStudentFeesSubTab("payments")}
-                >
-                  Payment Management
-                </button>
-                <button 
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    studentFeesSubTab === "reminders" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                  onClick={() => setStudentFeesSubTab("reminders")}
-                >
-                  Fee Reminders
-                </button>
-                <button 
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    studentFeesSubTab === "receipts" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                  onClick={() => setStudentFeesSubTab("receipts")}
-                >
-                  Receipt Management
-                </button>
-              </div>
+                             <div className="flex gap-2 mb-4">
+                                   <button 
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      studentFeesSubTab === "overview" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                    onClick={() => setStudentFeesSubTab("overview")}
+                  >
+                    费用分配
+                  </button>
+                  <button 
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      studentFeesSubTab === "invoices" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                    onClick={() => setStudentFeesSubTab("invoices")}
+                  >
+                    发票管理
+                  </button>
+                  <button 
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      studentFeesSubTab === "payments" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                    onClick={() => setStudentFeesSubTab("payments")}
+                  >
+                    支付管理
+                  </button>
+                  <button 
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      studentFeesSubTab === "reminders" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                    onClick={() => setStudentFeesSubTab("reminders")}
+                  >
+                    收费提醒
+                  </button>
+                  <button 
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      studentFeesSubTab === "receipts" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                    onClick={() => setStudentFeesSubTab("receipts")}
+                  >
+                    收据管理
+                  </button>
+               </div>
               
               {studentFeesSubTab === "overview" && <StudentFeeMatrix />}
               {studentFeesSubTab === "invoices" && <InvoiceManagement />}
-              {studentFeesSubTab === "receipts" && <ReceiptManagement />}
+                             {studentFeesSubTab === "receipts" && <ReceiptManagement />}
               {studentFeesSubTab === "payments" && <PaymentManagement />}
               {studentFeesSubTab === "reminders" && <ReminderManagement />}
             </div>

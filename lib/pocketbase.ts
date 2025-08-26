@@ -2,8 +2,8 @@ import PocketBase from 'pocketbase'
 // 智能网络环境检测
 const detectNetworkEnvironment = async () => {
   const testUrls = [
-    { url: 'http://192.168.0.59:8090', type: 'local', name: '局域网' },
-    { url: 'http://pjpc.tplinkdns.com:8090', type: 'ddns', name: 'DDNS' }
+    { url: 'http://pjpc.tplinkdns.com:8090', type: 'ddns', name: 'DDNS' },
+    { url: 'http://192.168.0.59:8090', type: 'local', name: '局域网' }
   ]
   
   // 并行测试所有URL
@@ -52,12 +52,19 @@ const detectNetworkEnvironment = async () => {
     throw new Error('无法连接到PocketBase服务器')
   }
   
-  // 选择延迟最低的连接
+  // 优先选择DDNS连接，如果DDNS可用则使用DDNS
+  const ddnsConnection = successfulResults.find(r => r.type === 'ddns')
+  if (ddnsConnection) {
+    console.log(`🌐 网络环境检测完成: 优先使用DDNS (${ddnsConnection.url}) - 延迟: ${ddnsConnection.latency}ms`)
+    return ddnsConnection.url
+  }
+  
+  // 如果DDNS不可用，选择延迟最低的连接
   const bestConnection = successfulResults.reduce((best, current) => 
     current.latency < best.latency ? current : best
   )
   
-  console.log(`🌐 网络环境检测完成: 选择 ${bestConnection.name} (${bestConnection.url}) - 延迟: ${bestConnection.latency}ms`)
+  console.log(`🌐 网络环境检测完成: DDNS不可用，选择 ${bestConnection.name} (${bestConnection.url}) - 延迟: ${bestConnection.latency}ms`)
   
   return bestConnection.url
 }
@@ -65,7 +72,7 @@ const detectNetworkEnvironment = async () => {
 // PocketBase URL配置（智能检测网络环境）
 const getPocketBaseUrl = async () => {
   // 优先使用环境变量
-  if (process.env.NEXT_PUBLIC_POCKETBASE_URL) {
+  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POCKETBASE_URL) {
     console.log('🔧 使用环境变量配置的PocketBase URL:', process.env.NEXT_PUBLIC_POCKETBASE_URL)
     return process.env.NEXT_PUBLIC_POCKETBASE_URL
   }
@@ -75,9 +82,9 @@ const getPocketBaseUrl = async () => {
     const bestUrl = await detectNetworkEnvironment()
     return bestUrl
   } catch (error) {
-    console.error('❌ 网络环境检测失败，使用默认配置:', error)
-    // 默认使用局域网地址
-    return 'http://192.168.0.59:8090'
+    console.error('❌ 网络环境检测失败，使用默认DDNS配置:', error)
+    // 默认使用DDNS地址
+    return 'http://pjpc.tplinkdns.com:8090'
   }
 }
 
@@ -133,35 +140,8 @@ export const checkPocketBaseConnection = async () => {
   }
 }
 
-// 兼容性导出（保持向后兼容）- 使用智能检测
-export const pb = new Proxy({} as PocketBase, {
-  get(target, prop) {
-    if (!pbInstance) {
-      // 如果实例不存在，创建一个默认实例
-      pbInstance = new PocketBase('http://pjpc.tplinkdns.com:8090')
-      console.log('🔧 创建兼容性PocketBase实例:', pbInstance.baseUrl)
-    }
-    return (pbInstance as any)[prop]
-  }
-})
-
-// 初始化兼容性实例
-const initCompatibilityInstance = async () => {
-  try {
-    const url = await getPocketBaseUrl()
-    pbInstance = new PocketBase(url)
-    console.log('✅ 兼容性PocketBase实例已初始化:', url)
-  } catch (error) {
-    console.error('❌ 兼容性PocketBase实例初始化失败:', error)
-    // 使用默认URL
-    pbInstance = new PocketBase('http://pjpc.tplinkdns.com:8090')
-  }
-}
-
-// 在模块加载时初始化
-if (typeof window !== 'undefined') {
-  initCompatibilityInstance()
-}
+// 兼容性导出（保持向后兼容）
+export const pb = new PocketBase('http://pjpc.tplinkdns.com:8090') // 临时实例，会被智能检测覆盖
 
 // 用户类型定义
 export interface UserProfile {

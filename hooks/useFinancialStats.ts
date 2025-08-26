@@ -49,9 +49,9 @@ export const useFinancialStats = () => {
         status: 'completed',
         type: 'payment',
         date: new Date('2024-01-15'),
-        description: 'Student - Fee Payment',
-        studentName: 'Student',
-        paymentMethod: 'Bank Transfer'
+        description: '张三 - 学费',
+        studentName: '张三',
+        paymentMethod: '银行转账'
       },
       {
         id: '2',
@@ -59,9 +59,9 @@ export const useFinancialStats = () => {
         status: 'completed',
         type: 'payment',
         date: new Date('2024-01-14'),
-        description: 'Student - Fee Payment',
-        studentName: 'Student',
-        paymentMethod: 'Cash'
+        description: '李四 - 学费',
+        studentName: '李四',
+        paymentMethod: '现金'
       },
       {
         id: '3',
@@ -69,9 +69,9 @@ export const useFinancialStats = () => {
         status: 'pending',
         type: 'payment',
         date: new Date('2024-01-13'),
-        description: 'Student - Fee Payment',
-        studentName: 'Student',
-        paymentMethod: 'Payment'
+        description: '王五 - 学费',
+        studentName: '王五',
+        paymentMethod: '支票'
       }
     ],
     revenueByMonth: {
@@ -90,11 +90,16 @@ export const useFinancialStats = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // 模拟获取财务数据
   const fetchAllFinancialStats = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
+
+      // 模拟API调用延迟
       await new Promise(resolve => setTimeout(resolve, 500))
+
+      // 使用模拟数据
       setStats({
         monthlyRevenue: 45600,
         totalRevenue: 285000,
@@ -107,9 +112,9 @@ export const useFinancialStats = () => {
             status: 'completed',
             type: 'payment',
             date: new Date('2024-01-15'),
-            description: 'Student - Fee Payment',
-            studentName: 'Student',
-            paymentMethod: 'Bank Transfer'
+            description: '张三 - 学费',
+            studentName: '张三',
+            paymentMethod: '银行转账'
           },
           {
             id: '2',
@@ -117,9 +122,9 @@ export const useFinancialStats = () => {
             status: 'completed',
             type: 'payment',
             date: new Date('2024-01-14'),
-            description: 'Student - Fee Payment',
-            studentName: 'Student',
-            paymentMethod: 'Cash'
+            description: '李四 - 学费',
+            studentName: '李四',
+            paymentMethod: '现金'
           },
           {
             id: '3',
@@ -127,9 +132,9 @@ export const useFinancialStats = () => {
             status: 'pending',
             type: 'payment',
             date: new Date('2024-01-13'),
-            description: 'Student - Fee Payment',
-            studentName: 'Student',
-            paymentMethod: 'Payment'
+            description: '王五 - 学费',
+            studentName: '王五',
+            paymentMethod: '支票'
           }
         ],
         revenueByMonth: {
@@ -146,7 +151,8 @@ export const useFinancialStats = () => {
         cashFlowHistory: []
       })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch financial data')
+      console.error('Error fetching financial stats:', err)
+      setError(err instanceof Error ? err.message : '获取财务数据失败')
     } finally {
       setLoading(false)
     }
@@ -162,4 +168,4 @@ export const useFinancialStats = () => {
     error,
     refetch: fetchAllFinancialStats
   }
-}
+} 
