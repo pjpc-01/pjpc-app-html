@@ -1,110 +1,190 @@
-# Student Fee Matrix System Simplification
+# PJPC School Management System - Task List
 
-Brief description: Simplified the complex PocketBase configuration and hooks to resolve autocancelled errors and improve system stability.
+## 🎯 **Current Status: React Query Migration Phase**
 
-## Completed Tasks
+The project is currently in the **React Query Migration Phase**, focusing on upgrading all data fetching hooks to use React Query for better performance, reliability, and developer experience.
 
-- [x] Implemented enhanced fee items storage with name and status
-- [x] Added lazy loading for fee items on student expansion
-- [x] Created SaveAssignmentParams type for detailed fee data
-- [x] Reverted lazy loading changes to original implementation
-- [x] Analyze toggle switch deactivation issue
-- [x] Debug the root cause of the problem
-- [x] Implement fix for toggle switch deactivation
-- [x] Simplified PocketBase configuration
-- [x] Removed complex error handling and retry logic
-- [x] Fixed import inconsistencies
-- [x] Removed duplicate functions and unused code
-- [x] Fixed InvoiceManagement default export
-- [x] Fixed InvoiceTemplateManager import
-- [x] Fixed ConnectionStatus imports
-- [x] Fixed all pb imports to use pocketbase-instance
-- [x] Fixed InvoiceList component props mismatch
-- [x] Fixed SelectItem empty value errors
-- [x] Fixed InvoiceCreateDialog dueDate error
+## ✅ **Completed Tasks**
 
-## In Progress Tasks
+### **Phase 1: Core System Setup**
+- [x] Project initialization with Next.js 13+ App Router
+- [x] PocketBase backend setup and configuration
+- [x] Authentication system implementation
+- [x] Basic UI components with Shadcn/ui
+- [x] TypeScript configuration and type definitions
 
-- [ ] Test the simplified solution thoroughly
-- [ ] Verify all components work correctly
+### **Phase 2: Finance Module Implementation**
+- [x] Student Fee Matrix system
+- [x] Invoice management system
+- [x] Payment tracking system
+- [x] Receipt generation system
+- [x] Financial reporting and analytics
 
-## Future Tasks
+### **Phase 3: User Management**
+- [x] Student management system
+- [x] Teacher management system
+- [x] User approval system with AI integration
+- [x] Role-based access control
 
-- [ ] Document the simplification and its benefits
-- [ ] Monitor system performance after simplification
+### **Phase 4: Attendance System**
+- [x] NFC/RFID attendance tracking
+- [x] Mobile NFC interface
+- [x] Attendance reporting and analytics
+- [x] Device management system
 
-## Current Status
+### **Phase 5: React Query Implementation**
+- [x] React Query provider setup
+- [x] `useStudentFeeMatrixQuery.ts` - Full React Query implementation
+- [x] `useInvoiceData.ts` - Full React Query implementation
+- [x] Centralized query keys system (`hooks/queryKeys.ts`)
+- [x] Comprehensive React Query implementation guide
+- [x] Invoice system migration to React Query (eliminated autocancellation issues)
 
-✅ **System Simplified**: Removed complex configurations and duplicate code.
-✅ **Import Errors Fixed**: All module import/export errors resolved.
-✅ **InvoiceList Fixed**: Component props mismatch resolved.
-✅ **SelectItem Errors Fixed**: Empty value props resolved.
-✅ **InvoiceCreateDialog Fixed**: Simplified and fixed dueDate error.
+## 🔄 **In Progress Tasks**
 
-**What was fixed:**
-1. **PocketBase Configuration**: Removed complex network detection and request interceptors
-2. **Error Handling**: Simplified error handling in hooks
-3. **Imports**: Fixed import inconsistencies across files
-4. **Duplicate Code**: Removed unused functions and duplicate logic
-5. **Request Logic**: Removed complex retry and deduplication logic
-6. **Module Exports**: Fixed InvoiceManagement default export
-7. **Import Paths**: Updated all pb imports to use pocketbase-instance
-8. **Missing Functions**: Removed references to non-existent functions
-9. **InvoiceList Props**: Fixed component interface to match actual usage
-10. **SelectItem Values**: Fixed empty string values in Select components
-11. **InvoiceCreateDialog**: Simplified component and fixed dueDate error
+### **Phase 6: React Query Migration (Current Priority)**
 
-## Implementation Plan
+#### **High Priority Migrations**
+- [ ] **`useStudents.ts`** - Migrate to React Query Pattern 1
+  - [ ] Create API functions (separate from hook logic)
+  - [ ] Replace useState/useEffect with useQuery
+  - [ ] Add mutations for CRUD operations
+  - [ ] Update components to use new interface
+  - [ ] Test all scenarios
 
-### Phase 1: Simplify PocketBase Configuration ✅
-1. ✅ Remove complex network detection logic
-2. ✅ Create simple PocketBase instance
-3. ✅ Remove request interceptors and deduplication
-4. ✅ Fix import inconsistencies
+- [ ] **`useTeachers.ts`** - Migrate to React Query Pattern 1
+  - [ ] Create API functions (separate from hook logic)
+  - [ ] Replace useState/useEffect with useQuery
+  - [ ] Add mutations for CRUD operations
+  - [ ] Update components to use new interface
+  - [ ] Test all scenarios
 
-### Phase 2: Simplify Hooks ✅
-1. ✅ Remove complex error handling in useFeeItems
-2. ✅ Remove complex error handling in useStudentFeeMatrixQuery
-3. ✅ Remove complex error handling in useFees
-4. ✅ Remove retry logic and autocancelled error detection
+#### **Medium Priority Migrations**
+- [ ] **`useFees.ts`** - Migrate to React Query Pattern 2
+- [ ] **`usePayments.ts`** - Migrate to React Query Pattern 2
+- [ ] **`useReceipts.ts`** - Migrate to React Query Pattern 2
+- [ ] **`useStudentCards.ts`** - Migrate to React Query Pattern 2
+- [ ] **`useUserApproval.ts`** - Migrate to React Query Pattern 2
 
-### Phase 3: Fix Imports ✅
-1. ✅ Update auth context imports
-2. ✅ Add UserProfile type to pocketbase-instance
-3. ✅ Remove unused functions and imports
+#### **Low Priority Migrations**
+- [ ] **`useAttendance.ts`** - Migrate to React Query Pattern 2
+- [ ] **`useNFC.ts`** - Migrate to React Query Pattern 2
+- [ ] **`useReminders.ts`** - Migrate to React Query Pattern 1
 
-### Phase 4: Testing
-1. Test all components work correctly
-2. Verify no autocancelled errors
-3. Ensure data fetching works properly
+## 📋 **Future Tasks**
 
-## Relevant Files
+### **Phase 7: Advanced React Query Features**
+- [ ] **React Query DevTools** - Add for debugging
+- [ ] **Optimistic Updates** - Implement for better UX
+- [ ] **Infinite Queries** - Add for pagination
+- [ ] **Query Prefetching** - Implement for better performance
+- [ ] **Background Synchronization** - Add for offline support
 
-- `lib/pocketbase-instance.ts` - ✅ Simple PocketBase instance
-- `lib/pocketbase.ts` - ✅ Simplified configuration
-- `hooks/useFeeItems.ts` - ✅ Simplified error handling
-- `hooks/useStudentFeeMatrixQuery.ts` - ✅ Simplified error handling
-- `hooks/useFees.ts` - ✅ Simplified error handling
-- `contexts/pocketbase-auth-context.tsx` - ✅ Fixed imports
-- `app/components/finance/student-fee-matrix/StudentFeeMatrix.tsx` - Main component
-- `types/student-fees.ts` - Type definitions
+### **Phase 8: Performance Optimization**
+- [ ] **Code Splitting** - Implement lazy loading
+- [ ] **Bundle Optimization** - Reduce bundle size
+- [ ] **Image Optimization** - Implement next/image
+- [ ] **Caching Strategy** - Optimize React Query cache settings
+- [ ] **Service Worker** - Add for offline functionality
 
-## Technical Details
+### **Phase 9: Advanced Features**
+- [ ] **Real-time Updates** - WebSocket integration
+- [ ] **Advanced Analytics** - Enhanced reporting
+- [ ] **Mobile App** - React Native implementation
+- [ ] **API Rate Limiting** - Implement proper rate limiting
+- [ ] **Advanced Search** - Full-text search implementation
 
-### Simplification Summary
-- **Removed**: Complex network detection, request interceptors, retry logic
-- **Simplified**: Error handling, PocketBase configuration
-- **Fixed**: Import inconsistencies, duplicate functions
-- **Result**: Cleaner, more maintainable codebase
+### **Phase 10: Production Readiness**
+- [ ] **Comprehensive Testing** - Unit, integration, and E2E tests
+- [ ] **Performance Monitoring** - Add monitoring tools
+- [ ] **Error Tracking** - Implement error tracking
+- [ ] **Documentation** - Complete API documentation
+- [ ] **Deployment Pipeline** - CI/CD setup
 
-### Key Changes
-1. **Single PocketBase Instance**: All hooks now use the same simple instance
-2. **Simple Error Handling**: Removed complex autocancelled error detection
-3. **Clean Imports**: Fixed all import paths and removed unused imports
-4. **No Duplicates**: Removed duplicate functions and logic
+## 🏗️ **Architecture Overview**
 
-### Expected Results
-- No more autocancelled errors
-- Better performance
-- Easier debugging
-- More stable system
+### **Current System Architecture**
+```
+Frontend (Next.js 13+ App Router)
+├── React Query (Data Fetching)
+├── PocketBase (Backend/Database)
+├── Shadcn/ui (UI Components)
+└── TypeScript (Type Safety)
+```
+
+### **React Query Implementation Status**
+```
+✅ Fully Implemented:
+├── useStudentFeeMatrixQuery.ts
+├── useInvoiceData.ts
+└── queryKeys.ts (Centralized)
+
+🔄 Needs Migration:
+├── useStudents.ts
+├── useTeachers.ts
+├── useFees.ts
+├── usePayments.ts
+├── useReceipts.ts
+├── useStudentCards.ts
+├── useUserApproval.ts
+├── useAttendance.ts
+├── useNFC.ts
+└── useReminders.ts
+```
+
+## 📊 **Migration Patterns**
+
+### **Pattern 1: Simple Data Fetching**
+- **Use for**: Basic CRUD operations (students, teachers, reminders)
+- **Features**: Single query, basic mutations, simple cache invalidation
+
+### **Pattern 2: Complex Data with Relations**
+- **Use for**: Complex data with relationships (fees, payments, invoices)
+- **Features**: Multiple queries, complex mutations, related cache invalidation
+
+### **Pattern 3: Real-time Data**
+- **Use for**: Attendance, NFC data, live updates
+- **Features**: Frequent refetching, optimistic updates, background sync
+
+## 🎯 **Success Metrics**
+
+### **Before React Query Migration**
+- ❌ Autocancellation issues
+- ❌ Component unmount errors
+- ❌ Manual loading/error state management
+- ❌ No caching
+- ❌ Race conditions
+
+### **After React Query Migration**
+- ✅ No autocancellation issues
+- ✅ Data persists across unmounts
+- ✅ Automatic loading/error states
+- ✅ Intelligent caching
+- ✅ Request deduplication
+- ✅ Background refetching
+- ✅ Optimistic updates
+- ✅ Type safety
+
+## 📚 **Documentation**
+
+### **Updated Guides**
+- ✅ **REACT_QUERY_IMPLEMENTATION.md** - Comprehensive migration guide
+- ✅ **queryKeys.ts** - Centralized query key management
+- ✅ **useInvoiceData.ts** - Example React Query implementation
+
+### **Migration Resources**
+- [React Query Documentation](https://tanstack.com/query/latest)
+- [Migration Patterns](./REACT_QUERY_IMPLEMENTATION.md)
+- [Query Keys Reference](./hooks/queryKeys.ts)
+
+## 🚀 **Next Steps**
+
+1. **Complete `useStudents.ts` migration** (High Priority)
+2. **Complete `useTeachers.ts` migration** (High Priority)
+3. **Migrate finance hooks** (Medium Priority)
+4. **Add React Query DevTools** (Low Priority)
+5. **Implement optimistic updates** (Low Priority)
+
+---
+
+*This task list is updated regularly to reflect the current development status and priorities.*

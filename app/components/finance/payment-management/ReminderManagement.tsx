@@ -1,28 +1,30 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { AlertCircle, Bell, Send, Clock, Users, Phone, Mail, Plus, Edit, Trash2 } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { 
+  Bell, 
+  Calendar, 
+  User, 
+  FileText, 
+  AlertCircle,
+  Send,
+  Clock,
+  CheckCircle
+} from "lucide-react"
+import { useInvoiceData } from "@/hooks/useInvoiceData"
+import { SimpleInvoice } from "@/hooks/useInvoiceData"
 import { useReminders } from "@/hooks/useReminders"
-import { useInvoices } from "@/hooks/useInvoices"
 
 export default function ReminderManagement() {
-  const { invoices } = useInvoices()
+  const { invoices } = useInvoiceData()
   const {
     reminders,
     templates,
@@ -172,7 +174,7 @@ export default function ReminderManagement() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">模板数量</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{templates.length}</div>
@@ -202,11 +204,11 @@ export default function ReminderManagement() {
               </div>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline">
-                  <Mail className="h-4 w-4 mr-2" />
+                  <FileText className="h-4 w-4 mr-2" />
                   发送邮件提醒
                 </Button>
                 <Button size="sm" variant="outline">
-                  <Phone className="h-4 w-4 mr-2" />
+                  <User className="h-4 w-4 mr-2" />
                   电话联系
                 </Button>
                 <Button size="sm" variant="outline">
@@ -226,11 +228,11 @@ export default function ReminderManagement() {
               </div>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline">
-                  <Mail className="h-4 w-4 mr-2" />
+                  <FileText className="h-4 w-4 mr-2" />
                   发送邮件提醒
                 </Button>
                 <Button size="sm" variant="outline">
-                  <Phone className="h-4 w-4 mr-2" />
+                  <User className="h-4 w-4 mr-2" />
                   电话联系
                 </Button>
                 <Button size="sm" variant="outline">
@@ -255,7 +257,7 @@ export default function ReminderManagement() {
               <CardDescription>管理提醒消息模板</CardDescription>
             </div>
             <Button size="sm" onClick={() => setIsAddTemplateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+              <User className="h-4 w-4 mr-2" />
               添加模板
             </Button>
           </div>
@@ -292,14 +294,14 @@ export default function ReminderManagement() {
                         size="sm"
                         onClick={() => handleEditTemplate(template)}
                       >
-                        <Edit className="h-4 w-4" />
+                        <User className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteTemplate(template.id as string)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <FileText className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>

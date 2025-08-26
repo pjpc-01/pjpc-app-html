@@ -15,7 +15,7 @@ import {
 } from "lucide-react"
 import FinanceOverview from "../finance/reports-overview/FinanceOverview"
 import FeeManagement from "../finance/fee-management/FeeManagement"
-import InvoiceManagement from "../finance/invoice-management/InvoiceManagement"
+import { InvoiceTab } from "../finance/invoice-management/InvoiceTab"
 import PaymentManagement from "../finance/payment-management/PaymentManagement"
 import ReminderManagement from "../finance/payment-management/ReminderManagement"
 import FinancialReports from "../finance/reports-overview/FinancialReports"
@@ -368,7 +368,7 @@ export default function FinanceTab({ financialStats, financialLoading, setActive
               <div className={`${studentFeesSubTab === "overview" ? "block" : "hidden"}`}>
                 <StudentFeeMatrix key="student-fee-matrix" />
               </div>
-              {studentFeesSubTab === "invoices" && <InvoiceManagement />}
+              {studentFeesSubTab === "invoices" && <InvoiceTab />}
               {studentFeesSubTab === "receipts" && <ReceiptManagement />}
               {studentFeesSubTab === "payments" && <PaymentManagement />}
               {studentFeesSubTab === "reminders" && <ReminderManagement />}

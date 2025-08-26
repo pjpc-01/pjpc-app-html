@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StudentFeeMatrix } from "../student-fee-matrix/StudentFeeMatrix"
 import FinanceOverview from "./FinanceOverview"
 import FeeManagement from "../fee-management/FeeManagement"
-import InvoiceManagement from "../invoice-management/InvoiceManagement"
+import { InvoiceTab } from "../invoice-management/InvoiceTab"
 import PaymentManagement from "../payment-management/PaymentManagement"
 import ReminderManagement from "../payment-management/ReminderManagement"
 import FinancialReports from "./FinancialReports"
@@ -239,7 +239,7 @@ export default function FinanceManagement({ defaultTab = "overview" }: FinanceMa
         </TabsContent>
 
         <TabsContent value="invoices">
-          <InvoiceManagement />
+          <InvoiceTab />
         </TabsContent>
 
         <TabsContent value="payments">

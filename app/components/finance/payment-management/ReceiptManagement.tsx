@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog"
 import { FileText, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Link } from "lucide-react"
 import { useReceipts } from "@/hooks/useReceipts"
-import { useInvoices } from "@/hooks/useInvoices"
+import { useInvoiceData } from "@/hooks/useInvoiceData"
 import { useStudents } from "@/hooks/useStudents"
 
 
@@ -52,7 +52,7 @@ export default function ReceiptManagement() {
 
   const {
     invoices
-  } = useInvoices()
+  } = useInvoiceData()
 
   const { students } = useStudents()
 

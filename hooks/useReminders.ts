@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Invoice } from './useInvoices'
+import { SimpleInvoice } from './useInvoiceData'
 
 export interface Reminder {
   id: string
@@ -23,7 +23,7 @@ export interface ReminderTemplate {
   daysBeforeDue: number
 }
 
-export const useReminders = (invoices: Invoice[]) => {
+export const useReminders = (invoices: SimpleInvoice[]) => {
   const [reminders, setReminders] = useState<Reminder[]>([
     {
       id: "1",
@@ -86,8 +86,8 @@ export const useReminders = (invoices: Invoice[]) => {
     if (!invoice) return null
 
     const message = template.body
-      .replace('{invoiceNumber}', invoice.invoiceNumber)
-      .replace('{dueDate}', invoice.dueDate)
+      .replace('{invoiceNumber}', invoice.invoice_id)
+      .replace('{dueDate}', invoice.due_date)
 
     const newReminder: Reminder = {
       id: Math.max(...reminders.map(r => parseInt(r.id)), 0) + 1 + "",
@@ -97,7 +97,7 @@ export const useReminders = (invoices: Invoice[]) => {
       scheduledDate,
       sentDate: null,
       message,
-      recipient: template.type === 'email' ? invoice.parentEmail || '' : '+86-138-0000-0000',
+      recipient: template.type === 'email' ? 'parent@example.com' : '+86-138-0000-0000',
       attempts: 0,
       maxAttempts: 3
     }
@@ -147,7 +147,7 @@ export const useReminders = (invoices: Invoice[]) => {
   const getOverdueInvoicesForReminders = useCallback(() => {
     const today = new Date().toISOString().split('T')[0]
     return invoices.filter(invoice => {
-      const isOverdue = invoice.dueDate < today
+      const isOverdue = invoice.due_date < today
       const hasPendingReminders = reminders.some(r => 
         r.invoiceId === invoice.id && r.status === 'scheduled'
       )
@@ -166,13 +166,13 @@ export const useReminders = (invoices: Invoice[]) => {
 
     // Schedule upcoming reminders for invoices due soon
     const upcomingInvoices = invoices.filter(invoice => {
-      const dueDate = new Date(invoice.dueDate)
+      const dueDate = new Date(invoice.due_date)
       const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
       return daysUntilDue > 0 && daysUntilDue <= 7
     })
 
     upcomingInvoices.forEach(invoice => {
-      const dueDate = new Date(invoice.dueDate)
+      const dueDate = new Date(invoice.due_date)
       const reminderDate = new Date(dueDate.getTime() - 7 * 24 * 60 * 60 * 1000)
       
       if (reminderDate >= today) {

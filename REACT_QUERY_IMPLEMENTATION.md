@@ -1,263 +1,438 @@
-# React Query Implementation - Student Fee Matrix
+# React Query Implementation Guide
 
-## 🎯 **Problem Solved**
+## 🎯 **Overview**
 
-The original issue was:
-```
-Component already unmounted, skipping fetchData
-```
+This guide provides comprehensive patterns for implementing React Query (TanStack Query) in the PJPC School Management System. React Query is the **recommended approach** for all data fetching operations in this project.
 
-This happened because:
-1. Component mounted and started data fetch
-2. Component unmounted before fetch completed (due to tab switching)
-3. Data arrived but component was gone
-4. State updates were skipped to prevent memory leaks
+## 🚀 **Why React Query?**
 
-## 🚀 **Solution: React Query**
+### **Problems Solved:**
+- ✅ **Autocancellation Issues** - No more "request was autocancelled" errors
+- ✅ **Component Unmount Errors** - Data persists across component lifecycle
+- ✅ **Manual State Management** - Automatic loading, error, and success states
+- ✅ **Cache Management** - Intelligent caching with background updates
+- ✅ **Request Deduplication** - Multiple components requesting same data? No problem!
 
-### **Why React Query?**
+### **Benefits:**
+- 🚀 **Better Performance** - Caching and background refetching
+- 🎯 **Better UX** - Loading states, optimistic updates, error handling
+- 🛠️ **Developer Experience** - Less boilerplate, more predictable code
+- 🔄 **Automatic Synchronization** - Data stays fresh automatically
 
-1. **Automatic Caching** - Data persists even if component unmounts
-2. **Background Refetching** - Data stays fresh automatically
-3. **Optimistic Updates** - UI updates immediately, then syncs with server
-4. **Error Handling** - Built-in retry logic and error states
-5. **No More Unmount Issues** - Data fetching is decoupled from component lifecycle
+## 📋 **Project Structure Analysis**
 
-### **Implementation Overview**
+### **Current Hooks to Migrate:**
+1. ✅ `useInvoiceData.ts` - **MIGRATED** (React Query implementation)
+2. 🔄 `useStudents.ts` - Needs migration
+3. 🔄 `useTeachers.ts` - Needs migration
+4. 🔄 `useFees.ts` - Needs migration
+5. 🔄 `usePayments.ts` - Needs migration
+6. 🔄 `useReceipts.ts` - Needs migration
+7. 🔄 `useStudentCards.ts` - Needs migration
+8. 🔄 `useUserApproval.ts` - Needs migration
+9. 🔄 `useAttendance.ts` - Needs migration
+10. 🔄 `useNFC.ts` - Needs migration
 
-#### **1. Setup React Query Provider**
+### **Already Using React Query:**
+- ✅ `useStudentFeeMatrixQuery.ts` - Full React Query implementation
+- ✅ `useInvoiceData.ts` - Full React Query implementation
+
+## 🏗️ **Setup & Configuration**
+
+### **1. Provider Setup (Already Done)**
 ```tsx
-// app/layout.tsx
+// components/providers.tsx
+'use client'
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { useState } from "react"
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
-      retry: 3,
-      refetchOnWindowFocus: false,
-    },
-  },
-})
+export function Providers({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 5 * 60 * 1000, // 5 minutes
+            gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+            retry: 3,
+            refetchOnWindowFocus: false,
+          },
+        },
+      })
+  )
 
-export default function RootLayout({ children }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>{children}</AuthProvider>
+      {children}
     </QueryClientProvider>
   )
 }
 ```
 
-#### **2. New React Query Hook**
+### **2. Query Keys Pattern**
 ```tsx
-// hooks/useStudentFeeMatrixQuery.ts
-export const useStudentFeeMatrixQuery = () => {
+// hooks/queryKeys.ts
+export const queryKeys = {
+  // Students
+  students: ['students'] as const,
+  student: (id: string) => ['students', id] as const,
+  
+  // Teachers
+  teachers: ['teachers'] as const,
+  teacher: (id: string) => ['teachers', id] as const,
+  
+  // Finance
+  invoices: ['invoices'] as const,
+  invoice: (id: string) => ['invoices', id] as const,
+  fees: ['fees'] as const,
+  payments: ['payments'] as const,
+  receipts: ['receipts'] as const,
+  
+  // Student Management
+  studentFees: ['student-fees'] as const,
+  studentFeeMatrix: ['student-fee-matrix'] as const,
+  studentCards: ['student-cards'] as const,
+  
+  // User Management
+  userApprovals: ['user-approvals'] as const,
+  
+  // Attendance
+  attendance: ['attendance'] as const,
+  nfc: ['nfc'] as const,
+}
+```
+
+## 📝 **Migration Patterns**
+
+### **Pattern 1: Simple Data Fetching Hook**
+
+#### **Before (useState + useEffect):**
+```tsx
+// hooks/useStudents.ts (OLD)
+export const useStudents = () => {
+  const [students, setStudents] = useState<Student[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchStudents = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await getAllStudents()
+      setStudents(data)
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch students')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchStudents()
+  }, [fetchStudents])
+
+  return { students, loading, error, refetch: fetchStudents }
+}
+```
+
+#### **After (React Query):**
+```tsx
+// hooks/useStudents.ts (NEW)
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { queryKeys } from './queryKeys'
+import { getAllStudents, addStudent, updateStudent, deleteStudent } from '@/lib/pocketbase-students'
+
+export const useStudents = () => {
   const queryClient = useQueryClient()
 
-  // Separate queries for each data type
-  const studentsQuery = useQuery({
+  // Query for fetching students
+  const {
+    data: students = [],
+    isLoading,
+    error,
+    refetch
+  } = useQuery({
     queryKey: queryKeys.students,
-    queryFn: fetchStudents,
-    staleTime: 5 * 60 * 1000,
+    queryFn: getAllStudents,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
-  const feesQuery = useQuery({
-    queryKey: queryKeys.fees,
-    queryFn: fetchFees,
-    staleTime: 5 * 60 * 1000,
-  })
-
-  const studentFeesQuery = useQuery({
-    queryKey: queryKeys.studentFees,
-    queryFn: fetchStudentFees,
-    staleTime: 5 * 60 * 1000,
-  })
-
-  // Mutations for updates
-  const updateAssignmentMutation = useMutation({
-    mutationFn: updateAssignment,
+  // Mutations
+  const addStudentMutation = useMutation({
+    mutationFn: addStudent,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.studentFees })
+      queryClient.invalidateQueries({ queryKey: queryKeys.students })
+    },
+  })
+
+  const updateStudentMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Student> }) => 
+      updateStudent({ id, ...data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.students })
+    },
+  })
+
+  const deleteStudentMutation = useMutation({
+    mutationFn: deleteStudent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.students })
     },
   })
 
   return {
-    students: studentsQuery.data || [],
-    fees: feesQuery.data || [],
-    assignments: studentFeesQuery.data || [],
-    loading: studentsQuery.isLoading || feesQuery.isLoading || studentFeesQuery.isLoading,
-    error: studentsQuery.error || feesQuery.error || studentFeesQuery.error,
-    updateAssignment: updateAssignmentMutation.mutate,
-    refetch: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.students })
-      queryClient.invalidateQueries({ queryKey: queryKeys.fees })
-      queryClient.invalidateQueries({ queryKey: queryKeys.studentFees })
-    },
+    students,
+    loading: isLoading,
+    error: error?.message || null,
+    refetch,
+    addStudent: addStudentMutation.mutateAsync,
+    updateStudent: updateStudentMutation.mutateAsync,
+    deleteStudent: deleteStudentMutation.mutateAsync,
+    // Mutation states for UI feedback
+    isAddingStudent: addStudentMutation.isPending,
+    isUpdatingStudent: updateStudentMutation.isPending,
+    isDeletingStudent: deleteStudentMutation.isPending,
   }
 }
 ```
 
-#### **3. Updated Component**
+### **Pattern 2: Complex Data with Relations**
+
+#### **Example: Invoice Data with Student Relations**
 ```tsx
-// app/components/finance/student-fee-matrix/StudentFeeMatrix.tsx
-export const StudentFeeMatrix: React.FC = () => {
-  const {
-    students,
-    fees,
-    assignments,
-    loading,
-    error,
-    updateAssignment,
-    refetch,
-  } = useStudentFeeMatrixQuery()
-
-  // Local state for UI
-  const [editMode, setEditMode] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  // ... other local state
-
-  // Computed values
-  const filteredStudents = useMemo(() => {
-    return students.filter(student => {
-      const matchesSearch = student.studentName.toLowerCase().includes(searchTerm.toLowerCase())
-      return matchesSearch
-    })
-  }, [students, searchTerm])
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <Header />
-      
-      {/* Statistics */}
-      <StatisticsCards />
-      
-      {/* Search and Filter */}
-      <SearchAndFilter />
-      
-      {/* Conditional Content */}
-      {loading && students.length === 0 && <LoadingState />}
-      {error && <ErrorState onRetry={refetch} />}
-      {students.length === 0 && !loading && !error && <EmptyState onRefresh={refetch} />}
-      {students.length > 0 && !loading && !error && <MainContent />}
-    </div>
-  )
+// hooks/useInvoiceData.ts (Current Implementation)
+export const useInvoiceData = () => {
+  const queryClient = useQueryClient()
+  
+  // Separate queries for different data types
+  const studentsQuery = useQuery({
+    queryKey: queryKeys.students,
+    queryFn: fetchStudentsWithFees,
+    staleTime: 5 * 60 * 1000,
+  })
+  
+  const invoicesQuery = useQuery({
+    queryKey: queryKeys.invoices,
+    queryFn: fetchInvoices,
+    staleTime: 2 * 60 * 1000,
+  })
+  
+  // Mutations with automatic cache invalidation
+  const createInvoiceMutation = useMutation({
+    mutationFn: createInvoiceAPI,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices })
+    },
+  })
+  
+  return {
+    students: studentsQuery.data || [],
+    invoices: invoicesQuery.data || [],
+    loading: studentsQuery.isLoading || invoicesQuery.isLoading,
+    error: studentsQuery.error || invoicesQuery.error,
+    createInvoice: createInvoiceMutation.mutateAsync,
+    isCreatingInvoice: createInvoiceMutation.isPending,
+  }
 }
 ```
 
-## ✅ **Benefits Achieved**
-
-### **1. No More Unmount Errors**
-- Data fetching is handled by React Query, not component lifecycle
-- Component can unmount/remount without losing data
-- Automatic background refetching keeps data fresh
-
-### **2. Better Performance**
-- **Caching**: Data is cached and reused across component remounts
-- **Background Updates**: Data refreshes automatically in background
-- **Optimistic Updates**: UI updates immediately, then syncs with server
-
-### **3. Improved User Experience**
-- **No Loading Flickers**: Cached data shows immediately
-- **Automatic Retries**: Failed requests retry automatically
-- **Error Recovery**: Clear error states with retry options
-
-### **4. Developer Experience**
-- **Less Code**: No manual loading/error state management
-- **Type Safety**: Full TypeScript support
-- **DevTools**: React Query DevTools for debugging
-
-## 🔧 **Key Features**
-
-### **Query Keys**
+### **Pattern 3: Optimistic Updates**
 ```tsx
-export const queryKeys = {
-  students: ['students'] as const,
-  fees: ['fees'] as const,
-  studentFees: ['student-fees'] as const,
-  studentFeeMatrix: ['student-fee-matrix'] as const,
-}
-```
-
-### **Mutations**
-```tsx
-const updateAssignmentMutation = useMutation({
-  mutationFn: async ({ studentId, feeId, paymentStatus }) => {
-    // Update logic
+// Example: Optimistic status update
+const updateStatusMutation = useMutation({
+  mutationFn: updateInvoiceStatus,
+  onMutate: async ({ invoiceId, status }) => {
+    // Cancel outgoing refetches
+    await queryClient.cancelQueries({ queryKey: queryKeys.invoices })
+    
+    // Snapshot previous value
+    const previousInvoices = queryClient.getQueryData(queryKeys.invoices)
+    
+    // Optimistically update
+    queryClient.setQueryData(queryKeys.invoices, (old: Invoice[]) =>
+      old.map(inv => inv.id === invoiceId ? { ...inv, status } : inv)
+    )
+    
+    return { previousInvoices }
   },
-  onSuccess: () => {
-    // Invalidate and refetch
-    queryClient.invalidateQueries({ queryKey: queryKeys.studentFees })
+  onError: (err, variables, context) => {
+    // Rollback on error
+    if (context?.previousInvoices) {
+      queryClient.setQueryData(queryKeys.invoices, context.previousInvoices)
+    }
+  },
+  onSettled: () => {
+    // Always refetch after error or success
+    queryClient.invalidateQueries({ queryKey: queryKeys.invoices })
+  },
+})
+```
+
+## 🔧 **Best Practices**
+
+### **1. Query Key Structure**
+```tsx
+// ✅ Good - Hierarchical and specific
+queryKeys.students
+queryKeys.student(studentId)
+queryKeys.studentFees(studentId)
+queryKeys.invoices({ status: 'unpaid' })
+
+// ❌ Bad - Too generic
+['data']
+['students', 'all']
+```
+
+### **2. Stale Time Configuration**
+```tsx
+// Static data (rarely changes)
+staleTime: 30 * 60 * 1000, // 30 minutes
+
+// Semi-static data (changes occasionally)
+staleTime: 5 * 60 * 1000, // 5 minutes
+
+// Dynamic data (changes frequently)
+staleTime: 1 * 60 * 1000, // 1 minute
+
+// Real-time data
+staleTime: 0, // Always stale
+```
+
+### **3. Error Handling**
+```tsx
+const query = useQuery({
+  queryKey: queryKeys.students,
+  queryFn: fetchStudents,
+  retry: (failureCount, error) => {
+    // Don't retry on 404
+    if (error.status === 404) return false
+    // Retry up to 3 times
+    return failureCount < 3
   },
   onError: (error) => {
-    console.error('Update failed:', error)
+    console.error('Failed to fetch students:', error)
+    // Show toast notification
+    toast.error('Failed to load students')
   },
 })
 ```
 
-### **Configuration**
+### **4. Loading States**
 ```tsx
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // Data fresh for 5 minutes
-      gcTime: 10 * 60 * 1000,   // Cache for 10 minutes
-      retry: 3,                 // Retry failed requests 3 times
-      refetchOnWindowFocus: false, // Don't refetch on window focus
-    },
-  },
+// Component usage
+const { students, loading, error, isCreatingStudent } = useStudents()
+
+if (loading) return <LoadingSpinner />
+if (error) return <ErrorMessage message={error} />
+
+return (
+  <div>
+    {students.map(student => (
+      <StudentCard key={student.id} student={student} />
+    ))}
+    <Button 
+      onClick={handleAddStudent} 
+      disabled={isCreatingStudent}
+    >
+      {isCreatingStudent ? 'Adding...' : 'Add Student'}
+    </Button>
+  </div>
+)
+```
+
+## 📊 **Migration Checklist**
+
+### **For Each Hook Migration:**
+
+- [ ] **Create API functions** (separate from hook logic)
+- [ ] **Define query keys** in centralized location
+- [ ] **Replace useState/useEffect** with useQuery
+- [ ] **Replace manual mutations** with useMutation
+- [ ] **Add cache invalidation** in mutation onSuccess
+- [ ] **Add loading states** for mutations
+- [ ] **Update components** to use new hook interface
+- [ ] **Test all scenarios** (loading, error, success)
+- [ ] **Remove old hook file** after migration
+
+### **Priority Order:**
+1. **High Priority** - `useStudents.ts`, `useTeachers.ts`
+2. **Medium Priority** - `useFees.ts`, `usePayments.ts`, `useReceipts.ts`
+3. **Low Priority** - `useAttendance.ts`, `useNFC.ts`
+
+## 🧪 **Testing Patterns**
+
+### **1. Query Testing**
+```tsx
+// Test successful query
+const { result } = renderHook(() => useStudents())
+await waitFor(() => {
+  expect(result.current.students).toHaveLength(5)
+  expect(result.current.loading).toBe(false)
+  expect(result.current.error).toBeNull()
 })
 ```
 
-## 🧪 **Testing the Implementation**
+### **2. Mutation Testing**
+```tsx
+// Test successful mutation
+const { result } = renderHook(() => useStudents())
+await act(async () => {
+  await result.current.addStudent(newStudent)
+})
+expect(result.current.students).toHaveLength(6)
+```
 
-### **Test Cases**
-1. **Tab Switching**: Switch between tabs rapidly - no data loss
-2. **Network Issues**: Disconnect/reconnect - automatic retry
-3. **Data Updates**: Update assignments - optimistic updates
-4. **Component Remount**: Navigate away and back - cached data shows immediately
+### **3. Error Testing**
+```tsx
+// Test error handling
+server.use(
+  rest.get('/api/students', (req, res, ctx) => {
+    return res(ctx.status(500))
+  })
+)
+const { result } = renderHook(() => useStudents())
+await waitFor(() => {
+  expect(result.current.error).toBeTruthy()
+})
+```
 
-### **Expected Behavior**
-- ✅ No "Component already unmounted" errors
-- ✅ Data persists across component remounts
-- ✅ Automatic background refetching
-- ✅ Optimistic updates for mutations
-- ✅ Clear loading and error states
+## 🎉 **Benefits Achieved**
 
-## 📊 **Performance Improvements**
+### **Before Migration:**
+- ❌ Manual loading/error state management
+- ❌ Autocancellation issues
+- ❌ Component unmount errors
+- ❌ No caching
+- ❌ Manual retry logic
+- ❌ Race conditions
 
-### **Before (Custom Hook)**
-- Data lost on component unmount
-- Manual loading/error state management
-- No caching
-- Manual retry logic
+### **After Migration:**
+- ✅ Automatic loading/error states
+- ✅ No autocancellation issues
+- ✅ Data persists across unmounts
+- ✅ Intelligent caching
+- ✅ Built-in retry logic
+- ✅ Request deduplication
+- ✅ Background refetching
+- ✅ Optimistic updates
+- ✅ Type safety
 
-### **After (React Query)**
-- Data cached and persists
-- Automatic loading/error states
-- Intelligent caching with stale-while-revalidate
-- Built-in retry logic
-- Background refetching
+## 🚀 **Next Steps**
 
-## 🎉 **Result**
+1. **Migrate `useStudents.ts`** - Follow Pattern 1
+2. **Migrate `useTeachers.ts`** - Follow Pattern 1
+3. **Migrate finance hooks** - Follow Pattern 2
+4. **Add React Query DevTools** for debugging
+5. **Implement optimistic updates** for better UX
+6. **Add infinite queries** for pagination
 
-The "Component already unmounted, skipping fetchData" error is **completely eliminated**. The component now:
+## 📚 **Resources**
 
-1. **Shows cached data immediately** when remounting
-2. **Refreshes data in background** automatically
-3. **Handles errors gracefully** with retry options
-4. **Updates optimistically** for better UX
-5. **Never loses data** due to unmounting
+- [React Query Documentation](https://tanstack.com/query/latest)
+- [React Query DevTools](https://tanstack.com/query/latest/docs/react/devtools)
+- [Migration Guide](https://tanstack.com/query/latest/docs/react/guides/migrating-to-react-query-4)
 
-## ✅ **Next.js App Router Compatibility**
+---
 
-The implementation is fully compatible with Next.js 13+ App Router:
-
-- **Client Components**: All React Query components are properly marked with `'use client'`
-- **Providers Pattern**: Uses a separate `Providers` component to handle React Query setup
-- **Server/Client Boundary**: Properly separates server and client components
-- **Type Safety**: Full TypeScript support with proper type definitions
-
-This is a **production-ready solution** that scales well and provides excellent user experience.
+*This guide ensures consistent, professional data fetching patterns across the entire PJPC School Management System.*

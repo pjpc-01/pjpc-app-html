@@ -1,4 +1,4 @@
-import { Invoice } from '@/hooks/useInvoices'
+import { SimpleInvoice } from '@/hooks/useInvoiceData'
 
 export interface PDFOptions {
   schoolName: string
@@ -9,7 +9,7 @@ export interface PDFOptions {
   taxNumber: string
 }
 
-export const generateInvoicePDF = async (invoice: Invoice, options: PDFOptions): Promise<Blob> => {
+export const generateInvoicePDF = async (invoice: SimpleInvoice, options: PDFOptions): Promise<Blob> => {
   // This is a mock implementation that would typically use a library like jsPDF or react-pdf
   // In a real implementation, you would use a proper PDF library
   
@@ -18,7 +18,7 @@ export const generateInvoicePDF = async (invoice: Invoice, options: PDFOptions):
     <html>
     <head>
       <meta charset="utf-8">
-      <title>发票 - ${invoice.invoiceNumber}</title>
+      <title>发票 - ${invoice.invoice_id}</title>
       <style>
         body {
           font-family: 'Microsoft YaHei', Arial, sans-serif;
@@ -120,10 +120,10 @@ export const generateInvoicePDF = async (invoice: Invoice, options: PDFOptions):
       
       <div class="invoice-info">
         <div class="invoice-details">
-          <div class="invoice-number">发票号码: ${invoice.invoiceNumber}</div>
-          <div>开票日期: ${invoice.issueDate}</div>
-          <div>到期日期: ${invoice.dueDate}</div>
-          <div>学生: ${invoice.studentName}</div>
+                  <div class="invoice-number">发票号码: ${invoice.invoice_id}</div>
+        <div>开票日期: ${invoice.issue_date}</div>
+        <div>到期日期: ${invoice.due_date}</div>
+        <div>学生: ${invoice.student_name}</div>
         </div>
         <div>
           <span class="status ${invoice.status}">${getStatusText(invoice.status)}</span>
@@ -138,23 +138,21 @@ export const generateInvoicePDF = async (invoice: Invoice, options: PDFOptions):
           </tr>
         </thead>
         <tbody>
-          ${invoice.items.map(item => `
-            <tr>
-              <td>${item.name}</td>
-              <td>${item.amount.toFixed(2)}</td>
-            </tr>
-          `).join('')}
+          <tr>
+            <td>学费</td>
+            <td>RM ${invoice.total_amount.toFixed(2)}</td>
+          </tr>
         </tbody>
       </table>
       
       <div class="totals">
         <div class="total-row">
           <span>小计:</span>
-          <span>RM ${invoice.totalAmount.toFixed(2)}</span>
+          <span>RM ${invoice.total_amount.toFixed(2)}</span>
         </div>
         <div class="total-row total-amount">
           <span>总计:</span>
-          <span>RM ${invoice.totalAmount.toFixed(2)}</span>
+          <span>RM ${invoice.total_amount.toFixed(2)}</span>
         </div>
       </div>
       
@@ -181,39 +179,31 @@ export const generateInvoicePDF = async (invoice: Invoice, options: PDFOptions):
   return blob
 }
 
-const getStatusColor = (status: Invoice['status']): string => {
+const getStatusColor = (status: SimpleInvoice['status']): string => {
   switch (status) {
-    case 'draft': return '#6b7280'
-    case 'issued': return '#3b82f6'
-    case 'sent': return '#8b5cf6'
-    case 'pending': return '#f59e0b'
-    case 'overdue': return '#ef4444'
+    case 'unpaid': return '#f59e0b'
     case 'paid': return '#10b981'
     case 'cancelled': return '#6b7280'
     default: return '#6b7280'
   }
 }
 
-const getStatusText = (status: Invoice['status']): string => {
+const getStatusText = (status: SimpleInvoice['status']): string => {
   switch (status) {
-    case 'draft': return '草稿'
-    case 'issued': return '已开具'
-    case 'sent': return '已发送'
-    case 'pending': return '待付款'
-    case 'overdue': return '已逾期'
+    case 'unpaid': return '待付款'
     case 'paid': return '已付款'
     case 'cancelled': return '已取消'
     default: return '未知'
   }
 }
 
-export const downloadInvoicePDF = async (invoice: Invoice, options: PDFOptions): Promise<void> => {
+export const downloadInvoicePDF = async (invoice: SimpleInvoice, options: PDFOptions): Promise<void> => {
   try {
     const blob = await generateInvoicePDF(invoice, options)
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `发票_${invoice.invoiceNumber}.pdf`
+    link.download = `发票_${invoice.invoice_id}.pdf`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -224,7 +214,7 @@ export const downloadInvoicePDF = async (invoice: Invoice, options: PDFOptions):
   }
 }
 
-export const printInvoicePDF = async (invoice: Invoice, options: PDFOptions): Promise<void> => {
+export const printInvoicePDF = async (invoice: SimpleInvoice, options: PDFOptions): Promise<void> => {
   try {
     const blob = await generateInvoicePDF(invoice, options)
     const url = URL.createObjectURL(blob)

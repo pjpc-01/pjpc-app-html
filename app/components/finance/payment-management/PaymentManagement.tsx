@@ -1,31 +1,36 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { CreditCard, DollarSign, CheckCircle, AlertCircle, RotateCcw, Eye, Loader2 } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { 
+  CreditCard, 
+  DollarSign, 
+  Calendar, 
+  User, 
+  FileText, 
+  CheckCircle, 
+  XCircle,
+  AlertCircle,
+  TrendingUp,
+  TrendingDown
+} from "lucide-react"
+import { useInvoiceData } from "@/hooks/useInvoiceData"
+import { SimpleInvoice } from "@/hooks/useInvoiceData"
 import { usePayments } from "@/hooks/usePayments"
-import { useInvoices } from "@/hooks/useInvoices"
 import { useReceipts } from "@/hooks/useReceipts"
 
 export default function PaymentManagement() {
   const { 
     invoices, 
     updateInvoiceStatus 
-  } = useInvoices()
+  } = useInvoiceData()
   const {
     payments,
     filters: paymentFilters,
