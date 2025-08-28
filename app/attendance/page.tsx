@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -34,6 +34,8 @@ import {
   CreditCard as CardIcon
 } from "lucide-react"
 import Link from "next/link"
+import { useStudents } from '@/hooks/useStudents'
+import { Student } from '@/hooks/useStudents'
 
 // 考勤记录接口
 interface AttendanceRecord {
@@ -49,19 +51,25 @@ interface AttendanceRecord {
   method: 'nfc' | 'url' | 'manual'
 }
 
-// 学生信息接口
-interface Student {
-  id: string
-  student_id?: string
-  student_name?: string
-  studentUrl?: string
-  center?: string
-  status?: string
+// 学生考勤状态接口
+interface StudentAttendanceStatus {
+  studentId: string
+  studentName: string
+  date: string
+  checkInTime?: string
+  checkOutTime?: string
+  status: 'not_checked_in' | 'checked_in' | 'checked_out' | 'absent' | 'late'
+  reason?: string
+  reasonDetail?: string
 }
 
 export default function AttendancePage() {
   const searchParams = useSearchParams()
   const centerId = searchParams.get('center')
+  const urlStudent = searchParams.get('student')
+  
+  // 使用 useStudents hook 获取学生数据
+  const { students, loading: studentsLoading, error: studentsError, refetch: refetchStudents } = useStudents()
   
   // 页面状态
   const [activeTab, setActiveTab] = useState("nfc")
@@ -83,46 +91,34 @@ export default function AttendancePage() {
   
   // 考勤记录状态
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([])
-  const [students, setStudents] = useState<Student[]>([])
+  const [studentAttendanceStatus, setStudentAttendanceStatus] = useState<StudentAttendanceStatus[]>([])
   const [loading, setLoading] = useState(false)
 
   // 检查HTTPS和NFC支持
   useEffect(() => {
     // 检查HTTPS
-    setIsHTTPS(window.location.protocol === 'https:')
-    
-    // 检查NFC支持
+    if (typeof window !== 'undefined') {
+      setIsHTTPS(window.location.protocol === 'https:')
+    }
+  }, [])
+
+  // 自动处理URL参数
+  useEffect(() => {
+    if (urlStudent && students.length > 0) {
+      // 自动处理学生打卡
+      console.log('🔄 自动处理学生打卡:', urlStudent)
+      processAttendance(urlStudent, 'url')
+    }
+  }, [urlStudent, students])
+
+  // 检查NFC支持
+  useEffect(() => {
     if (typeof window !== 'undefined' && 'NDEFReader' in window) {
       setIsNFCSupported(true)
     }
   }, [])
 
-  // 获取学生数据
-  useEffect(() => {
-    fetchStudents()
-  }, [])
-
-  const fetchStudents = async () => {
-    try {
-      setLoading(true)
-      
-      // 调用真实的PocketBase API获取学生数据
-      const response = await fetch('/api/students/list')
-      if (response.ok) {
-        const data = await response.json()
-        setStudents(data.students || [])
-      } else {
-        console.error('获取学生数据失败:', response.statusText)
-        // 如果API失败，使用备用数据
-        setStudents([])
-      }
-    } catch (err) {
-      console.error('获取学生数据失败:', err)
-      setStudents([])
-    } finally {
-      setLoading(false)
-    }
-  }
+  // 移除原来的 fetchStudents 函数，直接使用 useStudents hook 的数据
 
   // NFC读取功能
   const startNFCReading = async () => {
@@ -159,14 +155,14 @@ export default function AttendancePage() {
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({
-                nfcData: event,
-                deviceInfo: {
-                  deviceId: navigator.userAgent,
-                  deviceName: `${navigator.platform} - ${window.location.hostname}`
-                },
-                centerId: centerId || 'unknown'
-              })
+                             body: JSON.stringify({
+                 nfcData: event,
+                 deviceInfo: {
+                   deviceId: getDeviceInfo().userAgent,
+                   deviceName: `${getDeviceInfo().platform} - ${getDeviceInfo().hostname}`
+                 },
+                 centerId: centerId || 'unknown'
+               })
             })
 
             if (response.ok) {
@@ -174,19 +170,19 @@ export default function AttendancePage() {
               if (result.success) {
                 setSuccess(`${result.student.name} NFC打卡成功！`)
                 
-                // 添加到本地考勤记录
-                const newRecord: AttendanceRecord = {
-                  id: result.attendance.id,
-                  studentId: result.student.studentId,
-                  studentName: result.student.name,
-                  studentUrl: result.student.studentUrl,
-                  timestamp: result.attendance.timestamp,
-                  deviceInfo: `${navigator.userAgent} - ${window.location.hostname}`,
-                  center: result.student.center || centerId || 'unknown',
-                  type: "checkin",
-                  status: "success",
-                  method: "nfc"
-                }
+                                 // 添加到本地考勤记录
+                 const newRecord: AttendanceRecord = {
+                   id: result.attendance.id,
+                   studentId: result.student.studentId,
+                   studentName: result.student.name,
+                   studentUrl: result.student.studentUrl,
+                   timestamp: result.attendance.timestamp,
+                   deviceInfo: `${getDeviceInfo().userAgent} - ${getDeviceInfo().hostname}`,
+                   center: result.student.center || centerId || 'unknown',
+                   type: "checkin",
+                   status: "success",
+                   method: "nfc"
+                 }
                 
                 setAttendanceRecords(prev => [newRecord, ...prev])
               } else {
@@ -277,10 +273,52 @@ export default function AttendancePage() {
   const processAttendance = async (identifier: string, method: 'nfc' | 'url' | 'manual') => {
     try {
       let student: Student | undefined
+      let parsedData: {
+        studentId?: string | null
+        studentName?: string | null
+        teacherId?: string | null
+        teacherName?: string | null
+        centerId?: string | null
+        type?: string | null
+      } | null = null
 
       if (method === 'url') {
-        // 通过URL查找学生
-        student = students.find(s => s.studentUrl === identifier)
+        // 解析URL，自动识别学生或老师
+        try {
+          const url = new URL(identifier)
+          const params = new URLSearchParams(url.search)
+          
+          // 从URL参数中获取信息
+          parsedData = {
+            studentId: params.get('student_id') || params.get('id'),
+            studentName: params.get('student_name') || params.get('name'),
+            teacherId: params.get('teacher_id'),
+            teacherName: params.get('teacher_name'),
+            centerId: params.get('center') || params.get('center_id'),
+            type: params.get('type') || 'check-in'
+          }
+          
+          console.log('✅ URL解析成功:', parsedData)
+          
+          // 判断是学生还是老师
+          if (parsedData && (parsedData.studentId || parsedData.studentName)) {
+            // 学生打卡
+            student = students.find(s => 
+              s.student_id === parsedData!.studentId || 
+              s.student_name === parsedData!.studentName ||
+              s.studentUrl === identifier
+            )
+          } else if (parsedData && (parsedData.teacherId || parsedData.teacherName)) {
+            // 老师打卡 - 跳转到老师打卡页面
+            const teacherCenter = parsedData.centerId || centerId || 'wx01'
+            window.location.href = `/teacher-checkin?center=${teacherCenter}&teacherId=${parsedData.teacherId}&teacherName=${parsedData.teacherName}`
+            return
+          }
+        } catch (error) {
+          console.error('❌ URL解析失败:', error)
+          // 如果URL解析失败，尝试直接匹配studentUrl
+          student = students.find(s => s.studentUrl === identifier)
+        }
       } else {
         // 通过ID查找学生
         student = students.find(s => s.student_id === identifier || s.id === identifier)
@@ -296,6 +334,32 @@ export default function AttendancePage() {
         return
       }
 
+      // 检查学生今天的考勤状态
+      const today = new Date().toISOString().split('T')[0]
+      const currentStatus = studentAttendanceStatus.find(s => 
+        s.studentId === (student.student_id || student.id) && s.date === today
+      )
+
+      let attendanceType: 'checkin' | 'checkout'
+      let newStatus: StudentAttendanceStatus['status']
+      let actionText: string
+
+      if (!currentStatus || currentStatus.status === 'not_checked_in') {
+        // 学生还没签到，执行签到
+        attendanceType = 'checkin'
+        newStatus = 'checked_in'
+        actionText = '签到'
+      } else if (currentStatus.status === 'checked_in') {
+        // 学生已签到，执行签退
+        attendanceType = 'checkout'
+        newStatus = 'checked_out'
+        actionText = '签退'
+      } else {
+        // 学生已完成签到签退
+        setError(`${student.student_name} 今天的考勤已完成`)
+        return
+      }
+
       // 创建考勤记录
       const newRecord: AttendanceRecord = {
         id: Date.now().toString(),
@@ -303,20 +367,72 @@ export default function AttendancePage() {
         studentName: student.student_name || '未知学生',
         studentUrl: student.studentUrl,
         timestamp: new Date().toISOString(),
-        deviceInfo: `${navigator.userAgent} - ${window.location.hostname}`,
+        deviceInfo: `${getDeviceInfo().userAgent} - ${getDeviceInfo().hostname}`,
         center: centerId || '未知中心',
-        type: "checkin",
+        type: attendanceType,
         status: "success",
         method: method
-      }
+       }
 
       // 添加到本地状态
       setAttendanceRecords(prev => [newRecord, ...prev])
       
-      setSuccess(`${student.student_name} 打卡成功！(${getMethodDisplayName(method)})`)
+      // 调用API保存到PocketBase的student_attendance集合
+      try {
+        const response = await fetch('/api/student-attendance', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            studentId: student.student_id || student.id,
+            studentName: student.student_name || '未知学生',
+            centerId: centerId || 'unknown',
+            centerName: getCenterDisplayName(centerId),
+            branchId: centerId || 'unknown',        // 分行ID，这里使用中心ID
+            branchName: getCenterDisplayName(centerId), // 分行名称
+            type: attendanceType === 'checkin' ? 'check-in' : 'check-out',
+            timestamp: newRecord.timestamp,
+            deviceId: getDeviceInfo().userAgent,
+            deviceName: `${getDeviceInfo().platform} - ${getDeviceInfo().hostname}`,
+            method: method,
+            status: 'success'
+          })
+        })
+
+        if (response.ok) {
+          const result = await response.json()
+          console.log('✅ 学生考勤记录已保存到PocketBase:', result.data)
+        } else {
+          const errorData = await response.json()
+          console.error('❌ 保存学生考勤记录失败:', errorData.error)
+          // 不显示错误给用户，因为本地打卡已经成功
+        }
+      } catch (apiError) {
+        console.error('❌ API调用失败:', apiError)
+        // 不显示错误给用户，因为本地打卡已经成功
+      }
       
-      // 这里应该调用API保存到PocketBase
-      console.log('考勤记录:', newRecord)
+      // 更新学生考勤状态
+      const updatedStatus = studentAttendanceStatus.map(s => 
+        s.studentId === (student.student_id || student.id) && s.date === today
+          ? { ...s, status: newStatus, [attendanceType === 'checkin' ? 'checkInTime' : 'checkOutTime']: newRecord.timestamp }
+          : s
+      )
+      
+      if (!updatedStatus.find(s => s.studentId === (student.student_id || student.id) && s.date === today)) {
+        // 如果还没有今天的记录，添加新记录
+        updatedStatus.push({
+          studentId: student.student_id || student.id,
+          studentName: student.student_name || '未知学生',
+          date: today,
+          status: newStatus,
+          [attendanceType === 'checkin' ? 'checkInTime' : 'checkOutTime']: newRecord.timestamp
+        })
+      }
+      
+      setStudentAttendanceStatus(updatedStatus)
+      setSuccess(`${student.student_name} ${actionText}成功！(${getMethodDisplayName(method)})`)
       
     } catch (err: any) {
       setError(`考勤处理失败: ${err.message}`)
@@ -343,6 +459,28 @@ export default function AttendancePage() {
       'wx04': 'WX 04'
     }
     return centerNames[centerId.toLowerCase()] || centerId
+  }
+
+  // 获取学生今天的考勤状态
+  const getStudentTodayStatus = (studentId: string) => {
+    const today = new Date().toISOString().split('T')[0]
+    return studentAttendanceStatus.find(s => s.studentId === studentId && s.date === today)
+  }
+
+  // 获取安全的设备信息
+  const getDeviceInfo = () => {
+    if (typeof window === 'undefined') {
+      return {
+        userAgent: 'Unknown',
+        platform: 'Unknown',
+        hostname: 'localhost'
+      }
+    }
+    return {
+      userAgent: navigator.userAgent || 'Unknown',
+      platform: navigator.platform || 'Unknown',
+      hostname: window.location.hostname || 'localhost'
+    }
   }
 
   return (
@@ -640,6 +778,58 @@ export default function AttendancePage() {
           </Alert>
         )}
 
+        {/* 学生考勤状态 */}
+        {students.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <User className="h-5 w-5" />
+                学生考勤状态
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {students.slice(0, 10).map((student) => {
+                  const todayStatus = getStudentTodayStatus(student.student_id || student.id)
+                  return (
+                    <div key={student.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">{student.student_name}</p>
+                        <p className="text-sm text-gray-600">{student.student_id}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant={
+                            !todayStatus ? 'secondary' :
+                            todayStatus.status === 'checked_in' ? 'default' :
+                            todayStatus.status === 'checked_out' ? 'default' :
+                            'destructive'
+                          }>
+                            {!todayStatus ? '未签到' :
+                             todayStatus.status === 'checked_in' ? '已签到' :
+                             todayStatus.status === 'checked_out' ? '已签退' :
+                             todayStatus.status}
+                          </Badge>
+                        </div>
+                        {todayStatus && (
+                          <div className="text-xs text-gray-500 space-y-1">
+                            {todayStatus.checkInTime && (
+                              <div>签到: {new Date(todayStatus.checkInTime).toLocaleTimeString()}</div>
+                            )}
+                            {todayStatus.checkOutTime && (
+                              <div>签退: {new Date(todayStatus.checkOutTime).toLocaleTimeString()}</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* 考勤记录 */}
         {attendanceRecords.length > 0 && (
           <Card>
@@ -694,11 +884,17 @@ export default function AttendancePage() {
                 </div>
                 <div className="flex justify-between">
                   <span>协议:</span>
-                  <span className="font-mono">{window.location.protocol}</span>
+                  <span className="font-mono">{isHTTPS ? 'https:' : 'http:'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>主机:</span>
-                  <span className="font-mono">{window.location.hostname}</span>
+                  <span className="font-mono">localhost</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>学生数据:</span>
+                  <span className="font-medium">
+                    {studentsLoading ? '加载中...' : studentsError ? '加载失败' : `${students.length} 名学生`}
+                  </span>
                 </div>
               </div>
               <div className="space-y-2">
@@ -714,6 +910,12 @@ export default function AttendancePage() {
                   <span>数据库:</span>
                   <span className="font-medium">PocketBase</span>
                 </div>
+                {studentsError && (
+                  <div className="flex justify-between">
+                    <span>错误:</span>
+                    <span className="font-medium text-red-600 text-xs">{studentsError}</span>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

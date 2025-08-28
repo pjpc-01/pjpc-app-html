@@ -1,501 +1,292 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  Smartphone,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  ArrowLeft,
-  Radio,
-  Info,
-  Wifi,
-  WifiOff,
+import { 
+  User, 
+  GraduationCap,
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  AlertCircle,
   RefreshCw,
-  HelpCircle,
+  Activity,
+  Calendar,
+  MapPin,
+  Smartphone
 } from "lucide-react"
 import Link from "next/link"
 
-export default function NFCCheckInPage() {
-  const [nfcSupported, setNfcSupported] = useState<boolean>(false)
-  const [nfcPermission, setNfcPermission] = useState<boolean>(false)
-  const [isReading, setIsReading] = useState<boolean>(false)
-  const [error, setError] = useState<string>("")
-  const [success, setSuccess] = useState<string>("")
-  const [browserInfo, setBrowserInfo] = useState<any>({})
-  const [deviceInfo, setDeviceInfo] = useState<any>({})
+interface ParsedUrlData {
+  studentId?: string | null
+  studentName?: string | null
+  teacherId?: string | null
+  teacherName?: string | null
+  centerId?: string | null
+  type?: string | null
+  method?: string | null
+}
 
-  // 检查NFC支持和浏览器信息
+export default function NFCCheckinPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const nfcUrl = searchParams.get('url')
+  const centerId = searchParams.get('center') || 'wx01'
+  
+  // 页面状态
+  const [parsedData, setParsedData] = useState<ParsedUrlData | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [userType, setUserType] = useState<'student' | 'teacher' | 'unknown'>('unknown')
+
+  // 获取中心显示名称
+  const getCenterDisplayName = (centerId: string | null) => {
+    if (!centerId) return '未指定'
+    const centerNames: { [key: string]: string } = {
+      'wx01': 'WX 01',
+      'wx02': 'WX 02',
+      'wx03': 'WX 03',
+      'wx04': 'WX 04'
+    }
+    return centerNames[centerId.toLowerCase()] || centerId
+  }
+
+  // 解析NFC URL
   useEffect(() => {
-    const checkNFCSupport = () => {
-      const info: any = {
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        vendor: navigator.vendor,
-        language: navigator.language,
-        cookieEnabled: navigator.cookieEnabled,
-        onLine: navigator.onLine,
-      }
+    if (nfcUrl) {
+      parseNFCUrl(nfcUrl)
+    }
+  }, [nfcUrl])
 
-      // 检查Web NFC API支持
-      const hasNDEFReader = typeof window !== 'undefined' && 'NDEFReader' in window
-      const hasNDEF = typeof window !== 'undefined' && 'NDEF' in window
+  const parseNFCUrl = (url: string) => {
+    try {
+      const urlObj = new URL(url)
+      const params = new URLSearchParams(urlObj.search)
       
-      // 检查浏览器类型
-      const isChrome = /Chrome/.test(navigator.userAgent) && !/Edge/.test(navigator.userAgent)
-      const isEdge = /Edge/.test(navigator.userAgent)
-      const isFirefox = /Firefox/.test(navigator.userAgent)
-      const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
-      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-
-      info.browser = {
-        isChrome,
-        isEdge,
-        isFirefox,
-        isSafari,
-        isMobile,
-        version: navigator.userAgent.match(/(Chrome|Firefox|Safari|Edge)\/(\d+)/)?.[2] || 'unknown'
+      const data: ParsedUrlData = {
+        studentId: params.get('student_id') || params.get('id'),
+        studentName: params.get('student_name') || params.get('name'),
+        teacherId: params.get('teacher_id'),
+        teacherName: params.get('teacher_name'),
+        centerId: params.get('center') || params.get('center_id') || centerId,
+        type: params.get('type') || 'check-in',
+        method: params.get('method') || 'nfc'
       }
-
-      info.nfc = {
-        hasNDEFReader,
-        hasNDEF,
-        supported: hasNDEFReader || hasNDEF
+      
+      setParsedData(data)
+      
+      // 判断用户类型
+      if (data.studentId || data.studentName) {
+        setUserType('student')
+      } else if (data.teacherId || data.teacherName) {
+        setUserType('teacher')
+      } else {
+        setUserType('unknown')
       }
-
-      // 检查设备信息
-      info.device = {
-        isMobile,
-        isAndroid: /Android/.test(navigator.userAgent),
-        isIOS: /iPhone|iPad|iPod/.test(navigator.userAgent),
-        isTablet: /iPad|Android(?=.*\bMobile\b)(?=.*\bSafari\b)/.test(navigator.userAgent),
-        screenWidth: window.screen.width,
-        screenHeight: window.screen.height,
-        connection: (navigator as any).connection?.effectiveType || 'unknown'
-      }
-
-      setBrowserInfo(info)
-      setDeviceInfo(info.device)
-      setNfcSupported(info.nfc.supported)
-
-      console.log('NFC检测信息:', info)
-    }
-
-    checkNFCSupport()
-  }, [])
-
-  const startNFCReading = async () => {
-    if (!nfcSupported) {
-      setError("此设备不支持NFC功能")
-      return
-    }
-
-    if (!nfcPermission) {
-      setError("需要NFC权限，请允许浏览器访问NFC")
-      return
-    }
-
-    setIsReading(true)
-    setError("")
-    setSuccess("")
-
-    try {
-      // 尝试使用Web NFC API
-      if (typeof window !== 'undefined' && 'NDEFReader' in window) {
-        const ndef = new (window as any).NDEFReader()
-        
-        await ndef.scan({
-          recordType: "text",
-          mediaType: "application/json",
-        })
-
-        ndef.addEventListener("reading", (event: any) => {
-          console.log("NFC读取成功:", event)
-          setSuccess("NFC读取成功！")
-          setIsReading(false)
-        })
-
-        ndef.addEventListener("readingerror", (event: any) => {
-          console.error("NFC读取错误:", event)
-          setError("NFC读取失败，请重试")
-          setIsReading(false)
-        })
-
-        // 模拟读取过程（实际使用时删除）
-        setTimeout(() => {
-          setSuccess("NFC读取成功！（模拟）")
-          setIsReading(false)
-        }, 2000)
-      }
-    } catch (err) {
-      console.error("NFC读取错误:", err)
-      setError("NFC读取失败，请重试")
-      setIsReading(false)
+      
+      console.log('✅ NFC URL解析成功:', data)
+    } catch (error) {
+      console.error('❌ NFC URL解析失败:', error)
+      setError('NFC URL格式错误，无法解析')
     }
   }
 
-  const requestNFCPermission = async () => {
-    try {
-      if (typeof window !== 'undefined' && 'NDEFReader' in window) {
-        const ndef = new (window as any).NDEFReader()
-        
-        // 尝试扫描以请求权限
-        await ndef.scan()
-        setNfcPermission(true)
-        setError("")
-        setSuccess("NFC权限已获得！")
-      }
-    } catch (err) {
-      console.error("NFC权限请求失败:", err)
-      setError("NFC权限请求失败，请检查浏览器设置")
+  // 自动跳转到相应页面
+  const autoRedirect = () => {
+    if (!parsedData) return
+    
+    if (userType === 'student') {
+      // 跳转到学生考勤页面
+      const studentUrl = `/attendance?center=${parsedData.centerId}&student=${parsedData.studentId || parsedData.studentName}`
+      router.push(studentUrl)
+    } else if (userType === 'teacher') {
+      // 跳转到教师考勤页面
+      const teacherUrl = `/teacher-checkin?center=${parsedData.centerId}&teacherId=${parsedData.teacherId}&teacherName=${parsedData.teacherName}`
+      router.push(teacherUrl)
     }
   }
 
-  const getBrowserSupportStatus = () => {
-    if (!browserInfo.browser) return "检测中..."
-    
-    const { browser, nfc } = browserInfo
-    
-    if (browser.isChrome && parseInt(browser.version) >= 89) {
-      return "完全支持"
-    } else if (browser.isEdge && parseInt(browser.version) >= 89) {
-      return "完全支持"
-    } else if (browser.isFirefox && parseInt(browser.version) >= 79) {
-      return "部分支持"
-    } else if (browser.isSafari) {
-      return "不支持（Safari暂不支持Web NFC）"
-    } else {
-      return "版本过低"
-    }
+  // 手动选择页面
+  const goToStudentPage = () => {
+    router.push(`/attendance?center=${parsedData?.centerId || centerId}`)
   }
 
-  const getDeviceSupportStatus = () => {
-    if (!deviceInfo.isMobile) {
-      return "桌面设备通常不支持NFC"
-    }
-    
-    if (deviceInfo.isAndroid && parseInt(deviceInfo.screenWidth) > 0) {
-      return "Android设备通常支持NFC"
-    }
-    
-    if (deviceInfo.isIOS) {
-      return "iOS设备支持NFC（需要iOS 13+）"
-    }
-    
-    return "设备类型未知"
+  const goToTeacherPage = () => {
+    router.push(`/teacher-checkin?center=${parsedData?.centerId || centerId}`)
+  }
+
+  if (!nfcUrl) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="text-center">
+            <Smartphone className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">NFC打卡系统</h1>
+            <p className="text-gray-600">请使用NFC卡片或设备进行打卡</p>
+            <div className="mt-6 space-x-4">
+              <Button onClick={goToStudentPage} variant="default">
+                <User className="h-4 w-4 mr-2" />
+                学生打卡
+              </Button>
+              <Button onClick={goToTeacherPage} variant="outline">
+                <GraduationCap className="h-4 w-4 mr-2" />
+                教师打卡
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* 返回按钮 */}
-        <div className="flex items-center gap-4">
-          <Link href="/checkin">
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              返回选择
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">NFC 打卡系统</h1>
-            <p className="text-gray-600">13.56MHz NFC读卡器 - 现代智能系统</p>
-          </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        {/* 页面标题 */}
+        <div className="text-center mb-8">
+          <Smartphone className="h-16 w-16 text-blue-600 mx-auto mb-4" />
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">NFC打卡识别</h1>
+          <p className="text-gray-600">系统已识别您的NFC信息，正在处理...</p>
         </div>
-
-        {/* 系统状态 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Smartphone className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium">NFC支持</span>
-              </div>
-              <div className="mt-2">
-                {nfcSupported ? (
-                  <Badge variant="default" className="bg-green-100 text-green-800">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    已支持
-                  </Badge>
-                ) : (
-                  <Badge variant="destructive">
-                    <XCircle className="h-3 w-3 mr-1" />
-                    不支持
-                  </Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Radio className="h-5 w-5 text-blue-600" />
-                <span className="text-sm font-medium">NFC权限</span>
-              </div>
-              <div className="mt-2">
-                {nfcPermission ? (
-                  <Badge variant="default" className="bg-green-100 text-green-800">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    已授权
-                  </Badge>
-                ) : (
-                  <Badge variant="destructive">
-                    <XCircle className="h-3 w-3 mr-1" />
-                    未授权
-                  </Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Smartphone className="h-5 w-5 text-purple-600" />
-                <span className="text-sm font-medium">读取状态</span>
-              </div>
-              <div className="mt-2">
-                {isReading ? (
-                  <Badge variant="default" className="bg-blue-100 text-blue-800">
-                    读取中...
-                  </Badge>
-                ) : (
-                  <Badge variant="outline">
-                    待机中
-                  </Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                {navigator.onLine ? (
-                  <Wifi className="h-5 w-5 text-green-600" />
-                ) : (
-                  <WifiOff className="h-5 w-5 text-red-600" />
-                )}
-                <span className="text-sm font-medium">网络状态</span>
-              </div>
-              <div className="mt-2">
-                <Badge variant={navigator.onLine ? "default" : "destructive"}>
-                  {navigator.onLine ? "在线" : "离线"}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* 详细诊断信息 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Info className="h-5 w-5" />
-              系统诊断
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-600">浏览器:</span>
-                <span className="ml-2 font-medium">
-                  {browserInfo.browser?.isChrome ? 'Chrome' : 
-                   browserInfo.browser?.isEdge ? 'Edge' : 
-                   browserInfo.browser?.isFirefox ? 'Firefox' : 
-                   browserInfo.browser?.isSafari ? 'Safari' : '未知'}
-                  {browserInfo.browser?.version && ` ${browserInfo.browser.version}`}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-600">浏览器支持:</span>
-                <span className="ml-2 font-medium">{getBrowserSupportStatus()}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">设备类型:</span>
-                <span className="ml-2 font-medium">
-                  {deviceInfo.isMobile ? '移动设备' : '桌面设备'}
-                  {deviceInfo.isAndroid && ' (Android)'}
-                  {deviceInfo.isIOS && ' (iOS)'}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-600">设备支持:</span>
-                <span className="ml-2 font-medium">{getDeviceSupportStatus()}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Web NFC API:</span>
-                <span className="ml-2 font-medium">
-                  {browserInfo.nfc?.hasNDEFReader ? 'NDEFReader ✓' : 'NDEFReader ✗'}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-600">网络类型:</span>
-                <span className="ml-2 font-medium">{deviceInfo.connection}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 权限请求 */}
-        {nfcSupported && !nfcPermission && (
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription className="flex items-center justify-between">
-              <div>
-                <span>需要NFC权限才能使用打卡功能</span>
-                <div className="text-xs text-gray-500 mt-1">
-                  点击下方按钮请求NFC权限，或检查浏览器设置
-                </div>
-              </div>
-              <Button onClick={requestNFCPermission} size="sm">
-                授权NFC
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* 不支持NFC的提示 */}
-        {!nfcSupported && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              <div>
-                <strong>NFC功能不可用</strong>
-                <div className="text-sm mt-1">
-                  <p>• 确保使用支持的浏览器（Chrome 89+ 或 Edge 89+）</p>
-                  <p>• 确保设备支持NFC功能</p>
-                  <p>• 确保使用HTTPS协议（Web NFC需要安全上下文）</p>
-                  <p>• 移动设备通常支持NFC，桌面设备通常不支持</p>
-                </div>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* 控制按钮 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Smartphone className="h-5 w-5" />
-              NFC控制
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              <Button 
-                onClick={startNFCReading}
-                disabled={isReading || !nfcSupported || !nfcPermission}
-                className="flex items-center gap-2"
-              >
-                <Smartphone className="h-4 w-4" />
-                {isReading ? "读取中..." : "开始NFC读取"}
-              </Button>
-              
-              {!nfcSupported && (
-                <Button 
-                  onClick={() => window.location.reload()}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  重新检测
-                </Button>
-              )}
-              
-              <Link href="/nfc-test">
-                <Button 
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <HelpCircle className="h-4 w-4" />
-                  NFC诊断工具
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* 错误和成功提示 */}
         {error && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+          <Alert className="border-red-200 bg-red-50 mb-6">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">{error}</AlertDescription>
           </Alert>
         )}
 
         {success && (
-          <Alert>
-            <CheckCircle className="h-4 w-4" />
-            <AlertDescription>{success}</AlertDescription>
+          <Alert className="border-green-200 bg-green-50 mb-6">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">{success}</AlertDescription>
           </Alert>
         )}
 
-        {/* 系统信息 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>NFC系统信息</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-600">频率:</span>
-                <span className="ml-2 font-medium">13.56MHz</span>
+        {/* NFC信息显示 */}
+        {parsedData && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                NFC信息识别结果
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Badge variant={userType === 'student' ? 'default' : userType === 'teacher' ? 'secondary' : 'outline'}>
+                      {userType === 'student' ? '学生' : userType === 'teacher' ? '教师' : '未知'}
+                    </Badge>
+                    <span className="text-sm text-gray-600">用户类型</span>
+                  </div>
+                  
+                  {parsedData.studentId && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">学生ID:</span>
+                      <span className="ml-2 font-mono">{parsedData.studentId}</span>
+                    </div>
+                  )}
+                  
+                  {parsedData.studentName && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">学生姓名:</span>
+                      <span className="ml-2">{parsedData.studentName}</span>
+                    </div>
+                  )}
+                  
+                  {parsedData.teacherId && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">教师ID:</span>
+                      <span className="ml-2 font-mono">{parsedData.teacherId}</span>
+                    </div>
+                  )}
+                  
+                  {parsedData.teacherName && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">教师姓名:</span>
+                      <span className="ml-2">{parsedData.teacherName}</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">中心:</span>
+                    <span className="ml-2">{getCenterDisplayName(parsedData.centerId)}</span>
+                  </div>
+                  
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">打卡类型:</span>
+                    <span className="ml-2">{parsedData.type === 'check-in' ? '签到' : '签退'}</span>
+                  </div>
+                  
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">打卡方式:</span>
+                    <span className="ml-2">{parsedData.method === 'nfc' ? 'NFC卡片' : parsedData.method}</span>
+                  </div>
+                  
+                  <div>
+                    <span className="text-sm font-medium text-gray-600">识别时间:</span>
+                    <span className="ml-2">{new Date().toLocaleTimeString('zh-CN')}</span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <span className="text-gray-600">读卡距离:</span>
-                <span className="ml-2 font-medium">1-4cm</span>
-              </div>
-              <div>
-                <span className="text-gray-600">卡片类型:</span>
-                <span className="ml-2 font-medium">ISO14443, FeliCa</span>
-              </div>
-              <div>
-                <span className="text-gray-600">数据格式:</span>
-                <span className="ml-2 font-medium">NDEF, NFC-A/B/F</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* 使用说明 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>使用说明</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span>确保设备支持NFC功能（Android 4.4+ 或 iOS 11+）</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span>使用支持的浏览器（Chrome 89+ 或 Edge 89+）</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span>确保使用HTTPS协议（Web NFC需要安全上下文）</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span>允许浏览器访问NFC权限</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span>将NFC卡片或手机靠近读卡器（距离1-4cm）</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-                <span>等待读取完成，系统会自动记录考勤</span>
+        {/* 操作按钮 */}
+        <div className="text-center space-y-4">
+          {userType === 'student' && (
+            <div>
+              <Button onClick={autoRedirect} size="lg" className="px-8">
+                <User className="h-5 w-5 mr-2" />
+                自动跳转学生打卡页面
+              </Button>
+              <p className="text-sm text-gray-600 mt-2">系统将自动跳转到学生考勤页面</p>
+            </div>
+          )}
+          
+          {userType === 'teacher' && (
+            <div>
+              <Button onClick={autoRedirect} size="lg" className="px-8">
+                <GraduationCap className="h-5 w-5 mr-2" />
+                自动跳转教师打卡页面
+              </Button>
+              <p className="text-sm text-gray-600 mt-2">系统将自动跳转到教师考勤页面</p>
+            </div>
+          )}
+          
+          {userType === 'unknown' && (
+            <div className="space-y-4">
+              <p className="text-red-600">无法识别用户类型，请手动选择</p>
+              <div className="space-x-4">
+                <Button onClick={goToStudentPage} variant="default">
+                  <User className="h-4 w-4 mr-2" />
+                  学生打卡
+                </Button>
+                <Button onClick={goToTeacherPage} variant="outline">
+                  <GraduationCap className="h-4 w-4 mr-2" />
+                  教师打卡
+                </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          )}
+          
+          <div className="pt-6">
+            <Link href="/" className="text-blue-600 hover:text-blue-800">
+              返回首页
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   )
