@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { pb } from '@/lib/pocketbase'
+import { getPocketBase } from '@/lib/pocketbase'
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,6 +9,9 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '100')
     const page = parseInt(searchParams.get('page') || '1')
 
+    // 获取PocketBase实例
+    const pb = await getPocketBase()
+    
     // 构建过滤条件
     let filter = ''
     const filters = []
@@ -76,6 +79,9 @@ export async function POST(request: NextRequest) {
         error: '学生ID和姓名是必填字段' 
       }, { status: 400 })
     }
+
+    // 获取PocketBase实例
+    const pb = await getPocketBase()
 
     // 检查学生ID是否已存在
     const existingStudent = await pb.collection('students').getFirstListItem(`student_id = "${student_id}"`)
