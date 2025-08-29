@@ -71,8 +71,8 @@ const detectNetworkEnvironment = async () => {
 
 // PocketBase URL配置（智能检测网络环境）
 const getPocketBaseUrl = async () => {
-  // 优先使用环境变量
-  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POCKETBASE_URL) {
+  // 优先使用环境变量（服务器端和客户端都支持）
+  if (process.env.NEXT_PUBLIC_POCKETBASE_URL) {
     console.log('🔧 使用环境变量配置的PocketBase URL:', process.env.NEXT_PUBLIC_POCKETBASE_URL)
     return process.env.NEXT_PUBLIC_POCKETBASE_URL
   }
@@ -90,6 +90,11 @@ const getPocketBaseUrl = async () => {
 
 // 创建PocketBase实例
 let pbInstance: PocketBase | null = null
+let authPromise: Promise<any> | null = null
+let isAuthenticated = false
+
+// 全局认证锁，防止并发认证
+let authLock = false
 
 // 获取PocketBase实例（单例模式）
 export const getPocketBase = async (): Promise<PocketBase> => {
@@ -104,6 +109,8 @@ export const getPocketBase = async (): Promise<PocketBase> => {
 // 重新初始化PocketBase实例（用于网络环境变化时）
 export const reinitializePocketBase = async () => {
   pbInstance = null
+  isAuthenticated = false
+  authPromise = null
   return await getPocketBase()
 }
 
@@ -171,3 +178,104 @@ export interface AuthState {
 
 // 导出默认实例
 export default pb
+
+// 管理员认证（带缓存和防重复）
+export const authenticateAdmin = async (): Promise<void> => {
+  if (isAuthenticated) {
+    console.log('✅ 管理员已认证，跳过重复认证')
+    return
+  }
+
+  // 检查全局认证锁
+  if (authLock) {
+    console.log('🔒 等待全局认证锁释放...')
+    // 等待锁释放，最多等待5秒
+    let waitTime = 0
+    while (authLock && waitTime < 5000) {
+      await new Promise(resolve => setTimeout(resolve, 100))
+      waitTime += 100
+    }
+    if (authLock) {
+      throw new Error('认证锁超时')
+    }
+  }
+
+  if (authPromise) {
+    console.log('⏳ 等待进行中的认证请求...')
+    try {
+      await authPromise
+      return
+    } catch (error) {
+      console.log('⚠️ 等待的认证请求失败，重新认证')
+      // 如果等待的请求失败，清除状态并重新认证
+      isAuthenticated = false
+      authPromise = null
+    }
+  }
+
+  // 设置全局认证锁
+  authLock = true
+  console.log('🔒 设置全局认证锁')
+
+  try {
+    // 添加重试机制
+    let retryCount = 0
+    const maxRetries = 3
+    
+    while (retryCount < maxRetries) {
+      try {
+        const pb = await getPocketBase()
+        
+        // 创建新的PocketBase实例用于认证，避免影响其他请求
+        const authPb = new PocketBase(pb.baseUrl)
+        
+        console.log(`🔄 开始管理员认证... (尝试 ${retryCount + 1}/${maxRetries})`)
+        authPromise = authPb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        const authResult = await authPromise
+        
+        // 检查认证响应结构
+        if (authResult && (authResult.admin || authResult.record)) {
+          isAuthenticated = true
+          console.log('✅ 管理员认证成功')
+          
+          // 将认证状态同步到主实例
+          if (pb.authStore && authPb.authStore.token) {
+            pb.authStore.save(authPb.authStore.token, authPb.authStore.model)
+            console.log('🔑 认证令牌已同步到主实例')
+          }
+          
+          // 验证认证状态
+          if (pb.authStore.isValid) {
+            console.log('🔑 认证令牌有效')
+            return // 成功，退出重试循环
+          } else {
+            console.log('⚠️ 认证令牌无效，重试...')
+            isAuthenticated = false
+            retryCount++
+            continue
+          }
+        } else {
+          throw new Error('认证响应格式错误')
+        }
+      } catch (error) {
+        console.error(`❌ 管理员认证失败 (尝试 ${retryCount + 1}/${maxRetries}):`, error)
+        isAuthenticated = false
+        retryCount++
+        
+        if (retryCount >= maxRetries) {
+          console.error('❌ 达到最大重试次数，认证失败')
+          throw error
+        }
+        
+        // 等待一段时间后重试
+        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount))
+      } finally {
+        authPromise = null
+      }
+    }
+  } finally {
+    // 释放全局认证锁
+    authLock = false
+    console.log('🔓 释放全局认证锁')
+  }
+}

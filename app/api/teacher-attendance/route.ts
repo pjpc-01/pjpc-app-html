@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPocketBase } from '@/lib/pocketbase'
+import { getPocketBase, authenticateAdmin } from '@/lib/pocketbase'
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,12 +35,12 @@ export async function POST(request: NextRequest) {
 
     const pb = await getPocketBase()
     
-    // 以管理员身份登录PocketBase
+    // 使用新的认证函数
     try {
-      await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-      console.log('✅ 管理员登录成功')
+      await authenticateAdmin()
+      console.log('✅ 管理员认证成功')
     } catch (authError) {
-      console.error('❌ 管理员登录失败:', authError)
+      console.error('❌ 管理员认证失败:', authError)
       return NextResponse.json(
         { 
           error: 'PocketBase认证失败', 
@@ -128,12 +128,12 @@ export async function GET(request: NextRequest) {
 
     const pb = await getPocketBase()
     
-    // 以管理员身份登录PocketBase
+    // 使用新的认证函数
     try {
-      await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-      console.log('✅ 管理员登录成功')
+      await authenticateAdmin()
+      console.log('✅ 管理员认证成功')
     } catch (authError) {
-      console.error('❌ 管理员登录失败:', authError)
+      console.error('❌ 管理员认证失败:', authError)
       return NextResponse.json(
         { 
           error: 'PocketBase认证失败', 

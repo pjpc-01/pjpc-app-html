@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle as AlertTriangleIcon, Mail, Clock } from "lucide-react"
 import ConnectionStatus from "@/components/ConnectionStatus"
+import TeacherNavigation from "@/components/shared/TeacherNavigation"
 
 export default function Dashboard() {
   const { user, userProfile, loading, logout, resendVerification, error, connectionStatus, clearError } = useAuth()
