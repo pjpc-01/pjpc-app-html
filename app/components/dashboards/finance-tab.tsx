@@ -17,10 +17,10 @@ import FinanceOverview from "../finance/reports-overview/FinanceOverview"
 import FeeManagement from "../finance/fee-management/FeeManagement"
 import { InvoiceTab } from "../finance/invoice-management/InvoiceTab"
 import PaymentManagement from "../finance/payment-management/PaymentManagement"
-import ReminderManagement from "../finance/payment-management/ReminderManagement"
+import ReminderManagement from "../finance/reminders-management/ReminderManagement"
 import FinancialReports from "../finance/reports-overview/FinancialReports"
 import { StudentFeeMatrix } from "../finance/student-fee-matrix/StudentFeeMatrix"
-import ReceiptManagement from "../finance/payment-management/ReceiptManagement"
+import ReceiptManagement from "../finance/receipts-management/ReceiptManagement"
 
 interface FinanceTabProps {
   financialStats: any

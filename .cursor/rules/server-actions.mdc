@@ -1,8 +1,3 @@
----
-description: Guidelines for implementing Next.js server actions
-globs: 
-alwaysApply: false
----
 # Server Actions
 
 ## Format and Structure
@@ -95,6 +90,11 @@ export const updateEmailSettingsAction = actionClient
     - `adminActionClient`: Use for actions restricted to admin users.
 - **Input Validation:** Define input validation schemas using Zod in the corresponding `.validation.ts` file. These schemas are used by `next-safe-action` (`.schema()`) and can also be reused on the client for form validation.
 - **Context (`ctx`):** Access necessary context (like `userId`, `emailAccountId`, etc.) provided by the safe action client via the `ctx` object in the `.action()` handler.
+- **Mutations Only:** Server Actions are **strictly for mutations** (operations that change data, e.g., creating, updating, deleting). **Do NOT use Server Actions for data fetching (GET operations).**
+    - For data fetching, use dedicated [GET API Routes](mdc:.cursor/rules/get-api-route.mdc) combined with [SWR Hooks](mdc:.cursor/rules/data-fetching.mdc).
+- **Error Handling:** `next-safe-action` provides centralized error handling. Use `SafeError` for expected/handled errors within actions if needed (see `apps/web/utils/actions/safe-action.ts`).
+- **Instrumentation:** Sentry instrumentation is automatically applied via `withServerActionInstrumentation` within the safe action clients. Use the `.metadata({ name: "actionName" })` method to provide a meaningful name for monitoring.
+- **Cache Invalidation:** If an action modifies data displayed elsewhere, use `revalidatePath` or `revalidateTag` from `next/cache` within the action handler as needed.
 - **Mutations Only:** Server Actions are **strictly for mutations** (operations that change data, e.g., creating, updating, deleting). **Do NOT use Server Actions for data fetching (GET operations).**
     - For data fetching, use dedicated [GET API Routes](mdc:.cursor/rules/get-api-route.mdc) combined with [SWR Hooks](mdc:.cursor/rules/data-fetching.mdc).
 - **Error Handling:** `next-safe-action` provides centralized error handling. Use `SafeError` for expected/handled errors within actions if needed (see `apps/web/utils/actions/safe-action.ts`).

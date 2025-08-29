@@ -1,158 +1,129 @@
-import { useState, useCallback } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { pb } from '@/lib/pocketbase-instance'
 
-// Receipt interface matching exact PocketBase field names
+// Simple receipt interface matching PocketBase schema
 export interface Receipt {
   id: string
-  paymentId: string
-  receiptNumber: string
-  dateIssued: string
-  recipientName: string
-  items: { name: string; amount: number }[]
-  totalPaid: number
-  status: 'draft' | 'issued' | 'sent' | 'acknowledged'
-  notes: string
+  receipt_id: string
+  invoice_id: string
+  amount: number
+  receipt_date: string
+  created: string
+  updated: string
 }
 
-export interface ReceiptFilters {
-  status: string
-  dateRange: { start: string; end: string }
+// Create receipt data interface
+export interface CreateReceiptData {
+  receipt_id: string
+  invoice_id: string
+  amount: number
+  receipt_date: string
 }
 
+// API functions
+const fetchReceipts = async (): Promise<Receipt[]> => {
+  try {
+    const result = await pb.collection('receipts').getList(1, 200, {})
+    return result.items
+  } catch (error: any) {
+    console.error('Error fetching receipts:', error)
+    throw new Error(`Failed to fetch receipts: ${error.message}`)
+  }
+}
+
+const createReceipt = async (data: CreateReceiptData): Promise<Receipt> => {
+  try {
+    const newReceipt = await pb.collection('receipts').create(data)
+    return newReceipt
+  } catch (error: any) {
+    console.error('Error creating receipt:', error)
+    throw new Error(`Failed to create receipt: ${error.message}`)
+  }
+}
+
+const deleteReceipt = async (id: string): Promise<void> => {
+  try {
+    await pb.collection('receipts').delete(id)
+  } catch (error: any) {
+    console.error('Error deleting receipt:', error)
+    throw new Error(`Failed to delete receipt: ${error.message}`)
+  }
+}
+
+
+
+// React Query hook
 export const useReceipts = () => {
-  const [receipts, setReceipts] = useState<Receipt[]>([
-    {
-      id: "1",
-      paymentId: "1",
-      receiptNumber: "RCP-2024-001",
-      dateIssued: "2024-01-20",
-      recipientName: "王小明家长",
-      items: [
-        { name: "基础学费", amount: 800 },
-        { name: "特色课程费", amount: 400 }
-      ],
-      totalPaid: 1200,
-      status: "issued",
-      notes: "1月学费收据"
-    },
-    {
-      id: "2",
-      paymentId: "2",
-      receiptNumber: "RCP-2024-002",
-      dateIssued: "2024-01-25",
-      recipientName: "李小红家长",
-      items: [
-        { name: "基础学费", amount: 1000 },
-        { name: "特色课程费", amount: 400 }
-      ],
-      totalPaid: 1400,
-      status: "issued",
-      notes: "1月学费收据"
-    }
-  ])
+  const queryClient = useQueryClient()
 
-  const [filters, setFilters] = useState<ReceiptFilters>({
-    status: "",
-    dateRange: { start: "", end: "" }
+  // Query: Fetch receipts
+  const {
+    data: receipts = [],
+    isLoading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['receipts'],
+    queryFn: fetchReceipts,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2,
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
   })
 
-  const generateReceiptNumber = useCallback(() => {
-    const year = new Date().getFullYear()
-    const existingReceipts = receipts.filter(r => r.receiptNumber.startsWith(`RCP-${year}`))
-    const nextNumber = existingReceipts.length + 1
-    return `RCP-${year}-${nextNumber.toString().padStart(3, '0')}`
-  }, [receipts])
-
-  const createReceipt = useCallback((receiptData: Omit<Receipt, 'id' | 'receiptNumber'>) => {
-    const receiptNumber = generateReceiptNumber()
-    
-    const newReceipt: Receipt = {
-      ...receiptData,
-      id: Math.max(...receipts.map(r => parseInt(r.id)), 0) + 1 + "",
-      receiptNumber
+  // Mutation: Create receipt
+  const createReceiptMutation = useMutation({
+    mutationFn: createReceipt,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['receipts'] })
+    },
+    onError: (error) => {
+      console.error('Error creating receipt:', error)
     }
-    setReceipts(prev => [...prev, newReceipt])
-    return newReceipt
-  }, [receipts, generateReceiptNumber])
+  })
 
-  const updateReceipt = useCallback((receiptId: string, updates: Partial<Receipt>) => {
-    setReceipts(prev => prev.map(receipt => 
-      receipt.id === receiptId ? { ...receipt, ...updates } : receipt
-    ))
-  }, [])
-
-  const deleteReceipt = useCallback((receiptId: string) => {
-    setReceipts(prev => prev.filter(receipt => receipt.id !== receiptId))
-  }, [])
-
-  const updateReceiptStatus = useCallback((receiptId: string, status: Receipt['status']) => {
-    updateReceipt(receiptId, { status })
-  }, [updateReceipt])
-
-  const getFilteredReceipts = useCallback(() => {
-    return receipts.filter(receipt => {
-      const matchesStatus = !filters.status || receipt.status === filters.status
-      
-      let matchesDateRange = true
-      if (filters.dateRange.start && filters.dateRange.end) {
-        const receiptDate = new Date(receipt.dateIssued)
-        const startDate = new Date(filters.dateRange.start)
-        const endDate = new Date(filters.dateRange.end)
-        matchesDateRange = receiptDate >= startDate && receiptDate <= endDate
-      }
-      
-      return matchesStatus && matchesDateRange
-    })
-  }, [receipts, filters])
-
-  const getReceiptByPayment = useCallback((paymentId: string): Receipt | undefined => {
-    return receipts.find(receipt => receipt.paymentId === paymentId)
-  }, [receipts])
-
-  const generateReceiptFromPayment = useCallback((paymentId: string, paymentData: any, invoiceData: any): Receipt => {
-    const currentDate = new Date().toISOString().split('T')[0]
-    
-    return createReceipt({
-      paymentId,
-      dateIssued: currentDate,
-      recipientName: invoiceData.studentName + "家长",
-      items: invoiceData.items || [],
-      totalPaid: paymentData.amountPaid,
-      status: 'issued',
-      notes: `收据 - ${invoiceData.invoiceNumber}`
-    })
-  }, [createReceipt])
-
-  const getReceiptStatistics = useCallback(() => {
-    const total = receipts.length
-    const draft = receipts.filter(r => r.status === 'draft').length
-    const issued = receipts.filter(r => r.status === 'issued').length
-    const sent = receipts.filter(r => r.status === 'sent').length
-    const acknowledged = receipts.filter(r => r.status === 'acknowledged').length
-    
-    const totalAmount = receipts.reduce((sum, r) => sum + r.totalPaid, 0)
-    
-    return {
-      total,
-      draft,
-      issued,
-      sent,
-      acknowledged,
-      totalAmount
+  // Mutation: Delete receipt
+  const deleteReceiptMutation = useMutation({
+    mutationFn: deleteReceipt,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['receipts'] })
+    },
+    onError: (error) => {
+      console.error('Error deleting receipt:', error)
     }
-  }, [receipts])
+  })
+
+  // Helper functions
+  const addReceipt = async (data: CreateReceiptData) => {
+    return createReceiptMutation.mutateAsync(data)
+  }
+
+  const removeReceipt = async (id: string) => {
+    return deleteReceiptMutation.mutateAsync(id)
+  }
+
+  // Calculate stats
+  const totalReceipts = receipts.length
+  const totalAmount = receipts.reduce((sum, r) => sum + r.amount, 0)
 
   return {
+    // Data
     receipts,
-    filters,
-    setFilters,
-    createReceipt,
-    updateReceipt,
-    deleteReceipt,
-    updateReceiptStatus,
-    getFilteredReceipts,
-    getReceiptByPayment,
-    generateReceiptFromPayment,
-    getReceiptStatistics,
-    generateReceiptNumber
+    totalReceipts,
+    totalAmount,
+    
+    // State
+    isLoading,
+    error: error?.message || null,
+    
+    // Actions
+    addReceipt,
+    removeReceipt,
+    refetch,
+    
+    // Mutation states
+    isCreating: createReceiptMutation.isPending,
+    isDeleting: deleteReceiptMutation.isPending,
   }
 }

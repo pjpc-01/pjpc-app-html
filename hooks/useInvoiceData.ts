@@ -171,6 +171,57 @@ const deleteInvoiceAPI = async (invoiceId: string) => {
   console.log('✅ useInvoiceData: Invoice deleted successfully')
 }
 
+// Auto-create receipt when invoice is created
+const createReceiptForInvoice = async (invoiceId: string, amount: number) => {
+  try {
+    console.log('🔄 useInvoiceData: Auto-creating receipt for invoice:', invoiceId)
+    
+    // First, get the invoice to extract its ID components
+    const invoice = await pb.collection('invoices').getOne(invoiceId)
+    if (!invoice) {
+      console.error('❌ useInvoiceData: Invoice not found for receipt creation:', invoiceId)
+      return
+    }
+    
+    // Extract components from invoice_id (format: INV-YYYY-MM-NNNNN)
+    const invoiceIdMatch = invoice.invoice_id.match(/^INV-(\d{4})-(\d{2})-(\d{5})$/)
+    if (!invoiceIdMatch) {
+      console.error('❌ useInvoiceData: Invalid invoice ID format:', invoice.invoice_id)
+      return
+    }
+    
+    const [, year, month, sequence] = invoiceIdMatch
+    
+    // Generate receipt ID that links to invoice ID (format: RCP-YYYY-MM-NNNNN)
+    const receiptNumber = `RCP-${year}-${month}-${sequence}`
+    
+    const currentDate = new Date().toISOString().split('T')[0]
+    
+    const receiptData = {
+      receipt_id: receiptNumber,
+      invoice_id: invoiceId,
+      amount: amount,
+      receipt_date: currentDate
+    }
+    
+    console.log('📝 useInvoiceData: Creating receipt with data:', receiptData)
+    console.log('🔗 useInvoiceData: Receipt ID links to Invoice ID:', {
+      receipt_id: receiptNumber,
+      invoice_id: invoice.invoice_id,
+      pattern_match: `RCP-${year}-${month}-${sequence}`
+    })
+    
+    const newReceipt = await pb.collection('receipts').create(receiptData)
+    console.log('✅ useInvoiceData: Receipt created successfully:', newReceipt.id)
+    
+    return newReceipt
+  } catch (error: any) {
+    console.error('❌ useInvoiceData: Error creating receipt for invoice:', error)
+    // Don't throw error - receipt creation failure shouldn't break invoice creation
+    // Just log it for debugging
+  }
+}
+
 // Main hook
 export const useInvoiceData = () => {
   console.log('🔄 useInvoiceData: Hook initialized')
@@ -204,9 +255,19 @@ export const useInvoiceData = () => {
   // Mutation for creating invoices
   const createInvoiceMutation = useMutation({
     mutationFn: createInvoiceAPI,
-    onSuccess: () => {
-      // Invalidate and refetch invoices
+    onSuccess: async (newInvoice: any) => {
+      console.log('🔄 useInvoiceData: Invoice created, now creating receipt...')
+      
+      // Auto-create receipt for the new invoice
+      try {
+        await createReceiptForInvoice(newInvoice.id, newInvoice.total_amount)
+      } catch (error) {
+        console.error('❌ useInvoiceData: Failed to create receipt for invoice:', error)
+      }
+      
+      // Invalidate and refetch invoices and receipts
       queryClient.invalidateQueries({ queryKey: ['invoices'] })
+      queryClient.invalidateQueries({ queryKey: ['receipts'] })
     },
     onError: (error: any) => {
       console.error('❌ useInvoiceData: Error creating invoice:', error)
@@ -217,8 +278,9 @@ export const useInvoiceData = () => {
   const updateInvoiceStatusMutation = useMutation({
     mutationFn: updateInvoiceStatusAPI,
     onSuccess: () => {
-      // Invalidate and refetch invoices
+      // Invalidate and refetch invoices and receipts (status change might affect receipt status)
       queryClient.invalidateQueries({ queryKey: ['invoices'] })
+      queryClient.invalidateQueries({ queryKey: ['receipts'] })
     },
     onError: (error: any) => {
       console.error('❌ useInvoiceData: Error updating invoice status:', error)
@@ -229,8 +291,9 @@ export const useInvoiceData = () => {
   const deleteInvoiceMutation = useMutation({
     mutationFn: deleteInvoiceAPI,
     onSuccess: () => {
-      // Invalidate and refetch invoices
+      // Invalidate and refetch invoices and receipts
       queryClient.invalidateQueries({ queryKey: ['invoices'] })
+      queryClient.invalidateQueries({ queryKey: ['receipts'] })
     },
     onError: (error: any) => {
       console.error('❌ useInvoiceData: Error deleting invoice:', error)
