@@ -105,6 +105,59 @@ const createPaymentAPI = async (paymentData: Omit<Payment, 'id'>): Promise<Payme
   }
 }
 
+// Refund payment function with automatic invoice status update
+const refundPaymentAPI = async (paymentId: string, refundNotes?: string): Promise<Payment> => {
+  console.log('🔄 Refunding payment with automatic invoice status update...')
+  
+  try {
+    // Step 1: Get the payment to refund
+    const payment = await pb.collection('payments').getOne(paymentId)
+    console.log('📝 Payment to refund:', payment)
+    
+    // Step 2: Update payment status to refunded
+    const updatedPayment = await pb.collection('payments').update(paymentId, {
+      status: 'cancelled', // Using 'cancelled' as refund status
+      notes: refundNotes ? `${payment.notes || ''}\n[REFUNDED] ${refundNotes}` : `${payment.notes || ''}\n[REFUNDED]`
+    })
+    console.log('✅ Payment refunded successfully')
+    
+    // Step 3: Fetch the invoice to get current details
+    console.log('🔄 Fetching invoice for status update:', payment.invoice_id)
+    const invoice = await pb.collection('invoices').getOne(payment.invoice_id)
+    
+    // Step 4: Fetch all payments for this invoice to calculate new status
+    console.log('🔄 Fetching all payments for invoice to calculate status')
+    const allPayments = await pb.collection('payments').getList(1, 200, {
+      filter: `invoice_id = "${payment.invoice_id}"`
+    })
+    
+    // Step 5: Calculate new invoice status
+    const newStatus = calculateInvoicePaymentStatus(invoice, allPayments.items)
+    console.log(`📊 Calculated new invoice status: ${newStatus} (was: ${invoice.status})`)
+    
+    // Step 6: Update invoice status if it has changed
+    if (newStatus !== invoice.status) {
+      console.log(`🔄 Updating invoice status from "${invoice.status}" to "${newStatus}"`)
+      await pb.collection('invoices').update(payment.invoice_id, { status: newStatus })
+      console.log('✅ Invoice status updated successfully')
+    } else {
+      console.log('ℹ️ Invoice status unchanged, no update needed')
+    }
+    
+    return updatedPayment as unknown as Payment
+    
+  } catch (error: any) {
+    console.error('❌ Error refunding payment or updating invoice status:', error)
+    
+    // Enhanced error logging
+    if (error.data) {
+      console.error('Validation errors:', error.data)
+    }
+    
+    throw new Error(`Failed to refund payment: ${error.message || 'Unknown error'}`)
+  }
+}
+
 // Main hook - ENHANCED with automatic invoice status updates
 export const usePaymentData = () => {
   const queryClient = useQueryClient()
@@ -135,13 +188,29 @@ export const usePaymentData = () => {
       console.error('❌ Error creating payment:', error)
     }
   })
+
+  // Refund payment mutation with automatic invoice status updates
+  const refundPayment = useMutation({
+    mutationFn: refundPaymentAPI,
+    onSuccess: () => {
+      // Invalidate both payments and invoices since we're updating both
+      queryClient.invalidateQueries({ queryKey: ['payments'] })
+      queryClient.invalidateQueries({ queryKey: ['invoices'] })
+      console.log('✅ Payment refunded and invoice status updated - queries invalidated')
+    },
+    onError: (error: any) => {
+      console.error('❌ Error refunding payment:', error)
+    }
+  })
   
   return {
     payments,
     loading: isLoading,
     error: error?.message,
     createPayment: createPayment.mutateAsync,
+    refundPayment: refundPayment.mutateAsync,
     refetch,
-    isCreating: createPayment.isPending
+    isCreating: createPayment.isPending,
+    isRefunding: refundPayment.isPending
   }
 }

@@ -43,7 +43,7 @@ interface PaymentFormData {
 
 export default function PaymentManagement() {
   const { toast } = useToast()
-  const { payments, loading, error, createPayment, isCreating } = usePaymentData()
+  const { payments, loading, error, createPayment, refundPayment, isCreating, isRefunding } = usePaymentData()
   const { invoices: availableInvoices, loading: invoicesLoading } = useInvoiceData()
   
   // Basic state
@@ -133,8 +133,57 @@ export default function PaymentManagement() {
     }
   }
 
-  // Get status badge
-  const getStatusBadge = (status: string) => {
+  // Handle payment refund
+  const handleRefundPayment = async (paymentId: string) => {
+    if (!confirm('Are you sure you want to refund this payment? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      await refundPayment(paymentId, 'Payment refunded by admin')
+      
+      toast({
+        title: "Success",
+        description: "Payment refunded successfully and invoice status automatically updated"
+      })
+      
+    } catch (error: any) {
+      console.error('Payment refund error:', error)
+      
+      let errorMessage = "Failed to refund payment"
+      
+      if (error.message) {
+        errorMessage = error.message
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      })
+    }
+  }
+
+  // Get invoice status badge
+  const getInvoiceStatusBadge = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return <Badge className="bg-green-100 text-green-800">已缴费</Badge>
+      case 'overpaid':
+        return <Badge className="bg-blue-100 text-blue-800">超额缴费</Badge>
+      case 'underpaid':
+        return <Badge className="bg-yellow-100 text-yellow-800">部分缴费</Badge>
+      case 'pending':
+        return <Badge className="bg-red-100 text-red-800">待缴费</Badge>
+      case 'cancelled':
+        return <Badge className="bg-gray-100 text-gray-800">已取消</Badge>
+      default:
+        return <Badge variant="outline">{status}</Badge>
+    }
+  }
+
+  // Get payment status badge
+  const getPaymentStatusBadge = (status: string) => {
     const statusConfig = {
       confirmed: { label: '已缴费', variant: 'default' as const, icon: CheckCircle },
       pending: { label: '待缴费', variant: 'secondary' as const, icon: AlertCircle },
@@ -155,8 +204,11 @@ export default function PaymentManagement() {
 
   // Get method icon
   const getMethodIcon = (method: string) => {
+    if (method === 'cash') {
+      return null // No icon for cash payments
+    }
+    
     const methodIcons: Record<string, any> = {
-      cash: DollarSign,
       bank_transfer: CreditCard,
       card: CreditCard,
       e_wallet: CreditCard
@@ -314,12 +366,13 @@ export default function PaymentManagement() {
                       <TableHead>状态</TableHead>
                       <TableHead>缴费日期</TableHead>
                       <TableHead>备注</TableHead>
+                      <TableHead>操作</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredPayments.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                           暂无付款记录
                         </TableCell>
                       </TableRow>
@@ -352,7 +405,7 @@ export default function PaymentManagement() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              {getStatusBadge(payment.status || 'pending')}
+                              {getPaymentStatusBadge(payment.status || 'pending')}
                             </TableCell>
                             <TableCell>
                               {payment.payment_date ? 
@@ -362,6 +415,19 @@ export default function PaymentManagement() {
                             </TableCell>
                             <TableCell>
                               {payment.notes || '-'}
+                            </TableCell>
+                            <TableCell>
+                              {payment.status === 'confirmed' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRefundPayment(payment.id)}
+                                  disabled={isRefunding}
+                                  className="text-red-600 border-red-200 hover:bg-red-50"
+                                >
+                                  退款
+                                </Button>
+                              )}
                             </TableCell>
                           </TableRow>
                         )
@@ -417,7 +483,7 @@ export default function PaymentManagement() {
                       </TableRow>
                     ) : (
                       availableInvoices
-                        .filter(invoice => invoice.status === 'pending')
+                        .filter(invoice => invoice.status !== 'paid' && invoice.status !== 'overpaid')
                         .map((invoice) => (
                           <TableRow 
                             key={invoice.id} 
@@ -455,7 +521,7 @@ export default function PaymentManagement() {
                               </span>
                             </TableCell>
                             <TableCell>
-                              {getStatusBadge(invoice.status || 'pending')}
+                              {getInvoiceStatusBadge(invoice.status || 'pending')}
                             </TableCell>
                             <TableCell>
                               {invoice.due_date ? 
