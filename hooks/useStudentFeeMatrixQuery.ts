@@ -35,12 +35,11 @@ const fetchStudents = async (): Promise<StudentNameCard[]> => {
   return students
 }
 
-// Fetch fees (all active fees, regardless of individual assignments)
+// Fetch fees (ALL fees, regardless of global status - each student has independent status)
 const fetchFees = async (): Promise<FeeItem[]> => {
   console.log('[useStudentFeeMatrixQuery] Fetching fees...')
   
   const records = await pb.collection('fee_items').getFullList(200, {
-    filter: 'status = "active"',
     sort: 'name',
     fields: 'id,name,category,amount,description,status,frequency'
   })
@@ -55,7 +54,7 @@ const fetchFees = async (): Promise<FeeItem[]> => {
     frequency: record.frequency,
   }))
   
-  console.log(`[useStudentFeeMatrixQuery] Fetched ${fees.length} fees`)
+  console.log(`[useStudentFeeMatrixQuery] Fetched ${fees.length} fees (all statuses)`)
   return fees
 }
 
@@ -97,9 +96,11 @@ const fetchStudentFees = async (): Promise<StudentFeeAssignment[]> => {
                 feeItemsData = parsed
                 assignedFeeIds = parsed.map(item => item.id)
               } else {
-                // Old format: array of IDs
+                // Old format: array of IDs - convert to new format
                 assignedFeeIds = parsed
-                feeItemsData = parsed.map(id => ({ id }))
+                // For old format, we'll need to fetch the full fee details
+                // This will be handled by the UI when displaying
+                feeItemsData = parsed.map(id => ({ id, name: 'Loading...', amount: 0, status: 'active' }))
               }
             }
           } else if (Array.isArray(record.fee_items)) {
@@ -109,9 +110,11 @@ const fetchStudentFees = async (): Promise<StudentFeeAssignment[]> => {
               feeItemsData = record.fee_items
               assignedFeeIds = record.fee_items.map(item => item.id)
             } else {
-              // Old format: array of IDs
+              // Old format: array of IDs - convert to new format
               assignedFeeIds = record.fee_items
-              feeItemsData = record.fee_items.map(id => ({ id }))
+              // For old format, we'll need to fetch the full fee details
+              // This will be handled by the UI when displaying
+              feeItemsData = record.fee_items.map(id => ({ id, name: 'Loading...', amount: 0, status: 'active' }))
             }
           }
         }
@@ -132,7 +135,10 @@ const fetchStudentFees = async (): Promise<StudentFeeAssignment[]> => {
           name: item.name || 'Unknown',
           status: item.status || 'active',
           amount: item.amount || 0,
-          category: item.category || '未分类'
+          category: item.category || '未分类',
+          description: item.description || '',
+          frequency: item.frequency || 'one-time',
+          active: item.status === 'active'
         } as FeeItem)), // Convert to FeeItem objects with full data
         totalAmount: record.total_amount || 0,
         assigned_fee_ids: assignedFeeIds // Store the raw array for easy access
@@ -407,7 +413,7 @@ export const useStudentFeeMatrixQuery = (feeItems: Array<{ id: string; name: str
         const results = []
         const fees = feesQuery.data || []
         
-        for (const { studentId, assignedFeeIds, assignedFeeItems } of studentAssignments) {
+        for (const { studentId, assignedFeeIds } of studentAssignments) {
           console.log(`[useStudentFeeMatrixQuery] Processing student ${studentId} with ${assignedFeeIds.length} fee assignments`)
           
           // Calculate total amount for this student
@@ -423,10 +429,19 @@ export const useStudentFeeMatrixQuery = (feeItems: Array<{ id: string; name: str
             filter: `students = "${studentId}"`
           })
           
-          // Prepare fee_items data - use detailed objects if available, otherwise use IDs
-          const feeItemsData = assignedFeeItems && assignedFeeItems.length > 0 
-            ? assignedFeeItems 
-            : assignedFeeIds
+          // Store full fee item details instead of just IDs
+          const feeItemsData = assignedFeeIds.map(feeId => {
+            const fee = fees.find(f => f.id === feeId)
+            return {
+              id: feeId,
+              name: fee?.name || 'Unknown Fee',
+              amount: fee?.amount || 0,
+              category: fee?.category || '未分类',
+              description: fee?.description || '',
+              status: fee?.active ? 'active' : 'inactive',
+              frequency: fee?.frequency || 'one-time'
+            }
+          })
           
           if (existingRecords.length > 0) {
             // Update existing record
@@ -434,7 +449,7 @@ export const useStudentFeeMatrixQuery = (feeItems: Array<{ id: string; name: str
             console.log(`[useStudentFeeMatrixQuery] Updating existing record for student ${studentId}`)
             
             const result = await pb.collection('student_fee_matrix').update(existingRecord.id, {
-              fee_items: JSON.stringify(feeItemsData), // Store detailed fee items or IDs
+              fee_items: JSON.stringify(feeItemsData), // Store full fee item details
               total_amount: totalAmount, // Save calculated total amount
               updated: new Date().toISOString()
             })
@@ -445,7 +460,7 @@ export const useStudentFeeMatrixQuery = (feeItems: Array<{ id: string; name: str
             
             const result = await pb.collection('student_fee_matrix').create({
               students: studentId,
-              fee_items: JSON.stringify(feeItemsData), // Store detailed fee items or IDs
+              fee_items: JSON.stringify(feeItemsData), // Store full fee item details
               total_amount: totalAmount, // Save calculated total amount
               created: new Date().toISOString(),
               updated: new Date().toISOString()
@@ -475,28 +490,16 @@ export const useStudentFeeMatrixQuery = (feeItems: Array<{ id: string; name: str
     const assignments: SaveAssignmentParams[] = []
     
     localAssignments.forEach((feeIds, studentId) => {
-      const assignedFeeItems = Array.from(feeIds).map(feeId => {
-        const fee = feesQuery.data?.find(f => f.id === feeId)
-        return {
-          id: feeId,
-          name: fee?.name || 'Unknown',
-          status: fee?.status || 'active',
-          amount: fee?.amount || 0,
-          category: fee?.category || '未分类'
-        }
-      })
-      
       assignments.push({
         studentId,
-        assignedFeeIds: Array.from(feeIds),
-        assignedFeeItems
+        assignedFeeIds: Array.from(feeIds)
       })
     })
     
     if (assignments.length > 0) {
       saveAllAssignmentsMutation.mutate(assignments)
     }
-  }, [localAssignments, feesQuery.data, saveAllAssignmentsMutation])
+  }, [localAssignments, saveAllAssignmentsMutation])
 
   // ========================================
   // Utility Functions

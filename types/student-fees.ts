@@ -42,13 +42,6 @@ export interface StudentFeeAssignment {
 export interface SaveAssignmentParams {
   studentId: string
   assignedFeeIds: string[]
-  assignedFeeItems?: Array<{
-    id: string
-    name: string
-    status: string
-    amount: number
-    category?: string
-  }>
 }
 
 /**

@@ -78,21 +78,9 @@ export const StudentFeeMatrix: React.FC = () => {
       const studentAssignments: SaveAssignmentParams[] = []
       
       pendingChanges.forEach((assignedFeeIds, studentId) => {
-        // Get the fee items for this student to include name and status
-        const assignedFeeItems = feeItems
-          .filter(fee => assignedFeeIds.has(fee.id))
-          .map(fee => ({
-            id: fee.id,
-            name: fee.name,
-            status: (fee as any).status || 'active',
-            amount: fee.amount,
-            category: fee.category
-          }))
-
         studentAssignments.push({
           studentId,
-          assignedFeeIds: Array.from(assignedFeeIds),
-          assignedFeeItems // Add the detailed fee items data
+          assignedFeeIds: Array.from(assignedFeeIds)
         })
       })
 
@@ -498,7 +486,6 @@ const StudentFeeRow: React.FC<StudentFeeRowProps> = ({
                           {categoryFees.map(fee => {
                             const isAssigned = assignedFees.includes(fee.id)
                             const hasChange = hasPendingChange(student.id, fee.id)
-                            const isInactive = (fee as any).status === 'inactive' || (fee as any).active === false
                             
                             return (
                               <div 
@@ -506,20 +493,14 @@ const StudentFeeRow: React.FC<StudentFeeRowProps> = ({
                                 className={`flex items-center justify-between p-2 rounded transition-colors ${
                                   hasChange 
                                     ? 'bg-blue-50 border border-blue-200' 
-                                    : isInactive
-                                    ? 'bg-gray-50 border border-gray-200'
                                     : 'bg-gray-50'
                                 } ${!isEditMode ? 'opacity-60' : ''}`}
                               >
                                 <div className="flex items-center gap-3">
-                                  <span className={`text-sm font-medium ${!isEditMode ? 'text-gray-500' : isInactive ? 'text-gray-400' : ''}`}>
+                                  <span className={`text-sm font-medium ${!isEditMode ? 'text-gray-500' : ''}`}>
                                     {fee.name}
                                   </span>
-                                  {isInactive && (
-                                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
-                                      已停用
-                                    </span>
-                                  )}
+
                                   {hasChange && (
                                     <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
                                       待保存
@@ -527,7 +508,7 @@ const StudentFeeRow: React.FC<StudentFeeRowProps> = ({
                                   )}
                                 </div>
                                 <div className="flex items-center gap-3">
-                                  <span className={`text-sm ${!isEditMode ? 'text-gray-400' : isInactive ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  <span className={`text-sm ${!isEditMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                     ¥{fee.amount.toLocaleString()}
                                   </span>
                                   <ToggleSwitch

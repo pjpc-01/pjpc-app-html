@@ -101,7 +101,7 @@ invoices {
     total_amount: number (required)
     due_date: datetime (required)
     status: "unpaid" | "partially_paid" | "paid" | "overdue" (required)
-    serial_number: string (unique, format: INV-YYYY-NNNN)
+    serial_number: string (unique, format: inv-YYYY-MM-NNNNN)
     created: datetime
     updated: datetime
 }
@@ -126,7 +126,7 @@ interface Invoice {
 ```
 
 #### Business Rules
-- Unique serial numbers (INV-YYYY-NNNN format)
+- Unique serial numbers (inv-YYYY-MM-NNNNN format)
 - Automatic due date calculation
 - PDF generation with school branding
 - Email notification to parents
@@ -411,7 +411,7 @@ export class InvoiceService {
   private generateSerialNumber(): string {
     const year = new Date().getFullYear()
     const sequence = this.getNextSequence()
-    return `INV-${year}-${sequence.toString().padStart(4, '0')}`
+    return `inv-${year}-${month.toString().padStart(2, '0')}-${sequence.toString().padStart(5, '0')}`
   }
 }
 ```

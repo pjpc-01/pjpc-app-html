@@ -7,7 +7,7 @@ import { Input } from '../../../../components/ui/input'
 import { Label } from '../../../../components/ui/label'
 import { Textarea } from '../../../../components/ui/textarea'
 import { Badge } from '../../../../components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/select'
+
 import { X, Check } from 'lucide-react'
 import { StudentWithFees, SimpleInvoice } from '../../../../hooks/useInvoiceData'
 
@@ -18,7 +18,6 @@ interface InvoiceCreatorProps {
     discounts: number
     tax: number
     totalAmount: number
-    paymentMethod: string
   }) => Promise<SimpleInvoice>
 }
 
@@ -27,7 +26,7 @@ export function InvoiceCreator({ selectedStudent, onCancel, onCreateInvoice }: I
   const [notes, setNotes] = useState('')
   const [discounts, setDiscounts] = useState('0')
   const [tax, setTax] = useState('0')
-  const [paymentMethod, setPaymentMethod] = useState('unpaid')
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -46,8 +45,8 @@ export function InvoiceCreator({ selectedStudent, onCancel, onCreateInvoice }: I
       setLoading(true)
       setError(null)
       
-      // Calculate total amount with discounts and tax
-      const baseAmount = selectedStudent.fee_matrix?.total_amount || 0
+             // Calculate total amount with discounts and tax
+       const baseAmount = selectedStudent.fee_matrix?.total_amount || 0
       const discountAmount = parseFloat(discounts) || 0
       const taxAmount = parseFloat(tax) || 0
       const totalAmount = baseAmount - discountAmount + taxAmount
@@ -55,8 +54,7 @@ export function InvoiceCreator({ selectedStudent, onCancel, onCreateInvoice }: I
       await onCreateInvoice(selectedStudent.id, dueDate, notes, {
         discounts: discountAmount,
         tax: taxAmount,
-        totalAmount,
-        paymentMethod
+        totalAmount
       })
       
       setSuccess(true)
@@ -76,14 +74,14 @@ export function InvoiceCreator({ selectedStudent, onCancel, onCreateInvoice }: I
     setNotes('')
     setDiscounts('0')
     setTax('0')
-    setPaymentMethod('unpaid')
+
     setError(null)
     setSuccess(false)
     onCancel()
   }
 
-  // Calculate totals for display
-  const baseAmount = selectedStudent.fee_matrix?.total_amount || 0
+     // Calculate totals for display
+   const baseAmount = selectedStudent.fee_matrix?.total_amount || 0
   const discountAmount = parseFloat(discounts) || 0
   const taxAmount = parseFloat(tax) || 0
   const finalTotal = baseAmount - discountAmount + taxAmount
@@ -128,11 +126,11 @@ export function InvoiceCreator({ selectedStudent, onCancel, onCreateInvoice }: I
                 <div>
                   <p className="text-sm text-gray-600 mb-2">Fee Items:</p>
                   <div className="flex flex-wrap gap-2">
-                    {selectedStudent.fee_matrix.fee_items.map((item) => (
-                      <Badge key={item.id} variant="outline" className="text-xs">
-                        {item.name}: RM {item.amount}
-                      </Badge>
-                    ))}
+                                         {selectedStudent.fee_matrix.fee_items.map((item, index) => (
+                       <Badge key={item.id || `fee-${index}`} variant="outline" className="text-xs">
+                         {item.name}: RM {item.amount}
+                       </Badge>
+                     ))}
                   </div>
                 </div>
               )}
@@ -181,19 +179,7 @@ export function InvoiceCreator({ selectedStudent, onCancel, onCreateInvoice }: I
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="paymentMethod">Payment Method</Label>
-            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select payment method" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="unpaid">Unpaid</SelectItem>
-                <SelectItem value="bank transfer">Bank Transfer</SelectItem>
-                <SelectItem value="TnG">TnG</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+
 
           <div>
             <Label htmlFor="notes">Notes (Optional)</Label>

@@ -96,7 +96,7 @@ export function StudentSelector({ students, onSelectStudent, loading }: StudentS
                         <div className="mt-2">
                           <p className="text-sm text-gray-600">
                             Total Amount: <span className="font-semibold text-green-600">
-                              RM {student.fee_matrix.total_amount.toFixed(2)}
+                              RM {student.fee_matrix.subtotal_amount.toFixed(2)}
                             </span>
                           </p>
                           {student.fee_matrix.fee_items && student.fee_matrix.fee_items.length > 0 && (

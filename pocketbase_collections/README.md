@@ -189,7 +189,7 @@ const invoice = await pb.collection('invoices').create({
     { name: "Materials", amount: 200 }
   ], // SNAPSHOT
   totalAmount: 1000,
-  invoiceNumber: "INV-2024-001"
+  invoiceNumber: "inv-2024-08-00001"
 });
 ```
 

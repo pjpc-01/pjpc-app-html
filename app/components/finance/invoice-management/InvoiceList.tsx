@@ -11,7 +11,7 @@ import { SimpleInvoice } from '../../../../hooks/useInvoiceData'
 
 interface InvoiceListProps {
   invoices: SimpleInvoice[]
-  onUpdateStatus: (invoiceId: string, status: 'unpaid' | 'paid' | 'cancelled') => Promise<void>
+  onUpdateStatus: (invoiceId: string, status: 'paid' | 'overpaid' | 'underpaid' | 'pending' | 'cancelled') => Promise<void>
   onDeleteInvoice: (invoiceId: string) => Promise<void>
   isUpdatingStatus?: boolean
   isDeletingInvoice?: boolean
@@ -43,8 +43,12 @@ export function InvoiceList({
     switch (status) {
       case 'paid':
         return <Badge className="bg-green-100 text-green-800">Paid</Badge>
-      case 'unpaid':
-        return <Badge className="bg-red-100 text-red-800">Unpaid</Badge>
+      case 'overpaid':
+        return <Badge className="bg-blue-100 text-blue-800">Overpaid</Badge>
+      case 'underpaid':
+        return <Badge className="bg-yellow-100 text-yellow-800">Underpaid</Badge>
+      case 'pending':
+        return <Badge className="bg-red-100 text-red-800">Pending</Badge>
       case 'cancelled':
         return <Badge className="bg-gray-100 text-gray-800">Cancelled</Badge>
       default:
@@ -52,7 +56,7 @@ export function InvoiceList({
     }
   }
 
-  const handleStatusUpdate = async (invoiceId: string, newStatus: 'unpaid' | 'paid' | 'cancelled') => {
+  const handleStatusUpdate = async (invoiceId: string, newStatus: 'paid' | 'overpaid' | 'underpaid' | 'pending' | 'cancelled') => {
     try {
       setLoadingInvoice(invoiceId)
       await onUpdateStatus(invoiceId, newStatus)
@@ -104,8 +108,10 @@ export function InvoiceList({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="unpaid">Unpaid</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="overpaid">Overpaid</SelectItem>
+              <SelectItem value="underpaid">Underpaid</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
@@ -150,7 +156,7 @@ export function InvoiceList({
                       {invoice.status !== 'cancelled' && (
                         <Select
                           value={invoice.status}
-                          onValueChange={(value: 'unpaid' | 'paid' | 'cancelled') => 
+                          onValueChange={(value: 'paid' | 'overpaid' | 'underpaid' | 'pending' | 'cancelled') => 
                             handleStatusUpdate(invoice.id, value)
                           }
                           disabled={loadingInvoice === invoice.id || isUpdatingStatus}
@@ -159,8 +165,10 @@ export function InvoiceList({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="unpaid">Unpaid</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
                             <SelectItem value="paid">Paid</SelectItem>
+                            <SelectItem value="overpaid">Overpaid</SelectItem>
+                            <SelectItem value="underpaid">Underpaid</SelectItem>
                             <SelectItem value="cancelled">Cancel</SelectItem>
                           </SelectContent>
                         </Select>

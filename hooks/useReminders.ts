@@ -32,7 +32,7 @@ export const useReminders = (invoices: SimpleInvoice[]) => {
       status: 'sent',
       scheduledDate: '2024-01-25',
       sentDate: '2024-01-25',
-      message: '您的发票 INV-2024-002 即将到期，请及时付款。',
+              message: '您的发票 inv-2024-08-00002 即将到期，请及时付款。',
       recipient: 'parent2@example.com',
       attempts: 1,
       maxAttempts: 3

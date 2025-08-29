@@ -42,13 +42,15 @@ export function InvoiceTab() {
   // Calculate statistics
   const stats = {
     total: invoices.length,
-    unpaid: invoices.filter(inv => inv.status === 'unpaid').length,
+    pending: invoices.filter(inv => inv.status === 'pending').length,
     paid: invoices.filter(inv => inv.status === 'paid').length,
+    overpaid: invoices.filter(inv => inv.status === 'overpaid').length,
+    underpaid: invoices.filter(inv => inv.status === 'underpaid').length,
     cancelled: invoices.filter(inv => inv.status === 'cancelled').length,
-    totalAmount: invoices.reduce((sum, inv) => sum + inv.total_amount, 0),
-    unpaidAmount: invoices
-      .filter(inv => inv.status === 'unpaid')
-      .reduce((sum, inv) => sum + inv.total_amount, 0)
+    totalAmount: invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0),
+    pendingAmount: invoices
+      .filter(inv => inv.status === 'pending')
+      .reduce((sum, inv) => sum + (inv.total_amount || 0), 0)
   }
 
   console.log('📈 InvoiceTab: Stats calculated:', stats)
@@ -57,14 +59,13 @@ export function InvoiceTab() {
     discounts: number
     tax: number
     totalAmount: number
-    paymentMethod: string
   }) => {
     const newInvoice = await createInvoice(studentId, dueDate, notes, additionalData)
     setSelectedStudent(null)
     return newInvoice
   }
 
-  const handleUpdateStatus = async (invoiceId: string, status: 'unpaid' | 'paid' | 'cancelled') => {
+  const handleUpdateStatus = async (invoiceId: string, status: 'paid' | 'overpaid' | 'underpaid' | 'pending' | 'cancelled') => {
     await updateInvoiceStatus(invoiceId, status)
   }
 
@@ -142,8 +143,8 @@ export function InvoiceTab() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Unpaid</p>
-                <p className="text-2xl font-bold text-red-600">{stats.unpaid}</p>
+                <p className="text-sm font-medium text-gray-600">Pending</p>
+                <p className="text-2xl font-bold text-red-600">{stats.pending}</p>
               </div>
               <AlertCircle className="h-8 w-8 text-red-600" />
             </div>
@@ -168,7 +169,7 @@ export function InvoiceTab() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Amount</p>
                 <p className="text-2xl font-bold text-green-600">
-                  RM {stats.totalAmount.toFixed(2)}
+                  RM {(stats.totalAmount || 0).toFixed(2)}
                 </p>
               </div>
               <DollarSign className="h-8 w-8 text-green-600" />
@@ -198,7 +199,7 @@ export function InvoiceTab() {
                       <p className="text-sm text-gray-600">Grade: {student.standard}</p>
                       {student.fee_matrix ? (
                         <p className="text-sm text-green-600">
-                          Fee Matrix: RM {student.fee_matrix.total_amount.toFixed(2)}
+                          Fee Matrix: RM {(student.fee_matrix.total_amount || 0).toFixed(2)}
                         </p>
                       ) : (
                         <p className="text-sm text-red-600">No fee matrix assigned</p>

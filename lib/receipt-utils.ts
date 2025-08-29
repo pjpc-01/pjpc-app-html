@@ -1,7 +1,7 @@
 import { Receipt } from '@/hooks/useReceipts'
 
 export const generateReceiptNumber = (invoiceNumber: string) => {
-  return invoiceNumber.replace('INV-', 'RCP-')
+  return invoiceNumber.replace('inv-', 'rcp-')
 }
 
 export const createReceiptFromInvoice = (

@@ -19,12 +19,12 @@ import {
 import { FileText, Download, TrendingUp, BarChart3, PieChart, Calendar, DollarSign, Users, Loader2, CheckCircle, AlertCircle } from "lucide-react"
 import { useFinancialStats } from "@/hooks/useFinancialStats"
 import { useInvoiceData } from "@/hooks/useInvoiceData"
-import { usePayments } from "@/hooks/usePayments"
+import { usePaymentData } from "@/hooks/usePaymentData"
 
 export default function FinancialReports() {
   const { stats: financialStats, loading: financialLoading } = useFinancialStats()
   const { invoices } = useInvoiceData()
-  const { payments } = usePayments()
+  const { payments } = usePaymentData()
   const [selectedReportType, setSelectedReportType] = useState("monthly")
   const [selectedPeriod, setSelectedPeriod] = useState("2024")
 

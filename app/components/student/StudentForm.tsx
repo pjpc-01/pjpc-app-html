@@ -369,7 +369,7 @@ export default function StudentForm({
     
     // 马来西亚学年：1月开始，12月结束
     // 年级计算：当前年份 - 出生年份
-    let grade = currentYear - birthYear
+    const grade = currentYear - birthYear
     
     console.log(`年级计算: ${currentYear} - ${birthYear} = ${grade}`)
     
