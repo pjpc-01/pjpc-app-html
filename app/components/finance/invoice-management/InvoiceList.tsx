@@ -6,8 +6,9 @@ import { Button } from '../../../../components/ui/button'
 import { Badge } from '../../../../components/ui/badge'
 import { Input } from '../../../../components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/select'
-import { Search, Trash2, Edit } from 'lucide-react'
+import { Search, Trash2, Edit, Eye, X } from 'lucide-react'
 import { SimpleInvoice } from '../../../../hooks/useInvoiceData'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../../components/ui/dialog'
 
 interface InvoiceListProps {
   invoices: SimpleInvoice[]
@@ -27,6 +28,7 @@ export function InvoiceList({
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [loadingInvoice, setLoadingInvoice] = useState<string | null>(null)
+  const [selectedInvoiceForDetails, setSelectedInvoiceForDetails] = useState<SimpleInvoice | null>(null)
 
   // Filter invoices
   const filteredInvoices = invoices.filter(invoice => {
@@ -74,6 +76,23 @@ export function InvoiceList({
         await onDeleteInvoice(invoiceId)
       } catch (error) {
         console.error('Error deleting invoice:', error)
+      } finally {
+        setLoadingInvoice(null)
+      }
+    }
+  }
+
+  const handleViewDetails = (invoice: SimpleInvoice) => {
+    setSelectedInvoiceForDetails(invoice)
+  }
+
+  const handleCancelInvoice = async (invoiceId: string) => {
+    if (confirm('Are you sure you want to cancel this invoice?')) {
+      try {
+        setLoadingInvoice(invoiceId)
+        await onUpdateStatus(invoiceId, 'cancelled')
+      } catch (error) {
+        console.error('Error cancelling invoice:', error)
       } finally {
         setLoadingInvoice(null)
       }
@@ -153,36 +172,40 @@ export function InvoiceList({
                         </p>
                       </div>
                       
-                      {invoice.status !== 'cancelled' && (
-                        <Select
-                          value={invoice.status}
-                          onValueChange={(value: 'paid' | 'overpaid' | 'underpaid' | 'pending' | 'cancelled') => 
-                            handleStatusUpdate(invoice.id, value)
-                          }
-                          disabled={loadingInvoice === invoice.id || isUpdatingStatus}
-                        >
-                          <SelectTrigger className="w-24">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="paid">Paid</SelectItem>
-                            <SelectItem value="overpaid">Overpaid</SelectItem>
-                            <SelectItem value="underpaid">Underpaid</SelectItem>
-                            <SelectItem value="cancelled">Cancel</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                      
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(invoice.id)}
-                        disabled={loadingInvoice === invoice.id || isDeletingInvoice}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                                             <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => handleViewDetails(invoice)}
+                         disabled={loadingInvoice === invoice.id}
+                         className="text-blue-600 hover:text-blue-700"
+                         title="View Details"
+                       >
+                         <Eye className="h-4 w-4" />
+                       </Button>
+                       
+                       {invoice.status !== 'cancelled' && (
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                           onClick={() => handleCancelInvoice(invoice.id)}
+                           disabled={loadingInvoice === invoice.id || isUpdatingStatus}
+                           className="text-orange-600 hover:text-orange-700"
+                           title="Cancel Invoice"
+                         >
+                           <X className="h-4 w-4" />
+                         </Button>
+                       )}
+                       
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={() => handleDelete(invoice.id)}
+                         disabled={loadingInvoice === invoice.id || isDeletingInvoice}
+                         className="text-red-600 hover:text-red-700"
+                         title="Delete Invoice"
+                       >
+                         <Trash2 className="h-4 w-4" />
+                       </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -191,6 +214,104 @@ export function InvoiceList({
           </div>
         )}
       </CardContent>
+
+      {/* Invoice Details Modal */}
+      <Dialog open={!!selectedInvoiceForDetails} onOpenChange={(open) => !open && setSelectedInvoiceForDetails(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Invoice Details - {selectedInvoiceForDetails?.invoice_id}</DialogTitle>
+            <DialogDescription>
+              Complete information for this invoice
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedInvoiceForDetails && (
+            <div className="space-y-6 py-4">
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Invoice ID:</span>
+                      <span className="font-medium">{selectedInvoiceForDetails.invoice_id}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Student Name:</span>
+                      <span className="font-medium">{selectedInvoiceForDetails.student_name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Status:</span>
+                      <span>{getStatusBadge(selectedInvoiceForDetails.status)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total Amount:</span>
+                      <span className="font-semibold text-green-600 text-lg">
+                        RM {selectedInvoiceForDetails.total_amount.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900">Dates</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Issue Date:</span>
+                      <span className="font-medium">{formatDate(selectedInvoiceForDetails.issue_date)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Due Date:</span>
+                      <span className="font-medium">{formatDate(selectedInvoiceForDetails.due_date)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes Section */}
+              {selectedInvoiceForDetails.notes && (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900">Notes</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-700">{selectedInvoiceForDetails.notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedInvoiceForDetails(null)}
+                >
+                  Close
+                </Button>
+                {selectedInvoiceForDetails.status !== 'cancelled' && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      handleCancelInvoice(selectedInvoiceForDetails.id)
+                      setSelectedInvoiceForDetails(null)
+                    }}
+                    className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                  >
+                    Cancel Invoice
+                  </Button>
+                )}
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    handleDelete(selectedInvoiceForDetails.id)
+                    setSelectedInvoiceForDetails(null)
+                  }}
+                >
+                  Delete Invoice
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

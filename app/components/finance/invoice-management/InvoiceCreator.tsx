@@ -14,6 +14,7 @@ import { StudentWithFees, SimpleInvoice } from '../../../../hooks/useInvoiceData
 interface InvoiceCreatorProps {
   selectedStudent: StudentWithFees | null
   onCancel: () => void
+  onSuccess: () => void
   onCreateInvoice: (studentId: string, dueDate: string, notes?: string, additionalData?: {
     discounts: number
     tax: number
@@ -21,7 +22,7 @@ interface InvoiceCreatorProps {
   }) => Promise<SimpleInvoice>
 }
 
-export function InvoiceCreator({ selectedStudent, onCancel, onCreateInvoice }: InvoiceCreatorProps) {
+export function InvoiceCreator({ selectedStudent, onCancel, onSuccess, onCreateInvoice }: InvoiceCreatorProps) {
   const [dueDate, setDueDate] = useState('')
   const [notes, setNotes] = useState('')
   const [discounts, setDiscounts] = useState('0')
@@ -45,8 +46,8 @@ export function InvoiceCreator({ selectedStudent, onCancel, onCreateInvoice }: I
       setLoading(true)
       setError(null)
       
-             // Calculate total amount with discounts and tax
-       const baseAmount = selectedStudent.fee_matrix?.total_amount || 0
+      // Calculate total amount with discounts and tax
+      const baseAmount = selectedStudent.fee_matrix?.total_amount || 0
       const discountAmount = parseFloat(discounts) || 0
       const taxAmount = parseFloat(tax) || 0
       const totalAmount = baseAmount - discountAmount + taxAmount
@@ -58,8 +59,9 @@ export function InvoiceCreator({ selectedStudent, onCancel, onCreateInvoice }: I
       })
       
       setSuccess(true)
+      // Call onSuccess instead of onCancel to let parent handle navigation
       setTimeout(() => {
-        onCancel()
+        onSuccess()
       }, 2000)
       
     } catch (err: any) {

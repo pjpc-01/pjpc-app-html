@@ -1,14 +1,17 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui/card'
 import { Button } from '../../../../components/ui/button'
 import { Badge } from '../../../../components/ui/badge'
-import { Plus, FileText, DollarSign, AlertCircle } from 'lucide-react'
+import { Input } from '../../../../components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/select'
+import { Plus, FileText, DollarSign, AlertCircle, Search } from 'lucide-react'
 import { useInvoiceData } from '../../../../hooks/useInvoiceData'
 import { InvoiceCreator } from './InvoiceCreator'
 import { InvoiceList } from './InvoiceList'
 import { StudentWithFees, SimpleInvoice } from '../../../../hooks/useInvoiceData'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../../../../components/ui/dialog'
 
 export function InvoiceTab() {
   console.log('🔄 InvoiceTab: Component rendering...')
@@ -38,6 +41,36 @@ export function InvoiceTab() {
   })
 
   const [selectedStudent, setSelectedStudent] = useState<StudentWithFees | null>(null)
+  const [isStudentSelectionOpen, setIsStudentSelectionOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedGrade, setSelectedGrade] = useState<string>('all')
+
+  // Reset search and filter when opening student selection modal
+  const handleOpenStudentSelection = () => {
+    setSearchQuery('')
+    setSelectedGrade('all')
+    setIsStudentSelectionOpen(true)
+  }
+
+  // Get unique grades for filter dropdown
+  const availableGrades = useMemo(() => {
+    const grades = students.map(student => student.standard).filter(Boolean)
+    return ['all', ...Array.from(new Set(grades))]
+  }, [students])
+
+  // Filter students based on search and grade
+  const filteredStudents = useMemo(() => {
+    return students.filter(student => {
+      // Filter by search query (student name)
+      const matchesSearch = searchQuery === '' || 
+        student.student_name.toLowerCase().includes(searchQuery.toLowerCase())
+      
+      // Filter by grade
+      const matchesGrade = selectedGrade === 'all' || student.standard === selectedGrade
+      
+      return matchesSearch && matchesGrade
+    })
+  }, [students, searchQuery, selectedGrade])
 
   // Calculate statistics
   const stats = {
@@ -61,7 +94,9 @@ export function InvoiceTab() {
     totalAmount: number
   }) => {
     const newInvoice = await createInvoice(studentId, dueDate, notes, additionalData)
+    // On successful creation, close both modals and return to main invoice page
     setSelectedStudent(null)
+    setIsStudentSelectionOpen(false)
     return newInvoice
   }
 
@@ -125,6 +160,17 @@ export function InvoiceTab() {
         )}
       </div>
 
+      {/* Create Invoice Button */}
+      <div className="flex justify-end">
+        <Button 
+          onClick={handleOpenStudentSelection} 
+          className="flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Create Invoice
+        </Button>
+      </div>
+
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
@@ -178,67 +224,142 @@ export function InvoiceTab() {
         </Card>
       </div>
 
-      {/* Student Selection */}
-      {!selectedStudent && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Select Student to Create Invoice</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {students.length === 0 ? (
-              <p className="text-gray-600">No students available</p>
+      {/* Student Selection Modal */}
+      <Dialog open={isStudentSelectionOpen} onOpenChange={setIsStudentSelectionOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Select Student to Create Invoice</DialogTitle>
+            <DialogDescription>
+              Choose a student from the list below to create an invoice
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Search and Filter Controls */}
+            <div className="flex items-center gap-4">
+              {/* Search Bar */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search students by name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              {/* Grade Filter */}
+              <Select value={selectedGrade} onValueChange={setSelectedGrade}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by grade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableGrades.map((grade) => (
+                    <SelectItem key={grade} value={grade}>
+                      {grade === 'all' ? 'All Grades' : `Grade ${grade}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* Reset Button */}
+              {(searchQuery || selectedGrade !== 'all') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearchQuery('')
+                    setSelectedGrade('all')
+                  }}
+                >
+                  Reset
+                </Button>
+              )}
+            </div>
+
+            {/* Results Count */}
+            <div className="text-sm text-gray-600">
+              Showing {filteredStudents.length} of {students.length} students
+            </div>
+
+            {filteredStudents.length === 0 ? (
+              <p className="text-gray-600 text-center py-8">
+                {searchQuery || selectedGrade !== 'all' 
+                  ? 'No students match your search criteria' 
+                  : 'No students available'}
+              </p>
             ) : (
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600 mb-4">
-                  Found {students.length} students. Click on a student to create an invoice:
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">
+                  Click on a student to create an invoice:
                 </p>
-                {students.slice(0, 10).map((student) => (
-                  <div key={student.id} className="flex items-center justify-between p-3 border rounded-lg">
+                {filteredStudents
+                  .filter(student => !invoices.some(inv => 
+                    inv.student_id === student.id && 
+                    new Date(inv.issue_date).getMonth() === new Date().getMonth() && 
+                    new Date(inv.issue_date).getFullYear() === new Date().getFullYear()
+                  ))
+                  .map((student) => (
+                  <div 
+                    key={student.id} 
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                    onClick={() => {
+                      setSelectedStudent(student)
+                      setIsStudentSelectionOpen(false)
+                    }}
+                  >
                     <div>
-                      <h3 className="font-semibold">{student.student_name}</h3>
+                      <h3 className="font-semibold text-lg">{student.student_name}</h3>
                       <p className="text-sm text-gray-600">Grade: {student.standard}</p>
                       {student.fee_matrix ? (
-                        <p className="text-sm text-green-600">
+                        <p className="text-sm text-green-600 font-medium">
                           Fee Matrix: RM {(student.fee_matrix.total_amount || 0).toFixed(2)}
                         </p>
                       ) : (
                         <p className="text-sm text-red-600">No fee matrix assigned</p>
                       )}
                     </div>
-                    <Button 
-                      onClick={() => setSelectedStudent(student)}
-                      disabled={!student.fee_matrix || isCreatingInvoice}
-                    >
-                      {isCreatingInvoice ? 'Creating...' : 'Create Invoice'}
-                    </Button>
                   </div>
                 ))}
-                {students.length > 10 && (
-                  <p className="text-sm text-gray-500 text-center">
-                    ... and {students.length - 10} more students
-                  </p>
-                )}
               </div>
             )}
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
-      {/* Selected Student Invoice Creator */}
-      {selectedStudent && (
-        <Card className="border-green-200 bg-green-50">
-          <CardHeader>
-            <CardTitle>Create Invoice for {selectedStudent.student_name}</CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* Selected Student Invoice Creator Modal */}
+      <Dialog open={!!selectedStudent} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedStudent(null)
+          // Only return to student selection modal when cancelled/closed
+          // Successful creation will close both modals via handleCreateInvoice
+        }
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Invoice for {selectedStudent?.student_name}</DialogTitle>
+            <DialogDescription>
+              Fill in the invoice details below
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
             <InvoiceCreator
-              selectedStudent={selectedStudent}
-              onCancel={() => setSelectedStudent(null)}
+              selectedStudent={selectedStudent!}
+              onCancel={() => {
+                setSelectedStudent(null)
+                setIsStudentSelectionOpen(true) // Return to student selection modal
+              }}
+              onSuccess={() => {
+                // On successful creation, close both modals and return to main invoice page
+                setSelectedStudent(null)
+                setIsStudentSelectionOpen(false)
+              }}
               onCreateInvoice={handleCreateInvoice}
             />
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Invoice List */}
       <Card>

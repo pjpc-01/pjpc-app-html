@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertTriangle, Users, FileText, ChevronDown, ChevronRight, Edit, Save, X } from "lucide-react"
+import { AlertTriangle, Users, ChevronDown, ChevronRight, Edit, Save, X } from "lucide-react"
 import { ToggleSwitch } from "@/components/ui/ToggleSwitch"
 import { useStudentFeeMatrixQuery } from "@/hooks/useStudentFeeMatrixQuery"
 import { useFeeItems } from "@/hooks/useFeeItems"
@@ -38,6 +38,7 @@ export const StudentFeeMatrix: React.FC = () => {
   // Edit Mode State Management
   // ========================================
   const [isEditMode, setIsEditMode] = useState(false)
+  const [isBatchMode, setIsBatchMode] = useState(false)
   const [pendingChanges, setPendingChanges] = useState<Map<string, Set<string>>>(new Map()) // studentId -> Set of assigned fee IDs
   const [originalAssignments, setOriginalAssignments] = useState<Map<string, Set<string>>>(new Map()) // studentId -> Set of original assigned fee IDs
 
@@ -63,6 +64,7 @@ export const StudentFeeMatrix: React.FC = () => {
 
   const exitEditMode = () => {
     setIsEditMode(false)
+    setIsBatchMode(false)
     setPendingChanges(new Map())
     setOriginalAssignments(new Map())
   }
@@ -96,6 +98,28 @@ export const StudentFeeMatrix: React.FC = () => {
   const hasPendingChanges = pendingChanges.size > 0
 
   // ========================================
+  // Batch Toggle Functions
+  // ========================================
+  const batchToggleAllFees = (assign: boolean) => {
+    const newPendingChanges = new Map<string, Set<string>>()
+    
+    students.forEach(student => {
+      const currentAssigned = pendingChanges.get(student.id) || 
+                             new Set(getAssignedFees(student.id))
+      
+      if (assign) {
+        // Assign all fees to all students
+        newPendingChanges.set(student.id, new Set(feeItems.map(fee => fee.id)))
+      } else {
+        // Remove all fees from all students
+        newPendingChanges.set(student.id, new Set())
+      }
+    })
+    
+    setPendingChanges(newPendingChanges)
+  }
+
+  // ========================================
   // Core Functions Only
   // ========================================
   const assignFee = (studentId: string, feeId: string) => {
@@ -103,9 +127,21 @@ export const StudentFeeMatrix: React.FC = () => {
       // In edit mode, update pending changes
       setPendingChanges(prev => {
         const newChanges = new Map(prev)
-        const currentAssigned = newChanges.get(studentId) || new Set()
-        currentAssigned.add(feeId)
-        newChanges.set(studentId, currentAssigned)
+        
+        if (isBatchMode) {
+          // In batch mode, assign this fee to ALL students
+          students.forEach(student => {
+            const currentAssigned = newChanges.get(student.id) || new Set()
+            currentAssigned.add(feeId)
+            newChanges.set(student.id, currentAssigned)
+          })
+        } else {
+          // Normal edit mode, only assign to the specific student
+          const currentAssigned = newChanges.get(studentId) || new Set()
+          currentAssigned.add(feeId)
+          newChanges.set(studentId, currentAssigned)
+        }
+        
         return newChanges
       })
     } else {
@@ -119,13 +155,29 @@ export const StudentFeeMatrix: React.FC = () => {
       // In edit mode, update pending changes
       setPendingChanges(prev => {
         const newChanges = new Map(prev)
-        const currentAssigned = newChanges.get(studentId) || new Set()
-        currentAssigned.delete(feeId)
-        if (currentAssigned.size === 0) {
-          newChanges.delete(studentId)
+        
+        if (isBatchMode) {
+          // In batch mode, remove this fee from ALL students
+          students.forEach(student => {
+            const currentAssigned = newChanges.get(student.id) || new Set()
+            currentAssigned.delete(feeId)
+            if (currentAssigned.size === 0) {
+              newChanges.delete(student.id)
+            } else {
+              newChanges.set(student.id, currentAssigned)
+            }
+          })
         } else {
-          newChanges.set(studentId, currentAssigned)
+          // Normal edit mode, only remove from the specific student
+          const currentAssigned = newChanges.get(studentId) || new Set()
+          currentAssigned.delete(feeId)
+          if (currentAssigned.size === 0) {
+            newChanges.delete(studentId)
+          } else {
+            newChanges.set(studentId, currentAssigned)
+          }
         }
+        
         return newChanges
       })
     } else {
@@ -180,11 +232,7 @@ export const StudentFeeMatrix: React.FC = () => {
       .reduce((sum, fee) => sum + fee.amount, 0)
   }
 
-  const createInvoice = (studentId: string) => {
-    const total = getStudentTotal(studentId)
-    console.log(`Creating invoice for student ${studentId} with total: ${total}`)
-    // TODO: Implement invoice creation
-  }
+
 
   // Check if a fee has pending changes
   const hasPendingChange = (studentId: string, feeId: string) => {
@@ -265,6 +313,20 @@ export const StudentFeeMatrix: React.FC = () => {
           {/* Edit Mode Controls */}
           {isEditMode ? (
             <div className="flex items-center gap-2">
+              {/* Batch Mode Toggle */}
+              <div className="flex items-center gap-2 mr-4">
+                <Button 
+                  variant={isBatchMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsBatchMode(!isBatchMode)}
+                  disabled={isSaving}
+                  className={isBatchMode ? "bg-blue-600 hover:bg-blue-700" : "border-blue-600 text-blue-600 hover:bg-blue-50"}
+                >
+                  <Users className="h-4 w-4 mr-1" />
+                  {isBatchMode ? "批量模式" : "普通模式"}
+                </Button>
+              </div>
+              
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -303,6 +365,11 @@ export const StudentFeeMatrix: React.FC = () => {
             <div className="flex items-center justify-between">
               <span>
                 🎯 编辑模式已启用 - 您可以进行多个更改，然后点击"保存"按钮一次性保存所有更改
+                {isBatchMode && (
+                  <span className="ml-2 text-blue-600 font-medium">
+                    🔄 批量模式已启用 - 切换费用项目将影响所有学生
+                  </span>
+                )}
               </span>
               <span className="text-sm font-medium">
                 待保存学生: {pendingChanges.size}
@@ -327,7 +394,6 @@ export const StudentFeeMatrix: React.FC = () => {
               total={total}
               onAssignFee={assignFee}
               onRemoveFee={removeFee}
-              onCreateInvoice={createInvoice}
               isEditMode={isEditMode}
               hasPendingChange={hasPendingChange}
             />
@@ -348,7 +414,6 @@ interface StudentFeeRowProps {
   total: number
   onAssignFee: (studentId: string, feeId: string) => void
   onRemoveFee: (studentId: string, feeId: string) => void
-  onCreateInvoice: (studentId: string) => void
   isEditMode: boolean
   hasPendingChange: (studentId: string, feeId: string) => boolean
 }
@@ -360,7 +425,6 @@ const StudentFeeRow: React.FC<StudentFeeRowProps> = ({
   total,
   onAssignFee,
   onRemoveFee,
-  onCreateInvoice,
   isEditMode,
   hasPendingChange
 }) => {
@@ -434,7 +498,10 @@ const StudentFeeRow: React.FC<StudentFeeRowProps> = ({
             </div>
           </div>
           <div className="text-right">
-            <div className="text-lg font-bold text-gray-900">¥{total.toLocaleString()}</div>
+            <div className="text-lg font-bold text-green-600">
+              <span className="text-sm font-normal text-green-600 mr-2">应缴费</span>
+              RM {total.toLocaleString()}
+            </div>
             <div className="text-sm text-gray-500">{assignedFees.length} 个费用项目</div>
           </div>
         </div>
@@ -473,8 +540,8 @@ const StudentFeeRow: React.FC<StudentFeeRowProps> = ({
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-medium text-gray-900">
-                          ¥{categoryTotal.toLocaleString()}
+                        <div className="font-medium text-green-600">
+                          RM {categoryTotal.toLocaleString()}
                         </div>
                       </div>
                     </button>
@@ -508,8 +575,8 @@ const StudentFeeRow: React.FC<StudentFeeRowProps> = ({
                                   )}
                                 </div>
                                 <div className="flex items-center gap-3">
-                                  <span className={`text-sm ${!isEditMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                    ¥{fee.amount.toLocaleString()}
+                                  <span className={`text-sm ${!isEditMode ? 'text-green-400' : 'text-green-600'}`}>
+                                    RM {fee.amount.toLocaleString()}
                                   </span>
                                   <ToggleSwitch
                                     checked={isAssigned}
@@ -537,18 +604,7 @@ const StudentFeeRow: React.FC<StudentFeeRowProps> = ({
           </div>
         )}
 
-        {/* Action Buttons */}
-        {total > 0 && !isEditMode && (
-          <div className="pt-4 border-t">
-            <Button 
-              onClick={() => onCreateInvoice(student.id)}
-              className="w-full"
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              创建发票 (¥{total.toLocaleString()})
-            </Button>
-          </div>
-        )}
+
       </CardContent>
     </Card>
   )
