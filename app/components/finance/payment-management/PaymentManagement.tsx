@@ -101,7 +101,7 @@ export default function PaymentManagement() {
       
       toast({
         title: "Success",
-        description: "Payment created successfully"
+        description: "Payment created successfully and invoice status automatically updated"
       })
       
       setIsCreateDialogOpen(false)
@@ -260,125 +260,7 @@ export default function PaymentManagement() {
         </Card>
       </div>
 
-      {/* Manage Invoices Section - Duplicated from Invoice Tab */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Manage Invoices</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Invoice Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Invoices</p>
-                      <p className="text-2xl font-bold">{availableInvoices.length}</p>
-                    </div>
-                    <FileText className="h-8 w-8 text-blue-600" />
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Pending Invoices</p>
-                      <p className="text-2xl font-bold text-red-600">
-                        {availableInvoices.filter(inv => inv.status === 'pending').length}
-                      </p>
-                    </div>
-                    <AlertCircle className="h-8 w-8 text-red-600" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Paid</p>
-                      <p className="text-2xl font-bold text-green-600">
-                        {availableInvoices.filter(inv => inv.status === 'paid').length}
-                      </p>
-                    </div>
-                    <CheckCircle className="h-8 w-8 text-green-600" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Amount</p>
-                      <p className="text-2xl font-bold text-green-600">
-                        RM {(availableInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0)).toFixed(2)}
-                      </p>
-                    </div>
-                    <DollarSign className="h-8 w-8 text-green-600" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Invoice Table */}
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>发票ID</TableHead>
-                    <TableHead>学生姓名</TableHead>
-                    <TableHead>金额</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>到期日期</TableHead>
-                    <TableHead>备注</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {availableInvoices.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                        暂无发票记录
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    availableInvoices.map((invoice) => (
-                      <TableRow key={invoice.id}>
-                        <TableCell className="font-medium">
-                          {invoice.invoice_id || 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                          {invoice.student_name || 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-semibold text-blue-600">
-                            RM {invoice.total_amount?.toFixed(2) || '0.00'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(invoice.status || 'pending')}
-                        </TableCell>
-                        <TableCell>
-                          {invoice.due_date ? 
-                            new Date(invoice.due_date).toLocaleDateString() : 
-                            'N/A'
-                          }
-                        </TableCell>
-                        <TableCell>
-                          {invoice.notes || '-'}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Main Content */}
       <Tabs defaultValue="payments" className="space-y-4">
@@ -425,6 +307,8 @@ export default function PaymentManagement() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>付款ID</TableHead>
+                      <TableHead>学生姓名</TableHead>
+                      <TableHead>发票ID</TableHead>
                       <TableHead>金额</TableHead>
                       <TableHead>缴费方式</TableHead>
                       <TableHead>状态</TableHead>
@@ -435,43 +319,53 @@ export default function PaymentManagement() {
                   <TableBody>
                     {filteredPayments.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                           暂无付款记录
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredPayments.map((payment) => (
-                        <TableRow key={payment.id}>
-                          <TableCell className="font-medium">
-                            {payment.payment_id || 'N/A'}
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-semibold text-green-600">
-                              RM {payment.amount_paid?.toFixed(2) || '0.00'}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {getMethodIcon(payment.payment_method || '')}
-                              <span className="capitalize">
-                                {payment.payment_method || 'N/A'}
+                      filteredPayments.map((payment) => {
+                        // Find the associated invoice to get student name
+                        const associatedInvoice = availableInvoices.find(inv => inv.id === payment.invoice_id)
+                        return (
+                          <TableRow key={payment.id}>
+                            <TableCell className="font-medium">
+                              {payment.payment_id || 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              {associatedInvoice?.student_name || 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              {associatedInvoice?.invoice_id || 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-semibold text-green-600">
+                                RM {payment.amount_paid?.toFixed(2) || '0.00'}
                               </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {getStatusBadge(payment.status || 'pending')}
-                          </TableCell>
-                          <TableCell>
-                            {payment.payment_date ? 
-                              new Date(payment.payment_date).toLocaleDateString() : 
-                              'N/A'
-                            }
-                          </TableCell>
-                          <TableCell>
-                            {payment.notes || '-'}
-                          </TableCell>
-                        </TableRow>
-                      ))
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {getMethodIcon(payment.payment_method || '')}
+                                <span className="capitalize">
+                                  {payment.payment_method || 'N/A'}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {getStatusBadge(payment.status || 'pending')}
+                            </TableCell>
+                            <TableCell>
+                              {payment.payment_date ? 
+                                new Date(payment.payment_date).toLocaleDateString() : 
+                                'N/A'
+                              }
+                            </TableCell>
+                            <TableCell>
+                              {payment.notes || '-'}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
                     )}
                   </TableBody>
                 </Table>
@@ -483,81 +377,143 @@ export default function PaymentManagement() {
 
       {/* Create Payment Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>创建付款</DialogTitle>
             <DialogDescription>
-              为学生创建新的付款记录
+              为学生创建新的付款记录 - 请从下方列表中选择要支付的发票
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Invoice Selection Table */}
             <div>
-              <Label htmlFor="invoice_id">选择发票</Label>
-              <Select 
-                value={paymentFormData.invoice_id} 
-                onValueChange={(value) => {
-                  const selectedInvoice = availableInvoices.find(inv => inv.id === value)
-                  setPaymentFormData(prev => ({ 
-                    ...prev, 
-                    invoice_id: value,
-                    amount: selectedInvoice ? selectedInvoice.total_amount.toString() : ''
-                  }))
-                }}
-                disabled={invoicesLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={invoicesLoading ? "加载中..." : "选择要支付的发票"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {invoicesLoading ? (
-                    <SelectItem value="" disabled>加载发票中...</SelectItem>
-                  ) : availableInvoices.length === 0 ? (
-                    <SelectItem value="" disabled>暂无可用发票</SelectItem>
-                  ) : (
-                    availableInvoices
-                      .filter(invoice => invoice.status === 'pending')
-                      .map(invoice => (
-                        <SelectItem key={invoice.id} value={invoice.id}>
-                          {invoice.invoice_id} - {invoice.student_name} (RM {invoice.total_amount})
-                        </SelectItem>
-                      ))
-                  )}
-                </SelectContent>
-              </Select>
-              {invoicesLoading && (
-                <p className="text-sm text-gray-500 mt-1">正在加载发票数据...</p>
+              <Label className="text-base font-medium mb-3 block">选择要支付的发票</Label>
+              <div className="rounded-md border max-h-96 overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>选择</TableHead>
+                      <TableHead>发票ID</TableHead>
+                      <TableHead>学生姓名</TableHead>
+                      <TableHead>金额</TableHead>
+                      <TableHead>状态</TableHead>
+                      <TableHead>到期日期</TableHead>
+                      <TableHead>备注</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {invoicesLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                          正在加载发票数据...
+                        </TableCell>
+                      </TableRow>
+                    ) : availableInvoices.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                          暂无可用发票
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      availableInvoices
+                        .filter(invoice => invoice.status === 'pending')
+                        .map((invoice) => (
+                          <TableRow 
+                            key={invoice.id} 
+                            className={`cursor-pointer hover:bg-gray-50 ${
+                              paymentFormData.invoice_id === invoice.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                            }`}
+                            onClick={() => {
+                              setPaymentFormData(prev => ({ 
+                                ...prev, 
+                                invoice_id: invoice.id,
+                                amount: invoice.total_amount?.toString() || ''
+                              }))
+                            }}
+                          >
+                            <TableCell>
+                              <div className="flex items-center justify-center">
+                                {paymentFormData.invoice_id === invoice.id ? (
+                                  <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                                  </div>
+                                ) : (
+                                  <div className="w-4 h-4 border-2 border-gray-300 rounded-full"></div>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {invoice.invoice_id || 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              {invoice.student_name || 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-semibold text-blue-600">
+                                RM {invoice.total_amount?.toFixed(2) || '0.00'}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              {getStatusBadge(invoice.status || 'pending')}
+                            </TableCell>
+                            <TableCell>
+                              {invoice.due_date ? 
+                                new Date(invoice.due_date).toLocaleDateString() : 
+                                'N/A'
+                              }
+                            </TableCell>
+                            <TableCell>
+                              {invoice.notes || '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              {paymentFormData.invoice_id && (
+                <div className="mt-3 p-3 bg-blue-50 rounded-md border border-blue-200">
+                  <p className="text-sm text-blue-800">
+                    已选择发票: <span className="font-semibold">
+                      {availableInvoices.find(inv => inv.id === paymentFormData.invoice_id)?.invoice_id} - 
+                      {availableInvoices.find(inv => inv.id === paymentFormData.invoice_id)?.student_name}
+                    </span>
+                  </p>
+                </div>
               )}
             </div>
             
-            <div>
-              <Label htmlFor="amount">金额 (RM)</Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={paymentFormData.amount}
-                onChange={(e) => setPaymentFormData(prev => ({ ...prev, amount: e.target.value }))}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="method">缴费方式</Label>
-              <Select 
-                value={paymentFormData.method} 
-                onValueChange={(value: 'cash' | 'bank_transfer' | 'card' | 'e_wallet') => setPaymentFormData(prev => ({ ...prev, method: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="选择缴费方式" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">现金</SelectItem>
-                  <SelectItem value="bank_transfer">银行转账</SelectItem>
-                  <SelectItem value="card">信用卡</SelectItem>
-                  <SelectItem value="e_wallet">电子钱包</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="amount">金额 (RM)</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={paymentFormData.amount}
+                  onChange={(e) => setPaymentFormData(prev => ({ ...prev, amount: e.target.value }))}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="method">缴费方式</Label>
+                <Select 
+                  value={paymentFormData.method} 
+                  onValueChange={(value: 'cash' | 'bank_transfer' | 'card' | 'e_wallet') => setPaymentFormData(prev => ({ ...prev, method: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择缴费方式" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">现金</SelectItem>
+                    <SelectItem value="bank_transfer">银行转账</SelectItem>
+                    <SelectItem value="card">信用卡</SelectItem>
+                    <SelectItem value="e_wallet">电子钱包</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             <div>
