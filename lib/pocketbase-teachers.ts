@@ -1,5 +1,5 @@
 import PocketBase from 'pocketbase'
-import { getPocketBase } from './pocketbase'
+import { getPocketBase, authenticateAdmin } from './pocketbase'
 
 // 获取智能PocketBase实例
 const getPb = async () => {
@@ -77,9 +77,9 @@ export const getAllTeachers = async (): Promise<Teacher[]> => {
   try {
     const pb = await getPb()
     
-    // 使用管理员认证
+    // 使用优化的管理员认证
     try {
-      await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+      await authenticateAdmin()
       console.log('getAllTeachers - 管理员认证成功')
     } catch (adminAuthError) {
       console.error('getAllTeachers - 管理员认证失败:', adminAuthError)
@@ -180,9 +180,9 @@ export const addTeacher = async (teacherData: TeacherCreateData): Promise<Teache
   try {
     const pb = await getPb()
     
-    // 使用管理员认证
+    // 使用优化的管理员认证
     try {
-      await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+      await authenticateAdmin()
       console.log('addTeacher - 管理员认证成功')
     } catch (adminAuthError) {
       console.error('addTeacher - 管理员认证失败:', adminAuthError)
@@ -306,9 +306,9 @@ export const updateTeacher = async (teacherData: TeacherUpdateData): Promise<Tea
   try {
     const pb = await getPb()
     
-    // 使用管理员认证
+    // 使用优化的管理员认证
     try {
-      await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+      await authenticateAdmin()
       console.log('updateTeacher - 管理员认证成功')
     } catch (adminAuthError) {
       console.error('updateTeacher - 管理员认证失败:', adminAuthError)
@@ -437,9 +437,9 @@ export const deleteTeacher = async (teacherId: string): Promise<void> => {
   try {
     const pb = await getPb()
     
-    // 使用管理员认证
+    // 使用优化的管理员认证
     try {
-      await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+      await authenticateAdmin()
       console.log('deleteTeacher - 管理员认证成功')
     } catch (adminAuthError) {
       console.error('deleteTeacher - 管理员认证失败:', adminAuthError)
