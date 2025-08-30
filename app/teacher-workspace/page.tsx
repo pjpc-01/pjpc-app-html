@@ -83,18 +83,7 @@ interface ClassSchedule {
 function StudentManagement({ teacherId }: { teacherId?: string }) {
   const { students, loading, error, refetch } = useStudents()
   
-  useEffect(() => {
-    console.log('TeacherWorkspace StudentManagement: 学生数据状态:', {
-      totalStudents: students.length,
-      loading,
-      error,
-      teacherId
-    })
-    
-    if (students.length > 0) {
-      console.log('学生数据示例:', students[0])
-    }
-  }, [students, loading, error, teacherId])
+
 
   if (loading) {
     return (
@@ -298,6 +287,9 @@ function AttendanceManagement({
   // 分行考勤管理状态
   const [selectedCenter, setSelectedCenter] = useState<string | null>(null)
   const [showCenterDetail, setShowCenterDetail] = useState(false)
+  
+  // 分页状态
+  const [unmarkedStudentsPage, setUnmarkedStudentsPage] = useState(1)
 
   // 考勤统计
   const [attendanceStats, setAttendanceStats] = useState({
@@ -307,13 +299,7 @@ function AttendanceManagement({
     worstDay: ''
   })
 
-  // 移动端考勤状态
-  const [mobileAttendanceStatus, setMobileAttendanceStatus] = useState({
-    totalCenters: 4,
-    activeCenters: 3,
-    todayCheckins: 0,
-    mobileCheckins: 0
-  })
+
 
   // 动态计算中心信息 - 基于真实的 students 数据
   const centers = useMemo(() => {
@@ -472,16 +458,13 @@ function AttendanceManagement({
     
     setLoading(true)
     try {
-      console.log('🔄 开始获取学生考勤数据...')
       const response = await fetch('/api/student-attendance')
-      console.log('📡 学生考勤API响应状态:', response.status, response.statusText)
       
       if (response.ok) {
         const contentType = response.headers.get('content-type')
         if (contentType && contentType.includes('application/json')) {
           try {
             const data = await response.json()
-            console.log('📊 接收到的学生考勤数据:', data)
             
             // 转换数据格式以匹配组件期望的结构
             const formattedData = (data.data || []).map((record: any) => {
@@ -495,8 +478,6 @@ function AttendanceManagement({
                 processedDate = new Date().toISOString().split('T')[0]
               }
               
-              console.log('📅 日期处理:', { original: record.date, processed: processedDate })
-              
               return {
                 ...record,
                 // 使用处理后的日期
@@ -508,46 +489,19 @@ function AttendanceManagement({
               }
             })
             
-            console.log('🔄 格式化后的考勤数据:', formattedData)
-            
-            // 调试：显示每条考勤记录的详细信息
-            if (formattedData.length > 0) {
-              console.log('🔍 考勤记录详细信息:', formattedData.map(record => ({
-                id: record.id,
-                student_id: record.student_id,
-                student_name: record.student_name,
-                center: record.center,
-                date: record.date,
-                status: record.status,
-                timestamp: record.timestamp,
-                reason: record.reason,
-                detail: record.detail
-              })))
-              
-              // 特别检查缺席记录
-              const absentRecords = formattedData.filter(record => record.status === 'absent')
-              if (absentRecords.length > 0) {
-                console.log('🚨 发现的缺席记录:', absentRecords)
-              }
-            }
-            
             setAttendanceData(formattedData)
-          } catch (jsonError) {
-            console.error('❌ 解析学生考勤数据失败:', jsonError)
-            setAttendanceData([])
-          }
-        } else {
-          console.error('❌ 学生考勤API返回非JSON数据:', contentType)
-          setAttendanceData([])
-        }
-      } else {
-        console.error('❌ 获取学生考勤数据失败:', response.status, response.statusText)
-        setAttendanceData([])
-      }
-    } catch (error) {
-      console.error('获取考勤数据出错:', error)
-      setAttendanceData([])
-    } finally {
+                     } catch (jsonError) {
+             setAttendanceData([])
+           }
+                 } else {
+           setAttendanceData([])
+         }
+             } else {
+         setAttendanceData([])
+       }
+         } catch (error) {
+       setAttendanceData([])
+     } finally {
       setLoading(false)
     }
   }
@@ -570,15 +524,12 @@ function AttendanceManagement({
   useEffect(() => {
     if (teacherId) {
       fetchAttendanceData()
-      // 模拟更新移动端考勤状态
-      updateMobileAttendanceStatus()
     }
   }, [teacherId])
 
   // 监听刷新考勤数据事件
   useEffect(() => {
     const handleRefreshAttendance = () => {
-      console.log('🔄 收到刷新考勤数据事件，开始刷新...')
       fetchAttendanceData()
     }
 
@@ -607,43 +558,9 @@ function AttendanceManagement({
     return ''
   }
 
-  // 强制刷新数据
-  const forceRefreshData = async () => {
-    console.log('🔄 强制刷新数据...')
-    console.log('🔄 刷新前的attendanceData:', attendanceData)
-    
-    // 清空现有数据，强制重新获取
-    setAttendanceData([])
-    
-    // 等待状态更新
-    await new Promise(resolve => setTimeout(resolve, 100))
-    
-    // 重新获取数据
-    await fetchAttendanceData()
-    
-    // 等待数据更新后再次检查
-    setTimeout(() => {
-      console.log('🔄 数据刷新完成，当前attendanceData:', attendanceData)
-      // 强制重新渲染
-      setRefreshKey(prev => prev + 1)
-    }, 1000)
-  }
 
-  // 基于真实数据更新移动端考勤状态
-  const updateMobileAttendanceStatus = () => {
-    // 基于真实数据计算移动端考勤状态
-    const totalCenters = centers.length
-    const activeCenters = centers.filter(c => c.status === 'active').length
-    const todayCheckins = centers.reduce((sum, center) => sum + center.todayAttendance, 0)
-    const mobileCheckins = todayCheckins // 假设所有考勤都是通过移动端进行的
-    
-    setMobileAttendanceStatus({
-      totalCenters,
-      activeCenters,
-      todayCheckins,
-      mobileCheckins
-    })
-  }
+
+
 
   // 刷新键变化时重新获取数据
   useEffect(() => {
@@ -652,13 +569,7 @@ function AttendanceManagement({
     }
   }, [refreshKey, teacherId])
 
-  // 定时更新移动端考勤状态（基于真实数据）
-  useEffect(() => {
-    if (teacherId) {
-      const interval = setInterval(updateMobileAttendanceStatus, 60000) // 每1分钟更新一次，减少频率
-      return () => clearInterval(interval)
-    }
-  }, [teacherId])
+
 
   // 如果显示中心详情，则显示详细内容
   if (showCenterDetail && selectedCenter) {
@@ -755,331 +666,11 @@ function AttendanceManagement({
                   <RefreshCw className="h-4 w-4 mr-2" />
                   刷新
                 </Button>
-                <Button variant="outline" size="sm" onClick={forceRefreshData}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  强制刷新考勤
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => {
-                  console.log('🔍 调试: 当前状态')
-                  console.log('🔍 selectedDate:', selectedDate)
-                  console.log('🔍 attendanceData:', attendanceData)
-                  console.log('🔍 students:', students.filter(s => s.center === center.name))
-                  console.log('🔍 缺席记录:', attendanceData.filter(att => att.status === 'absent'))
-                }}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  调试数据
-                </Button>
               </div>
             </div>
           </CardHeader>
           
-          {/* 调试信息面板 */}
-          <div className="px-6 py-3 bg-gray-50 border-b text-xs text-gray-600">
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <strong>当前日期:</strong> {selectedDate}
-              </div>
-              <div>
-                <strong>考勤数据总数:</strong> {attendanceData.length}
-              </div>
-              <div>
-                <strong>该中心学生数:</strong> {students.filter(s => s.center === center.name).length}
-              </div>
-            </div>
-            <div className="mt-2">
-              <strong>考勤数据示例:</strong> {attendanceData.slice(0, 3).map(att => `${att.student_name}:${att.status}:${att.date}`).join(', ')}
-            </div>
-            <div className="mt-2">
-              <strong>该中心考勤数据:</strong> {attendanceData.filter(att => att.center === center.name).slice(0, 3).map(att => `${att.student_name}:${att.status}:${att.date}`).join(', ')}
-            </div>
-            <div className="mt-2">
-              <strong>所有考勤数据:</strong> {attendanceData.slice(0, 5).map(att => `${att.student_name}:${att.status}:${att.center}:${att.date}`).join(', ')}
-            </div>
-            <div className="mt-2">
-              <strong>缺席状态记录:</strong> {attendanceData.filter(att => att.status === 'absent').slice(0, 3).map(att => `${att.student_name}:${att.center}:${att.date}`).join(', ')}
-            </div>
-            <div className="mt-2">
-              <strong>未考勤过滤结果:</strong> {students.filter(student => student.center === center.name && !attendanceData.some(att => (att.student_id === student.student_id || att.student_id === student.id) && att.center === center.name && att.date === selectedDate)).length} 人
-            </div>
-            <div className="mt-2">
-              <strong>缺席过滤结果:</strong> {students.filter(student => student.center === center.name && attendanceData.some(att => (att.student_id === student.student_id || att.student_id === student.id) && att.center === center.name && att.date === selectedDate && att.status === 'absent')).length} 人
-            </div>
-            <div className="mt-2">
-              <strong>调试: 学生ID匹配测试:</strong> {students.filter(s => s.center === center.name).slice(0, 2).map(s => `${s.student_name}(${s.student_id}/${s.id})`).join(', ')}
-            </div>
-            <div className="mt-2">
-              <strong>调试: 缺席记录详情:</strong> {attendanceData.filter(att => att.status === 'absent' && att.center === center.name).map(att => `${att.student_name}:${att.student_id}:${att.date}`).join(', ')}
-            </div>
-            <div className="mt-2">
-              <strong>调试: 日期匹配测试:</strong> selectedDate={selectedDate}, 考勤日期={attendanceData.filter(att => att.status === 'absent' && att.center === center.name).map(att => att.date ? att.date.split('T')[0] : att.date).join(', ')}
-            </div>
-            <div className="mt-2">
-              <strong>调试: 匹配结果:</strong> {(() => {
-                const absentStudents = students.filter(student => student.center === center.name && attendanceData.some(att => {
-                  const attDate = att.date ? att.date.split('T')[0] : ''
-                  const selDate = selectedDate
-                  const dateMatch = attDate === selDate
-                  
-                  return (att.student_id === student.student_id || att.student_id === student.id) && 
-                         att.center === center.name && 
-                         dateMatch && 
-                         att.status === 'absent'
-                }))
-                return `找到 ${absentStudents.length} 个缺席学生: ${absentStudents.map(s => s.student_name).join(', ')}`
-              })()}
-            </div>
-            <div className="mt-2">
-              <strong>调试: 原始数据vs处理后:</strong> {attendanceData.filter(att => att.status === 'absent' && att.center === center.name).map(att => 
-                `原始:${att.date} -> 处理后:${att.date ? att.date.split('T')[0] : att.date}`
-              ).join(', ')}
-            </div>
-            <div className="mt-2">
-              <strong>调试: 直接测试过滤:</strong> {(() => {
-                // 直接测试过滤逻辑
-                const testResult = students.filter(student => 
-                  student.center === center.name && 
-                  student.student_name === 'Alston Yap Kay Xuan 叶凯轩'
-                ).map(student => {
-                  const matchingAtt = attendanceData.find(att => 
-                    att.student_id === student.student_id && 
-                    att.center === center.name && 
-                    att.status === 'absent'
-                  )
-                  if (matchingAtt) {
-                    const attDate = matchingAtt.date ? matchingAtt.date.split('T')[0] : ''
-                    const dateMatch = attDate === selectedDate
-                    return `${student.student_name}: 匹配=${dateMatch}, 考勤日期=${attDate}, 选择日期=${selectedDate}`
-                  }
-                  return `${student.student_name}: 未找到考勤记录`
-                }).join(', ')
-                return testResult || '无匹配学生'
-              })()}
-            </div>
-            <div className="mt-2">
-              <strong>调试: 关键数据检查:</strong> {(() => {
-                const alston = students.find(s => s.student_name === 'Alston Yap Kay Xuan 叶凯轩' && s.center === center.name)
-                const alstonAtt = attendanceData.find(att => att.student_name === 'Alston Yap Kay Xuan 叶凯轩' && att.center === center.name)
-                if (alston && alstonAtt) {
-                  return `学生ID: ${alston.student_id}/${alston.id}, 考勤ID: ${alstonAtt.student_id}, 状态: ${alstonAtt.status}, 日期: ${alstonAtt.date}`
-                }
-                return '未找到Alston的数据'
-              })()}
-            </div>
-            <div className="mt-2">
-              <strong>调试: 当前状态数据:</strong> {(() => {
-                return `attendanceData长度: ${attendanceData.length}, 学生数据长度: ${students.length}, 刷新键: ${refreshKey}`
-              })()}
-            </div>
-            <div className="mt-2">
-              <strong>调试: 强制刷新测试:</strong> 
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => {
-                  console.log('🧪 手动测试: 当前attendanceData:', attendanceData)
-                  console.log('🧪 手动测试: 当前students:', students.filter(s => s.center === center.name).slice(0, 3))
-                  setRefreshKey(prev => prev + 1)
-                }}
-                className="ml-2"
-              >
-                测试刷新
-              </Button>
-            </div>
-            <div className="mt-2">
-              <strong>调试: 实时数据检查:</strong> {(() => {
-                // 直接从当前状态读取数据，不使用闭包
-                const currentAttendanceData = attendanceData
-                const currentStudents = students
-                const currentCenter = center.name
-                
-                // 过滤该中心的数据
-                const centerStudents = currentStudents.filter(s => s.center === currentCenter)
-                const centerAttendance = currentAttendanceData.filter(att => att.center === currentCenter)
-                
-                // 使用更灵活的匹配逻辑，处理可能的空格和特殊字符
-                const alston = centerStudents.find(s => s.student_name && s.student_name.trim() === 'Alston Yap Kay Xuan 叶凯轩'.trim())
-                const alstonAtt = centerAttendance.find(att => att.student_name && att.student_name.trim() === 'Alston Yap Kay Xuan 叶凯轩'.trim())
-                
-                // 如果精确匹配失败，尝试模糊匹配
-                const alstonFuzzy = alston || centerStudents.find(s => s.student_name && s.student_name.includes('Alston') && s.student_name.includes('叶凯轩'))
-                const alstonAttFuzzy = alstonAtt || centerAttendance.find(att => att.student_name && att.student_name.includes('Alston') && att.student_name.includes('叶凯轩'))
-                
-                if (alstonFuzzy && alstonAttFuzzy) {
-                  return `✅ 找到: ${alstonFuzzy.student_name} (ID: ${alstonFuzzy.student_id}/${alstonFuzzy.id}, 考勤: ${alstonAttFuzzy.status}, 日期: ${alstonAttFuzzy.date})`
-                }
-                return `❌ 未找到: 中心=${currentCenter}, 该中心学生=${centerStudents.length}, 该中心考勤=${centerAttendance.length}`
-              })()}
-            </div>
-            <div className="mt-2">
-              <strong>调试: 数据详情:</strong> {(() => {
-                const currentCenter = center.name
-                const centerStudents = students.filter(s => s.center === currentCenter)
-                const centerAttendance = attendanceData.filter(att => att.center === currentCenter)
-                
-                return `中心: ${currentCenter}, 学生: ${centerStudents.length}, 考勤: ${centerAttendance.length}, 缺席: ${centerAttendance.filter(att => att.status === 'absent').length}`
-              })()}
-            </div>
-            <div className="mt-2">
-              <strong>调试: Alston详细信息:</strong> {(() => {
-                const currentCenter = center.name
-                const centerStudents = students.filter(s => s.center === currentCenter)
-                const centerAttendance = attendanceData.filter(att => att.center === currentCenter)
-                
-                // 使用更灵活的匹配逻辑，处理可能的空格和特殊字符
-                const alston = centerStudents.find(s => s.student_name && s.student_name.trim() === 'Alston Yap Kay Xuan 叶凯轩'.trim())
-                
-                // 如果精确匹配失败，尝试模糊匹配
-                const alstonFuzzy = alston || centerStudents.find(s => s.student_name && s.student_name.includes('Alston') && s.student_name.includes('叶凯轩'))
-                
-                if (alstonFuzzy) {
-                  return `学生: ${alstonFuzzy.student_name} (${alstonFuzzy.student_id}/${alstonFuzzy.id})`
-                }
-                return '未找到Alston学生记录'
-              })()}
-            </div>
-            <div className="mt-2">
-              <strong>调试: 该中心前5个学生:</strong> {(() => {
-                const currentCenter = center.name
-                const centerStudents = students.filter(s => s.center === currentCenter)
-                return centerStudents.slice(0, 5).map(s => s.student_name).join(', ')
-              })()}
-            </div>
-            <div className="mt-2">
-              <strong>调试: 该中心考勤记录:</strong> {(() => {
-                const currentCenter = center.name
-                const centerAttendance = attendanceData.filter(att => att.center === currentCenter)
-                return centerAttendance.map(att => `${att.student_name}:${att.status}`).join(', ')
-              })()}
-            </div>
-            <div className="mt-2">
-              <strong>调试: 字符串匹配测试:</strong> {(() => {
-                const currentCenter = center.name
-                const centerStudents = students.filter(s => s.center === currentCenter)
-                const centerAttendance = attendanceData.filter(att => att.center === currentCenter)
-                
-                // 测试不同的匹配方式
-                const exactMatch = centerStudents.find(s => s.student_name && s.student_name === 'Alston Yap Kay Xuan 叶凯轩')
-                const partialMatch = centerStudents.find(s => s.student_name && s.student_name.includes('Alston'))
-                const containsMatch = centerStudents.find(s => s.student_name && s.student_name.includes('叶凯轩'))
-                
-                return `精确匹配: ${exactMatch ? '✅' : '❌'}, 包含Alston: ${partialMatch ? '✅' : '❌'}, 包含叶凯轩: ${containsMatch ? '✅' : '❌'}`
-              })()}
-            </div>
-            <div className="mt-2">
-              <strong>调试: 缺席过滤测试:</strong> {(() => {
-                const currentCenter = center.name
-                const centerStudents = students.filter(s => s.center === currentCenter)
-                const centerAttendance = attendanceData.filter(att => att.center === currentCenter)
-                
-                // 测试Alston的缺席过滤逻辑
-                const alston = centerStudents.find(s => s.student_name && s.student_name.includes('Alston'))
-                if (alston) {
-                  const alstonAttendance = centerAttendance.find(att => 
-                    (att.student_id === alston.student_id || att.student_id === alston.id) && 
-                    att.status === 'absent'
-                  )
-                  
-                  if (alstonAttendance) {
-                    // 更安全的日期处理
-                    let attDate = ''
-                    if (typeof alstonAttendance.date === 'string') {
-                      // 处理ISO 8601格式：2025-08-30 09:36:20.489Z
-                      if (alstonAttendance.date.includes(' ') || alstonAttendance.date.includes('T') || alstonAttendance.date.includes('Z')) {
-                        // 先按空格分割，再按T分割，取第一部分
-                        attDate = alstonAttendance.date.split(' ')[0].split('T')[0]
-                      } else {
-                        attDate = alstonAttendance.date
-                      }
-                    } else if (alstonAttendance.date instanceof Date) {
-                      attDate = alstonAttendance.date.toISOString().split('T')[0]
-                    } else if (alstonAttendance.timestamp) {
-                      attDate = new Date(alstonAttendance.timestamp).toISOString().split('T')[0]
-                    }
-                    
-                    const dateMatch = attDate === selectedDate
-                    return `Alston: 学生ID=${alston.student_id}/${alston.id}, 考勤ID=${alstonAttendance.student_id}, 日期=${alstonAttendance.date}, 处理后=${attDate}, 选择日期=${selectedDate}, 匹配=${dateMatch}`
-                  }
-                  return 'Alston: 找到学生但无考勤记录'
-                }
-                return 'Alston: 未找到学生'
-              })()}
-            </div>
-            <div className="mt-2">
-              <strong>调试: 实际过滤结果:</strong> {(() => {
-                const currentCenter = center.name
-                const centerStudents = students.filter(s => s.center === currentCenter)
-                const centerAttendance = attendanceData.filter(att => att.center === currentCenter)
-                
-                // 实际执行缺席过滤逻辑
-                const absentStudents = centerStudents.filter(student => 
-                  centerAttendance.some(att => {
-                    // 更安全的日期处理
-                    let attDate = ''
-                    if (typeof att.date === 'string') {
-                      // 处理ISO 8601格式：2025-08-30 09:36:20.489Z
-                      if (att.date.includes(' ') || att.date.includes('T') || att.date.includes('Z')) {
-                        // 先按空格分割，再按T分割，取第一部分
-                        attDate = att.date.split(' ')[0].split('T')[0]
-                      } else {
-                        attDate = att.date
-                      }
-                    } else if (att.date instanceof Date) {
-                      attDate = att.date.toISOString().split('T')[0]
-                    } else if (att.timestamp) {
-                      attDate = new Date(att.timestamp).toISOString().split('T')[0]
-                    }
-                    
-                    const dateMatch = attDate === selectedDate
-                    
-                    return (att.student_id === student.student_id || att.student_id === student.id) && 
-                           att.status === 'absent' && 
-                           dateMatch
-                  })
-                )
-                
-                return `缺席学生数量: ${absentStudents.length}, 姓名: ${absentStudents.map(s => s.student_name).join(', ')}`
-              })()}
-            </div>
-            <div className="mt-2">
-              <strong>调试: 字段类型检查:</strong> {(() => {
-                const currentCenter = center.name
-                const centerAttendance = attendanceData.filter(att => att.center === currentCenter)
-                
-                if (centerAttendance.length > 0) {
-                  const firstAtt = centerAttendance[0]
-                  return `第一个考勤记录: date类型=${typeof firstAtt.date}, date值=${firstAtt.date}, date构造函数=${firstAtt.date?.constructor?.name}, 是否有T=${typeof firstAtt.date === 'string' ? firstAtt.date.includes('T') : 'N/A'}`
-                }
-                return '无考勤记录'
-              })()}
-            </div>
-            <div className="mt-2">
-              <strong>调试: 日期处理测试:</strong> {(() => {
-                const currentCenter = center.name
-                const centerAttendance = attendanceData.filter(att => att.center === currentCenter)
-                
-                if (centerAttendance.length > 0) {
-                  const firstAtt = centerAttendance[0]
-                  let attDate = ''
-                  
-                  // 测试不同的日期处理方式
-                  if (typeof firstAtt.date === 'string') {
-                    if (firstAtt.date.includes('T') || firstAtt.date.includes('Z')) {
-                      attDate = firstAtt.date.split('T')[0]
-                    } else {
-                      attDate = firstAtt.date
-                    }
-                  } else if (firstAtt.date instanceof Date) {
-                    attDate = firstAtt.date.toISOString().split('T')[0]
-                  } else if (firstAtt.timestamp) {
-                    attDate = new Date(firstAtt.timestamp).toISOString().split('T')[0]
-                  }
-                  
-                  return `原始: ${firstAtt.date}, 处理后: ${attDate}, 是否包含T: ${typeof firstAtt.date === 'string' ? firstAtt.date.includes('T') : 'N/A'}`
-                }
-                return '无考勤记录'
-              })()}
-            </div>
-          </div>
+
           <CardContent>
             {loading ? (
               <div className="text-center py-8">
@@ -1088,127 +679,152 @@ function AttendanceManagement({
               </div>
             ) : (
               <div className="space-y-6">
-                {/* 未考勤学生列表 */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-red-600 flex items-center gap-2">
-                      <XCircle className="h-5 w-5" />
-                      未考勤学生 ({students.filter(student => student.center === center.name && !attendanceData.some(att => {
-                        // 更安全的日期处理
-                        let attDate = ''
-                        if (typeof att.date === 'string') {
-                          if (att.date.includes('T') || att.date.includes('Z')) {
-                            attDate = att.date.split('T')[0]
-                          } else {
-                            attDate = att.date
-                          }
-                        } else if (att.date instanceof Date) {
-                          attDate = att.date.toISOString().split('T')[0]
-                        } else if (att.timestamp) {
-                          attDate = new Date(att.timestamp).toISOString().split('T')[0]
-                        }
-                        
-                        const selDate = selectedDate
-                        const dateMatch = attDate === selDate
-                        
-                        return (att.student_id === student.student_id || att.student_id === student.id) && 
-                               att.center === center.name && 
-                               dateMatch
-                      })).length})
-                    </h4>
-                    <Badge variant="destructive" className="text-xs">
-                      需要处理
-                    </Badge>
-                  </div>
-                  <div className="space-y-3">
-                    {students
-                      .filter(student => student.center === center.name && !attendanceData.some(att => {
-                        // 更安全的日期处理
-                        let attDate = ''
-                        if (typeof att.date === 'string') {
-                          if (att.date.includes('T') || att.date.includes('Z')) {
-                            attDate = att.date.split('T')[0]
-                          } else {
-                            attDate = att.date
-                          }
-                        } else if (att.date instanceof Date) {
-                          attDate = att.date.toISOString().split('T')[0]
-                        } else if (att.timestamp) {
-                          attDate = new Date(att.timestamp).toISOString().split('T')[0]
-                        }
-                        
-                        const selDate = selectedDate
-                        const dateMatch = attDate === selDate
-                        
-                        return (att.student_id === student.student_id || att.student_id === student.id) && 
-                               att.center === center.name && 
-                               dateMatch
-                      }))
-                      .map((student) => (
-                        <div key={student.id} className="flex items-center justify-between p-4 border-2 border-red-200 rounded-lg bg-red-50 hover:bg-red-100 transition-colors">
-                          <div className="flex items-center space-x-3">
-                            <Avatar className="h-10 w-10">
-                              <AvatarFallback className="bg-red-100 text-red-600">
-                                {student.student_name?.charAt(0) || '?'}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium text-gray-900">{student.student_name || '未知姓名'}</p>
-                              <p className="text-sm text-gray-500">学号: {student.student_id || '无学号'}</p>
-                              <p className="text-sm text-gray-500">中心: {student.center || '未指定'}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge variant="destructive" className="text-xs">
-                              未考勤
-                            </Badge>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => {
-                                console.log('🔍 未考勤学生列表中的标记缺席按钮被点击')
-                                console.log('🔍 选中的学生:', student)
-                                setSelectedStudent(student)
-                                setShowAbsenceModal(true)
-                                console.log('🔍 设置状态后:', { showAbsenceModal: true, selectedStudent: student })
-                              }}
-                              className="border-red-300 text-red-700 hover:bg-red-100"
-                            >
-                              <XCircle className="h-4 w-4 mr-2" />
-                              标记缺席
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    {students.filter(student => student.center === center.name && !attendanceData.some(att => {
-                        // 更安全的日期处理
-                        let attDate = ''
-                        if (typeof att.date === 'string') {
-                          if (att.date.includes('T') || att.date.includes('Z')) {
-                            attDate = att.date.split('T')[0]
-                          } else {
-                            attDate = att.date
-                          }
-                        } else if (att.date instanceof Date) {
-                          attDate = att.date.toISOString().split('T')[0]
-                        } else if (att.timestamp) {
-                          attDate = new Date(att.timestamp).toISOString().split('T')[0]
-                        }
-                        
-                        const selDate = selectedDate
-                        const dateMatch = attDate === selDate
-                        
-                        return (att.student_id === student.student_id || att.student_id === student.id) && 
-                               att.center === center.name && 
-                               dateMatch
-                      })).length === 0 && (
-                      <div className="text-center py-6 text-green-600">
-                        <CheckCircle className="h-8 w-8 mx-auto mb-2" />
-                        <p>所有学生都已考勤！</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                                 {/* 未考勤学生列表 */}
+                 <div>
+                   <div className="flex items-center justify-between mb-4">
+                     <h4 className="text-lg font-semibold text-red-600 flex items-center gap-2">
+                       <XCircle className="h-5 w-5" />
+                       未考勤学生 ({students.filter(student => student.center === center.name && !attendanceData.some(att => {
+                         // 更安全的日期处理
+                         let attDate = ''
+                         if (typeof att.date === 'string') {
+                           if (att.date.includes('T') || att.date.includes('Z')) {
+                             attDate = att.date.split('T')[0]
+                           } else {
+                             attDate = att.date
+                           }
+                         } else if (att.date instanceof Date) {
+                           attDate = att.date.toISOString().split('T')[0]
+                         } else if (att.timestamp) {
+                           attDate = new Date(att.timestamp).toISOString().split('T')[0]
+                         }
+                         
+                         const selDate = selectedDate
+                         const dateMatch = attDate === selDate
+                         
+                         return (att.student_id === student.student_id || att.student_id === student.id) && 
+                                att.center === center.name && 
+                                dateMatch
+                       })).length})
+                     </h4>
+                     <Badge variant="destructive" className="text-xs">
+                       需要处理
+                     </Badge>
+                   </div>
+                   
+                   {(() => {
+                     const unmarkedStudents = students
+                       .filter(student => student.center === center.name && !attendanceData.some(att => {
+                         // 更安全的日期处理
+                         let attDate = ''
+                         if (typeof att.date === 'string') {
+                           if (att.date.includes('T') || att.date.includes('Z')) {
+                             attDate = att.date.split('T')[0]
+                           } else {
+                             attDate = att.date
+                           }
+                         } else if (att.date instanceof Date) {
+                           attDate = att.date.toISOString().split('T')[0]
+                         } else if (att.timestamp) {
+                           attDate = new Date(att.timestamp).toISOString().split('T')[0]
+                         }
+                         
+                         const selDate = selectedDate
+                         const dateMatch = attDate === selDate
+                         
+                         return (att.student_id === student.student_id || att.student_id === student.id) && 
+                                att.center === center.name && 
+                                dateMatch
+                       }))
+                     
+                     // 分页逻辑
+                     const itemsPerPage = 10
+                     const totalPages = Math.ceil(unmarkedStudents.length / itemsPerPage)
+                     const currentPage = 1 // 默认第一页
+                     const startIndex = (currentPage - 1) * itemsPerPage
+                     const endIndex = startIndex + itemsPerPage
+                     const currentStudents = unmarkedStudents.slice(startIndex, endIndex)
+                     
+                     return (
+                       <>
+                         <div className="space-y-3">
+                           {currentStudents.map((student) => (
+                             <div key={student.id} className="flex items-center justify-between p-4 border-2 border-red-200 rounded-lg bg-red-50 hover:bg-red-100 transition-colors">
+                               <div className="flex items-center space-x-3">
+                                 <Avatar className="h-10 w-10">
+                                   <AvatarFallback className="bg-red-100 text-red-600">
+                                     {student.student_name?.charAt(0) || '?'}
+                                   </AvatarFallback>
+                                 </Avatar>
+                                 <div>
+                                   <p className="font-medium text-gray-900">{student.student_name || '未知姓名'}</p>
+                                   <p className="text-sm text-gray-500">学号: {student.student_id || '无学号'}</p>
+                                   <p className="text-sm text-gray-500">中心: {student.center || '未指定'}</p>
+                                 </div>
+                               </div>
+                               <div className="flex items-center space-x-2">
+                                 <Badge variant="destructive" className="text-xs">
+                                   未考勤
+                                 </Badge>
+                                 <Button 
+                                   size="sm" 
+                                   variant="outline"
+                                   onClick={() => {
+                                     setSelectedStudent(student)
+                                     setShowAbsenceModal(true)
+                                   }}
+                                   className="border-red-300 text-red-700 hover:bg-red-100"
+                                 >
+                                   <XCircle className="h-4 w-4 mr-2" />
+                                   标记缺席
+                                 </Button>
+                               </div>
+                             </div>
+                           ))}
+                           
+                           {/* 如果没有未考勤学生，显示提示 */}
+                           {unmarkedStudents.length === 0 && (
+                             <div className="text-center py-6 text-green-600">
+                               <CheckCircle className="h-8 w-8 mx-auto mb-2" />
+                               <p>所有学生都已考勤！</p>
+                             </div>
+                           )}
+                         </div>
+                         
+                         {/* 分页控件 */}
+                         {totalPages > 1 && (
+                           <div className="flex items-center justify-center space-x-2 mt-6">
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               disabled={currentPage === 1}
+                               onClick={() => {
+                                 // 分页功能待实现
+                               }}
+                             >
+                               ← 上一页
+                             </Button>
+                             
+                             <span className="text-sm text-gray-600">
+                               第 {currentPage} 页，共 {totalPages} 页
+                             </span>
+                             
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               disabled={currentPage === totalPages}
+                               onClick={() => {
+                                 // 分页功能待实现
+                               }}
+                             >
+                               下一页 →
+                             </Button>
+                           </div>
+                         )}
+                       </>
+                     )
+                   })()}
+                 </div>
 
                 {/* 缺席学生列表 */}
                 <div>
@@ -1216,16 +832,22 @@ function AttendanceManagement({
                     <h4 className="text-lg font-semibold text-red-600 flex items-center gap-2">
                       <XCircle className="h-5 w-5" />
                       缺席学生 ({students.filter(student => student.center === center.name && attendanceData.some(att => {
-                        // 更安全的日期处理
+                        // 更安全的日期处理 - 支持多种日期字段
                         let attDate = ''
-                        if (typeof att.date === 'string') {
-                          if (att.date.includes('T') || att.date.includes('Z')) {
-                            attDate = att.date.split('T')[0]
+                        // 优先使用 check_in 字段，如果没有则使用 date 字段
+                        const dateField = att.check_in || att.date || att.timestamp
+                        
+                        if (typeof dateField === 'string') {
+                          // 处理 YYYY-MM-DD HH:MM:SS 格式
+                          if (dateField.includes(' ')) {
+                            attDate = dateField.split(' ')[0]
+                          } else if (dateField.includes('T') || dateField.includes('Z')) {
+                            attDate = dateField.split('T')[0]
                           } else {
-                            attDate = att.date
+                            attDate = dateField
                           }
-                        } else if (att.date instanceof Date) {
-                          attDate = att.date.toISOString().split('T')[0]
+                        } else if (dateField instanceof Date) {
+                          attDate = dateField.toISOString().split('T')[0]
                         } else if (att.timestamp) {
                           attDate = new Date(att.timestamp).toISOString().split('T')[0]
                         }
@@ -1243,19 +865,28 @@ function AttendanceManagement({
                       缺席
                     </Badge>
                   </div>
+                  
+
+                  
                   <div className="space-y-3">
                     {students
                       .filter(student => student.center === center.name && attendanceData.some(att => {
-                        // 更安全的日期处理
+                        // 更安全的日期处理 - 支持多种日期字段
                         let attDate = ''
-                        if (typeof att.date === 'string') {
-                          if (att.date.includes('T') || att.date.includes('Z')) {
-                            attDate = att.date.split('T')[0]
+                        // 优先使用 check_in 字段，如果没有则使用 date 字段
+                        const dateField = att.check_in || att.date || att.timestamp
+                        
+                        if (typeof dateField === 'string') {
+                          // 处理 YYYY-MM-DD HH:MM:SS 格式
+                          if (dateField.includes(' ')) {
+                            attDate = dateField.split(' ')[0]
+                          } else if (dateField.includes('T') || dateField.includes('Z')) {
+                            attDate = dateField.split('T')[0]
                           } else {
-                            attDate = att.date
+                            attDate = dateField
                           }
-                        } else if (att.date instanceof Date) {
-                          attDate = att.date.toISOString().split('T')[0]
+                        } else if (dateField instanceof Date) {
+                          attDate = dateField.toISOString().split('T')[0]
                         } else if (att.timestamp) {
                           attDate = new Date(att.timestamp).toISOString().split('T')[0]
                         }
@@ -1270,16 +901,22 @@ function AttendanceManagement({
                       }))
                       .map((student) => {
                         const attendanceRecord = attendanceData.find(att => {
-                          // 更安全的日期处理
+                          // 更安全的日期处理 - 支持多种日期字段
                           let attDate = ''
-                          if (typeof att.date === 'string') {
-                            if (att.date.includes('T') || att.date.includes('Z')) {
-                              attDate = att.date.split('T')[0]
+                          // 优先使用 check_in 字段，如果没有则使用 date 字段
+                          const dateField = att.check_in || att.date || att.timestamp
+                          
+                          if (typeof dateField === 'string') {
+                            // 处理 YYYY-MM-DD HH:MM:SS 格式
+                            if (dateField.includes(' ')) {
+                              attDate = dateField.split(' ')[0]
+                            } else if (dateField.includes('T') || dateField.includes('Z')) {
+                              attDate = dateField.split('T')[0]
                             } else {
-                              attDate = att.date
+                              attDate = dateField
                             }
-                          } else if (att.date instanceof Date) {
-                            attDate = att.date.toISOString().split('T')[0]
+                          } else if (dateField instanceof Date) {
+                            attDate = dateField.toISOString().split('T')[0]
                           } else if (att.timestamp) {
                             attDate = new Date(att.timestamp).toISOString().split('T')[0]
                           }
@@ -1727,17 +1364,7 @@ function AttendanceManagement({
                 <RefreshCw className="h-4 w-4 mr-2" />
                 刷新
               </Button>
-              <Button variant="outline" size="sm" onClick={updateMobileAttendanceStatus}>
-                <Smartphone className="h-4 w-4 mr-2" />
-                刷新移动端
-              </Button>
               <Button size="sm" onClick={() => {
-                console.log('🔍 标记缺席按钮被点击')
-                console.log('🔍 当前状态:', {
-                  showAbsenceModal,
-                  teacherId,
-                  students: students?.length
-                })
                 setShowAbsenceModal(true)
               }}>
                 <XCircle className="h-4 w-4 mr-2" />
@@ -1852,40 +1479,26 @@ export default function TeacherWorkspace() {
       return []
     }
     
-    // 这里应该从真实的考勤记录、作业提交记录等获取
-    // 暂时返回空数组，等待真实数据API
+    // 等待真实数据API集成
     return []
   }, [students])
 
   // 基于真实数据计算即将开始的课程
   const upcomingClasses = useMemo(() => {
-    // 这里应该从真实的课程安排API获取
-    // 暂时返回空数组，等待真实数据API
+    // 等待真实数据API集成
     return []
   }, [])
 
   // 当用户数据加载完成后更新统计信息
   useEffect(() => {
     if (userProfile) {
-      console.log('教师工作台: 用户资料已加载', userProfile)
+      // 用户资料已加载，可以在这里添加额外的初始化逻辑
     }
   }, [userProfile])
 
   // 标记学生缺席 - 移动到主组件层级
   const handleMarkAbsence = async () => {
-    console.log('🔍 handleMarkAbsence 被调用:', {
-      selectedStudent,
-      absenceReason,
-      teacherId: user?.id,
-      selectedDate
-    })
-    
     if (!selectedStudent || !absenceReason || !user?.id) {
-      console.log('❌ 缺少必需参数:', {
-        hasSelectedStudent: !!selectedStudent,
-        hasAbsenceReason: !!absenceReason,
-        hasTeacherId: !!user?.id
-      })
       return
     }
     
@@ -1910,8 +1523,6 @@ export default function TeacherWorkspace() {
       })
 
       if (response.ok) {
-        console.log('✅ 成功标记学生缺席')
-        
         // 显示成功提示
         alert(`✅ 成功标记学生 ${selectedStudent.student_name} 缺席`)
         
@@ -1921,22 +1532,16 @@ export default function TeacherWorkspace() {
         setAbsenceReason('')
         setAbsenceDetail('')
         
-        // 刷新考勤数据
-        // 使用更可靠的方式触发刷新
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('refreshAttendanceData'))
-          // 如果事件方式不工作，强制刷新页面
-          setTimeout(() => {
-            window.location.reload()
-          }, 2000)
-        }, 500)
+                 // 刷新考勤数据
+         setTimeout(() => {
+           window.dispatchEvent(new CustomEvent('refreshAttendanceData'))
+         }, 500)
       } else {
-        console.error('❌ 标记学生缺席失败:', response.status, response.statusText)
         alert(`❌ 标记缺席失败: ${response.status} ${response.statusText}`)
       }
-    } catch (error) {
-      console.error('标记学生缺席出错:', error)
-    } finally {
+         } catch (error) {
+       // 标记缺席失败
+     } finally {
       setIsMarkingAbsence(false)
     }
   }
@@ -2158,23 +1763,7 @@ export default function TeacherWorkspace() {
                   </Card>
                 </div>
 
-                {/* 数据说明 */}
-                <Card className="bg-blue-50 border-blue-200">
-                  <CardHeader>
-                    <CardTitle className="text-blue-800">数据说明</CardTitle>
-                    <CardDescription className="text-blue-700">
-                      当前显示的数据基于真实的学生信息和考勤记录
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-sm text-blue-700 space-y-2">
-                      <p>• 学生数据：从PocketBase数据库实时获取</p>
-                      <p>• 考勤数据：基于真实的考勤记录计算</p>
-                      <p>• 活动记录：等待相关API接口开发完成后显示</p>
-                      <p>• 课程安排：等待课程管理系统集成后显示</p>
-                    </div>
-                  </CardContent>
-                </Card>
+
               </div>
             </TabsContent>
           </Tabs>
