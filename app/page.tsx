@@ -265,14 +265,15 @@ export default function Dashboard() {
         </div>
       </div>
       
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <GraduationCap className="h-8 w-8 text-blue-600" />
-              <h1 className="ml-2 text-xl font-bold text-gray-900">{getRoleTitle()}</h1>
-            </div>
+      {/* Header - 只有非教师角色才显示标题，教师角色由TeacherWorkspace组件处理 */}
+      {userProfile.role !== 'teacher' && (
+        <header className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center">
+                <GraduationCap className="h-8 w-8 text-blue-600" />
+                <h1 className="ml-2 text-xl font-bold text-gray-900">{getRoleTitle()}</h1>
+              </div>
             <div className="flex items-center space-x-4">
               {/* Quick Access to Systems */}
               {userProfile.role === 'admin' && (
@@ -284,9 +285,9 @@ export default function Dashboard() {
                 </Button>
               )}
               <Button variant="outline" size="sm" asChild>
-                <a href="/unified-attendance" className="flex items-center gap-2">
+                <a href="/attendance" className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4" />
-                  <span className="hidden sm:inline">统一打卡</span>
+                  <span className="hidden sm:inline">考勤打卡</span>
                 </a>
               </Button>
               
@@ -306,10 +307,11 @@ export default function Dashboard() {
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
               </Button>
+                          </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* Error Display */}
       {error && (

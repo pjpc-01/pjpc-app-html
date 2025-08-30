@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +23,8 @@ import {
   BarChart3,
   TrendingUp,
   TrendingDown,
-  Target
+  Target,
+  RefreshCw
 } from "lucide-react"
 
 interface Student {
@@ -60,72 +61,114 @@ interface AttendanceManagementProps {
 }
 
 export default function AttendanceManagement({ teacherId }: AttendanceManagementProps) {
-  // 模拟数据
-  const [students] = useState<Student[]>([
-    { id: '1', student_name: '张小明', student_id: 'ST001', standard: '三年级A班' },
-    { id: '2', student_name: '李小红', student_id: 'ST002', standard: '三年级A班' },
-    { id: '3', student_name: '王小华', student_id: 'ST003', standard: '三年级A班' },
-    { id: '4', student_name: '赵小强', student_id: 'ST004', standard: '三年级A班' },
-    { id: '5', student_name: '孙小美', student_id: 'ST005', standard: '三年级A班' }
-  ])
+  // 状态管理
+  const [students, setStudents] = useState<Student[]>([])
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([
-    {
-      id: '1',
-      studentId: '1',
-      studentName: '张小明',
-      studentId: 'ST001',
-      standard: '三年级A班',
-      date: '2024-01-15',
-      status: 'present',
-      time: '08:55',
-      note: ''
-    },
-    {
-      id: '2',
-      studentId: '2',
-      studentName: '李小红',
-      studentId: 'ST002',
-      standard: '三年级A班',
-      date: '2024-01-15',
-      status: 'present',
-      time: '08:50',
-      note: ''
-    },
-    {
-      id: '3',
-      studentId: '3',
-      studentName: '王小华',
-      studentId: 'ST003',
-      standard: '三年级A班',
-      date: '2024-01-15',
-      status: 'late',
-      time: '09:15',
-      note: '交通拥堵'
-    },
-    {
-      id: '4',
-      studentId: '4',
-      studentName: '赵小强',
-      studentId: 'ST004',
-      standard: '三年级A班',
-      date: '2024-01-15',
-      status: 'absent',
-      time: '',
-      note: '生病请假'
-    },
-    {
-      id: '5',
-      studentId: '5',
-      studentName: '孙小美',
-      student_id: 'ST005',
-      standard: '三年级A班',
-      date: '2024-01-15',
-      status: 'present',
-      time: '08:45',
-      note: ''
+  // 获取学生数据
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const response = await fetch('/api/students')
+        if (response.ok) {
+          const data = await response.json()
+          setStudents(data.students || [])
+        }
+      } catch (error) {
+        console.error('获取学生数据失败:', error)
+        setError('获取学生数据失败')
+      }
     }
-  ])
+
+    fetchStudents()
+  }, [])
+
+  // 获取考勤记录
+  useEffect(() => {
+    const fetchAttendanceRecords = async () => {
+      setLoading(true)
+      setError(null)
+      
+      try {
+        const response = await fetch('/api/student-attendance')
+        if (response.ok) {
+          const data = await response.json()
+          console.log('获取到的考勤记录:', data.data)
+          
+          // 转换数据格式以匹配组件期望的结构
+          const formattedRecords: AttendanceRecord[] = (data.data || []).map((record: any) => ({
+            id: record.id,
+            studentId: record.student_id,
+            studentName: record.student_name,
+            standard: record.center || '未指定中心',
+            date: record.date || new Date(record.timestamp).toISOString().split('T')[0],
+            status: record.status === 'present' ? 'present' : 
+                   record.status === 'late' ? 'late' : 
+                   record.status === 'absent' ? 'absent' : 'present',
+            time: record.time || new Date(record.timestamp).toTimeString().split(' ')[0],
+            note: record.method || '系统记录'
+          }))
+          
+          setAttendanceRecords(formattedRecords)
+        } else {
+          const errorData = await response.json()
+          console.error('获取考勤记录失败:', errorData)
+          setError('获取考勤记录失败')
+        }
+      } catch (error) {
+        console.error('获取考勤记录失败:', error)
+        setError('获取考勤记录失败')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAttendanceRecords()
+  }, [])
+
+  // 刷新数据
+  const refreshData = async () => {
+    setLoading(true)
+    setError(null)
+    
+    try {
+      // 同时刷新学生数据和考勤记录
+      const [studentsResponse, attendanceResponse] = await Promise.all([
+        fetch('/api/students'),
+        fetch('/api/student-attendance')
+      ])
+      
+      if (studentsResponse.ok) {
+        const studentsData = await studentsResponse.json()
+        setStudents(studentsData.students || [])
+      }
+      
+      if (attendanceResponse.ok) {
+        const attendanceData = await attendanceResponse.json()
+        const formattedRecords: AttendanceRecord[] = (attendanceData.data || []).map((record: any) => ({
+          id: record.id,
+          studentId: record.student_id,
+          studentName: record.student_name,
+          standard: record.center || '未指定中心',
+          date: record.date || new Date(record.timestamp).toISOString().split('T')[0],
+          status: record.status === 'present' ? 'present' : 
+                 record.status === 'late' ? 'late' : 
+                 record.status === 'absent' ? 'absent' : 'present',
+          time: record.time || new Date(record.timestamp).toTimeString().split(' ')[0],
+          note: record.method || '系统记录'
+        }))
+        
+        setAttendanceRecords(formattedRecords)
+      }
+    } catch (error) {
+      console.error('刷新数据失败:', error)
+      setError('刷新数据失败')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // 状态管理
   const [selectedDate, setSelectedDate] = useState('2024-01-15')
@@ -235,9 +278,28 @@ export default function AttendanceManagement({ teacherId }: AttendanceManagement
   return (
     <div className="space-y-6">
       {/* 页面标题和描述 */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">考勤管理</h2>
-        <p className="text-gray-600 mt-1">记录学生出勤情况、查看考勤统计和趋势分析</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">考勤管理</h2>
+          <p className="text-gray-600 mt-1">记录学生出勤情况、查看考勤统计和趋势分析</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {error && (
+            <div className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md">
+              {error}
+            </div>
+          )}
+          <Button 
+            onClick={refreshData} 
+            disabled={loading}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? '刷新中...' : '刷新数据'}
+          </Button>
+        </div>
       </div>
 
       {/* 考勤统计概览 */}
@@ -479,8 +541,22 @@ export default function AttendanceManagement({ teacherId }: AttendanceManagement
           <CardDescription>查看历史考勤记录和统计</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {filteredRecords.map((record) => (
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="flex items-center gap-2 text-gray-500">
+                <RefreshCw className="h-5 w-5 animate-spin" />
+                加载考勤记录中...
+              </div>
+            </div>
+          ) : filteredRecords.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-lg font-medium">暂无考勤记录</p>
+              <p className="text-sm">点击"刷新数据"按钮获取最新考勤信息</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredRecords.map((record) => (
               <div key={record.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">

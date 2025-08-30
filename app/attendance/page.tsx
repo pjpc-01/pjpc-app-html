@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -31,7 +31,11 @@ import {
   Database,
   Activity,
   Smartphone as MobileIcon,
-  CreditCard as CardIcon
+  CreditCard as CardIcon,
+  MapPin,
+  Users,
+  AlertTriangle,
+  HelpCircle
 } from "lucide-react"
 import Link from "next/link"
 import { useStudents } from '@/hooks/useStudents'
@@ -47,7 +51,7 @@ interface AttendanceRecord {
   deviceInfo: string
   center: string
   type: 'checkin' | 'checkout'
-  status: 'success' | 'failed'
+  status: 'present' | 'late' | 'absent'
   method: 'nfc' | 'url' | 'manual'
 }
 
@@ -93,6 +97,9 @@ export default function AttendancePage() {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([])
   const [studentAttendanceStatus, setStudentAttendanceStatus] = useState<StudentAttendanceStatus[]>([])
   const [loading, setLoading] = useState(false)
+  
+  // 帮助模态框状态
+  const [showHelpModal, setShowHelpModal] = useState(false)
 
   // 检查HTTPS和NFC支持
   useEffect(() => {
@@ -180,7 +187,7 @@ export default function AttendancePage() {
                    deviceInfo: `${getDeviceInfo().userAgent} - ${getDeviceInfo().hostname}`,
                    center: result.student.center || centerId || 'unknown',
                    type: "checkin",
-                   status: "success",
+                   status: "present",
                    method: "nfc"
                  }
                 
@@ -368,9 +375,9 @@ export default function AttendancePage() {
         studentUrl: student.studentUrl,
         timestamp: new Date().toISOString(),
         deviceInfo: `${getDeviceInfo().userAgent} - ${getDeviceInfo().hostname}`,
-        center: centerId || '未知中心',
+        center: student.center || 'unknown', // 直接使用学生的 center，不使用 centerId
         type: attendanceType,
-        status: "success",
+        status: "present",
         method: method
        }
 
@@ -385,18 +392,11 @@ export default function AttendancePage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            studentId: student.student_id || student.id,
-            studentName: student.student_name || '未知学生',
-            centerId: centerId || 'unknown',
-            centerName: getCenterDisplayName(centerId),
-            branchId: centerId || 'unknown',        // 分行ID，这里使用中心ID
-            branchName: getCenterDisplayName(centerId), // 分行名称
-            type: attendanceType === 'checkin' ? 'check-in' : 'check-out',
-            timestamp: newRecord.timestamp,
-            deviceId: getDeviceInfo().userAgent,
-            deviceName: `${getDeviceInfo().platform} - ${getDeviceInfo().hostname}`,
-            method: method,
-            status: 'success'
+            student_id: student.student_id || student.id,
+            student_name: student.student_name || '未知学生',
+            center: student.center || 'unknown', // 直接使用学生的 center，不使用 centerId
+            status: 'present',
+            timestamp: newRecord.timestamp
           })
         })
 
@@ -452,6 +452,13 @@ export default function AttendancePage() {
   // 获取中心显示名称
   const getCenterDisplayName = (centerId: string | null) => {
     if (!centerId) return '未指定'
+    
+    // 处理 PocketBase 中的中心格式 (WX 01, WX 02 等)
+    if (centerId.includes(' ')) {
+      return centerId // 如果已经是 "WX 01" 格式，直接返回
+    }
+    
+    // 处理简化的中心ID格式 (wx01, wx02 等)
     const centerNames: { [key: string]: string } = {
       'wx01': 'WX 01',
       'wx02': 'WX 02',
@@ -488,17 +495,19 @@ export default function AttendancePage() {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* 页面标题 */}
         <div className="flex items-center gap-4">
-          <Link href="/checkin">
+          <Link href="/">
             <Button variant="outline" size="sm" className="flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" />
-              返回选择
+              返回首页
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">统一打卡系统</h1>
+            <h1 className="text-3xl font-bold text-gray-900">考勤系统</h1>
             <p className="text-gray-600">多方式打卡 - 实时数据同步 - 支持NFC、URL、手动输入</p>
-            {centerId && (
-              <p className="text-sm text-gray-500">中心: {getCenterDisplayName(centerId)}</p>
+            {(centerId || (students.length > 0 && students[0]?.center)) && (
+              <p className="text-sm text-gray-500">
+                中心: {getCenterDisplayName(students.length > 0 && students[0]?.center ? students[0].center : centerId)}
+              </p>
             )}
           </div>
         </div>
@@ -569,6 +578,85 @@ export default function AttendancePage() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* 系统信息 */}
+        <div className="flex items-start gap-4">
+          <Card className="border-2 border-gray-200 bg-gray-50 flex-1">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-gray-800">
+                <Database className="h-5 w-5" />
+                系统信息
+              </CardTitle>
+              <CardDescription>详细的系统配置和状态信息</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-gray-700">中心信息</span>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {getCenterDisplayName(students.length > 0 && students[0]?.center ? students[0].center : centerId)}
+                  </div>
+                  <div className="text-xs text-gray-500">当前考勤中心</div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium text-gray-700">协议状态</span>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">{isHTTPS ? 'HTTPS' : 'HTTP'}</div>
+                  <div className="text-xs text-gray-500">安全连接协议</div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-purple-600" />
+                    <span className="text-sm font-medium text-gray-700">学生数据</span>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {studentsLoading ? '...' : studentsError ? '0' : students.length}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {studentsLoading ? '加载中' : studentsError ? '加载失败' : '名学生'}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Database className="h-4 w-4 text-orange-600" />
+                    <span className="text-sm font-medium text-gray-700">数据库</span>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">PocketBase</div>
+                  <div className="text-xs text-gray-500">数据存储系统</div>
+                </div>
+              </div>
+
+              {studentsError && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-red-800">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span className="text-sm font-medium">数据加载错误</span>
+                  </div>
+                  <p className="text-xs text-red-600 mt-1">{studentsError}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 帮助按钮 */}
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => setShowHelpModal(true)}
+            className="h-16 w-16 p-0 flex flex-col items-center justify-center gap-1 border-blue-200 hover:border-blue-300 hover:bg-blue-50"
+          >
+            <HelpCircle className="h-6 w-6 text-blue-600" />
+            <span className="text-xs text-blue-600">帮助</span>
+          </Button>
         </div>
 
         {/* 打卡方式选择 */}
@@ -867,113 +955,116 @@ export default function AttendancePage() {
           </Card>
         )}
 
-        {/* 系统信息 */}
-        <Card className="border-2 border-gray-200 bg-gray-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-gray-800">
-              <Database className="h-5 w-5" />
-              系统信息
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>中心:</span>
-                  <span className="font-medium">{getCenterDisplayName(centerId)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>协议:</span>
-                  <span className="font-mono">{isHTTPS ? 'https:' : 'http:'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>主机:</span>
-                  <span className="font-mono">localhost</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>学生数据:</span>
-                  <span className="font-medium">
-                    {studentsLoading ? '加载中...' : studentsError ? '加载失败' : `${students.length} 名学生`}
-                  </span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>NFC支持:</span>
-                  <span className="font-medium">{isNFCSupported ? '支持' : '不支持'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>HTTPS状态:</span>
-                  <span className="font-medium">{isHTTPS ? '启用' : '未启用'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>数据库:</span>
-                  <span className="font-medium">PocketBase</span>
-                </div>
-                {studentsError && (
-                  <div className="flex justify-between">
-                    <span>错误:</span>
-                    <span className="font-medium text-red-600 text-xs">{studentsError}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 功能说明 */}
-        <Card className="border-2 border-blue-200 bg-blue-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-800">
-              <Settings className="h-5 w-5" />
-              功能说明
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-blue-700">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <h4 className="font-medium">NFC卡片打卡</h4>
-                <div className="space-y-1">
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p>需要HTTPS环境</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p>设备需支持NFC</p>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <h4 className="font-medium">URL识别打卡</h4>
-                <div className="space-y-1">
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p>输入学生专属URL</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p>自动识别学生身份</p>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <h4 className="font-medium">手动输入打卡</h4>
-                <div className="space-y-1">
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p>输入学生ID</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p>备用打卡方式</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
+
+      {/* 帮助模态框 */}
+      {showHelpModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <HelpCircle className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">功能说明</h3>
+                  <p className="text-sm text-gray-600">了解各种打卡方式的使用方法</p>
+                </div>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setShowHelpModal(false)}
+                className="p-2"
+              >
+                <XCircle className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-4">
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CardIcon className="h-5 w-5 text-blue-600" />
+                    <h4 className="font-semibold text-blue-800">NFC卡片打卡</h4>
+                  </div>
+                  <div className="space-y-2 text-sm text-blue-700">
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <p>需要HTTPS环境</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <p>设备需支持NFC</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <p>靠近NFC卡片即可打卡</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Globe className="h-5 w-5 text-green-600" />
+                    <h4 className="font-semibold text-green-800">URL识别打卡</h4>
+                  </div>
+                  <div className="space-y-2 text-sm text-green-700">
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <p>输入学生专属URL</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <p>自动识别学生身份</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <p>支持二维码扫描</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <User className="h-5 w-5 text-purple-600" />
+                    <h4 className="font-semibold text-purple-800">手动输入打卡</h4>
+                  </div>
+                  <div className="space-y-2 text-sm text-purple-700">
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <p>输入学生ID</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <p>备用打卡方式</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <p>适用于所有设备</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <h4 className="font-medium text-gray-800 mb-2">使用提示</h4>
+              <div className="text-sm text-gray-600 space-y-1">
+                <p>• 首次使用建议先测试手动输入打卡</p>
+                <p>• NFC打卡需要设备支持并开启NFC功能</p>
+                <p>• URL打卡支持复制粘贴和二维码扫描</p>
+                <p>• 所有打卡记录都会实时同步到系统</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+  

@@ -94,7 +94,7 @@ export default function AdminDashboard() {
                   <div className="text-2xl font-bold text-green-600">双设备</div>
                   <div className="text-xs text-gray-500">NFC + RFID</div>
                 </div>
-                <Link href="/unified-attendance">
+                <Link href="/attendance">
                   <Button className="flex items-center gap-2">
                     进入系统
                     <ArrowRight className="h-4 w-4" />
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
                   <div className="text-2xl font-bold text-blue-600">URL识别</div>
                   <div className="text-xs text-gray-500">移动 + NFC</div>
                 </div>
-                <Link href="/url-attendance">
+                <Link href="/attendance">
                   <Button className="flex items-center gap-2">
                     进入系统
                     <ArrowRight className="h-4 w-4" />
@@ -275,7 +275,7 @@ export default function AdminDashboard() {
                     <span>用户审核</span>
                   </Button>
                 </Link>
-                <Link href="/unified-attendance">
+                <Link href="/attendance">
                   <Button variant="outline" className="w-full h-16 flex flex-col items-center gap-2">
                     <CreditCard className="h-6 w-6" />
                     <span>打卡系统</span>

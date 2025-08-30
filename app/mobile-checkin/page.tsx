@@ -1,254 +1,220 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { 
   Smartphone, 
-  CreditCard, 
-  Globe, 
-  Shield, 
-  Zap,
+  MapPin, 
   ArrowRight,
-  Home,
-  Info
+  Users,
+  Activity,
+  Clock
 } from "lucide-react"
-import Link from "next/link"
 
-// 中心信息
-const centers = [
-  {
-    id: 'wx01',
-    name: 'WX 01',
-    description: '主要教学中心',
-    status: 'active',
-    studentCount: 25,
-    lastActivity: '2分钟前'
-  },
-  {
-    id: 'wx02', 
-    name: 'WX 02',
-    description: '分校教学点',
-    status: 'active',
-    studentCount: 18,
-    lastActivity: '5分钟前'
-  },
-  {
-    id: 'wx03',
-    name: 'WX 03', 
-    description: '新开教学中心',
-    status: 'active',
-    studentCount: 12,
-    lastActivity: '1小时前'
-  },
-  {
-    id: 'wx04',
-    name: 'WX 04',
-    description: '远程教学点',
-    status: 'maintenance',
-    studentCount: 8,
-    lastActivity: '维护中'
+interface Center {
+  id: string
+  name: string
+  status: 'active' | 'inactive'
+  studentCount: number
+  todayAttendance: number
+  attendanceRate: number
+}
+
+export default function MobileCheckinPage() {
+  const router = useRouter()
+  const [centers, setCenters] = useState<Center[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // 模拟获取中心数据，实际应该从API获取
+    const mockCenters: Center[] = [
+      {
+        id: 'wx01',
+        name: 'WX 01',
+        status: 'active',
+        studentCount: 25,
+        todayAttendance: 22,
+        attendanceRate: 88
+      },
+      {
+        id: 'wx02',
+        name: 'WX 02',
+        status: 'active',
+        studentCount: 30,
+        todayAttendance: 28,
+        attendanceRate: 93
+      },
+      {
+        id: 'wx03',
+        name: 'WX 03',
+        status: 'active',
+        studentCount: 20,
+        todayAttendance: 18,
+        attendanceRate: 90
+      },
+      {
+        id: 'wx04',
+        name: 'WX 04',
+        status: 'active',
+        studentCount: 28,
+        todayAttendance: 25,
+        attendanceRate: 89
+      }
+    ]
+
+    setCenters(mockCenters)
+    setLoading(false)
+  }, [])
+
+  const handleCenterSelect = (centerId: string) => {
+    router.push(`/mobile-checkin/${centerId}`)
   }
-]
 
-export default function MobileCheckinIndexPage() {
-  const [selectedCenter, setSelectedCenter] = useState<string | null>(null)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">正在加载中心信息...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-2xl mx-auto space-y-6">
-        {/* 页面标题 */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Smartphone className="h-12 w-12 text-blue-600" />
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">移动端考勤系统</h1>
-              <p className="text-gray-600 mt-1">选择中心进行NFC考勤打卡</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* 顶部标题 */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-md mx-auto px-4 py-6">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="p-3 bg-blue-100 rounded-full">
+                <Smartphone className="h-8 w-8 text-blue-600" />
+              </div>
             </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">移动端考勤系统</h1>
+            <p className="text-gray-600">请选择要考勤的中心</p>
           </div>
-          
-          {/* 返回首页按钮 */}
-          <Link href="/" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800">
-            <Home className="h-4 w-4" />
-            <span>返回首页</span>
-          </Link>
+        </div>
+      </div>
+
+      <div className="max-w-md mx-auto px-4 py-6">
+        {/* 系统说明 */}
+        <Card className="mb-6 bg-blue-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <h3 className="font-semibold text-blue-800 mb-2">使用说明</h3>
+              <div className="text-sm text-blue-700 space-y-1">
+                <p>• 选择对应的中心进行考勤</p>
+                <p>• 搜索并选择学生</p>
+                <p>• 选择考勤状态（出勤/迟到/缺席）</p>
+                <p>• 确认提交考勤记录</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 中心列表 */}
+        <div className="space-y-4">
+          {centers.map((center) => (
+            <Card 
+              key={center.id}
+              className={`cursor-pointer transition-all hover:shadow-lg ${
+                center.status === 'active' 
+                  ? 'border-2 border-green-200 hover:border-green-300 bg-green-50' 
+                  : 'border-2 border-gray-200 bg-gray-50 opacity-50'
+              }`}
+              onClick={() => center.status === 'active' && handleCenterSelect(center.id)}
+            >
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <MapPin className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{center.name}</h3>
+                      <p className="text-sm text-gray-600">学生考勤中心</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant={center.status === 'active' ? 'default' : 'secondary'} className="mb-2">
+                      {center.status === 'active' ? '可用' : '维护中'}
+                    </Badge>
+                    <div className="text-xs text-gray-500">
+                      学生: {center.studentCount}人
+                    </div>
+                  </div>
+                </div>
+
+                {center.status === 'active' && (
+                  <div className="mt-4 grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <div className="text-lg font-bold text-green-600">{center.todayAttendance}</div>
+                      <div className="text-xs text-green-600">今日打卡</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-blue-600">{center.studentCount - center.todayAttendance}</div>
+                      <div className="text-xs text-blue-600">待打卡</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-purple-600">{center.attendanceRate}%</div>
+                      <div className="text-xs text-purple-600">出勤率</div>
+                    </div>
+                  </div>
+                )}
+
+                {center.status === 'active' && (
+                  <div className="mt-4 flex items-center justify-center">
+                    <Button 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleCenterSelect(center.id)
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      进入考勤
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        {/* 系统状态概览 */}
-        <Card className="border-2 border-blue-200 bg-blue-50">
+        {/* 快速统计 */}
+        <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-800">
-              <Shield className="h-5 w-5" />
-              系统状态概览
-            </CardTitle>
+            <CardTitle className="text-gray-900">今日总览</CardTitle>
+            <CardDescription>所有中心的考勤统计</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-blue-600">
-                  {centers.filter(c => c.status === 'active').length}
+                  {centers.reduce((sum, center) => sum + center.studentCount, 0)}
                 </div>
-                <div className="text-sm text-blue-700">活跃中心</div>
+                <div className="text-xs text-blue-600">总学生</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-green-600">
-                  {centers.reduce((sum, c) => sum + c.studentCount, 0)}
+                  {centers.reduce((sum, center) => sum + center.todayAttendance, 0)}
                 </div>
-                <div className="text-sm text-green-700">总学生数</div>
+                <div className="text-xs text-green-600">已打卡</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-purple-600">
-                  {centers.filter(c => c.status === 'active').length}
+                  {Math.round(centers.reduce((sum, center) => sum + center.attendanceRate, 0) / centers.length)}
                 </div>
-                <div className="text-sm text-purple-700">可用打卡点</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-orange-600">
-                  HTTPS
-                </div>
-                <div className="text-sm text-orange-700">安全协议</div>
+                <div className="text-xs text-purple-600">平均出勤率</div>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* 中心选择 */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-800 text-center">
-            选择考勤中心
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {centers.map((center) => (
-              <Card 
-                key={center.id}
-                className={`border-2 transition-all hover:shadow-lg cursor-pointer ${
-                  center.status === 'active' 
-                    ? 'border-green-200 hover:border-green-300 bg-green-50' 
-                    : 'border-gray-200 bg-gray-50'
-                }`}
-                onClick={() => center.status === 'active' && setSelectedCenter(center.id)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-5 w-5 text-blue-600" />
-                      <h3 className="font-semibold text-gray-900">{center.name}</h3>
-                    </div>
-                    <Badge variant={center.status === 'active' ? 'default' : 'secondary'}>
-                      {center.status === 'active' ? '可用' : '维护中'}
-                    </Badge>
-                  </div>
-                  
-                  <p className="text-sm text-gray-600 mb-3">{center.description}</p>
-                  
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                    <span>学生数: {center.studentCount}</span>
-                    <span>活动: {center.lastActivity}</span>
-                  </div>
-                  
-                  {center.status === 'active' ? (
-                    <Link href={`/mobile-checkin/${center.id}`}>
-                      <Button className="w-full" size="sm">
-                        <span>开始打卡</span>
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Button className="w-full" size="sm" disabled>
-                      维护中
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* 使用说明 */}
-        <Card className="border-2 border-blue-200 bg-blue-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-800">
-              <Info className="h-5 w-5" />
-              使用说明
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-blue-700">
-            <div className="flex items-start gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-              <p>选择你要进行考勤的中心</p>
-            </div>
-            <div className="flex items-start gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-              <p>确保手机支持NFC功能</p>
-            </div>
-            <div className="flex items-start gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-              <p>使用HTTPS协议访问页面</p>
-            </div>
-            <div className="flex items-start gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-              <p>将学生NFC卡片贴近手机背面进行打卡</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 技术特性 */}
-        <Card className="border-2 border-green-200 bg-green-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-800">
-              <Zap className="h-5 w-5" />
-              技术特性
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-green-700">HTTPS安全协议</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-green-700">NFC卡片读取</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-green-700">实时考勤记录</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-green-700">多中心支持</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-green-700">设备信息记录</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-green-700">离线缓存支持</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 快速访问链接 */}
-        <div className="text-center space-y-2">
-          <p className="text-sm text-gray-600">快速访问链接</p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {centers.filter(c => c.status === 'active').map(center => (
-              <Link key={center.id} href={`/mobile-checkin/${center.id}`}>
-                <Button variant="outline" size="sm">
-                  {center.name}
-                </Button>
-              </Link>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   )
