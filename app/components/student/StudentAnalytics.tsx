@@ -3,29 +3,17 @@
 import { useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { 
   BarChart3, 
-  PieChart, 
   TrendingUp, 
   TrendingDown, 
   Users, 
   GraduationCap, 
-  UserCheck, 
-  UserX, 
-  Calendar, 
-  MapPin, 
   Phone, 
-  Mail,
-  Star,
-  Award,
-  Clock,
   Activity,
-  Target,
   CheckCircle,
   XCircle,
-  AlertCircle,
   Info
 } from "lucide-react"
 import { Student } from "@/hooks/useStudents"
@@ -35,16 +23,7 @@ interface StudentAnalyticsProps {
   filteredStudents: Student[]
 }
 
-interface ChartData {
-  labels: string[]
-  datasets: {
-    label: string
-    data: number[]
-    backgroundColor: string[]
-    borderColor: string[]
-    borderWidth: number
-  }[]
-}
+
 
 export default function StudentAnalytics({ students, filteredStudents }: StudentAnalyticsProps) {
   const analytics = useMemo(() => {
@@ -157,11 +136,11 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
                 <p className="text-sm font-medium text-gray-600">在读学生</p>
                 <p className="text-2xl font-bold text-green-600">{analytics.active}</p>
                 <p className="text-xs text-green-600 flex items-center mt-1">
-                  <UserCheck className="h-3 w-3 mr-1" />
+                  <className="h-3 w-3 mr-1" />
                   {analytics.activeRate.toFixed(1)}% 在读率
                 </p>
               </div>
-              <UserCheck className="h-8 w-8 text-green-600" />
+              <className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
@@ -241,7 +220,7 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
+              <className="h-5 w-5" />
               中心分布
             </CardTitle>
             <CardDescription>各中心学生数量分布</CardDescription>

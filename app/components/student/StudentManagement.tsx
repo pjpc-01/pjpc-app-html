@@ -1,14 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { UserPlus, Search, Edit, Users, Trash2, Download, Upload } from "lucide-react"
-import { useStudents } from "@/hooks/useStudents"
-import { Student } from "@/hooks/useStudents"
-import { useAuth } from "@/contexts/pocketbase-auth-context"
-import { checkDataHealth } from "@/lib/pocketbase-students"
+import { useState, useEffect } from 'react'
 import StudentList from "./StudentList"
 import StudentForm from "./StudentForm"
 import StudentDetails from "./StudentDetails"
@@ -139,8 +131,8 @@ export default function StudentManagement({
 
     // 排序
     filtered.sort((a, b) => {
-      let aValue: any
-      let bValue: any
+      let aValue: unknown
+      let bValue: unknown
 
       switch (sortBy) {
         case 'name':
