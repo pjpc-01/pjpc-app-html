@@ -1,6 +1,6 @@
 export { default as AttendanceSystem } from './attendance-system'
 export { default as NFCAttendanceSystem } from './nfc-attendance-system'
-export { default as URLAttendanceSystem } from './url-attendance-system'
+// URLAttendanceSystem 已整合到 attendance-system
 export { default as CommunicationSystem } from './communication-system'
 export { default as ExamSystem } from './exam-system'
 export { default as SecurityMonitoring } from './security-monitoring'

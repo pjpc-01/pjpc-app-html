@@ -5,24 +5,24 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { 
-      studentId, 
-      studentName,
-      centerId, 
-      centerName,
-      branchId,      // 分行ID
-      branchName,    // 分行名称
-      type,          // 'check-in' 或 'check-out'
-      timestamp, 
-      deviceId, 
-      deviceName,
-      method,        // 'nfc', 'url', 'manual'
-      status         // 'success', 'failed'
+      student_id, 
+      student_name,
+      center, 
+      date,
+      time,
+      status,
+      timestamp,
+      // 新增缺席相关字段
+      reason,
+      detail,
+      teacher_id,
+      method = 'mobile'
     } = body
 
     // 验证必需字段
-    if (!studentId || !studentName || !centerId || !type) {
+    if (!student_id || !student_name || !center || !status) {
       return NextResponse.json(
-        { error: '缺少必需字段: studentId, studentName, centerId, type' },
+        { error: '缺少必需字段: student_id, student_name, center, status' },
         { status: 400 }
       )
     }
@@ -44,17 +44,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 创建学生考勤记录 - 根据实际字段结构
+    // 创建学生考勤记录 - 支持移动端考勤和缺席标记
     const attendanceData = {
-      student_id: studentId,
-      student_name: studentName,
-      branch_code: branchId || centerId,        // 分行代码
-      branch_name: branchName || centerName || centerId, // 分行名称
-      date: new Date(timestamp || new Date()).toISOString().split('T')[0], // 日期格式 YYYY-MM-DD
-      check_in: type === 'check-in' ? new Date(timestamp || new Date()).toISOString() : null, // 签到时间
-      check_out: type === 'check-out' ? new Date(timestamp || new Date()).toISOString() : null, // 签退时间
-      status: 'present', // 默认状态为出席
-      notes: `打卡方式: ${method || 'manual'}, 设备: ${deviceName || 'unknown'}`
+      student_id: student_id,
+      student_name: student_name,
+      center: center,
+      date: date || new Date(timestamp || new Date()).toISOString().split('T')[0],
+      time: time || new Date(timestamp || new Date()).toISOString(),
+      status: status, // 'present', 'late', 'absent'
+      timestamp: timestamp || new Date().toISOString(),
+      method: method, // 'mobile', 'manual', 'nfc', 'url'
+      // 新增缺席相关字段
+      reason: reason || '',
+      detail: detail || '',
+      teacher_id: teacher_id || 'system',
+      created: new Date().toISOString(),
+      updated: new Date().toISOString()
     }
 
     // 保存到PocketBase的student_attendance集合
@@ -81,26 +86,15 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const centerId = searchParams.get('center')
-    const branchId = searchParams.get('branch')
+    const center = searchParams.get('center')
     const studentId = searchParams.get('student')
     const date = searchParams.get('date')
-    const type = searchParams.get('type') // 'check-in' 或 'check-out'
+    const status = searchParams.get('status')
 
     let filter = ''
 
-    if (centerId) {
-      filter += `branch_code = "${centerId}"`
-    }
-
-    if (branchId) {
-      if (filter) filter += ' && '
-      filter += `branch_code = "${branchId}"`
-    }
-
-    if (studentId) {
-      if (filter) filter += ' && '
-      filter += `student_id = "${studentId}"`
+    if (center) {
+      filter += `center = "${center}"`
     }
 
     if (date) {
@@ -108,9 +102,9 @@ export async function GET(request: NextRequest) {
       filter += `date = "${date}"`
     }
 
-    if (type) {
+    if (status) {
       if (filter) filter += ' && '
-      filter += `check_in != ""`
+      filter += `status = "${status}"`
     }
 
     const pb = await getPocketBase()
@@ -135,10 +129,34 @@ export async function GET(request: NextRequest) {
       sort: '-created'
     })
 
+    // 格式化考勤记录数据 - 支持移动端考勤格式
+    const formattedRecords = records.items.map(record => {
+      return {
+        id: record.id,
+        student_id: record.student_id || '无学号',
+        student_name: record.student_name || '未知姓名',
+        center: record.center || record.branch_code || '未指定',
+        date: record.date || '未指定',
+        time: record.time || record.check_in || '未指定',
+        status: record.status || 'unknown',
+        timestamp: record.timestamp || record.created || '未指定',
+        method: record.method || 'manual',
+        // 添加缺席相关字段
+        reason: record.reason || '',
+        detail: record.detail || '',
+        teacher_id: record.teacher_id || '',
+        created: record.created,
+        updated: record.updated
+      };
+    })
+
     return NextResponse.json({
       success: true,
-      data: records.items,
-      count: records.totalItems
+      data: formattedRecords,
+      totalItems: records.totalItems,
+      totalPages: records.totalPages,
+      page: records.page,
+      perPage: records.perPage
     })
 
   } catch (error: any) {

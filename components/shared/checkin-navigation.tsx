@@ -48,7 +48,7 @@ export default function CheckInNavigation() {
                 <div className="text-2xl font-bold text-blue-600">RFID</div>
                 <div className="text-xs text-gray-500">传统门禁系统</div>
               </div>
-              <Link href="/rfid-checkin">
+              <Link href="/attendance">
                 <Button className="flex items-center gap-2">
                   进入系统
                   <ArrowRight className="h-4 w-4" />
@@ -84,7 +84,7 @@ export default function CheckInNavigation() {
                 <div className="text-2xl font-bold text-green-600">NFC</div>
                 <div className="text-xs text-gray-500">现代智能系统</div>
               </div>
-              <Link href="/nfc-checkin">
+              <Link href="/attendance">
                 <Button className="flex items-center gap-2">
                   进入系统
                   <ArrowRight className="h-4 w-4" />
@@ -120,15 +120,15 @@ export default function CheckInNavigation() {
                 <div className="text-2xl font-bold text-orange-600">手机</div>
                 <div className="text-xs text-gray-500">移动NFC系统</div>
               </div>
-                          <Link href="/mobile-nfc">
+                          <Link href="/attendance">
               <Button className="flex items-center gap-2">
                 进入系统
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
             <div className="text-xs text-gray-500 mt-2">
-              <div>HTTPS: https://192.168.0.72:3000/mobile-nfc</div>
-              <div>测试: https://192.168.0.72:3000/mobile-nfc-test</div>
+              <div>统一考勤系统: /attendance</div>
+              <div>支持NFC、URL和手动三种打卡方式</div>
             </div>
             </div>
           </CardContent>
