@@ -1,17 +1,5 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
-import { Teacher } from '@/hooks/useTeachers'
-import { Calendar } from '@/components/ui/calendar'
-import { CalendarIcon, MapPin, ChevronDown } from 'lucide-react'
-import { format } from 'date-fns'
-import { cn } from '@/lib/utils'
 
 import {
   Command,
@@ -223,7 +211,7 @@ export default function TeacherForm({
     setErrors({})
   }, [teacher, open])
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     
     // 如果改变部门，重置职位

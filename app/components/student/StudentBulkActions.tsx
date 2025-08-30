@@ -6,12 +6,13 @@ import { Badge } from "@/components/ui/badge"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Trash2, Download, X, Users } from "lucide-react"
 import { generateCSV, downloadCSV } from "./utils"
+import { Student } from "@/types/student"
 
 interface StudentBulkActionsProps {
   selectedCount: number
   onDelete: () => void
   onClearSelection: () => void
-  selectedStudents?: any[]
+  selectedStudents?: Student[]
 }
 
 export default function StudentBulkActions({

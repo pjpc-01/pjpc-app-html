@@ -1,23 +1,14 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { UserPlus, Edit, AlertTriangle, Upload, FileText, User } from "lucide-react"
-import { Student } from "@/hooks/useStudents"
-import { validateEmail, convertGradeToChinese } from "./utils"
-import { Badge } from "@/components/ui/badge"
-import { Calendar } from "@/components/ui/calendar"
-import { CalendarIcon } from "lucide-react"
-import { format } from "date-fns"
-import { cn } from "@/lib/utils"
-import { Checkbox } from "@/components/ui/checkbox"
+import { useState, useEffect, useCallback } from 'react'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { User, Upload, Edit, UserPlus } from 'lucide-react'
+import { Student } from '@/types/student'
 
 interface StudentFormProps {
   open: boolean
@@ -254,7 +245,7 @@ export default function StudentForm({
       console.log('StudentForm 提交的数据:', cleanData)
       await onSubmit(cleanData)
       onOpenChange(false)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error submitting form:', error)
       setSubmitError(error.message || '提交失败，请重试')
     } finally {
@@ -437,7 +428,7 @@ export default function StudentForm({
   // 当出生日期改变时，自动计算年级
   useEffect(() => {
     if (formData.dob) {
-      const grade = calculateGradeFromDob(formData.dob)
+      let grade = calculateGradeFromDob(formData.dob)
       console.log(`出生日期: ${formData.dob}, 计算年级: ${grade}`)
       setFormData(prev => ({ ...prev, standard: grade }))
     }

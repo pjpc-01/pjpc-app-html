@@ -1,7 +1,0 @@
-[2025-08-25T09:42:55.502Z] 🚀 开始测试脚本...
-[2025-08-25T09:42:55.522Z] 当前时间: 2025-08-25T09:42:55.522Z
-[2025-08-25T09:42:55.523Z] Node.js 版本: v22.17.0
-[2025-08-25T09:42:55.523Z] 当前目录: C:\Users\munpo\OneDrive\Desktop\pjpc-app-html\scripts
-[2025-08-25T09:42:55.524Z] 当前目录文件: check-collections.js, check-student-fields.js, debug-merge.js, debug-update-error.js, dev-https.js, export-import-merge.js, fixed-merge.js, frontend-merge.js, generate-ssl-cert.js, generate-ssl-cert.ps1, merge-config.js, merge-final.js, merge-log.txt, merge-students-data.js, README.md, run-merge.bat, simple-merge.js, students_card_export.json, students_merged_data.json, test-pocketbase-permissions.js, test-simple-output.js, test-simple.js, test-with-file-output.js
-[2025-08-25T09:42:55.525Z] 🏁 测试完成
-[2025-08-25T09:42:55.526Z] 日志已保存到: C:\Users\munpo\OneDrive\Desktop\pjpc-app-html\scripts\merge-log.txt
