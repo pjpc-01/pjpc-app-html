@@ -136,11 +136,11 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
                 <p className="text-sm font-medium text-gray-600">在读学生</p>
                 <p className="text-2xl font-bold text-green-600">{analytics.active}</p>
                 <p className="text-xs text-green-600 flex items-center mt-1">
-                  <className="h-3 w-3 mr-1" />
+                  <CheckCircle className="h-3 w-3 mr-1" />
                   {analytics.activeRate.toFixed(1)}% 在读率
                 </p>
               </div>
-              <className="h-8 w-8 text-green-600" />
+              <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
@@ -220,7 +220,7 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <className="h-5 w-5" />
+              <Activity className="h-5 w-5" />
               中心分布
             </CardTitle>
             <CardDescription>各中心学生数量分布</CardDescription>

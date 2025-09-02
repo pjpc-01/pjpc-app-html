@@ -49,17 +49,17 @@ export async function POST(request: NextRequest) {
       student_id: student_id,
       student_name: student_name,
       center: center,
+      branch_name: center, // 使用center作为branch_name
       date: date || new Date(timestamp || new Date()).toISOString().split('T')[0],
-      time: time || new Date(timestamp || new Date()).toISOString(),
-      status: status, // 'present', 'late', 'absent'
-      timestamp: timestamp || new Date().toISOString(),
-      method: method, // 'mobile', 'manual', 'nfc', 'url'
+      // 根据状态设置check_in和check_out时间
+      check_in: status === 'present' ? (time || new Date(timestamp || new Date()).toISOString()) : null,
+      check_out: null, // 签退时间稍后设置
+      status: status, // 'present', 'absent', 'sick', 'leave'
       // 新增缺席相关字段
       reason: reason || '',
       detail: detail || '',
-      teacher_id: teacher_id || 'system',
-      created: new Date().toISOString(),
-      updated: new Date().toISOString()
+      notes: detail || '', // 使用detail作为notes
+      teacher_id: teacher_id || 'system'
     }
 
     // 保存到PocketBase的student_attendance集合
@@ -129,21 +129,21 @@ export async function GET(request: NextRequest) {
       sort: '-created'
     })
 
-    // 格式化考勤记录数据 - 支持移动端考勤格式
+    // 格式化考勤记录数据 - 匹配PocketBase字段配置
     const formattedRecords = records.items.map(record => {
       return {
         id: record.id,
         student_id: record.student_id || '无学号',
         student_name: record.student_name || '未知姓名',
-        center: record.center || record.branch_code || '未指定',
+        center: record.center || '未指定',
+        branch_name: record.branch_name || record.center || '未指定',
         date: record.date || '未指定',
-        time: record.time || record.check_in || '未指定',
+        check_in: record.check_in || null,
+        check_out: record.check_out || null,
         status: record.status || 'unknown',
-        timestamp: record.timestamp || record.created || '未指定',
-        method: record.method || 'manual',
-        // 添加缺席相关字段
         reason: record.reason || '',
         detail: record.detail || '',
+        notes: record.notes || '',
         teacher_id: record.teacher_id || '',
         created: record.created,
         updated: record.updated
