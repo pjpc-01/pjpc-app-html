@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -17,13 +17,26 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle as AlertTriangleIcon, Mail, Clock } from "lucide-react"
 import ConnectionStatus from "@/components/ConnectionStatus"
 import TeacherNavigation from "@/components/shared/TeacherNavigation"
+import StaticPage from "./static-page"
 
 export default function Dashboard() {
   const { user, userProfile, loading, logout, resendVerification, error, connectionStatus, clearError } = useAuth()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
+  const [isStaticBuild, setIsStaticBuild] = useState(false)
 
+  // 检测是否为静态构建
+  useEffect(() => {
+    // 在静态构建时，window对象可能不存在或PocketBase连接会失败
+    if (typeof window === 'undefined' || connectionStatus === 'disconnected') {
+      setIsStaticBuild(true)
+    }
+  }, [connectionStatus])
 
+  // 如果是静态构建，直接显示静态页面
+  if (isStaticBuild || typeof window === 'undefined') {
+    return <StaticPage />
+  }
 
   // 显示加载状态 - 只有在真正需要等待时才显示
   if (loading) {

@@ -36,10 +36,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking')
 
+  // 在静态构建时，立即设置为已连接状态
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      setConnectionStatus('connected')
+      setLoading(false)
+    }
+  }, [])
+
   // 检查PocketBase连接状态
   const checkConnection = useCallback(async () => {
     try {
       setConnectionStatus('checking')
+      
+      // 在静态构建时跳过连接检查
+      if (typeof window === 'undefined') {
+        setConnectionStatus('connected')
+        setLoading(false)
+        return
+      }
+      
       const result = await checkPocketBaseConnection()
       
       const { connected, error: connError } = result
