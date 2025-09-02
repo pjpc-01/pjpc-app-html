@@ -226,23 +226,16 @@ export const authenticateAdmin = async (): Promise<void> => {
       try {
         const pb = await getPocketBase()
         
-        // 创建新的PocketBase实例用于认证，避免影响其他请求
-        const authPb = new PocketBase(pb.baseUrl)
-        
         console.log(`🔄 开始管理员认证... (尝试 ${retryCount + 1}/${maxRetries})`)
-        authPromise = authPb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        authPromise = pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
         const authResult = await authPromise
         
         // 检查认证响应结构
-        if (authResult && (authResult.admin || authResult.record)) {
+        console.log('🔍 认证响应结构:', JSON.stringify(authResult, null, 2))
+        
+        if (authResult && (authResult.admin || authResult.token)) {
           isAuthenticated = true
           console.log('✅ 管理员认证成功')
-          
-          // 将认证状态同步到主实例
-          if (pb.authStore && authPb.authStore.token) {
-            pb.authStore.save(authPb.authStore.token, authPb.authStore.model)
-            console.log('🔑 认证令牌已同步到主实例')
-          }
           
           // 验证认证状态
           if (pb.authStore.isValid) {
@@ -255,6 +248,7 @@ export const authenticateAdmin = async (): Promise<void> => {
             continue
           }
         } else {
+          console.log('⚠️ 认证响应格式:', authResult)
           throw new Error('认证响应格式错误')
         }
       } catch (error) {

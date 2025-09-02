@@ -503,7 +503,7 @@ export default function AttendancePage() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-gray-900">考勤系统</h1>
-            <p className="text-gray-600">多方式打卡 - 实时数据同步 - 支持NFC、URL、手动输入</p>
+            <p className="text-gray-600">NFC卡片打卡 - 实时数据同步 - 支持手动输入备用</p>
             {(centerId || (students.length > 0 && students[0]?.center)) && (
               <p className="text-sm text-gray-500">
                 中心: {getCenterDisplayName(students.length > 0 && students[0]?.center ? students[0].center : centerId)}
@@ -661,14 +661,10 @@ export default function AttendancePage() {
 
         {/* 打卡方式选择 */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 h-12">
+          <TabsList className="grid w-full grid-cols-2 h-12">
             <TabsTrigger value="nfc" className="flex items-center gap-2">
               <CardIcon className="h-4 w-4" />
               NFC卡片打卡
-            </TabsTrigger>
-            <TabsTrigger value="url" className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              URL识别打卡
             </TabsTrigger>
             <TabsTrigger value="manual" className="flex items-center gap-2">
               <User className="h-4 w-4" />
@@ -684,6 +680,7 @@ export default function AttendancePage() {
                   <QrCode className="h-6 w-6" />
                   NFC考勤打卡
                 </CardTitle>
+                <CardDescription>将学生NFC卡片贴近设备即可自动打卡</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center">
@@ -717,69 +714,7 @@ export default function AttendancePage() {
                   </div>
                   <div className="flex items-start gap-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p>将学生NFC卡片贴近设备</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* URL打卡标签页 */}
-          <TabsContent value="url" className="mt-6">
-            <Card className="border-2 border-blue-200 bg-blue-50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-blue-800">
-                  <Globe className="h-6 w-6" />
-                  URL识别打卡
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <Label htmlFor="studentUrl" className="text-sm font-medium text-blue-700">
-                    学生专属URL
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="studentUrl"
-                      placeholder="输入学生专属URL..."
-                      value={studentUrl}
-                      onChange={(e) => setStudentUrl(e.target.value)}
-                      className="text-lg"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          startUrlCheckIn()
-                        }
-                      }}
-                    />
-                    <Button 
-                      onClick={startUrlCheckIn}
-                      disabled={!studentUrl.trim() || isUrlProcessing}
-                      className="px-6"
-                    >
-                      {isUrlProcessing ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          处理中
-                        </>
-                      ) : (
-                        '确认打卡'
-                      )}
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="text-sm text-blue-700 space-y-2">
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p>输入学生的专属URL进行打卡</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p>系统自动识别学生身份</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p>支持移动端和桌面端</p>
+                    <p>将学生NFC卡片贴近设备即可自动识别并打卡</p>
                   </div>
                 </div>
               </CardContent>
@@ -794,6 +729,7 @@ export default function AttendancePage() {
                   <User className="h-6 w-6" />
                   手动输入打卡
                 </CardTitle>
+                <CardDescription>当NFC卡片无法使用时，可手动输入学生ID进行打卡</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
@@ -835,7 +771,7 @@ export default function AttendancePage() {
                 <div className="text-sm text-purple-700 space-y-2">
                   <div className="flex items-start gap-2">
                     <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p>手动输入学生ID进行打卡</p>
+                    <p>当NFC卡片无法识别时使用</p>
                   </div>
                   <div className="flex items-start gap-2">
                     <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
@@ -866,66 +802,15 @@ export default function AttendancePage() {
           </Alert>
         )}
 
-        {/* 学生考勤状态 */}
-        {students.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <User className="h-5 w-5" />
-                学生考勤状态
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {students.slice(0, 10).map((student) => {
-                  const todayStatus = getStudentTodayStatus(student.student_id || student.id)
-                  return (
-                    <div key={student.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900">{student.student_name}</p>
-                        <p className="text-sm text-gray-600">{student.student_id}</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant={
-                            !todayStatus ? 'secondary' :
-                            todayStatus.status === 'checked_in' ? 'default' :
-                            todayStatus.status === 'checked_out' ? 'default' :
-                            'destructive'
-                          }>
-                            {!todayStatus ? '未签到' :
-                             todayStatus.status === 'checked_in' ? '已签到' :
-                             todayStatus.status === 'checked_out' ? '已签退' :
-                             todayStatus.status}
-                          </Badge>
-                        </div>
-                        {todayStatus && (
-                          <div className="text-xs text-gray-500 space-y-1">
-                            {todayStatus.checkInTime && (
-                              <div>签到: {new Date(todayStatus.checkInTime).toLocaleTimeString()}</div>
-                            )}
-                            {todayStatus.checkOutTime && (
-                              <div>签退: {new Date(todayStatus.checkOutTime).toLocaleTimeString()}</div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* 考勤记录 */}
         {attendanceRecords.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Activity className="h-5 w-5" />
-                今日考勤记录
+                考勤记录
               </CardTitle>
+              <CardDescription>显示所有打卡记录，包括签到和签退</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -981,7 +866,7 @@ export default function AttendancePage() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <div className="flex items-center gap-2 mb-3">
@@ -999,30 +884,7 @@ export default function AttendancePage() {
                     </div>
                     <div className="flex items-start gap-2">
                       <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <p>靠近NFC卡片即可打卡</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Globe className="h-5 w-5 text-green-600" />
-                    <h4 className="font-semibold text-green-800">URL识别打卡</h4>
-                  </div>
-                  <div className="space-y-2 text-sm text-green-700">
-                    <div className="flex items-start gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <p>输入学生专属URL</p>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <p>自动识别学生身份</p>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <p>支持二维码扫描</p>
+                      <p>靠近NFC卡片即可自动打卡</p>
                     </div>
                   </div>
                 </div>
@@ -1037,7 +899,7 @@ export default function AttendancePage() {
                   <div className="space-y-2 text-sm text-purple-700">
                     <div className="flex items-start gap-2">
                       <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <p>输入学生ID</p>
+                      <p>当NFC卡片无法识别时使用</p>
                     </div>
                     <div className="flex items-start gap-2">
                       <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
@@ -1055,9 +917,9 @@ export default function AttendancePage() {
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
               <h4 className="font-medium text-gray-800 mb-2">使用提示</h4>
               <div className="text-sm text-gray-600 space-y-1">
-                <p>• 首次使用建议先测试手动输入打卡</p>
+                <p>• 主要使用NFC卡片打卡，将卡片贴近设备即可</p>
                 <p>• NFC打卡需要设备支持并开启NFC功能</p>
-                <p>• URL打卡支持复制粘贴和二维码扫描</p>
+                <p>• 手动输入作为备用方案，当NFC无法使用时</p>
                 <p>• 所有打卡记录都会实时同步到系统</p>
               </div>
             </div>

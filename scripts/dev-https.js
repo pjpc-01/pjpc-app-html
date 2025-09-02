@@ -19,6 +19,12 @@ const generateSelfSignedCert = () => {
       return;
     }
     
+    // 检查是否有PEM格式的证书
+    if (fs.existsSync('./certs/localhost.pem') && fs.existsSync('./certs/localhost-key.pem')) {
+      console.log('✅ PEM格式SSL证书已存在');
+      return;
+    }
+    
     // 创建certs目录
     if (!fs.existsSync('./certs')) {
       fs.mkdirSync('./certs');
@@ -59,10 +65,20 @@ const startHttpsServer = async () => {
     await app.prepare();
     
     // 读取SSL证书
-    const httpsOptions = {
-      key: fs.readFileSync('./certs/localhost.key'),
-      cert: fs.readFileSync('./certs/localhost.crt'),
-    };
+    let httpsOptions;
+    if (fs.existsSync('./certs/localhost.crt') && fs.existsSync('./certs/localhost.key')) {
+      httpsOptions = {
+        key: fs.readFileSync('./certs/localhost.key'),
+        cert: fs.readFileSync('./certs/localhost.crt'),
+      };
+    } else if (fs.existsSync('./certs/localhost.pem') && fs.existsSync('./certs/localhost-key.pem')) {
+      httpsOptions = {
+        key: fs.readFileSync('./certs/localhost-key.pem'),
+        cert: fs.readFileSync('./certs/localhost.pem'),
+      };
+    } else {
+      throw new Error('未找到SSL证书文件');
+    }
     
     // 创建HTTPS服务器
     const server = createServer(httpsOptions, async (req, res) => {
