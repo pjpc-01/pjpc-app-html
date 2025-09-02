@@ -6,7 +6,7 @@ const path = require('path');
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = '0.0.0.0';
-const port = 3000;
+const port = 3002;
 
 // 从PFX文件读取证书和私钥
 const getHttpsOptions = () => {
@@ -68,3 +68,4 @@ const startHttpsServer = async () => {
 };
 
 startHttpsServer();
+
