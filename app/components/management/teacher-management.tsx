@@ -40,6 +40,11 @@ interface Teacher {
   department?: string
   experience?: number
   avatar?: string
+  // NFC卡相关字段
+  nfc_card_number?: string
+  permissions?: 'normal_teacher' | 'senior_teacher' | 'admin'
+  nfc_card_issued_date?: string
+  nfc_card_expiry_date?: string
 }
 
 interface TeacherFormData {
@@ -49,6 +54,11 @@ interface TeacherFormData {
   subject: string
   department: string
   experience: string
+  // NFC卡相关字段
+  nfc_card_number: string
+  permissions: 'normal_teacher' | 'senior_teacher' | 'admin'
+  nfc_card_issued_date: string
+  nfc_card_expiry_date: string
 }
 
 export default function TeacherManagement() {
@@ -67,7 +77,11 @@ export default function TeacherManagement() {
     phone: "",
     subject: "",
     department: "",
-    experience: ""
+    experience: "",
+    nfc_card_number: "",
+    permissions: "normal_teacher",
+    nfc_card_issued_date: "",
+    nfc_card_expiry_date: ""
   })
   
   // Enterprise-level state
@@ -119,7 +133,11 @@ export default function TeacherManagement() {
           phone: '0123456789',
           subject: '数学',
           department: '理科部',
-          experience: 5
+          experience: 5,
+          nfc_card_number: 'T001',
+          permissions: 'senior_teacher',
+          nfc_card_issued_date: '2024-01-01',
+          nfc_card_expiry_date: '2025-01-01'
         },
         {
           uid: '2',
@@ -133,7 +151,11 @@ export default function TeacherManagement() {
           phone: '0123456790',
           subject: '语文',
           department: '文科部',
-          experience: 8
+          experience: 8,
+          nfc_card_number: 'T002',
+          permissions: 'normal_teacher',
+          nfc_card_issued_date: '2024-01-02',
+          nfc_card_expiry_date: '2025-01-02'
         },
         {
           uid: '3',
@@ -147,7 +169,11 @@ export default function TeacherManagement() {
           phone: '0123456791',
           subject: '英语',
           department: '外语部',
-          experience: 3
+          experience: 3,
+          nfc_card_number: '',
+          permissions: 'normal_teacher',
+          nfc_card_issued_date: '',
+          nfc_card_expiry_date: ''
         }
       ]
       
@@ -563,6 +589,8 @@ export default function TeacherManagement() {
                 <TableHead>科目</TableHead>
                 <TableHead>部门</TableHead>
                 <TableHead>经验</TableHead>
+                <TableHead>NFC卡号</TableHead>
+                <TableHead>权限</TableHead>
                   <TableHead>状态</TableHead>
                   <TableHead>最后登录</TableHead>
                 <TableHead>操作</TableHead>
@@ -586,6 +614,20 @@ export default function TeacherManagement() {
                   <TableCell>{teacher.subject}</TableCell>
                   <TableCell>{teacher.department}</TableCell>
                   <TableCell>{teacher.experience}年</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {teacher.nfc_card_number || '未设置'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={
+                      teacher.permissions === 'admin' ? 'default' :
+                      teacher.permissions === 'senior_teacher' ? 'secondary' : 'outline'
+                    }>
+                      {teacher.permissions === 'admin' ? '管理员' :
+                       teacher.permissions === 'senior_teacher' ? '高级教师' : '普通教师'}
+                    </Badge>
+                  </TableCell>
                   <TableCell>{getStatusBadge(teacher.status)}</TableCell>
                     <TableCell>
                     {teacher.lastLogin ? formatDate(teacher.lastLogin) : '从未登录'}
