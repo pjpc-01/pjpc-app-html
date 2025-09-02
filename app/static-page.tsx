@@ -190,7 +190,7 @@ export default function StaticPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center text-sm text-gray-500">
             <p>© 2024 PJPC安亲班管理系统. 保留所有权利.</p>
-            <p className="mt-1">技术支持: 系统管理员 | 版本: v2.0.0</p>
+                               <p className="mt-1">技术支持: 系统管理员 | 版本: v2.0.0 | 部署时间: {new Date().toLocaleString()}</p>
           </div>
         </div>
       </footer>
