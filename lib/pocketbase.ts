@@ -1,6 +1,20 @@
 import PocketBase from 'pocketbase'
 // 智能网络环境检测
 const detectNetworkEnvironment = async () => {
+  // 检查是否在HTTPS模式下运行
+  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
+  
+  if (isHttps) {
+    // HTTPS模式下使用代理
+    return {
+      url: '/api/pocketbase-proxy',
+      type: 'proxy',
+      name: 'HTTPS代理',
+      latency: 0,
+      success: true
+    }
+  }
+  
   const testUrls = [
     { url: 'http://pjpc.tplinkdns.com:8090', type: 'ddns', name: 'DDNS' },
     { url: 'http://192.168.0.59:8090', type: 'local', name: '局域网' }
@@ -70,7 +84,7 @@ const detectNetworkEnvironment = async () => {
 }
 
 // PocketBase URL配置（智能检测网络环境）
-const getPocketBaseUrl = async () => {
+const getPocketBaseUrl = async (): Promise<string> => {
   // 优先使用环境变量（服务器端和客户端都支持）
   if (process.env.NEXT_PUBLIC_POCKETBASE_URL) {
     console.log('🔧 使用环境变量配置的PocketBase URL:', process.env.NEXT_PUBLIC_POCKETBASE_URL)
@@ -80,7 +94,13 @@ const getPocketBaseUrl = async () => {
   // 智能检测网络环境
   try {
     const bestUrl = await detectNetworkEnvironment()
-    return bestUrl
+    // 确保返回字符串
+    if (typeof bestUrl === 'string') {
+      return bestUrl
+    } else if (bestUrl && typeof bestUrl === 'object' && 'url' in bestUrl) {
+      return bestUrl.url
+    }
+    throw new Error('Invalid URL format')
   } catch (error) {
     console.error('❌ 网络环境检测失败，使用默认DDNS配置:', error)
     // 默认使用DDNS地址

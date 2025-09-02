@@ -17,6 +17,8 @@ import {
   Clock,
   Database,
   Globe,
+  Trophy,
+  Star,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -30,6 +32,28 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* 积分系统 */}
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">积分系统</CardTitle>
+              <Trophy className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">1,234</div>
+              <p className="text-xs text-muted-foreground">
+                总积分奖励次数
+              </p>
+              <div className="mt-2">
+                <Link href="/points-management">
+                  <Button variant="outline" size="sm" className="w-full">
+                    管理积分系统
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* 用户管理 */}
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
@@ -279,6 +303,12 @@ export default function AdminDashboard() {
                   <Button variant="outline" className="w-full h-16 flex flex-col items-center gap-2">
                     <CreditCard className="h-6 w-6" />
                     <span>打卡系统</span>
+                  </Button>
+                </Link>
+                <Link href="/points-management">
+                  <Button variant="outline" className="w-full h-16 flex flex-col items-center gap-2">
+                    <Trophy className="h-6 w-6" />
+                    <span>积分管理</span>
                   </Button>
                 </Link>
                 <Button variant="outline" className="w-full h-16 flex flex-col items-center gap-2">

@@ -1,14 +1,42 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { User, Upload, Edit, UserPlus } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Calendar } from '@/components/ui/calendar'
+import { User, Upload, Edit, UserPlus, CalendarIcon, AlertTriangle, FileText } from 'lucide-react'
+import { format } from 'date-fns'
+import { cn } from '@/lib/utils'
 import { Student } from '@/types/student'
+
+// 工具函数
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
+
+const convertGradeToChinese = (grade: string): string => {
+  const gradeMap: Record<string, string> = {
+    '1': 'Standard 1',
+    '2': 'Standard 2', 
+    '3': 'Standard 3',
+    '4': 'Standard 4',
+    '5': 'Standard 5',
+    '6': 'Standard 6',
+    '7': 'Form 1',
+    '8': 'Form 2',
+    '9': 'Form 3',
+    '10': 'Form 4',
+    '11': 'Form 5',
+    '12': 'Form 6'
+  }
+  return gradeMap[grade] || grade
+}
 
 interface StudentFormProps {
   open: boolean
