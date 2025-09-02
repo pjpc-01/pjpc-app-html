@@ -29,44 +29,142 @@ export default function MobileCheckinPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // 模拟获取中心数据，实际应该从API获取
-    const mockCenters: Center[] = [
-      {
-        id: 'wx01',
-        name: 'WX 01',
-        status: 'active',
-        studentCount: 25,
-        todayAttendance: 22,
-        attendanceRate: 88
-      },
-      {
-        id: 'wx02',
-        name: 'WX 02',
-        status: 'active',
-        studentCount: 30,
-        todayAttendance: 28,
-        attendanceRate: 93
-      },
-      {
-        id: 'wx03',
-        name: 'WX 03',
-        status: 'active',
-        studentCount: 20,
-        todayAttendance: 18,
-        attendanceRate: 90
-      },
-      {
-        id: 'wx04',
-        name: 'WX 04',
-        status: 'active',
-        studentCount: 28,
-        todayAttendance: 25,
-        attendanceRate: 89
-      }
-    ]
+    const fetchCentersData = async () => {
+      setLoading(true)
+      try {
+        // 获取所有学生数据
+        const studentsResponse = await fetch('/api/students')
+        if (!studentsResponse.ok) {
+          throw new Error('获取学生数据失败')
+        }
+        const studentsData = await studentsResponse.json()
+        
+        if (!studentsData.success) {
+          throw new Error(studentsData.error || '获取学生数据失败')
+        }
 
-    setCenters(mockCenters)
-    setLoading(false)
+        // 获取今日考勤数据
+        const today = new Date().toISOString().split('T')[0]
+        const attendanceResponse = await fetch(`/api/student-attendance?date=${today}`)
+        let attendanceData = []
+        if (attendanceResponse.ok) {
+          const attendanceResult = await attendanceResponse.json()
+          attendanceData = attendanceResult.data || []
+        }
+
+        // 按中心统计学生数量
+        const centerStats = studentsData.students.reduce((acc: any, student: any) => {
+          const center = student.center || 'WX 01'
+          if (!acc[center]) {
+            acc[center] = {
+              studentCount: 0,
+              todayAttendance: 0
+            }
+          }
+          acc[center].studentCount++
+          return acc
+        }, {})
+
+        // 按中心统计今日考勤
+        attendanceData.forEach((record: any) => {
+          const center = record.center
+          if (center && centerStats[center]) {
+            if (record.status === 'present' || record.status === 'late') {
+              centerStats[center].todayAttendance++
+            }
+          }
+        })
+
+        // 构建中心数据
+        const centersData: Center[] = [
+          {
+            id: 'wx01',
+            name: 'WX 01',
+            status: 'active',
+            studentCount: centerStats['WX 01']?.studentCount || 0,
+            todayAttendance: centerStats['WX 01']?.todayAttendance || 0,
+            attendanceRate: centerStats['WX 01']?.studentCount > 0 
+              ? Math.round((centerStats['WX 01'].todayAttendance / centerStats['WX 01'].studentCount) * 100)
+              : 0
+          },
+          {
+            id: 'wx02',
+            name: 'WX 02',
+            status: 'active',
+            studentCount: centerStats['WX 02']?.studentCount || 0,
+            todayAttendance: centerStats['WX 02']?.todayAttendance || 0,
+            attendanceRate: centerStats['WX 02']?.studentCount > 0 
+              ? Math.round((centerStats['WX 02'].todayAttendance / centerStats['WX 02'].studentCount) * 100)
+              : 0
+          },
+          {
+            id: 'wx03',
+            name: 'WX 03',
+            status: 'active',
+            studentCount: centerStats['WX 03']?.studentCount || 0,
+            todayAttendance: centerStats['WX 03']?.todayAttendance || 0,
+            attendanceRate: centerStats['WX 03']?.studentCount > 0 
+              ? Math.round((centerStats['WX 03'].todayAttendance / centerStats['WX 03'].studentCount) * 100)
+              : 0
+          },
+          {
+            id: 'wx04',
+            name: 'WX 04',
+            status: 'active',
+            studentCount: centerStats['WX 04']?.studentCount || 0,
+            todayAttendance: centerStats['WX 04']?.todayAttendance || 0,
+            attendanceRate: centerStats['WX 04']?.studentCount > 0 
+              ? Math.round((centerStats['WX 04'].todayAttendance / centerStats['WX 04'].studentCount) * 100)
+              : 0
+          }
+        ]
+
+        setCenters(centersData)
+        console.log('✅ 成功加载中心数据:', centersData)
+      } catch (error) {
+        console.error('❌ 获取中心数据失败:', error)
+        // 如果获取失败，使用默认数据
+        const defaultCenters: Center[] = [
+          {
+            id: 'wx01',
+            name: 'WX 01',
+            status: 'active',
+            studentCount: 0,
+            todayAttendance: 0,
+            attendanceRate: 0
+          },
+          {
+            id: 'wx02',
+            name: 'WX 02',
+            status: 'active',
+            studentCount: 0,
+            todayAttendance: 0,
+            attendanceRate: 0
+          },
+          {
+            id: 'wx03',
+            name: 'WX 03',
+            status: 'active',
+            studentCount: 0,
+            todayAttendance: 0,
+            attendanceRate: 0
+          },
+          {
+            id: 'wx04',
+            name: 'WX 04',
+            status: 'active',
+            studentCount: 0,
+            todayAttendance: 0,
+            attendanceRate: 0
+          }
+        ]
+        setCenters(defaultCenters)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCentersData()
   }, [])
 
   const handleCenterSelect = (centerId: string) => {
