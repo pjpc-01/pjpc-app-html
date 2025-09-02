@@ -219,31 +219,31 @@ function StudentManagement({ teacherId }: { teacherId?: string }) {
           <div className="space-y-4">
             {students.map((student) => (
               <div key={student.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-blue-100 text-blue-600">
-                            {student.student_name?.charAt(0) || '?'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
+                <div className="flex items-center space-x-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-blue-100 text-blue-600">
+                      {student.student_name?.charAt(0) || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
                     <p className="font-medium text-gray-900">{student.student_name || '未知姓名'}</p>
                     <p className="text-sm text-gray-500">学号: {student.student_id || '无学号'}</p>
                     <p className="text-sm text-gray-500">中心: {student.center || '未指定'}</p>
-                          </div>
-                        </div>
-                      <div className="flex items-center space-x-2">
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
                   <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
                     {student.status === 'active' ? '在线' : '离线'}
                   </Badge>
                   <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                    <Eye className="h-4 w-4" />
+                  </Button>
                   <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-                ))}
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -456,6 +456,7 @@ function AttendanceManagement({
   const fetchAttendanceData = async () => {
     if (!teacherId) return
     
+    console.log('📊 开始获取考勤数据...')
     setLoading(true)
     try {
       const response = await fetch('/api/student-attendance')
@@ -465,6 +466,7 @@ function AttendanceManagement({
         if (contentType && contentType.includes('application/json')) {
           try {
             const data = await response.json()
+            console.log('📊 获取到考勤数据:', data.data?.length || 0, '条记录')
             
             // 转换数据格式以匹配组件期望的结构
             const formattedData = (data.data || []).map((record: any) => {
@@ -489,20 +491,27 @@ function AttendanceManagement({
               }
             })
             
+            console.log('📊 格式化后的考勤数据:', formattedData.length, '条记录')
+            console.log('📊 缺席记录:', formattedData.filter((r: any) => r.status === 'absent').length, '条')
             setAttendanceData(formattedData)
-                     } catch (jsonError) {
-             setAttendanceData([])
-           }
-                 } else {
-           setAttendanceData([])
-         }
-             } else {
-         setAttendanceData([])
-       }
-         } catch (error) {
-       setAttendanceData([])
-     } finally {
+          } catch (jsonError) {
+            console.error('❌ 解析考勤数据失败:', jsonError)
+            setAttendanceData([])
+          }
+        } else {
+          console.error('❌ 响应不是JSON格式')
+          setAttendanceData([])
+        }
+      } else {
+        console.error('❌ 获取考勤数据失败:', response.status, response.statusText)
+        setAttendanceData([])
+      }
+    } catch (error) {
+      console.error('❌ 获取考勤数据异常:', error)
+      setAttendanceData([])
+    } finally {
       setLoading(false)
+      console.log('📊 考勤数据获取完成')
     }
   }
 
@@ -530,6 +539,7 @@ function AttendanceManagement({
   // 监听刷新考勤数据事件
   useEffect(() => {
     const handleRefreshAttendance = () => {
+      console.log('🔄 收到刷新考勤数据事件，开始刷新...')
       fetchAttendanceData()
     }
 
@@ -576,10 +586,10 @@ function AttendanceManagement({
     const center = centers.find(c => c.id === selectedCenter)
     if (!center) return null
 
-    return (
-      <>
+  return (
+    <>
         {/* 返回按钮和中心标题 */}
-        <div className="mb-6">
+      <div className="mb-6">
           <Button 
             variant="ghost" 
             onClick={handleBackToOverview}
@@ -590,61 +600,61 @@ function AttendanceManagement({
           </Button>
           <h3 className="text-xl font-semibold text-blue-600">
             {center.name} 中心 - 考勤详情
-          </h3>
+        </h3>
           <p className="text-sm text-gray-600">查看该中心的详细考勤信息和学生状态</p>
-        </div>
+      </div>
 
         {/* 中心统计卡片 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Users className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
                   <p className="text-sm font-medium text-gray-600">总学生数</p>
                   <p className="text-2xl font-bold text-gray-900">{center.studentCount}</p>
-                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2">
                 <div className="p-2 bg-green-100 rounded-lg">
                   <UserCheck className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
+              </div>
+              <div>
                   <p className="text-sm font-medium text-gray-600">今日出勤</p>
                   <p className="text-2xl font-bold text-gray-900">{center.todayAttendance}</p>
-                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Clock className="h-5 w-5 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">迟到</p>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Clock className="h-5 w-5 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">迟到</p>
                   <p className="text-2xl font-bold text-gray-900">{center.lateCount}</p>
-                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2">
                 <div className="p-2 bg-red-100 rounded-lg">
                   <XCircle className="h-5 w-5 text-red-600" />
-                </div>
-                <div>
+              </div>
+              <div>
                   <p className="text-sm font-medium text-gray-600">缺席</p>
                   <p className="text-2xl font-bold text-gray-900">{center.absentCount}</p>
                 </div>
@@ -715,18 +725,20 @@ function AttendanceManagement({
                    {(() => {
                      const unmarkedStudents = students
                        .filter(student => student.center === center.name && !attendanceData.some(att => {
-                         // 更安全的日期处理
+                         // 更安全的日期处理 - 支持多种日期字段
                          let attDate = ''
-                         if (typeof att.date === 'string') {
-                           if (att.date.includes('T') || att.date.includes('Z')) {
-                             attDate = att.date.split('T')[0]
+                         const dateField = att.date || att.check_in || att.created
+                         
+                         if (typeof dateField === 'string') {
+                           if (dateField.includes(' ')) {
+                             attDate = dateField.split(' ')[0]
+                           } else if (dateField.includes('T') || dateField.includes('Z')) {
+                             attDate = dateField.split('T')[0]
                            } else {
-                             attDate = att.date
+                             attDate = dateField
                            }
-                         } else if (att.date instanceof Date) {
-                           attDate = att.date.toISOString().split('T')[0]
-                         } else if (att.timestamp) {
-                           attDate = new Date(att.timestamp).toISOString().split('T')[0]
+                         } else if (dateField instanceof Date) {
+                           attDate = dateField.toISOString().split('T')[0]
                          }
                          
                          const selDate = selectedDate
@@ -873,11 +885,9 @@ function AttendanceManagement({
                       .filter(student => student.center === center.name && attendanceData.some(att => {
                         // 更安全的日期处理 - 支持多种日期字段
                         let attDate = ''
-                        // 优先使用 check_in 字段，如果没有则使用 date 字段
-                        const dateField = att.check_in || att.date || att.timestamp
+                        const dateField = att.date || att.check_in || att.created
                         
                         if (typeof dateField === 'string') {
-                          // 处理 YYYY-MM-DD HH:MM:SS 格式
                           if (dateField.includes(' ')) {
                             attDate = dateField.split(' ')[0]
                           } else if (dateField.includes('T') || dateField.includes('Z')) {
@@ -887,8 +897,6 @@ function AttendanceManagement({
                           }
                         } else if (dateField instanceof Date) {
                           attDate = dateField.toISOString().split('T')[0]
-                        } else if (att.timestamp) {
-                          attDate = new Date(att.timestamp).toISOString().split('T')[0]
                         }
                         
                         const selDate = selectedDate
@@ -952,9 +960,9 @@ function AttendanceManagement({
                                         详细说明: {attendanceRecord.detail}
                                       </p>
                                     )}
-                                  </div>
+              </div>
                                 )}
-                              </div>
+            </div>
                             </div>
                             <div className="flex items-center space-x-2">
                               <Badge variant="destructive" className="text-xs">
@@ -1032,18 +1040,20 @@ function AttendanceManagement({
                   <div className="space-y-3">
                     {students
                       .filter(student => student.center === center.name && attendanceData.some(att => {
-                        // 更安全的日期处理
+                        // 更安全的日期处理 - 支持多种日期字段
                         let attDate = ''
-                        if (typeof att.date === 'string') {
-                          if (att.date.includes('T') || att.date.includes('Z')) {
-                            attDate = att.date.split('T')[0]
+                        const dateField = att.date || att.check_in || att.created
+                        
+                        if (typeof dateField === 'string') {
+                          if (dateField.includes(' ')) {
+                            attDate = dateField.split(' ')[0]
+                          } else if (dateField.includes('T') || dateField.includes('Z')) {
+                            attDate = dateField.split('T')[0]
                           } else {
-                            attDate = att.date
+                            attDate = dateField
                           }
-                        } else if (att.date instanceof Date) {
-                          attDate = att.date.toISOString().split('T')[0]
-                        } else if (att.timestamp) {
-                          attDate = new Date(att.timestamp).toISOString().split('T')[0]
+                        } else if (dateField instanceof Date) {
+                          attDate = dateField.toISOString().split('T')[0]
                         }
                         
                         const selDate = selectedDate
@@ -1056,18 +1066,20 @@ function AttendanceManagement({
                       }))
                       .map((student) => {
                         const attendanceRecord = attendanceData.find(att => {
-                          // 更安全的日期处理
+                          // 更安全的日期处理 - 支持多种日期字段
                           let attDate = ''
-                          if (typeof att.date === 'string') {
-                            if (att.date.includes('T') || att.date.includes('Z')) {
-                              attDate = att.date.split('T')[0]
+                          const dateField = att.date || att.check_in || att.created
+                          
+                          if (typeof dateField === 'string') {
+                            if (dateField.includes(' ')) {
+                              attDate = dateField.split(' ')[0]
+                            } else if (dateField.includes('T') || dateField.includes('Z')) {
+                              attDate = dateField.split('T')[0]
                             } else {
-                              attDate = att.date
+                              attDate = dateField
                             }
-                          } else if (att.date instanceof Date) {
-                            attDate = att.date.toISOString().split('T')[0]
-                          } else if (att.timestamp) {
-                            attDate = new Date(att.timestamp).toISOString().split('T')[0]
+                          } else if (dateField instanceof Date) {
+                            attDate = dateField.toISOString().split('T')[0]
                           }
                           
                           const selDate = selectedDate
@@ -1102,7 +1114,11 @@ function AttendanceManagement({
                                 <p className="text-sm text-gray-500">中心: {student.center || '未指定'}</p>
                                 {attendanceRecord && (
                                   <p className="text-xs text-gray-400 mt-1">
-                                    考勤时间: {attendanceRecord.time || '未记录'}
+                                    考勤时间: {attendanceRecord.check_in ? 
+                                      new Date(attendanceRecord.check_in).toLocaleTimeString('zh-CN', { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit' 
+                                      }) : '未记录'}
                                   </p>
                                 )}
                               </div>
@@ -1156,7 +1172,7 @@ function AttendanceManagement({
             <User className="h-4 w-4 mr-2" />
             教师打卡入口
           </Button>
-        </div>
+      </div>
       </>
     )
   }
@@ -1380,8 +1396,8 @@ function AttendanceManagement({
               <p className="text-gray-600">正在加载考勤数据...</p>
             </div>
           ) : attendanceData.length > 0 ? (
-              <Table>
-                <TableHeader>
+            <Table>
+              <TableHeader>
                 <TableRow>
                   <TableHead>学生姓名</TableHead>
                   <TableHead>学号</TableHead>
@@ -1390,16 +1406,16 @@ function AttendanceManagement({
                   <TableHead>状态</TableHead>
                   <TableHead>时间</TableHead>
                   <TableHead>操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {attendanceData.map((record) => (
                   <TableRow key={record.id}>
                     <TableCell className="font-medium">{record.student_name}</TableCell>
                     <TableCell>{record.student_id}</TableCell>
                     <TableCell>{record.center}</TableCell>
                     <TableCell>{record.date}</TableCell>
-                      <TableCell>
+                    <TableCell>
                       <Badge variant={
                         record.status === 'present' ? 'default' :
                         record.status === 'absent' ? 'destructive' :
@@ -1408,10 +1424,16 @@ function AttendanceManagement({
                         {record.status === 'present' ? '出勤' :
                          record.status === 'absent' ? '缺席' :
                          record.status === 'late' ? '迟到' : record.status}
-                        </Badge>
-                      </TableCell>
-                    <TableCell>{record.time || '-'}</TableCell>
-                      <TableCell>
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {record.check_in ? 
+                        new Date(record.check_in).toLocaleTimeString('zh-CN', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        }) : '-'}
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center space-x-2">
                         <Button variant="ghost" size="sm">
                           <Eye className="h-4 w-4" />
@@ -1419,12 +1441,12 @@ function AttendanceManagement({
                         <Button variant="ghost" size="sm">
                           <Edit className="h-4 w-4" />
                         </Button>
-                          </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           ) : (
             <div className="text-center py-8">
               <Info className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -1446,7 +1468,7 @@ export default function TeacherWorkspace() {
   const { user, userProfile, loading, logout } = useAuth()
   const { students } = useStudents()
   const [activeTab, setActiveTab] = useState("dashboard")
-  
+
   // 缺席管理状态 - 移动到主组件层级
   const [showAbsenceModal, setShowAbsenceModal] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<any>(null)
@@ -1532,10 +1554,15 @@ export default function TeacherWorkspace() {
         setAbsenceReason('')
         setAbsenceDetail('')
         
-                 // 刷新考勤数据
-         setTimeout(() => {
-           window.dispatchEvent(new CustomEvent('refreshAttendanceData'))
-         }, 500)
+        // 立即刷新考勤数据
+        console.log('✅ 缺席标记成功，立即刷新考勤数据...')
+        window.dispatchEvent(new CustomEvent('refreshAttendanceData'))
+        
+        // 额外延迟刷新以确保数据同步
+        setTimeout(() => {
+          console.log('🔄 延迟刷新考勤数据...')
+          window.dispatchEvent(new CustomEvent('refreshAttendanceData'))
+        }, 1000)
       } else {
         alert(`❌ 标记缺席失败: ${response.status} ${response.statusText}`)
       }
@@ -1702,22 +1729,22 @@ export default function TeacherWorkspace() {
                     </CardHeader>
                     <CardContent>
                       {recentActivities.length > 0 ? (
-                        <div className="space-y-4">
-                          {recentActivities.map((activity) => (
-                            <div key={activity.id} className="flex items-start space-x-3">
-                              <div className={`w-2 h-2 rounded-full mt-2 ${
-                                activity.status === 'success' ? 'bg-green-500' :
-                                activity.status === 'pending' ? 'bg-yellow-500' :
-                                'bg-blue-500'
-                              }`} />
-                              <div className="flex-1">
-                                <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                                <p className="text-sm text-gray-600">{activity.detail}</p>
-                                <p className="text-xs text-gray-500">{activity.time}</p>
-                              </div>
+                      <div className="space-y-4">
+                        {recentActivities.map((activity) => (
+                          <div key={activity.id} className="flex items-start space-x-3">
+                            <div className={`w-2 h-2 rounded-full mt-2 ${
+                              activity.status === 'success' ? 'bg-green-500' :
+                              activity.status === 'pending' ? 'bg-yellow-500' :
+                              'bg-blue-500'
+                            }`} />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900">{activity.action}</p>
+                              <p className="text-sm text-gray-600">{activity.detail}</p>
+                              <p className="text-xs text-gray-500">{activity.time}</p>
                             </div>
-                          ))}
-                        </div>
+                          </div>
+                        ))}
+                      </div>
                       ) : (
                         <div className="text-center py-8">
                           <Info className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -1737,21 +1764,21 @@ export default function TeacherWorkspace() {
                     </CardHeader>
                     <CardContent>
                       {upcomingClasses.length > 0 ? (
-                        <div className="space-y-4">
-                          {upcomingClasses.map((classItem) => (
-                            <div key={classItem.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div>
-                                <p className="font-medium text-gray-900">{classItem.subject}</p>
-                                <p className="text-sm text-gray-600">{classItem.className} • {classItem.room}</p>
-                                <p className="text-xs text-gray-500">{classItem.students} 名学生</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-medium text-blue-600">{classItem.time}</p>
-                                <p className="text-xs text-gray-500">{classItem.duration}</p>
-                              </div>
+                      <div className="space-y-4">
+                        {upcomingClasses.map((classItem) => (
+                          <div key={classItem.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                              <p className="font-medium text-gray-900">{classItem.subject}</p>
+                              <p className="text-sm text-gray-600">{classItem.className} • {classItem.room}</p>
+                              <p className="text-xs text-gray-500">{classItem.students} 名学生</p>
                             </div>
-                          ))}
-                        </div>
+                            <div className="text-right">
+                              <p className="font-medium text-blue-600">{classItem.time}</p>
+                              <p className="text-xs text-gray-500">{classItem.duration}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                       ) : (
                         <div className="text-center py-8">
                           <Info className="h-12 w-12 text-gray-400 mx-auto mb-4" />
