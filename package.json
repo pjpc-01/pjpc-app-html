@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "build:static": "cross-env NODE_ENV=production STATIC_EXPORT=true next build",
+    "build:static": "node scripts/build-static-simple.js",
     "dev": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=4096\" next dev -H 0.0.0.0",
     "dev:http": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=4096\" next dev -H 0.0.0.0",
     "dev:https": "node https-server.js",
