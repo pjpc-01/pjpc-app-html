@@ -30,6 +30,7 @@ interface Student {
   student_name: string
   center: string
   status: string
+  studentUrl?: string
 }
 
 interface AttendanceRecord {
@@ -52,6 +53,16 @@ export default function MobileCheckinPage() {
 
   const centerId = params.centerId as string
   
+  // 中心ID映射：URL中的小写ID映射到数据库中的大写格式
+  const centerIdMapping: Record<string, string> = {
+    'wx01': 'WX 01',
+    'wx02': 'WX 02',
+    'wx03': 'WX 03',
+    'wx04': 'WX 04'
+  }
+  
+  const mappedCenterId = centerIdMapping[centerId.toLowerCase()] || centerId
+  
   // ---------- 核心状态 ----------
   const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(false)
@@ -62,7 +73,7 @@ export default function MobileCheckinPage() {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([])
   const [currentTime, setCurrentTime] = useState(new Date())
   const [centerInfo, setCenterInfo] = useState({
-    name: centerId,
+    name: mappedCenterId,
     totalStudents: 0,
     checkedInToday: 0,
     attendanceRate: 0
@@ -128,11 +139,11 @@ export default function MobileCheckinPage() {
           if (data.success) {
             // 根据中心筛选学生
             const centerStudents = (data.students || []).filter((student: any) => 
-              student.center === centerId
+              student.center === mappedCenterId
             )
             setStudents(centerStudents)
             setCenterInfo(prev => ({ ...prev, totalStudents: centerStudents.length }))
-            console.log(`✅ 成功加载 ${centerStudents.length} 个学生，中心: ${centerId} (总学生数: ${data.students?.length || 0})`)
+            console.log(`✅ 成功加载 ${centerStudents.length} 个学生，中心: ${mappedCenterId} (总学生数: ${data.students?.length || 0})`)
           } else {
             console.error('获取学生数据失败:', data.error)
             setStudents([])
@@ -151,15 +162,15 @@ export default function MobileCheckinPage() {
         setLoading(false)
       }
     }
-    if (centerId) fetchStudents()
-  }, [centerId])
+    if (mappedCenterId) fetchStudents()
+  }, [mappedCenterId])
 
   // 今日考勤
   useEffect(() => {
     const fetchAttendance = async () => {
       try {
         const today = new Date().toISOString().split('T')[0]
-        const response = await fetch(`/api/student-attendance?date=${today}&center=${centerId}`)
+        const response = await fetch(`/api/student-attendance?date=${today}&center=${mappedCenterId}`)
         if (response.ok) {
           const data = await response.json()
           setAttendanceRecords(data.data || [])
@@ -172,8 +183,8 @@ export default function MobileCheckinPage() {
         console.error('获取考勤记录失败:', error)
       }
     }
-    if (centerId && students.length > 0) fetchAttendance()
-  }, [centerId, students])
+    if (mappedCenterId && students.length > 0) fetchAttendance()
+  }, [mappedCenterId, students])
 
   // 工具函数
   const todayISO = () => new Date().toISOString().split('T')[0]
@@ -195,6 +206,10 @@ export default function MobileCheckinPage() {
     student,
     status = 'present' as AttendanceStatus,
     source = "manual" as "manual" | "nfc" | "url",
+  }: {
+    student: Student
+    status?: AttendanceStatus
+    source?: "manual" | "nfc" | "url"
   }) => {
     if (!student) return
     setIsSubmitting(true)
@@ -211,7 +226,7 @@ export default function MobileCheckinPage() {
       const payload = {
         student_id: student.student_id,
         student_name: student.student_name,
-        center: centerId,
+        center: mappedCenterId,
         date: todayISO(),
         time: nowISO(),
         status,
@@ -233,7 +248,7 @@ export default function MobileCheckinPage() {
       // 本地更新
       setAttendanceRecords(prev => [...prev, payload as any])
       // 重新统计
-      const updatedRes = await fetch(`/api/student-attendance?date=${todayISO()}&center=${centerId}`)
+      const updatedRes = await fetch(`/api/student-attendance?date=${todayISO()}&center=${mappedCenterId}`)
       if (updatedRes.ok) {
         const updatedData = await updatedRes.json()
         setAttendanceRecords(updatedData.data || [])
@@ -258,8 +273,8 @@ export default function MobileCheckinPage() {
   useEffect(() => {
     if (!students.length) return
     // 优先用 URL 的 center 覆盖（允许跨中心链接）
-    const effectiveCenter = centerFromUrl || centerId
-    if (effectiveCenter !== centerId) {
+    const effectiveCenter = centerFromUrl || mappedCenterId
+    if (effectiveCenter !== mappedCenterId) {
       // 如果你希望自动跳转到 URL 指定中心，可在此处理
       // router.replace(`/checkin/${effectiveCenter}?${searchParams.toString()}`)
     }
@@ -318,15 +333,56 @@ export default function MobileCheckinPage() {
             toastError("未读到URL，请确认卡片已写入专属链接")
         return
       }
-          // 解析 URL 参数
-          const u = new URL(urlFromTag)
-          const sid = u.searchParams.get("student_id") || ""
-          const sname = u.searchParams.get("name") || ""
-          const scenter = u.searchParams.get("center") || centerId
-          const s = students.find(st => st.student_id === sid) || students.find(st => sname && st.student_name === sname)
+          // 通过URL匹配找到学生
+          let s = null
+          
+          // 方法1: 通过URL参数查找（如果URL包含参数）
+          try {
+            const u = new URL(urlFromTag)
+            const sid = u.searchParams.get("student_id") || ""
+            const sname = u.searchParams.get("name") || ""
+            if (sid) {
+              s = students.find(st => st.student_id === sid)
+            }
+            if (!s && sname) {
+              s = students.find(st => st.student_name === sname)
+            }
+          } catch (e) {
+            // URL解析失败，继续尝试其他方法
+          }
+          
+          // 方法2: 通过studentUrl字段直接匹配（不限制中心）
           if (!s) {
-            toastError("找不到该学生，请检查卡片信息或学生名单")
-            return
+            s = students.find(st => st.studentUrl && st.studentUrl === urlFromTag)
+          }
+          
+          // 方法3: 通过URL包含关系匹配（处理URL可能略有不同的情况）
+          if (!s) {
+            s = students.find(st => st.studentUrl && urlFromTag.includes(st.studentUrl.split('/').pop() || ''))
+          }
+          
+          if (!s) {
+            console.log('🔍 NFC调试信息:')
+            console.log('  NFC读取的URL:', urlFromTag)
+            console.log('  当前中心ID:', mappedCenterId)
+            console.log('  学生总数:', students.length)
+            console.log('  有URL的学生数:', students.filter(st => st.studentUrl).length)
+            console.log('  可用学生URLs:', students.map(st => ({ id: st.student_id, name: st.student_name, url: st.studentUrl })).filter(st => st.url))
+            
+            // 尝试模糊匹配
+            const fuzzyMatch = students.find(st => 
+              st.studentUrl && 
+              (st.studentUrl.includes(urlFromTag.split('/').pop() || '') || 
+               urlFromTag.includes(st.studentUrl.split('/').pop() || ''))
+            )
+            
+            if (fuzzyMatch) {
+              console.log('🎯 找到模糊匹配:', fuzzyMatch.student_name, fuzzyMatch.student_id)
+              s = fuzzyMatch
+            } else {
+              toastError("找不到该学生，请检查卡片信息或学生名单")
+              return
+            }
           }
           processAttendance({ student: s, status: 'present', source: 'nfc' })
         } catch (e) {
@@ -386,9 +442,9 @@ export default function MobileCheckinPage() {
         inputId: trimmedId,
         availableStudents: students.length,
         availableIds: students.map(st => st.student_id),
-        center: centerId
+        center: mappedCenterId
       })
-      toastError(`未找到学号 "${trimmedId}" 的学生。当前中心: ${centerId}，可用学生: ${students.length} 人`)
+      toastError(`未找到学号 "${trimmedId}" 的学生。当前中心: ${mappedCenterId}，可用学生: ${students.length} 人`)
       return
     }
     
@@ -564,7 +620,7 @@ export default function MobileCheckinPage() {
                 </Badge>
               </div>
               <div className="text-gray-600">
-                中心: <span className="font-mono">{centerId}</span> | 
+                中心: <span className="font-mono">{mappedCenterId}</span> | 
                 学号示例: {students.length > 0 ? students.slice(0, 3).map(s => s.student_id).join(', ') : '无'}
               </div>
             </div>

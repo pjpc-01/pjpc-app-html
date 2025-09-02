@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFC URL匹配测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 3px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>NFC URL匹配测试</h1>
+    
+    <div class="test-section">
+        <h3>测试URL匹配逻辑</h3>
+        <p>目标URL: <code>https://docs.google.com/forms/d/e/1FAIpQLSdAd-P98guw4MPtEJOM0m-5sL7WoMy4hzRJ4P6alfzcVuHhOg/viewform</code></p>
+        <button onclick="testUrlMatch()">测试URL匹配</button>
+        <div id="matchResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>所有学生数据</h3>
+        <button onclick="loadAllStudents()">加载所有学生</button>
+        <div id="studentsResult"></div>
+    </div>
+
+    <script>
+        async function testUrlMatch() {
+            const targetUrl = "https://docs.google.com/forms/d/e/1FAIpQLSdAd-P98guw4MPtEJOM0m-5sL7WoMy4hzRJ4P6alfzcVuHhOg/viewform";
+            const resultDiv = document.getElementById('matchResult');
+            
+            try {
+                const response = await fetch('/api/students');
+                const data = await response.json();
+                
+                if (!data.success) {
+                    resultDiv.innerHTML = '<div class="result error">API调用失败</div>';
+                    return;
+                }
+                
+                const students = data.students;
+                
+                // 方法1: 直接匹配
+                let matchedStudent = students.find(st => st.studentUrl && st.studentUrl === targetUrl);
+                
+                if (matchedStudent) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            ✅ 找到匹配学生: ${matchedStudent.student_name} (${matchedStudent.student_id})<br>
+                            中心: ${matchedStudent.center}<br>
+                            URL: ${matchedStudent.studentUrl}
+                        </div>
+                    `;
+                } else {
+                    // 方法2: 模糊匹配
+                    const fuzzyMatch = students.find(st => 
+                        st.studentUrl && 
+                        (st.studentUrl.includes(targetUrl.split('/').pop() || '') || 
+                         targetUrl.includes(st.studentUrl.split('/').pop() || ''))
+                    );
+                    
+                    if (fuzzyMatch) {
+                        resultDiv.innerHTML = `
+                            <div class="result success">
+                                ✅ 找到模糊匹配: ${fuzzyMatch.student_name} (${fuzzyMatch.student_id})<br>
+                                中心: ${fuzzyMatch.center}<br>
+                                URL: ${fuzzyMatch.studentUrl}
+                            </div>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div class="result error">
+                                ❌ 未找到匹配的学生<br>
+                                目标URL: ${targetUrl}<br>
+                                有URL的学生数: ${students.filter(st => st.studentUrl).length}
+                            </div>
+                        `;
+                    }
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">错误: ${error.message}</div>`;
+            }
+        }
+        
+        async function loadAllStudents() {
+            const resultDiv = document.getElementById('studentsResult');
+            
+            try {
+                const response = await fetch('/api/students');
+                const data = await response.json();
+                
+                if (!data.success) {
+                    resultDiv.innerHTML = '<div class="result error">API调用失败</div>';
+                    return;
+                }
+                
+                const studentsWithUrl = data.students.filter(st => st.studentUrl);
+                
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <h4>有URL的学生 (${studentsWithUrl.length}个):</h4>
+                        <pre>${JSON.stringify(studentsWithUrl.map(st => ({
+                            id: st.student_id,
+                            name: st.student_name,
+                            center: st.center,
+                            url: st.studentUrl
+                        })), null, 2)}</pre>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">错误: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

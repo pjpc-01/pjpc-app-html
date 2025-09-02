@@ -85,6 +85,7 @@ export async function GET(request: NextRequest) {
           center: student.center || '未指定',
           status: student.status || 'active',
           standard: student.standard || '未指定',
+          studentUrl: student.studentUrl || '',
           created: student.created,
           updated: student.updated
         };
