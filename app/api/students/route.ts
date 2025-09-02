@@ -45,6 +45,16 @@ export async function GET(request: NextRequest) {
     }
 
     try {
+      // 确保认证状态有效
+      if (!pb.authStore.isValid) {
+        console.log('⚠️ 认证状态无效，重新认证...')
+        await authenticateAdmin()
+      }
+      
+      console.log('🔍 开始获取学生数据...')
+      console.log('🔑 认证状态:', pb.authStore.isValid ? '有效' : '无效')
+      console.log('🔑 认证模型:', pb.authStore.model ? '已设置' : '未设置')
+      
       // 从PocketBase获取学生数据
       const students = await pb.collection('students').getList(page, limit, {
         sort: 'student_name',
