@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase } from '@/lib/pocketbase'
 
+// 静态导出配置
+export const dynamic = 'force-static'
+
 // 获取学生积分记录
 export async function GET(request: NextRequest) {
   try {

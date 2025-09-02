@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import PocketBase from 'pocketbase'
 
+// 静态导出配置
+export const dynamic = 'force-static'
+
 export async function DELETE(request: NextRequest) {
   try {
     const { userId } = await request.json()

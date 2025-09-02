@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkPocketBaseConnection } from '@/lib/pocketbase'
 
+// 静态导出配置
+export const dynamic = 'force-static'
+
 export async function GET(request: NextRequest) {
   try {
     console.log('🔍 检查PocketBase连接状态...')

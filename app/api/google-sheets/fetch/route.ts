@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// 静态导出配置
+export const dynamic = 'force-static'
+
 export async function POST(request: NextRequest) {
   try {
     const { url } = await request.json()

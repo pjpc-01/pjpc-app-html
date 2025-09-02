@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase } from '@/lib/pocketbase'
 
+// 静态导出配置
+export const dynamic = 'force-static'
+
 export async function POST(request: NextRequest) {
   try {
     console.log('测试完整导入流程...')

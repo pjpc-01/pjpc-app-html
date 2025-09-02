@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase, authenticateAdmin } from '@/lib/pocketbase'
 
+// 静态导出配置
+export const dynamic = 'force-static'
+
 export async function GET(request: NextRequest) {
   try {
     console.log('🔍 开始调试students集合...')

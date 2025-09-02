@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStudentCardByCardNumber, updateCardUsage } from '@/lib/pocketbase-students-card'
 
+// 静态导出配置
+export const dynamic = 'force-static'
+
 export async function POST(request: NextRequest) {
   try {
     const { cardNumber, deviceId, deviceName, location } = await request.json()

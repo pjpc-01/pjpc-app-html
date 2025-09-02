@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "dev": "node https-server.js",
+    "build:static": "cross-env NODE_ENV=production STATIC_EXPORT=true next build",
+    "dev": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=4096\" next dev -H 0.0.0.0",
     "dev:http": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=4096\" next dev -H 0.0.0.0",
     "dev:https": "node https-server.js",
     "dev:nfc": "node simple-https-nfc.js",

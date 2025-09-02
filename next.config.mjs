@@ -1,9 +1,23 @@
 /** @type {import('next').NextConfig} */
+const isStaticExport = process.env.NODE_ENV === 'production' && process.env.STATIC_EXPORT === 'true'
+
 const nextConfig = {
-  // 启用HTTPS开发环境
-  experimental: {
-    https: true,
-  },
+  // 静态导出配置
+  ...(isStaticExport && {
+    output: 'export',
+    trailingSlash: true,
+    skipTrailingSlashRedirect: true,
+    // 排除动态路由
+    distDir: 'out',
+  }),
+  
+  // 启用HTTPS开发环境（仅在非静态导出时）
+  ...(!isStaticExport && {
+    experimental: {
+      https: true,
+    },
+  }),
+  
   // 解决 OpenSSL 兼容性问题
   experimental: {
     serverComponentsExternalPackages: ['googleapis'],
@@ -31,9 +45,10 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // 禁用图片优化（静态导出不支持）
   images: {
     unoptimized: true,
-    domains: ['localhost', '127.0.0.1'],
+    domains: ['localhost', '127.0.0.1', 'pjpc.tplinkdns.com'],
   },
   // 优化HMR配置 - 减少连接时间
   webpack: (config, { dev, isServer }) => {
