@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { getPocketBase } from '@/lib/pocketbase'
 import { StudentCard } from '@/lib/pocketbase-students-card'
 
+// 静态导出配置
+export const dynamic = 'force-static'
+
 export async function GET() {
   try {
     console.log('获取学生卡片列表...')

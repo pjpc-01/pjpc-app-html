@@ -138,13 +138,14 @@ export const checkPocketBaseConnection = async () => {
   try {
     const pb = await getPocketBase()
     
-    // 测试连接
-    const response = await fetch(`${pb.baseUrl}/api/health`, {
+    // 测试连接 - 使用PocketBase的根端点而不是/api/health
+    const response = await fetch(`${pb.baseUrl}/`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     })
     
-    if (response.ok) {
+    // 任何响应都认为是成功的（包括404，说明服务器在运行）
+    if (response.status === 200 || response.status === 404) {
       return {
         connected: true,
         url: pb.baseUrl,

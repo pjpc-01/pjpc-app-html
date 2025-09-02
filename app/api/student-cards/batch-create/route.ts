@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase } from '@/lib/pocketbase'
 import { StudentCard } from '@/lib/pocketbase-students-card'
 
+// 静态导出配置
+export const dynamic = 'force-static'
+
 export async function POST(request: NextRequest) {
   try {
     const { cards } = await request.json()

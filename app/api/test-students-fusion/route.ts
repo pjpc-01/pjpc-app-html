@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getAllStudents } from '@/lib/pocketbase-students'
 
+// 静态导出配置
+export const dynamic = 'force-static'
+
 export async function GET() {
   try {
     console.log('=== 测试学生数据融合 ===')
