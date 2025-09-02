@@ -13,8 +13,8 @@ const detectNetworkEnvironment = async () => {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 3000)
       
-      // 测试PocketBase的API健康检查端点
-      const response = await fetch(`${testUrl.url}/api/health`, {
+      // 测试PocketBase的根端点
+      const response = await fetch(`${testUrl.url}/`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
@@ -24,14 +24,13 @@ const detectNetworkEnvironment = async () => {
       const endTime = Date.now()
       const latency = endTime - startTime
       
-      if (response.ok) {
-        return {
-          url: testUrl.url,
-          type: testUrl.type,
-          name: testUrl.name,
-          latency,
-          success: true
-        }
+      // 任何响应都认为是成功的（包括404，说明服务器在运行）
+      return {
+        url: testUrl.url,
+        type: testUrl.type,
+        name: testUrl.name,
+        latency,
+        success: true
       }
     } catch (error) {
       console.log(`${testUrl.name}连接失败:`, error)
