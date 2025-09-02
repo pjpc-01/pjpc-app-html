@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API测试</title>
+</head>
+<body>
+    <h1>API连接测试</h1>
+    <button onclick="testStudentsAPI()">测试学生API</button>
+    <button onclick="testAttendanceAPI()">测试考勤API</button>
+    <button onclick="createTestStudents()" style="background-color: #10b981; color: white;">创建测试学生数据</button>
+    <div id="result"></div>
+
+    <script>
+        async function testStudentsAPI() {
+            const result = document.getElementById('result');
+            result.innerHTML = '测试中...';
+            
+            try {
+                const response = await fetch('/api/students?center=wx01');
+                const data = await response.json();
+                
+                result.innerHTML = `
+                    <h3>学生API测试结果:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                result.innerHTML = `
+                    <h3>学生API测试失败:</h3>
+                    <p style="color: red;">${error.message}</p>
+                `;
+            }
+        }
+
+        async function testAttendanceAPI() {
+            const result = document.getElementById('result');
+            result.innerHTML = '测试中...';
+            
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const response = await fetch(`/api/student-attendance?date=${today}&center=wx01`);
+                const data = await response.json();
+                
+                result.innerHTML = `
+                    <h3>考勤API测试结果:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                result.innerHTML = `
+                    <h3>考勤API测试失败:</h3>
+                    <p style="color: red;">${error.message}</p>
+                `;
+            }
+        }
+
+        async function createTestStudents() {
+            const result = document.getElementById('result');
+            result.innerHTML = '创建测试学生数据中...';
+            
+            try {
+                const response = await fetch('/api/create-test-students', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                
+                result.innerHTML = `
+                    <h3>创建测试学生结果:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                    <p style="color: green; font-weight: bold;">✅ 测试学生数据创建完成！现在可以重新测试学生API了。</p>
+                `;
+            } catch (error) {
+                result.innerHTML = `
+                    <h3>创建测试学生失败:</h3>
+                    <p style="color: red;">${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

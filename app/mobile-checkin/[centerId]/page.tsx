@@ -12,7 +12,7 @@ import {
   MapPin, 
   Clock, 
   CheckCircle, 
-  XCircle,
+  XCircle, 
   ArrowLeft,
   Search,
   Users,
@@ -51,7 +51,7 @@ export default function MobileCheckinPage() {
   const searchParams = useSearchParams()
 
   const centerId = params.centerId as string
-
+  
   // ---------- 核心状态 ----------
   const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(false)
@@ -121,14 +121,18 @@ export default function MobileCheckinPage() {
     const fetchStudents = async () => {
       setLoading(true)
       try {
-        // 直接请求特定中心的学生数据
-        const response = await fetch(`/api/students?center=${encodeURIComponent(centerId)}`)
+        // 获取所有学生数据，然后根据中心筛选
+        const response = await fetch('/api/students')
         if (response.ok) {
           const data = await response.json()
           if (data.success) {
-            setStudents(data.students || [])
-            setCenterInfo(prev => ({ ...prev, totalStudents: data.students?.length || 0 }))
-            console.log(`✅ 成功加载 ${data.students?.length || 0} 个学生，中心: ${centerId}`)
+            // 根据中心筛选学生
+            const centerStudents = (data.students || []).filter((student: any) => 
+              student.center === centerId
+            )
+            setStudents(centerStudents)
+            setCenterInfo(prev => ({ ...prev, totalStudents: centerStudents.length }))
+            console.log(`✅ 成功加载 ${centerStudents.length} 个学生，中心: ${centerId} (总学生数: ${data.students?.length || 0})`)
           } else {
             console.error('获取学生数据失败:', data.error)
             setStudents([])
@@ -276,12 +280,12 @@ export default function MobileCheckinPage() {
   const startNfcScan = async () => {
     if (!isHttps) {
       toastError("NFC 需要 HTTPS 环境")
-      return
-    }
+        return
+      }
     if (!nfcSupported) {
       toastError("此设备或浏览器不支持 NFC")
-      return
-    }
+        return
+      }
     try {
       // 终止上一次扫描
       if (nfcControllerRef.current) nfcControllerRef.current.abort()
@@ -312,8 +316,8 @@ export default function MobileCheckinPage() {
           }
           if (!urlFromTag) {
             toastError("未读到URL，请确认卡片已写入专属链接")
-            return
-          }
+        return
+      }
           // 解析 URL 参数
           const u = new URL(urlFromTag)
           const sid = u.searchParams.get("student_id") || ""
@@ -482,13 +486,13 @@ export default function MobileCheckinPage() {
             <div className="flex items-center gap-2 text-sm">
               <Smartphone className="h-4 w-4 text-gray-600" />
               设备：{typeof navigator !== "undefined" ? (navigator as any).platform : "unknown"}
-            </div>
+              </div>
             <div className="flex items-center gap-2 text-sm">
               <LinkIcon className={`h-4 w-4 ${pbHealthy === "ok" ? "text-green-600" : pbHealthy === "down" ? "text-red-600" : "text-gray-400"}`} />
               数据库：{pbHealthy === "ok" ? "连接正常" : pbHealthy === "down" ? "异常" : "未知"}
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
 
         {/* 当前时间 */}
         <Card className="mb-6">
@@ -506,16 +510,16 @@ export default function MobileCheckinPage() {
 
         {/* NFC 打卡区域 */}
         <Card className="mb-6 border-2 border-emerald-200 bg-emerald-50">
-          <CardHeader className="pb-3">
+              <CardHeader className="pb-3">
             <CardTitle className="text-emerald-800 flex items-center gap-2">
               <Radio className="h-5 w-5" /> NFC 卡片打卡
-            </CardTitle>
+                </CardTitle>
             <CardDescription className="text-emerald-700">
               需要 HTTPS 与支持NFC的设备。点击按钮后将学生卡片贴近设备，卡片内需写入专属URL（含 student_id）。
-            </CardDescription>
-          </CardHeader>
+                </CardDescription>
+              </CardHeader>
           <CardContent className="flex gap-3">
-            <Button
+                  <Button 
               className="flex-1 bg-emerald-600 hover:bg-emerald-700"
               onClick={startNfcScan}
               disabled={!isHttps || !nfcSupported || nfcActive}
@@ -661,8 +665,8 @@ export default function MobileCheckinPage() {
                   </div>
                 )
               })}
-            </div>
-
+                </div>
+                
             {filteredStudents.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
