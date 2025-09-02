@@ -1,15 +1,30 @@
 import PocketBase from 'pocketbase'
 // 智能网络环境检测
 const detectNetworkEnvironment = async () => {
+  // 检查是否在GitHub Pages环境中运行
+  const isGitHubPages = typeof window !== 'undefined' && 
+    (window.location.hostname.includes('github.io') || window.location.hostname.includes('pjpc-01.github.io'))
+  
+  if (isGitHubPages) {
+    // GitHub Pages环境下直接使用DDNS连接
+    return {
+      url: 'http://pjpc.tplinkdns.com:8090',
+      type: 'ddns',
+      name: 'GitHub Pages DDNS',
+      latency: 0,
+      success: true
+    }
+  }
+  
   // 检查是否在HTTPS模式下运行
   const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
   
   if (isHttps) {
-    // HTTPS模式下使用代理
+    // HTTPS模式下直接使用DDNS连接
     return {
-      url: '/api/pocketbase-proxy',
-      type: 'proxy',
-      name: 'HTTPS代理',
+      url: 'http://pjpc.tplinkdns.com:8090',
+      type: 'ddns',
+      name: 'HTTPS DDNS',
       latency: 0,
       success: true
     }
