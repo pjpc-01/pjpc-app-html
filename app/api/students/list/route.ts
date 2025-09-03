@@ -49,9 +49,7 @@ export async function GET(request: NextRequest) {
 
     try {
       // 从PocketBase获取学生数据 - 使用最简单的查询，不指定任何字段
-      const students = await pb.collection('students').getList(page, limit, {
-        sort: '-created'
-      })
+      const students = await pb.collection('students').getList(page, limit)
 
       console.log(`✅ 成功获取 ${students.items.length} 个学生记录`);
 
