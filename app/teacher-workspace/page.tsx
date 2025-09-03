@@ -4,8 +4,15 @@ import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useStudents } from "@/hooks/useStudents"
+import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
+import { useCourses } from "@/hooks/useCourses"
+import { useClasses } from "@/hooks/useClasses"
+import { useAnnouncements, useNotifications } from "@/hooks/useAnnouncements"
 import TeacherNavigation from "@/components/shared/TeacherNavigation"
 import AssignmentManagement from "@/app/components/management/assignment-management"
+import CourseManagement from "@/app/components/management/course-management"
+import ClassManagement from "@/app/components/management/class-management"
+import AnnouncementManagement from "@/app/components/management/announcement-management"
 // import StudentProfileView from "@/components/student/StudentProfileView"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -46,7 +53,7 @@ import {
   MapPin,
   Shield,
   Globe,
-    User, 
+  User, 
   ArrowLeft, 
   ArrowRight,
   Filter,
@@ -54,7 +61,8 @@ import {
   Mail,
   Heart,
   Car,
-  FileText
+  FileText,
+  Megaphone
 } from "lucide-react"
 
 interface TeacherStats {
@@ -614,6 +622,13 @@ function StudentProfileView({ teacherId }: { teacherId?: string }) {
 function OverviewTab({ students }: { students: any[] }) {
   const [attendanceData, setAttendanceData] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  
+  // 获取教师信息和相关数据
+  const { teacher, loading: teacherLoading } = useCurrentTeacher()
+  const { courses } = useCourses(teacher?.id)
+  const { classes } = useClasses(teacher?.id)
+  const { announcements } = useAnnouncements(teacher?.id)
+  const { notifications } = useNotifications(teacher?.id)
 
   // 获取考勤数据
   const fetchAttendanceData = async () => {
@@ -687,6 +702,12 @@ function OverviewTab({ students }: { students: any[] }) {
       }
     })
 
+    // 课程和班级统计
+    const totalCourses = courses?.length || 0
+    const totalClasses = classes?.length || 0
+    const totalAnnouncements = announcements?.length || 0
+    const unreadNotifications = notifications?.filter(n => !n.is_read).length || 0
+
     return {
       totalStudents,
       centerStats,
@@ -696,9 +717,25 @@ function OverviewTab({ students }: { students: any[] }) {
         absent: absentCount,
         rate: attendanceRate
       },
-      attendanceTrend
+      attendanceTrend,
+      courses: {
+        total: totalCourses,
+        active: courses?.filter(c => c.status === 'active').length || 0
+      },
+      classes: {
+        total: totalClasses,
+        active: classes?.filter(c => c.status === 'active').length || 0
+      },
+      announcements: {
+        total: totalAnnouncements,
+        published: announcements?.filter(a => a.status === 'published').length || 0
+      },
+      notifications: {
+        total: notifications?.length || 0,
+        unread: unreadNotifications
+      }
     }
-  }, [students, attendanceData])
+  }, [students, attendanceData, courses, classes, announcements, notifications])
 
   return (
     <div className="space-y-6">
@@ -742,6 +779,39 @@ function OverviewTab({ students }: { students: any[] }) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center space-x-2">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <BookOpen className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">活跃课程</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.courses.active}</p>
+                <p className="text-xs text-purple-600">共 {stats.courses.total} 门课程</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <GraduationCap className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">活跃班级</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.classes.active}</p>
+                <p className="text-xs text-orange-600">共 {stats.classes.total} 个班级</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 第二行指标卡片 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2">
               <div className="p-2 bg-yellow-100 rounded-lg">
                 <Clock className="h-5 w-5 text-yellow-600" />
               </div>
@@ -762,6 +832,36 @@ function OverviewTab({ students }: { students: any[] }) {
               <div>
                 <p className="text-sm font-medium text-gray-600">缺席人数</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.todayAttendance.absent}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <Bell className="h-5 w-5 text-indigo-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">未读通知</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.notifications.unread}</p>
+                <p className="text-xs text-indigo-600">共 {stats.notifications.total} 条通知</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-teal-100 rounded-lg">
+                <MessageSquare className="h-5 w-5 text-teal-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">已发布公告</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.announcements.published}</p>
+                <p className="text-xs text-teal-600">共 {stats.announcements.total} 条公告</p>
               </div>
             </div>
           </CardContent>
@@ -846,7 +946,7 @@ function OverviewTab({ students }: { students: any[] }) {
           <CardDescription>常用功能快速访问</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Button 
               variant="outline" 
               className="h-20 flex flex-col items-center justify-center space-y-2"
@@ -863,6 +963,48 @@ function OverviewTab({ students }: { students: any[] }) {
             >
               <User className="h-6 w-6" />
               <span>教师打卡</span>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col items-center justify-center space-y-2"
+              onClick={() => {
+                // 切换到课程与作业管理标签页
+                const tabs = document.querySelector('[role="tablist"]')
+                const teachingTab = tabs?.querySelector('[value="teaching"]') as HTMLElement
+                teachingTab?.click()
+              }}
+            >
+              <BookOpen className="h-6 w-6" />
+              <span>课程与作业</span>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col items-center justify-center space-y-2"
+              onClick={() => {
+                // 切换到通知公告标签页
+                const tabs = document.querySelector('[role="tablist"]')
+                const announcementTab = tabs?.querySelector('[value="announcements"]') as HTMLElement
+                announcementTab?.click()
+              }}
+            >
+              <Bell className="h-6 w-6" />
+              <span>发布公告</span>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col items-center justify-center space-y-2"
+              onClick={() => {
+                // 切换到学生与考勤管理标签页
+                const tabs = document.querySelector('[role="tablist"]')
+                const studentTab = tabs?.querySelector('[value="students"]') as HTMLElement
+                studentTab?.click()
+              }}
+            >
+              <Users className="h-6 w-6" />
+              <span>学生与考勤</span>
             </Button>
             
             <Button 
@@ -2982,26 +3124,22 @@ export default function TeacherWorkspace() {
         <main className="w-full">
           {/* Tab导航 */}
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-5 mb-8">
+            <TabsList className="grid w-full grid-cols-4 mb-8">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
                 总览
               </TabsTrigger>
-              <TabsTrigger value="attendance" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                考勤管理
-              </TabsTrigger>
               <TabsTrigger value="students" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                学生管理
+                学生与考勤
               </TabsTrigger>
-              <TabsTrigger value="assignments" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                作业与成绩
+              <TabsTrigger value="teaching" className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                课程与作业
               </TabsTrigger>
-              <TabsTrigger value="dashboard" className="flex items-center gap-2">
-                <Activity className="h-4 w-4" />
-                数据概览
+              <TabsTrigger value="announcements" className="flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                通知公告
               </TabsTrigger>
             </TabsList>
 
@@ -3010,36 +3148,90 @@ export default function TeacherWorkspace() {
               <OverviewTab students={students} />
             </TabsContent>
 
-            {/* 考勤管理标签页 */}
-            <TabsContent value="attendance" className="space-y-6">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">考勤管理系统</h2>
-                <p className="text-gray-600">实时监控学生出勤情况，管理考勤记录</p>
-              </div>
-              <AttendanceManagement 
-                teacherId={user?.id}
-                showAbsenceModal={showAbsenceModal}
-                setShowAbsenceModal={setShowAbsenceModal}
-                selectedStudent={selectedStudent}
-                setSelectedStudent={setSelectedStudent}
-                absenceReason={absenceReason}
-                setAbsenceReason={setAbsenceReason}
-                absenceDetail={absenceDetail}
-                setAbsenceDetail={setAbsenceDetail}
-                selectedDate={selectedDate}
-                setSelectedDate={setSelectedDate}
-                isMarkingAbsence={isMarkingAbsence}
-              />
-            </TabsContent>
-
-            {/* 学生管理标签页 */}
+            {/* 学生与考勤管理标签页 */}
             <TabsContent value="students" className="space-y-6">
-              <StudentManagement teacherId={user?.id} />
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">学生与考勤管理</h2>
+                <p className="text-gray-600">管理学生信息和考勤记录</p>
+              </div>
+              
+              {/* 内部子标签页 */}
+              <Tabs defaultValue="student-list" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="student-list" className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    学生管理
+                  </TabsTrigger>
+                  <TabsTrigger value="attendance" className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    考勤管理
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="student-list" className="space-y-6">
+                  <StudentManagement teacherId={user?.id} />
+                </TabsContent>
+                
+                <TabsContent value="attendance" className="space-y-6">
+                  <AttendanceManagement 
+                    teacherId={user?.id}
+                    showAbsenceModal={showAbsenceModal}
+                    setShowAbsenceModal={setShowAbsenceModal}
+                    selectedStudent={selectedStudent}
+                    setSelectedStudent={setSelectedStudent}
+                    absenceReason={absenceReason}
+                    setAbsenceReason={setAbsenceReason}
+                    absenceDetail={absenceDetail}
+                    setAbsenceDetail={setAbsenceDetail}
+                    selectedDate={selectedDate}
+                    setSelectedDate={setSelectedDate}
+                    isMarkingAbsence={isMarkingAbsence}
+                  />
+                </TabsContent>
+              </Tabs>
             </TabsContent>
 
-            {/* 作业与成绩录入标签页 */}
-            <TabsContent value="assignments" className="space-y-6">
-              <AssignmentManagement />
+            {/* 课程与作业管理标签页 */}
+            <TabsContent value="teaching" className="space-y-6">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">课程与作业管理</h2>
+                <p className="text-gray-600">管理课程、班级和作业成绩</p>
+              </div>
+              
+              {/* 内部子标签页 */}
+              <Tabs defaultValue="courses" className="w-full">
+                <TabsList className="grid w-full grid-cols-3 mb-6">
+                  <TabsTrigger value="courses" className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    课程管理
+                  </TabsTrigger>
+                  <TabsTrigger value="classes" className="flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4" />
+                    班级管理
+                  </TabsTrigger>
+                  <TabsTrigger value="assignments" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    作业与成绩
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="courses" className="space-y-6">
+                  <CourseManagement />
+                </TabsContent>
+                
+                <TabsContent value="classes" className="space-y-6">
+                  <ClassManagement />
+                </TabsContent>
+                
+                <TabsContent value="assignments" className="space-y-6">
+                  <AssignmentManagement />
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
+
+            {/* 通知公告标签页 */}
+            <TabsContent value="announcements" className="space-y-6">
+              <AnnouncementManagement />
             </TabsContent>
 
             {/* 数据概览标签页 */}

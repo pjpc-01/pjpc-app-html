@@ -1,400 +1,349 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Calendar, Clock, BookOpen, Plus, Edit, Eye, Play, Upload } from "lucide-react"
+import { useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Plus, BookOpen, Users, Clock, Calendar, Edit, Trash2 } from 'lucide-react'
+import { useCourses, useCourseStats, Course } from '@/hooks/useCourses'
+import { useCurrentTeacher } from '@/hooks/useCurrentTeacher'
+import { useStudents } from '@/hooks/useStudents'
 
 export default function CourseManagement() {
-  const [courses, setCourses] = useState([
-    {
-      id: 1,
-      name: "三年级数学",
-      teacher: "张老师",
-      students: 28,
-      schedule: "周一、三、五 14:00-15:30",
-      status: "active",
-      progress: 65,
-      materials: 12,
-    },
-    {
-      id: 2,
-      name: "四年级语文",
-      teacher: "李老师",
-      students: 32,
-      schedule: "周二、四 15:00-16:30",
-      status: "active",
-      progress: 78,
-      materials: 18,
-    },
-    {
-      id: 3,
-      name: "五年级英语",
-      teacher: "王老师",
-      students: 29,
-      schedule: "周一、三 16:00-17:30",
-      status: "active",
-      progress: 52,
-      materials: 15,
-    },
-  ])
+  const { teacher, loading: teacherLoading } = useCurrentTeacher()
+  const { courses, loading: coursesLoading, createCourse, updateCourse, deleteCourse } = useCourses(teacher?.id)
+  const { stats, loading: statsLoading } = useCourseStats(teacher?.id)
+  const { students } = useStudents()
 
-  const [schedule] = useState([
-    {
-      time: "14:00-15:30",
-      monday: "三年级数学",
-      tuesday: "四年级语文",
-      wednesday: "三年级数学",
-      thursday: "四年级语文",
-      friday: "三年级数学",
-    },
-    { time: "15:00-16:30", monday: "", tuesday: "", wednesday: "", thursday: "", friday: "" },
-    { time: "16:00-17:30", monday: "五年级英语", tuesday: "", wednesday: "五年级英语", thursday: "", friday: "" },
-    { time: "17:30-19:00", monday: "", tuesday: "", wednesday: "", thursday: "", friday: "" },
-  ])
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null)
+  const [newCourse, setNewCourse] = useState<Partial<Course>>({
+    title: '',
+    description: '',
+    subject: '',
+    grade_level: '',
+    duration: 60,
+    max_students: 30,
+    status: 'active'
+  })
+
+  const handleCreateCourse = async () => {
+    if (!teacher?.id) return
+
+    // 验证必填字段
+    if (!newCourse.title || !newCourse.subject) {
+      alert('请填写课程名称和科目')
+      return
+    }
+
+    const courseData = {
+      ...newCourse,
+      teacher_id: teacher.id
+    }
+
+    const result = await createCourse(courseData)
+    if (result) {
+      setShowCreateDialog(false)
+      setNewCourse({
+        title: '',
+        description: '',
+        subject: '',
+        grade_level: '',
+        duration: 60,
+        max_students: 30,
+        status: 'active'
+      })
+      alert('课程创建成功！')
+    }
+  }
+
+  const handleUpdateCourse = async () => {
+    if (!editingCourse?.id) return
+
+    // 验证必填字段
+    if (!newCourse.title || !newCourse.subject) {
+      alert('请填写课程名称和科目')
+      return
+    }
+
+    const result = await updateCourse(editingCourse.id, newCourse)
+    if (result) {
+      setShowCreateDialog(false)
+      setEditingCourse(null)
+      setNewCourse({
+        title: '',
+        description: '',
+        subject: '',
+        grade_level: '',
+        duration: 60,
+        max_students: 30,
+        status: 'active'
+      })
+      alert('课程更新成功！')
+    }
+  }
+
+  const handleDeleteCourse = async (courseId: string) => {
+    if (confirm('确定要删除这个课程吗？删除后无法恢复！')) {
+      const result = await deleteCourse(courseId)
+      if (result) {
+        alert('课程删除成功！')
+      }
+    }
+  }
+
+  const handleEditCourse = (course: Course) => {
+    setEditingCourse(course)
+    setNewCourse({
+      title: course.title,
+      description: course.description,
+      subject: course.subject,
+      grade_level: course.grade_level,
+      duration: course.duration,
+      max_students: course.max_students,
+      status: course.status
+    })
+    setShowCreateDialog(true)
+  }
+
+  if (teacherLoading) {
+    return <div className="p-6">加载教师信息中...</div>
+  }
+
+  if (!teacher) {
+    return <div className="p-6">未找到教师信息</div>
+  }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">课程管理系统</h2>
-          <p className="text-gray-600">管理课程安排、教材资源和教学内容</p>
-        </div>
-        <Dialog>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">课程管理</h2>
+        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              添加课程
+              创建课程
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>添加新课程</DialogTitle>
-              <DialogDescription>创建新的课程安排</DialogDescription>
+              <DialogTitle>{editingCourse ? '编辑课程' : '创建新课程'}</DialogTitle>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="courseName" className="text-right">
-                  课程名称
-                </Label>
-                <Input id="courseName" className="col-span-3" />
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="title">课程名称 <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="title"
+                    value={newCourse.title}
+                    onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
+                    placeholder="输入课程名称"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="subject">科目 <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="subject"
+                    value={newCourse.subject}
+                    onChange={(e) => setNewCourse({ ...newCourse, subject: e.target.value })}
+                    placeholder="输入科目"
+                    required
+                  />
+                </div>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="teacher" className="text-right">
-                  授课老师
-                </Label>
-                <Input id="teacher" className="col-span-3" />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="grade_level">年级</Label>
+                  <Input
+                    id="grade_level"
+                    value={newCourse.grade_level}
+                    onChange={(e) => setNewCourse({ ...newCourse, grade_level: e.target.value })}
+                    placeholder="输入年级"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="duration">课程时长(分钟)</Label>
+                  <Input
+                    id="duration"
+                    type="number"
+                    value={newCourse.duration}
+                    onChange={(e) => setNewCourse({ ...newCourse, duration: parseInt(e.target.value) || 60 })}
+                  />
+                </div>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="schedule" className="text-right">
-                  上课时间
-                </Label>
-                <Input id="schedule" placeholder="如：周一、三、五 14:00-15:30" className="col-span-3" />
+              <div>
+                <Label htmlFor="max_students">最大学生数</Label>
+                <Input
+                  id="max_students"
+                  type="number"
+                  value={newCourse.max_students}
+                  onChange={(e) => setNewCourse({ ...newCourse, max_students: parseInt(e.target.value) || 30 })}
+                />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="description" className="text-right">
-                  课程描述
-                </Label>
-                <Textarea id="description" className="col-span-3" />
+              <div>
+                <Label htmlFor="description">课程描述</Label>
+                <Textarea
+                  id="description"
+                  value={newCourse.description}
+                  onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
+                  placeholder="输入课程描述"
+                  rows={3}
+                />
               </div>
-            </div>
-            <div className="flex justify-end">
-              <Button>创建课程</Button>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => {
+                  setShowCreateDialog(false)
+                  setEditingCourse(null)
+                  setNewCourse({
+                    title: '',
+                    description: '',
+                    subject: '',
+                    grade_level: '',
+                    duration: 60,
+                    max_students: 30,
+                    status: 'active'
+                  })
+                }}>
+                  取消
+                </Button>
+                <Button onClick={editingCourse ? handleUpdateCourse : handleCreateCourse}>
+                  {editingCourse ? '更新课程' : '创建课程'}
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      <Tabs defaultValue="courses" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="courses">课程列表</TabsTrigger>
-          <TabsTrigger value="schedule">课程表</TabsTrigger>
-          <TabsTrigger value="materials">教材管理</TabsTrigger>
-          <TabsTrigger value="content">课程内容</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="courses" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map((course) => (
-              <Card key={course.id}>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg">{course.name}</CardTitle>
-                      <CardDescription>授课老师：{course.teacher}</CardDescription>
-                    </div>
-                    <Badge variant={course.status === "active" ? "default" : "secondary"}>
-                      {course.status === "active" ? "进行中" : "已结束"}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Clock className="h-4 w-4" />
-                      {course.schedule}
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">学生人数</span>
-                      <Badge variant="outline">{course.students}人</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">教学进度</span>
-                      <span className="text-sm">{course.progress}%</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">教材数量</span>
-                      <Badge variant="outline">{course.materials}个</Badge>
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                      <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                        <Eye className="h-4 w-4 mr-1" />
-                        查看
-                      </Button>
-                      <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                        <Edit className="h-4 w-4 mr-1" />
-                        编辑
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="schedule" className="space-y-6">
+      {/* 统计卡片 */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                课程时间表
-              </CardTitle>
-              <CardDescription>本周课程安排</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>时间</TableHead>
-                    <TableHead>周一</TableHead>
-                    <TableHead>周二</TableHead>
-                    <TableHead>周三</TableHead>
-                    <TableHead>周四</TableHead>
-                    <TableHead>周五</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {schedule.map((slot, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{slot.time}</TableCell>
-                      <TableCell>{slot.monday && <Badge variant="outline">{slot.monday}</Badge>}</TableCell>
-                      <TableCell>{slot.tuesday && <Badge variant="outline">{slot.tuesday}</Badge>}</TableCell>
-                      <TableCell>{slot.wednesday && <Badge variant="outline">{slot.wednesday}</Badge>}</TableCell>
-                      <TableCell>{slot.thursday && <Badge variant="outline">{slot.thursday}</Badge>}</TableCell>
-                      <TableCell>{slot.friday && <Badge variant="outline">{slot.friday}</Badge>}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="materials" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
+            <CardContent className="pt-6">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <BookOpen className="h-5 w-5 text-blue-600" />
+                </div>
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5" />
-                    教材管理
-                  </CardTitle>
-                  <CardDescription>管理课程教材和学习资源</CardDescription>
+                  <p className="text-sm font-medium text-gray-600">总课程数</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalCourses}</p>
                 </div>
-                <Button>
-                  <Upload className="h-4 w-4 mr-2" />
-                  上传教材
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">三年级数学教材</CardTitle>
-                    <CardDescription>第一学期</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>章节数</span>
-                        <Badge variant="outline">12章</Badge>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>练习题</span>
-                        <Badge variant="outline">156题</Badge>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>更新时间</span>
-                        <span className="text-gray-500">2024-01-10</span>
-                      </div>
-                      <Button variant="outline" size="sm" className="w-full mt-2 bg-transparent">
-                        <Eye className="h-4 w-4 mr-1" />
-                        查看内容
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">四年级语文教材</CardTitle>
-                    <CardDescription>第一学期</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>课文数</span>
-                        <Badge variant="outline">24篇</Badge>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>生字词</span>
-                        <Badge variant="outline">320个</Badge>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>更新时间</span>
-                        <span className="text-gray-500">2024-01-08</span>
-                      </div>
-                      <Button variant="outline" size="sm" className="w-full mt-2 bg-transparent">
-                        <Eye className="h-4 w-4 mr-1" />
-                        查看内容
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">五年级英语教材</CardTitle>
-                    <CardDescription>第一学期</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>单元数</span>
-                        <Badge variant="outline">8单元</Badge>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>词汇量</span>
-                        <Badge variant="outline">200词</Badge>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>更新时间</span>
-                        <span className="text-gray-500">2024-01-12</span>
-                      </div>
-                      <Button variant="outline" size="sm" className="w-full mt-2 bg-transparent">
-                        <Eye className="h-4 w-4 mr-1" />
-                        查看内容
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="content" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>直播课程</CardTitle>
-                <CardDescription>实时在线教学</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium">三年级数学 - 分数运算</div>
-                      <div className="text-sm text-gray-500">今天 14:00-15:30</div>
-                    </div>
-                    <Button size="sm">
-                      <Play className="h-4 w-4 mr-1" />
-                      开始直播
-                    </Button>
-                  </div>
-                  <div className="flex justify-between items-center p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium">四年级语文 - 古诗词赏析</div>
-                      <div className="text-sm text-gray-500">明天 15:00-16:30</div>
-                    </div>
-                    <Button size="sm" variant="outline">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      预约
-                    </Button>
-                  </div>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <BookOpen className="h-5 w-5 text-green-600" />
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>录播课程</CardTitle>
-                <CardDescription>课程回放和复习</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium">数学基础 - 加减法运算</div>
-                      <div className="text-sm text-gray-500">时长：45分钟</div>
-                    </div>
-                    <Button size="sm" variant="outline">
-                      <Play className="h-4 w-4 mr-1" />
-                      播放
-                    </Button>
-                  </div>
-                  <div className="flex justify-between items-center p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium">语文阅读 - 理解技巧</div>
-                      <div className="text-sm text-gray-500">时长：38分钟</div>
-                    </div>
-                    <Button size="sm" variant="outline">
-                      <Play className="h-4 w-4 mr-1" />
-                      播放
-                    </Button>
-                  </div>
-                  <div className="flex justify-between items-center p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium">英语口语 - 日常对话</div>
-                      <div className="text-sm text-gray-500">时长：52分钟</div>
-                    </div>
-                    <Button size="sm" variant="outline">
-                      <Play className="h-4 w-4 mr-1" />
-                      播放
-                    </Button>
-                  </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">活跃课程</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.activeCourses}</p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Users className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">总学生数</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalStudents}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <Clock className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">平均班级大小</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.averageClassSize}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* 课程列表 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>我的课程</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {coursesLoading ? (
+            <div className="text-center py-8">加载中...</div>
+          ) : courses.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              暂无课程，点击上方按钮创建第一个课程
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>课程名称</TableHead>
+                  <TableHead>科目</TableHead>
+                  <TableHead>年级</TableHead>
+                  <TableHead>时长</TableHead>
+                  <TableHead>最大学生数</TableHead>
+                  <TableHead>状态</TableHead>
+                  <TableHead>操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {courses.map((course) => (
+                  <TableRow key={course.id}>
+                    <TableCell className="font-medium">{course.title}</TableCell>
+                    <TableCell>{course.subject}</TableCell>
+                    <TableCell>{course.grade_level}</TableCell>
+                    <TableCell>{course.duration}分钟</TableCell>
+                    <TableCell>{course.max_students}</TableCell>
+                    <TableCell>
+                      <Badge variant={course.status === 'active' ? 'default' : 'secondary'}>
+                        {course.status === 'active' ? '活跃' : '非活跃'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditCourse(course)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDeleteCourse(course.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
