@@ -295,6 +295,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error: any) {
       console.error('SignIn error:', error)
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        response: error.response,
+        originalError: error.originalError
+      })
       const errorMessage = getErrorMessage(error.message)
       setError(errorMessage)
       setLoading(false) // 确保错误时也设置loading为false
@@ -471,6 +477,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (errorCode.includes('ClientResponseError 400')) {
       return "认证失败：请检查用户名和密码是否正确"
     }
+    if (errorCode.includes('ClientResponseError 404')) {
+      return "用户不存在或密码错误"
+    }
+    if (errorCode.includes('ClientResponseError 500')) {
+      return "服务器内部错误，请稍后重试"
+    }
     if (errorCode.includes('Failed to authenticate')) {
       return "用户不存在或密码错误"
     }
@@ -479,6 +491,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     if (errorCode.includes('无法连接到PocketBase数据库')) {
       return "无法连接到数据库服务器，请检查网络连接"
+    }
+    if (errorCode.includes('Something went wrong')) {
+      return "服务器错误，请检查网络连接或稍后重试"
+    }
+    if (errorCode.includes('Failed to fetch')) {
+      return "网络连接失败，请检查网络连接"
     }
     
     switch (errorCode) {
@@ -494,6 +512,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return "请求过于频繁，请稍后再试"
       case "Network request failed.":
         return "网络连接失败，请检查网络"
+      case "Something went wrong.":
+        return "服务器错误，请检查网络连接或稍后重试"
       default:
         return `操作失败: ${errorCode}`
     }
