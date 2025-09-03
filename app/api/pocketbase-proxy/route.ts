@@ -28,8 +28,23 @@ export async function GET(request: NextRequest) {
     const path = url.pathname.replace('/api/pocketbase-proxy', '')
     const searchParams = url.searchParams.toString()
     
-    // 如果路径为空，默认访问PocketBase的API根路径
-    const finalPath = path === '' ? '/api/' : path
+    // 如果路径为空，返回PocketBase API信息
+    if (path === '') {
+      return NextResponse.json({
+        message: 'PocketBase Proxy API',
+        status: 'active',
+        pocketbase_url: POCKETBASE_URL,
+        available_endpoints: [
+          '/api/collections/users/auth-with-password',
+          '/api/collections/students',
+          '/api/health',
+          '/api/collections'
+        ],
+        timestamp: new Date().toISOString()
+      })
+    }
+    
+    const finalPath = path
     const targetUrl = `${POCKETBASE_URL}${finalPath}${searchParams ? `?${searchParams}` : ''}`
     
     console.log('🔍 Proxy GET request:', {
@@ -74,8 +89,23 @@ export async function POST(request: NextRequest) {
     const path = url.pathname.replace('/api/pocketbase-proxy', '')
     const body = await request.text()
     
-    // 如果路径为空，默认访问PocketBase的API根路径
-    const finalPath = path === '' ? '/api/' : path
+    // 如果路径为空，返回PocketBase API信息
+    if (path === '') {
+      return NextResponse.json({
+        message: 'PocketBase Proxy API',
+        status: 'active',
+        pocketbase_url: POCKETBASE_URL,
+        available_endpoints: [
+          '/api/collections/users/auth-with-password',
+          '/api/collections/students',
+          '/api/health',
+          '/api/collections'
+        ],
+        timestamp: new Date().toISOString()
+      })
+    }
+    
+    const finalPath = path
     const targetUrl = `${POCKETBASE_URL}${finalPath}`
     
     console.log('🔍 Proxy POST request:', {
@@ -121,8 +151,23 @@ export async function PUT(request: NextRequest) {
     const path = url.pathname.replace('/api/pocketbase-proxy', '')
     const body = await request.text()
     
-    // 如果路径为空，默认访问PocketBase的API根路径
-    const finalPath = path === '' ? '/api/' : path
+    // 如果路径为空，返回PocketBase API信息
+    if (path === '') {
+      return NextResponse.json({
+        message: 'PocketBase Proxy API',
+        status: 'active',
+        pocketbase_url: POCKETBASE_URL,
+        available_endpoints: [
+          '/api/collections/users/auth-with-password',
+          '/api/collections/students',
+          '/api/health',
+          '/api/collections'
+        ],
+        timestamp: new Date().toISOString()
+      })
+    }
+    
+    const finalPath = path
     const targetUrl = `${POCKETBASE_URL}${finalPath}`
     
     const response = await fetchWithIgnoreSSL(targetUrl, {
@@ -159,8 +204,23 @@ export async function DELETE(request: NextRequest) {
     const url = new URL(request.url)
     const path = url.pathname.replace('/api/pocketbase-proxy', '')
     
-    // 如果路径为空，默认访问PocketBase的API根路径
-    const finalPath = path === '' ? '/api/' : path
+    // 如果路径为空，返回PocketBase API信息
+    if (path === '') {
+      return NextResponse.json({
+        message: 'PocketBase Proxy API',
+        status: 'active',
+        pocketbase_url: POCKETBASE_URL,
+        available_endpoints: [
+          '/api/collections/users/auth-with-password',
+          '/api/collections/students',
+          '/api/health',
+          '/api/collections'
+        ],
+        timestamp: new Date().toISOString()
+      })
+    }
+    
+    const finalPath = path
     const targetUrl = `${POCKETBASE_URL}${finalPath}`
     
     const response = await fetchWithIgnoreSSL(targetUrl, {
