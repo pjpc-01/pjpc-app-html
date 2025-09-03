@@ -160,7 +160,18 @@ export const getAllStudents = async (): Promise<Student[]> => {
     }
     
     const students = data.students || []
-    console.log(`获取到 ${students.length} 个学生数据`)
+    console.log(`✅ getAllStudents: 获取到 ${students.length} 个学生数据`)
+    
+    // 调试中心分布
+    if (students.length > 0) {
+      const centerCounts = students.reduce((acc: Record<string, number>, student: any) => {
+        const center = student.center || 'WX 01'
+        acc[center] = (acc[center] || 0) + 1
+        return acc
+      }, {})
+      console.log('📊 getAllStudents: 中心分布:', centerCounts)
+      console.log('🔍 getAllStudents: 前3个学生:', students.slice(0, 3))
+    }
     
     // 数据验证
     if (students.length === 0) {
