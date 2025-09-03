@@ -88,8 +88,26 @@ export const usePoints = () => {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || '创建积分交易失败')
+        let errorMessage = '创建积分交易失败'
+        let errorData = null
+        
+        try {
+          const responseText = await response.text()
+          console.error('API错误响应文本:', responseText)
+          
+          if (responseText) {
+            errorData = JSON.parse(responseText)
+            console.error('API错误响应对象:', errorData)
+            errorMessage = errorData.error || errorData.details || errorMessage
+          } else {
+            errorMessage = `HTTP ${response.status}: ${response.statusText} (空响应)`
+          }
+        } catch (parseError) {
+          console.error('无法解析错误响应:', parseError)
+          errorMessage = `HTTP ${response.status}: ${response.statusText} (解析失败)`
+        }
+        
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()

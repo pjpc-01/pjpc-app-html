@@ -13,6 +13,7 @@ import AssignmentManagement from "@/app/components/management/assignment-managem
 import CourseManagement from "@/app/components/management/course-management"
 import ClassManagement from "@/app/components/management/class-management"
 import AnnouncementManagement from "@/app/components/management/announcement-management"
+import PointsManagement from "@/app/components/management/points-management"
 // import StudentProfileView from "@/components/student/StudentProfileView"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -62,7 +63,8 @@ import {
   Heart,
   Car,
   FileText,
-  Megaphone
+  Megaphone,
+  Trophy
 } from "lucide-react"
 
 interface TeacherStats {
@@ -1005,6 +1007,27 @@ function OverviewTab({ students }: { students: any[] }) {
             >
               <Users className="h-6 w-6" />
               <span>学生与考勤</span>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col items-center justify-center space-y-2"
+              onClick={() => {
+                // 切换到学生与考勤管理标签页，然后切换到积分管理子标签页
+                const tabs = document.querySelector('[role="tablist"]')
+                const studentTab = tabs?.querySelector('[value="students"]') as HTMLElement
+                studentTab?.click()
+                
+                // 延迟切换到积分管理子标签页
+                setTimeout(() => {
+                  const subTabs = document.querySelectorAll('[role="tablist"]')[1]
+                  const pointsTab = subTabs?.querySelector('[value="points"]') as HTMLElement
+                  pointsTab?.click()
+                }, 100)
+              }}
+            >
+              <Trophy className="h-6 w-6" />
+              <span>积分管理</span>
             </Button>
             
             <Button 
@@ -3152,12 +3175,12 @@ export default function TeacherWorkspace() {
             <TabsContent value="students" className="space-y-6">
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">学生与考勤管理</h2>
-                <p className="text-gray-600">管理学生信息和考勤记录</p>
+                <p className="text-gray-600">管理学生信息、考勤记录和积分系统</p>
               </div>
               
               {/* 内部子标签页 */}
               <Tabs defaultValue="student-list" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsList className="grid w-full grid-cols-3 mb-6">
                   <TabsTrigger value="student-list" className="flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     学生管理
@@ -3165,6 +3188,10 @@ export default function TeacherWorkspace() {
                   <TabsTrigger value="attendance" className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     考勤管理
+                  </TabsTrigger>
+                  <TabsTrigger value="points" className="flex items-center gap-2">
+                    <Trophy className="h-4 w-4" />
+                    积分管理
                   </TabsTrigger>
                 </TabsList>
                 
@@ -3187,6 +3214,10 @@ export default function TeacherWorkspace() {
                     setSelectedDate={setSelectedDate}
                     isMarkingAbsence={isMarkingAbsence}
                   />
+                </TabsContent>
+                
+                <TabsContent value="points" className="space-y-6">
+                  <PointsManagement />
                 </TabsContent>
               </Tabs>
             </TabsContent>

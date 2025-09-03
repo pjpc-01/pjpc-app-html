@@ -93,6 +93,7 @@ export const useStudents = () => {
     students,
     loading,
     error,
+    fetchStudents,
     refetch,
     addStudent,
     updateStudent,
