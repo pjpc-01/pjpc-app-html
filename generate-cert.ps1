@@ -1,8 +1,8 @@
 # Generate self-signed SSL certificate
 Write-Host "Generating self-signed SSL certificate..." -ForegroundColor Green
 
-# Create certificate
-$cert = New-SelfSignedCertificate -DnsName "localhost" -CertStoreLocation "cert:\CurrentUser\My" -NotAfter (Get-Date).AddYears(1)
+# Create certificate with multiple DNS names
+$cert = New-SelfSignedCertificate -DnsName @("localhost", "pjpc.tplinkdns.com", "127.0.0.1") -CertStoreLocation "cert:\CurrentUser\My" -NotAfter (Get-Date).AddYears(1)
 
 # Set password
 $pwd = ConvertTo-SecureString -String "password" -Force -AsPlainText

@@ -22,17 +22,13 @@ const fetchWithIgnoreSSL = async (url: string, options: RequestInit = {}) => {
   return fetch(url, options)
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
-) {
+export async function GET(request: NextRequest) {
   try {
-    const resolvedParams = await params
-    const path = resolvedParams.path.join('/')
     const url = new URL(request.url)
+    const path = url.pathname.replace('/api/pocketbase-proxy', '')
     const searchParams = url.searchParams.toString()
     
-    const targetUrl = `${POCKETBASE_URL}/${path}${searchParams ? `?${searchParams}` : ''}`
+    const targetUrl = `${POCKETBASE_URL}${path}${searchParams ? `?${searchParams}` : ''}`
     
     console.log('🔍 Proxy GET request:', {
       originalPath: path,
@@ -61,24 +57,27 @@ export async function GET(
       }
     })
   } catch (error) {
-    console.error('Proxy error:', error)
+    console.error('❌ Proxy GET error:', error)
     return NextResponse.json(
-      { error: 'Proxy request failed' },
+      { error: 'Proxy request failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
-) {
+export async function POST(request: NextRequest) {
   try {
-    const resolvedParams = await params
-    const path = resolvedParams.path.join('/')
+    const url = new URL(request.url)
+    const path = url.pathname.replace('/api/pocketbase-proxy', '')
     const body = await request.text()
     
-    const targetUrl = `${POCKETBASE_URL}/${path}`
+    const targetUrl = `${POCKETBASE_URL}${path}`
+    
+    console.log('🔍 Proxy POST request:', {
+      originalPath: path,
+      targetUrl,
+      bodyLength: body.length
+    })
     
     const response = await fetchWithIgnoreSSL(targetUrl, {
       method: 'POST',
@@ -102,30 +101,26 @@ export async function POST(
       }
     })
   } catch (error) {
-    console.error('Proxy error:', error)
+    console.error('❌ Proxy POST error:', error)
     return NextResponse.json(
-      { error: 'Proxy request failed' },
+      { error: 'Proxy request failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
-) {
+export async function PUT(request: NextRequest) {
   try {
-    const resolvedParams = await params
-    const path = resolvedParams.path.join('/')
+    const url = new URL(request.url)
+    const path = url.pathname.replace('/api/pocketbase-proxy', '')
     const body = await request.text()
     
-    const targetUrl = `${POCKETBASE_URL}/${path}`
+    const targetUrl = `${POCKETBASE_URL}${path}`
     
     const response = await fetchWithIgnoreSSL(targetUrl, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        // 传递原始请求的headers
         ...Object.fromEntries(request.headers.entries())
       },
       body: body
@@ -143,31 +138,25 @@ export async function PUT(
       }
     })
   } catch (error) {
-    console.error('Proxy error:', error)
+    console.error('❌ Proxy PUT error:', error)
     return NextResponse.json(
-      { error: 'Proxy request failed' },
+      { error: 'Proxy request failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
-) {
+export async function DELETE(request: NextRequest) {
   try {
-    const resolvedParams = await params
-    const path = resolvedParams.path.join('/')
     const url = new URL(request.url)
-    const searchParams = url.searchParams.toString()
+    const path = url.pathname.replace('/api/pocketbase-proxy', '')
     
-    const targetUrl = `${POCKETBASE_URL}/${path}${searchParams ? `?${searchParams}` : ''}`
+    const targetUrl = `${POCKETBASE_URL}${path}`
     
     const response = await fetchWithIgnoreSSL(targetUrl, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        // 传递原始请求的headers
         ...Object.fromEntries(request.headers.entries())
       }
     })
@@ -184,15 +173,15 @@ export async function DELETE(
       }
     })
   } catch (error) {
-    console.error('Proxy error:', error)
+    console.error('❌ Proxy DELETE error:', error)
     return NextResponse.json(
-      { error: 'Proxy request failed' },
+      { error: 'Proxy request failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
 }
 
-export async function OPTIONS() {
+export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {
