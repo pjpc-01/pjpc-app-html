@@ -142,6 +142,19 @@ export const getPocketBase = async (): Promise<PocketBase> => {
     const url = await getPocketBaseUrl()
     pbInstance = new PocketBase(url)
     console.log('✅ PocketBase实例已创建:', url)
+    
+    // 添加错误处理
+    pbInstance.afterSend = function (response, data) {
+      if (!response.ok) {
+        console.error('PocketBase请求失败:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          data: data
+        })
+      }
+      return data
+    }
   }
   return pbInstance
 }
