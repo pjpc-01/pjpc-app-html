@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useStudents } from "@/hooks/useStudents"
 import TeacherNavigation from "@/components/shared/TeacherNavigation"
+import AssignmentManagement from "@/app/components/management/assignment-management"
+// import StudentProfileView from "@/components/student/StudentProfileView"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -18,7 +21,6 @@ import {
   GraduationCap,
   Users,
   UserCheck,
-  FileText,
   Calendar,
   BookOpen,
   MessageSquare,
@@ -44,8 +46,15 @@ import {
   MapPin,
   Shield,
   Globe,
-  User,
-  ArrowLeft
+    User, 
+  ArrowLeft, 
+  ArrowRight,
+  Filter,
+  Phone,
+  Mail,
+  Heart,
+  Car,
+  FileText
 } from "lucide-react"
 
 interface TeacherStats {
@@ -79,9 +88,893 @@ interface ClassSchedule {
   status: string
 }
 
+// StudentProfileView component
+function StudentProfileView({ teacherId }: { teacherId?: string }) {
+  const { students, loading, error } = useStudents()
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedCenter, setSelectedCenter] = useState("all")
+  const [selectedStudent, setSelectedStudent] = useState<any | null>(null)
+  const [filteredStudents, setFilteredStudents] = useState<any[]>([])
+
+  // 过滤学生数据
+  useEffect(() => {
+    let filtered = students
+
+    // 按搜索词过滤
+    if (searchTerm) {
+      filtered = filtered.filter((student: any) => 
+        student.student_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.student_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.school?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    // 按中心过滤
+    if (selectedCenter !== "all") {
+      filtered = filtered.filter((student: any) => student.center === selectedCenter)
+    }
+
+    setFilteredStudents(filtered)
+  }, [students, searchTerm, selectedCenter])
+
+  // 获取中心列表
+  const centers = Array.from(new Set(students.map((s: any) => s.center).filter(Boolean)))
+
+  // 获取学生姓名首字母
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase()
+  }
+
+  // 格式化日期
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "未设置"
+    return new Date(dateString).toLocaleDateString('zh-CN')
+  }
+
+  // 获取状态颜色
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800'
+      case 'inactive': return 'bg-gray-100 text-gray-800'
+      case 'lost': return 'bg-red-100 text-red-800'
+      case 'graduated': return 'bg-blue-100 text-blue-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  // 获取服务类型颜色
+  const getServiceTypeColor = (type: string) => {
+    switch (type) {
+      case 'afterschool': return 'bg-purple-100 text-purple-800'
+      case 'tuition': return 'bg-orange-100 text-orange-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">加载学生档案中...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600 mb-4">加载学生档案失败: {error}</p>
+        <Button onClick={() => window.location.reload()}>重新加载</Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* 页面标题 */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">学生档案查看</h2>
+        <p className="text-gray-600">查看学生详细信息、紧急联络、健康状况等档案资料</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 左侧：学生列表 */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                学生列表 ({filteredStudents.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* 搜索和过滤 */}
+              <div className="space-y-4 mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="搜索学生姓名、学号或学校..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-gray-400" />
+                  <select
+                    value={selectedCenter}
+                    onChange={(e) => setSelectedCenter(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="all">所有中心</option>
+                    {centers.map((center: any) => (
+                      <option key={center} value={center}>{center}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* 学生列表 */}
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {filteredStudents.map((student: any) => (
+                  <div
+                    key={student.id}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
+                      selectedStudent?.id === student.id 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setSelectedStudent(student)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={student.avatar || undefined} />
+                        <AvatarFallback className="bg-blue-100 text-blue-600">
+                          {getInitials(student.student_name || '')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">
+                          {student.student_name || '未设置姓名'}
+                        </p>
+                        <p className="text-sm text-gray-500 truncate">
+                          {student.student_id || '无学号'} • {student.center || '未分配中心'}
+                        </p>
+                        <div className="flex items-center gap-1 mt-1">
+                          <Badge 
+                            variant="secondary" 
+                            className={`text-xs ${getStatusColor(student.status || 'inactive')}`}
+                          >
+                            {student.status === 'active' ? '活跃' : 
+                             student.status === 'inactive' ? '非活跃' :
+                             student.status === 'lost' ? '丢失' : '已毕业'}
+                          </Badge>
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs ${getServiceTypeColor(student.serviceType || 'afterschool')}`}
+                          >
+                            {student.serviceType === 'afterschool' ? '课后班' : '补习班'}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {filteredStudents.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>没有找到匹配的学生</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 右侧：学生档案详情 */}
+        <div className="lg:col-span-2">
+          {selectedStudent ? (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={selectedStudent.avatar || undefined} />
+                      <AvatarFallback className="bg-blue-100 text-blue-600 text-lg">
+                        {getInitials(selectedStudent.student_name || '')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <CardTitle className="text-xl">
+                        {selectedStudent.student_name || '未设置姓名'}
+                      </CardTitle>
+                      <CardDescription>
+                        {selectedStudent.student_id || '无学号'} • {selectedStudent.center || '未分配中心'}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant="secondary" 
+                      className={getStatusColor(selectedStudent.status || 'inactive')}
+                    >
+                      {selectedStudent.status === 'active' ? '活跃' : 
+                       selectedStudent.status === 'inactive' ? '非活跃' :
+                       selectedStudent.status === 'lost' ? '丢失' : '已毕业'}
+                    </Badge>
+                    <Badge 
+                      variant="outline" 
+                      className={getServiceTypeColor(selectedStudent.serviceType || 'afterschool')}
+                    >
+                      {selectedStudent.serviceType === 'afterschool' ? '课后班' : '补习班'}
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="basic" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="basic">基本信息</TabsTrigger>
+                    <TabsTrigger value="contact">紧急联络</TabsTrigger>
+                    <TabsTrigger value="health">健康状况</TabsTrigger>
+                    <TabsTrigger value="pickup">接送安排</TabsTrigger>
+                  </TabsList>
+
+                  {/* 基本信息 */}
+                  <TabsContent value="basic" className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-3">
+                          <User className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">姓名</p>
+                            <p className="text-gray-900">{selectedStudent.student_name || '未设置'}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-3">
+                          <Calendar className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">出生日期</p>
+                            <p className="text-gray-900">{formatDate(selectedStudent.dob || '')}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-3">
+                          <User className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">性别</p>
+                            <p className="text-gray-900">
+                              {selectedStudent.gender === 'male' ? '男' : 
+                               selectedStudent.gender === 'female' ? '女' : '未设置'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-3">
+                          <FileText className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">年级</p>
+                            <p className="text-gray-900">{selectedStudent.standard || '未设置'}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-3">
+                          <MapPin className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">学校</p>
+                            <p className="text-gray-900">{selectedStudent.school || '未设置'}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-3">
+                          <MapPin className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">家庭地址</p>
+                            <p className="text-gray-900">{selectedStudent.home_address || '未设置'}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-3">
+                          <Calendar className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">注册日期</p>
+                            <p className="text-gray-900">{formatDate(selectedStudent.registrationDate || '')}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-3">
+                          <FileText className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">NRIC/护照</p>
+                            <p className="text-gray-900">{selectedStudent.nric || '未设置'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* 紧急联络 */}
+                  <TabsContent value="contact" className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-3">
+                          <Phone className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">父亲电话</p>
+                            <p className="text-gray-900">{selectedStudent.father_phone || '未设置'}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-3">
+                          <Phone className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">母亲电话</p>
+                            <p className="text-gray-900">{selectedStudent.mother_phone || '未设置'}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-3">
+                          <Phone className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">家长电话</p>
+                            <p className="text-gray-900">{selectedStudent.parentPhone || '未设置'}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-3">
+                          <Users className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">紧急联络人</p>
+                            <p className="text-gray-900">{selectedStudent.emergencyContact || '未设置'}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-3">
+                          <Phone className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">紧急联络电话</p>
+                            <p className="text-gray-900">{selectedStudent.emergencyPhone || '未设置'}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-3">
+                          <Mail className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">邮箱</p>
+                            <p className="text-gray-900">{selectedStudent.email || '未设置'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* 健康状况 */}
+                  <TabsContent value="health" className="space-y-4">
+                    <div className="space-y-4">
+                      <div className="flex items-start space-x-3">
+                        <Heart className="h-5 w-5 text-gray-400 mt-1" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-500 mb-2">健康信息</p>
+                          <div className="bg-gray-50 p-3 rounded-lg">
+                            <p className="text-gray-900 whitespace-pre-wrap">
+                              {selectedStudent.healthInfo || '暂无健康信息记录'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start space-x-3">
+                        <Heart className="h-5 w-5 text-gray-400 mt-1" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-500 mb-2">医疗信息</p>
+                          <div className="bg-gray-50 p-3 rounded-lg">
+                            <p className="text-gray-900 whitespace-pre-wrap">
+                              {selectedStudent.medicalInfo || '暂无医疗信息记录'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start space-x-3">
+                        <FileText className="h-5 w-5 text-gray-400 mt-1" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-500 mb-2">备注</p>
+                          <div className="bg-gray-50 p-3 rounded-lg">
+                            <p className="text-gray-900 whitespace-pre-wrap">
+                              {selectedStudent.notes || '暂无备注信息'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* 接送安排 */}
+                  <TabsContent value="pickup" className="space-y-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <Car className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">接送方式</p>
+                          <p className="text-gray-900">
+                            {selectedStudent.pickupMethod === 'parent' ? '家长接送' :
+                             selectedStudent.pickupMethod === 'guardian' ? '监护人接送' :
+                             selectedStudent.pickupMethod === 'authorized' ? '授权人接送' :
+                             selectedStudent.pickupMethod === 'public' ? '公共交通' :
+                             selectedStudent.pickupMethod === 'walking' ? '步行' : '未设置'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      <div className="space-y-4">
+                        <h4 className="font-medium text-gray-900">授权接送人</h4>
+                        
+                        {selectedStudent.authorizedPickup1Name && (
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <h5 className="font-medium text-gray-900 mb-2">接送人 1</h5>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                              <div>
+                                <span className="text-gray-500">姓名：</span>
+                                <span className="text-gray-900">{selectedStudent.authorizedPickup1Name}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">电话：</span>
+                                <span className="text-gray-900">{selectedStudent.authorizedPickup1Phone || '未设置'}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">关系：</span>
+                                <span className="text-gray-900">{selectedStudent.authorizedPickup1Relation || '未设置'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {selectedStudent.authorizedPickup2Name && (
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <h5 className="font-medium text-gray-900 mb-2">接送人 2</h5>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                              <div>
+                                <span className="text-gray-500">姓名：</span>
+                                <span className="text-gray-900">{selectedStudent.authorizedPickup2Name}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">电话：</span>
+                                <span className="text-gray-900">{selectedStudent.authorizedPickup2Phone || '未设置'}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">关系：</span>
+                                <span className="text-gray-900">{selectedStudent.authorizedPickup2Relation || '未设置'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {selectedStudent.authorizedPickup3Name && (
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <h5 className="font-medium text-gray-900 mb-2">接送人 3</h5>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                              <div>
+                                <span className="text-gray-500">姓名：</span>
+                                <span className="text-gray-900">{selectedStudent.authorizedPickup3Name}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">电话：</span>
+                                <span className="text-gray-900">{selectedStudent.authorizedPickup3Phone || '未设置'}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">关系：</span>
+                                <span className="text-gray-900">{selectedStudent.authorizedPickup3Relation || '未设置'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {!selectedStudent.authorizedPickup1Name && 
+                         !selectedStudent.authorizedPickup2Name && 
+                         !selectedStudent.authorizedPickup3Name && (
+                          <div className="text-center py-8 text-gray-500">
+                            <Car className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                            <p>暂无授权接送人信息</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="flex items-center justify-center h-64">
+                <div className="text-center text-gray-500">
+                  <Eye className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>请从左侧列表选择一个学生查看档案</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// OverviewTab component
+function OverviewTab({ students }: { students: any[] }) {
+  const [attendanceData, setAttendanceData] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+
+  // 获取考勤数据
+  const fetchAttendanceData = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/student-attendance')
+      if (response.ok) {
+        const data = await response.json()
+        setAttendanceData(data.data || [])
+      }
+    } catch (error) {
+      console.error('获取考勤数据失败:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchAttendanceData()
+  }, [])
+
+  // 计算统计数据
+  const stats = useMemo(() => {
+    const totalStudents = students.length
+    
+    // 按中心统计学生数量
+    const centerStats = students.reduce((acc, student) => {
+      const center = student.center || 'WX 01'
+      if (!acc[center]) {
+        acc[center] = { total: 0, active: 0 }
+      }
+      acc[center].total++
+      if (student.status === 'active') {
+        acc[center].active++
+      }
+      return acc
+    }, {} as Record<string, { total: number; active: number }>)
+
+    // 今日考勤统计
+    const today = new Date().toISOString().split('T')[0]
+    const todayAttendance = attendanceData.filter(record => {
+      const recordDate = record.date ? record.date.split('T')[0] : ''
+      return recordDate === today
+    })
+
+    const presentCount = todayAttendance.filter(r => r.status === 'present').length
+    const lateCount = todayAttendance.filter(r => r.status === 'late').length
+    const absentCount = todayAttendance.filter(r => r.status === 'absent').length
+    const attendanceRate = totalStudents > 0 ? Math.round((presentCount / totalStudents) * 100) : 0
+
+    // 最近7天考勤趋势
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date()
+      date.setDate(date.getDate() - i)
+      return date.toISOString().split('T')[0]
+    }).reverse()
+
+    const attendanceTrend = last7Days.map(date => {
+      const dayAttendance = attendanceData.filter(record => {
+        const recordDate = record.date ? record.date.split('T')[0] : ''
+        return recordDate === date
+      })
+      const dayPresent = dayAttendance.filter(r => r.status === 'present').length
+      const dayRate = totalStudents > 0 ? Math.round((dayPresent / totalStudents) * 100) : 0
+      
+      return {
+        date,
+        present: dayPresent,
+        rate: dayRate,
+        label: new Date(date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+      }
+    })
+
+    return {
+      totalStudents,
+      centerStats,
+      todayAttendance: {
+        present: presentCount,
+        late: lateCount,
+        absent: absentCount,
+        rate: attendanceRate
+      },
+      attendanceTrend
+    }
+  }, [students, attendanceData])
+
+  return (
+    <div className="space-y-6">
+      {/* 页面标题 */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">工作台总览</h2>
+        <p className="text-gray-600">查看整体教学情况和关键指标</p>
+      </div>
+
+      {/* 核心指标卡片 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Users className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">总学生数</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalStudents}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <UserCheck className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">今日出勤</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.todayAttendance.present}</p>
+                <p className="text-xs text-green-600">{stats.todayAttendance.rate}% 出勤率</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Clock className="h-5 w-5 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">迟到人数</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.todayAttendance.late}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <XCircle className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">缺席人数</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.todayAttendance.absent}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 中心分布和考勤趋势 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 中心分布 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              中心分布
+            </CardTitle>
+            <CardDescription>各中心学生数量和活跃状态</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {Object.entries(stats.centerStats).map(([center, data]) => (
+                <div key={center} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <MapPin className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{center}</p>
+                      <p className="text-sm text-gray-500">{(data as any).active}/{(data as any).total} 活跃</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-blue-600">{(data as any).total}</p>
+                    <p className="text-xs text-gray-500">学生</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 考勤趋势 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              考勤趋势
+            </CardTitle>
+            <CardDescription>最近7天出勤率变化</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {stats.attendanceTrend.map((day, index) => (
+                <div key={day.date} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm text-gray-600">{day.label}</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm text-gray-500">{day.present}人</span>
+                    <div className="w-16 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${day.rate}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900 w-8">{day.rate}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 快速操作 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            快速操作
+          </CardTitle>
+          <CardDescription>常用功能快速访问</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col items-center justify-center space-y-2"
+              onClick={() => window.open('/mobile-checkin', '_blank')}
+            >
+              <Smartphone className="h-6 w-6" />
+              <span>移动端考勤</span>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col items-center justify-center space-y-2"
+              onClick={() => window.open('/teacher-checkin', '_blank')}
+            >
+              <User className="h-6 w-6" />
+              <span>教师打卡</span>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col items-center justify-center space-y-2"
+              onClick={fetchAttendanceData}
+              disabled={loading}
+            >
+              <RefreshCw className={`h-6 w-6 ${loading ? 'animate-spin' : ''}`} />
+              <span>刷新数据</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 // StudentManagement component
 function StudentManagement({ teacherId }: { teacherId?: string }) {
   const { students, loading, error, refetch } = useStudents()
+  
+  // 分页状态管理
+  const [currentPage, setCurrentPage] = useState(1)
+  const studentsPerPage = 10
+  
+  // 学生档案查看状态
+  const [selectedStudent, setSelectedStudent] = useState<any | null>(null)
+  const [showProfile, setShowProfile] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedCenter, setSelectedCenter] = useState("all")
+  
+  // 计算分页数据
+  const totalPages = Math.ceil(students.length / studentsPerPage)
+  const startIndex = (currentPage - 1) * studentsPerPage
+  const endIndex = startIndex + studentsPerPage
+  const currentStudents = students.slice(startIndex, endIndex)
+  
+  // 过滤学生数据
+  const filteredStudents = students.filter((student: any) => {
+    const matchesSearch = !searchTerm || 
+      student.student_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.student_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.school?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesCenter = selectedCenter === "all" || student.center === selectedCenter
+    
+    return matchesSearch && matchesCenter
+  })
+  
+  // 分页控制函数
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+  
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
+  
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+  
+  // 查看学生档案
+  const handleViewProfile = (student: any) => {
+    setSelectedStudent(student)
+    setShowProfile(true)
+  }
+  
+  // 关闭档案查看
+  const handleCloseProfile = () => {
+    setShowProfile(false)
+    setSelectedStudent(null)
+  }
+  
+  // 获取中心列表
+  const centers = Array.from(new Set(students.map((s: any) => s.center).filter(Boolean)))
+  
+  // 获取学生姓名首字母
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase()
+  }
+  
+  // 格式化日期
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "未设置"
+    return new Date(dateString).toLocaleDateString('zh-CN')
+  }
+  
+  // 获取状态颜色
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800'
+      case 'inactive': return 'bg-gray-100 text-gray-800'
+      case 'lost': return 'bg-red-100 text-red-800'
+      case 'graduated': return 'bg-blue-100 text-blue-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+  
+  // 获取服务类型颜色
+  const getServiceTypeColor = (type: string) => {
+    switch (type) {
+      case 'afterschool': return 'bg-purple-100 text-purple-800'
+      case 'tuition': return 'bg-orange-100 text-orange-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
   
 
 
@@ -216,37 +1109,501 @@ function StudentManagement({ teacherId }: { teacherId?: string }) {
           </div>
         </CardHeader>
         <CardContent>
+          {/* 搜索和过滤 */}
+          <div className="flex items-center space-x-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="搜索学生姓名、学号或学校..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-400" />
+              <select
+                value={selectedCenter}
+                onChange={(e) => setSelectedCenter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+              >
+                <option value="all">所有中心</option>
+                {centers.map((center: any) => (
+                  <option key={center} value={center}>{center}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {/* 分页信息 */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-sm text-gray-600">
+              显示第 {startIndex + 1} - {Math.min(endIndex, filteredStudents.length)} 条，共 {filteredStudents.length} 条记录
+            </div>
+            <div className="text-sm text-gray-600">
+              第 {currentPage} 页，共 {Math.ceil(filteredStudents.length / studentsPerPage)} 页
+            </div>
+          </div>
+          
           <div className="space-y-4">
-            {students.map((student) => (
+            {filteredStudents.slice(startIndex, endIndex).map((student) => (
               <div key={student.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
                 <div className="flex items-center space-x-3">
                   <Avatar className="h-10 w-10">
+                    <AvatarImage src={student.avatar || undefined} />
                     <AvatarFallback className="bg-blue-100 text-blue-600">
-                      {student.student_name?.charAt(0) || '?'}
+                      {getInitials(student.student_name || '')}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-medium text-gray-900">{student.student_name || '未知姓名'}</p>
                     <p className="text-sm text-gray-500">学号: {student.student_id || '无学号'}</p>
                     <p className="text-sm text-gray-500">中心: {student.center || '未指定'}</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <Badge 
+                        variant="secondary" 
+                        className={`text-xs ${getStatusColor(student.status || 'inactive')}`}
+                      >
+                        {student.status === 'active' ? '活跃' : 
+                         student.status === 'inactive' ? '非活跃' :
+                         student.status === 'lost' ? '丢失' : '已毕业'}
+                      </Badge>
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs ${getServiceTypeColor(student.serviceType || 'afterschool')}`}
+                      >
+                        {student.serviceType === 'afterschool' ? '课后班' : '补习班'}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
-                    {student.status === 'active' ? '在线' : '离线'}
-                  </Badge>
-                  <Button variant="ghost" size="sm">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleViewProfile(student)}
+                    title="查看档案"
+                  >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" title="编辑">
                     <Edit className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             ))}
+            
+            {/* 如果没有学生数据 */}
+            {filteredStudents.length === 0 && (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">没有找到匹配的学生</p>
+              </div>
+            )}
           </div>
+          
+          {/* 分页控件 */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t">
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-1" />
+                  上一页
+                </Button>
+                
+                {/* 页码按钮 */}
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageChange(pageNum)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  })}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                >
+                  下一页
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+              
+              {/* 跳转到指定页面 */}
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">跳转到:</span>
+                <Select
+                  value={currentPage.toString()}
+                  onValueChange={(value) => handlePageChange(parseInt(value))}
+                >
+                  <SelectTrigger className="w-20 h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <SelectItem key={i + 1} value={(i + 1).toString()}>
+                        {i + 1}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-sm text-gray-600">页</span>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* 学生档案查看模态框 */}
+      {showProfile && selectedStudent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              {/* 模态框头部 */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-4">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={selectedStudent.avatar || undefined} />
+                    <AvatarFallback className="bg-blue-100 text-blue-600 text-lg">
+                      {getInitials(selectedStudent.student_name || '')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {selectedStudent.student_name || '未设置姓名'}
+                    </h2>
+                    <p className="text-gray-600">
+                      {selectedStudent.student_id || '无学号'} • {selectedStudent.center || '未分配中心'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge 
+                    variant="secondary" 
+                    className={getStatusColor(selectedStudent.status || 'inactive')}
+                  >
+                    {selectedStudent.status === 'active' ? '活跃' : 
+                     selectedStudent.status === 'inactive' ? '非活跃' :
+                     selectedStudent.status === 'lost' ? '丢失' : '已毕业'}
+                  </Badge>
+                  <Badge 
+                    variant="outline" 
+                    className={getServiceTypeColor(selectedStudent.serviceType || 'afterschool')}
+                  >
+                    {selectedStudent.serviceType === 'afterschool' ? '课后班' : '补习班'}
+                  </Badge>
+                  <Button variant="ghost" onClick={handleCloseProfile}>
+                    <XCircle className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* 档案内容 */}
+              <Tabs defaultValue="basic" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="basic">基本信息</TabsTrigger>
+                  <TabsTrigger value="contact">紧急联络</TabsTrigger>
+                  <TabsTrigger value="health">健康状况</TabsTrigger>
+                  <TabsTrigger value="pickup">接送安排</TabsTrigger>
+                </TabsList>
+
+                {/* 基本信息 */}
+                <TabsContent value="basic" className="space-y-4 mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <User className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">姓名</p>
+                          <p className="text-gray-900">{selectedStudent.student_name || '未设置'}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <Calendar className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">出生日期</p>
+                          <p className="text-gray-900">{formatDate(selectedStudent.dob || '')}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-3">
+                        <User className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">性别</p>
+                          <p className="text-gray-900">
+                            {selectedStudent.gender === 'male' ? '男' : 
+                             selectedStudent.gender === 'female' ? '女' : '未设置'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-3">
+                        <FileText className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">年级</p>
+                          <p className="text-gray-900">{selectedStudent.standard || '未设置'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <MapPin className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">学校</p>
+                          <p className="text-gray-900">{selectedStudent.school || '未设置'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-3">
+                        <MapPin className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">家庭地址</p>
+                          <p className="text-gray-900">{selectedStudent.home_address || '未设置'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-3">
+                        <Calendar className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">注册日期</p>
+                          <p className="text-gray-900">{formatDate(selectedStudent.registrationDate || '')}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-3">
+                        <FileText className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">NRIC/护照</p>
+                          <p className="text-gray-900">{selectedStudent.nric || '未设置'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* 紧急联络 */}
+                <TabsContent value="contact" className="space-y-4 mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <Phone className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">父亲电话</p>
+                          <p className="text-gray-900">{selectedStudent.father_phone || '未设置'}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <Phone className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">母亲电话</p>
+                          <p className="text-gray-900">{selectedStudent.mother_phone || '未设置'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-3">
+                        <Phone className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">家长电话</p>
+                          <p className="text-gray-900">{selectedStudent.parentPhone || '未设置'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <Users className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">紧急联络人</p>
+                          <p className="text-gray-900">{selectedStudent.emergencyContact || '未设置'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-3">
+                        <Phone className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">紧急联络电话</p>
+                          <p className="text-gray-900">{selectedStudent.emergencyPhone || '未设置'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-3">
+                        <Mail className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">邮箱</p>
+                          <p className="text-gray-900">{selectedStudent.email || '未设置'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* 健康状况 */}
+                <TabsContent value="health" className="space-y-4 mt-6">
+                  <div className="space-y-4">
+                    <div className="flex items-start space-x-3">
+                      <Heart className="h-5 w-5 text-gray-400 mt-1" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-500 mb-2">健康信息</p>
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <p className="text-gray-900 whitespace-pre-wrap">
+                            {selectedStudent.healthInfo || '暂无健康信息记录'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start space-x-3">
+                      <Heart className="h-5 w-5 text-gray-400 mt-1" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-500 mb-2">医疗信息</p>
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <p className="text-gray-900 whitespace-pre-wrap">
+                            {selectedStudent.medicalInfo || '暂无医疗信息记录'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start space-x-3">
+                      <FileText className="h-5 w-5 text-gray-400 mt-1" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-500 mb-2">备注</p>
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <p className="text-gray-900 whitespace-pre-wrap">
+                            {selectedStudent.notes || '暂无备注信息'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* 接送安排 */}
+                <TabsContent value="pickup" className="space-y-4 mt-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-3">
+                      <Car className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">接送方式</p>
+                        <p className="text-gray-900">
+                          {selectedStudent.pickupMethod === 'parent' ? '家长接送' :
+                           selectedStudent.pickupMethod === 'guardian' ? '监护人接送' :
+                           selectedStudent.pickupMethod === 'authorized' ? '授权人接送' :
+                           selectedStudent.pickupMethod === 'public' ? '公共交通' :
+                           selectedStudent.pickupMethod === 'walking' ? '步行' : '未设置'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-gray-900">授权接送人</h4>
+                      
+                      {selectedStudent.authorizedPickup1Name && (
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <h5 className="font-medium text-gray-900 mb-2">接送人 1</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                            <div>
+                              <span className="text-gray-500">姓名：</span>
+                              <span className="text-gray-900">{selectedStudent.authorizedPickup1Name}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">电话：</span>
+                              <span className="text-gray-900">{selectedStudent.authorizedPickup1Phone || '未设置'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">关系：</span>
+                              <span className="text-gray-900">{selectedStudent.authorizedPickup1Relation || '未设置'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedStudent.authorizedPickup2Name && (
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <h5 className="font-medium text-gray-900 mb-2">接送人 2</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                            <div>
+                              <span className="text-gray-500">姓名：</span>
+                              <span className="text-gray-900">{selectedStudent.authorizedPickup2Name}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">电话：</span>
+                              <span className="text-gray-900">{selectedStudent.authorizedPickup2Phone || '未设置'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">关系：</span>
+                              <span className="text-gray-900">{selectedStudent.authorizedPickup2Relation || '未设置'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedStudent.authorizedPickup3Name && (
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <h5 className="font-medium text-gray-900 mb-2">接送人 3</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                            <div>
+                              <span className="text-gray-500">姓名：</span>
+                              <span className="text-gray-900">{selectedStudent.authorizedPickup3Name}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">电话：</span>
+                              <span className="text-gray-900">{selectedStudent.authorizedPickup3Phone || '未设置'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">关系：</span>
+                              <span className="text-gray-900">{selectedStudent.authorizedPickup3Relation || '未设置'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {!selectedStudent.authorizedPickup1Name && 
+                       !selectedStudent.authorizedPickup2Name && 
+                       !selectedStudent.authorizedPickup3Name && (
+                        <div className="text-center py-8 text-gray-500">
+                          <Car className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                          <p>暂无授权接送人信息</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
@@ -305,6 +1662,7 @@ function AttendanceManagement({
   const centers = useMemo(() => {
     console.log('🔍 AttendanceManagement: 计算中心信息，学生数量:', students?.length || 0)
     console.log('🔍 AttendanceManagement: 学生数据:', students?.slice(0, 3))
+    console.log('🔍 AttendanceManagement: 考勤数据数量:', attendanceData?.length || 0)
     
     if (!students || students.length === 0) {
       console.log('⚠️ AttendanceManagement: 没有学生数据，返回默认中心')
@@ -368,46 +1726,44 @@ function AttendanceManagement({
 
     console.log('📊 AttendanceManagement: 中心分布:', centerCounts)
 
-
-
-      // 基于真实考勤数据计算每个中心的考勤情况
-  const calculateCenterAttendance = (centerId: string, studentCount: number) => {
-    if (studentCount === 0) return { todayAttendance: 0, attendanceRate: 0, lateCount: 0, absentCount: 0 }
-    
-    // 获取今天的日期
-    const today = new Date().toISOString().split('T')[0]
-    
-    // 从真实考勤数据中筛选该中心的数据
-    const centerAttendance = attendanceData.filter(record => {
-      // 直接使用考勤记录的 center 字段匹配，因为已经修复了保存逻辑
-      const centerMatch = record.center === centerId.toUpperCase().replace('WX', 'WX ')
+    // 基于真实考勤数据计算每个中心的考勤情况
+    const calculateCenterAttendance = (centerName: string, studentCount: number) => {
+      if (studentCount === 0) return { todayAttendance: 0, attendanceRate: 0, lateCount: 0, absentCount: 0 }
       
-      // 使用今天的日期而不是 selectedDate
-      // 简化日期匹配：只要日期字符串包含今天的日期就算匹配
-      const dateMatch = record.date && record.date.includes(today)
+      // 获取今天的日期
+      const today = new Date().toISOString().split('T')[0]
       
-      const result = centerMatch && dateMatch
+      // 从真实考勤数据中筛选该中心的数据
+      const centerAttendance = attendanceData.filter(record => {
+        // 直接使用考勤记录的 center 字段匹配
+        const centerMatch = record.center === centerName
+        
+        // 使用今天的日期
+        const dateMatch = record.date && record.date.includes(today)
+        
+        const result = centerMatch && dateMatch
+        console.log(`🔍 考勤匹配 - 中心: ${centerName}, 记录中心: ${record.center}, 日期匹配: ${dateMatch}, 结果: ${result}`)
+        
+        return result
+      })
       
-
+      console.log(`📊 ${centerName} 中心考勤数据:`, centerAttendance.length, '条记录')
       
-      return result
-    })
-    
-
-    
-    const presentCount = centerAttendance.filter(r => r.status === 'present').length
-    const lateCount = centerAttendance.filter(r => r.status === 'late').length
-    const absentCount = centerAttendance.filter(r => r.status === 'absent').length
-    
-    const attendanceRate = studentCount > 0 ? Math.round((presentCount / studentCount) * 100) : 0
-    
-    return {
-      todayAttendance: presentCount,
-      attendanceRate: Math.max(0, Math.min(100, attendanceRate)),
-      lateCount: lateCount,
-      absentCount: absentCount
+      const presentCount = centerAttendance.filter(r => r.status === 'present').length
+      const lateCount = centerAttendance.filter(r => r.status === 'late').length
+      const absentCount = centerAttendance.filter(r => r.status === 'absent').length
+      
+      const attendanceRate = studentCount > 0 ? Math.round((presentCount / studentCount) * 100) : 0
+      
+      console.log(`📊 ${centerName} 统计: 出勤${presentCount}, 迟到${lateCount}, 缺席${absentCount}, 出勤率${attendanceRate}%`)
+      
+      return {
+        todayAttendance: presentCount,
+        attendanceRate: Math.max(0, Math.min(100, attendanceRate)),
+        lateCount: lateCount,
+        absentCount: absentCount
+      }
     }
-  }
 
     // 生成中心列表
     const centerList = [
@@ -419,7 +1775,7 @@ function AttendanceManagement({
 
     return centerList.map(center => {
       const studentCount = centerCounts[center.name] || 0
-      const attendance = calculateCenterAttendance(center.id, studentCount)
+      const attendance = calculateCenterAttendance(center.name, studentCount)
       
       // 基于真实考勤数据计算最后活动时间
       const getLastActivity = () => {
@@ -1625,8 +2981,12 @@ export default function TeacherWorkspace() {
         {/* 主内容区域 */}
         <main className="w-full">
           {/* Tab导航 */}
-          <Tabs defaultValue="attendance" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-8">
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="grid w-full grid-cols-5 mb-8">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                总览
+              </TabsTrigger>
               <TabsTrigger value="attendance" className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 考勤管理
@@ -1635,11 +2995,20 @@ export default function TeacherWorkspace() {
                 <Users className="h-4 w-4" />
                 学生管理
               </TabsTrigger>
+              <TabsTrigger value="assignments" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                作业与成绩
+              </TabsTrigger>
               <TabsTrigger value="dashboard" className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
+                <Activity className="h-4 w-4" />
                 数据概览
               </TabsTrigger>
             </TabsList>
+
+            {/* 总览标签页 */}
+            <TabsContent value="overview" className="space-y-6">
+              <OverviewTab students={students} />
+            </TabsContent>
 
             {/* 考勤管理标签页 */}
             <TabsContent value="attendance" className="space-y-6">
@@ -1666,6 +3035,11 @@ export default function TeacherWorkspace() {
             {/* 学生管理标签页 */}
             <TabsContent value="students" className="space-y-6">
               <StudentManagement teacherId={user?.id} />
+            </TabsContent>
+
+            {/* 作业与成绩录入标签页 */}
+            <TabsContent value="assignments" className="space-y-6">
+              <AssignmentManagement />
             </TabsContent>
 
             {/* 数据概览标签页 */}
@@ -1750,7 +3124,7 @@ export default function TeacherWorkspace() {
                     <CardContent>
                       {recentActivities.length > 0 ? (
                       <div className="space-y-4">
-                        {recentActivities.map((activity) => (
+                        {recentActivities.map((activity: any) => (
                           <div key={activity.id} className="flex items-start space-x-3">
                             <div className={`w-2 h-2 rounded-full mt-2 ${
                               activity.status === 'success' ? 'bg-green-500' :
@@ -1785,7 +3159,7 @@ export default function TeacherWorkspace() {
                     <CardContent>
                       {upcomingClasses.length > 0 ? (
                       <div className="space-y-4">
-                        {upcomingClasses.map((classItem) => (
+                        {upcomingClasses.map((classItem: any) => (
                           <div key={classItem.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                             <div>
                               <p className="font-medium text-gray-900">{classItem.subject}</p>
