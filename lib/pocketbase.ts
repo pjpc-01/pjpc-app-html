@@ -99,7 +99,13 @@ const detectNetworkEnvironment = async () => {
 
 // PocketBase URL配置（智能检测网络环境）
 const getPocketBaseUrl = async (): Promise<string> => {
-  // 优先使用环境变量（服务器端和客户端都支持）
+  // 服务器端直接使用HTTP连接，避免自签名证书问题
+  if (typeof window === 'undefined') {
+    console.log('🔧 服务器端使用直接HTTP连接')
+    return 'http://pjpc.tplinkdns.com:8090'
+  }
+  
+  // 客户端优先使用环境变量
   if (process.env.NEXT_PUBLIC_POCKETBASE_URL) {
     console.log('🔧 使用环境变量配置的PocketBase URL:', process.env.NEXT_PUBLIC_POCKETBASE_URL)
     return process.env.NEXT_PUBLIC_POCKETBASE_URL
