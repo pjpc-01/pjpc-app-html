@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { GraduationCap, Bell, Settings, LogOut, UserCheck, Wifi, WifiOff, AlertTriangle, CreditCard } from "lucide-react"
+import { GraduationCap, Bell, Settings, LogOut, UserCheck, Wifi, WifiOff, AlertTriangle, CreditCard, Menu, X } from "lucide-react"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import SecureLoginForm from "@/app/components/systems/auth/secure-login-form"
 import AdminDashboard from "./components/dashboards/admin-dashboard"
@@ -18,12 +18,15 @@ import { AlertTriangle as AlertTriangleIcon, Mail, Clock } from "lucide-react"
 import ConnectionStatus from "@/components/ConnectionStatus"
 import TeacherNavigation from "@/components/shared/TeacherNavigation"
 import StaticPage from "./static-page"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export default function Dashboard() {
   const { user, userProfile, loading, logout, resendVerification, error, connectionStatus, clearError } = useAuth()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
   const [isStaticBuild, setIsStaticBuild] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const isMobile = useIsMobile()
 
   // 检测是否为静态构建
   useEffect(() => {
@@ -285,43 +288,106 @@ export default function Dashboard() {
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center">
                 <GraduationCap className="h-8 w-8 text-blue-600" />
-                <h1 className="ml-2 text-xl font-bold text-gray-900">{getRoleTitle()}</h1>
+                <h1 className="ml-2 text-lg sm:text-xl font-bold text-gray-900 truncate">{getRoleTitle()}</h1>
               </div>
-            <div className="flex items-center space-x-4">
-              {/* Quick Access to Systems */}
-              {userProfile.role === 'admin' && (
+              
+              {/* Desktop Navigation */}
+              <div className="hidden md:flex items-center space-x-4">
+                {/* Quick Access to Systems */}
+                {userProfile.role === 'admin' && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href="/admin-dashboard" className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      <span>管理面板</span>
+                    </a>
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" asChild>
-                  <a href="/admin-dashboard" className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" />
-                    <span className="hidden sm:inline">管理面板</span>
+                  <a href="/attendance" className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    <span>考勤打卡</span>
                   </a>
                 </Button>
-              )}
-              <Button variant="outline" size="sm" asChild>
-                <a href="/attendance" className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4" />
-                  <span className="hidden sm:inline">考勤打卡</span>
-                </a>
-              </Button>
-              
-              {/* User Info */}
-              <div className="flex items-center gap-2">
-                <UserCheck className="h-4 w-4 text-gray-500" />
-                <span className="text-sm text-gray-700">{userProfile.name}</span>
-                <span className="text-xs text-gray-500">({user.email})</span>
+                
+                {/* User Info */}
+                <div className="flex items-center gap-2">
+                  <UserCheck className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-700">{userProfile.name}</span>
+                  <span className="text-xs text-gray-500 hidden lg:inline">({user.email})</span>
+                </div>
+                <Badge variant={getRoleBadgeColor() as any}>{getRoleLabel()}</Badge>
+                <Button variant="ghost" size="sm">
+                  <Bell className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm">
+                  <Settings className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                </Button>
               </div>
-              <Badge variant={getRoleBadgeColor() as any}>{getRoleLabel()}</Badge>
-              <Button variant="ghost" size="sm">
-                <Bell className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm">
-                <Settings className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-              </Button>
-                          </div>
+
+              {/* Mobile Navigation */}
+              <div className="md:hidden flex items-center space-x-2">
+                <Badge variant={getRoleBadgeColor() as any} className="text-xs">
+                  {getRoleLabel()}
+                </Badge>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                >
+                  {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </Button>
+              </div>
             </div>
+
+            {/* Mobile Menu */}
+            {mobileMenuOpen && isMobile && (
+              <div className="md:hidden border-t bg-white">
+                <div className="px-2 pt-2 pb-3 space-y-1">
+                  {/* Quick Access to Systems */}
+                  {userProfile.role === 'admin' && (
+                    <Button variant="outline" size="sm" asChild className="w-full justify-start">
+                      <a href="/admin-dashboard" className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        <span>管理面板</span>
+                      </a>
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" asChild className="w-full justify-start">
+                    <a href="/attendance" className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      <span>考勤打卡</span>
+                    </a>
+                  </Button>
+                  
+                  {/* User Info */}
+                  <div className="px-3 py-2 border-t">
+                    <div className="flex items-center gap-2 mb-2">
+                      <UserCheck className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-700">{userProfile.name}</span>
+                    </div>
+                    <div className="text-xs text-gray-500 mb-3">{user.email}</div>
+                    
+                    <div className="flex space-x-2">
+                      <Button variant="ghost" size="sm" className="flex-1">
+                        <Bell className="h-4 w-4 mr-2" />
+                        通知
+                      </Button>
+                      <Button variant="ghost" size="sm" className="flex-1">
+                        <Settings className="h-4 w-4 mr-2" />
+                        设置
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={handleLogout} className="flex-1">
+                        <LogOut className="h-4 w-4 mr-2" />
+                        退出
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </header>
       )}
@@ -341,7 +407,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         <ErrorBoundary>
           {renderDashboard()}
         </ErrorBoundary>

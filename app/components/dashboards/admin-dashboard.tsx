@@ -28,29 +28,33 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
   const [educationDataType, setEducationDataType] = useState<string>('primary')
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`grid w-full h-12 ${
-          userProfile?.role === "admin" ? "grid-cols-4" : "grid-cols-3"
+        <TabsList className={`grid w-full h-auto sm:h-12 ${
+          userProfile?.role === "admin" ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3"
         }`}>
-          <TabsTrigger value="overview" className="flex items-center gap-2 text-sm">
-            <BarChart3 className="h-4 w-4" />
-            概览
+          <TabsTrigger value="overview" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-0">
+            <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden xs:inline">概览</span>
+            <span className="xs:hidden">概</span>
           </TabsTrigger>
           {userProfile?.role === "admin" && (
-            <TabsTrigger value="finance" className="flex items-center gap-2 text-sm">
-              <DollarSign className="h-4 w-4" />
-              财务
+            <TabsTrigger value="finance" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-0">
+              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">财务</span>
+              <span className="xs:hidden">财</span>
             </TabsTrigger>
           )}
-          <TabsTrigger value="education" className="flex items-center gap-2 text-sm">
-            <BookOpen className="h-4 w-4" />
-            教育
+          <TabsTrigger value="education" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-0">
+            <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden xs:inline">教育</span>
+            <span className="xs:hidden">教</span>
           </TabsTrigger>
           {userProfile?.role === "admin" && (
-            <TabsTrigger value="settings" className="flex items-center gap-2 text-sm">
-              <Settings className="h-4 w-4" />
-              设定
+            <TabsTrigger value="settings" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-0">
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">设定</span>
+              <span className="xs:hidden">设</span>
             </TabsTrigger>
           )}
         </TabsList>

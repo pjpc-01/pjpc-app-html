@@ -23,7 +23,7 @@ interface OverviewTabProps {
 
 export default function OverviewTab({ stats, statsLoading, statsError }: OverviewTabProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* 错误提示 */}
       {statsError && (
         <Alert variant="destructive">
@@ -33,12 +33,12 @@ export default function OverviewTab({ stats, statsLoading, statsError }: Overvie
       )}
 
       {/* Key Performance Indicators */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">总用户数</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">总用户数</p>
                 {statsLoading ? (
                   <div className="flex items-center mt-2">
                     <RefreshCw className="h-4 w-4 animate-spin mr-2" />
@@ -46,7 +46,7 @@ export default function OverviewTab({ stats, statsLoading, statsError }: Overvie
                   </div>
                 ) : (
                   <>
-                    <p className="text-2xl font-bold">{stats?.totalUsers || 0}</p>
+                    <p className="text-xl sm:text-2xl font-bold">{stats?.totalUsers || 0}</p>
                     <p className="text-xs text-green-600 flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" />
                       实时数据
@@ -54,16 +54,16 @@ export default function OverviewTab({ stats, statsLoading, statsError }: Overvie
                   </>
                 )}
               </div>
-              <Users className="h-8 w-8 text-blue-600" />
+              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">学生总数</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">学生总数</p>
                 {statsLoading ? (
                   <div className="flex items-center mt-2">
                     <RefreshCw className="h-4 w-4 animate-spin mr-2" />
@@ -71,7 +71,7 @@ export default function OverviewTab({ stats, statsLoading, statsError }: Overvie
                   </div>
                 ) : (
                   <>
-                    <p className="text-2xl font-bold">{stats?.totalStudents || 0}</p>
+                    <p className="text-xl sm:text-2xl font-bold">{stats?.totalStudents || 0}</p>
                     <p className="text-xs text-green-600 flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" />
                       实时数据
@@ -79,16 +79,16 @@ export default function OverviewTab({ stats, statsLoading, statsError }: Overvie
                   </>
                 )}
               </div>
-              <GraduationCap className="h-8 w-8 text-green-600" />
+              <GraduationCap className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">月收入</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-600">月收入</p>
                 {statsLoading ? (
                   <div className="flex items-center mt-2">
                     <RefreshCw className="h-4 w-4 animate-spin mr-2" />
@@ -96,7 +96,7 @@ export default function OverviewTab({ stats, statsLoading, statsError }: Overvie
                   </div>
                 ) : (
                   <>
-                    <p className="text-2xl font-bold">RM {(stats?.monthlyRevenue || 0).toLocaleString()}</p>
+                    <p className="text-xl sm:text-2xl font-bold">RM {(stats?.monthlyRevenue || 0).toLocaleString()}</p>
                     <p className="text-xs text-green-600 flex items-center mt-1">
                       <TrendingUp className="h-3 w-3 mr-1" />
                       实时数据
@@ -104,7 +104,7 @@ export default function OverviewTab({ stats, statsLoading, statsError }: Overvie
                   </>
                 )}
               </div>
-              <DollarSign className="h-8 w-8 text-purple-600" />
+              <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
             </div>
           </CardContent>
         </Card>
