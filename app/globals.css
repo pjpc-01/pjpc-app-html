@@ -88,3 +88,45 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* 移动端优化样式 */
+  .mobile-optimized {
+    @apply text-sm sm:text-base;
+  }
+  
+  .mobile-card {
+    @apply p-3 sm:p-6;
+  }
+  
+  .mobile-text {
+    @apply text-xs sm:text-sm;
+  }
+  
+  .mobile-title {
+    @apply text-lg sm:text-xl;
+  }
+  
+  .mobile-icon {
+    @apply h-4 w-4 sm:h-5 sm:w-5;
+  }
+  
+  .mobile-button {
+    @apply text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5;
+  }
+  
+  /* 确保在小屏幕上内容不会溢出 */
+  .mobile-container {
+    @apply max-w-full overflow-x-hidden;
+  }
+  
+  /* 移动端表格优化 */
+  .mobile-table {
+    @apply text-xs sm:text-sm;
+  }
+  
+  .mobile-table th,
+  .mobile-table td {
+    @apply px-2 sm:px-4 py-2;
+  }
+}
