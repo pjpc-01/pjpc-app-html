@@ -20,11 +20,11 @@ const detectNetworkEnvironment = async () => {
   const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
   
   if (isHttps) {
-    // HTTPS模式下直接使用DDNS连接
+    // HTTPS模式下使用代理连接，避免混合内容错误
     return {
-      url: 'http://pjpc.tplinkdns.com:8090',
-      type: 'ddns',
-      name: 'HTTPS DDNS',
+      url: '/api/pocketbase-proxy',
+      type: 'proxy',
+      name: 'HTTPS Proxy',
       latency: 0,
       success: true
     }
