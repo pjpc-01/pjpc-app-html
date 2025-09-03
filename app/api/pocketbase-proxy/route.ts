@@ -28,10 +28,13 @@ export async function GET(request: NextRequest) {
     const path = url.pathname.replace('/api/pocketbase-proxy', '')
     const searchParams = url.searchParams.toString()
     
-    const targetUrl = `${POCKETBASE_URL}${path}${searchParams ? `?${searchParams}` : ''}`
+    // 如果路径为空，默认访问PocketBase的API根路径
+    const finalPath = path === '' ? '/api/' : path
+    const targetUrl = `${POCKETBASE_URL}${finalPath}${searchParams ? `?${searchParams}` : ''}`
     
     console.log('🔍 Proxy GET request:', {
       originalPath: path,
+      finalPath,
       targetUrl,
       searchParams
     })
@@ -71,10 +74,13 @@ export async function POST(request: NextRequest) {
     const path = url.pathname.replace('/api/pocketbase-proxy', '')
     const body = await request.text()
     
-    const targetUrl = `${POCKETBASE_URL}${path}`
+    // 如果路径为空，默认访问PocketBase的API根路径
+    const finalPath = path === '' ? '/api/' : path
+    const targetUrl = `${POCKETBASE_URL}${finalPath}`
     
     console.log('🔍 Proxy POST request:', {
       originalPath: path,
+      finalPath,
       targetUrl,
       bodyLength: body.length
     })
@@ -115,7 +121,9 @@ export async function PUT(request: NextRequest) {
     const path = url.pathname.replace('/api/pocketbase-proxy', '')
     const body = await request.text()
     
-    const targetUrl = `${POCKETBASE_URL}${path}`
+    // 如果路径为空，默认访问PocketBase的API根路径
+    const finalPath = path === '' ? '/api/' : path
+    const targetUrl = `${POCKETBASE_URL}${finalPath}`
     
     const response = await fetchWithIgnoreSSL(targetUrl, {
       method: 'PUT',
@@ -151,7 +159,9 @@ export async function DELETE(request: NextRequest) {
     const url = new URL(request.url)
     const path = url.pathname.replace('/api/pocketbase-proxy', '')
     
-    const targetUrl = `${POCKETBASE_URL}${path}`
+    // 如果路径为空，默认访问PocketBase的API根路径
+    const finalPath = path === '' ? '/api/' : path
+    const targetUrl = `${POCKETBASE_URL}${finalPath}`
     
     const response = await fetchWithIgnoreSSL(targetUrl, {
       method: 'DELETE',
