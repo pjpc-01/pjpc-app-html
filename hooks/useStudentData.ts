@@ -69,18 +69,25 @@ export const useStudentData = () => {
       
       console.log('开始获取合并后的学生数据...')
       
-      // 检查认证状态
-      if (!pb.authStore.isValid) {
-        throw new Error('用户未认证，请先登录系统')
-      }
-      
-      // 从合并后的 students 集合获取数据
-      const response = await pb.collection('students').getList(1, 500, {
-        sort: 'student_name',
-        $autoCancel: false
+      // 使用API路由获取学生数据，确保数据一致性
+      const response = await fetch('/api/students', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
       
-      const studentData = response.items || []
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      
+      if (!data.success) {
+        throw new Error(data.error || '获取学生数据失败')
+      }
+      
+      const studentData = data.students || []
       console.log(`成功获取 ${studentData.length} 个学生数据`)
       
       // 转换数据格式
@@ -154,24 +161,36 @@ export const useStudentData = () => {
     try {
       console.log('添加学生:', studentData)
       
-      if (!pb.authStore.isValid) {
-        throw new Error('用户未认证')
-      }
-      
       const dataToSave = {
         ...studentData,
         student_name: studentData.student_name || '未命名学生',
         status: studentData.status || 'active',
-        created: new Date().toISOString(),
-        updated: new Date().toISOString(),
       }
       
-      const record = await pb.collection('students').create(dataToSave)
-      console.log('学生添加成功:', record.id)
+      // 使用API路由添加学生，确保数据一致性
+      const response = await fetch('/api/students', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dataToSave),
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      
+      if (!data.success) {
+        throw new Error(data.error || '添加学生失败')
+      }
+      
+      console.log('学生添加成功:', data.student.id)
       
       // 刷新数据
       await fetchStudents()
-      return record
+      return data.student
       
     } catch (err: any) {
       console.error('添加学生失败:', err)
@@ -231,17 +250,25 @@ export const useStudentData = () => {
     try {
       console.log('搜索学生:', query)
       
-      if (!pb.authStore.isValid) {
-        throw new Error('用户未认证')
-      }
-      
-      const response = await pb.collection('students').getList(1, 50, {
-        filter: `student_name ~ "${query}" || student_id ~ "${query}" || school ~ "${query}"`,
-        sort: 'student_name',
-        $autoCancel: false
+      // 使用API路由搜索学生，确保数据一致性
+      const response = await fetch(`/api/students?search=${encodeURIComponent(query)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
       
-      const studentData = response.items || []
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      
+      if (!data.success) {
+        throw new Error(data.error || '搜索学生失败')
+      }
+      
+      const studentData = data.students || []
       console.log(`搜索到 ${studentData.length} 个学生`)
       
       // 转换数据格式
@@ -312,17 +339,25 @@ export const useStudentData = () => {
     try {
       console.log('获取中心学生:', center)
       
-      if (!pb.authStore.isValid) {
-        throw new Error('用户未认证')
-      }
-      
-      const response = await pb.collection('students').getList(1, 500, {
-        filter: `center = "${center}"`,
-        sort: 'student_name',
-        $autoCancel: false
+      // 使用API路由获取学生数据，确保数据一致性
+      const response = await fetch(`/api/students?center=${encodeURIComponent(center)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
       
-      const studentData = response.items || []
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      
+      if (!data.success) {
+        throw new Error(data.error || '获取学生数据失败')
+      }
+      
+      const studentData = data.students || []
       console.log(`中心 ${center} 有 ${studentData.length} 个学生`)
       
       // 转换数据格式
