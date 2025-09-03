@@ -14,9 +14,19 @@ export const useStudents = () => {
       setLoading(true)
       setError(null)
       
-      console.log('开始获取融合的学生数据...')
+      console.log('🔍 useStudents: 开始获取融合的学生数据...')
       const allStudents = await getAllStudents()
-      console.log(`成功获取 ${allStudents.length} 个学生数据`)
+      console.log(`✅ useStudents: 成功获取 ${allStudents.length} 个学生数据`)
+      
+      if (allStudents.length > 0) {
+        console.log('🔍 useStudents: 前3个学生数据:', allStudents.slice(0, 3))
+        const centerCounts = allStudents.reduce((acc, student) => {
+          const center = student.center || 'WX 01'
+          acc[center] = (acc[center] || 0) + 1
+          return acc
+        }, {} as Record<string, number>)
+        console.log('📊 useStudents: 中心分布:', centerCounts)
+      }
       
       setStudents(allStudents)
     } catch (err: any) {

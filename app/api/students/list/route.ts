@@ -47,9 +47,15 @@ export async function GET(request: NextRequest) {
       filter = filters.join(' && ')
     }
 
+    console.log(`🔍 查询参数: center=${center}, status=${status}, limit=${limit}, page=${page}`)
+    console.log(`🔍 过滤条件: ${filter || '无过滤'}`)
+
     try {
-      // 从PocketBase获取学生数据 - 使用最简单的查询，不指定任何字段
-      const students = await pb.collection('students').getList(page, limit)
+      // 从PocketBase获取学生数据 - 应用过滤条件
+      const students = await pb.collection('students').getList(page, limit, {
+        filter: filter || undefined,
+        sort: 'student_name'
+      })
 
       console.log(`✅ 成功获取 ${students.items.length} 个学生记录`);
 
@@ -81,13 +87,28 @@ export async function GET(request: NextRequest) {
         };
       })
 
+      // 计算中心分布用于调试
+      const centerDistribution = formattedStudents.reduce((acc, student) => {
+        const center = student.center
+        acc[center] = (acc[center] || 0) + 1
+        return acc
+      }, {} as Record<string, number>)
+
+      console.log(`📊 中心分布:`, centerDistribution)
+
       return NextResponse.json({
         success: true,
         students: formattedStudents,
         totalItems: students.totalItems,
         totalPages: students.totalPages,
         page: students.page,
-        perPage: students.perPage
+        perPage: students.perPage,
+        centerDistribution: centerDistribution,
+        debug: {
+          filter: filter || '无过滤',
+          center: center,
+          status: status
+        }
       })
     } catch (collectionError) {
       console.error('访问students集合失败:', collectionError)

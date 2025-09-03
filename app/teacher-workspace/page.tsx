@@ -303,7 +303,11 @@ function AttendanceManagement({
 
   // 动态计算中心信息 - 基于真实的 students 数据
   const centers = useMemo(() => {
+    console.log('🔍 AttendanceManagement: 计算中心信息，学生数量:', students?.length || 0)
+    console.log('🔍 AttendanceManagement: 学生数据:', students?.slice(0, 3))
+    
     if (!students || students.length === 0) {
+      console.log('⚠️ AttendanceManagement: 没有学生数据，返回默认中心')
       return [
         { 
           id: 'wx01', 
@@ -361,6 +365,8 @@ function AttendanceManagement({
       acc[center]++
       return acc
     }, {} as Record<string, number>)
+
+    console.log('📊 AttendanceManagement: 中心分布:', centerCounts)
 
 
 
@@ -1468,6 +1474,20 @@ export default function TeacherWorkspace() {
   const { user, userProfile, loading, logout } = useAuth()
   const { students } = useStudents()
   const [activeTab, setActiveTab] = useState("dashboard")
+
+  // 调试学生数据
+  useEffect(() => {
+    console.log('🔍 TeacherWorkspace: 学生数据更新:', students?.length || 0)
+    if (students && students.length > 0) {
+      console.log('🔍 TeacherWorkspace: 前3个学生:', students.slice(0, 3))
+      const centerCounts = students.reduce((acc, student) => {
+        const center = student.center || 'WX 01'
+        acc[center] = (acc[center] || 0) + 1
+        return acc
+      }, {} as Record<string, number>)
+      console.log('📊 TeacherWorkspace: 中心分布:', centerCounts)
+    }
+  }, [students])
 
   // 缺席管理状态 - 移动到主组件层级
   const [showAbsenceModal, setShowAbsenceModal] = useState(false)
