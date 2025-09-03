@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Progress } from "@/components/ui/progress"
 import {
   Trophy,
   Plus,
@@ -21,6 +22,7 @@ import {
   Star,
   Award,
   TrendingUp,
+  TrendingDown,
   Users,
   Camera,
   CheckCircle,
@@ -28,29 +30,54 @@ import {
   Clock,
   BarChart3,
   Settings,
-  RefreshCw
+  RefreshCw,
+  Search,
+  Filter,
+  Download,
+  Eye,
+  Edit,
+  CreditCard,
+  Calendar,
+  Target,
+  Zap,
+  Crown,
+  Medal,
+  Activity,
+  PieChart,
+  LineChart,
+  Loader2
 } from "lucide-react"
 import { usePoints } from '@/hooks/usePoints'
 import { useStudents } from '@/hooks/useStudents'
 import { useTeachers } from '@/hooks/useTeachers'
-import { StudentPoints, PointTransaction } from '@/types/points'
+import { useCurrentTeacher } from '@/hooks/useCurrentTeacher'
+import { StudentPoints, PointTransaction, PointTransactionCreateData } from '@/types/points'
+import NFCPointsOperation from '@/app/components/management/nfc-points-operation'
 
 export default function PointsManagement() {
+  const { teacher } = useCurrentTeacher()
   const { loading, error, getStudentPoints, getPointsLeaderboard, createPointTransaction } = usePoints()
   const { students, loading: studentsLoading, fetchStudents } = useStudents()
   const { teachers, loading: teachersLoading, fetchTeachers } = useTeachers()
 
   // 状态管理
   const [leaderboard, setLeaderboard] = useState<StudentPoints[]>([])
-  const [selectedStudent, setSelectedStudent] = useState<string>('')
-  const [selectedTeacher, setSelectedTeacher] = useState<string>('')
+  const [selectedStudent, setSelectedStudent] = useState<any>(null)
+  const [studentPoints, setStudentPoints] = useState<StudentPoints | null>(null)
+  const [transactions, setTransactions] = useState<PointTransaction[]>([])
   const [pointsChange, setPointsChange] = useState<string>('')
   const [transactionType, setTransactionType] = useState<'add_points' | 'deduct_points' | 'redeem_gift'>('add_points')
   const [reason, setReason] = useState<string>('')
   const [proofImage, setProofImage] = useState<File | null>(null)
+  const [giftName, setGiftName] = useState<string>('')
+  const [giftPoints, setGiftPoints] = useState<string>('')
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState('leaderboard')
+  const [activeTab, setActiveTab] = useState('overview')
   const [searchTerm, setSearchTerm] = useState('')
+  const [filterCenter, setFilterCenter] = useState('all')
+  const [filterGrade, setFilterGrade] = useState('all')
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table')
+  const [operationMode, setOperationMode] = useState<'manual' | 'nfc'>('nfc')
 
   // 加载数据
   useEffect(() => {
@@ -68,45 +95,102 @@ export default function PointsManagement() {
     }
   }
 
+  // 加载学生积分详情
+  const loadStudentDetails = async (studentId: string) => {
+    try {
+      const data = await getStudentPoints(studentId)
+      setStudentPoints(data.student_points)
+      setTransactions(data.transactions.items || [])
+    } catch (error) {
+      console.error('加载学生积分详情失败:', error)
+    }
+  }
+
+  // 获取统计数据
+  const getStats = () => {
+    const totalStudents = students.length
+    const totalPoints = leaderboard.reduce((sum, item) => sum + item.current_points, 0)
+    const averagePoints = totalStudents > 0 ? Math.round(totalPoints / totalStudents) : 0
+    const maxPoints = leaderboard.length > 0 ? leaderboard[0].current_points : 0
+    const activeStudents = leaderboard.filter(item => item.current_points > 0).length
+    
+    return {
+      totalStudents,
+      totalPoints,
+      averagePoints,
+      maxPoints,
+      activeStudents
+    }
+  }
+
+  // 获取中心列表
+  const getCenters = () => {
+    return Array.from(new Set(students.map(s => s.center).filter(Boolean)))
+  }
+
+  // 获取年级列表
+  const getGrades = () => {
+    return Array.from(new Set(students.map(s => s.standard).filter(Boolean)))
+  }
+
   // 处理积分操作
   const handlePointTransaction = async () => {
-    if (!selectedStudent || !selectedTeacher || !pointsChange || !reason) {
-      alert('请填写所有必填字段')
-      return
-    }
+    console.log('🔍 积分操作调试信息:')
+    console.log('  选中学生:', selectedStudent)
+    console.log('  当前教师:', teacher)
+    console.log('  积分变化:', pointsChange)
+    console.log('  操作理由:', reason)
+    console.log('  操作类型:', transactionType)
 
-    const teacher = teachers.find(t => t.id === selectedTeacher)
-    if (!teacher) {
-      alert('找不到老师信息')
+    if (!selectedStudent || !teacher || !pointsChange || !reason) {
+      console.log('❌ 缺少必填字段')
+      alert('请填写所有必填字段')
       return
     }
 
     try {
       const points = transactionType === 'add_points' ? parseInt(pointsChange) : -parseInt(pointsChange)
       
-      await createPointTransaction({
-        student_id: selectedStudent,
-        teacher_id: selectedTeacher,
+      const transactionData: PointTransactionCreateData = {
+        student_id: selectedStudent.id,
+        teacher_id: teacher.id,
         points_change: points,
         transaction_type: transactionType,
         reason: reason,
-        proof_image: proofImage || undefined
+        proof_image: proofImage || undefined,
+        gift_name: giftName || undefined,
+        gift_points: giftPoints ? parseInt(giftPoints) : undefined
+      }
+
+      console.log('📋 发送积分交易数据:', transactionData)
+      console.log('🔍 选中的学生详情:', {
+        id: selectedStudent.id,
+        name: selectedStudent.student_name,
+        student_id: selectedStudent.student_id
       })
+      await createPointTransaction(transactionData)
 
       // 重置表单
-      setSelectedStudent('')
-      setSelectedTeacher('')
+      setSelectedStudent(null)
+      setStudentPoints(null)
       setPointsChange('')
       setReason('')
       setProofImage(null)
+      setGiftName('')
+      setGiftPoints('')
       setDialogOpen(false)
 
       // 刷新数据
       loadLeaderboard()
+      if (selectedStudent) {
+        loadStudentDetails(selectedStudent.id)
+      }
       
       alert('积分操作成功！')
     } catch (error) {
       console.error('积分操作失败:', error)
+      const errorMessage = error instanceof Error ? error.message : '积分操作失败，请重试'
+      alert(`积分操作失败: ${errorMessage}`)
     }
   }
 
@@ -139,74 +223,122 @@ export default function PointsManagement() {
     })
   }
 
-  const filteredStudents = students.filter(student =>
-    student.student_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.student_id?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // 过滤学生数据
+  const filteredStudents = students.filter(student => {
+    const matchesSearch = !searchTerm || 
+      student.student_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.student_id?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesCenter = filterCenter === "all" || student.center === filterCenter
+    const matchesGrade = filterGrade === "all" || student.standard === filterGrade
+    
+    return matchesSearch && matchesCenter && matchesGrade
+  })
+
+  const stats = getStats()
+  const centers = getCenters()
+  const grades = getGrades()
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="max-w-7xl mx-auto p-6">
         {/* 头部 */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">积分管理系统</h1>
-              <p className="text-gray-600">管理学生积分，激励优秀表现</p>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                积分管理系统
+              </h1>
+              <p className="text-gray-600 text-lg">智能管理学生积分，激励优秀表现</p>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={loadLeaderboard}>
-                <RefreshCw className="h-4 w-4 mr-2" />
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={loadLeaderboard} className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4" />
                 刷新数据
               </Button>
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="flex items-center gap-2">
-                    <Star className="h-4 w-4" />
-                    积分操作
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
+              <Button variant="outline" className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                导出报告
+              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant={operationMode === 'nfc' ? 'default' : 'outline'}
+                  onClick={() => setOperationMode('nfc')}
+                  className="flex items-center gap-2"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  NFC操作
+                </Button>
+                <Button
+                  variant={operationMode === 'manual' ? 'default' : 'outline'}
+                  onClick={() => setOperationMode('manual')}
+                  className="flex items-center gap-2"
+                >
+                  <Search className="h-4 w-4" />
+                  手动操作
+                </Button>
+              </div>
+              {operationMode === 'manual' && (
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                      <Zap className="h-4 w-4" />
+                      积分操作
+                    </Button>
+                  </DialogTrigger>
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>积分操作</DialogTitle>
                     <DialogDescription>
-                      为学生添加或扣除积分，需要提供理由
+                      为学生进行积分操作，包括加分、扣分和兑换礼物
                     </DialogDescription>
                   </DialogHeader>
+                  
                   <div className="space-y-4">
                     {/* 选择学生 */}
                     <div>
-                      <Label htmlFor="student">选择学生</Label>
-                      <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                      <Label htmlFor="student-select">选择学生</Label>
+                      <Select onValueChange={(value) => {
+                        const student = students.find(s => s.id === value)
+                        setSelectedStudent(student)
+                        if (student) {
+                          loadStudentDetails(student.id)
+                        }
+                      }}>
                         <SelectTrigger>
                           <SelectValue placeholder="请选择学生" />
                         </SelectTrigger>
                         <SelectContent>
-                          {students.map((student) => (
+                          {filteredStudents.map((student: any) => (
                             <SelectItem key={student.id} value={student.id}>
-                              {student.student_name} ({student.student_id})
+                              {student.student_name} ({student.student_id}) - {student.center || '未知中心'}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
 
-                    {/* 选择老师 */}
-                    <div>
-                      <Label htmlFor="teacher">操作老师</Label>
-                      <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="请选择老师" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {teachers.map((teacher) => (
-                            <SelectItem key={teacher.id} value={teacher.id}>
-                              {teacher.teacher_name || teacher.name} ({teacher.email})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {/* 学生积分信息 */}
+                    {selectedStudent && studentPoints && (
+                      <Card>
+                        <CardContent className="pt-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold">{selectedStudent.student_name}</p>
+                              <p className="text-sm text-gray-500">
+                                学号: {selectedStudent.student_id} | 班级: {selectedStudent.standard || '未知班级'}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-2xl font-bold text-blue-600">
+                                {studentPoints.current_points}
+                              </p>
+                              <p className="text-sm text-gray-500">当前积分</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
 
                     {/* 操作类型 */}
                     <div>
@@ -250,6 +382,31 @@ export default function PointsManagement() {
                       />
                     </div>
 
+                    {/* 礼物信息（兑换礼物时） */}
+                    {transactionType === 'redeem_gift' && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="gift-name">礼物名称</Label>
+                          <Input
+                            id="gift-name"
+                            value={giftName}
+                            onChange={(e) => setGiftName(e.target.value)}
+                            placeholder="请输入礼物名称"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="gift-points">礼物积分</Label>
+                          <Input
+                            id="gift-points"
+                            type="number"
+                            value={giftPoints}
+                            onChange={(e) => setGiftPoints(e.target.value)}
+                            placeholder="请输入礼物积分"
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {/* 操作理由 */}
                     <div>
                       <Label htmlFor="reason">操作理由</Label>
@@ -262,95 +419,114 @@ export default function PointsManagement() {
                       />
                     </div>
 
-                    {/* 证明照片 */}
+                    {/* 证明照片（兑换礼物时） */}
                     {transactionType === 'redeem_gift' && (
                       <div>
                         <Label htmlFor="proof-image">证明照片</Label>
-                        <Input
-                          id="proof-image"
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => setProofImage(e.target.files?.[0] || null)}
-                        />
+                        <div className="mt-2">
+                          <Input
+                            id="proof-image"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setProofImage(e.target.files?.[0] || null)}
+                          />
+                          <p className="text-sm text-gray-500 mt-1">
+                            兑换礼物时需要上传证明照片
+                          </p>
+                        </div>
                       </div>
                     )}
-
-                    {/* 操作按钮 */}
-                    <div className="flex gap-2">
-                      <Button onClick={handlePointTransaction} className="flex-1">
-                        确认操作
-                      </Button>
-                      <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                        取消
-                      </Button>
-                    </div>
                   </div>
+
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                      取消
+                    </Button>
+                    <Button onClick={handlePointTransaction} disabled={loading}>
+                      {loading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          处理中...
+                        </>
+                      ) : (
+                        '确认操作'
+                      )}
+                    </Button>
+                  </DialogFooter>
                 </DialogContent>
               </Dialog>
+              )}
             </div>
           </div>
         </div>
 
         {/* 统计卡片 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
             <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users className="h-6 w-6 text-blue-600" />
-                </div>
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">总学生数</p>
-                  <p className="text-2xl font-bold">{students.length}</p>
+                  <p className="text-blue-100 text-sm font-medium">总学生数</p>
+                  <p className="text-3xl font-bold">{stats.totalStudents}</p>
+                </div>
+                <div className="p-3 bg-white/20 rounded-full">
+                  <Users className="h-6 w-6" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
             <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Trophy className="h-6 w-6 text-green-600" />
-                </div>
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">平均积分</p>
-                  <p className="text-2xl font-bold">
-                    {leaderboard.length > 0 
-                      ? Math.round(leaderboard.reduce((sum, item) => sum + item.current_points, 0) / leaderboard.length)
-                      : 0
-                    }
-                  </p>
+                  <p className="text-green-100 text-sm font-medium">平均积分</p>
+                  <p className="text-3xl font-bold">{stats.averagePoints}</p>
+                </div>
+                <div className="p-3 bg-white/20 rounded-full">
+                  <BarChart3 className="h-6 w-6" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-yellow-500 to-yellow-600 text-white">
             <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Star className="h-6 w-6 text-yellow-600" />
-                </div>
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">最高积分</p>
-                  <p className="text-2xl font-bold">
-                    {leaderboard.length > 0 ? leaderboard[0].current_points : 0}
-                  </p>
+                  <p className="text-yellow-100 text-sm font-medium">最高积分</p>
+                  <p className="text-3xl font-bold">{stats.maxPoints}</p>
+                </div>
+                <div className="p-3 bg-white/20 rounded-full">
+                  <Crown className="h-6 w-6" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white">
             <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <BarChart3 className="h-6 w-6 text-purple-600" />
-                </div>
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">活跃教师</p>
-                  <p className="text-2xl font-bold">{teachers.length}</p>
+                  <p className="text-purple-100 text-sm font-medium">活跃学生</p>
+                  <p className="text-3xl font-bold">{stats.activeStudents}</p>
+                </div>
+                <div className="p-3 bg-white/20 rounded-full">
+                  <Activity className="h-6 w-6" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-pink-500 to-pink-600 text-white">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-pink-100 text-sm font-medium">总积分</p>
+                  <p className="text-3xl font-bold">{stats.totalPoints}</p>
+                </div>
+                <div className="p-3 bg-white/20 rounded-full">
+                  <Trophy className="h-6 w-6" />
                 </div>
               </div>
             </CardContent>
@@ -358,11 +534,180 @@ export default function PointsManagement() {
         </div>
 
         {/* 主要内容 */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="leaderboard">积分排行榜</TabsTrigger>
-            <TabsTrigger value="students">学生管理</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4 bg-white shadow-sm">
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <PieChart className="h-4 w-4" />
+              总览
+            </TabsTrigger>
+            <TabsTrigger value="leaderboard" className="flex items-center gap-2">
+              <Trophy className="h-4 w-4" />
+              排行榜
+            </TabsTrigger>
+            <TabsTrigger value="students" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              学生管理
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <LineChart className="h-4 w-4" />
+              数据分析
+            </TabsTrigger>
           </TabsList>
+
+          {/* 总览标签页 */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* 操作模式切换 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5" />
+                  积分操作模式
+                </CardTitle>
+                <CardDescription>
+                  选择您偏好的积分操作方式
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-4">
+                  <Button
+                    variant={operationMode === 'nfc' ? 'default' : 'outline'}
+                    onClick={() => setOperationMode('nfc')}
+                    className="flex items-center gap-2 flex-1 h-20"
+                  >
+                    <CreditCard className="h-6 w-6" />
+                    <div className="text-left">
+                      <div className="font-semibold">NFC操作</div>
+                      <div className="text-sm opacity-80">通过NFC卡片进行安全操作</div>
+                    </div>
+                  </Button>
+                  <Button
+                    variant={operationMode === 'manual' ? 'default' : 'outline'}
+                    onClick={() => setOperationMode('manual')}
+                    className="flex items-center gap-2 flex-1 h-20"
+                  >
+                    <Search className="h-6 w-6" />
+                    <div className="text-left">
+                      <div className="font-semibold">手动操作</div>
+                      <div className="text-sm opacity-80">通过界面直接操作</div>
+                    </div>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* NFC操作模式 */}
+            {operationMode === 'nfc' && (
+              <NFCPointsOperation />
+            )}
+
+            {/* 手动操作模式的内容 */}
+            {operationMode === 'manual' && (
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* 积分分布图 */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <PieChart className="h-5 w-5" />
+                        积分分布
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {leaderboard.slice(0, 5).map((item, index) => {
+                          const percentage = stats.maxPoints > 0 ? (item.current_points / stats.maxPoints) * 100 : 0
+                          return (
+                            <div key={item.id} className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium">
+                                  {item.expand?.student_id?.student_name || '未知学生'}
+                                </span>
+                                <span className="text-sm text-gray-500">{item.current_points} 分</span>
+                              </div>
+                              <Progress value={percentage} className="h-2" />
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* 最近活动 */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Activity className="h-5 w-5" />
+                        最近活动
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {transactions.slice(0, 5).map((transaction: PointTransaction) => (
+                          <div key={transaction.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                            {getTransactionTypeIcon(transaction.transaction_type)}
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">
+                                {transaction.expand?.student_id?.student_name || '未知学生'}
+                              </p>
+                              <p className="text-xs text-gray-500">{transaction.reason}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className={`text-sm font-semibold ${
+                                transaction.points_change > 0 ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                {transaction.points_change > 0 ? '+' : ''}{transaction.points_change}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                {formatDate(transaction.created)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* 快速操作 */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Zap className="h-5 w-5" />
+                      快速操作
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Button 
+                        variant="outline" 
+                        className="h-20 flex flex-col items-center gap-2"
+                        onClick={() => setActiveTab('leaderboard')}
+                      >
+                        <Trophy className="h-6 w-6 text-yellow-500" />
+                        <span>查看排行榜</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="h-20 flex flex-col items-center gap-2"
+                        onClick={() => setActiveTab('students')}
+                      >
+                        <Users className="h-6 w-6 text-blue-500" />
+                        <span>管理学生</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="h-20 flex flex-col items-center gap-2"
+                        onClick={() => setDialogOpen(true)}
+                      >
+                        <Plus className="h-6 w-6 text-green-500" />
+                        <span>积分操作</span>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </TabsContent>
 
           <TabsContent value="leaderboard" className="space-y-6">
             <Card>
@@ -377,49 +722,103 @@ export default function PointsManagement() {
               </CardHeader>
               <CardContent>
                 {leaderboard.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">暂无积分数据</p>
+                  <div className="text-center py-12">
+                    <Trophy className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 text-lg">暂无积分数据</p>
+                    <p className="text-gray-400 text-sm">开始为学生添加积分来创建排行榜</p>
+                  </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>排名</TableHead>
-                        <TableHead>学生姓名</TableHead>
-                        <TableHead>学号</TableHead>
-                        <TableHead>班级</TableHead>
-                        <TableHead>当前积分</TableHead>
-                        <TableHead>历史获得</TableHead>
-                        <TableHead>历史消费</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {leaderboard.map((item, index) => (
-                        <TableRow key={item.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {index < 3 && (
-                                <Trophy className={`h-4 w-4 ${
-                                  index === 0 ? 'text-yellow-500' :
-                                  index === 1 ? 'text-gray-400' :
-                                  'text-orange-500'
-                                }`} />
-                              )}
+                  <div className="space-y-4">
+                    {/* 前三名特殊显示 */}
+                    {leaderboard.slice(0, 3).map((item, index) => (
+                      <div key={item.id} className={`p-4 rounded-lg border-2 ${
+                        index === 0 ? 'bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-300' :
+                        index === 1 ? 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-300' :
+                        'bg-gradient-to-r from-orange-50 to-orange-100 border-orange-300'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg ${
+                              index === 0 ? 'bg-yellow-500' :
+                              index === 1 ? 'bg-gray-400' :
+                              'bg-orange-500'
+                            }`}>
                               {index + 1}
                             </div>
-                          </TableCell>
-                          <TableCell>{item.expand?.student_id?.student_name || '未知'}</TableCell>
-                          <TableCell>{item.expand?.student_id?.student_id || '未知'}</TableCell>
-                          <TableCell>{item.expand?.student_id?.standard || '未知'}</TableCell>
-                          <TableCell>
-                            <Badge variant="default" className="bg-blue-100 text-blue-700">
-                              {item.current_points}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-green-600">{item.total_earned}</TableCell>
-                          <TableCell className="text-red-600">{item.total_spent}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                            <div>
+                              <h3 className="font-semibold text-lg">
+                                {item.expand?.student_id?.student_name || '未知学生'}
+                              </h3>
+                              <p className="text-gray-600">
+                                {item.expand?.student_id?.student_id} • {item.expand?.student_id?.standard}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-blue-600">{item.current_points}</p>
+                            <p className="text-sm text-gray-500">当前积分</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* 其余学生表格显示 */}
+                    {leaderboard.length > 3 && (
+                      <div className="mt-6">
+                        <h4 className="text-lg font-semibold mb-4">其他学生</h4>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>排名</TableHead>
+                              <TableHead>学生姓名</TableHead>
+                              <TableHead>学号</TableHead>
+                              <TableHead>班级</TableHead>
+                              <TableHead>当前积分</TableHead>
+                              <TableHead>历史获得</TableHead>
+                              <TableHead>历史消费</TableHead>
+                              <TableHead>操作</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {leaderboard.slice(3).map((item, index) => (
+                              <TableRow key={item.id}>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold">{index + 4}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="font-medium">
+                                  {item.expand?.student_id?.student_name || '未知'}
+                                </TableCell>
+                                <TableCell>{item.expand?.student_id?.student_id || '未知'}</TableCell>
+                                <TableCell>{item.expand?.student_id?.standard || '未知'}</TableCell>
+                                <TableCell>
+                                  <Badge variant="default" className="bg-blue-100 text-blue-700">
+                                    {item.current_points}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-green-600">{item.total_earned}</TableCell>
+                                <TableCell className="text-red-600">{item.total_spent}</TableCell>
+                                <TableCell>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedStudent(item.student_id)
+                                      setDialogOpen(true)
+                                    }}
+                                  >
+                                    <Edit className="h-3 w-3 mr-1" />
+                                    操作
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -437,17 +836,66 @@ export default function PointsManagement() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="mb-4">
-                  <Input
-                    placeholder="搜索学生姓名或学号..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-sm"
-                  />
+                {/* 搜索和过滤 */}
+                <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        placeholder="搜索学生姓名或学号..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <Select value={filterCenter} onValueChange={setFilterCenter}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <SelectValue placeholder="选择中心" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">所有中心</SelectItem>
+                      {centers.map((center) => (
+                        <SelectItem key={center} value={center || ''}>{center}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={filterGrade} onValueChange={setFilterGrade}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <SelectValue placeholder="选择年级" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">所有年级</SelectItem>
+                      {grades.map((grade) => (
+                        <SelectItem key={grade} value={grade || ''}>{grade}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={viewMode === 'table' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setViewMode('table')}
+                    >
+                      <BarChart3 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === 'grid' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setViewMode('grid')}
+                    >
+                      <Users className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
+
                 {filteredStudents.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">没有找到学生</p>
-                ) : (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 text-lg">没有找到学生</p>
+                    <p className="text-gray-400 text-sm">尝试调整搜索条件或过滤器</p>
+                  </div>
+                ) : viewMode === 'table' ? (
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -456,36 +904,215 @@ export default function PointsManagement() {
                         <TableHead>班级</TableHead>
                         <TableHead>中心</TableHead>
                         <TableHead>NFC卡号</TableHead>
+                        <TableHead>积分状态</TableHead>
                         <TableHead>操作</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredStudents.map((student) => (
-                        <TableRow key={student.id}>
-                          <TableCell>{student.student_name}</TableCell>
-                          <TableCell>{student.student_id}</TableCell>
-                          <TableCell>{student.standard}</TableCell>
-                          <TableCell>{student.center}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{student.cardNumber || '未设置'}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedStudent(student.id)
-                                setDialogOpen(true)
-                              }}
-                            >
-                              积分操作
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {filteredStudents.map((student) => {
+                        const studentPoints = leaderboard.find(item => item.student_id === student.id)
+                        return (
+                          <TableRow key={student.id}>
+                            <TableCell className="font-medium">{student.student_name}</TableCell>
+                            <TableCell>{student.student_id}</TableCell>
+                            <TableCell>{student.standard}</TableCell>
+                            <TableCell>{student.center}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{student.cardNumber || '未设置'}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              {studentPoints ? (
+                                <Badge variant="default" className="bg-blue-100 text-blue-700">
+                                  {studentPoints.current_points} 分
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary">无积分记录</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedStudent(student.id)
+                                    setDialogOpen(true)
+                                  }}
+                                >
+                                  <Edit className="h-3 w-3 mr-1" />
+                                  积分操作
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => loadStudentDetails(student.id)}
+                                >
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  详情
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
                     </TableBody>
                   </Table>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredStudents.map((student) => {
+                      const studentPoints = leaderboard.find(item => item.student_id === student.id)
+                      return (
+                        <Card key={student.id} className="hover:shadow-md transition-shadow">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div>
+                                <h3 className="font-semibold">{student.student_name}</h3>
+                                <p className="text-sm text-gray-500">{student.student_id}</p>
+                              </div>
+                              {studentPoints && (
+                                <Badge variant="default" className="bg-blue-100 text-blue-700">
+                                  {studentPoints.current_points} 分
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="space-y-2 text-sm text-gray-600">
+                              <p><span className="font-medium">班级:</span> {student.standard}</p>
+                              <p><span className="font-medium">中心:</span> {student.center}</p>
+                              <p><span className="font-medium">NFC卡:</span> {student.cardNumber || '未设置'}</p>
+                            </div>
+                            <div className="flex gap-2 mt-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => {
+                                  setSelectedStudent(student.id)
+                                  setDialogOpen(true)
+                                }}
+                              >
+                                <Edit className="h-3 w-3 mr-1" />
+                                积分操作
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => loadStudentDetails(student.id)}
+                              >
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+                  </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* 数据分析标签页 */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* 积分趋势 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <LineChart className="h-5 w-5" />
+                    积分趋势分析
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="text-center py-8">
+                      <LineChart className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">积分趋势图表</p>
+                      <p className="text-gray-400 text-sm">即将推出详细的数据分析功能</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 中心分布 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PieChart className="h-5 w-5" />
+                    中心积分分布
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {centers.map((center) => {
+                      const centerStudents = students.filter(s => s.center === center)
+                      const centerPoints = leaderboard.filter(item => 
+                        centerStudents.some(s => s.id === item.student_id)
+                      )
+                      const totalPoints = centerPoints.reduce((sum, item) => sum + item.current_points, 0)
+                      const avgPoints = centerStudents.length > 0 ? Math.round(totalPoints / centerStudents.length) : 0
+                      
+                      return (
+                        <div key={center} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{center}</span>
+                            <span className="text-sm text-gray-500">{centerStudents.length} 学生</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Progress value={avgPoints} max={stats.maxPoints} className="flex-1 h-2" />
+                            <span className="text-sm font-semibold">{avgPoints} 分</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* 年级分析 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  年级积分分析
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {grades.map((grade) => {
+                    const gradeStudents = students.filter(s => s.standard === grade)
+                    const gradePoints = leaderboard.filter(item => 
+                      gradeStudents.some(s => s.id === item.student_id)
+                    )
+                    const totalPoints = gradePoints.reduce((sum, item) => sum + item.current_points, 0)
+                    const avgPoints = gradeStudents.length > 0 ? Math.round(totalPoints / gradeStudents.length) : 0
+                    const maxPoints = gradePoints.length > 0 ? Math.max(...gradePoints.map(p => p.current_points)) : 0
+                    
+                    return (
+                      <div key={grade} className="p-4 border rounded-lg">
+                        <h4 className="font-semibold mb-3">{grade}</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>学生数:</span>
+                            <span className="font-medium">{gradeStudents.length}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>平均积分:</span>
+                            <span className="font-medium text-blue-600">{avgPoints}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>最高积分:</span>
+                            <span className="font-medium text-green-600">{maxPoints}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>总积分:</span>
+                            <span className="font-medium text-purple-600">{totalPoints}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

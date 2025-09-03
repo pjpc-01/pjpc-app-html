@@ -29,6 +29,10 @@ export interface Teacher {
   hireDate?: string
   idNumber?: number
   
+  // NFC/URL相关字段
+  teacherUrl?: string
+  nfc_card_number?: string
+  
   // 系统字段
   created: string
   updated: string
@@ -66,6 +70,10 @@ export interface TeacherCreateData {
   bankName?: string
   bankAccountName?: string
   bankAccountNo?: string
+  
+  // NFC/URL相关字段
+  teacherUrl?: string
+  nfc_card_number?: string
 }
 
 export interface TeacherUpdateData extends Partial<TeacherCreateData> {
@@ -104,7 +112,7 @@ export const getAllTeachers = async (): Promise<Teacher[]> => {
       
       if (item.notes) {
         const notesParts = item.notes.split(',')
-        notesParts.forEach(part => {
+        notesParts.forEach((part: string) => {
           const trimmed = part.trim()
           if (trimmed.startsWith('Citizen:')) {
             isCitizen = trimmed.includes('Yes')
@@ -147,6 +155,9 @@ export const getAllTeachers = async (): Promise<Teacher[]> => {
         bankName: item.bankName || '',
         bankAccountName: item.bankAccountName || '',
         bankAccountNo: item.bankAccountNo || '',
+        // NFC/URL相关字段
+        teacherUrl: item.teacherUrl || '',
+        nfc_card_number: item.nfc_card_number || '',
         created: item.created,
         updated: item.updated
       }
