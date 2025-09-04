@@ -130,7 +130,22 @@ export default function NFCPointsOperation() {
     }
   }
 
-  // 真正的NFC读取功能
+  // NFC文本解码函数（完全参考考勤系统）
+  const decodeNfcText = (data: any) => {
+    try {
+      // data 为 DataView
+      // 按NDEF文本记录规范解析，或直接尝试UTF-8解码
+      const dec = new TextDecoder("utf-8")
+      // 一些浏览器直接给 ArrayBuffer
+      // @ts-ignore
+      const buf = data?.buffer ? data.buffer : data
+      return dec.decode(buf)
+    } catch {
+      return ""
+    }
+  }
+
+  // 真正的NFC读取功能（完全参考考勤系统实现）
   const scanNFCCard = async (): Promise<string | null> => {
     if (!nfcSupported || nfcPermission !== 'granted') {
       throw new Error('NFC功能不可用')
@@ -151,21 +166,28 @@ export default function NFCPointsOperation() {
         setIsScanning(false)
         
         try {
-          // 尝试从NFC消息中提取数据
-          let nfcData = ''
-          
-          if (event.serialNumber) {
-            nfcData = event.serialNumber
-          } else if (event.message && event.message.records && event.message.records.length > 0) {
-            // 尝试从NDEF记录中读取数据
-            const record = event.message.records[0]
-            if (record.data) {
-              nfcData = new TextDecoder().decode(record.data)
+          const { message } = event
+          // 解析 NDEF 记录：优先拿 URL（完全参考考勤系统）
+          let urlFromTag = ""
+          for (const record of message.records) {
+            if (record.recordType === "url") {
+              urlFromTag = decodeNfcText(record.data)
+              break
+            }
+            if (record.recordType === "text") {
+              const txt = decodeNfcText(record.data)
+              // 允许把 URL 写在 TEXT 里
+              if (txt?.startsWith("http")) urlFromTag = txt
             }
           }
           
-          console.log('NFC读取成功:', { event, nfcData })
-          resolve(nfcData || 'unknown')
+          if (!urlFromTag) {
+            reject(new Error('未读到URL，请确认卡片已写入专属链接'))
+            return
+          }
+          
+          console.log('NFC读取成功:', { event, urlFromTag })
+          resolve(urlFromTag)
         } catch (error) {
           reject(new Error('NFC数据解析失败'))
         }
@@ -219,34 +241,51 @@ export default function NFCPointsOperation() {
     }
   }
 
-  // 处理学生卡片数据
+  // 处理学生卡片数据（完全参考考勤系统实现）
   const processStudentCard = async (cardData: string) => {
     try {
       let foundStudent = null
-      const nfcData = cardData
+      const urlFromTag = cardData
 
-      // 方法1: 通过studentUrl字段直接匹配
-      foundStudent = students.find(s => s.studentUrl && s.studentUrl === nfcData)
-      
-      // 方法2: 通过URL包含关系匹配（处理URL可能略有不同的情况）
-      if (!foundStudent) {
-        foundStudent = students.find(s => s.studentUrl && nfcData.includes(s.studentUrl.split('/').pop() || ''))
+      // 方法1: 通过URL参数查找（如果URL包含参数）- 完全参考考勤系统
+      try {
+        const u = new URL(urlFromTag)
+        const sid = u.searchParams.get("student_id") || ""
+        const sname = u.searchParams.get("name") || ""
+        if (sid) {
+          foundStudent = students.find(s => s.student_id === sid)
+        }
+        if (!foundStudent && sname) {
+          foundStudent = students.find(s => s.student_name === sname)
+        }
+      } catch (e) {
+        // URL解析失败，继续尝试其他方法
       }
       
-      // 方法3: 通过student_id匹配
+      // 方法2: 通过studentUrl字段直接匹配（不限制中心）
       if (!foundStudent) {
-        foundStudent = students.find(s => s.student_id === nfcData)
+        foundStudent = students.find(s => s.studentUrl && s.studentUrl === urlFromTag)
       }
       
-      // 方法4: 通过cardNumber匹配（备用方案）
+      // 方法3: 通过URL包含关系匹配（处理URL可能略有不同的情况）
       if (!foundStudent) {
-        foundStudent = students.find(s => s.cardNumber === nfcData)
+        foundStudent = students.find(s => s.studentUrl && urlFromTag.includes(s.studentUrl.split('/').pop() || ''))
       }
       
-      // 方法5: 尝试模糊匹配
+      // 方法4: 通过student_id匹配
+      if (!foundStudent) {
+        foundStudent = students.find(s => s.student_id === urlFromTag)
+      }
+      
+      // 方法5: 通过cardNumber匹配（备用方案）
+      if (!foundStudent) {
+        foundStudent = students.find(s => s.cardNumber === urlFromTag)
+      }
+      
+      // 方法6: 尝试模糊匹配
       if (!foundStudent) {
         console.log('🔍 NFC调试信息:')
-        console.log('  NFC读取的数据:', nfcData)
+        console.log('  NFC读取的URL:', urlFromTag)
         console.log('  学生总数:', students.length)
         console.log('  有URL的学生数:', students.filter(s => s.studentUrl).length)
         console.log('  有cardNumber的学生数:', students.filter(s => s.cardNumber).length)
@@ -255,11 +294,9 @@ export default function NFCPointsOperation() {
         
         // 尝试模糊匹配
         const fuzzyMatch = students.find(s => 
-          (s.studentUrl && 
-           (s.studentUrl.includes(nfcData.split('/').pop() || '') || 
-            nfcData.includes(s.studentUrl.split('/').pop() || ''))) ||
-          (s.cardNumber && s.cardNumber.includes(nfcData)) ||
-          (s.student_id && s.student_id.includes(nfcData))
+          s.studentUrl && 
+          (s.studentUrl.includes(urlFromTag.split('/').pop() || '') || 
+           urlFromTag.includes(s.studentUrl.split('/').pop() || ''))
         )
         
         if (fuzzyMatch) {
