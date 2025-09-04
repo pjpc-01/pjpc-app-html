@@ -27,7 +27,11 @@ import {
   Clock,
   Calendar,
   Award,
-  AlertTriangle
+  AlertTriangle,
+  Wifi,
+  WifiOff,
+  Smartphone,
+  Info
 } from "lucide-react"
 import { usePoints } from '@/hooks/usePoints'
 import { useStudents } from '@/hooks/useStudents'
@@ -65,6 +69,121 @@ export default function NFCPointsOperation() {
   // NFC卡号输入
   const [studentCardNumber, setStudentCardNumber] = useState<string>('')
   const [teacherCardNumber, setTeacherCardNumber] = useState<string>('')
+  
+  // NFC功能状态
+  const [nfcSupported, setNfcSupported] = useState<boolean>(false)
+  const [nfcPermission, setNfcPermission] = useState<PermissionState | null>(null)
+  const [isHttps, setIsHttps] = useState<boolean>(false)
+  const [nfcStatus, setNfcStatus] = useState<string>('检测中...')
+  const [isScanning, setIsScanning] = useState<boolean>(false)
+
+  // 初始化NFC功能检测
+  useEffect(() => {
+    checkNFCSupport()
+  }, [])
+
+  // 检查NFC支持
+  const checkNFCSupport = async () => {
+    // 检查HTTPS
+    const https = window.location.protocol === 'https:'
+    setIsHttps(https)
+    
+    // 检查NFC API支持
+    const supported = 'NDEFReader' in window
+    setNfcSupported(supported)
+    
+    if (supported && https) {
+      try {
+        const permission = await navigator.permissions.query({ name: 'nfc' as PermissionName })
+        setNfcPermission(permission.state)
+        
+        if (permission.state === 'granted') {
+          setNfcStatus('NFC功能可用')
+        } else if (permission.state === 'prompt') {
+          setNfcStatus('需要用户授权')
+        } else {
+          setNfcStatus('NFC权限被拒绝')
+        }
+      } catch (error) {
+        setNfcStatus('无法检查NFC权限')
+      }
+    } else if (!https) {
+      setNfcStatus('需要HTTPS连接')
+    } else {
+      setNfcStatus('浏览器不支持NFC')
+    }
+  }
+
+  // 请求NFC权限
+  const requestNFCPermission = async () => {
+    if (!nfcSupported) return
+
+    try {
+      const reader = new (window as any).NDEFReader()
+      await reader.scan()
+      setNfcPermission('granted')
+      setNfcStatus('NFC功能可用')
+    } catch (error) {
+      console.error('NFC权限请求失败:', error)
+      setNfcPermission('denied')
+      setNfcStatus('NFC权限被拒绝')
+    }
+  }
+
+  // 真正的NFC读取功能
+  const scanNFCCard = async (): Promise<string | null> => {
+    if (!nfcSupported || nfcPermission !== 'granted') {
+      throw new Error('NFC功能不可用')
+    }
+
+    return new Promise((resolve, reject) => {
+      const reader = new (window as any).NDEFReader()
+      setIsScanning(true)
+      
+      const timeout = setTimeout(() => {
+        reader.abort()
+        setIsScanning(false)
+        reject(new Error('NFC读取超时，请重试'))
+      }, 10000) // 10秒超时
+
+      reader.addEventListener('reading', (event: any) => {
+        clearTimeout(timeout)
+        setIsScanning(false)
+        
+        try {
+          // 尝试从NFC消息中提取数据
+          let nfcData = ''
+          
+          if (event.serialNumber) {
+            nfcData = event.serialNumber
+          } else if (event.message && event.message.records && event.message.records.length > 0) {
+            // 尝试从NDEF记录中读取数据
+            const record = event.message.records[0]
+            if (record.data) {
+              nfcData = new TextDecoder().decode(record.data)
+            }
+          }
+          
+          console.log('NFC读取成功:', { event, nfcData })
+          resolve(nfcData || 'unknown')
+        } catch (error) {
+          reject(new Error('NFC数据解析失败'))
+        }
+      })
+
+      reader.addEventListener('readingerror', (event: any) => {
+        clearTimeout(timeout)
+        setIsScanning(false)
+        reject(new Error('NFC读取失败'))
+      })
+
+      reader.scan().catch((error: any) => {
+        clearTimeout(timeout)
+        setIsScanning(false)
+        reject(error)
+      })
+    })
+  }
 
   // 加载学生积分详情
   const loadStudentPoints = async (studentId: string) => {
@@ -84,9 +203,27 @@ export default function NFCPointsOperation() {
       return
     }
 
+    await processStudentCard(studentCardNumber.trim())
+  }
+
+  // 处理真正的NFC扫描
+  const handleNFCCardScan = async () => {
+    try {
+      const nfcData = await scanNFCCard()
+      if (nfcData) {
+        await processStudentCard(nfcData)
+      }
+    } catch (error) {
+      console.error('NFC扫描失败:', error)
+      alert('NFC扫描失败: ' + (error as Error).message)
+    }
+  }
+
+  // 处理学生卡片数据
+  const processStudentCard = async (cardData: string) => {
     try {
       let foundStudent = null
-      const nfcData = studentCardNumber.trim()
+      const nfcData = cardData
 
       // 方法1: 通过studentUrl字段直接匹配
       foundStudent = students.find(s => s.studentUrl && s.studentUrl === nfcData)
@@ -342,6 +479,57 @@ export default function NFCPointsOperation() {
         </div>
       </div>
 
+      {/* NFC功能状态提示 */}
+      {currentStep === 'scan-student' && (
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5" />
+              NFC功能状态
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {nfcStatus === 'NFC功能可用' ? (
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                ) : (
+                  <XCircle className="h-5 w-5 text-red-500" />
+                )}
+                <span className="font-medium">{nfcStatus}</span>
+              </div>
+              {nfcStatus !== 'NFC功能可用' && (
+                <Button 
+                  onClick={() => window.open('/nfc-test', '_blank')} 
+                  variant="outline" 
+                  size="sm"
+                >
+                  诊断NFC问题
+                </Button>
+              )}
+            </div>
+            
+            {!isHttps && (
+              <Alert className="mt-3">
+                <WifiOff className="h-4 w-4" />
+                <AlertDescription>
+                  需要HTTPS连接才能使用NFC功能。请使用 https:// 访问网站。
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {nfcSupported && nfcPermission !== 'granted' && (
+              <Alert className="mt-3">
+                <Shield className="h-4 w-4" />
+                <AlertDescription>
+                  NFC权限未授权。点击下方"请求NFC权限"按钮进行授权。
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* 步骤1: 扫描学生NFC卡 */}
       {currentStep === 'scan-student' && (
         <Card>
@@ -353,27 +541,79 @@ export default function NFCPointsOperation() {
             <CardDescription>请扫描学生的NFC卡片以获取学生信息</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-                         <div>
-               <Label htmlFor="student-card">学生NFC卡号/URL</Label>
-               <Input
-                 id="student-card"
-                 value={studentCardNumber}
-                 onChange={(e) => setStudentCardNumber(e.target.value)}
-                 placeholder="请输入或扫描学生NFC卡号、URL或学号"
-                 className="mt-1"
-               />
-               <p className="text-sm text-gray-500 mt-1">
-                 支持：NFC卡号、学生URL、学号(student_id)
-               </p>
-             </div>
-            <Button onClick={handleStudentCardScan} className="w-full" disabled={loading}>
+            {/* NFC扫描按钮 */}
+            {nfcSupported && nfcPermission === 'granted' && (
+              <div className="space-y-2">
+                <Button 
+                  onClick={handleNFCCardScan} 
+                  className="w-full bg-blue-600 hover:bg-blue-700" 
+                  disabled={isScanning || loading}
+                >
+                  {isScanning ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      正在扫描NFC卡片...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      扫描NFC卡片
+                    </>
+                  )}
+                </Button>
+                <p className="text-sm text-gray-500 text-center">
+                  将NFC卡片靠近设备背面进行扫描
+                </p>
+              </div>
+            )}
+
+            {/* 权限请求按钮 */}
+            {nfcSupported && nfcPermission !== 'granted' && (
+              <Button 
+                onClick={requestNFCPermission} 
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                <Shield className="h-4 w-4 mr-2" />
+                请求NFC权限
+              </Button>
+            )}
+
+            {/* 分隔线 */}
+            {(nfcSupported && nfcPermission === 'granted') && (
+              <div className="flex items-center gap-4">
+                <div className="flex-1 h-px bg-gray-300"></div>
+                <span className="text-sm text-gray-500">或</span>
+                <div className="flex-1 h-px bg-gray-300"></div>
+              </div>
+            )}
+
+            {/* 手动输入 */}
+            <div>
+              <Label htmlFor="student-card">手动输入学生信息</Label>
+              <Input
+                id="student-card"
+                value={studentCardNumber}
+                onChange={(e) => setStudentCardNumber(e.target.value)}
+                placeholder="请输入学生NFC卡号、URL或学号"
+                className="mt-1"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                支持：NFC卡号、学生URL、学号(student_id)
+              </p>
+            </div>
+            
+            <Button 
+              onClick={handleStudentCardScan} 
+              className="w-full" 
+              disabled={loading || !studentCardNumber.trim()}
+            >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  扫描中...
+                  处理中...
                 </>
               ) : (
-                '扫描学生卡片'
+                '确认学生信息'
               )}
             </Button>
           </CardContent>
