@@ -214,4 +214,114 @@ class AttendanceProvider with ChangeNotifier {
   void clearError() {
     _clearError();
   }
+
+  // Mark student as late
+  Future<bool> markStudentLate(String studentId, String studentName, String reason) async {
+    final record = {
+      'student': studentId,
+      'student_name': studentName,
+      'type': 'check_in',
+      'date': DateTime.now().toIso8601String().split('T')[0],
+      'check_in_time': DateTime.now().toIso8601String().split('T')[1].split('.')[0],
+      'status': 'late',
+      'notes': '迟到: $reason',
+    };
+
+    return await createAttendanceRecord(record);
+  }
+
+  // Mark student as absent
+  Future<bool> markStudentAbsent(String studentId, String studentName, String reason) async {
+    final record = {
+      'student': studentId,
+      'student_name': studentName,
+      'type': 'check_in',
+      'date': DateTime.now().toIso8601String().split('T')[0],
+      'check_in_time': DateTime.now().toIso8601String().split('T')[1].split('.')[0],
+      'status': 'absent',
+      'notes': '缺勤: $reason',
+    };
+
+    return await createAttendanceRecord(record);
+  }
+
+  // Mark student as early leave
+  Future<bool> markStudentEarlyLeave(String studentId, String studentName, String reason) async {
+    final record = {
+      'student': studentId,
+      'student_name': studentName,
+      'type': 'check_out',
+      'date': DateTime.now().toIso8601String().split('T')[0],
+      'check_out_time': DateTime.now().toIso8601String().split('T')[1].split('.')[0],
+      'status': 'early_leave',
+      'notes': '早退: $reason',
+    };
+
+    return await createAttendanceRecord(record);
+  }
+
+  // Get attendance exceptions for a period
+  List<RecordModel> getAttendanceExceptions(DateTime startDate, DateTime endDate) {
+    return _attendanceRecords.where((record) {
+      final recordDate = DateTime.tryParse(record.getStringValue('date') ?? '');
+      if (recordDate == null) return false;
+      
+      final isInRange = recordDate.isAfter(startDate.subtract(const Duration(days: 1))) &&
+                       recordDate.isBefore(endDate.add(const Duration(days: 1)));
+      
+      if (!isInRange) return false;
+      
+      final status = record.getStringValue('status') ?? '';
+      return status == 'late' || status == 'absent' || status == 'early_leave';
+    }).toList();
+  }
+
+  // Update attendance record
+  Future<bool> updateAttendanceRecord(String recordId, Map<String, dynamic> data) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final record = await _pocketBaseService.updateStudentAttendanceRecord(recordId, data);
+      
+      // Update local record
+      final index = _attendanceRecords.indexWhere((r) => r.id == recordId);
+      if (index != -1) {
+        _attendanceRecords[index] = record;
+      }
+      
+      print('✅ Updated attendance record in PocketBase');
+      notifyListeners();
+      return true;
+    } catch (e) {
+      print('❌ Error updating attendance record: $e');
+      _setError('更新考勤记录失败: ${e.toString()}');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Delete attendance record
+  Future<bool> deleteAttendanceRecord(String recordId) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      await _pocketBaseService.deleteStudentAttendanceRecord(recordId);
+      
+      // Remove from local records
+      _attendanceRecords.removeWhere((r) => r.id == recordId);
+      
+      print('✅ Deleted attendance record from PocketBase');
+      notifyListeners();
+      return true;
+    } catch (e) {
+      print('❌ Error deleting attendance record: $e');
+      _setError('删除考勤记录失败: ${e.toString()}');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
 }

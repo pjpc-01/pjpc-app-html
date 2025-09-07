@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/attendance_provider.dart';
 import '../../providers/student_provider.dart';
-import '../../widgets/attendance/nfc_scanner.dart';
+import '../../widgets/attendance/nfc_scanner_widget.dart';
 
 class MobileCheckinScreen extends StatefulWidget {
   final String centerId;

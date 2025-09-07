@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/pocketbase_service.dart';
+import '../../services/secure_storage_service.dart';
+import '../../services/error_handler_service.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/custom_button.dart';
-import '../dashboard/dashboard_screen.dart';
+import '../home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,28 +37,29 @@ class _LoginScreenState extends State<LoginScreen> {
     if (authProvider.isAuthenticated) {
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       }
       return;
     }
 
-    // 尝试使用保存的凭据自动登录
-    final prefs = await SharedPreferences.getInstance();
-    final savedEmail = prefs.getString('saved_email');
-    final savedPassword = prefs.getString('saved_password');
-    
-    if (savedEmail != null && savedPassword != null) {
+    // 尝试使用安全存储的凭据自动登录
+    if (await SecureStorageService.hasCredentials()) {
       try {
-        await authProvider.login(savedEmail, savedPassword);
-        if (authProvider.isAuthenticated && mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const DashboardScreen()),
-          );
+        final credentials = await SecureStorageService.getCredentials();
+        if (credentials['email'] != null && credentials['password'] != null) {
+          await authProvider.login(credentials['email']!, credentials['password']!);
+          if (authProvider.isAuthenticated && mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+            );
+          }
         }
       } catch (e) {
         // 自动登录失败，显示登录界面
         print('自动登录失败: $e');
+        // 清除无效凭据
+        await SecureStorageService.clearCredentials();
       }
     }
   }
@@ -79,20 +82,14 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     if (authProvider.isAuthenticated && mounted) {
-      // 保存登录凭据
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('saved_email', _emailController.text.trim());
-      await prefs.setString('saved_password', _passwordController.text);
-      
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
     } else if (authProvider.error != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authProvider.error!),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      ErrorHandlerService.showErrorSnackBar(
+        context,
+        authProvider.error!,
+        null,
       );
     }
   }
@@ -117,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await prefs.setString('saved_password', _passwordController.text);
       
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
     } else if (authProvider.error != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -324,9 +321,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    '服务器: http://pjpc.tplinkdns.com:8090',
+                                    '服务器: 已连接',
                                     style: TextStyle(
-                                      color: Colors.blue[700],
+                                      color: Colors.green[700],
                                       fontSize: 12,
                                     ),
                                   ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/attendance_provider.dart';
-import '../../widgets/common/stats_card.dart';
+import '../../widgets/common/statistics_card.dart';
 
 class AttendanceAnalyticsScreen extends StatefulWidget {
   const AttendanceAnalyticsScreen({Key? key}) : super(key: key);
@@ -216,27 +216,27 @@ class _AttendanceAnalyticsScreenState extends State<AttendanceAnalyticsScreen> {
           crossAxisCount: 2,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
-          childAspectRatio: 1.5,
+          childAspectRatio: 1.3,
           children: [
-            StatsCard(
+            StatisticsCard(
               title: '总出勤',
               value: '${analytics['totalPresent'] ?? 0}',
               icon: Icons.check_circle,
               color: Colors.green,
             ),
-            StatsCard(
+            StatisticsCard(
               title: '迟到',
               value: '${analytics['totalLate'] ?? 0}',
               icon: Icons.schedule,
               color: Colors.orange,
             ),
-            StatsCard(
+            StatisticsCard(
               title: '缺勤',
               value: '${analytics['totalAbsent'] ?? 0}',
               icon: Icons.cancel,
               color: Colors.red,
             ),
-            StatsCard(
+            StatisticsCard(
               title: '出勤率',
               value: '${analytics['attendanceRate']?.toStringAsFixed(1) ?? '0.0'}%',
               icon: Icons.trending_up,
@@ -386,16 +386,31 @@ class _AttendanceAnalyticsScreenState extends State<AttendanceAnalyticsScreen> {
                 itemCount: recentAttendance.length,
                 itemBuilder: (context, index) {
                   final record = recentAttendance[index];
+                  
+                  // 处理RecordModel和Map两种类型
+                  String getValue(String key) {
+                    if (record is Map<String, dynamic>) {
+                      return record[key]?.toString() ?? '';
+                    } else {
+                      return record.getStringValue(key) ?? '';
+                    }
+                  }
+                  
+                  final status = getValue('status');
+                  final studentName = getValue('studentName');
+                  final grade = getValue('grade');
+                  final time = getValue('time');
+                  
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: _getStatusColor(record['status']).withOpacity(0.1),
+                      backgroundColor: _getStatusColor(status).withOpacity(0.1),
                       child: Icon(
-                        _getStatusIcon(record['status']),
-                        color: _getStatusColor(record['status']),
+                        _getStatusIcon(status),
+                        color: _getStatusColor(status),
                       ),
                     ),
                     title: Text(
-                      record['studentName'] ?? '未知学生',
+                      studentName.isEmpty ? '未知学生' : studentName,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -403,7 +418,7 @@ class _AttendanceAnalyticsScreenState extends State<AttendanceAnalyticsScreen> {
                       ),
                     ),
                     subtitle: Text(
-                      '${record['grade'] ?? ''} - ${record['time'] ?? ''}',
+                      '${grade.isEmpty ? '' : grade} - ${time.isEmpty ? '' : time}',
                       style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF6B7280),
@@ -412,15 +427,15 @@ class _AttendanceAnalyticsScreenState extends State<AttendanceAnalyticsScreen> {
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: _getStatusColor(record['status']).withOpacity(0.1),
+                        color: _getStatusColor(status).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        record['status'] ?? '未知',
+                        status.isEmpty ? '未知' : status,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: _getStatusColor(record['status']),
+                          color: _getStatusColor(status),
                         ),
                       ),
                     ),

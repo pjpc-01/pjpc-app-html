@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/pocketbase_service.dart';
+import '../services/secure_storage_service.dart';
+import '../services/error_handler_service.dart';
+import '../services/network_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final SharedPreferences _prefs;
@@ -32,9 +35,32 @@ class AuthProvider with ChangeNotifier {
       _connectionStatus = 'connected';
     }
     notifyListeners();
+    
+    // 尝试自动登录
+    _attemptAutoLogin();
   }
-
-  Future<void> login(String email, String password) async {
+  
+  /// 尝试自动登录
+  Future<void> _attemptAutoLogin() async {
+    try {
+      // 检查是否有保存的凭据
+      if (await SecureStorageService.hasCredentials()) {
+        final credentials = await SecureStorageService.getCredentials();
+        if (credentials['email'] != null && credentials['password'] != null) {
+          print('🔄 尝试自动登录...');
+          // 直接调用登录，不进行网络检查
+          await _performLogin(credentials['email']!, credentials['password']!);
+        }
+      }
+    } catch (e) {
+      print('❌ 自动登录失败: $e');
+      // 自动登录失败时清除凭据
+      await SecureStorageService.clearCredentials();
+    }
+  }
+  
+  /// 执行登录操作（不进行网络检查）
+  Future<void> _performLogin(String email, String password) async {
     _setLoading(true);
     _clearError();
 
@@ -44,16 +70,35 @@ class AuthProvider with ChangeNotifier {
       _userProfile = authData.record;
       _connectionStatus = 'connected';
       
-      // Save login state
+      // 使用安全存储保存凭据
+      await SecureStorageService.saveCredentials(email, password);
+      await SecureStorageService.saveUserData(authData.record.data);
+      
+      // 保存登录状态到SharedPreferences
       await _prefs.setBool('is_logged_in', true);
       await _prefs.setString('user_email', email);
       
       notifyListeners();
     } catch (e) {
-      _setError('登录失败: ${e.toString()}');
+      _setError(ErrorHandlerService.getErrorMessage(e));
     } finally {
       _setLoading(false);
     }
+  }
+
+  Future<void> login(String email, String password) async {
+    // 检查网络连接（如果网络服务可用）
+    try {
+      if (!NetworkService.instance.isConnected) {
+        throw Exception('网络连接不可用，请检查网络设置');
+      }
+    } catch (e) {
+      // 如果网络服务不可用，继续尝试登录
+      print('⚠️ 网络服务检查失败，继续尝试登录: $e');
+    }
+
+    // 执行登录操作
+    await _performLogin(email, password);
   }
 
   Future<void> register({
@@ -92,6 +137,9 @@ class AuthProvider with ChangeNotifier {
       _user = null;
       _userProfile = null;
       _connectionStatus = 'disconnected';
+      
+      // 清除安全存储
+      await SecureStorageService.clearCredentials();
       
       // Clear saved login state
       await _prefs.remove('is_logged_in');

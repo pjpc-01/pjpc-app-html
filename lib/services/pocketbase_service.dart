@@ -1,10 +1,15 @@
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'dart:async';
+import 'pocketbase_cache_service.dart';
 
 class PocketBaseService {
   late PocketBase pb;
   static const String _baseUrlKey = 'pocketbase_url';
   static const String _defaultUrl = 'http://pjpc.tplinkdns.com:8090';
+  static const Duration _connectionTimeout = Duration(seconds: 10);
+  static const int _maxRetryAttempts = 3;
   bool _isInitialized = false;
   
   // 单例模式
@@ -24,22 +29,23 @@ class PocketBaseService {
   }
 
   void _initializePocketBase() {
-    // 直接使用默认URL初始化，不等待SharedPreferences
+    // 使用默认初始化，避免HTTP客户端类型问题
     pb = PocketBase(_defaultUrl);
-    print('PocketBase initialized with URL: $_defaultUrl');
     _isInitialized = true;
     
     // 在后台清除可能存在的错误URL缓存
     _clearCachedUrl();
+    
+    // 恢复缓存
+    PocketBaseCacheService.restoreCache();
   }
   
   Future<void> _clearCachedUrl() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_baseUrlKey);
-      print('Cleared cached URL');
     } catch (e) {
-      print('Error clearing cached URL: $e');
+      // 静默处理错误
     }
   }
 
@@ -47,7 +53,6 @@ class PocketBaseService {
     pb = PocketBase(url);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_baseUrlKey, url);
-    print('PocketBase URL updated to: $url');
   }
 
   Future<String> getBaseUrl() async {
@@ -60,18 +65,31 @@ class PocketBaseService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_baseUrlKey);
     pb = PocketBase(_defaultUrl);
-    print('PocketBase reset to default URL: $_defaultUrl');
+  }
+
+  // 重试机制
+  Future<T> _retryOperation<T>(Future<T> Function() operation) async {
+    int attempts = 0;
+    while (attempts < _maxRetryAttempts) {
+      try {
+        return await operation();
+      } catch (e) {
+        attempts++;
+        if (attempts >= _maxRetryAttempts) {
+          rethrow;
+        }
+        await Future.delayed(Duration(seconds: attempts * 2));
+      }
+    }
+    throw Exception('操作失败，已达到最大重试次数');
   }
 
   // Test connection to server
   Future<bool> testConnection() async {
     try {
-      print('Testing connection to: ${pb.baseUrl}');
-      await pb.health.check();
-      print('Connection test successful');
+      await _retryOperation(() => pb.health.check());
       return true;
     } catch (e) {
-      print('Connection test failed: $e');
       return false;
     }
   }
@@ -79,9 +97,6 @@ class PocketBaseService {
   // Authentication methods
   Future<RecordAuth> login(String email, String password) async {
     try {
-      print('Attempting login for: $email');
-      print('PocketBase URL: ${pb.baseUrl}');
-      
       // First test connection
       final isConnected = await testConnection();
       if (!isConnected) {
@@ -89,10 +104,8 @@ class PocketBaseService {
       }
       
       final authData = await pb.collection('users').authWithPassword(email, password);
-      print('Login successful for: $email');
       return authData;
     } catch (e) {
-      print('Login error: $e');
       
       // Provide more specific error messages
       if (e.toString().contains('Failed to fetch') || e.toString().contains('ClientException')) {
@@ -134,32 +147,234 @@ class PocketBaseService {
   }
 
   // Student management
-  Future<List<RecordModel>> getStudents({int page = 1, int perPage = 200}) async {
+  Future<List<RecordModel>> getStudents({
+    int page = 1, 
+    int perPage = 200,
+    String? filter,
+    String? sort,
+    List<String>? fields,
+    bool useCache = true,
+  }) async {
     try {
       // 确保用户已认证
       if (!pb.authStore.isValid) {
         throw Exception('User not authenticated. Please login first.');
       }
       
-      print('🔐 User authenticated: ${pb.authStore.record?.getStringValue('email')}');
-      print('🔐 Auth token valid: ${pb.authStore.isValid}');
+      const collection = 'students';
       
-      final result = await pb.collection('students').getList(
-        page: page,
-        perPage: perPage,
-        sort: 'student_name', // 使用student_name排序，这个字段存在
-      );
-      print('✅ Successfully fetched ${result.items.length} students');
+      // 检查缓存
+      if (useCache && !PocketBaseCacheService.shouldRefresh(collection)) {
+        final cachedData = PocketBaseCacheService.getCachedData(collection);
+        if (cachedData != null) {
+          return cachedData;
+        }
+      }
+      
+      
+      final result = await _retryOperation(() async {
+        return await pb.collection('students').getList(
+          page: page,
+          perPage: perPage,
+          filter: filter,
+          sort: sort ?? 'student_name',
+          fields: fields?.join(','),
+        );
+      });
+      
+      // 缓存结果
+      if (useCache) {
+        PocketBaseCacheService.cacheData(collection, result.items, queryParams: {
+          'page': page,
+          'perPage': perPage,
+          'filter': filter,
+          'sort': sort,
+          'fields': fields,
+        });
+      }
+      
       return result.items;
     } catch (e) {
-      print('❌ Error fetching students: $e');
+      
+      // 如果网络失败，尝试返回缓存数据
+      if (useCache) {
+        final cachedData = PocketBaseCacheService.getCachedData('students');
+        if (cachedData != null) {
+          return cachedData;
+        }
+      }
+      
       throw Exception('Failed to fetch students: ${e.toString()}');
+    }
+  }
+
+  // 优化的查询方法
+  Future<List<RecordModel>> getActiveStudents({bool useCache = true}) async {
+    return await getStudents(
+      filter: 'status = "active"',
+      fields: ['id', 'student_name', 'student_id', 'standard', 'center', 'status'],
+      useCache: useCache,
+    );
+  }
+  
+  Future<List<RecordModel>> getStudentsByGrade(String grade, {bool useCache = true}) async {
+    return await getStudents(
+      filter: 'standard = "$grade"',
+      useCache: useCache,
+    );
+  }
+  
+  Future<List<RecordModel>> getStudentsByCenter(String center, {bool useCache = true}) async {
+    return await getStudents(
+      filter: 'center = "$center"',
+      useCache: useCache,
+    );
+  }
+
+  // 根据NFC URL查找学生
+  Future<RecordModel?> getStudentByNfcUrl(String nfcUrl) async {
+    try {
+      final cleanUrl = nfcUrl.trim(); // 去掉前后空格
+      
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      // 查询所有学生记录，查找匹配的URL
+      final allStudents = await pb.collection('students').getList(perPage: 200);
+      
+      // 在所有学生中查找匹配的URL
+      for (int i = 0; i < allStudents.items.length; i++) {
+        final student = allStudents.items[i];
+        final studentUrl = student.getStringValue("studentUrl")?.trim();
+        final registerFormUrl = student.getStringValue("register_form_url")?.trim();
+        final studentName = student.getStringValue("student_name");
+        
+        
+        // 智能URL匹配
+        bool isMatch = false;
+        String? matchedUrl;
+        
+        // 1. 精确匹配
+        if (studentUrl == cleanUrl || registerFormUrl == cleanUrl) {
+          isMatch = true;
+          matchedUrl = studentUrl == cleanUrl ? studentUrl : registerFormUrl;
+        }
+        
+        // 2. 去除协议后的匹配
+        if (!isMatch) {
+          String cleanStudentUrl = studentUrl?.replaceAll(RegExp(r'^https?://'), '') ?? '';
+          String cleanRegisterUrl = registerFormUrl?.replaceAll(RegExp(r'^https?://'), '') ?? '';
+          String cleanTargetUrl = cleanUrl.replaceAll(RegExp(r'^https?://'), '');
+          
+          if (cleanStudentUrl == cleanTargetUrl || cleanRegisterUrl == cleanTargetUrl) {
+            isMatch = true;
+            matchedUrl = cleanStudentUrl == cleanTargetUrl ? studentUrl : registerFormUrl;
+          }
+        }
+        
+        // 3. 核心部分匹配（提取Google Forms ID）
+        if (!isMatch) {
+          String extractFormId(String url) {
+            final match = RegExp(r'/forms/d/e/([^/]+)').firstMatch(url);
+            return match?.group(1) ?? '';
+          }
+          
+          String targetFormId = extractFormId(cleanUrl);
+          String studentFormId = extractFormId(studentUrl ?? '');
+          String registerFormId = extractFormId(registerFormUrl ?? '');
+          
+          if (targetFormId.isNotEmpty && (targetFormId == studentFormId || targetFormId == registerFormId)) {
+            isMatch = true;
+            matchedUrl = targetFormId == studentFormId ? studentUrl : registerFormUrl;
+          }
+        }
+        
+        // 4. 相似度匹配（允许1-2个字符差异）
+        if (!isMatch) {
+          int calculateSimilarity(String s1, String s2) {
+            int maxLen = s1.length > s2.length ? s1.length : s2.length;
+            int minLen = s1.length < s2.length ? s1.length : s2.length;
+            if (maxLen == 0) return 100;
+            
+            int matches = 0;
+            for (int i = 0; i < minLen; i++) {
+              if (s1[i] == s2[i]) matches++;
+            }
+            
+            return (matches * 100 / maxLen).round();
+          }
+          
+          int studentSimilarity = calculateSimilarity(cleanUrl, studentUrl ?? '');
+          int registerSimilarity = calculateSimilarity(cleanUrl, registerFormUrl ?? '');
+          
+          if (studentSimilarity >= 95 || registerSimilarity >= 95) {
+            isMatch = true;
+            matchedUrl = studentSimilarity >= registerSimilarity ? studentUrl : registerFormUrl;
+          }
+        }
+        
+        if (isMatch) {
+          return student;
+        }
+      }
+      
+      // 尝试不同的字段名查询
+      final result1 = await pb.collection('students').getList(
+        filter: 'studentUrl = "${cleanUrl.replaceAll('"', '\\"')}"',
+        perPage: 1,
+      );
+      
+      if (result1.items.isNotEmpty) {
+        return result1.items.first;
+      }
+      
+      final result2 = await pb.collection('students').getList(
+        filter: 'register_form_url = "${cleanUrl.replaceAll('"', '\\"')}"',
+        perPage: 1,
+      );
+      
+      if (result2.items.isNotEmpty) {
+        return result2.items.first;
+      }
+      
+      // 如果精确匹配失败，尝试包含查询
+      final result3 = await pb.collection('students').getList(
+        filter: 'studentUrl ~ "${cleanUrl.replaceAll('"', '\\"')}"',
+        perPage: 1,
+      );
+      
+      if (result3.items.isNotEmpty) {
+        return result3.items.first;
+      }
+      
+      // 尝试在 register_form_url 字段进行包含查询
+      final result4 = await pb.collection('students').getList(
+        filter: 'register_form_url ~ "${cleanUrl.replaceAll('"', '\\"')}"',
+        perPage: 1,
+      );
+      
+      if (result4.items.isNotEmpty) {
+        return result4.items.first;
+      }
+
+      // 所有查询都失败，返回null
+      return null;
+    } catch (e) {
+      throw Exception('Failed to find student by NFC URL: ${e.toString()}');
     }
   }
 
   Future<RecordModel> createStudent(Map<String, dynamic> data) async {
     try {
-      final record = await pb.collection('students').create(body: data);
+      final record = await _retryOperation(() async {
+        return await pb.collection('students').create(body: data);
+      });
+      
+      // 清除缓存，强制下次刷新
+      PocketBaseCacheService.clearCache('students');
+      
       return record;
     } catch (e) {
       throw Exception('Failed to create student: ${e.toString()}');
@@ -257,6 +472,23 @@ class PocketBaseService {
       return record;
     } catch (e) {
       throw Exception('Failed to create student attendance record: ${e.toString()}');
+    }
+  }
+
+  Future<RecordModel> updateStudentAttendanceRecord(String recordId, Map<String, dynamic> data) async {
+    try {
+      final record = await pb.collection('student_attendance').update(recordId, body: data);
+      return record;
+    } catch (e) {
+      throw Exception('Failed to update student attendance record: ${e.toString()}');
+    }
+  }
+
+  Future<void> deleteStudentAttendanceRecord(String recordId) async {
+    try {
+      await pb.collection('student_attendance').delete(recordId);
+    } catch (e) {
+      throw Exception('Failed to delete student attendance record: ${e.toString()}');
     }
   }
 
@@ -477,4 +709,16 @@ class PocketBaseService {
     }
     return null;
   }
+
+  // Create attendance record
+  Future<RecordModel> createAttendanceRecord(Map<String, dynamic> data) async {
+    try {
+      final record = await pb.collection('student_attendance').create(body: data);
+      return record;
+    } catch (e) {
+      throw Exception('Failed to create attendance record: ${e.toString()}');
+    }
+  }
+
+
 }

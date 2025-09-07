@@ -10,13 +10,18 @@ import 'providers/class_provider.dart';
 import 'providers/points_provider.dart';
 import 'screens/splash_screen.dart';
 import 'services/pocketbase_service.dart';
-import 'utils/app_theme.dart';
+import 'services/network_service.dart';
+import 'services/realtime_service.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialize shared preferences
   final prefs = await SharedPreferences.getInstance();
+  
+  // Initialize network monitoring
+  NetworkService.instance.startListening();
   
   runApp(MyApp(prefs: prefs));
 }
@@ -31,6 +36,8 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider(create: (_) => PocketBaseService.instance),
+        ChangeNotifierProvider(create: (_) => NetworkService.instance),
+        ChangeNotifierProvider(create: (_) => RealtimeService.instance),
         ChangeNotifierProvider(create: (context) => AuthProvider(prefs)),
         ChangeNotifierProxyProvider<PocketBaseService, StudentProvider>(
           create: (context) => StudentProvider(pocketBaseService: context.read<PocketBaseService>()),
@@ -50,8 +57,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'PJPC School Management',
         theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
+        themeMode: ThemeMode.light,
         home: const SplashScreen(),
         debugShowCheckedModeBanner: false,
       ),

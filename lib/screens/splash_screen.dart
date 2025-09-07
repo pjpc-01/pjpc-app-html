@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'auth/login_screen.dart';
-import 'dashboard/dashboard_screen.dart';
+import 'home/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -56,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       
       if (authProvider.isAuthenticated) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       } else {
         Navigator.of(context).pushReplacement(

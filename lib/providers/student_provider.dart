@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import '../services/pocketbase_service.dart';
+import '../services/error_handler_service.dart';
+import '../services/realtime_service.dart' as app_realtime;
 
 class StudentProvider with ChangeNotifier {
   final PocketBaseService _pocketBaseService;
@@ -13,7 +15,48 @@ class StudentProvider with ChangeNotifier {
   Map<String, bool> _expandedCategories = {};
 
   StudentProvider({PocketBaseService? pocketBaseService}) 
-      : _pocketBaseService = pocketBaseService ?? PocketBaseService.instance;
+      : _pocketBaseService = pocketBaseService ?? PocketBaseService.instance {
+    _setupRealtimeUpdates();
+  }
+  
+  /// 设置实时更新
+  void _setupRealtimeUpdates() {
+    // 订阅学生数据更新
+    app_realtime.RealtimeService.instance.subscribeToStudents((data) {
+      _handleStudentUpdate(data);
+    });
+    
+    // 订阅费用项目更新
+    app_realtime.RealtimeService.instance.subscribeToFeeItems((data) {
+      _handleFeeItemUpdate(data);
+    });
+    
+    // 订阅学生费用更新
+    app_realtime.RealtimeService.instance.subscribeToStudentFees((data) {
+      _handleStudentFeeUpdate(data);
+    });
+  }
+  
+  /// 处理学生数据更新
+  void _handleStudentUpdate(Map<String, dynamic> data) {
+    // 这里可以添加具体的更新逻辑
+    // 例如：更新本地学生列表
+    print('📡 收到学生数据更新: ${data['student_name']}');
+    // 可以在这里触发数据刷新
+    loadStudents(useCache: false);
+  }
+  
+  /// 处理费用项目更新
+  void _handleFeeItemUpdate(Map<String, dynamic> data) {
+    print('📡 收到费用项目更新: ${data['name']}');
+    loadFeeItems();
+  }
+  
+  /// 处理学生费用更新
+  void _handleStudentFeeUpdate(Map<String, dynamic> data) {
+    print('📡 收到学生费用更新');
+    loadStudentFees();
+  }
 
   // Getters
   bool get isLoading => _isLoading;
@@ -24,7 +67,7 @@ class StudentProvider with ChangeNotifier {
   Map<String, bool> get expandedCategories => _expandedCategories;
 
   // Load students
-  Future<void> loadStudents() async {
+  Future<void> loadStudents({bool useCache = true}) async {
     _setLoading(true);
     _clearError();
 
@@ -35,12 +78,15 @@ class StudentProvider with ChangeNotifier {
       }
       
       print('🔐 User is authenticated, loading students...');
-      _students = await _pocketBaseService.getStudents(perPage: 200);
+      _students = await _pocketBaseService.getStudents(
+        perPage: 200,
+        useCache: useCache,
+      );
       print('✅ Loaded ${_students.length} students from PocketBase');
       notifyListeners();
     } catch (e) {
       print('❌ Error loading students: $e');
-      _setError('加载学生数据失败: ${e.toString()}');
+      _setError(ErrorHandlerService.getErrorMessage(e));
     } finally {
       _setLoading(false);
     }
@@ -316,5 +362,15 @@ class StudentProvider with ChangeNotifier {
 
   void clearError() {
     _clearError();
+  }
+
+  // Get student by NFC URL
+  Future<RecordModel?> getStudentByNfcUrl(String nfcUrl) async {
+    try {
+      return await _pocketBaseService.getStudentByNfcUrl(nfcUrl);
+    } catch (e) {
+      print('❌ StudentProvider: 通过NFC URL查找学生失败: $e');
+      return null;
+    }
   }
 }
