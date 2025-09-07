@@ -25,10 +25,8 @@ class PointsProvider with ChangeNotifier {
 
     try {
       _studentPoints = await _pocketBaseService.getStudentPoints();
-      print('✅ Loaded ${_studentPoints.length} student points from PocketBase');
       notifyListeners();
     } catch (e) {
-      print('❌ Error loading student points: $e');
       _setError('加载学生积分失败: ${e.toString()}');
     } finally {
       _setLoading(false);
@@ -42,10 +40,8 @@ class PointsProvider with ChangeNotifier {
 
     try {
       _pointTransactions = await _pocketBaseService.getPointTransactions();
-      print('✅ Loaded ${_pointTransactions.length} point transactions from PocketBase');
       notifyListeners();
     } catch (e) {
-      print('❌ Error loading point transactions: $e');
       _setError('加载积分交易记录失败: ${e.toString()}');
     } finally {
       _setLoading(false);

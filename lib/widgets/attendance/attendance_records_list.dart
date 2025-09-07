@@ -59,7 +59,7 @@ class AttendanceRecordsList extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              '开始扫描NFC卡片或手动录入考勤',
+              '开始扫描NFC卡片进行考勤',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppTheme.textTertiary,
               ),
@@ -338,14 +338,12 @@ class AttendanceRecordsList extends StatelessWidget {
     switch (type.toLowerCase()) {
       case 'check_in':
         return 'NFC签到';
-      case 'manual':
-        return '手动签到';
       case 'late':
         return '迟到';
       case 'absent':
         return '缺勤';
       default:
-        return '未知类型';
+        return 'NFC签到';
     }
   }
 

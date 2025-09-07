@@ -27,9 +27,7 @@ class AttendanceProvider with ChangeNotifier {
 
     try {
       _attendanceRecords = await _pocketBaseService.getStudentAttendanceRecords();
-      print('✅ Loaded ${_attendanceRecords.length} student attendance records from PocketBase');
     } catch (e) {
-      print('❌ Error loading attendance records: $e');
       _error = '加载考勤记录失败: ${e.toString()}';
       _attendanceRecords = [];
     } finally {
@@ -46,7 +44,6 @@ class AttendanceProvider with ChangeNotifier {
     try {
       final record = await _pocketBaseService.createStudentAttendanceRecord(data);
       _attendanceRecords.add(record);
-      print('✅ Created student attendance record in PocketBase');
       notifyListeners();
       return true;
     } catch (e) {
@@ -290,11 +287,9 @@ class AttendanceProvider with ChangeNotifier {
         _attendanceRecords[index] = record;
       }
       
-      print('✅ Updated attendance record in PocketBase');
       notifyListeners();
       return true;
     } catch (e) {
-      print('❌ Error updating attendance record: $e');
       _setError('更新考勤记录失败: ${e.toString()}');
       return false;
     } finally {
@@ -313,11 +308,9 @@ class AttendanceProvider with ChangeNotifier {
       // Remove from local records
       _attendanceRecords.removeWhere((r) => r.id == recordId);
       
-      print('✅ Deleted attendance record from PocketBase');
       notifyListeners();
       return true;
     } catch (e) {
-      print('❌ Error deleting attendance record: $e');
       _setError('删除考勤记录失败: ${e.toString()}');
       return false;
     } finally {

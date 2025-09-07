@@ -25,10 +25,8 @@ class PaymentProvider with ChangeNotifier {
 
     try {
       _payments = await _pocketBaseService.getPayments();
-      print('✅ Loaded ${_payments.length} payments from PocketBase');
       notifyListeners();
     } catch (e) {
-      print('❌ Error loading payments: $e');
       _setError('加载支付记录失败: ${e.toString()}');
     } finally {
       _setLoading(false);
@@ -42,10 +40,8 @@ class PaymentProvider with ChangeNotifier {
 
     try {
       _invoices = await _pocketBaseService.getInvoices();
-      print('✅ Loaded ${_invoices.length} invoices from PocketBase');
       notifyListeners();
     } catch (e) {
-      print('❌ Error loading invoices: $e');
       _setError('加载发票记录失败: ${e.toString()}');
     } finally {
       _setLoading(false);

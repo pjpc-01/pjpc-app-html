@@ -57,7 +57,6 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } catch (e) {
         // 自动登录失败，显示登录界面
-        print('自动登录失败: $e');
         // 清除无效凭据
         await SecureStorageService.clearCredentials();
       }

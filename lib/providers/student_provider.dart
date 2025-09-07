@@ -41,20 +41,17 @@ class StudentProvider with ChangeNotifier {
   void _handleStudentUpdate(Map<String, dynamic> data) {
     // 这里可以添加具体的更新逻辑
     // 例如：更新本地学生列表
-    print('📡 收到学生数据更新: ${data['student_name']}');
     // 可以在这里触发数据刷新
     loadStudents(useCache: false);
   }
   
   /// 处理费用项目更新
   void _handleFeeItemUpdate(Map<String, dynamic> data) {
-    print('📡 收到费用项目更新: ${data['name']}');
     loadFeeItems();
   }
   
   /// 处理学生费用更新
   void _handleStudentFeeUpdate(Map<String, dynamic> data) {
-    print('📡 收到学生费用更新');
     loadStudentFees();
   }
 
@@ -77,15 +74,12 @@ class StudentProvider with ChangeNotifier {
         throw Exception('用户未认证，请先登录');
       }
       
-      print('🔐 User is authenticated, loading students...');
       _students = await _pocketBaseService.getStudents(
         perPage: 200,
         useCache: useCache,
       );
-      print('✅ Loaded ${_students.length} students from PocketBase');
       notifyListeners();
     } catch (e) {
-      print('❌ Error loading students: $e');
       _setError(ErrorHandlerService.getErrorMessage(e));
     } finally {
       _setLoading(false);
@@ -369,7 +363,6 @@ class StudentProvider with ChangeNotifier {
     try {
       return await _pocketBaseService.getStudentByNfcUrl(nfcUrl);
     } catch (e) {
-      print('❌ StudentProvider: 通过NFC URL查找学生失败: $e');
       return null;
     }
   }

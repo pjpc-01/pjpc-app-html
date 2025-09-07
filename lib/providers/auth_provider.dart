@@ -47,13 +47,11 @@ class AuthProvider with ChangeNotifier {
       if (await SecureStorageService.hasCredentials()) {
         final credentials = await SecureStorageService.getCredentials();
         if (credentials['email'] != null && credentials['password'] != null) {
-          print('🔄 尝试自动登录...');
           // 直接调用登录，不进行网络检查
           await _performLogin(credentials['email']!, credentials['password']!);
         }
       }
     } catch (e) {
-      print('❌ 自动登录失败: $e');
       // 自动登录失败时清除凭据
       await SecureStorageService.clearCredentials();
     }
@@ -94,7 +92,6 @@ class AuthProvider with ChangeNotifier {
       }
     } catch (e) {
       // 如果网络服务不可用，继续尝试登录
-      print('⚠️ 网络服务检查失败，继续尝试登录: $e');
     }
 
     // 执行登录操作

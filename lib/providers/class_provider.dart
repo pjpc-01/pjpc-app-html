@@ -23,10 +23,8 @@ class ClassProvider with ChangeNotifier {
 
     try {
       _classes = await _pocketBaseService.getClasses();
-      print('✅ Loaded ${_classes.length} classes from PocketBase');
       notifyListeners();
     } catch (e) {
-      print('❌ Error loading classes: $e');
       _setError('加载班级数据失败: ${e.toString()}');
     } finally {
       _isLoading = false;

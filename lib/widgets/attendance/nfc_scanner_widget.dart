@@ -120,8 +120,6 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
           _buildStatusMessage(),
           const SizedBox(height: AppSpacing.lg),
           _buildInstructions(),
-          const SizedBox(height: AppSpacing.lg),
-          _buildTestSection(),
         ],
       ),
     );
@@ -271,115 +269,12 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
               ),
             ),
           ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: _showManualCheckIn,
-              icon: const Icon(Icons.edit),
-              label: const Text('手动签到'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.accentColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildTestSection() {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppTheme.dividerColor),
-      ),
-      child: Column(
-        children: [
-          const Text(
-            '测试功能',
-            style: AppTextStyles.headline6,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          ElevatedButton.icon(
-            onPressed: _testNfcUrlLookup,
-            icon: const Icon(Icons.bug_report),
-            label: const Text('测试URL查找'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.warningColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          ElevatedButton.icon(
-            onPressed: _simulateNfcScan,
-            icon: const Icon(Icons.sim_card),
-            label: const Text('模拟NFC扫描'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          ElevatedButton.icon(
-            onPressed: _createJaydenStudent,
-            icon: const Icon(Icons.person_add),
-            label: const Text('创建Jayden学生'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.successColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Future<void> _testNfcUrlLookup() async {
-    try {
-      _updateStatus('测试URL查找功能...');
-      
-      // 使用Jayden的测试URL（不包含https://前缀，与NFC卡中存储的一致）
-      const testUrl = 'docs.google.com/forms/d/e/1FAIpQLSc05w6sa742nS8mLMLFfBmQSpnQij_djz8USeR15LOQk_LTzw/viewform';
-      
-      final student = await PocketBaseService.instance.getStudentByNfcUrl(testUrl);
-      
-      if (student != null) {
-        final studentName = student.getStringValue('student_name');
-        _updateStatus('测试成功！找到学生: $studentName', isSuccess: true);
-      } else {
-        _updateStatus('测试失败：未找到对应的学生', isError: true);
-      }
-    } catch (e) {
-      _updateStatus('测试失败: $e', isError: true);
-    }
-  }
-
-  /// 模拟NFC扫描测试
-  Future<void> _simulateNfcScan() async {
-    try {
-      _updateStatus('模拟NFC扫描...');
-      
-      // 模拟学生信息
-      final studentInfo = {
-        'id': 'test_student_123',
-        'name': '测试学生',
-        'class': '测试班级',
-        'center': '测试中心',
-        'url': 'https://docs.google.com/forms/d/e/1FAIpQLScQ8UfvNjBJ0Fyu5k6mOfU2exAxNR6CzFjoSKSluScGQ:',
-      };
-      
-      await _recordAttendance(studentInfo);
-    } catch (e) {
-      _updateStatus('模拟扫描失败: $e', isError: true);
-    }
-  }
 
 
   Color _getStatusColor() {
@@ -647,8 +542,4 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
     );
   }
 
-  void _showManualCheckIn() {
-    Navigator.pop(context);
-    // 这里可以触发手动签到对话框
-  }
 }

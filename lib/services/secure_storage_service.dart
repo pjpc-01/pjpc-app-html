@@ -25,9 +25,7 @@ class SecureStorageService {
       await _storage.write(key: _emailKey, value: email);
       await _storage.write(key: _passwordKey, value: password);
       await _storage.write(key: _lastLoginKey, value: DateTime.now().toIso8601String());
-      print('✅ 凭据已安全保存');
     } catch (e) {
-      print('❌ 保存凭据失败: $e');
       throw Exception('保存凭据失败');
     }
   }

@@ -239,13 +239,6 @@ class HomeDashboard extends StatelessWidget {
               onTap: () => _navigateToNfcAttendance(context),
             ),
             QuickActionCard(
-              title: '手动签到',
-              subtitle: '手动录入考勤',
-              icon: Icons.edit_calendar,
-              color: AppTheme.primaryColor,
-              onTap: () => _showManualCheckInDialog(context),
-            ),
-            QuickActionCard(
               title: '学生管理',
               subtitle: '查看学生信息',
               icon: Icons.people,
@@ -377,7 +370,7 @@ class HomeDashboard extends StatelessWidget {
               const Divider(height: 1),
               RecentActivityItem(
                 studentName: '李四',
-                action: '手动签到',
+                action: 'NFC签到',
                 time: '09:20',
                 status: 'success',
               ),
@@ -457,49 +450,5 @@ class HomeDashboard extends StatelessWidget {
   }
 
 
-  void _showManualCheckInDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('手动签到'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              decoration: InputDecoration(
-                labelText: '学生姓名或学号',
-                hintText: '请输入学生信息',
-              ),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              decoration: InputDecoration(
-                labelText: '备注',
-                hintText: '可选',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('签到成功'),
-                  backgroundColor: AppTheme.successColor,
-                ),
-              );
-            },
-            child: const Text('确认'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 

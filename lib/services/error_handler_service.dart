@@ -131,7 +131,7 @@ class ErrorHandlerService {
   /// 记录错误日志
   static void _logError(dynamic error, String operation, ErrorType errorType) {
     final timestamp = DateTime.now().toIso8601String();
-    print('❌ [$timestamp] Error in $operation (${errorType.name}): $error');
+    // Error logged: $operation (${errorType.name}): $error
     
     // 这里可以添加更详细的日志记录
     // 例如：发送到崩溃报告服务

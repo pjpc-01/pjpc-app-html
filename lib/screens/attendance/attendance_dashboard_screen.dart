@@ -6,7 +6,6 @@ import '../../widgets/attendance/nfc_scanner_widget.dart';
 import '../../widgets/attendance/attendance_stats_grid.dart';
 import '../../widgets/attendance/attendance_records_list.dart';
 import '../../widgets/attendance/attendance_filters.dart';
-import '../../widgets/common/floating_action_button_group.dart';
 
 class AttendanceDashboardScreen extends StatefulWidget {
   const AttendanceDashboardScreen({super.key});
@@ -55,9 +54,10 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButtonGroup(
-        onNFCTap: () => _showNFCScanner(context),
-        onManualTap: () => _showManualCheckInDialog(context),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showNFCScanner(context),
+        backgroundColor: AppTheme.primaryColor,
+        child: const Icon(Icons.nfc, color: Colors.white),
       ),
     );
   }
@@ -257,48 +257,6 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
     );
   }
 
-  void _showManualCheckInDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('手动签到'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              decoration: const InputDecoration(
-                labelText: '学生姓名或学号',
-                hintText: '请输入学生信息',
-                prefixIcon: Icon(Icons.person),
-              ),
-              onChanged: (value) => _searchQuery = value,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: const InputDecoration(
-                labelText: '备注',
-                hintText: '可选',
-                prefixIcon: Icon(Icons.note),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _processManualCheckIn();
-            },
-            child: const Text('确认签到'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showSearchDialog(BuildContext context) {
     showDialog(
@@ -387,24 +345,5 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
     );
   }
 
-  void _processManualCheckIn() {
-    if (_searchQuery.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('请输入学生信息'),
-          backgroundColor: AppTheme.warningColor,
-        ),
-      );
-      return;
-    }
-
-    // 处理手动签到逻辑
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('签到成功'),
-        backgroundColor: AppTheme.successColor,
-      ),
-    );
-  }
 }
 
