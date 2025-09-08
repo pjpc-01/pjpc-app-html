@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/student_provider.dart';
 import '../../providers/attendance_provider.dart';
+import '../../providers/points_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common/statistics_card.dart';
 
@@ -40,9 +41,12 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
       _isLoading = true;
     });
     
-    // 加载学生考勤数据
+    // 加载学生考勤与积分数据
     final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
     await attendanceProvider.loadAttendanceRecords();
+    final pointsProvider = Provider.of<PointsProvider>(context, listen: false);
+    await pointsProvider.loadPointTransactions();
+    await pointsProvider.loadStudentSummary(widget.studentId);
     
     setState(() {
       _isLoading = false;
@@ -247,6 +251,51 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Consumer<PointsProvider>(
+            builder: (context, pointsProvider, child) {
+              final summary = pointsProvider.getSummary(widget.studentId);
+              final current = summary?.getIntValue('current_points') ?? 0;
+              final earned = summary?.getIntValue('total_earned') ?? 0;
+              final spent = summary?.getIntValue('total_spent') ?? 0;
+              return Row(
+                children: [
+                  Expanded(
+                    child: StatisticsCard(
+                      title: '当前积分',
+                      value: '$current',
+                      change: '',
+                      isPositive: true,
+                      icon: Icons.stars,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: StatisticsCard(
+                      title: '累计获得',
+                      value: '$earned',
+                      change: '',
+                      isPositive: true,
+                      icon: Icons.trending_up,
+                      color: AppTheme.successColor,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: StatisticsCard(
+                      title: '累计支出',
+                      value: '$spent',
+                      change: '',
+                      isPositive: false,
+                      icon: Icons.trending_down,
+                      color: AppTheme.errorColor,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: AppSpacing.lg),
           _buildInfoCard(
             '班级信息',
             [

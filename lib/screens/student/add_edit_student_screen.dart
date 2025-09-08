@@ -491,7 +491,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedBGT,
+                    value: _getSafeDropdownValue(_selectedBGT, ['B', 'G', 'T']),
                     decoration: const InputDecoration(
                       labelText: '性别/类型',
                       prefixIcon: Icon(Icons.person_outline),
@@ -504,13 +504,11 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                     onChanged: (value) {
                       setState(() {
                         _selectedBGT = value!;
-                        // 同步更新性别字段
                         if (value == 'B') {
                           _selectedGender = 'male';
                         } else if (value == 'G') {
                           _selectedGender = 'female';
                         }
-                        // T类型保持当前性别选择
                       });
                       _generateSmartStudentId();
                     },
@@ -555,7 +553,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedGender == 'male' || _selectedGender == 'female' ? _selectedGender : 'male',
+                    value: _getSafeDropdownValue(_selectedGender, ['male', 'female']),
                     decoration: const InputDecoration(
                       labelText: '性别',
                       prefixIcon: Icon(Icons.person_outline),
@@ -570,7 +568,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedStatus,
+                    value: _getSafeDropdownValue(_selectedStatus, ['active', 'inactive', 'graduated']),
                     decoration: const InputDecoration(
                       labelText: '状态',
                       prefixIcon: Icon(Icons.info_outline),
@@ -721,7 +719,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedServiceType,
+                    value: _getSafeDropdownValue(_selectedServiceType, _serviceTypes),
                     decoration: const InputDecoration(
                       labelText: '服务类型',
                       prefixIcon: Icon(Icons.work),
@@ -1125,7 +1123,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
             DropdownButtonFormField<String>(
-              value: _selectedPickupMethod,
+              value: _getSafeDropdownValue(_selectedPickupMethod, _pickupMethods),
               decoration: const InputDecoration(
                 labelText: '接送方式',
                 prefixIcon: Icon(Icons.directions_car),
@@ -1262,7 +1260,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedTuitionStatus,
+                    value: _getSafeDropdownValue(_selectedTuitionStatus, _tuitionStatuses),
                     decoration: const InputDecoration(
                       labelText: '学费状态',
                       prefixIcon: Icon(Icons.payment),

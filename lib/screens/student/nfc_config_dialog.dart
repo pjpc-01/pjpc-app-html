@@ -47,6 +47,13 @@ class _NfcConfigDialogState extends State<NfcConfigDialog> {
     _selectedCardStatus = student.getStringValue('cardStatus') ?? 'active';
   }
 
+  String? _getSafeDropdownValue(String? currentValue, List<String> availableOptions) {
+    if (availableOptions.isEmpty) return null;
+    if (currentValue == null || currentValue.isEmpty) return availableOptions.first;
+    if (availableOptions.contains(currentValue)) return currentValue;
+    return availableOptions.first;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -137,7 +144,7 @@ class _NfcConfigDialogState extends State<NfcConfigDialog> {
           const SizedBox(height: AppSpacing.md),
           
           DropdownButtonFormField<String>(
-            value: _selectedCardStatus,
+            value: _getSafeDropdownValue(_selectedCardStatus, ['active', 'inactive', 'blocked', 'lost']),
             decoration: const InputDecoration(
               labelText: '卡片状态',
               prefixIcon: Icon(Icons.info_outline),

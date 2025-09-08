@@ -11,6 +11,7 @@ import '../settings/settings_screen.dart';
 import '../../widgets/common/quick_action_card.dart';
 import '../../widgets/common/statistics_card.dart';
 import '../../widgets/common/recent_activity_item.dart';
+import '../points/points_management_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -259,6 +260,13 @@ class HomeDashboard extends StatelessWidget {
               color: AppTheme.warningColor,
               onTap: () => _navigateToReports(context),
             ),
+            QuickActionCard(
+              title: '积分管理',
+              subtitle: '学生积分加减与记录',
+              icon: Icons.stars,
+              color: AppTheme.primaryVariant,
+              onTap: () => _navigateToPoints(context),
+            ),
           ],
         ),
       ],
@@ -327,6 +335,22 @@ class HomeDashboard extends StatelessWidget {
               isPositive: true,
               icon: Icons.person_off,
               color: AppTheme.errorColor,
+            ),
+            StatisticsCard(
+              title: '本周累计加分',
+              value: '—',
+              change: '',
+              isPositive: true,
+              icon: Icons.stars,
+              color: AppTheme.primaryVariant,
+            ),
+            StatisticsCard(
+              title: '今日兑换次数',
+              value: '—',
+              change: '',
+              isPositive: true,
+              icon: Icons.card_giftcard,
+              color: AppTheme.accentColor,
             ),
           ],
         ),
@@ -441,6 +465,15 @@ class HomeDashboard extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (context) => const HomeworkGradesScreen(),
+      ),
+    );
+  }
+
+  void _navigateToPoints(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PointsManagementScreen(),
       ),
     );
   }

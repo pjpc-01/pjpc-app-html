@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'dart:async';
 import 'pocketbase_cache_service.dart';
+import 'package:http/http.dart' as http;
 
 class PocketBaseService {
   late PocketBase pb;
@@ -663,6 +664,65 @@ class PocketBaseService {
     }
   }
 
+  // Student points summary by student_id (upsert semantics)
+  Future<RecordModel> upsertStudentPointsSummary({
+    required String studentId,
+    int deltaEarned = 0,
+    int deltaSpent = 0,
+    int? seasonNumber,
+    DateTime? seasonStart,
+    DateTime? seasonEnd,
+  }) async {
+    try {
+      // find existing summary
+      final list = await pb.collection('student_points').getList(
+        perPage: 1,
+        filter: 'student_id = "$studentId"',
+      );
+      if (list.items.isEmpty) {
+        final record = await pb.collection('student_points').create(body: {
+          'student_id': studentId,
+          'current_points': (deltaEarned - deltaSpent).clamp(0, 1 << 31),
+          'total_earned': deltaEarned,
+          'total_spent': deltaSpent,
+          if (seasonNumber != null) 'season_number': seasonNumber,
+          if (seasonStart != null) 'season_start_date': seasonStart.toIso8601String(),
+          if (seasonEnd != null) 'season_end_date': seasonEnd.toIso8601String(),
+        });
+        return record;
+      } else {
+        final current = list.items.first;
+        final currentPoints = current.getIntValue('current_points');
+        final totalEarned = current.getIntValue('total_earned');
+        final totalSpent = current.getIntValue('total_spent');
+        final updated = await pb.collection('student_points').update(current.id, body: {
+          'current_points': (currentPoints + deltaEarned - deltaSpent).clamp(0, 1 << 31),
+          'total_earned': totalEarned + deltaEarned,
+          'total_spent': totalSpent + deltaSpent,
+          if (seasonNumber != null) 'season_number': seasonNumber,
+          if (seasonStart != null) 'season_start_date': seasonStart.toIso8601String(),
+          if (seasonEnd != null) 'season_end_date': seasonEnd.toIso8601String(),
+        });
+        return updated;
+      }
+    } catch (e) {
+      throw Exception('Failed to upsert student points summary: ${e.toString()}');
+    }
+  }
+
+  Future<RecordModel?> getStudentPointsSummary(String studentId) async {
+    try {
+      final list = await pb.collection('student_points').getList(
+        perPage: 1,
+        filter: 'student_id = "$studentId"',
+      );
+      if (list.items.isEmpty) return null;
+      return list.items.first;
+    } catch (e) {
+      throw Exception('Failed to get student points summary: ${e.toString()}');
+    }
+  }
+
   // Point Transactions management
   Future<List<RecordModel>> getPointTransactions({int page = 1, int perPage = 50}) async {
     try {
@@ -675,6 +735,60 @@ class PocketBaseService {
       return result.items;
     } catch (e) {
       throw Exception('Failed to fetch point transactions: ${e.toString()}');
+    }
+  }
+
+  Future<RecordModel> createPointTransaction({
+    required String studentId,
+    required String teacherId,
+    required int pointsChange,
+    required String transactionType, // add_points | deduct_points | redeem
+    String? reason,
+    File? proofImage,
+    int? seasonNumber,
+    String status = 'approved',
+  }) async {
+    try {
+      final body = {
+        'student_id': studentId,
+        'teacher_id': teacherId,
+        'points_change': pointsChange,
+        'transaction_type': transactionType,
+        if (reason != null) 'reason': reason,
+        if (seasonNumber != null) 'season_number': seasonNumber,
+        'status': status,
+      };
+      final files = <http.MultipartFile>[];
+      if (proofImage != null) {
+        files.add(await http.MultipartFile.fromPath('proof_image', proofImage.path));
+      }
+      final record = await pb.collection('point_transactions').create(body: body, files: files);
+      return record;
+    } catch (e) {
+      throw Exception('Failed to create point transaction: ${e.toString()}');
+    }
+  }
+
+  // Teachers lookup by NFC card id (hex, upper-case with or without colons)
+  Future<RecordModel?> getTeacherByCardId(String cardIdHex) async {
+    try {
+      String normalized = cardIdHex.toUpperCase();
+      normalized = normalized.replaceAll(':', '');
+      // Primary exact field in your schema: nfc_card_number
+      final res1 = await pb.collection('teachers').getList(
+        perPage: 1,
+        filter: 'nfc_card_number = "$normalized" || nfc_card_number = "${cardIdHex.toUpperCase()}"',
+      );
+      if (res1.items.isNotEmpty) return res1.items.first;
+      // Try contains to be safe
+      final res2 = await pb.collection('teachers').getList(
+        perPage: 1,
+        filter: 'nfc_card_number ~ "$normalized"',
+      );
+      if (res2.items.isNotEmpty) return res2.items.first;
+      return null;
+    } catch (e) {
+      return null;
     }
   }
 
