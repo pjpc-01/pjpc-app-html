@@ -73,81 +73,165 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        title: const Text('积分管理'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          // 调试按钮 - 临时添加
-          IconButton(
-            tooltip: '测试积分操作',
-            icon: const Icon(Icons.bug_report),
-            onPressed: _testPointsOperation,
-          ),
-          IconButton(
-            tooltip: '扫描学生NFC卡',
-            icon: AnimatedBuilder(
-              animation: _pulseAnimation,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: _isScanning ? _pulseAnimation.value : 1.0,
-                  child: Icon(
-                    _isScanning ? Icons.nfc : Icons.nfc_outlined,
-                    color: _isScanning ? AppTheme.successColor : Colors.white,
-                  ),
-                );
-              },
-            ),
-            onPressed: _isScanning ? null : _startStudentScan,
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // 顶部状态区域
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppTheme.primaryColor, AppTheme.primaryColor.withOpacity(0.8)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
+      body: CustomScrollView(
+        slivers: [
+          _buildModernAppBar(),
+          SliverToBoxAdapter(
             child: Column(
               children: [
+                _buildWelcomeSection(),
                 _buildQuickStats(),
                 const SizedBox(height: 16),
                 _buildScanStatusCard(),
+                const SizedBox(height: 16),
+                _buildLastScanCard(),
+                const SizedBox(height: 16),
+                _buildInstructionsCard(),
+                const SizedBox(height: 16),
+                _buildLeaderboardCard(),
+                const SizedBox(height: 16),
+                _buildSearchBar(),
+                const SizedBox(height: 16),
+                _buildStudentList(),
+                const SizedBox(height: 20),
               ],
-            ),
-          ),
-          // 主要内容区域
-          Expanded(
-            child: RefreshIndicator(
-              color: AppTheme.primaryColor,
-              onRefresh: _loadData,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    _buildLastScanCard(),
-                    const SizedBox(height: 16),
-                    _buildInstructionsCard(),
-                    const SizedBox(height: 16),
-                    _buildSearchBar(),
-                    const SizedBox(height: 16),
-                    _buildStudentList(),
-                  ],
-                ),
-              ),
             ),
           ),
         ],
       ),
       floatingActionButton: _buildSmartFab(),
+    );
+  }
+
+  Widget _buildModernAppBar() {
+    return SliverAppBar(
+      expandedHeight: 120,
+      floating: false,
+      pinned: true,
+      elevation: 0,
+      backgroundColor: AppTheme.primaryColor,
+      foregroundColor: Colors.white,
+      flexibleSpace: FlexibleSpaceBar(
+        title: const Text(
+          '积分管理',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppTheme.primaryColor, AppTheme.primaryColor.withOpacity(0.8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                SizedBox(height: 40),
+                Icon(
+                  Icons.stars,
+                  color: Colors.white,
+                  size: 32,
+                ),
+                SizedBox(height: 8),
+                Text(
+                  '学生积分管理系统',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        // 调试按钮 - 临时添加
+        IconButton(
+          tooltip: '测试积分操作',
+          icon: const Icon(Icons.bug_report),
+          onPressed: _testPointsOperation,
+        ),
+        IconButton(
+          tooltip: '扫描学生NFC卡',
+          icon: AnimatedBuilder(
+            animation: _pulseAnimation,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: _isScanning ? _pulseAnimation.value : 1.0,
+                child: Icon(
+                  _isScanning ? Icons.nfc : Icons.nfc_outlined,
+                  color: _isScanning ? AppTheme.successColor : Colors.white,
+                ),
+              );
+            },
+          ),
+          onPressed: _isScanning ? null : _startStudentScan,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWelcomeSection() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppTheme.primaryColor.withOpacity(0.1), AppTheme.accentColor.withOpacity(0.1)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.emoji_events,
+              color: AppTheme.primaryColor,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '欢迎使用积分管理系统',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '管理学生积分，激励学习进步',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -161,26 +245,29 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
           totalPoints += pointsProvider.getTotalPointsForStudent(student.id);
         }
         
-        return Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                '学生总数',
-                totalStudents.toString(),
-                Icons.people,
-                AppTheme.primaryColor,
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  '学生总数',
+                  totalStudents.toString(),
+                  Icons.people,
+                  AppTheme.primaryColor,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                '总积分',
-                totalPoints.toString(),
-                Icons.stars,
-                AppTheme.accentColor,
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  '总积分',
+                  totalPoints.toString(),
+                  Icons.stars,
+                  AppTheme.accentColor,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
@@ -188,29 +275,39 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.3)),
+        color: AppTheme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.dividerColor),
+        boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
         children: [
-          Icon(icon, color: Colors.white, size: 24),
-          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(height: 12),
           Text(
             value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
+          const SizedBox(height: 4),
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppTheme.textSecondary,
               fontSize: 12,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -398,6 +495,300 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
         ],
       ),
     );
+  }
+
+  Widget _buildLeaderboardCard() {
+    return Consumer2<StudentProvider, PointsProvider>(
+      builder: (context, studentProvider, pointsProvider, child) {
+        // 获取积分排行榜数据
+        final leaderboard = _getLeaderboardData(studentProvider, pointsProvider);
+        
+        return Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppTheme.cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.dividerColor),
+            boxShadow: AppTheme.cardShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 标题栏
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppTheme.primaryColor, AppTheme.primaryColor.withOpacity(0.8)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.emoji_events,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '积分排行榜',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'Top 10 学生积分排名',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              opacity: 0.9,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${leaderboard.length} 名学生',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // 排行榜内容
+              if (leaderboard.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(40),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.emoji_events_outlined,
+                        color: AppTheme.textSecondary,
+                        size: 48,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '暂无积分数据',
+                        style: TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '开始为学生添加积分以查看排行榜',
+                        style: TextStyle(
+                          color: AppTheme.textTertiary,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: leaderboard.length > 10 ? 10 : leaderboard.length,
+                  separatorBuilder: (_, __) => Divider(
+                    height: 1,
+                    color: AppTheme.dividerColor.withOpacity(0.5),
+                  ),
+                  itemBuilder: (context, index) {
+                    final item = leaderboard[index];
+                    return _buildLeaderboardItem(item, index + 1);
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLeaderboardItem(Map<String, dynamic> item, int rank) {
+    final student = item['student'] as RecordModel;
+    final points = item['points'] as int;
+    final studentName = student.getStringValue('student_name');
+    final studentId = student.getStringValue('student_id');
+    final standard = student.getStringValue('standard');
+
+    // 根据排名选择颜色和图标
+    Color rankColor;
+    IconData rankIcon;
+    
+    if (rank == 1) {
+      rankColor = const Color(0xFFFFD700); // 金色
+      rankIcon = Icons.emoji_events;
+    } else if (rank == 2) {
+      rankColor = const Color(0xFFC0C0C0); // 银色
+      rankIcon = Icons.emoji_events;
+    } else if (rank == 3) {
+      rankColor = const Color(0xFFCD7F32); // 铜色
+      rankIcon = Icons.emoji_events;
+    } else {
+      rankColor = AppTheme.textSecondary;
+      rankIcon = Icons.person;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        children: [
+          // 排名
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: rankColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: rankColor.withOpacity(0.3)),
+            ),
+            child: Center(
+              child: Text(
+                '$rank',
+                style: TextStyle(
+                  color: rankColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          
+          // 学生头像
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+            child: Text(
+              studentName.isNotEmpty ? studentName[0].toUpperCase() : '?',
+              style: const TextStyle(
+                color: AppTheme.primaryColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          
+          // 学生信息
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  studentName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$studentId · $standard',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // 积分显示
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: _getPointsColor(points).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: _getPointsColor(points).withOpacity(0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.stars,
+                  color: _getPointsColor(points),
+                  size: 16,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '$points',
+                  style: TextStyle(
+                    color: _getPointsColor(points),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Map<String, dynamic>> _getLeaderboardData(StudentProvider studentProvider, PointsProvider pointsProvider) {
+    final students = studentProvider.students;
+    final leaderboard = <Map<String, dynamic>>[];
+    
+    for (final student in students) {
+      final points = pointsProvider.getTotalPointsForStudent(student.id);
+      leaderboard.add({
+        'student': student,
+        'points': points,
+      });
+    }
+    
+    // 按积分降序排序
+    leaderboard.sort((a, b) => (b['points'] as int).compareTo(a['points'] as int));
+    
+    return leaderboard;
+  }
+
+  Color _getPointsColor(int points) {
+    if (points >= 100) {
+      return AppTheme.successColor;
+    } else if (points >= 50) {
+      return AppTheme.accentColor;
+    } else if (points >= 0) {
+      return AppTheme.primaryColor;
+    } else {
+      return AppTheme.errorColor;
+    }
   }
 
   Widget _buildInstructionsCard() {
