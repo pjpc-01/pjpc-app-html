@@ -81,10 +81,11 @@ export async function GET(request: NextRequest) {
 
       // 格式化学生数据
       const formattedStudents = students.items.map(student => {
+        console.log('📝 原始学生数据:', student)
         return {
           id: student.id,
-          student_id: student.student_id || '无学号',
-          student_name: student.student_name || '未知姓名',
+          student_id: student.student_id || student.id || '无学号',
+          student_name: student.student_name || student.name || student.full_name || '未知姓名',
           center: student.center || '未指定',
           status: student.status || 'active',
           standard: student.standard || '未指定',
@@ -131,6 +132,109 @@ export async function GET(request: NextRequest) {
       { 
         success: false,
         error: '获取学生数据失败', 
+        details: error.message || '未知错误'
+      },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    console.log('📝 收到添加学生请求:', body)
+
+    // 获取PocketBase实例
+    const pb = await getPocketBase()
+    
+    // 使用优化的管理员认证
+    try {
+      await authenticateAdmin()
+      console.log('✅ 管理员认证成功')
+    } catch (authError) {
+      console.error('❌ 管理员认证失败:', authError)
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'PocketBase认证失败', 
+          details: '无法以管理员身份登录'
+        },
+        { status: 500 }
+      )
+    }
+
+    try {
+      // 确保认证状态有效
+      if (!pb.authStore.isValid) {
+        console.log('⚠️ 认证状态无效，重新认证...')
+        await authenticateAdmin()
+      }
+
+      // 准备学生数据
+      const studentData = {
+        student_name: body.student_name || '未命名学生',
+        student_id: body.student_id || '',
+        standard: body.standard || '',
+        center: body.center || 'WX 01',
+        status: body.status || 'active',
+        gender: body.gender || 'male',
+        serviceType: body.serviceType || 'afterschool',
+        dob: body.dob || '',
+        parentName: body.parentName || '',
+        email: body.email || '',
+        // 扩展信息
+        nric: body.nric || '',
+        school: body.school || '',
+        parentPhone: body.parentPhone || '',
+        emergencyContact: body.emergencyContact || '',
+        emergencyPhone: body.emergencyPhone || '',
+        healthInfo: body.healthInfo || '',
+        pickupMethod: body.pickupMethod || 'parent',
+        // 接送安排
+        authorizedPickup1Name: body.authorizedPickup1Name || '',
+        authorizedPickup1Phone: body.authorizedPickup1Phone || '',
+        authorizedPickup1Relation: body.authorizedPickup1Relation || '',
+        authorizedPickup2Name: body.authorizedPickup2Name || '',
+        authorizedPickup2Phone: body.authorizedPickup2Phone || '',
+        authorizedPickup2Relation: body.authorizedPickup2Relation || '',
+        authorizedPickup3Name: body.authorizedPickup3Name || '',
+        authorizedPickup3Phone: body.authorizedPickup3Phone || '',
+        authorizedPickup3Relation: body.authorizedPickup3Relation || '',
+        registrationDate: body.registrationDate || new Date().toISOString().split('T')[0],
+        tuitionStatus: body.tuitionStatus || 'pending',
+        birthCertificate: body.birthCertificate || null,
+        avatar: body.avatar || null
+      }
+
+      console.log('💾 准备保存的学生数据:', studentData)
+
+      // 创建学生记录
+      const newStudent = await pb.collection('students').create(studentData)
+      
+      console.log('✅ 学生创建成功:', newStudent.id)
+
+      return NextResponse.json({
+        success: true,
+        student: newStudent,
+        message: '学生添加成功'
+      })
+
+    } catch (createError: any) {
+      console.error('❌ 创建学生失败:', createError)
+      
+      return NextResponse.json({
+        success: false,
+        error: '创建学生失败',
+        details: createError instanceof Error ? createError.message : '未知错误'
+      }, { status: 500 })
+    }
+
+  } catch (error: any) {
+    console.error('❌ 处理添加学生请求失败:', error)
+    return NextResponse.json(
+      { 
+        success: false,
+        error: '处理请求失败', 
         details: error.message || '未知错误'
       },
       { status: 500 }

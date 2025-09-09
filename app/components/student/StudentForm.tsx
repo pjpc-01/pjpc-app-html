@@ -275,7 +275,7 @@ export default function StudentForm({
       onOpenChange(false)
     } catch (error: unknown) {
       console.error('Error submitting form:', error)
-      setSubmitError(error.message || '提交失败，请重试')
+      setSubmitError(error instanceof Error ? error.message : '提交失败，请重试')
     } finally {
       setIsSubmitting(false)
     }

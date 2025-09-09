@@ -14,6 +14,8 @@ import CourseManagement from "@/app/components/management/course-management"
 import ClassManagement from "@/app/components/management/class-management"
 import AnnouncementManagement from "@/app/components/management/announcement-management"
 import PointsManagement from "@/app/components/management/points-management"
+import NFCReplacementCard from "@/components/teacher/NFCReplacementCard"
+import StudentForm from "@/app/components/student/StudentForm"
 // import StudentProfileView from "@/components/student/StudentProfileView"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -64,7 +66,8 @@ import {
   Car,
   FileText,
   Megaphone,
-  Trophy
+  Trophy,
+  CreditCard
 } from "lucide-react"
 
 interface TeacherStats {
@@ -621,7 +624,7 @@ function StudentProfileView({ teacherId }: { teacherId?: string }) {
 }
 
 // OverviewTab component
-function OverviewTab({ students }: { students: any[] }) {
+function OverviewTab({ students, onShowNFCReplacement, onTabChange }: { students: any[], onShowNFCReplacement: (show: boolean) => void, onTabChange: (tab: string) => void }) {
   const [attendanceData, setAttendanceData] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   
@@ -971,10 +974,8 @@ function OverviewTab({ students }: { students: any[] }) {
               variant="outline" 
               className="h-20 flex flex-col items-center justify-center space-y-2"
               onClick={() => {
-                // 切换到课程与作业管理标签页
-                const tabs = document.querySelector('[role="tablist"]')
-                const teachingTab = tabs?.querySelector('[value="teaching"]') as HTMLElement
-                teachingTab?.click()
+                console.log('课程与作业按钮被点击')
+                onTabChange("teaching")
               }}
             >
               <BookOpen className="h-6 w-6" />
@@ -985,10 +986,8 @@ function OverviewTab({ students }: { students: any[] }) {
               variant="outline" 
               className="h-20 flex flex-col items-center justify-center space-y-2"
               onClick={() => {
-                // 切换到通知公告标签页
-                const tabs = document.querySelector('[role="tablist"]')
-                const announcementTab = tabs?.querySelector('[value="announcements"]') as HTMLElement
-                announcementTab?.click()
+                console.log('发布公告按钮被点击')
+                onTabChange("announcements")
               }}
             >
               <Bell className="h-6 w-6" />
@@ -998,11 +997,18 @@ function OverviewTab({ students }: { students: any[] }) {
             <Button 
               variant="outline" 
               className="h-20 flex flex-col items-center justify-center space-y-2"
+              onClick={() => onShowNFCReplacement(true)}
+            >
+              <CreditCard className="h-6 w-6" />
+              <span>NFC卡补办</span>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col items-center justify-center space-y-2"
               onClick={() => {
-                // 切换到学生与考勤管理标签页
-                const tabs = document.querySelector('[role="tablist"]')
-                const studentTab = tabs?.querySelector('[value="students"]') as HTMLElement
-                studentTab?.click()
+                console.log('学生与考勤按钮被点击')
+                onTabChange("students")
               }}
             >
               <Users className="h-6 w-6" />
@@ -1013,11 +1019,8 @@ function OverviewTab({ students }: { students: any[] }) {
               variant="outline" 
               className="h-20 flex flex-col items-center justify-center space-y-2"
               onClick={() => {
-                // 切换到学生与考勤管理标签页，然后切换到积分管理子标签页
-                const tabs = document.querySelector('[role="tablist"]')
-                const studentTab = tabs?.querySelector('[value="students"]') as HTMLElement
-                studentTab?.click()
-                
+                console.log('积分管理按钮被点击')
+                onTabChange("students")
                 // 延迟切换到积分管理子标签页
                 setTimeout(() => {
                   const subTabs = document.querySelectorAll('[role="tablist"]')[1]
@@ -1033,7 +1036,10 @@ function OverviewTab({ students }: { students: any[] }) {
             <Button 
               variant="outline" 
               className="h-20 flex flex-col items-center justify-center space-y-2"
-              onClick={fetchAttendanceData}
+              onClick={() => {
+                console.log('刷新数据按钮被点击')
+                fetchAttendanceData()
+              }}
               disabled={loading}
             >
               <RefreshCw className={`h-6 w-6 ${loading ? 'animate-spin' : ''}`} />
@@ -1048,7 +1054,7 @@ function OverviewTab({ students }: { students: any[] }) {
 
 // StudentManagement component
 function StudentManagement({ teacherId }: { teacherId?: string }) {
-  const { students, loading, error, refetch } = useStudents()
+  const { students, loading, error, refetch, addStudent } = useStudents()
   
   // 分页状态管理
   const [currentPage, setCurrentPage] = useState(1)
@@ -1059,6 +1065,20 @@ function StudentManagement({ teacherId }: { teacherId?: string }) {
   const [showProfile, setShowProfile] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCenter, setSelectedCenter] = useState("all")
+  
+  // 添加学生对话框状态
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  
+  // 处理添加学生
+  const handleAddStudent = async (studentData: any) => {
+    try {
+      await addStudent(studentData)
+      setIsAddDialogOpen(false)
+      refetch()
+    } catch (error) {
+      console.error("Error adding student:", error)
+    }
+  }
   
   // 计算分页数据
   const totalPages = Math.ceil(students.length / studentsPerPage)
@@ -1266,7 +1286,7 @@ function StudentManagement({ teacherId }: { teacherId?: string }) {
                 <Download className="h-4 w-4 mr-2" />
                 导出
               </Button>
-              <Button size="sm">
+              <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 添加学生
               </Button>
@@ -1769,6 +1789,18 @@ function StudentManagement({ teacherId }: { teacherId?: string }) {
           </div>
         </div>
       )}
+
+      {/* 添加学生对话框 */}
+      <StudentForm
+        open={isAddDialogOpen}
+        onOpenChange={(open: boolean) => {
+          if (!open) {
+            setIsAddDialogOpen(false)
+          }
+        }}
+        onSubmit={handleAddStudent}
+        existingStudents={students}
+      />
     </>
   )
 }
@@ -3017,6 +3049,9 @@ export default function TeacherWorkspace() {
   const [absenceDetail, setAbsenceDetail] = useState('')
   const [isMarkingAbsence, setIsMarkingAbsence] = useState(false)
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  
+  // NFC卡补办申请状态
+  const [showNFCReplacement, setShowNFCReplacement] = useState(false)
 
   // 基于真实数据计算统计信息
   const stats = useMemo(() => {
@@ -3146,7 +3181,7 @@ export default function TeacherWorkspace() {
         {/* 主内容区域 */}
         <main className="w-full">
           {/* Tab导航 */}
-          <Tabs defaultValue="overview" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-4 mb-8">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
@@ -3168,7 +3203,7 @@ export default function TeacherWorkspace() {
 
             {/* 总览标签页 */}
             <TabsContent value="overview" className="space-y-6">
-              <OverviewTab students={students} />
+              <OverviewTab students={students} onShowNFCReplacement={setShowNFCReplacement} onTabChange={setActiveTab} />
             </TabsContent>
 
             {/* 学生与考勤管理标签页 */}
@@ -3555,6 +3590,24 @@ export default function TeacherWorkspace() {
                 className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
               >
                 ❌ 取消
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* NFC卡补办申请对话框 */}
+      {showNFCReplacement && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <NFCReplacementCard />
+            <div className="mt-4 text-center">
+              <Button
+                onClick={() => setShowNFCReplacement(false)}
+                variant="outline"
+                className="w-full"
+              >
+                关闭
               </Button>
             </div>
           </div>

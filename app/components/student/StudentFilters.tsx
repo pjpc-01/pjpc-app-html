@@ -3,29 +3,12 @@
 import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { Filter, Search, X, Smartphone, MapPin, Calendar as CalendarIcon, Users, GraduationCap, UserCheck } from "lucide-react"
+import { Filter, X, TrendingUp, BarChart3 } from "lucide-react"
 import { Student } from "@/hooks/useStudents"
-import { convertGradeToChinese } from "./utils"
-import { format } from "date-fns"
-import { zhCN } from "date-fns/locale"
+import SmartSearch from "./SmartSearch"
+import AdvancedFilters from "./AdvancedFilters"
+import FilterAnalytics from "./FilterAnalytics"
 import QuickFilters from "./QuickFilters"
 
 interface StudentFiltersProps {
@@ -34,6 +17,7 @@ interface StudentFiltersProps {
   selectedGrade: string
   setSelectedGrade: (grade: string) => void
   students: Student[]
+  filteredStudents: Student[]
   onFiltersChange?: (filters: FilterState) => void
 }
 
@@ -46,10 +30,16 @@ interface FilterState {
   selectedLevel: string
   ageRange: [number, number]
   enrollmentYear: string
+  enrollmentDateRange: { from: Date | undefined; to: Date | undefined }
   hasPhone: boolean
+  hasEmail: boolean
   hasAddress: boolean
+  hasGrades: boolean
+  hasAssignments: boolean
+  attendanceRate: [number, number]
   sortBy: string
   sortOrder: 'asc' | 'desc'
+  quickFilters: string[]
 }
 
 export default function StudentFilters({
@@ -58,9 +48,11 @@ export default function StudentFilters({
   selectedGrade,
   setSelectedGrade,
   students,
+  filteredStudents,
   onFiltersChange
 }: StudentFiltersProps) {
   const [showFilters, setShowFilters] = useState(false)
+  const [showAnalytics, setShowAnalytics] = useState(false)
   const [selectedCenter, setSelectedCenter] = useState("all")
   const [selectedStatus, setSelectedStatus] = useState("all")
   const [selectedGender, setSelectedGender] = useState("")
@@ -68,81 +60,46 @@ export default function StudentFilters({
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 25])
   const [enrollmentYear, setEnrollmentYear] = useState("")
   const [hasPhone, setHasPhone] = useState(false)
+  const [hasEmail, setHasEmail] = useState(false)
   const [hasAddress, setHasAddress] = useState(false)
+  const [hasGrades, setHasGrades] = useState(false)
+  const [hasAssignments, setHasAssignments] = useState(false)
+  const [attendanceRate, setAttendanceRate] = useState<[number, number]>([0, 100])
   const [sortBy, setSortBy] = useState("name")
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
-  const [dateRange, setDateRange] = useState<{
+  const [enrollmentDateRange, setEnrollmentDateRange] = useState<{
     from: Date | undefined
     to: Date | undefined
   }>({
     from: undefined,
     to: undefined
   })
+  const [quickFilters, setQuickFilters] = useState<string[]>([])
 
-  // 智能搜索建议
-  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([])
-  const [showSuggestions, setShowSuggestions] = useState(false)
-
-  // 获取筛选选项
-  const filterOptions = useMemo(() => {
-    const grades = Array.from(new Set(students.map(s => s.grade).filter(Boolean))).sort()
-    const statuses = Array.from(new Set(students.map(s => s.status).filter(Boolean))).sort()
-
-    return { grades, statuses }
-  }, [students])
-
-  // 生成搜索建议
-  const generateSearchSuggestions = (input: string) => {
-    if (!input.trim()) {
-      setSearchSuggestions([])
-      return
-    }
-
-    const suggestions = new Set<string>()
-    const lowerInput = input.toLowerCase()
-
-    students.forEach(student => {
-      // 姓名匹配
-      if (student.name?.toLowerCase().includes(lowerInput)) {
-        suggestions.add(student.name)
-      }
-      // 学号匹配
-      if (student.studentId?.toLowerCase().includes(lowerInput)) {
-        suggestions.add(student.studentId)
-      }
-      // 年级匹配
-      if (student.grade?.toLowerCase().includes(lowerInput)) {
-        suggestions.add(student.grade)
-      }
-      // 状态匹配
-      if (student.status?.toLowerCase().includes(lowerInput)) {
-        suggestions.add(student.status)
-      }
-      // 家长姓名匹配
-      if (student.parentName?.toLowerCase().includes(lowerInput)) {
-        suggestions.add(student.parentName)
-      }
-      // 家长邮箱匹配
-      if (student.parentEmail?.toLowerCase().includes(lowerInput)) {
-        suggestions.add(student.parentEmail)
-      }
-    })
-
-    setSearchSuggestions(Array.from(suggestions).slice(0, 5))
+  // 当前筛选状态
+  const currentFilters: FilterState = {
+    searchTerm,
+    selectedGrade,
+    selectedCenter,
+    selectedStatus,
+    selectedGender,
+    selectedLevel,
+    ageRange,
+    enrollmentYear,
+    enrollmentDateRange,
+    hasPhone,
+    hasEmail,
+    hasAddress,
+    hasGrades,
+    hasAssignments,
+    attendanceRate,
+    sortBy,
+    sortOrder,
+    quickFilters
   }
 
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value)
-    generateSearchSuggestions(value)
-    setShowSuggestions(true)
-  }
-
-  const handleSuggestionClick = (suggestion: string) => {
-    setSearchTerm(suggestion)
-    setShowSuggestions(false)
-  }
-
-  const clearFilters = () => {
+  // 清除所有筛选
+  const clearAllFilters = () => {
     setSearchTerm("")
     setSelectedGrade("all")
     setSelectedCenter("all")
@@ -152,282 +109,166 @@ export default function StudentFilters({
     setAgeRange([0, 25])
     setEnrollmentYear("")
     setHasPhone(false)
+    setHasEmail(false)
     setHasAddress(false)
-    setDateRange({ from: undefined, to: undefined })
-    setSearchSuggestions([])
-    setShowSuggestions(false)
+    setHasGrades(false)
+    setHasAssignments(false)
+    setAttendanceRate([0, 100])
+    setEnrollmentDateRange({ from: undefined, to: undefined })
+    setQuickFilters([])
   }
 
-  const hasActiveFilters = searchTerm || (selectedGrade && selectedGrade !== "all") || (selectedCenter && selectedCenter !== "all") || (selectedStatus && selectedStatus !== "all") || selectedGender || selectedLevel || 
-                          enrollmentYear || hasPhone || hasAddress || (ageRange[0] > 0 || ageRange[1] < 25) ||
-                          dateRange.from || dateRange.to
+  // 检查是否有活跃筛选
+  const hasActiveFilters = searchTerm || 
+    (selectedGrade && selectedGrade !== "all") || 
+    (selectedCenter && selectedCenter !== "all") || 
+    (selectedStatus && selectedStatus !== "all") || 
+    selectedGender || selectedLevel || 
+    enrollmentYear || hasPhone || hasEmail || hasAddress || 
+    hasGrades || hasAssignments ||
+    (ageRange[0] > 0 || ageRange[1] < 25) ||
+    (attendanceRate[0] > 0 || attendanceRate[1] < 100) ||
+    enrollmentDateRange.from || enrollmentDateRange.to ||
+    quickFilters.length > 0
 
   // 应用筛选
   const applyFilters = () => {
-    const filters: FilterState = {
-      searchTerm,
-      selectedGrade,
-      selectedCenter,
-      selectedStatus,
-      selectedGender,
-      selectedLevel,
-      ageRange,
-      enrollmentYear,
-      hasPhone,
-      hasAddress,
-      sortBy,
-      sortOrder
-    }
-    onFiltersChange?.(filters)
+    onFiltersChange?.(currentFilters)
   }
 
   // 当筛选条件改变时自动应用
   useEffect(() => {
     applyFilters()
-  }, [searchTerm, selectedGrade, selectedCenter, selectedStatus, selectedGender, selectedLevel, ageRange, enrollmentYear, hasPhone, hasAddress, sortBy, sortOrder, applyFilters])
+  }, [currentFilters, onFiltersChange])
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="space-y-4">
-          {/* 智能搜索栏 */}
-          <div className="relative">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="智能搜索：姓名、学号、年级、家长信息..."
-                  value={searchTerm}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  onFocus={() => setShowSuggestions(true)}
-                  className="pl-10"
-                />
-                {showSuggestions && searchSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 mt-1">
-                    {searchSuggestions.map((suggestion, index) => (
-                      <div
-                        key={index}
-                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                        onClick={() => handleSuggestionClick(suggestion)}
-                      >
-                        {suggestion}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                高级筛选
-              </Button>
+    <div className="space-y-4">
+      {/* 智能搜索 */}
+      <SmartSearch
+        students={students}
+        onSearch={setSearchTerm}
+        onClear={() => setSearchTerm("")}
+      />
 
-              {hasActiveFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearFilters}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  清除
-                </Button>
-              )}
-            </div>
-          </div>
+      {/* 快速筛选 */}
+      <QuickFilters
+        onFilterSelect={(filterId) => {
+          switch (filterId) {
+            case 'primary':
+              setSelectedLevel('primary')
+              break
+            case 'secondary':
+              setSelectedLevel('secondary')
+              break
+            case 'has-phone':
+              setHasPhone(true)
+              break
+            case 'has-email':
+              setHasEmail(true)
+              break
+            case 'has-address':
+              setHasAddress(true)
+              break
+            case 'recent':
+              // 设置最近3个月的日期范围
+              const threeMonthsAgo = new Date()
+              threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+              setEnrollmentDateRange({
+                from: threeMonthsAgo,
+                to: new Date()
+              })
+              break
+            case 'new':
+              // 设置本月的日期范围
+              const now = new Date()
+              const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+              setEnrollmentDateRange({
+                from: firstDayOfMonth,
+                to: now
+              })
+              break
+            case 'all':
+              clearAllFilters()
+              break
+          }
+        }}
+        activeFilters={[
+          ...(selectedLevel ? [selectedLevel] : []),
+          ...(hasPhone ? ['has-phone'] : []),
+          ...(hasEmail ? ['has-email'] : []),
+          ...(hasAddress ? ['has-address'] : []),
+          ...(enrollmentDateRange.from ? ['recent'] : [])
+        ]}
+      />
 
-          {/* 快速筛选 */}
-          <QuickFilters
-            onFilterSelect={(filterId) => {
-              switch (filterId) {
-                case 'primary':
-                  setSelectedLevel('primary')
-                  break
-                case 'secondary':
-                  setSelectedLevel('secondary')
-                  break
-                case 'has-phone':
-                  setHasPhone(true)
-                  break
-                case 'has-address':
-                  setHasAddress(true)
-                  break
-                case 'recent':
-                  // 设置最近3个月的日期范围
-                  const threeMonthsAgo = new Date()
-                  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
-                  setDateRange({
-                    from: threeMonthsAgo,
-                    to: new Date()
-                  })
-                  break
-                case 'new':
-                  // 设置本月的日期范围
-                  const now = new Date()
-                  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-                  setDateRange({
-                    from: firstDayOfMonth,
-                    to: now
-                  })
-                  break
-                case 'all':
-                  clearFilters()
-                  break
-              }
-            }}
-            activeFilters={[
-              ...(selectedLevel ? [selectedLevel] : []),
-              ...(hasPhone ? ['has-phone'] : []),
-              ...(hasAddress ? ['has-address'] : []),
-              ...(dateRange.from ? ['recent'] : [])
-            ]}
-          />
+      {/* 控制按钮 */}
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          <Filter className="h-4 w-4 mr-2" />
+          {showFilters ? '收起筛选' : '高级筛选'}
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowAnalytics(!showAnalytics)}
+        >
+          <BarChart3 className="h-4 w-4 mr-2" />
+          {showAnalytics ? '隐藏统计' : '筛选统计'}
+        </Button>
 
-          {/* 快速筛选标签 */}
-          {hasActiveFilters && (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-gray-600">当前筛选:</span>
-              {searchTerm && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <Search className="h-3 w-3" />
-                  {searchTerm}
-                </Badge>
-              )}
-              {selectedGrade && selectedGrade !== "all" && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <GraduationCap className="h-3 w-3" />
-                  {convertGradeToChinese(selectedGrade)}
-                </Badge>
-              )}
-              {selectedCenter && selectedCenter !== "all" && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  {selectedCenter}
-                </Badge>
-              )}
-              {selectedStatus && selectedStatus !== "all" && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <UserCheck className="h-3 w-3" />
-                  状态: {selectedStatus === 'active' ? '在读' : 
-                         selectedStatus === 'graduated' ? '已毕业' : 
-                         selectedStatus === 'transferred' ? '已转学' : 
-                         selectedStatus === 'inactive' ? '非活跃' : selectedStatus}
-                </Badge>
-              )}
-              {selectedGender && (
-                <Badge variant="secondary">
-                  性别: {selectedGender}
-                </Badge>
-              )}
-              {selectedLevel && (
-                <Badge variant="secondary">
-                  级别: {selectedLevel === 'primary' ? '小学' : '中学'}
-                </Badge>
-              )}
-              {enrollmentYear && (
-                <Badge variant="secondary">
-                  入学年份: {enrollmentYear}
-                </Badge>
-              )}
-              {hasPhone && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <Smartphone className="h-3 w-3" />
-                  有电话
-                </Badge>
-              )}
-              {hasAddress && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  有地址
-                </Badge>
-              )}
-              {(ageRange[0] > 0 || ageRange[1] < 25) && (
-                <Badge variant="secondary">
-                  年龄: {ageRange[0]}-{ageRange[1]}岁
-                </Badge>
-              )}
-            </div>
-          )}
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearAllFilters}
+          >
+            <X className="h-4 w-4 mr-2" />
+            清除筛选
+          </Button>
+        )}
+      </div>
 
-          {/* 高级筛选面板 */}
-          {showFilters && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t">
-              {/* 年级筛选 */}
-              <div>
-                <Label htmlFor="grade-filter">年级</Label>
-                <Select value={selectedGrade} onValueChange={setSelectedGrade}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择年级" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全部年级</SelectItem>
-                    {filterOptions.grades.map((grade) => (
-                      <SelectItem key={grade} value={grade}>
-                        {convertGradeToChinese(grade)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      {/* 高级筛选 */}
+      {showFilters && (
+        <AdvancedFilters
+          students={students}
+          onFiltersChange={(newFilters) => {
+            // 更新本地状态
+            if (newFilters.selectedGrade !== undefined) setSelectedGrade(newFilters.selectedGrade)
+            if (newFilters.selectedCenter !== undefined) setSelectedCenter(newFilters.selectedCenter)
+            if (newFilters.selectedStatus !== undefined) setSelectedStatus(newFilters.selectedStatus)
+            if (newFilters.selectedGender !== undefined) setSelectedGender(newFilters.selectedGender)
+            if (newFilters.selectedLevel !== undefined) setSelectedLevel(newFilters.selectedLevel)
+            if (newFilters.ageRange !== undefined) setAgeRange(newFilters.ageRange)
+            if (newFilters.enrollmentYear !== undefined) setEnrollmentYear(newFilters.enrollmentYear)
+            if (newFilters.enrollmentDateRange !== undefined) setEnrollmentDateRange(newFilters.enrollmentDateRange)
+            if (newFilters.hasPhone !== undefined) setHasPhone(newFilters.hasPhone)
+            if (newFilters.hasEmail !== undefined) setHasEmail(newFilters.hasEmail)
+            if (newFilters.hasAddress !== undefined) setHasAddress(newFilters.hasAddress)
+            if (newFilters.hasGrades !== undefined) setHasGrades(newFilters.hasGrades)
+            if (newFilters.hasAssignments !== undefined) setHasAssignments(newFilters.hasAssignments)
+            if (newFilters.attendanceRate !== undefined) setAttendanceRate(newFilters.attendanceRate)
+            if (newFilters.sortBy !== undefined) setSortBy(newFilters.sortBy)
+            if (newFilters.sortOrder !== undefined) setSortOrder(newFilters.sortOrder)
+            if (newFilters.quickFilters !== undefined) setQuickFilters(newFilters.quickFilters)
+          }}
+          onClearFilters={clearAllFilters}
+        />
+      )}
 
-              {/* 状态筛选 */}
-              <div>
-                <Label htmlFor="status-filter">状态</Label>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择状态" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全部状态</SelectItem>
-                    {filterOptions.statuses.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status === 'active' ? '在读' : 
-                         status === 'graduated' ? '已毕业' : 
-                         status === 'transferred' ? '已转学' : 
-                         status === 'inactive' ? '非活跃' : status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* 排序 */}
-              <div>
-                <Label htmlFor="sort-filter">排序</Label>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择排序" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="name">姓名</SelectItem>
-                    <SelectItem value="studentId">学号</SelectItem>
-                    <SelectItem value="grade">年级</SelectItem>
-                    <SelectItem value="status">状态</SelectItem>
-                    <SelectItem value="parentName">家长姓名</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* 排序方向 */}
-              <div>
-                <Label htmlFor="sort-order">排序方向</Label>
-                <Select value={sortOrder} onValueChange={(value: 'asc' | 'desc') => setSortOrder(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="asc">升序</SelectItem>
-                    <SelectItem value="desc">降序</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+      {/* 筛选统计 */}
+      {showAnalytics && (
+        <FilterAnalytics
+          students={students}
+          filteredStudents={filteredStudents}
+          filters={currentFilters}
+        />
+      )}
+    </div>
   )
 } 

@@ -13,8 +13,9 @@ export async function GET(request: NextRequest) {
     const email = searchParams.get('email')
     const teacherId = searchParams.get('teacher_id')
     const userId = searchParams.get('user_id')
+    const nfcCard = searchParams.get('nfcCard')
 
-    console.log('📋 请求参数:', { email, teacherId, userId })
+    console.log('📋 请求参数:', { email, teacherId, userId, nfcCard })
 
     // 使用正确的 PocketBase 集成获取所有教师
     console.log('🔍 获取所有教师记录...')
@@ -24,7 +25,14 @@ export async function GET(request: NextRequest) {
     // 在前端进行过滤
     let filteredTeachers = allTeachers
     
-    if (userId) {
+    if (nfcCard) {
+      console.log('🔍 在前端通过NFC卡号过滤:', nfcCard)
+      filteredTeachers = allTeachers.filter(teacher => 
+        (teacher as any).nfc_card_number === nfcCard || 
+        (teacher as any).nfc_card_number === nfcCard.trim()
+      )
+      console.log('✅ 过滤后剩余:', filteredTeachers.length, '个记录')
+    } else if (userId) {
       console.log('🔍 在前端通过 user_id 过滤:', userId)
       filteredTeachers = allTeachers.filter(teacher => (teacher as any).user_id === userId)
       console.log('✅ 过滤后剩余:', filteredTeachers.length, '个记录')

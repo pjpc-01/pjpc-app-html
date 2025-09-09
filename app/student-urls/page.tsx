@@ -28,6 +28,7 @@ import {
   Zap,
   Users,
   Link,
+  ArrowLeft,
   Search,
   GraduationCap,
   BookOpen,
@@ -37,6 +38,7 @@ import { useStudentCards } from "@/hooks/useStudentCards"
 import { StudentCard } from "@/lib/pocketbase-students-card"
 import { StudentCardDialog } from "../components/student-card-dialog"
 import { GoogleSheetsImport } from "../components/google-sheets-import"
+import Link from "next/link"
 
 export default function StudentUrlsPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -119,13 +121,23 @@ export default function StudentUrlsPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-          <Globe className="h-8 w-8 text-blue-600" />
-          学生专属网址管理
-        </h1>
-        <p className="text-gray-600">
-          为每个学生创建和管理专属的个人网址，方便访问个人信息和相关资源
-        </p>
+        <div className="flex items-center gap-4 mb-4">
+          <Link href="/">
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              返回主页
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
+              <Globe className="h-8 w-8 text-blue-600" />
+              学生专属网址管理
+            </h1>
+            <p className="text-gray-600">
+              为每个学生创建和管理专属的个人网址，方便访问个人信息和相关资源
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* 统计信息 */}

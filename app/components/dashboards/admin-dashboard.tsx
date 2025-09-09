@@ -7,6 +7,14 @@ import {
   DollarSign,
   Settings,
   BookOpen,
+  Shield,
+  CreditCard,
+  Smartphone,
+  Activity,
+  Users,
+  Globe,
+  Trophy,
+  Star,
 } from "lucide-react"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useDashboardStats } from "@/hooks/useDashboardStats"
@@ -15,6 +23,7 @@ import OverviewTab from "./overview-tab"
 import FinanceTab from "./finance-tab"
 import EducationTab from "./education-tab"
 import SettingsTab from "./settings-tab"
+import ManagementTab from "./management-tab"
 
 interface AdminDashboardProps {
   activeTab: string
@@ -31,13 +40,20 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
     <div className="space-y-4 sm:space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className={`grid w-full h-auto sm:h-12 ${
-          userProfile?.role === "admin" ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3"
+          userProfile?.role === "admin" ? "grid-cols-2 sm:grid-cols-5" : "grid-cols-2 sm:grid-cols-3"
         }`}>
           <TabsTrigger value="overview" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-0">
             <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden xs:inline">概览</span>
             <span className="xs:hidden">概</span>
           </TabsTrigger>
+          {userProfile?.role === "admin" && (
+            <TabsTrigger value="management" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-0">
+              <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">管理</span>
+              <span className="xs:hidden">管</span>
+            </TabsTrigger>
+          )}
           {userProfile?.role === "admin" && (
             <TabsTrigger value="finance" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-0">
               <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -66,6 +82,16 @@ export default function AdminDashboard({ activeTab, setActiveTab }: AdminDashboa
             statsError={statsError}
           />
         </TabsContent>
+
+        {userProfile?.role === "admin" && (
+          <TabsContent value="management" className="mt-6">
+            <ManagementTab 
+              stats={stats}
+              statsLoading={statsLoading}
+              setActiveTab={setActiveTab}
+            />
+          </TabsContent>
+        )}
 
         {userProfile?.role === "admin" && (
           <TabsContent value="finance" className="mt-6">

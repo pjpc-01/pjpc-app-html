@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import TeacherAuthModal from "@/components/smart/TeacherAuthModal"
 import { 
   MapPin, 
   Clock, 
@@ -22,6 +23,8 @@ import {
   Radio,
   Link as LinkIcon,
   Smartphone,
+  Shield,
+  User as UserIcon,
 } from "lucide-react"
 
 interface Student {
@@ -33,6 +36,16 @@ interface Student {
   studentUrl?: string
 }
 
+interface Teacher {
+  id: string
+  teacher_name: string
+  name: string
+  email: string
+  teacherUrl?: string
+  nfc_card_number?: string
+  center?: string
+}
+
 interface AttendanceRecord {
   id: string
   student_id: string
@@ -42,6 +55,8 @@ interface AttendanceRecord {
   time: string
   status: 'present' | 'late' | 'absent'
   timestamp: string
+  teacher_id?: string
+  teacher_name?: string
 }
 
 type AttendanceStatus = 'present' | 'late' | 'absent'
@@ -78,6 +93,14 @@ export default function MobileCheckinPage() {
     checkedInToday: 0,
     attendanceRate: 0
   })
+
+  // ---------- 教师认证状态 ----------
+  const [authenticatedTeacher, setAuthenticatedTeacher] = useState<Teacher | null>(null)
+  const [showTeacherAuth, setShowTeacherAuth] = useState(false)
+  const [pendingAction, setPendingAction] = useState<{
+    type: 'manual' | 'student-select' | 'nfc'
+    data?: any
+  } | null>(null)
 
   // ---------- 系统/设备状态 ----------
   const [isHttps, setIsHttps] = useState<boolean>(false)
@@ -201,6 +224,38 @@ export default function MobileCheckinPage() {
     return record?.status || null
   }
 
+  // ---------- 教师认证处理 ----------
+  const requireTeacherAuth = (actionType: 'manual' | 'student-select' | 'nfc', data?: any) => {
+    if (!authenticatedTeacher) {
+      setPendingAction({ type: actionType, data })
+      setShowTeacherAuth(true)
+      return false
+    }
+    return true
+  }
+
+  const handleTeacherAuthenticated = (teacher: Teacher) => {
+    setAuthenticatedTeacher(teacher)
+    setShowTeacherAuth(false)
+    
+    // 执行待处理的操作
+    if (pendingAction) {
+      if (pendingAction.type === 'manual') {
+        manualCheckIn()
+      } else if (pendingAction.type === 'student-select' && pendingAction.data) {
+        processAttendance({ student: pendingAction.data, status: 'present', source: "manual" })
+      } else if (pendingAction.type === 'nfc' && pendingAction.data) {
+        processAttendance({ student: pendingAction.data, status: 'present', source: "nfc" })
+      }
+      setPendingAction(null)
+    }
+  }
+
+  const handleTeacherAuthClose = () => {
+    setShowTeacherAuth(false)
+    setPendingAction(null)
+  }
+
   // ---------- 核心：统一处理考勤 ----------
   const processAttendance = async ({
     student,
@@ -232,6 +287,8 @@ export default function MobileCheckinPage() {
         status,
         timestamp: nowISO(),
         device_info: deviceInfo,
+        teacher_id: authenticatedTeacher?.id,
+        teacher_name: authenticatedTeacher?.teacher_name || authenticatedTeacher?.name,
       }
 
       const res = await fetch('/api/student-attendance', {
@@ -384,6 +441,7 @@ export default function MobileCheckinPage() {
               return
             }
           }
+          // NFC打卡不需要教师认证
           processAttendance({ student: s, status: 'present', source: 'nfc' })
         } catch (e) {
           console.error(e)
@@ -449,6 +507,12 @@ export default function MobileCheckinPage() {
     }
     
     console.log('✅ 找到学生:', s)
+    
+    // 检查教师认证
+    if (!requireTeacherAuth('manual')) {
+      return
+    }
+    
     processAttendance({ student: s, status: attendanceStatus, source: "manual" })
     setManualId("")
   }
@@ -491,6 +555,62 @@ export default function MobileCheckinPage() {
       </div>
 
       <div className="max-w-md mx-auto px-4 py-6">
+        {/* 教师认证状态 */}
+        <Card className="mb-6 border-2 border-orange-200 bg-orange-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <Shield className="h-5 w-5" />
+              教师身份验证
+            </CardTitle>
+            <CardDescription className="text-orange-700">
+              手动输入打卡和选择学生打卡需要先验证教师身份
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {authenticatedTeacher ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <UserIcon className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-green-800">
+                      {authenticatedTeacher.teacher_name || authenticatedTeacher.name}
+                    </p>
+                    <p className="text-sm text-green-600">
+                      ID: {authenticatedTeacher.id}
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="default" className="bg-green-600">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  已认证
+                </Badge>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-100 rounded-lg">
+                    <XCircle className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-red-800">未认证教师</p>
+                    <p className="text-sm text-red-600">请先验证教师身份</p>
+                  </div>
+                </div>
+                <Button 
+                  size="sm" 
+                  onClick={() => setShowTeacherAuth(true)}
+                  className="bg-orange-600 hover:bg-orange-700"
+                >
+                  <Shield className="h-4 w-4 mr-2" />
+                  验证身份
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* 中心信息卡片 */}
         <Card className="mb-6 border-2 border-blue-200 bg-blue-50">
           <CardHeader className="pb-3">
@@ -571,7 +691,7 @@ export default function MobileCheckinPage() {
               <Radio className="h-5 w-5" /> NFC 卡片打卡
                 </CardTitle>
             <CardDescription className="text-emerald-700">
-              需要 HTTPS 与支持NFC的设备。点击按钮后将学生卡片贴近设备，卡片内需写入专属URL（含 student_id）。
+              需要 HTTPS 与支持NFC的设备。点击按钮后将学生卡片贴近设备，卡片内需写入专属URL（含 student_id）。NFC打卡无需教师认证。
                 </CardDescription>
               </CardHeader>
           <CardContent className="flex gap-3">
@@ -608,7 +728,7 @@ export default function MobileCheckinPage() {
         <Card className="mb-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-gray-900">手动输入打卡（备用）</CardTitle>
-            <CardDescription>设备不支持NFC或卡片损坏时使用</CardDescription>
+            <CardDescription>设备不支持NFC或卡片损坏时使用（需要教师认证）</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {/* 调试信息 */}
@@ -657,7 +777,7 @@ export default function MobileCheckinPage() {
         <Card className="mb-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-gray-900">选择学生</CardTitle>
-            <CardDescription>搜索并选择要考勤的学生（未打卡优先显示）</CardDescription>
+            <CardDescription>搜索并选择要考勤的学生（未打卡优先显示，需要教师认证）</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="relative mb-4">
@@ -686,7 +806,14 @@ export default function MobileCheckinPage() {
                           : 'border-red-200 bg-red-50'
                         : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50'
                     }`}
-                    onClick={() => !checked && processAttendance({ student, status: 'present', source: "manual" })}
+                    onClick={() => {
+                      if (!checked) {
+                        if (!requireTeacherAuth('student-select', student)) {
+                          return
+                        }
+                        processAttendance({ student, status: 'present', source: "manual" })
+                      }
+                    }}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
@@ -777,6 +904,14 @@ export default function MobileCheckinPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* 教师认证模态框 */}
+      <TeacherAuthModal
+        isOpen={showTeacherAuth}
+        onClose={handleTeacherAuthClose}
+        onTeacherAuthenticated={handleTeacherAuthenticated}
+        centerId={mappedCenterId}
+      />
     </div>
   )
 }

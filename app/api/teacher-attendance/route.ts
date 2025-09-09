@@ -20,6 +20,10 @@ export async function POST(request: NextRequest) {
       deviceName,
       method,        // 'manual', 'nfc', 'url'
       status,        // 'success', 'failed'
+      // WiFi网络验证相关字段
+      wifiNetwork,
+      wifiVerified,
+      networkInfo,
       // 缺席相关字段
       studentId,
       studentName,

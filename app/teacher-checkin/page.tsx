@@ -2,24 +2,33 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { 
-  User, 
-  Clock, 
   CheckCircle, 
   XCircle, 
   AlertCircle,
   RefreshCw,
   Activity,
   Calendar,
-  MapPin
+  MapPin,
+  CreditCard
 } from "lucide-react"
 import Link from "next/link"
+import SilentWiFiVerification from "@/components/smart/SilentWiFiVerification"
+import TeacherNFCScanner from "@/components/smart/TeacherNFCScanner"
+
+interface Teacher {
+  id: string
+  name: string
+  email: string
+  nfc_card_number: string
+  position: string
+  department: string
+  status: string
+}
 
 interface TeacherAttendanceRecord {
   id: string
@@ -48,7 +57,52 @@ export default function TeacherCheckinPage() {
   const [attendanceRecords, setAttendanceRecords] = useState<TeacherAttendanceRecord[]>([])
   const [todayStatus, setTodayStatus] = useState<'not_checked_in' | 'checked_in' | 'checked_out'>('not_checked_in')
   const [checkInTime, setCheckInTime] = useState<string | null>(null)
+  
+  // WiFi验证状态（后台静默验证）
+  const [isWiFiVerified, setIsWiFiVerified] = useState<boolean | null>(null)
+  const [wifiNetworkInfo, setWifiNetworkInfo] = useState<any>(null)
   const [checkOutTime, setCheckOutTime] = useState<string | null>(null)
+  
+  // NFC扫描状态
+  const [showNFCScanner, setShowNFCScanner] = useState(false)
+  const [scannedTeacher, setScannedTeacher] = useState<Teacher | null>(null)
+
+  // WiFi验证处理回调
+  const handleWiFiVerification = (isVerified: boolean, networkInfo?: any) => {
+    setIsWiFiVerified(isVerified)
+    setWifiNetworkInfo(networkInfo)
+    
+    console.log('WiFi验证结果:', {
+      isVerified,
+      networkInfo,
+      timestamp: new Date().toISOString()
+    })
+  }
+
+  // NFC扫描处理 - 直接进行考勤
+  const handleTeacherFound = async (teacher: Teacher) => {
+    setScannedTeacher(teacher)
+    setTeacherId(teacher.id)
+    setTeacherName(teacher.name)
+    setShowNFCScanner(false)
+    
+    // 直接执行考勤，无需额外步骤
+    try {
+      if (todayStatus === 'not_checked_in') {
+        await processAttendance('check-in')
+      } else if (todayStatus === 'checked_in') {
+        await processAttendance('check-out')
+      } else {
+        setSuccess(`教师 ${teacher.name} 今日考勤已完成`)
+      }
+    } catch (error) {
+      console.error('NFC考勤失败:', error)
+    }
+  }
+
+  const handleNFCError = (error: string) => {
+    setError(error)
+  }
 
   // 获取中心显示名称
   const getCenterDisplayName = (centerId: string | null) => {
@@ -107,6 +161,18 @@ export default function TeacherCheckinPage() {
       return
     }
 
+    // WiFi验证逻辑：NFC考勤需要严格验证
+    if (isWiFiVerified === false) {
+      setError('网络环境不符合要求，无法进行考勤操作')
+      return
+    }
+
+    // 如果WiFi验证状态未知，等待验证完成
+    if (isWiFiVerified === null) {
+      setError('正在验证网络环境，请稍后再试')
+      return
+    }
+
     setIsProcessing(true)
     setError(null)
     setSuccess(null)
@@ -126,8 +192,11 @@ export default function TeacherCheckinPage() {
           branchName: getCenterDisplayName(centerId),
           type: type,
           timestamp: new Date().toISOString(),
-          method: 'manual',
-          status: 'success'
+          method: scannedTeacher ? 'nfc' : 'manual',
+          status: 'success',
+          wifiNetwork: wifiNetworkInfo?.ssid || '未知网络',
+          wifiVerified: isWiFiVerified,
+          networkInfo: wifiNetworkInfo
         })
       })
 
@@ -145,7 +214,7 @@ export default function TeacherCheckinPage() {
           timestamp: new Date().toISOString(),
           type: type,
           status: 'success',
-          method: 'manual'
+          method: scannedTeacher ? 'nfc' : 'manual'
         }
 
         setAttendanceRecords(prev => [newRecord, ...prev])
@@ -193,8 +262,8 @@ export default function TeacherCheckinPage() {
       <div className="max-w-4xl mx-auto px-4">
         {/* 页面标题 */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">教师打卡系统</h1>
-          <p className="text-gray-600">请填写教师信息进行签到签退</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">教师NFC考勤系统</h1>
+          <p className="text-gray-600">扫描NFC卡快速完成考勤</p>
         </div>
 
         {/* 返回链接 */}
@@ -220,50 +289,61 @@ export default function TeacherCheckinPage() {
           </Alert>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 教师信息输入 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                教师信息
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="teacherId">教师ID</Label>
-                <Input
-                  id="teacherId"
-                  value={teacherId}
-                  onChange={(e) => setTeacherId(e.target.value)}
-                  placeholder="请输入教师ID"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="teacherName">教师姓名</Label>
-                <Input
-                  id="teacherName"
-                  value={teacherName}
-                  onChange={(e) => setTeacherName(e.target.value)}
-                  placeholder="请输入教师姓名"
-                />
-              </div>
 
-              <div>
-                <Label>中心</Label>
-                <div className="p-3 bg-gray-50 rounded-md">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">{getCenterDisplayName(centerId)}</span>
+        {/* NFC考勤区域 */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              NFC考勤
+            </CardTitle>
+            <CardDescription>
+              将教师NFC卡靠近设备进行考勤
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <Button
+                onClick={() => setShowNFCScanner(true)}
+                size="lg"
+                className="px-8 py-4 text-lg"
+              >
+                <CreditCard className="h-6 w-6 mr-3" />
+                扫描教师NFC卡
+              </Button>
+              <p className="text-sm text-gray-500 mt-4">
+                支持签到和签退，系统会自动识别考勤类型
+              </p>
+            </div>
+
+            {/* 扫描的教师信息显示 */}
+            {scannedTeacher && (
+              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <span className="font-medium text-green-800">NFC扫描成功</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-green-700">
+                  <div>
+                    <p><strong>教师:</strong> {scannedTeacher.name}</p>
+                    <p><strong>职位:</strong> {scannedTeacher.position}</p>
+                  </div>
+                  <div>
+                    <p><strong>部门:</strong> {scannedTeacher.department}</p>
+                    <p><strong>邮箱:</strong> {scannedTeacher.email}</p>
+                  </div>
+                  <div>
+                    <p><strong>中心:</strong> {getCenterDisplayName(centerId)}</p>
+                    <p><strong>状态:</strong> {scannedTeacher.status}</p>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* 考勤状态 */}
-          <Card>
+        {/* 考勤状态 */}
+        <Card className="mt-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Activity className="h-5 w-5" />
@@ -301,70 +381,8 @@ export default function TeacherCheckinPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
 
         {/* 打卡操作 */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              打卡操作
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4 justify-center">
-              {todayStatus === 'not_checked_in' && (
-                <Button
-                  onClick={() => processAttendance('check-in')}
-                  disabled={isProcessing || !teacherId || !teacherName}
-                  size="lg"
-                  className="px-8"
-                >
-                  {isProcessing ? (
-                    <>
-                      <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-                      处理中...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="h-5 w-5 mr-2" />
-                      签到
-                    </>
-                  )}
-                </Button>
-              )}
-
-              {todayStatus === 'checked_in' && (
-                <Button
-                  onClick={() => processAttendance('check-out')}
-                  disabled={isProcessing}
-                  size="lg"
-                  variant="secondary"
-                  className="px-8"
-                >
-                  {isProcessing ? (
-                    <>
-                      <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-                      处理中...
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="h-5 w-5 mr-2" />
-                      签退
-                    </>
-                  )}
-                </Button>
-              )}
-
-              {todayStatus === 'checked_out' && (
-                <div className="text-center py-4">
-                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
-                  <p className="text-green-600 font-medium">今日考勤已完成</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
 
         {/* 今日考勤记录 */}
         {attendanceRecords.length > 0 && (
@@ -403,6 +421,34 @@ export default function TeacherCheckinPage() {
           </Card>
         )}
       </div>
+
+      {/* 静默WiFi验证组件 */}
+      <SilentWiFiVerification
+        onWiFiVerified={handleWiFiVerification}
+        centerId={centerId}
+      />
+
+      {/* NFC扫描模态框 */}
+      {showNFCScanner && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-md">
+            <TeacherNFCScanner
+              onTeacherFound={handleTeacherFound}
+              onError={handleNFCError}
+              centerId={centerId}
+            />
+            <div className="mt-4 text-center">
+              <Button
+                onClick={() => setShowNFCScanner(false)}
+                variant="outline"
+                className="w-full"
+              >
+                关闭
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

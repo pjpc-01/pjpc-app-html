@@ -18,7 +18,20 @@ import { AlertTriangle as AlertTriangleIcon, Mail, Clock } from "lucide-react"
 import ConnectionStatus from "@/components/ConnectionStatus"
 import TeacherNavigation from "@/components/shared/TeacherNavigation"
 import StaticPage from "./static-page"
-import { useIsMobile } from "@/hooks/use-mobile"
+import dynamic from "next/dynamic"
+
+// 动态导入TeacherWorkspace以避免水合问题
+const TeacherWorkspace = dynamic(() => import('./teacher-workspace/page'), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <GraduationCap className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-pulse" />
+        <p className="text-gray-600">加载教师工作台...</p>
+      </div>
+    </div>
+  )
+})
 
 export default function Dashboard() {
   const { user, userProfile, loading, logout, resendVerification, error, connectionStatus, clearError } = useAuth()
@@ -26,18 +39,17 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("overview")
   const [isStaticBuild, setIsStaticBuild] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const isMobile = useIsMobile()
 
   // 检测是否为静态构建
   useEffect(() => {
     // 在静态构建时，window对象可能不存在或PocketBase连接会失败
-    if (typeof window === 'undefined' || connectionStatus === 'disconnected') {
+    if (connectionStatus === 'disconnected') {
       setIsStaticBuild(true)
     }
   }, [connectionStatus])
 
   // 如果是静态构建，直接显示静态页面
-  if (isStaticBuild || typeof window === 'undefined') {
+  if (isStaticBuild) {
     return <StaticPage />
   }
 
@@ -207,8 +219,6 @@ export default function Dashboard() {
       case "admin":
         return <AdminDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
       case "teacher":
-        // 直接导入并使用优化后的教师工作台
-        const TeacherWorkspace = require('./teacher-workspace/page').default
         return <TeacherWorkspace />
       case "parent":
         return <ParentDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -287,28 +297,27 @@ export default function Dashboard() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center">
-                <GraduationCap className="h-8 w-8 text-blue-600" />
+                <div className="flex items-center">
+                  <img 
+                    src="/logo.png" 
+                    alt="温馨小屋" 
+                    className="h-8 w-auto mr-2"
+                    onError={(e) => {
+                      // 如果logo文件不存在，显示备用图标
+                      e.currentTarget.style.display = 'none'
+                      const nextElement = e.currentTarget.nextElementSibling as HTMLElement
+                      if (nextElement) {
+                        nextElement.style.display = 'block'
+                      }
+                    }}
+                  />
+                  <GraduationCap className="h-8 w-8 text-blue-600 hidden" />
+                </div>
                 <h1 className="ml-2 text-lg sm:text-xl font-bold text-gray-900 truncate">{getRoleTitle()}</h1>
               </div>
               
               {/* Desktop Navigation */}
               <div className="hidden md:flex items-center space-x-4">
-                {/* Quick Access to Systems */}
-                {userProfile.role === 'admin' && (
-                  <Button variant="outline" size="sm" asChild>
-                    <a href="/admin-dashboard" className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      <span>管理面板</span>
-                    </a>
-                  </Button>
-                )}
-                <Button variant="outline" size="sm" asChild>
-                  <a href="/attendance" className="flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" />
-                    <span>考勤打卡</span>
-                  </a>
-                </Button>
-                
                 {/* User Info */}
                 <div className="flex items-center gap-2">
                   <UserCheck className="h-4 w-4 text-gray-500" />
@@ -343,25 +352,9 @@ export default function Dashboard() {
             </div>
 
             {/* Mobile Menu */}
-            {mobileMenuOpen && isMobile && (
+            {mobileMenuOpen && (
               <div className="md:hidden border-t bg-white">
                 <div className="px-2 pt-2 pb-3 space-y-1">
-                  {/* Quick Access to Systems */}
-                  {userProfile.role === 'admin' && (
-                    <Button variant="outline" size="sm" asChild className="w-full justify-start">
-                      <a href="/admin-dashboard" className="flex items-center gap-2">
-                        <Settings className="h-4 w-4" />
-                        <span>管理面板</span>
-                      </a>
-                    </Button>
-                  )}
-                  <Button variant="outline" size="sm" asChild className="w-full justify-start">
-                    <a href="/attendance" className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" />
-                      <span>考勤打卡</span>
-                    </a>
-                  </Button>
-                  
                   {/* User Info */}
                   <div className="px-3 py-2 border-t">
                     <div className="flex items-center gap-2 mb-2">

@@ -19,6 +19,8 @@ export async function POST(request: NextRequest) {
       reason,
       detail,
       teacher_id,
+      teacher_name,
+      device_info,
       method = 'mobile'
     } = body
 
@@ -62,7 +64,10 @@ export async function POST(request: NextRequest) {
       reason: reason || '',
       detail: detail || '',
       notes: detail || '', // 使用detail作为notes
-      teacher_id: teacher_id || 'system'
+      teacher_id: teacher_id || 'system',
+      teacher_name: teacher_name || '系统',
+      device_info: device_info ? JSON.stringify(device_info) : '',
+      method: method
     }
 
     // 保存到PocketBase的student_attendance集合
@@ -148,6 +153,9 @@ export async function GET(request: NextRequest) {
         detail: record.detail || '',
         notes: record.notes || '',
         teacher_id: record.teacher_id || '',
+        teacher_name: record.teacher_name || '',
+        device_info: record.device_info || '',
+        method: record.method || 'mobile',
         created: record.created,
         updated: record.updated
       };
