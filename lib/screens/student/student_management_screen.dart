@@ -542,10 +542,10 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
                         child: DropdownButton<String>(
                           value: _selectedCenter,
                           onChanged: (value) {
-                            setState(() {
+        setState(() {
                               _selectedCenter = value!;
-                            });
-                          },
+        });
+      },
                           items: [
                             const DropdownMenuItem(value: '全部中心', child: Text('全部中心')),
                             ...centers.map((center) => DropdownMenuItem(
@@ -562,7 +562,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
+          Expanded(
                 child: Consumer<StudentProvider>(
                   builder: (context, studentProvider, child) {
                     final standards = studentProvider.standards;
@@ -627,10 +627,10 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    setState(() {
+                setState(() {
                       _showAdvancedFilters = !_showAdvancedFilters;
-                    });
-                  },
+                });
+              },
                   icon: Icon(
                     _showAdvancedFilters ? Icons.filter_list_off_rounded : Icons.filter_list_rounded,
                     size: 18,
@@ -1042,7 +1042,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
         
         return Container(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
+                        decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
@@ -1055,7 +1055,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          children: [
               const Text(
                 '学生数据分析',
                 style: TextStyle(
@@ -1082,10 +1082,10 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
                       '$uniqueStandards个班级', 
                       Icons.class_rounded, 
                       const Color(0xFF10B981)
-                    ),
-                  ),
-                ],
               ),
+            ),
+          ],
+        ),
               const SizedBox(height: 12),
               Row(
                 children: [

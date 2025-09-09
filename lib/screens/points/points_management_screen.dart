@@ -36,7 +36,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
     );
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
+    _loadData();
       _animationController.forward();
     });
   }
@@ -95,7 +95,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
       floating: false,
       pinned: true,
       backgroundColor: const Color(0xFF1E293B),
-      foregroundColor: Colors.white,
+        foregroundColor: Colors.white,
       flexibleSpace: FlexibleSpaceBar(
         title: const Text(
           '积分智能管理中心',
@@ -106,18 +106,18 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
         ),
         background: Container(
           decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               colors: [
                 Color(0xFF1E293B),
                 Color(0xFF334155),
                 Color(0xFF475569),
               ],
+              ),
             ),
-          ),
           child: Stack(
-            children: [
+              children: [
               Positioned(
                 right: -50,
                 top: -50,
@@ -139,11 +139,11 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white.withOpacity(0.05),
-                  ),
-                ),
               ),
-            ],
+            ),
           ),
+        ],
+      ),
         ),
       ),
       actions: [
@@ -174,7 +174,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
       child: Container(
         margin: const EdgeInsets.all(16),
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
+      decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
@@ -184,10 +184,10 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
               offset: const Offset(0, 4),
             ),
           ],
-        ),
-        child: Column(
+      ),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        children: [
             Row(
               children: [
                 Container(
@@ -205,9 +205,9 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
                 const SizedBox(width: 12),
                 const Text(
                   '积分系统概览',
-                  style: TextStyle(
+            style: TextStyle(
                     fontSize: 20,
-                    fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.bold,
                     color: Color(0xFF1E293B),
                   ),
                 ),
@@ -220,14 +220,14 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
                   ),
                   child: const Text(
                     '实时更新',
-                    style: TextStyle(
+            style: TextStyle(
                       color: Color(0xFF10B981),
                       fontWeight: FontWeight.w600,
                       fontSize: 12,
                     ),
-                  ),
-                ),
-              ],
+            ),
+          ),
+        ],
             ),
             const SizedBox(height: 16),
             _buildQuickStats(),
@@ -249,7 +249,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
         final topStudent = _getTopStudent(students, pointsProvider);
 
         return Row(
-          children: [
+        children: [
             Expanded(
               child: _buildStatCard(
                 '总学生数',
@@ -257,9 +257,9 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
                 Icons.people_rounded,
                 const Color(0xFF3B82F6),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
+          ),
+          const SizedBox(width: 12),
+          Expanded(
               child: _buildStatCard(
                 '总积分',
                 totalPoints.toString(),
@@ -285,59 +285,59 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
                 const Color(0xFFEF4444),
               ),
             ),
-          ],
+        ],
         );
       },
     );
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Container(
+      return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
+        decoration: BoxDecoration(
         color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Column(
-        children: [
+        ),
+        child: Column(
+          children: [
           Icon(icon, color: color, size: 20),
-          const SizedBox(height: 8),
-          Text(
+            const SizedBox(height: 8),
+            Text(
             value,
-            style: TextStyle(
+              style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: color,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
+            const SizedBox(height: 4),
+            Text(
             title,
             style: const TextStyle(
-              fontSize: 12,
+                fontSize: 12,
               color: Color(0xFF64748B),
-            ),
+              ),
             textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
+            ),
+          ],
+        ),
+      );
+    }
 
   Widget _buildAnalyticsSection() {
     return SliverToBoxAdapter(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          children: [
-            Row(
-              children: [
+      child: Column(
+        children: [
+          Row(
+            children: [
                 const Text(
                   '积分趋势分析',
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                     color: Color(0xFF1E293B),
                   ),
                 ),
@@ -356,9 +356,9 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
                   ],
                   underline: Container(),
                   style: const TextStyle(color: Color(0xFF64748B)),
+                      ),
+                  ],
                 ),
-              ],
-            ),
             const SizedBox(height: 16),
             _buildTrendChart(),
           ],
@@ -372,7 +372,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
       height: 200,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+                  color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -522,7 +522,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
     return SliverToBoxAdapter(
       child: Container(
         margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
+      decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
@@ -533,8 +533,8 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
             ),
           ],
         ),
-        child: Column(
-          children: [
+      child: Column(
+        children: [
             TabBar(
               controller: _tabController,
               labelColor: const Color(0xFF3B82F6),
@@ -571,7 +571,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
-        children: [
+      children: [
           Row(
             children: [
               Expanded(
@@ -589,7 +589,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
                       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                     onChanged: (value) {
-                      setState(() {
+      setState(() {
                         _searchQuery = value;
                       });
                     },
@@ -606,7 +606,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
                   child: DropdownButton<String>(
                     value: _selectedFilter,
                     onChanged: (value) {
-                      setState(() {
+      setState(() {
                         _selectedFilter = value!;
                       });
                     },
@@ -624,10 +624,10 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
             ],
           ),
         ],
-      ),
-    );
-  }
-
+          ),
+        );
+      }
+      
   Widget _buildContentSection() {
     return SliverFillRemaining(
       child: TabBarView(
@@ -694,18 +694,18 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+                    ),
+                  ],
+                ),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
+                        child: Row(
+                          children: [
             // 排名
-            Container(
+                      Container(
               width: 48,
               height: 48,
-              decoration: BoxDecoration(
+                        decoration: BoxDecoration(
                 color: _getRankColor(rank).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: _getRankColor(rank).withOpacity(0.3)),
@@ -725,11 +725,11 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
             ),
             const SizedBox(width: 16),
             // 学生信息
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
                     studentName,
                     style: const TextStyle(
                       fontSize: 16,
@@ -738,20 +738,20 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
+                            Text(
                     '$studentId · $standard',
                     style: const TextStyle(
                       fontSize: 14,
                       color: Color(0xFF64748B),
-                    ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
             // 积分
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
+                    children: [
                 Text(
                   '$points',
                   style: TextStyle(
@@ -762,12 +762,12 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
                 ),
                 const Text(
                   '积分',
-                  style: TextStyle(
-                    fontSize: 12,
+                          style: TextStyle(
+                            fontSize: 12,
                     color: Color(0xFF64748B),
-                  ),
-                ),
-              ],
+                          ),
+                        ),
+                      ],
             ),
           ],
         ),
@@ -865,7 +865,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
+        children: [
                 Text(
                   '$points',
                   style: const TextStyle(
@@ -905,7 +905,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
         return RefreshIndicator(
           onRefresh: _loadData,
           child: ListView.builder(
-            padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
             itemCount: transactions.length,
             itemBuilder: (context, index) {
               final transaction = transactions[index];
@@ -922,7 +922,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
     final amount = transaction.getIntValue('amount') ?? 0;
     final reason = transaction.getStringValue('reason') ?? '';
     final createdAt = DateTime.tryParse(transaction.getStringValue('created') ?? '') ?? DateTime.now();
-
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -938,29 +938,29 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
+      child: Row(
+        children: [
+          Container(
               width: 48,
               height: 48,
-              decoration: BoxDecoration(
+            decoration: BoxDecoration(
                 color: type == 'earn' 
                     ? const Color(0xFF10B981).withOpacity(0.1)
                     : const Color(0xFFEF4444).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
+            ),
+            child: Icon(
                 type == 'earn' ? Icons.add_rounded : Icons.remove_rounded,
                 color: type == 'earn' ? const Color(0xFF10B981) : const Color(0xFFEF4444),
                 size: 24,
               ),
             ),
             const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
                     reason,
                     style: const TextStyle(
                       fontSize: 16,
@@ -969,35 +969,35 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
+                Text(
                     _formatDateTime(createdAt),
                     style: const TextStyle(
                       fontSize: 14,
                       color: Color(0xFF64748B),
                     ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Text(
+          ),
+              Text(
               '${type == 'earn' ? '+' : '-'}$amount',
               style: TextStyle(
                 fontSize: 20,
-                fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                 color: type == 'earn' ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
       ),
     );
   }
 
   Widget _buildAnalyticsView() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
           _buildAnalyticsCard(),
           const SizedBox(height: 16),
           _buildPerformanceMetrics(),
@@ -1017,9 +1017,9 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
+              Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
+                decoration: BoxDecoration(
               color: const Color(0xFFF1F5F9),
               shape: BoxShape.circle,
             ),
@@ -1034,12 +1034,12 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
             title,
             style: const TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.bold,
               color: Color(0xFF1E293B),
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+                  Text(
             subtitle,
             style: const TextStyle(
               fontSize: 14,
@@ -1061,8 +1061,8 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
         // 计算平均积分
         int totalPoints = 0;
         int studentCount = 0;
-        for (final student in students) {
-          final points = pointsProvider.getTotalPointsForStudent(student.id);
+    for (final student in students) {
+      final points = pointsProvider.getTotalPointsForStudent(student.id);
           if (points > 0) {
             totalPoints += points;
             studentCount++;
@@ -1097,7 +1097,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+          color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -1106,10 +1106,10 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
                 offset: const Offset(0, 4),
               ),
             ],
-          ),
-          child: Column(
+        ),
+        child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          children: [
               const Text(
                 '积分系统分析',
                 style: TextStyle(
@@ -1135,9 +1135,9 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
                 children: [
                   Expanded(
                     child: _buildMetricCard('获得率', '$earnRate%', Icons.star_rounded, const Color(0xFFF59E0B)),
-                  ),
+            ),
                   const SizedBox(width: 12),
-                  Expanded(
+            Expanded(
                     child: _buildMetricCard('使用率', '$spendRate%', Icons.shopping_cart_rounded, const Color(0xFF8B5CF6)),
                   ),
                 ],
@@ -1165,7 +1165,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
             value,
             style: TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
@@ -1197,14 +1197,14 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
           const Text(
             '关键指标',
             style: TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.bold,
               color: Color(0xFF1E293B),
             ),
           ),
@@ -1225,25 +1225,25 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
+                children: [
+                  Text(
               label,
               style: const TextStyle(
                 fontSize: 14,
                 color: Color(0xFF1E293B),
                 fontWeight: FontWeight.w500,
-              ),
-            ),
-            Text(
+                    ),
+                  ),
+                  Text(
               '${(value * 100).toInt()}%',
               style: TextStyle(
                 fontSize: 14,
                 color: color,
                 fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
         const SizedBox(height: 8),
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
@@ -1259,10 +1259,10 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
   }
 
   Widget _buildRecentActivity() {
-    return Container(
+            return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
+              decoration: BoxDecoration(
+                          color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -1272,14 +1272,14 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
           const Text(
             '最近活动',
             style: TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.bold,
               color: Color(0xFF1E293B),
             ),
           ),
@@ -1300,34 +1300,34 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
           Container(
             width: 32,
             height: 32,
-            decoration: BoxDecoration(
+      decoration: BoxDecoration(
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 16),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
                   title,
                   style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF1E293B),
                     fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
+                      ),
+                    ),
+                    Text(
                   time,
                   style: const TextStyle(
                     fontSize: 12,
                     color: Color(0xFF64748B),
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
           ),
         ],
       ),
@@ -1371,8 +1371,8 @@ class _PointsManagementScreenState extends State<PointsManagementScreen>
   List<dynamic> _rankStudents(List<dynamic> students, PointsProvider pointsProvider) {
     // Sort students by points in descending order
     students.sort((a, b) {
-      final pointsA = pointsProvider.getTotalPointsForStudent(a.id);
-      final pointsB = pointsProvider.getTotalPointsForStudent(b.id);
+          final pointsA = pointsProvider.getTotalPointsForStudent(a.id);
+          final pointsB = pointsProvider.getTotalPointsForStudent(b.id);
       return pointsB.compareTo(pointsA);
     });
     return students;
