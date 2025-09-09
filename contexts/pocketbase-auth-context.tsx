@@ -235,7 +235,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Error details:', {
           status: authError.status,
           response: authError.response,
-          data: authError.data
+          data: authError.data,
+          originalError: authError.originalError
         })
         
         // 检查是否是404错误（集合不存在）
@@ -251,6 +252,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // 检查是否是网络错误
         if (authError.status === 0 || authError.message.includes('Failed to fetch')) {
           throw new Error('网络连接失败，请检查网络连接')
+        }
+        
+        // 检查是否是CORS错误
+        if (authError.message.includes('CORS') || authError.message.includes('cross-origin')) {
+          throw new Error('跨域访问被阻止，请检查服务器CORS配置')
+        }
+        
+        // 检查是否是超时错误
+        if (authError.message.includes('timeout') || authError.message.includes('TIMEOUT')) {
+          throw new Error('请求超时，请检查网络连接')
         }
         
         // 其他错误

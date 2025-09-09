@@ -105,11 +105,9 @@ const getPocketBaseUrl = async (): Promise<string> => {
     return 'http://pjpc.tplinkdns.com:8090'
   }
   
-  // 客户端优先使用环境变量
-  if (process.env.NEXT_PUBLIC_POCKETBASE_URL) {
-    console.log('🔧 使用环境变量配置的PocketBase URL:', process.env.NEXT_PUBLIC_POCKETBASE_URL)
-    return process.env.NEXT_PUBLIC_POCKETBASE_URL
-  }
+  // 客户端优先使用代理连接（避免CORS问题）
+  console.log('🔧 客户端使用代理连接避免CORS问题')
+  return '/api/pocketbase-proxy'
   
   // 智能检测网络环境
   try {
@@ -150,8 +148,24 @@ export const getPocketBase = async (): Promise<PocketBase> => {
           status: response.status,
           statusText: response.statusText,
           url: response.url,
-          data: data
+          data: data,
+          headers: Object.fromEntries(response.headers.entries())
         })
+        
+        // 特殊处理常见错误
+        if (response.status === 0) {
+          console.error('❌ 网络连接失败 - 可能是CORS问题或服务器不可达')
+        } else if (response.status === 404) {
+          console.error('❌ 资源不存在 - 检查集合名称和端点')
+        } else if (response.status === 400) {
+          console.error('❌ 请求错误 - 检查请求参数和认证状态')
+        } else if (response.status === 401) {
+          console.error('❌ 认证失败 - 检查用户名密码或token')
+        } else if (response.status === 403) {
+          console.error('❌ 权限不足 - 检查用户角色和权限')
+        } else if (response.status >= 500) {
+          console.error('❌ 服务器错误 - PocketBase服务器可能有问题')
+        }
       }
       return data
     }
@@ -173,7 +187,9 @@ export const checkPocketBaseConnection = async () => {
     const pb = await getPocketBase()
     
     // 测试连接 - 使用PocketBase的根端点而不是/api/health
-    const response = await fetch(`${pb.baseUrl}/`, {
+    // 如果baseUrl是代理路径，直接使用它；否则添加根路径
+    const testUrl = pb.baseUrl.startsWith('/api/') ? pb.baseUrl : `${pb.baseUrl}/`
+    const response = await fetch(testUrl, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     })

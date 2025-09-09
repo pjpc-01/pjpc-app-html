@@ -1,258 +1,276 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Database, Users, Award, CreditCard } from "lucide-react"
+import { RefreshCw, AlertCircle, CheckCircle, XCircle } from "lucide-react"
 
-export default function DebugPocketBase() {
-  const [collectionsData, setCollectionsData] = useState<any>(null)
-  const [dataInfo, setDataInfo] = useState<any>(null)
+export default function PocketBaseDiagnostic() {
+  const [results, setResults] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const checkCollections = async () => {
-    setLoading(true)
-    setError(null)
+  const runDiagnostic = async () => {
     try {
-      const response = await fetch('/api/debug/collections')
-      const result = await response.json()
-      if (result.success) {
-        setCollectionsData(result.data)
-      } else {
-        setError(result.error || '检查集合失败')
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '检查集合失败')
+      setLoading(true)
+      setError(null)
+      setResults(null)
+      
+      console.log('🔍 开始PocketBase诊断...')
+      
+      const response = await fetch('/api/test-pocketbase')
+      const data = await response.json()
+      
+      console.log('📊 诊断结果:', data)
+      setResults(data)
+      
+    } catch (err: any) {
+      console.error('❌ 诊断失败:', err)
+      setError(err.message || '诊断失败')
     } finally {
       setLoading(false)
     }
   }
 
-  const checkData = async () => {
-    setLoading(true)
-    setError(null)
+  const testUserAuth = async () => {
     try {
-      const response = await fetch('/api/debug/data')
-      const result = await response.json()
-      if (result.success) {
-        setDataInfo(result.data)
-      } else {
-        setError(result.error || '检查数据失败')
+      setLoading(true)
+      setError(null)
+      
+      console.log('🔐 测试用户认证...')
+      
+      const response = await fetch('/api/simple-user-test')
+      const data = await response.json()
+      
+      console.log('📊 用户认证测试结果:', data)
+      setResults(prev => ({
+        ...prev,
+        userAuthTest: data
+      }))
+      
+    } catch (err: any) {
+      console.error('❌ 用户认证测试失败:', err)
+      setError(err.message || '用户认证测试失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const testConnection = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      console.log('🌐 测试连接...')
+      
+      // 测试直接连接
+      const directResponse = await fetch('http://pjpc.tplinkdns.com:8090/', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      
+      const directData = {
+        status: directResponse.status,
+        ok: directResponse.ok,
+        statusText: directResponse.statusText,
+        url: directResponse.url
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '检查数据失败')
+      
+      console.log('📡 直接连接结果:', directData)
+      
+      setResults(prev => ({
+        ...prev,
+        directConnection: directData
+      }))
+      
+    } catch (err: any) {
+      console.error('❌ 连接测试失败:', err)
+      setError(err.message || '连接测试失败')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">PocketBase 调试工具</h1>
-          <p className="text-gray-600">检查集合结构和现有数据</p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={checkCollections} disabled={loading}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Database className="h-4 w-4 mr-2" />}
-            检查集合结构
-          </Button>
-          <Button onClick={checkData} disabled={loading} variant="outline">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Users className="h-4 w-4 mr-2" />}
-            检查现有数据
-          </Button>
-        </div>
-      </div>
+    <div className="max-w-6xl mx-auto p-6 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <RefreshCw className="h-5 w-5" />
+            PocketBase诊断工具
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={runDiagnostic} disabled={loading}>
+              {loading ? '诊断中...' : '运行完整诊断'}
+            </Button>
+            <Button onClick={testUserAuth} disabled={loading} variant="outline">
+              测试用户认证
+            </Button>
+            <Button onClick={testConnection} disabled={loading} variant="outline">
+              测试连接
+            </Button>
+          </div>
 
-      {error && (
-        <Alert>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-      {/* 集合结构信息 */}
-      {collectionsData && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="h-5 w-5" />
-                集合概览
-              </CardTitle>
-              <CardDescription>相关集合的基本信息</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <p><strong>总集合数:</strong> {collectionsData.totalCollections}</p>
-                <p><strong>相关集合数:</strong> {collectionsData.relevantCollections.length}</p>
-                <p><strong>student_points 存在:</strong> {collectionsData.studentPointsExists ? '✅' : '❌'}</p>
-                <p><strong>point_transactions 存在:</strong> {collectionsData.pointTransactionsExists ? '✅' : '❌'}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="h-5 w-5" />
-                相关集合列表
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1">
-                {collectionsData.relevantCollections.map((collection: any) => (
-                  <div key={collection.name} className="flex items-center gap-2">
-                    <span className="font-mono text-sm">{collection.name}</span>
-                    <span className="text-xs bg-gray-100 px-2 py-1 rounded">{collection.type}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* student_points 集合详情 */}
-      {collectionsData?.studentPointsDetails && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5" />
-              student_points 集合详情
-            </CardTitle>
-            <CardDescription>字段结构和验证规则</CardDescription>
-          </CardHeader>
-          <CardContent>
+          {results && (
             <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold mb-2">字段结构:</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {collectionsData.studentPointsDetails.schema.map((field: any) => (
-                    <div key={field.name} className="border rounded p-2 text-sm">
-                      <div className="font-mono font-semibold">{field.name}</div>
-                      <div className="text-gray-600">类型: {field.type}</div>
-                      <div className="text-gray-600">必需: {field.required ? '✅' : '❌'}</div>
-                      {field.system && <div className="text-blue-600">系统字段</div>}
+              {/* 连接状态 */}
+              {results.connection && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      {results.connection.success ? (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-red-500" />
+                      )}
+                      连接状态
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div><strong>状态:</strong> {results.connection.success ? '成功' : '失败'}</div>
+                      <div><strong>URL:</strong> {results.connection.url}</div>
+                      <div><strong>延迟:</strong> {results.connection.latency}ms</div>
+                      {results.connection.error && (
+                        <div><strong>错误:</strong> {results.connection.error}</div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">权限规则:</h4>
-                <div className="space-y-1 text-sm">
-                  <p><strong>创建规则:</strong> {collectionsData.studentPointsDetails.rules.createRule || '无'}</p>
-                  <p><strong>查看规则:</strong> {collectionsData.studentPointsDetails.rules.viewRule || '无'}</p>
-                  <p><strong>更新规则:</strong> {collectionsData.studentPointsDetails.rules.updateRule || '无'}</p>
-                  <p><strong>删除规则:</strong> {collectionsData.studentPointsDetails.rules.deleteRule || '无'}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                  </CardContent>
+                </Card>
+              )}
 
-      {/* point_transactions 集合详情 */}
-      {collectionsData?.pointTransactionsDetails && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              point_transactions 集合详情
-            </CardTitle>
-            <CardDescription>字段结构和验证规则</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold mb-2">字段结构:</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {collectionsData.pointTransactionsDetails.schema.map((field: any) => (
-                    <div key={field.name} className="border rounded p-2 text-sm">
-                      <div className="font-mono font-semibold">{field.name}</div>
-                      <div className="text-gray-600">类型: {field.type}</div>
-                      <div className="text-gray-600">必需: {field.required ? '✅' : '❌'}</div>
-                      {field.system && <div className="text-blue-600">系统字段</div>}
+              {/* 管理员认证 */}
+              {results.adminAuth && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      {results.adminAuth.success ? (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-red-500" />
+                      )}
+                      管理员认证
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div><strong>状态:</strong> {results.adminAuth.success ? '成功' : '失败'}</div>
+                      {results.adminAuth.user && (
+                        <div><strong>用户:</strong> {results.adminAuth.user.email}</div>
+                      )}
+                      {results.adminAuth.error && (
+                        <div><strong>错误:</strong> {results.adminAuth.error}</div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">权限规则:</h4>
-                <div className="space-y-1 text-sm">
-                  <p><strong>创建规则:</strong> {collectionsData.pointTransactionsDetails.rules.createRule || '无'}</p>
-                  <p><strong>查看规则:</strong> {collectionsData.pointTransactionsDetails.rules.viewRule || '无'}</p>
-                  <p><strong>更新规则:</strong> {collectionsData.pointTransactionsDetails.rules.updateRule || '无'}</p>
-                  <p><strong>删除规则:</strong> {collectionsData.pointTransactionsDetails.rules.deleteRule || '无'}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                  </CardContent>
+                </Card>
+              )}
 
-      {/* 现有数据信息 */}
-      {dataInfo && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              现有数据概览
-            </CardTitle>
-            <CardDescription>各集合中的数据统计</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="border rounded p-4">
-                <h4 className="font-semibold mb-2">学生数据</h4>
-                {dataInfo.students.error ? (
-                  <p className="text-red-600 text-sm">{dataInfo.students.error}</p>
-                ) : (
-                  <div>
-                    <p className="text-2xl font-bold">{dataInfo.students.count}</p>
-                    <p className="text-sm text-gray-600">个学生记录</p>
-                  </div>
-                )}
-              </div>
-              <div className="border rounded p-4">
-                <h4 className="font-semibold mb-2">教师数据</h4>
-                {dataInfo.teachers.error ? (
-                  <p className="text-red-600 text-sm">{dataInfo.teachers.error}</p>
-                ) : (
-                  <div>
-                    <p className="text-2xl font-bold">{dataInfo.teachers.count}</p>
-                    <p className="text-sm text-gray-600">个教师记录</p>
-                  </div>
-                )}
-              </div>
-              <div className="border rounded p-4">
-                <h4 className="font-semibold mb-2">学生积分</h4>
-                {dataInfo.studentPoints.error ? (
-                  <p className="text-red-600 text-sm">{dataInfo.studentPoints.error}</p>
-                ) : (
-                  <div>
-                    <p className="text-2xl font-bold">{dataInfo.studentPoints.count}</p>
-                    <p className="text-sm text-gray-600">个积分记录</p>
-                  </div>
-                )}
-              </div>
-              <div className="border rounded p-4">
-                <h4 className="font-semibold mb-2">积分交易</h4>
-                {dataInfo.pointTransactions.error ? (
-                  <p className="text-red-600 text-sm">{dataInfo.pointTransactions.error}</p>
-                ) : (
-                  <div>
-                    <p className="text-2xl font-bold">{dataInfo.pointTransactions.count}</p>
-                    <p className="text-sm text-gray-600">个交易记录</p>
-                  </div>
-                )}
-              </div>
+              {/* 用户认证测试 */}
+              {results.userAuthTest && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      {results.userAuthTest.success ? (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-red-500" />
+                      )}
+                      用户认证测试
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div><strong>状态:</strong> {results.userAuthTest.success ? '成功' : '失败'}</div>
+                      {results.userAuthTest.user && (
+                        <div><strong>用户:</strong> {results.userAuthTest.user.email}</div>
+                      )}
+                      {results.userAuthTest.error && (
+                        <div><strong>错误:</strong> {results.userAuthTest.error}</div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* 直接连接测试 */}
+              {results.directConnection && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      {results.directConnection.ok ? (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-red-500" />
+                      )}
+                      直接连接测试
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div><strong>状态:</strong> {results.directConnection.status} {results.directConnection.statusText}</div>
+                      <div><strong>URL:</strong> {results.directConnection.url}</div>
+                      <div><strong>成功:</strong> {results.directConnection.ok ? '是' : '否'}</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* 集合信息 */}
+              {results.collections && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">集合信息</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div><strong>状态:</strong> {results.collections.success ? '成功' : '失败'}</div>
+                      {results.collections.info && (
+                        <div>
+                          <strong>集合数量:</strong> {results.collections.info.length}
+                          <div className="mt-2">
+                            <strong>集合列表:</strong>
+                            <ul className="list-disc list-inside ml-4">
+                              {results.collections.info.map((collection: any) => (
+                                <li key={collection.name}>{collection.name}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+                      {results.collections.error && (
+                        <div><strong>错误:</strong> {results.collections.error}</div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* 原始数据 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">原始诊断数据</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <pre className="bg-gray-100 p-4 rounded-lg overflow-auto text-sm">
+                    {JSON.stringify(results, null, 2)}
+                  </pre>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

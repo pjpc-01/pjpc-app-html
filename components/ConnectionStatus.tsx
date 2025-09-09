@@ -15,8 +15,9 @@ interface NetworkStatus {
 
 export default function ConnectionStatus() {
   const [networkStatus, setNetworkStatus] = useState<NetworkStatus | null>(null)
-  const [isChecking, setIsChecking] = useState(true)
-  const [lastCheck, setLastCheck] = useState<Date>(new Date())
+  const [isChecking, setIsChecking] = useState(false)
+  const [lastCheck, setLastCheck] = useState<Date | null>(null)
+  const [mounted, setMounted] = useState(false)
 
   const checkNetworkStatus = async () => {
     setIsChecking(true)
@@ -72,6 +73,7 @@ export default function ConnectionStatus() {
   }
 
   useEffect(() => {
+    setMounted(true)
     checkNetworkStatus()
     
     // 每30秒检查一次网络状态
@@ -79,6 +81,16 @@ export default function ConnectionStatus() {
     
     return () => clearInterval(interval)
   }, [])
+
+  // 防止水合错误
+  if (!mounted) {
+    return (
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg">
+        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600"></div>
+        <span className="text-xs text-gray-700">初始化中...</span>
+      </div>
+    )
+  }
 
   if (!networkStatus) {
     return (

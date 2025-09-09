@@ -22,6 +22,9 @@ export default function AnnouncementManagement() {
 
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showNotificationDialog, setShowNotificationDialog] = useState(false)
+  const [showViewDialog, setShowViewDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null)
   const [newAnnouncement, setNewAnnouncement] = useState<Partial<Announcement>>({
     title: '',
     content: '',
@@ -89,6 +92,101 @@ export default function AnnouncementManagement() {
         type: 'system'
       })
       alert('通知发送成功！')
+    }
+  }
+
+  const handleViewAnnouncement = (announcement: Announcement) => {
+    setSelectedAnnouncement(announcement)
+    setShowViewDialog(true)
+  }
+
+  const handleEditAnnouncement = (announcement: Announcement) => {
+    setSelectedAnnouncement(announcement)
+    setNewAnnouncement({
+      title: announcement.title,
+      content: announcement.content,
+      type: announcement.type,
+      priority: announcement.priority,
+      status: announcement.status,
+      target_audience: announcement.target_audience
+    })
+    setShowEditDialog(true)
+  }
+
+  const handleDeleteAnnouncement = async (announcementId: string) => {
+    if (!confirm('确定要删除这个公告吗？此操作不可撤销。')) {
+      return
+    }
+
+    try {
+      console.log('开始删除公告:', announcementId)
+      const response = await fetch(`/api/announcements/${announcementId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      console.log('删除响应状态:', response.status)
+      const responseData = await response.json()
+      console.log('删除响应数据:', responseData)
+      
+      if (response.ok) {
+        alert('公告删除成功！')
+        // 这里应该刷新公告列表
+        window.location.reload()
+      } else {
+        alert(`删除失败: ${responseData.error || '未知错误'}`)
+      }
+    } catch (error) {
+      console.error('删除公告失败:', error)
+      alert(`删除失败: ${error instanceof Error ? error.message : '网络错误'}`)
+    }
+  }
+
+  const handleUpdateAnnouncement = async () => {
+    if (!selectedAnnouncement?.id) return
+
+    // 验证必填字段
+    if (!newAnnouncement.title || !newAnnouncement.content) {
+      alert('请填写公告标题和内容')
+      return
+    }
+
+    try {
+      console.log('开始更新公告:', selectedAnnouncement.id, newAnnouncement)
+      const response = await fetch(`/api/announcements/${selectedAnnouncement.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newAnnouncement)
+      })
+      
+      console.log('更新响应状态:', response.status)
+      const responseData = await response.json()
+      console.log('更新响应数据:', responseData)
+      
+      if (response.ok) {
+        alert('公告更新成功！')
+        setShowEditDialog(false)
+        setSelectedAnnouncement(null)
+        setNewAnnouncement({
+          title: '',
+          content: '',
+          type: 'general',
+          priority: 'medium',
+          status: 'draft',
+          target_audience: { type: 'all' }
+        })
+        // 这里应该刷新公告列表
+        window.location.reload()
+      } else {
+        alert(`更新失败: ${responseData.error || '未知错误'}`)
+      }
+    } catch (error) {
+      console.error('更新公告失败:', error)
+      alert(`更新失败: ${error instanceof Error ? error.message : '网络错误'}`)
     }
   }
 
@@ -308,13 +406,28 @@ export default function AnnouncementManagement() {
                         <TableCell>{announcement.publish_date}</TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewAnnouncement(announcement)}
+                              title="查看公告"
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditAnnouncement(announcement)}
+                              title="编辑公告"
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDeleteAnnouncement(announcement.id)}
+                              title="删除公告"
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -395,6 +508,117 @@ export default function AnnouncementManagement() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* 查看公告对话框 */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>公告详情</DialogTitle>
+          </DialogHeader>
+          {selectedAnnouncement && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold">{selectedAnnouncement.title}</h3>
+                <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
+                  <div className="flex items-center space-x-1">
+                    {getTypeIcon(selectedAnnouncement.type)}
+                    <span>{selectedAnnouncement.type === 'general' ? '一般' : selectedAnnouncement.type === 'urgent' ? '紧急' : '活动'}</span>
+                  </div>
+                  <Badge variant={getPriorityColor(selectedAnnouncement.priority)}>
+                    {selectedAnnouncement.priority === 'high' ? '高' : selectedAnnouncement.priority === 'medium' ? '中' : '低'}
+                  </Badge>
+                  <Badge variant={selectedAnnouncement.status === 'published' ? 'default' : 'secondary'}>
+                    {selectedAnnouncement.status === 'published' ? '已发布' : '草稿'}
+                  </Badge>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">公告内容</h4>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="whitespace-pre-wrap">{selectedAnnouncement.content}</p>
+                </div>
+              </div>
+              <div className="text-sm text-gray-600">
+                <p>发布日期: {selectedAnnouncement.publish_date}</p>
+                <p>创建时间: {new Date(selectedAnnouncement.created).toLocaleString()}</p>
+              </div>
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => setShowViewDialog(false)}>
+                  关闭
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 编辑公告对话框 */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>编辑公告</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-announcement-title">公告标题 <span className="text-red-500">*</span></Label>
+              <Input
+                id="edit-announcement-title"
+                value={newAnnouncement.title}
+                onChange={(e) => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })}
+                placeholder="输入公告标题"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-announcement-type">公告类型</Label>
+                <Select value={newAnnouncement.type} onValueChange={(value) => setNewAnnouncement({ ...newAnnouncement, type: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">一般公告</SelectItem>
+                    <SelectItem value="urgent">紧急公告</SelectItem>
+                    <SelectItem value="event">活动公告</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit-announcement-priority">优先级</Label>
+                <Select value={newAnnouncement.priority} onValueChange={(value) => setNewAnnouncement({ ...newAnnouncement, priority: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">低</SelectItem>
+                    <SelectItem value="medium">中</SelectItem>
+                    <SelectItem value="high">高</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="edit-announcement-content">公告内容 <span className="text-red-500">*</span></Label>
+              <Textarea
+                id="edit-announcement-content"
+                value={newAnnouncement.content}
+                onChange={(e) => setNewAnnouncement({ ...newAnnouncement, content: e.target.value })}
+                placeholder="输入公告内容"
+                rows={6}
+                required
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                取消
+              </Button>
+              <Button onClick={handleUpdateAnnouncement}>
+                更新公告
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

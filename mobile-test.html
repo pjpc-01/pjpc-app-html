@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>移动端测试页面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 移动端优化样式 */
+        .mobile-optimized {
+            @apply text-sm sm:text-base;
+        }
+        
+        .mobile-card {
+            @apply p-3 sm:p-6;
+        }
+        
+        .mobile-text {
+            @apply text-xs sm:text-sm;
+        }
+        
+        .mobile-title {
+            @apply text-lg sm:text-xl;
+        }
+        
+        .mobile-icon {
+            @apply h-4 w-4 sm:h-5 sm:w-5;
+        }
+        
+        .mobile-button {
+            @apply text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5;
+        }
+        
+        .mobile-container {
+            @apply max-w-full overflow-x-hidden;
+        }
+        
+        .mobile-table {
+            @apply text-xs sm:text-sm;
+        }
+        
+        .mobile-table th,
+        .mobile-table td {
+            @apply px-2 sm:px-4 py-2;
+        }
+        
+        .mobile-grid {
+            @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6;
+        }
+        
+        .mobile-grid-2 {
+            @apply grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4;
+        }
+        
+        .mobile-grid-3 {
+            @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4;
+        }
+        
+        .mobile-grid-4 {
+            @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4;
+        }
+        
+        .mobile-heading {
+            @apply text-lg sm:text-xl lg:text-2xl font-semibold;
+        }
+        
+        .mobile-subheading {
+            @apply text-base sm:text-lg font-medium;
+        }
+        
+        .mobile-body {
+            @apply text-sm sm:text-base;
+        }
+        
+        .mobile-caption {
+            @apply text-xs sm:text-sm text-gray-500;
+        }
+        
+        .mobile-spacing {
+            @apply space-y-3 sm:space-y-4 lg:space-y-6;
+        }
+        
+        .mobile-padding {
+            @apply p-3 sm:p-4 lg:p-6;
+        }
+        
+        .mobile-margin {
+            @apply m-3 sm:m-4 lg:m-6;
+        }
+        
+        .mobile-button-group {
+            @apply flex flex-col sm:flex-row gap-2 sm:gap-3;
+        }
+        
+        .mobile-button-group > * {
+            @apply flex-1 sm:flex-none;
+        }
+        
+        .mobile-table-responsive {
+            @apply overflow-x-auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .mobile-table-responsive table {
+            @apply min-w-full;
+        }
+        
+        .mobile-table-responsive .mobile-hide {
+            @apply hidden sm:table-cell;
+        }
+        
+        .mobile-table-responsive .mobile-show {
+            @apply table-cell sm:hidden;
+        }
+        
+        .mobile-table-responsive td,
+        .mobile-table-responsive th {
+            @apply px-2 sm:px-4 py-2 text-xs sm:text-sm;
+            white-space: nowrap;
+        }
+        
+        .mobile-table-responsive .mobile-actions {
+            @apply flex flex-col sm:flex-row gap-1 sm:gap-2;
+        }
+        
+        .mobile-table-responsive .mobile-actions button {
+            @apply text-xs px-2 py-1 min-h-[32px] min-w-[32px];
+        }
+        
+        .mobile-stack {
+            @apply flex flex-col space-y-3 sm:space-y-4;
+        }
+        
+        .mobile-only {
+            @apply block sm:hidden;
+        }
+        
+        .desktop-only {
+            @apply hidden sm:block;
+        }
+        
+        .mobile-scroll {
+            @apply overflow-y-auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .mobile-touch {
+            @apply min-h-[44px] min-w-[44px];
+        }
+        
+        .mobile-stats-grid {
+            @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4;
+        }
+        
+        .mobile-stats-card {
+            @apply p-3 sm:p-4 text-center;
+        }
+        
+        .mobile-stats-value {
+            @apply text-xl sm:text-2xl font-bold;
+        }
+        
+        .mobile-stats-label {
+            @apply text-xs sm:text-sm text-gray-500 mt-1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-14 sm:h-16">
+                    <div class="flex items-center min-w-0 flex-1">
+                        <div class="h-6 w-6 sm:h-8 sm:w-8 bg-blue-600 rounded flex-shrink-0"></div>
+                        <h1 class="ml-2 text-sm sm:text-base lg:text-lg xl:text-xl font-bold text-gray-900 truncate">安亲班管理系统</h1>
+                    </div>
+                    
+                    <!-- Mobile Menu Button -->
+                    <div class="lg:hidden flex items-center space-x-2">
+                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">管理员</span>
+                        <button class="mobile-touch p-2 bg-gray-100 rounded">
+                            <div class="h-5 w-5 bg-gray-600"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6 lg:py-8 mobile-container">
+            <!-- Stats Cards -->
+            <div class="mobile-stats-grid mb-6">
+                <div class="bg-white rounded-lg shadow-sm border p-3 sm:p-4 text-center">
+                    <div class="text-xs sm:text-sm font-medium text-gray-600 mb-1">总用户数</div>
+                    <div class="mobile-stats-value text-blue-600">1,234</div>
+                    <div class="mobile-stats-label">实时数据</div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm border p-3 sm:p-4 text-center">
+                    <div class="text-xs sm:text-sm font-medium text-gray-600 mb-1">学生总数</div>
+                    <div class="mobile-stats-value text-green-600">856</div>
+                    <div class="mobile-stats-label">实时数据</div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm border p-3 sm:p-4 text-center">
+                    <div class="text-xs sm:text-sm font-medium text-gray-600 mb-1">今日考勤</div>
+                    <div class="mobile-stats-value text-orange-600">92%</div>
+                    <div class="mobile-stats-label">出勤率</div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm border p-3 sm:p-4 text-center">
+                    <div class="text-xs sm:text-sm font-medium text-gray-600 mb-1">待处理</div>
+                    <div class="mobile-stats-value text-red-600">12</div>
+                    <div class="mobile-stats-label">任务</div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-lg shadow-sm border p-3 sm:p-4 lg:p-6 mb-6">
+                <h2 class="mobile-heading mb-4">快速操作</h2>
+                <div class="mobile-grid-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <button class="mobile-btn h-16 sm:h-20 flex flex-col items-center justify-center space-y-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <div class="h-5 w-5 sm:h-6 sm:w-6 bg-blue-600 rounded"></div>
+                        <span class="text-xs sm:text-sm">移动端考勤</span>
+                    </button>
+                    <button class="mobile-btn h-16 sm:h-20 flex flex-col items-center justify-center space-y-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <div class="h-5 w-5 sm:h-6 sm:w-6 bg-green-600 rounded"></div>
+                        <span class="text-xs sm:text-sm">教师打卡</span>
+                    </button>
+                    <button class="mobile-btn h-16 sm:h-20 flex flex-col items-center justify-center space-y-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <div class="h-5 w-5 sm:h-6 sm:w-6 bg-purple-600 rounded"></div>
+                        <span class="text-xs sm:text-sm">课程与作业</span>
+                    </button>
+                    <button class="mobile-btn h-16 sm:h-20 flex flex-col items-center justify-center space-y-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <div class="h-5 w-5 sm:h-6 sm:w-6 bg-orange-600 rounded"></div>
+                        <span class="text-xs sm:text-sm">通知公告</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table Example -->
+            <div class="bg-white rounded-lg shadow-sm border">
+                <div class="p-3 sm:p-4 lg:p-6 border-b">
+                    <h2 class="mobile-heading">学生列表</h2>
+                    <p class="mobile-caption mt-1">显示所有学生信息</p>
+                </div>
+                <div class="mobile-table-responsive">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-gray-50 border-b">
+                                <th class="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-500">学生信息</th>
+                                <th class="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 mobile-hide">年级</th>
+                                <th class="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 mobile-hide">中心</th>
+                                <th class="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-500">状态</th>
+                                <th class="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-500">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b">
+                                <td class="px-2 sm:px-4 py-3">
+                                    <div class="min-w-0">
+                                        <div class="font-medium text-sm sm:text-base">张三</div>
+                                        <div class="text-xs sm:text-sm text-gray-500">学号: S001</div>
+                                        <!-- 移动端显示额外信息 -->
+                                        <div class="sm:hidden mt-1 space-y-1">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">三年级</span>
+                                                <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">WX 01</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 mobile-hide">
+                                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">三年级</span>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 mobile-hide">
+                                    <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">WX 01</span>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3">
+                                    <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">在读</span>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3">
+                                    <div class="mobile-actions">
+                                        <button class="text-xs px-2 py-1 min-h-[32px] min-w-[32px] bg-blue-50 text-blue-600 rounded hover:bg-blue-100">
+                                            查看
+                                        </button>
+                                        <button class="text-xs px-2 py-1 min-h-[32px] min-w-[32px] bg-green-50 text-green-600 rounded hover:bg-green-100">
+                                            编辑
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="border-b">
+                                <td class="px-2 sm:px-4 py-3">
+                                    <div class="min-w-0">
+                                        <div class="font-medium text-sm sm:text-base">李四</div>
+                                        <div class="text-xs sm:text-sm text-gray-500">学号: S002</div>
+                                        <!-- 移动端显示额外信息 -->
+                                        <div class="sm:hidden mt-1 space-y-1">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">四年级</span>
+                                                <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">WX 02</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 mobile-hide">
+                                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">四年级</span>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 mobile-hide">
+                                    <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">WX 02</span>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3">
+                                    <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">请假</span>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3">
+                                    <div class="mobile-actions">
+                                        <button class="text-xs px-2 py-1 min-h-[32px] min-w-[32px] bg-blue-50 text-blue-600 rounded hover:bg-blue-100">
+                                            查看
+                                        </button>
+                                        <button class="text-xs px-2 py-1 min-h-[32px] min-w-[32px] bg-green-50 text-green-600 rounded hover:bg-green-100">
+                                            编辑
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 简单的移动端检测
+        function isMobile() {
+            return window.innerWidth < 768;
+        }
+        
+        // 在控制台显示当前设备类型
+        console.log('当前设备类型:', isMobile() ? '移动端' : '桌面端');
+        console.log('屏幕宽度:', window.innerWidth + 'px');
+        
+        // 监听窗口大小变化
+        window.addEventListener('resize', function() {
+            console.log('窗口大小变化:', window.innerWidth + 'px', isMobile() ? '移动端' : '桌面端');
+        });
+    </script>
+</body>
+</html>

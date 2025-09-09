@@ -5,6 +5,7 @@ import ConnectionStatus from "@/components/ConnectionStatus"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+
 import { GraduationCap, Bell, LogOut } from "lucide-react"
 
 interface TeacherNavigationProps {
@@ -27,7 +28,22 @@ export default function TeacherNavigation({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <GraduationCap className="h-8 w-8 text-blue-600 mr-3" />
+            <div className="flex items-center">
+              <img 
+                src="/logo.png" 
+                alt="温馨小屋" 
+                className="h-8 w-auto mr-3"
+                onError={(e) => {
+                  // 如果logo文件不存在，显示备用图标
+                  e.currentTarget.style.display = 'none'
+                  const nextElement = e.currentTarget.nextElementSibling as HTMLElement
+                  if (nextElement) {
+                    nextElement.style.display = 'block'
+                  }
+                }}
+              />
+              <GraduationCap className="h-8 w-8 text-blue-600 mr-3 hidden" />
+            </div>
             <h1 className="text-xl font-semibold text-gray-900">{title}</h1>
           </div>
           

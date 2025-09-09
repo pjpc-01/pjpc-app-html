@@ -156,12 +156,27 @@ export default function SecureLoginForm() {
         {/* Logo and Title */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="bg-blue-600 p-3 rounded-full">
-              <GraduationCap className="h-8 w-8 text-white" />
+            <div className="bg-white p-4 rounded-2xl shadow-lg border-2 border-yellow-200">
+              <img 
+                src="/logo.png" 
+                alt="温馨小屋 - 安亲补习中心" 
+                className="h-16 w-auto"
+                onError={(e) => {
+                  // 如果logo文件不存在，显示备用图标
+                  e.currentTarget.style.display = 'none'
+                  const nextElement = e.currentTarget.nextElementSibling as HTMLElement
+                  if (nextElement) {
+                    nextElement.style.display = 'block'
+                  }
+                }}
+              />
+              <div className="bg-blue-600 p-3 rounded-full hidden">
+                <GraduationCap className="h-8 w-8 text-white" />
+              </div>
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">安亲班管理系统</h1>
-          <p className="text-gray-600">安全的教育管理平台</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">温馨小屋</h1>
+          <p className="text-gray-600">安亲补习中心管理系统</p>
         </div>
 
         <Card className="shadow-lg">

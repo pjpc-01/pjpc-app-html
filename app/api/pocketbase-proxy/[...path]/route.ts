@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import https from 'https'
 
-const POCKETBASE_URL = 'http://pjpc.tplinkdns.com:8090'
+// 尝试多个PocketBase服务器地址
+const POCKETBASE_URLS = [
+  'http://localhost:8090',  // 本地开发
+  'http://192.168.0.59:8090',  // 局域网
+  'http://pjpc.tplinkdns.com:8090'  // DDNS
+]
+
+// 选择可用的PocketBase URL
+const POCKETBASE_URL = POCKETBASE_URLS[2] // 使用DDNS地址
 
 // 创建忽略SSL证书的fetch函数
 const fetchWithIgnoreSSL = async (url: string, options: RequestInit = {}) => {
