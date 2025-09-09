@@ -177,7 +177,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
           crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 1.5,
+          childAspectRatio: 1.2,
           crossAxisSpacing: AppSpacing.md,
           mainAxisSpacing: AppSpacing.md,
           children: [
@@ -228,7 +228,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -237,26 +237,27 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
+                padding: const EdgeInsets.all(AppSpacing.xs),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Icon(
                   icon,
                   color: color,
-                  size: 20,
+                  size: 16,
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.xs,
+                  horizontal: AppSpacing.xs,
+                  vertical: 2,
                 ),
                 decoration: BoxDecoration(
                   color: isPositive 
@@ -269,7 +270,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                   children: [
                     Icon(
                       isPositive ? Icons.trending_up : Icons.trending_down,
-                      size: 12,
+                      size: 10,
                       color: isPositive ? AppTheme.successColor : AppTheme.errorColor,
                     ),
                     const SizedBox(width: 2),
@@ -278,6 +279,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                       style: AppTextStyles.caption.copyWith(
                         color: isPositive ? AppTheme.successColor : AppTheme.errorColor,
                         fontWeight: FontWeight.w600,
+                        fontSize: 10,
                       ),
                     ),
                   ],
@@ -285,19 +287,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             value,
-            style: AppTextStyles.headline3.copyWith(
+            style: AppTextStyles.headline4.copyWith(
               color: AppTheme.textPrimary,
               fontWeight: FontWeight.bold,
+              fontSize: 18,
             ),
           ),
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: 2),
           Text(
             title,
-            style: AppTextStyles.bodyMedium.copyWith(
+            style: AppTextStyles.bodySmall.copyWith(
               color: AppTheme.textSecondary,
+              fontSize: 12,
             ),
           ),
         ],
@@ -368,9 +372,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
             style: AppTextStyles.headline5,
           ),
           const SizedBox(height: AppSpacing.lg),
-          _buildPerformerItem('张三', '100%', 1),
-          _buildPerformerItem('李四', '98.5%', 2),
-          _buildPerformerItem('王五', '97.2%', 3),
+          _buildPerformerItem('系统优化', '100%', 1),
+          _buildPerformerItem('数据同步', '98.5%', 2),
+          _buildPerformerItem('界面更新', '97.2%', 3),
         ],
       ),
     );

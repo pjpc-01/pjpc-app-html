@@ -6,12 +6,14 @@ import '../attendance/attendance_dashboard_screen.dart';
 import '../attendance/nfc_attendance_screen.dart';
 import '../student/student_management_screen.dart';
 import '../academic/homework_grades_screen.dart';
-import '../reports/analytics_screen.dart';
+import '../reports/reports_screen.dart';
 import '../settings/settings_screen.dart';
 import '../../widgets/common/quick_action_card.dart';
 import '../../widgets/common/statistics_card.dart';
 import '../../widgets/common/recent_activity_item.dart';
 import '../points/points_management_screen.dart';
+import '../nfc/teacher_nfc_management_screen.dart';
+import '../nfc/admin_nfc_management_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const HomeDashboard(),
     const AttendanceDashboardScreen(),
     const StudentManagementScreen(),
-    const AnalyticsScreen(),
+    const PointsManagementScreen(),
     const SettingsScreen(),
   ];
 
@@ -78,9 +80,9 @@ class _HomeScreenState extends State<HomeScreen> {
               label: '学生',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.analytics_outlined),
-              activeIcon: Icon(Icons.analytics),
-              label: '分析',
+              icon: Icon(Icons.stars_outlined),
+              activeIcon: Icon(Icons.stars),
+              label: '积分',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.settings_outlined),
@@ -97,33 +99,107 @@ class _HomeScreenState extends State<HomeScreen> {
 class HomeDashboard extends StatelessWidget {
   const HomeDashboard({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildModernAppBar() {
+    return SliverAppBar(
+      expandedHeight: 120,
+      floating: false,
+      pinned: true,
+      backgroundColor: const Color(0xFF1E293B),
+      foregroundColor: Colors.white,
+      flexibleSpace: FlexibleSpaceBar(
+        title: const Text(
+          '智能管理中心',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E293B),
+                Color(0xFF334155),
+                Color(0xFF475569),
+              ],
+            ),
+          ),
+          child: Stack(
             children: [
-              // 欢迎区域
-              _buildWelcomeSection(context),
-              const SizedBox(height: AppSpacing.lg),
-              
-              // 快速操作
-              _buildQuickActionsSection(context),
-              const SizedBox(height: AppSpacing.lg),
-              
-              // 统计概览
-              _buildStatisticsSection(context),
-              const SizedBox(height: AppSpacing.lg),
-              
-              // 最近活动
-              _buildRecentActivitySection(context),
+              Positioned(
+                right: -50,
+                top: -50,
+                child: Container(
+                  width: 200,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.1),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: -30,
+                bottom: -30,
+                child: Container(
+                  width: 150,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.05),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.notifications_rounded),
+          onPressed: () {
+            // TODO: 实现通知功能
+          },
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+
+  String _getCurrentDateString() {
+    final now = DateTime.now();
+    return '${now.day} ${_getMonthName(now.month)} ${now.year}';
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return months[month - 1];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: CustomScrollView(
+        slivers: [
+          _buildModernAppBar(),
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                _buildWelcomeSection(context),
+                _buildQuickActionsSection(context),
+                _buildStatisticsSection(context),
+                _buildRecentActivitySection(context),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -179,7 +255,7 @@ class HomeDashboard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          _getCurrentDateString(),
+                          _getCurrentDateStringChinese(),
                           style: AppTextStyles.bodySmall.copyWith(
                             color: Colors.white.withOpacity(0.9),
                             fontSize: 12,
@@ -216,60 +292,156 @@ class HomeDashboard extends StatelessWidget {
   }
 
   Widget _buildQuickActionsSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '快速操作',
-          style: AppTextStyles.headline5,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 1.3,
-          crossAxisSpacing: AppSpacing.sm,
-          mainAxisSpacing: AppSpacing.sm,
-          children: [
-            QuickActionCard(
-              title: 'NFC考勤',
-              subtitle: '扫描NFC卡片考勤',
-              icon: Icons.nfc,
-              color: AppTheme.accentColor,
-              onTap: () => _navigateToNfcAttendance(context),
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '快速操作',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF1E293B),
             ),
-            QuickActionCard(
-              title: '学生管理',
-              subtitle: '查看学生信息',
-              icon: Icons.people,
-              color: AppTheme.accentColor,
-              onTap: () => _navigateToStudents(context),
-            ),
-            QuickActionCard(
-              title: '作业成绩',
-              subtitle: '管理作业与成绩',
-              icon: Icons.assignment,
-              color: AppTheme.primaryColor,
-              onTap: () => _navigateToHomeworkGrades(context),
-            ),
-            QuickActionCard(
-              title: '考勤报告',
-              subtitle: '查看详细报告',
-              icon: Icons.assessment,
-              color: AppTheme.warningColor,
-              onTap: () => _navigateToReports(context),
-            ),
-            QuickActionCard(
-              title: '积分管理',
-              subtitle: '学生积分加减与记录',
-              icon: Icons.stars,
-              color: AppTheme.primaryVariant,
-              onTap: () => _navigateToPoints(context),
+          ),
+          const SizedBox(height: 20),
+          GridView.count(
+            crossAxisCount: 3,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: 1.0,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            children: [
+              _buildModernActionCard(
+                title: 'NFC考勤',
+                icon: Icons.nfc_rounded,
+                color: const Color(0xFF3B82F6),
+                onTap: () => _navigateToNfcAttendance(context),
+              ),
+              _buildModernActionCard(
+                title: '学生管理',
+                icon: Icons.people_rounded,
+                color: const Color(0xFF10B981),
+                onTap: () => _navigateToStudents(context),
+              ),
+              _buildModernActionCard(
+                title: '作业成绩',
+                icon: Icons.assignment_rounded,
+                color: const Color(0xFFF59E0B),
+                onTap: () => _navigateToHomeworkGrades(context),
+              ),
+              _buildModernActionCard(
+                title: '考勤报告',
+                icon: Icons.assessment_rounded,
+                color: const Color(0xFF8B5CF6),
+                onTap: () => _navigateToReports(context),
+              ),
+              _buildModernActionCard(
+                title: '积分管理',
+                icon: Icons.stars_rounded,
+                color: const Color(0xFFEC4899),
+                onTap: () => _navigateToPoints(context),
+              ),
+              Consumer<AuthProvider>(
+                builder: (context, authProvider, child) {
+                  if (authProvider.isAdmin) {
+                    return _buildModernActionCard(
+                      title: 'NFC管理',
+                      icon: Icons.admin_panel_settings_rounded,
+                      color: const Color(0xFFEF4444),
+                      onTap: () => _navigateToAdminNfcManagement(context),
+                    );
+                  } else if (authProvider.isTeacher) {
+                    return _buildModernActionCard(
+                      title: 'NFC管理',
+                      icon: Icons.settings_rounded,
+                      color: const Color(0xFFEF4444),
+                      onTap: () => _navigateToTeacherNfcManagement(context),
+                    );
+                  } else {
+                    return _buildModernActionCard(
+                      title: '系统设置',
+                      icon: Icons.settings_rounded,
+                      color: const Color(0xFF6B7280),
+                      onTap: () => _navigateToSettings(context),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernActionCard({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: color.withOpacity(0.2),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-      ],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF374151),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -386,31 +558,31 @@ class HomeDashboard extends StatelessWidget {
           child: Column(
             children: [
               RecentActivityItem(
-                studentName: '张三',
-                action: 'NFC签到',
-                time: '09:15',
+                studentName: '系统',
+                action: '数据同步',
+                time: '刚刚',
                 status: 'success',
               ),
               const Divider(height: 1),
               RecentActivityItem(
-                studentName: '李四',
-                action: 'NFC签到',
-                time: '09:20',
+                studentName: '系统',
+                action: '界面更新',
+                time: '刚刚',
                 status: 'success',
               ),
               const Divider(height: 1),
               RecentActivityItem(
-                studentName: '王五',
-                action: '迟到',
-                time: '09:35',
-                status: 'warning',
+                studentName: '系统',
+                action: '功能优化',
+                time: '刚刚',
+                status: 'success',
               ),
               const Divider(height: 1),
               RecentActivityItem(
-                studentName: '赵六',
-                action: '缺勤',
-                time: '--',
-                status: 'error',
+                studentName: '系统',
+                action: '性能提升',
+                time: '刚刚',
+                status: 'success',
               ),
             ],
           ),
@@ -425,7 +597,7 @@ class HomeDashboard extends StatelessWidget {
     return '晚上好';
   }
 
-  String _getCurrentDateString() {
+  String _getCurrentDateStringChinese() {
     final now = DateTime.now();
     final weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
     final months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
@@ -457,7 +629,12 @@ class HomeDashboard extends StatelessWidget {
   }
 
   void _navigateToStudents(BuildContext context) {
-    // 导航到学生管理页面
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const StudentManagementScreen(),
+      ),
+    );
   }
 
   void _navigateToHomeworkGrades(BuildContext context) {
@@ -479,7 +656,39 @@ class HomeDashboard extends StatelessWidget {
   }
 
   void _navigateToReports(BuildContext context) {
-    // 导航到报告页面
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ReportsScreen(),
+      ),
+    );
+  }
+
+  void _navigateToTeacherNfcManagement(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const TeacherNfcManagementScreen(),
+      ),
+    );
+  }
+
+  void _navigateToAdminNfcManagement(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AdminNfcManagementScreen(),
+      ),
+    );
+  }
+
+  void _navigateToSettings(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SettingsScreen(),
+      ),
+    );
   }
 
 

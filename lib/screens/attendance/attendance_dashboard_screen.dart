@@ -37,43 +37,56 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenHeight < 700 || screenWidth < 360;
+    
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          _buildSliverAppBar(),
-          _buildStatsSection(),
-          _buildTabBar(),
+          _buildSliverAppBar(isSmallScreen),
+          _buildStatsSection(isSmallScreen),
+          _buildTabBar(isSmallScreen),
         ],
         body: TabBarView(
           controller: _tabController,
           children: [
-            _buildAttendanceRecordsTab(),
-            _buildNFCScannerTab(),
-            _buildAnalyticsTab(),
+            _buildAttendanceRecordsTab(isSmallScreen),
+            _buildNFCScannerTab(isSmallScreen),
+            _buildAnalyticsTab(isSmallScreen),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showNFCScanner(context),
         backgroundColor: AppTheme.primaryColor,
-        child: const Icon(Icons.nfc, color: Colors.white),
+        child: Icon(
+          Icons.nfc, 
+          color: Colors.white,
+          size: isSmallScreen ? 20 : 24,
+        ),
       ),
     );
   }
 
-  Widget _buildSliverAppBar() {
+  Widget _buildSliverAppBar(bool isSmallScreen) {
     return SliverAppBar(
-      expandedHeight: 120,
+      expandedHeight: isSmallScreen ? 120 : 140,
       floating: false,
       pinned: true,
       backgroundColor: AppTheme.primaryColor,
       flexibleSpace: FlexibleSpaceBar(
-        title: const Text(
+        titlePadding: EdgeInsets.only(
+          left: 16,
+          bottom: isSmallScreen ? 8 : 12,
+        ),
+        title: Text(
           '考勤管理',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
+            fontSize: isSmallScreen ? 16 : 18,
           ),
         ),
         background: Container(
@@ -87,26 +100,26 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
               ],
             ),
           ),
-          child: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(height: 40),
-                Icon(
-                  Icons.access_time,
-                  color: Colors.white,
-                  size: 32,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(height: isSmallScreen ? 20 : 30),
+              Icon(
+                Icons.access_time,
+                color: Colors.white,
+                size: isSmallScreen ? 24 : 32,
+              ),
+              SizedBox(height: isSmallScreen ? 4 : 8),
+              Text(
+                '智能考勤系统',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: isSmallScreen ? 12 : 14,
+                  fontWeight: FontWeight.w500,
                 ),
-                SizedBox(height: 8),
-                Text(
-                  '智能考勤系统',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              SizedBox(height: isSmallScreen ? 8 : 12),
+            ],
           ),
         ),
       ),
@@ -123,16 +136,16 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
     );
   }
 
-  Widget _buildStatsSection() {
+  Widget _buildStatsSection(bool isSmallScreen) {
     return SliverToBoxAdapter(
       child: Container(
-        margin: const EdgeInsets.all(AppSpacing.md),
-        child: const AttendanceStatsGrid(),
+        margin: EdgeInsets.all(isSmallScreen ? 8 : AppSpacing.md),
+        child: AttendanceStatsGrid(),
       ),
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildTabBar(bool isSmallScreen) {
     return SliverToBoxAdapter(
       child: Container(
         color: Colors.white,
@@ -142,12 +155,12 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
           unselectedLabelColor: AppTheme.textTertiary,
           indicatorColor: AppTheme.primaryColor,
           indicatorWeight: 3,
-          labelStyle: const TextStyle(
-            fontSize: 16,
+          labelStyle: TextStyle(
+            fontSize: isSmallScreen ? 12 : 16,
             fontWeight: FontWeight.w600,
           ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 16,
+          unselectedLabelStyle: TextStyle(
+            fontSize: isSmallScreen ? 11 : 16,
             fontWeight: FontWeight.normal,
           ),
           tabs: const [
@@ -160,7 +173,7 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
     );
   }
 
-  Widget _buildAttendanceRecordsTab() {
+  Widget _buildAttendanceRecordsTab(bool isSmallScreen) {
     return Consumer<AttendanceProvider>(
       builder: (context, attendanceProvider, child) {
         if (attendanceProvider.isLoading) {
@@ -183,11 +196,11 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
     );
   }
 
-  Widget _buildNFCScannerTab() {
+  Widget _buildNFCScannerTab(bool isSmallScreen) {
     return const NFCScannerWidget();
   }
 
-  Widget _buildAnalyticsTab() {
+  Widget _buildAnalyticsTab(bool isSmallScreen) {
     return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

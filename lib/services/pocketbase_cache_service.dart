@@ -123,33 +123,22 @@ class PocketBaseCacheService {
   /// 从本地存储恢复缓存
   static Future<void> restoreCache() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      // 暂时禁用持久化缓存恢复，避免 RecordModel 创建问题
+      // 只使用内存缓存
+      print('⚠️ 持久化缓存恢复已禁用，仅使用内存缓存');
       
-      // 恢复数据缓存
+      // 清理过期的本地存储缓存
+      final prefs = await SharedPreferences.getInstance();
       for (final collection in [_studentsKey, _attendanceKey, _invoicesKey, _paymentsKey, _feeItemsKey, _studentFeesKey]) {
         final dataKey = 'cache_$collection';
         final timestampKey = 'timestamp_$collection';
-        
-        final dataString = prefs.getString(dataKey);
-        final timestampString = prefs.getString(timestampKey);
-        
-        if (dataString != null && timestampString != null) {
-          final data = jsonDecode(dataString) as List<dynamic>;
-          final timestamp = DateTime.parse(timestampString);
-          
-          // 检查缓存是否过期
-          if (DateTime.now().difference(timestamp).compareTo(_getDefaultTimeout(collection)) <= 0) {
-            final records = data.map((item) => RecordModel.fromJson(item as Map<String, dynamic>)).toList();
-            _memoryCache[collection] = records;
-            _lastUpdate[collection] = timestamp;
-            print('✅ 已恢复 $collection 缓存: ${records.length} 条记录');
-          } else {
-            print('⚠️ $collection 缓存已过期，跳过恢复');
-          }
-        }
+        await prefs.remove(dataKey);
+        await prefs.remove(timestampKey);
       }
+      
+      print('✅ 已清理本地存储缓存');
     } catch (e) {
-      print('❌ 恢复缓存失败: $e');
+      print('❌ 清理本地存储缓存失败: $e');
     }
   }
   

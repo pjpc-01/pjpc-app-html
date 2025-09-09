@@ -102,16 +102,21 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
     final center = student.getStringValue('center') ?? '未知中心';
     
     return SliverAppBar(
-      expandedHeight: 200.0,
+      expandedHeight: 220.0,
       floating: false,
       pinned: true,
       backgroundColor: AppTheme.primaryColor,
       flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.only(
+          left: 16,
+          bottom: 12,
+        ),
         title: Text(
           name,
           style: AppTextStyles.headline6?.copyWith(
             color: Colors.white,
             fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
         ),
         background: Container(
@@ -334,7 +339,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
           _buildInfoCard(
             '学习记录',
             [
-              _buildInfoRow('最近考试', '2024-01-15 数学测试'),
+              _buildInfoRow('最近更新', '系统数据已同步'),
               _buildInfoRow('最近作业', '2024-01-14 语文作文'),
               _buildInfoRow('学习计划', '已完成本周计划'),
               _buildInfoRow('学习目标', '提高英语成绩'),

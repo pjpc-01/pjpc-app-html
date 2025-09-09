@@ -59,8 +59,11 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isSmallScreen = screenHeight < 700;
+    
     return Container(
-      height: MediaQuery.of(context).size.height * 0.8,
+      height: isSmallScreen ? screenHeight * 0.6 : screenHeight * 0.8,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(
@@ -69,9 +72,9 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
       ),
       child: Column(
         children: [
-          _buildHeader(),
+          _buildHeader(isSmallScreen),
           Expanded(
-            child: _buildScannerContent(),
+            child: _buildScannerContent(isSmallScreen),
           ),
           _buildActionButtons(),
         ],
@@ -79,9 +82,9 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isSmallScreen) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: EdgeInsets.all(isSmallScreen ? AppSpacing.md : AppSpacing.lg),
       decoration: const BoxDecoration(
         border: Border(
           bottom: BorderSide(color: AppTheme.dividerColor),
@@ -89,36 +92,43 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.nfc,
             color: AppTheme.primaryColor,
-            size: 24,
+            size: isSmallScreen ? 20 : 24,
           ),
           const SizedBox(width: AppSpacing.sm),
-          const Text(
+          Text(
             'NFC考勤扫描',
-            style: AppTextStyles.headline5,
+            style: TextStyle(
+              fontSize: isSmallScreen ? 16 : 18,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimary,
+            ),
           ),
           const Spacer(),
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close),
+            icon: Icon(
+              Icons.close,
+              size: isSmallScreen ? 20 : 24,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildScannerContent() {
+  Widget _buildScannerContent(bool isSmallScreen) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.xl),
+      padding: EdgeInsets.all(isSmallScreen ? AppSpacing.lg : AppSpacing.xl),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _buildScannerCircle(),
-          const SizedBox(height: AppSpacing.xl),
+          SizedBox(height: isSmallScreen ? AppSpacing.lg : AppSpacing.xl),
           _buildStatusMessage(),
-          const SizedBox(height: AppSpacing.lg),
+          SizedBox(height: isSmallScreen ? AppSpacing.md : AppSpacing.lg),
           _buildInstructions(),
         ],
       ),

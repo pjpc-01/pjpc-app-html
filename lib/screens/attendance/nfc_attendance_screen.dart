@@ -71,6 +71,9 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
 
   Future<void> _handleNfcTag(NfcTag tag) async {
     try {
+      // 停止扫描
+      await _stopNfcScan();
+      
       // 简化处理：直接使用模拟数据
       // 在实际应用中，这里应该读取NFC卡片中的URL
       String studentUrl = 'https://example.com/student/STU001';
@@ -86,8 +89,8 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
         return;
       }
 
-      // 记录考勤
-      await _recordAttendance(student);
+      // 显示签到/签退选择对话框
+      await _showAttendanceChoiceDialog(student);
 
     } catch (e) {
       setState(() {
@@ -96,7 +99,195 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
     }
   }
 
-  Future<void> _recordAttendance(dynamic student) async {
+  /// 显示签到/签退选择对话框
+  Future<void> _showAttendanceChoiceDialog(dynamic student) async {
+    final studentName = student.getStringValue('student_name') ?? '未知学生';
+    final studentId = student.getStringValue('id');
+    
+    // 检查今天的考勤状态
+    final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    final todayAttendance = attendanceProvider.attendanceRecords
+        .where((record) => 
+            record.getStringValue('student_id') == studentId &&
+            record.getStringValue('date') == today)
+        .toList();
+
+    bool hasCheckedIn = todayAttendance.isNotEmpty;
+    bool hasCheckedOut = hasCheckedIn && 
+        (todayAttendance.first.getStringValue('check_out')?.isNotEmpty == true);
+
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                child: Text(
+                  studentName.isNotEmpty ? studentName[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      studentName,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      '请选择考勤操作',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (hasCheckedOut)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.warningColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.warningColor),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info, color: AppTheme.warningColor, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '今天已完成签到和签退',
+                          style: TextStyle(
+                            color: AppTheme.warningColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else if (hasCheckedIn)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.successColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.successColor),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: AppTheme.successColor, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '今天已签到，可以进行签退',
+                          style: TextStyle(
+                            color: AppTheme.successColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.primaryColor),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.login, color: AppTheme.primaryColor, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '今天尚未签到，可以进行签到',
+                          style: TextStyle(
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 16),
+              if (!hasCheckedOut) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: hasCheckedIn ? null : () async {
+                      Navigator.of(context).pop();
+                      await _recordAttendance(student, 'check_in');
+                    },
+                    icon: const Icon(Icons.login),
+                    label: const Text('签到'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: hasCheckedIn ? AppTheme.textSecondary : AppTheme.successColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: !hasCheckedIn ? null : () async {
+                      Navigator.of(context).pop();
+                      await _recordAttendance(student, 'check_out');
+                    },
+                    icon: const Icon(Icons.logout),
+                    label: const Text('签退'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: !hasCheckedIn ? AppTheme.textSecondary : AppTheme.errorColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  _scanStatus = '操作已取消';
+                });
+              },
+              child: const Text('取消'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 记录考勤
+  Future<void> _recordAttendance(dynamic student, String action) async {
     try {
       final studentId = student.getStringValue('id');
       final studentName = student.getStringValue('student_name');
@@ -116,28 +307,100 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
           .toList();
 
       String status = 'present';
-      String notes = 'NFC签到';
-      String checkInTime = timeString;
+      String notes = action == 'check_in' ? 'NFC签到' : 'NFC签退';
+      String checkInTime = '';
       String checkOutTime = '';
 
-      if (todayAttendance.isNotEmpty) {
-        // 已有记录，执行签退
-        final existingRecord = todayAttendance.first;
-        if (existingRecord.getStringValue('check_out')?.isNotEmpty == true) {
+      if (action == 'check_in') {
+        // 签到操作
+        if (todayAttendance.isNotEmpty) {
           setState(() {
-            _scanStatus = '今天已经完成签到和签退';
+            _scanStatus = '今天已经签到过了';
             _lastScannedStudent = studentName;
             _lastScanTime = now;
           });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('$studentName 今天已经签到过了'),
+                backgroundColor: AppTheme.warningColor,
+              ),
+            );
+          }
           return;
-        } else {
-          // 执行签退
-          checkOutTime = timeString;
-          notes = 'NFC签退';
         }
+        checkInTime = timeString;
+      } else {
+        // 签退操作
+        if (todayAttendance.isEmpty) {
+          setState(() {
+            _scanStatus = '请先签到再签退';
+            _lastScannedStudent = studentName;
+            _lastScanTime = now;
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('$studentName 请先签到再签退'),
+                backgroundColor: AppTheme.warningColor,
+              ),
+            );
+          }
+          return;
+        }
+        
+        final existingRecord = todayAttendance.first;
+        if (existingRecord.getStringValue('check_out')?.isNotEmpty == true) {
+          setState(() {
+            _scanStatus = '今天已经签退过了';
+            _lastScannedStudent = studentName;
+            _lastScanTime = now;
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('$studentName 今天已经签退过了'),
+                backgroundColor: AppTheme.warningColor,
+              ),
+            );
+          }
+          return;
+        }
+        
+        // 更新现有记录，添加签退时间
+        checkInTime = existingRecord.getStringValue('check_in') ?? '';
+        checkOutTime = timeString;
+        
+        // 更新现有记录而不是创建新记录
+        final updateData = {
+          'check_out': checkOutTime,
+          'notes': 'NFC签退',
+        };
+        
+        final pocketbaseService = PocketBaseService();
+        await pocketbaseService.updateStudentAttendanceRecord(existingRecord.id, updateData);
+        
+        // 刷新考勤数据
+        await attendanceProvider.loadAttendanceRecords();
+        
+        setState(() {
+          _scanStatus = '签退成功';
+          _lastScannedStudent = studentName;
+          _lastScanTime = now;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('签退成功: $studentName'),
+              backgroundColor: AppTheme.successColor,
+            ),
+          );
+        }
+        return;
       }
 
-      // 创建考勤记录
+      // 创建考勤记录（仅用于签到）
       final attendanceData = {
         'student_id': studentId,
         'student_name': studentName,
@@ -160,7 +423,7 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
       await attendanceProvider.loadAttendanceRecords();
 
       setState(() {
-        _scanStatus = '考勤记录成功';
+        _scanStatus = '签到成功';
         _lastScannedStudent = studentName;
         _lastScanTime = now;
       });
@@ -169,7 +432,7 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${checkInTime.isNotEmpty ? '签到' : '签退'}成功: $studentName'),
+            content: Text('签到成功: $studentName'),
             backgroundColor: AppTheme.successColor,
           ),
         );
@@ -188,35 +451,98 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
     super.dispose();
   }
 
+  Widget _buildEnterpriseAppBar() {
+    return SliverAppBar(
+      expandedHeight: 120,
+      floating: false,
+      pinned: true,
+      backgroundColor: const Color(0xFF1E293B),
+      foregroundColor: Colors.white,
+      flexibleSpace: FlexibleSpaceBar(
+        title: const Text(
+          'NFC考勤智能扫描',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E293B),
+                Color(0xFF334155),
+                Color(0xFF475569),
+              ],
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -50,
+                top: -50,
+                child: Container(
+                  width: 200,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.1),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: -30,
+                bottom: -30,
+                child: Container(
+                  width: 150,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.05),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(_isScanning ? Icons.stop_rounded : Icons.refresh_rounded),
+          onPressed: _isScanning ? _stopNfcScan : _startNfcScan,
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        title: const Text('NFC考勤扫描'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: Icon(_isScanning ? Icons.stop : Icons.refresh),
-            onPressed: _isScanning ? _stopNfcScan : _startNfcScan,
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: CustomScrollView(
+        slivers: [
+          _buildEnterpriseAppBar(),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildScanStatusCard(),
+                  const SizedBox(height: AppSpacing.lg),
+                  _buildLastScanCard(),
+                  const SizedBox(height: AppSpacing.lg),
+                  _buildInstructionsCard(),
+                  const SizedBox(height: AppSpacing.lg),
+                  _buildStatisticsCard(),
+                ],
+              ),
+            ),
           ),
         ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildScanStatusCard(),
-            const SizedBox(height: AppSpacing.lg),
-            _buildLastScanCard(),
-            const SizedBox(height: AppSpacing.lg),
-            _buildInstructionsCard(),
-            const SizedBox(height: AppSpacing.lg),
-            _buildStatisticsCard(),
-          ],
-        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _isScanning ? _stopNfcScan : _startNfcScan,

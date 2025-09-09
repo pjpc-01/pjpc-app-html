@@ -63,16 +63,21 @@ class _HomeworkGradesScreenState extends State<HomeworkGradesScreen>
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 120.0,
+      expandedHeight: 140.0,
       floating: false,
       pinned: true,
       backgroundColor: AppTheme.primaryColor,
       flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.only(
+          left: 16,
+          bottom: 12,
+        ),
         title: const Text(
           '作业与成绩',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
         ),
         background: Container(
@@ -578,10 +583,10 @@ class _HomeworkGradesScreenState extends State<HomeworkGradesScreen>
               ],
             ),
           ),
-          _buildGradeItem('张三', '数学', 95, 'A+', AppTheme.successColor),
-          _buildGradeItem('李四', '语文', 88, 'A', AppTheme.successColor),
-          _buildGradeItem('王五', '英语', 76, 'B', AppTheme.warningColor),
-          _buildGradeItem('赵六', '物理', 92, 'A', AppTheme.successColor),
+          _buildGradeItem('系统', '性能', 95, 'A+', AppTheme.successColor),
+          _buildGradeItem('界面', '设计', 88, 'A', AppTheme.successColor),
+          _buildGradeItem('功能', '稳定性', 76, 'B', AppTheme.warningColor),
+          _buildGradeItem('数据', '准确性', 92, 'A', AppTheme.successColor),
         ],
       ),
     );

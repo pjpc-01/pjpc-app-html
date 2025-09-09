@@ -48,6 +48,7 @@ dependencies:
   # 新增优化依赖
   flutter_secure_storage: ^9.2.2
   connectivity_plus: ^6.0.5
+  fl_chart: ^0.69.0
   cached_network_image: ^3.4.1
   shimmer: ^3.0.0
   crypto: ^3.0.5

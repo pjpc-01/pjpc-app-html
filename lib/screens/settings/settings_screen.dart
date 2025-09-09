@@ -15,36 +15,103 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _darkModeEnabled = false;
   String _selectedLanguage = 'zh';
 
+  Widget _buildEnterpriseAppBar(bool isSmallScreen) {
+    return SliverAppBar(
+      expandedHeight: 120,
+      floating: false,
+      pinned: true,
+      backgroundColor: const Color(0xFF1E293B),
+      foregroundColor: Colors.white,
+      flexibleSpace: FlexibleSpaceBar(
+        title: Text(
+          '系统设置中心',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: isSmallScreen ? 16 : 18,
+          ),
+        ),
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E293B),
+                Color(0xFF334155),
+                Color(0xFF475569),
+              ],
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -50,
+                top: -50,
+                child: Container(
+                  width: 200,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.1),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: -30,
+                bottom: -30,
+                child: Container(
+                  width: 150,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.05),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenHeight < 700 || screenWidth < 360;
+    
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        title: const Text('设置'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        children: [
-          _buildProfileSection(),
-          const SizedBox(height: AppSpacing.xl),
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: CustomScrollView(
+        slivers: [
+          _buildEnterpriseAppBar(isSmallScreen),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(isSmallScreen ? 12 : AppSpacing.lg),
+              child: Column(
+                children: [
+          _buildProfileSection(isSmallScreen),
+          SizedBox(height: isSmallScreen ? 16 : AppSpacing.xl),
           _buildGeneralSection(),
-          const SizedBox(height: AppSpacing.xl),
+          SizedBox(height: isSmallScreen ? 16 : AppSpacing.xl),
           _buildNotificationSection(),
-          const SizedBox(height: AppSpacing.xl),
+          SizedBox(height: isSmallScreen ? 16 : AppSpacing.xl),
           _buildAppearanceSection(),
-          const SizedBox(height: AppSpacing.xl),
+          SizedBox(height: isSmallScreen ? 16 : AppSpacing.xl),
           _buildAboutSection(),
-          const SizedBox(height: AppSpacing.xl),
+          SizedBox(height: isSmallScreen ? 16 : AppSpacing.xl),
           _buildLogoutSection(),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildProfileSection() {
+  Widget _buildProfileSection(bool isSmallScreen) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final user = authProvider.user;
@@ -52,7 +119,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final userEmail = user?.getStringValue('email') ?? 'user@example.com';
 
         return Container(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: EdgeInsets.all(isSmallScreen ? 12 : AppSpacing.lg),
           decoration: BoxDecoration(
             color: AppTheme.cardColor,
             borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -62,13 +129,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Row(
             children: [
               CircleAvatar(
-                radius: 32,
+                radius: isSmallScreen ? 24 : 32,
                 backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
                 child: Text(
                   userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
                   style: AppTextStyles.headline4.copyWith(
                     color: AppTheme.primaryColor,
                     fontWeight: FontWeight.bold,
+                    fontSize: isSmallScreen ? 16 : 20,
                   ),
                 ),
               ),
@@ -81,6 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       userName,
                       style: AppTextStyles.bodyLarge.copyWith(
                         fontWeight: FontWeight.w600,
+                        fontSize: isSmallScreen ? 14 : 16,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
@@ -88,6 +157,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       userEmail,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: AppTheme.textSecondary,
+                        fontSize: isSmallScreen ? 12 : 14,
                       ),
                     ),
                   ],
@@ -95,7 +165,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               IconButton(
                 onPressed: _editProfile,
-                icon: const Icon(Icons.edit),
+                icon: Icon(
+                  Icons.edit,
+                  size: isSmallScreen ? 20 : 24,
+                ),
               ),
             ],
           ),

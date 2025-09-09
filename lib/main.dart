@@ -8,6 +8,7 @@ import 'providers/attendance_provider.dart';
 import 'providers/payment_provider.dart';
 import 'providers/class_provider.dart';
 import 'providers/points_provider.dart';
+import 'providers/nfc_card_provider.dart';
 import 'screens/splash_screen.dart';
 import 'services/pocketbase_service.dart';
 import 'services/network_service.dart';
@@ -53,6 +54,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
         ChangeNotifierProvider(create: (_) => ClassProvider()),
         ChangeNotifierProvider(create: (_) => PointsProvider()),
+        ChangeNotifierProvider(create: (_) => NfcCardProvider()),
       ],
       child: MaterialApp(
         title: 'PJPC School Management',
