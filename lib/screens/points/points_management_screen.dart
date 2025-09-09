@@ -558,9 +558,8 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                           Text(
                             'Top 10 学生积分排名',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: Colors.white.withOpacity(0.9),
                               fontSize: 12,
-                              opacity: 0.9,
                             ),
                           ),
                         ],
