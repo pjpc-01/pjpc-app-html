@@ -166,6 +166,8 @@ class NfcCardProvider with ChangeNotifier {
         'replacement_status': 'pending',
         'replacement_request_date': DateTime.now().toIso8601String(),
         'replacement_notes': notes,
+        'student_name': studentName,
+        'class_name': className,
         'last_updated': DateTime.now().toIso8601String(),
         'updated_by': teacherId,
       });
@@ -191,6 +193,8 @@ class NfcCardProvider with ChangeNotifier {
           'replacement_status': 'pending',
           'replacement_request_date': DateTime.now().toIso8601String(),
           'replacement_notes': notes,
+          'student_name': studentName,
+          'class_name': className,
           'last_updated': DateTime.now().toIso8601String(),
           'updated_by': teacherId,
         });

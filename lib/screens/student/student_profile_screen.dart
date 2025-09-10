@@ -5,6 +5,7 @@ import '../../providers/attendance_provider.dart';
 import '../../providers/points_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common/statistics_card.dart';
+import 'add_edit_student_screen.dart';
 
 class StudentProfileScreen extends StatefulWidget {
   final String studentId;
@@ -56,7 +57,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: Consumer<StudentProvider>(
         builder: (context, studentProvider, child) {
           final student = studentProvider.getStudentById(widget.studentId);
@@ -64,7 +65,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
           if (_isLoading) {
             return const Center(
               child: CircularProgressIndicator(
-                color: AppTheme.primaryColor,
+                color: Color(0xFF3B82F6),
               ),
             );
           }
@@ -73,24 +74,528 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
             return _buildErrorState();
           }
           
-          return NestedScrollView(
-            headerSliverBuilder: (context, innerBoxIsScrolled) {
-              return [
-                _buildSliverAppBar(student),
-                _buildTabBar(),
-              ];
-            },
-            body: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildBasicInfoTab(student),
-                _buildAcademicTab(student),
-                _buildAttendanceTab(student),
-                _buildParentInfoTab(student),
-              ],
-            ),
+          return CustomScrollView(
+            slivers: [
+              _buildModernHeader(student),
+              _buildQuickActions(student),
+              _buildStudentInfo(student),
+              _buildRecentActivity(student),
+            ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildModernHeader(dynamic student) {
+    final name = student.getStringValue('student_name') ?? '未知学生';
+    final studentId = student.getStringValue('student_id') ?? '';
+    final standard = student.getStringValue('standard') ?? '未知班级';
+    final status = student.getStringValue('status') ?? 'active';
+    
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF3B82F6),
+              Color(0xFF1D4ED8),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF3B82F6).withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+              children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: CircleAvatar(
+                    radius: 32,
+                    backgroundColor: Colors.white.withOpacity(0.3),
+                    child: Text(
+                      name.isNotEmpty ? name[0].toUpperCase() : '?',
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '学号：$studentId',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        standard,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(status).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: _getStatusColor(status).withOpacity(0.5),
+                    ),
+                  ),
+                  child: Text(
+                    _getStatusText(status),
+                    style: TextStyle(
+                      color: _getStatusColor(status),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildStudentStats(student),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStudentStats(dynamic student) {
+    return Consumer<PointsProvider>(
+      builder: (context, pointsProvider, child) {
+        final totalPoints = pointsProvider.getTotalPointsForStudent(widget.studentId) ?? 0;
+        
+        return Row(
+          children: [
+            Expanded(
+              child: _buildStatItem(
+                '总积分',
+                totalPoints.toString(),
+                Icons.stars,
+                const Color(0xFFF59E0B),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildStatItem(
+                '本月积分',
+                '0', // TODO: 计算本月积分
+                Icons.trending_up,
+                const Color(0xFF10B981),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildStatItem(
+                '出勤率',
+                '95%', // TODO: 计算出勤率
+                Icons.check_circle,
+                const Color(0xFF8B5CF6),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildStatItem(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 10,
+              color: Colors.white70,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'active':
+        return const Color(0xFF10B981);
+      case 'inactive':
+        return const Color(0xFFF59E0B);
+      case 'graduated':
+        return const Color(0xFF64748B);
+      default:
+        return const Color(0xFF3B82F6);
+    }
+  }
+
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'active':
+        return '活跃';
+      case 'inactive':
+        return '非活跃';
+      case 'graduated':
+        return '已毕业';
+      default:
+        return '未知';
+    }
+  }
+
+  Widget _buildQuickActions(dynamic student) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '快速操作',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildActionButton(
+                    '编辑信息',
+                    Icons.edit,
+                    const Color(0xFF3B82F6),
+                    () => _editStudent(student),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildActionButton(
+                    '积分管理',
+                    Icons.stars,
+                    const Color(0xFFF59E0B),
+                    () => _managePoints(student),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildActionButton(
+                    '考勤记录',
+                    Icons.access_time,
+                    const Color(0xFF10B981),
+                    () => _viewAttendance(student),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(String title, IconData icon, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _editStudent(dynamic student) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddEditStudentScreen(student: student),
+      ),
+    );
+  }
+
+  void _managePoints(dynamic student) {
+    // TODO: 实现积分管理功能
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('积分管理功能开发中...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _viewAttendance(dynamic student) {
+    // TODO: 实现考勤记录查看功能
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('考勤记录功能开发中...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Widget _buildStudentInfo(dynamic student) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '基本信息',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildInfoRow('姓名', student.getStringValue('student_name') ?? '未知'),
+            _buildInfoRow('学号', student.getStringValue('student_id') ?? '未知'),
+            _buildInfoRow('班级', student.getStringValue('standard') ?? '未知'),
+            _buildInfoRow('中心', student.getStringValue('center') ?? '未知'),
+            _buildInfoRow('年龄', '${student.getStringValue('age') ?? '未知'}岁'),
+            _buildInfoRow('注册时间', _formatDate(student.getStringValue('created'))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF64748B),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(String? dateString) {
+    if (dateString == null || dateString.isEmpty) return '未知';
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return '未知';
+    }
+  }
+
+  Widget _buildRecentActivity(dynamic student) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '最近活动',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildActivityItem(
+              Icons.stars,
+              '获得积分',
+              '+10 积分',
+              '2小时前',
+              const Color(0xFFF59E0B),
+            ),
+            _buildActivityItem(
+              Icons.access_time,
+              '考勤打卡',
+              '正常出勤',
+              '今天 08:30',
+              const Color(0xFF10B981),
+            ),
+            _buildActivityItem(
+              Icons.edit,
+              '信息更新',
+              '更新了联系方式',
+              '昨天',
+              const Color(0xFF3B82F6),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActivityItem(IconData icon, String title, String description, String time, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            time,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF94A3B8),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -449,34 +954,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              '$label:',
-              style: AppTextStyles.bodyMedium?.copyWith(
-                color: AppTheme.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: AppTextStyles.bodyMedium?.copyWith(
-                color: AppTheme.textPrimary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildAttendanceStats(List studentAttendance) {
     // 计算统计数据
@@ -781,35 +1258,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
     }
   }
 
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'present':
-        return AppTheme.successColor;
-      case 'absent':
-        return AppTheme.errorColor;
-      case 'sick':
-        return AppTheme.warningColor;
-      case 'leave':
-        return AppTheme.accentColor;
-      default:
-        return AppTheme.textSecondary;
-    }
-  }
-
-  String _getStatusText(String status) {
-    switch (status) {
-      case 'present':
-        return '出勤';
-      case 'absent':
-        return '缺勤';
-      case 'sick':
-        return '病假';
-      case 'leave':
-        return '请假';
-      default:
-        return '未知';
-    }
-  }
 
   Widget _buildAttendanceDetails(List studentAttendance) {
     return Card(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/common/app_logo.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -14,62 +15,201 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   bool _darkModeEnabled = false;
   String _selectedLanguage = 'zh';
+  late ScrollController _scrollController;
+  bool _showScrollToTop = false;
 
-  Widget _buildEnterpriseAppBar(bool isSmallScreen) {
-    return SliverAppBar(
-      expandedHeight: 120,
-      floating: false,
-      pinned: true,
-      backgroundColor: const Color(0xFF1E293B),
-      foregroundColor: Colors.white,
-      flexibleSpace: FlexibleSpaceBar(
-        title: Text(
-          '系统设置中心',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: isSmallScreen ? 16 : 18,
-          ),
-        ),
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF1E293B),
-                Color(0xFF334155),
-                Color(0xFF475569),
-              ],
-            ),
-          ),
-          child: Stack(
-            children: [
-              Positioned(
-                right: -50,
-                top: -50,
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: -30,
-                bottom: -30,
-                child: Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.05),
-                  ),
-                ),
-              ),
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.offset > 200) {
+      if (!_showScrollToTop) {
+        setState(() {
+          _showScrollToTop = true;
+        });
+      }
+    } else {
+      if (_showScrollToTop) {
+        setState(() {
+          _showScrollToTop = false;
+        });
+      }
+    }
+  }
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  Widget _buildModernHeader(bool isSmallScreen) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF6366F1),
+              Color(0xFF4F46E5),
             ],
           ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6366F1).withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const AppLogo(
+                    size: 40,
+                    showText: false,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '系统设置',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '个性化您的应用体验',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Consumer<AuthProvider>(
+                  builder: (context, authProvider, child) {
+                    final user = authProvider.user;
+                    final userName = user?.getStringValue('name') ?? '用户';
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        userName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildSettingsQuickActions(isSmallScreen),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsQuickActions(bool isSmallScreen) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildActionButton(
+            '个人资料',
+            Icons.person,
+            const Color(0xFF3B82F6),
+            () => _editProfile(),
+            isSmallScreen,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionButton(
+            '通知设置',
+            Icons.notifications,
+            const Color(0xFF10B981),
+            () => _showReminderDialog(),
+            isSmallScreen,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionButton(
+            '主题设置',
+            Icons.palette,
+            const Color(0xFF8B5CF6),
+            () => _showThemeDialog(),
+            isSmallScreen,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton(String title, IconData icon, Color color, VoidCallback onTap, bool isSmallScreen) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          vertical: isSmallScreen ? 12 : 16, 
+          horizontal: 8,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.white, size: isSmallScreen ? 20 : 24),
+            SizedBox(height: isSmallScreen ? 4 : 6),
+            Text(
+              title,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isSmallScreen ? 10 : 12,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
@@ -84,8 +224,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
-          _buildEnterpriseAppBar(isSmallScreen),
+          _buildModernHeader(isSmallScreen),
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.all(isSmallScreen ? 12 : AppSpacing.lg),
@@ -107,6 +248,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
         ],
+      ),
+      floatingActionButton: _showScrollToTop ? _buildScrollToTopButton() : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+  }
+
+  Widget _buildScrollToTopButton() {
+    return FloatingActionButton(
+      onPressed: _scrollToTop,
+      backgroundColor: const Color(0xFF6366F1),
+      child: const Icon(
+        Icons.keyboard_arrow_up,
+        color: Colors.white,
+        size: 28,
       ),
     );
   }
@@ -607,15 +762,120 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showAppInfo() {
-    showAboutDialog(
+    showDialog(
       context: context,
-      applicationName: 'PJPC考勤管理系统',
-      applicationVersion: '1.0.0',
-      applicationIcon: const Icon(
-        Icons.access_time,
-        size: 48,
-        color: AppTheme.primaryColor,
-      ),
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Logo
+              const AppLogo(
+                size: 100,
+                showText: true,
+                textColor: Color(0xFF1E3A8A),
+                textSize: 16,
+              ),
+              
+              const SizedBox(height: 20),
+              
+              // 应用信息
+              Text(
+                'PJPC 学校管理系统',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1E3A8A),
+                ),
+              ),
+              
+              const SizedBox(height: 8),
+              
+              Text(
+                '版本 1.0.0',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // 功能描述
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '智能教育管理平台',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1E3A8A),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '• 学生信息管理\n• NFC智能考勤\n• 积分奖励系统\n• 成绩管理\n• 家长沟通平台',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey[700],
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // 联系信息
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.location_on,
+                      color: const Color(0xFF1E3A8A),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '温馨小屋安亲补习中心\nPusat Jagaan Prospek Cemerlang',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFF1E3A8A),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                '确定',
+                style: TextStyle(
+                  color: Color(0xFF1E3A8A),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -688,9 +948,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: const Text('取消'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              Provider.of<AuthProvider>(context, listen: false).logout();
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              await authProvider.logout();
+              // AuthWrapper会自动处理导航，不需要手动导航
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.errorColor,

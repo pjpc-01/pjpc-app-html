@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/nfc_card_provider.dart';
 import '../../providers/student_provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import 'nfc_replacement_request_dialog.dart';
 
@@ -17,10 +16,14 @@ class _TeacherNfcManagementScreenState extends State<TeacherNfcManagementScreen>
   String _selectedFilter = 'all';
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  late ScrollController _scrollController;
+  bool _showScrollToTop = false;
 
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
     });
@@ -50,75 +53,215 @@ class _TeacherNfcManagementScreenState extends State<TeacherNfcManagementScreen>
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  Widget _buildEnterpriseAppBar() {
-    return SliverAppBar(
-      expandedHeight: 120,
-      floating: false,
-      pinned: true,
-      backgroundColor: const Color(0xFF1E293B),
-      foregroundColor: Colors.white,
-      flexibleSpace: FlexibleSpaceBar(
-        title: const Text(
-          'NFC智能管理中心',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF1E293B),
-                Color(0xFF334155),
-                Color(0xFF475569),
-              ],
-            ),
-          ),
-          child: Stack(
-            children: [
-              Positioned(
-                right: -50,
-                top: -50,
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: -30,
-                bottom: -30,
-                child: Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.05),
-                  ),
-                ),
-              ),
+  void _onScroll() {
+    if (_scrollController.offset > 200) {
+      if (!_showScrollToTop) {
+        setState(() {
+          _showScrollToTop = true;
+        });
+      }
+    } else {
+      if (_showScrollToTop) {
+        setState(() {
+          _showScrollToTop = false;
+        });
+      }
+    }
+  }
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  Widget _buildModernHeader() {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF059669),
+              Color(0xFF047857),
             ],
           ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF059669).withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.nfc,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'NFC卡管理',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '管理学生NFC卡状态，申请补办服务',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Consumer<StudentProvider>(
+                  builder: (context, studentProvider, child) {
+                    final totalStudents = studentProvider.students.length;
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '$totalStudents 个学生',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildTeacherNfcQuickActions(),
+          ],
         ),
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.refresh_rounded),
-          onPressed: () {
-            _loadData();
-          },
+    );
+  }
+
+  Widget _buildTeacherNfcQuickActions() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildActionButton(
+            '申请补办',
+            Icons.add_card,
+            const Color(0xFF3B82F6),
+            () => _showQuickReplacement(),
+          ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionButton(
+            '状态筛选',
+            Icons.filter_list,
+            const Color(0xFF10B981),
+            () => _showFilterOptions(),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionButton(
+            '刷新数据',
+            Icons.refresh,
+            const Color(0xFF8B5CF6),
+            () => _loadData(),
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _buildActionButton(String title, IconData icon, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.white, size: 24),
+            const SizedBox(height: 6),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showQuickReplacement() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('请选择需要申请补办的学生'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showFilterOptions() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('使用下方筛选器选择NFC卡状态'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Widget _buildScrollToTopButton() {
+    return FloatingActionButton(
+      onPressed: _scrollToTop,
+      backgroundColor: const Color(0xFF059669),
+      child: const Icon(
+        Icons.keyboard_arrow_up,
+        color: Colors.white,
+        size: 28,
+      ),
     );
   }
 
@@ -127,8 +270,9 @@ class _TeacherNfcManagementScreenState extends State<TeacherNfcManagementScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
-          _buildEnterpriseAppBar(),
+          _buildModernHeader(),
           SliverToBoxAdapter(
             child: _buildSearchAndFilter(),
           ),
@@ -200,6 +344,8 @@ class _TeacherNfcManagementScreenState extends State<TeacherNfcManagementScreen>
           ),
         ],
       ),
+      floatingActionButton: _showScrollToTop ? _buildScrollToTopButton() : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 

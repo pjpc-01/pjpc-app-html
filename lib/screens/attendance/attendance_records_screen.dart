@@ -19,6 +19,7 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('初始化考勤记录屏幕');
       Provider.of<AttendanceProvider>(context, listen: false).loadAttendanceRecords();
     });
   }
@@ -265,6 +266,8 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
                 }
 
                 final filteredRecords = _getFilteredRecords(attendanceProvider.attendanceRecords);
+                print('考勤记录数量: ${attendanceProvider.attendanceRecords.length}');
+                print('过滤后记录数量: ${filteredRecords.length}');
 
                 if (filteredRecords.isEmpty) {
                   return Center(
@@ -387,149 +390,142 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            // Type Icon
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: typeColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                typeIcon,
-                color: typeColor,
-                size: 24,
-              ),
-            ),
-
-            const SizedBox(width: 16),
-
-            // Record Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        studentName,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1E293B),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: typeColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          isCheckIn ? '签到' : '签退',
-                          style: TextStyle(
-                            color: typeColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '日期: $date',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF64748B),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '时间: $time',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF64748B),
-                    ),
-                  ),
-                  if (nfcCardId.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      'NFC: $nfcCardId',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF94A3B8),
-                      ),
-                    ),
-                  ],
-                  if (notes.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      '备注: $notes',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF94A3B8),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            // Time Badge
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+        children: [
+          // Main Record Info
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
               children: [
+                // Type Icon
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  width: 50,
+                  height: 50,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(8),
+                    color: typeColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text(
-                    _formatTime(created),
-                    style: const TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  child: Icon(
+                    typeIcon,
+                    color: typeColor,
+                    size: 24,
                   ),
                 ),
-                const SizedBox(height: 4),
-                PopupMenuButton<String>(
-                  onSelected: (value) => _handleRecordAction(value, record),
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
+
+                const SizedBox(width: 16),
+
+                // Record Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Icon(Icons.edit, color: Color(0xFF3B82F6)),
-                          SizedBox(width: 8),
-                          Text('编辑'),
+                          Text(
+                            studentName,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: typeColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              isCheckIn ? '签到' : '签退',
+                              style: TextStyle(
+                                color: typeColor,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '日期: $date',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: const Color(0xFF64748B),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '时间: $time',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: const Color(0xFF64748B),
+                        ),
+                      ),
+                      if (nfcCardId.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'NFC: $nfcCardId',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: const Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ],
+                      if (notes.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          '备注: $notes',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: const Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                // Time Badge
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _formatTime(created),
+                        style: const TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, color: Color(0xFFEF4444)),
-                          SizedBox(width: 8),
-                          Text('删除'),
-                        ],
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '已${isCheckIn ? '签到' : '签退'}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
-                  child: Icon(
-                    Icons.more_vert,
-                    color: Colors.grey[400],
-                    size: 16,
-                  ),
-                  tooltip: '更多操作',
                 ),
               ],
             ),
-          ],
+          ),
+          
+        ],
         ),
       ),
     );
@@ -555,18 +551,8 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
     }
   }
 
-  void _handleRecordAction(String action, dynamic record) {
-    switch (action) {
-      case 'edit':
-        _showEditRecordDialog(record);
-        break;
-      case 'delete':
-        _showDeleteConfirmDialog(record);
-        break;
-    }
-  }
-
   void _showEditRecordDialog(dynamic record) {
+    print('显示编辑对话框 - 学生: ${record.getStringValue('student_name')}');
     final studentName = record.getStringValue('student_name') ?? '';
     final type = record.getStringValue('type') ?? '';
     final date = record.getStringValue('date') ?? '';
@@ -646,6 +632,27 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
           ),
           ElevatedButton(
             onPressed: () {
+              // 验证输入
+              if (dateController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('请选择日期'),
+                    backgroundColor: Color(0xFFEF4444),
+                  ),
+                );
+                return;
+              }
+              
+              if (timeController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('请选择时间'),
+                    backgroundColor: Color(0xFFEF4444),
+                  ),
+                );
+                return;
+              }
+              
               Navigator.pop(context);
               _updateRecord(record, dateController.text, timeController.text, notesController.text);
             },
@@ -657,6 +664,7 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
   }
 
   void _showDeleteConfirmDialog(dynamic record) {
+    print('显示删除确认对话框 - 学生: ${record.getStringValue('student_name')}');
     final studentName = record.getStringValue('student_name') ?? '';
     final type = record.getStringValue('type') ?? '';
 
@@ -688,34 +696,71 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
   Future<void> _updateRecord(dynamic record, String date, String time, String notes) async {
     final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
     final type = record.getStringValue('type') ?? '';
+    final studentName = record.getStringValue('student_name') ?? '';
     
-    final updateData = {
-      'date': date,
-      'notes': notes,
-    };
-
-    if (type == 'check_in') {
-      updateData['check_in_time'] = time;
-    } else {
-      updateData['check_out_time'] = time;
-    }
-
-    final success = await attendanceProvider.updateAttendanceRecord(record.id, updateData);
+    // 显示加载状态
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
     
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('记录更新成功'),
-          backgroundColor: Color(0xFF10B981),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('更新失败，请重试'),
-          backgroundColor: Color(0xFFEF4444),
-        ),
-      );
+    try {
+      final updateData = {
+        'date': date,
+        'notes': notes,
+      };
+
+      if (type == 'check_in') {
+        updateData['check_in_time'] = time;
+      } else {
+        updateData['check_out_time'] = time;
+      }
+
+      final success = await attendanceProvider.updateAttendanceRecord(record.id, updateData);
+      
+      // 关闭加载对话框
+      if (mounted) Navigator.pop(context);
+      
+      if (success) {
+        // 刷新记录列表
+        await attendanceProvider.loadAttendanceRecords();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$studentName 的${type == 'check_in' ? '签到' : '签退'}记录更新成功'),
+              backgroundColor: const Color(0xFF10B981),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('更新失败: ${attendanceProvider.error ?? '未知错误'}'),
+              backgroundColor: const Color(0xFFEF4444),
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // 关闭加载对话框
+      if (mounted) Navigator.pop(context);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('更新失败: ${e.toString()}'),
+            backgroundColor: const Color(0xFFEF4444),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
     }
   }
 
@@ -724,22 +769,59 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
     final studentName = record.getStringValue('student_name') ?? '';
     final type = record.getStringValue('type') ?? '';
 
-    final success = await attendanceProvider.deleteAttendanceRecord(record.id);
-    
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$studentName 的${type == 'check_in' ? '签到' : '签退'}记录已删除'),
-          backgroundColor: const Color(0xFF10B981),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('删除失败，请重试'),
-          backgroundColor: Color(0xFFEF4444),
-        ),
-      );
+    // 显示加载状态
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      final success = await attendanceProvider.deleteAttendanceRecord(record.id);
+      
+      // 关闭加载对话框
+      if (mounted) Navigator.pop(context);
+      
+      if (success) {
+        // 刷新记录列表
+        await attendanceProvider.loadAttendanceRecords();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$studentName 的${type == 'check_in' ? '签到' : '签退'}记录已删除'),
+              backgroundColor: const Color(0xFF10B981),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('删除失败: ${attendanceProvider.error ?? '未知错误'}'),
+              backgroundColor: const Color(0xFFEF4444),
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // 关闭加载对话框
+      if (mounted) Navigator.pop(context);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('删除失败: ${e.toString()}'),
+            backgroundColor: const Color(0xFFEF4444),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
     }
   }
+
 }

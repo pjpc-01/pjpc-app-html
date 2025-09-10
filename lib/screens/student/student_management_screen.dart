@@ -26,8 +26,10 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
   List<String> _recentSearches = [];
   bool _showAnalytics = true;
   bool _showAdvancedFilters = false;
+  bool _showScrollToTop = false;
   
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   late TabController _tabController;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -35,7 +37,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -44,15 +46,43 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
     
+    // 设置滚动监听器
+    _scrollController.addListener(_onScroll);
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
         Provider.of<StudentProvider>(context, listen: false).loadStudents();
       _animationController.forward();
     });
   }
 
+  void _onScroll() {
+    if (_scrollController.offset > 200) {
+      if (!_showScrollToTop) {
+        setState(() {
+          _showScrollToTop = true;
+        });
+      }
+    } else {
+      if (_showScrollToTop) {
+        setState(() {
+          _showScrollToTop = false;
+        });
+      }
+    }
+  }
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     _tabController.dispose();
     _animationController.dispose();
     super.dispose();
@@ -65,88 +95,27 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: CustomScrollView(
+          controller: _scrollController,
         slivers: [
-            _buildEnterpriseAppBar(),
             _buildSmartHeader(),
-          _buildAnalyticsSection(),
             _buildTabSection(),
             _buildContentSection(),
         ],
+        ),
       ),
-      ),
+      floatingActionButton: _showScrollToTop ? _buildScrollToTopButton() : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
-  Widget _buildEnterpriseAppBar() {
-    return SliverAppBar(
-      expandedHeight: 120,
-      floating: false,
-      pinned: true,
-      backgroundColor: const Color(0xFF1E293B),
-        foregroundColor: Colors.white,
-      flexibleSpace: FlexibleSpaceBar(
-        title: const Text(
-          '学生智能管理中心',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF1E293B),
-                Color(0xFF334155),
-                Color(0xFF475569),
-              ],
-            ),
-          ),
-          child: Stack(
-            children: [
-              Positioned(
-                right: -50,
-                top: -50,
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: -30,
-                bottom: -30,
-                child: Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.05),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-        actions: [
-          IconButton(
-          icon: const Icon(Icons.refresh_rounded),
-          onPressed: () {
-            Provider.of<StudentProvider>(context, listen: false).loadStudents();
-          },
-        ),
-        IconButton(
-          icon: const Icon(Icons.settings_rounded),
-          onPressed: () => _showSettingsDialog(),
-        ),
-        const SizedBox(width: 8),
-      ],
+  Widget _buildScrollToTopButton() {
+    return FloatingActionButton(
+      onPressed: _scrollToTop,
+      backgroundColor: const Color(0xFF3B82F6),
+      foregroundColor: Colors.white,
+      elevation: 4,
+      mini: true,
+      child: const Icon(Icons.keyboard_arrow_up, size: 24),
     );
   }
 
@@ -156,64 +125,170 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
         margin: const EdgeInsets.all(16),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF3B82F6),
+              Color(0xFF1D4ED8),
+            ],
+          ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
+              color: const Color(0xFF3B82F6).withOpacity(0.3),
+              blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
-                    Icons.school_rounded,
-                    color: Color(0xFF3B82F6),
-                    size: 24,
-                  ),
-                  ),
-                  const SizedBox(width: 12),
-                const Text(
-                  '学生数据概览',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
+                    Icons.school,
+                    color: Colors.white,
+                    size: 28,
                   ),
                 ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '我的学生',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '快速管理您的学生信息',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
                   ),
-                  child: const Text(
-                    '实时同步',
-                    style: TextStyle(
-                      color: Color(0xFF10B981),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
+                ),
+                Consumer<StudentProvider>(
+                  builder: (context, studentProvider, child) {
+                    final totalStudents = studentProvider.students.length;
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '$totalStudents 名学生',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            _buildQuickStats(),
+            const SizedBox(height: 20),
+            _buildTeacherQuickActions(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTeacherQuickActions() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildActionButton(
+            '添加学生',
+            Icons.person_add,
+            const Color(0xFF10B981),
+            () => _addNewStudent(),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionButton(
+            '批量操作',
+            Icons.checklist,
+            const Color(0xFFF59E0B),
+            () => _showBulkOperations(),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionButton(
+            '导出名单',
+            Icons.download,
+            const Color(0xFF8B5CF6),
+            () => _exportStudentList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton(String title, IconData icon, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.white, size: 24),
+            const SizedBox(height: 6),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addNewStudent() {
+    // TODO: 实现添加学生功能
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddEditStudentScreen(),
+      ),
+    );
+  }
+
+  void _exportStudentList() {
+    // TODO: 实现导出学生名单功能
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('导出功能开发中...'),
+        duration: Duration(seconds: 2),
       ),
     );
   }
@@ -231,12 +306,12 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
         final avgAge = _calculateAverageAge(students);
 
         return Row(
-                children: [
+          children: [
             Expanded(
               child: _buildStatCard(
-                '总学生数',
+                '总学生',
                 totalStudents.toString(),
-                Icons.people_rounded,
+                Icons.people_outline,
                 const Color(0xFF3B82F6),
               ),
             ),
@@ -245,26 +320,8 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
               child: _buildStatCard(
                 '活跃学生',
                 activeStudents.toString(),
-                Icons.person_rounded,
+                Icons.person_outline,
                 const Color(0xFF10B981),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                '本月新增',
-                newStudentsThisMonth.toString(),
-                Icons.person_add_rounded,
-                const Color(0xFFF59E0B),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                '平均年龄',
-                '${avgAge.toStringAsFixed(1)}岁',
-                Icons.cake_rounded,
-                const Color(0xFF8B5CF6),
               ),
             ),
           ],
@@ -277,30 +334,32 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
       ),
-        child: Column(
-          children: [
+      child: Row(
+        children: [
           Icon(icon, color: color, size: 20),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF64748B),
-            ),
-            textAlign: TextAlign.center,
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF64748B),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -413,7 +472,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
   Widget _buildTabSection() {
     return SliverToBoxAdapter(
       child: Container(
-        margin: const EdgeInsets.all(16),
+        margin: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -435,20 +494,12 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
               indicatorWeight: 3,
               tabs: const [
                 Tab(
-                  icon: Icon(Icons.people_rounded),
-                  text: '全部学生',
+                  icon: Icon(Icons.people, size: 20),
+                  text: '学生列表',
                 ),
                 Tab(
-                  icon: Icon(Icons.person_rounded),
-                  text: '活跃学生',
-                ),
-                Tab(
-                  icon: Icon(Icons.person_add_rounded),
-                  text: '新生管理',
-                ),
-                Tab(
-                  icon: Icon(Icons.analytics_rounded),
-                  text: '数据分析',
+                  icon: Icon(Icons.favorite, size: 20),
+                  text: '重点关注',
                 ),
               ],
             ),
@@ -464,200 +515,70 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
+          // 智能搜索框
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: '🔍 搜索学生姓名、学号或班级...',
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF3B82F6)),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: Color(0xFF64748B)),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          // 快速筛选按钮
           Row(
             children: [
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: '智能搜索：姓名、学号、班级、家长姓名...',
-                      prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF64748B)),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear_rounded, color: Color(0xFF64748B)),
-                              onPressed: () {
-                                _searchController.clear();
-        setState(() {
-                                  _searchQuery = '';
-        });
-      },
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
-                    onChanged: (value) {
-        setState(() {
-                        _searchQuery = value;
-        });
-      },
-                  ),
+                child: _buildFilterChip(
+                  '全部学生',
+                  _selectedFilter == 'all',
+                  () => setState(() => _selectedFilter = 'all'),
                 ),
               ),
-              const SizedBox(width: 12),
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedFilter,
-                    onChanged: (value) {
-        setState(() {
-                        _selectedFilter = value!;
-        });
-      },
-                    items: const [
-                      DropdownMenuItem(value: 'all', child: Text('全部状态')),
-                      DropdownMenuItem(value: 'active', child: Text('活跃')),
-                      DropdownMenuItem(value: 'inactive', child: Text('非活跃')),
-                      DropdownMenuItem(value: 'graduated', child: Text('已毕业')),
-                    ],
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    style: const TextStyle(color: Color(0xFF1E293B)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-          children: [
+              const SizedBox(width: 8),
               Expanded(
-                child: Consumer<StudentProvider>(
-                  builder: (context, studentProvider, child) {
-                    final centers = studentProvider.centers;
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedCenter,
-                          onChanged: (value) {
-        setState(() {
-                              _selectedCenter = value!;
-        });
-      },
-                          items: [
-                            const DropdownMenuItem(value: '全部中心', child: Text('全部中心')),
-                            ...centers.map((center) => DropdownMenuItem(
-                              value: center,
-                              child: Text(center),
-                            )),
-                          ],
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          style: const TextStyle(color: Color(0xFF1E293B)),
-                        ),
-                      ),
-                    );
-                  },
+                child: _buildFilterChip(
+                  '活跃学生',
+                  _selectedFilter == 'active',
+                  () => setState(() => _selectedFilter = 'active'),
                 ),
               ),
-              const SizedBox(width: 12),
-          Expanded(
-                child: Consumer<StudentProvider>(
-                  builder: (context, studentProvider, child) {
-                    final standards = studentProvider.standards;
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedStandard,
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedStandard = value!;
-                            });
-                          },
-                          items: [
-                            const DropdownMenuItem(value: '全部班级', child: Text('全部班级')),
-                            ...standards.map((standard) => DropdownMenuItem(
-                              value: standard,
-                              child: Text(standard),
-                            )),
-                          ],
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          style: const TextStyle(color: Color(0xFF1E293B)),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _sortBy,
-                    onChanged: (value) {
-                setState(() {
-                        _sortBy = value!;
-                });
-              },
-                    items: const [
-                      DropdownMenuItem(value: 'name', child: Text('按姓名')),
-                      DropdownMenuItem(value: 'age', child: Text('按年龄')),
-                      DropdownMenuItem(value: 'created', child: Text('按注册时间')),
-                      DropdownMenuItem(value: 'standard', child: Text('按班级')),
-                    ],
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    style: const TextStyle(color: Color(0xFF1E293B)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
+              const SizedBox(width: 8),
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                setState(() {
-                      _showAdvancedFilters = !_showAdvancedFilters;
-                });
-              },
-                  icon: Icon(
-                    _showAdvancedFilters ? Icons.filter_list_off_rounded : Icons.filter_list_rounded,
-                    size: 18,
-                  ),
-                  label: Text(_showAdvancedFilters ? '隐藏高级筛选' : '高级筛选'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF3B82F6),
-                    side: const BorderSide(color: Color(0xFF3B82F6)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _selectedStudents.isNotEmpty ? _showBulkOperations : null,
-                  icon: const Icon(Icons.checklist_rounded, size: 18),
-                  label: Text('批量操作 (${_selectedStudents.length})'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
+                child: _buildFilterChip(
+                  '我的班级',
+                  _selectedFilter == 'my_class',
+                  () => setState(() => _selectedFilter = 'my_class'),
                 ),
               ),
             ],
@@ -667,16 +588,240 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
     );
   }
 
+  Widget _buildFilterChip(String label, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : const Color(0xFF64748B),
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  String _getFilterDescription() {
+    List<String> filters = [];
+    
+    if (_searchQuery.isNotEmpty) {
+      filters.add('搜索"$_searchQuery"');
+    }
+    if (_selectedFilter != 'all') {
+      String statusText = '';
+      switch (_selectedFilter) {
+        case 'active': statusText = '活跃'; break;
+        case 'inactive': statusText = '非活跃'; break;
+        case 'graduated': statusText = '已毕业'; break;
+      }
+      filters.add('状态：$statusText');
+    }
+    if (_selectedCenter != '全部中心') {
+      filters.add('中心：$_selectedCenter');
+    }
+    if (_selectedStandard != '全部班级') {
+      filters.add('班级：$_selectedStandard');
+    }
+    
+    return filters.isEmpty ? '无筛选条件' : filters.join('，');
+  }
+
+  void _clearAllFilters() {
+    setState(() {
+      _searchQuery = '';
+      _selectedFilter = 'all';
+      _selectedCenter = '全部中心';
+      _selectedStandard = '全部班级';
+      _sortBy = 'name';
+    });
+    _searchController.clear();
+  }
+
   Widget _buildContentSection() {
     return SliverFillRemaining(
       child: TabBarView(
         controller: _tabController,
         children: [
           _buildAllStudents(),
-          _buildActiveStudents(),
-          _buildNewStudents(),
-          _buildAnalyticsView(),
+          _buildFocusStudents(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFocusStudents() {
+    return Consumer<StudentProvider>(
+      builder: (context, studentProvider, child) {
+        if (studentProvider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final students = _getFilteredStudents(studentProvider.students);
+        // 重点关注的学生（可以根据需要调整筛选条件）
+        final focusStudents = students.where((s) {
+          final status = s.getStringValue('status');
+          final createdAt = DateTime.tryParse(s.getStringValue('created') ?? '');
+          final isNewStudent = createdAt != null && 
+              DateTime.now().difference(createdAt).inDays < 30;
+          return status == 'active' && isNewStudent;
+        }).toList();
+
+        if (focusStudents.isEmpty) {
+          return _buildEmptyState(
+            icon: Icons.favorite_border,
+            title: '暂无重点关注学生',
+            subtitle: '新注册或需要特别关注的学生会显示在这里',
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            await studentProvider.loadStudents();
+          },
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: focusStudents.length,
+            itemBuilder: (context, index) {
+              return _buildFocusStudentCard(focusStudents[index], studentProvider);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFocusStudentCard(dynamic student, StudentProvider studentProvider) {
+    final studentName = student.getStringValue('student_name') ?? '未知学生';
+    final studentId = student.getStringValue('student_id') ?? '';
+    final standard = student.getStringValue('standard') ?? '未知班级';
+    final status = student.getStringValue('status') ?? 'active';
+    final createdAt = DateTime.tryParse(student.getStringValue('created') ?? '');
+    final isNewStudent = createdAt != null && 
+        DateTime.now().difference(createdAt).inDays < 30;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: isNewStudent ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+          width: 2,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: isNewStudent ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                  child: Text(
+                    studentName.isNotEmpty ? studentName[0] : '?',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        studentName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      Text(
+                        '学号：$studentId | $standard',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isNewStudent ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    isNewStudent ? '新生' : '需关注',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _viewStudentProfile(student),
+                    icon: const Icon(Icons.visibility, size: 16),
+                    label: const Text('查看详情'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF3B82F6),
+                      side: const BorderSide(color: Color(0xFF3B82F6)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _editStudent(student),
+                    icon: const Icon(Icons.edit, size: 16),
+                    label: const Text('编辑'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -945,38 +1090,46 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
               ),
               const SizedBox(height: 16),
               Row(
-                        children: [
+                children: [
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _viewStudentProfile(student),
-                      icon: const Icon(Icons.visibility_rounded, size: 16),
-                      label: const Text('查看详情'),
+                      icon: const Icon(Icons.visibility_rounded, size: 14),
+                      label: const Text(
+                        '查看详情',
+                        style: TextStyle(fontSize: 12),
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF3B82F6),
                         side: const BorderSide(color: Color(0xFF3B82F6)),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
+                        padding: const EdgeInsets.symmetric(vertical: 6),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                      Expanded(
+                  const SizedBox(width: 6),
+                  Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () => _editStudent(student),
-                      icon: const Icon(Icons.edit_rounded, size: 16),
-                      label: const Text('编辑'),
+                      icon: const Icon(Icons.edit_rounded, size: 14),
+                      label: const Text(
+                        '编辑',
+                        style: TextStyle(fontSize: 12),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF10B981),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
+                        padding: const EdgeInsets.symmetric(vertical: 6),
                       ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
+                ],
+              ),
             ],
           ),
         ),

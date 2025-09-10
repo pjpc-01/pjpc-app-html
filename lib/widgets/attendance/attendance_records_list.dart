@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
+import '../../providers/attendance_provider.dart';
 
 class AttendanceRecordsList extends StatelessWidget {
   final List<dynamic> records;
@@ -178,13 +180,13 @@ class AttendanceRecordsList extends StatelessWidget {
                     _buildActionButton(
                       icon: Icons.edit,
                       label: '编辑',
-                      onTap: () => _editRecord(record),
+                      onTap: () => _editRecord(context, record),
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     _buildActionButton(
                       icon: Icons.delete_outline,
                       label: '删除',
-                      onTap: () => _deleteRecord(record),
+                      onTap: () => _deleteRecord(context, record),
                       isDestructive: true,
                     ),
                     const Spacer(),
@@ -404,12 +406,318 @@ class AttendanceRecordsList extends StatelessWidget {
     );
   }
 
-  void _editRecord(dynamic record) {
-    // 编辑记录
+  void _editRecord(BuildContext context, dynamic record) {
+    // 处理RecordModel和Map两种类型
+    String getValue(String key) {
+      if (record is Map<String, dynamic>) {
+        return record[key]?.toString() ?? '';
+      } else {
+        return record.getStringValue(key) ?? '';
+      }
+    }
+    
+    final studentName = getValue('student_name');
+    final type = getValue('type');
+    final date = getValue('date');
+    final checkInTime = getValue('check_in_time');
+    final checkOutTime = getValue('check_out_time');
+    final notes = getValue('notes');
+
+    final dateController = TextEditingController(text: date);
+    final timeController = TextEditingController(text: type == 'check_in' ? checkInTime : checkOutTime);
+    final notesController = TextEditingController(text: notes);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('编辑${type == 'check_in' ? '签到' : '签退'}记录'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('学生: $studentName'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: dateController,
+                decoration: const InputDecoration(
+                  labelText: '日期',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.calendar_today),
+                ),
+                readOnly: true,
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.tryParse(dateController.text) ?? DateTime.now(),
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime.now(),
+                  );
+                  if (date != null) {
+                    dateController.text = date.toIso8601String().split('T')[0];
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: timeController,
+                decoration: const InputDecoration(
+                  labelText: '时间',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.access_time),
+                ),
+                readOnly: true,
+                onTap: () async {
+                  final time = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.fromDateTime(
+                      DateTime.tryParse('2023-01-01 ${timeController.text}') ?? DateTime.now(),
+                    ),
+                  );
+                  if (time != null) {
+                    timeController.text = '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: notesController,
+                decoration: const InputDecoration(
+                  labelText: '备注',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.note),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              // 验证输入
+              if (dateController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('请选择日期'),
+                    backgroundColor: Color(0xFFEF4444),
+                  ),
+                );
+                return;
+              }
+              
+              if (timeController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('请选择时间'),
+                    backgroundColor: Color(0xFFEF4444),
+                  ),
+                );
+                return;
+              }
+              
+              Navigator.pop(context);
+              await _updateRecord(context, record, dateController.text, timeController.text, notesController.text);
+            },
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
   }
 
-  void _deleteRecord(dynamic record) {
-    // 删除记录
+  void _deleteRecord(BuildContext context, dynamic record) {
+    // 处理RecordModel和Map两种类型
+    String getValue(String key) {
+      if (record is Map<String, dynamic>) {
+        return record[key]?.toString() ?? '';
+      } else {
+        return record.getStringValue(key) ?? '';
+      }
+    }
+    
+    final studentName = getValue('student_name');
+    final type = getValue('type');
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认删除'),
+        content: Text('确定要删除 $studentName 的${type == 'check_in' ? '签到' : '签退'}记录吗？\n\n此操作无法撤销。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _performDelete(context, record);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+            ),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _updateRecord(BuildContext context, dynamic record, String date, String time, String notes) async {
+    final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+    
+    // 处理RecordModel和Map两种类型
+    String getValue(String key) {
+      if (record is Map<String, dynamic>) {
+        return record[key]?.toString() ?? '';
+      } else {
+        return record.getStringValue(key) ?? '';
+      }
+    }
+    
+    final type = getValue('type');
+    final studentName = getValue('student_name');
+    final recordId = record is Map<String, dynamic> ? record['id'] : record.id;
+    
+    // 显示加载状态
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+    
+    try {
+      final updateData = {
+        'date': date,
+        'notes': notes,
+      };
+
+      if (type == 'check_in') {
+        updateData['check_in_time'] = time;
+      } else {
+        updateData['check_out_time'] = time;
+      }
+
+      final success = await attendanceProvider.updateAttendanceRecord(recordId, updateData);
+      
+      // 关闭加载对话框
+      if (context.mounted) Navigator.pop(context);
+      
+      if (success) {
+        // 刷新记录列表
+        await attendanceProvider.loadAttendanceRecords();
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$studentName 的${type == 'check_in' ? '签到' : '签退'}记录更新成功'),
+              backgroundColor: const Color(0xFF10B981),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('更新失败: ${attendanceProvider.error ?? '未知错误'}'),
+              backgroundColor: const Color(0xFFEF4444),
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // 关闭加载对话框
+      if (context.mounted) Navigator.pop(context);
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('更新失败: ${e.toString()}'),
+            backgroundColor: const Color(0xFFEF4444),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _performDelete(BuildContext context, dynamic record) async {
+    final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+    
+    // 处理RecordModel和Map两种类型
+    String getValue(String key) {
+      if (record is Map<String, dynamic>) {
+        return record[key]?.toString() ?? '';
+      } else {
+        return record.getStringValue(key) ?? '';
+      }
+    }
+    
+    final studentName = getValue('student_name');
+    final type = getValue('type');
+    final recordId = record is Map<String, dynamic> ? record['id'] : record.id;
+
+    // 显示加载状态
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      final success = await attendanceProvider.deleteAttendanceRecord(recordId);
+      
+      // 关闭加载对话框
+      if (context.mounted) Navigator.pop(context);
+      
+      if (success) {
+        // 刷新记录列表
+        await attendanceProvider.loadAttendanceRecords();
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$studentName 的${type == 'check_in' ? '签到' : '签退'}记录已删除'),
+              backgroundColor: const Color(0xFF10B981),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('删除失败: ${attendanceProvider.error ?? '未知错误'}'),
+              backgroundColor: const Color(0xFFEF4444),
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // 关闭加载对话框
+      if (context.mounted) Navigator.pop(context);
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('删除失败: ${e.toString()}'),
+            backgroundColor: const Color(0xFFEF4444),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildDetailRow(String label, String value) {

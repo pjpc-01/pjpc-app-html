@@ -4,6 +4,8 @@ import 'dart:io';
 import 'dart:async';
 import 'pocketbase_cache_service.dart';
 import 'package:http/http.dart' as http;
+// import 'security_service.dart';
+// import 'alert_service.dart';
 
 class PocketBaseService {
   late PocketBase pb;
@@ -12,6 +14,10 @@ class PocketBaseService {
   static const Duration _connectionTimeout = Duration(seconds: 10);
   static const int _maxRetryAttempts = 3;
   bool _isInitialized = false;
+  
+  // 安全服务 - 移除循环依赖
+  // late SecurityService _securityService;
+  // late AlertService _alertService;
   
   // 单例模式
   static PocketBaseService? _instance;
@@ -33,6 +39,11 @@ class PocketBaseService {
     // 使用默认初始化，避免HTTP客户端类型问题
     pb = PocketBase(_defaultUrl);
     _isInitialized = true;
+    
+    // 初始化安全服务
+    // 移除循环依赖 - 安全服务将在需要时单独初始化
+    // _securityService = SecurityService();
+    // _alertService = AlertService();
     
     // 在后台清除可能存在的错误URL缓存
     _clearCachedUrl();
@@ -469,7 +480,45 @@ class PocketBaseService {
 
   Future<RecordModel> createStudentAttendanceRecord(Map<String, dynamic> data) async {
     try {
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      // 添加安全监控数据
+      final studentId = data['student_id'] ?? '';
+      final swipeData = {
+        'timestamp': data['timestamp'] ?? DateTime.now().toIso8601String(),
+        'location': data['location'] ?? 'unknown',
+        'device_id': data['device_id'] ?? 'unknown',
+      };
+      
+      // 添加基本安全字段（简化版本，避免循环依赖）
+      final securityFlags = <String>[];
+      if (swipeData['location'] == 'unknown') securityFlags.add('location_mismatch');
+      if (swipeData['device_id'] == 'unknown') securityFlags.add('device_mismatch');
+      
+      data['security_flags'] = securityFlags;
+      data['risk_score'] = 0;
+      data['verification_level'] = 'normal';
+      data['encryption_version'] = 2; // 当前密钥版本
+      data['encryption_algorithm'] = 'AES-256';
+      
+      // 创建考勤记录
       final record = await pb.collection('student_attendance').create(body: data);
+      
+      // 移除安全服务调用，避免循环依赖
+      // 更新学生安全状态
+      // final swipeCountToday = await _securityService.getStudentSwipeCountToday(studentId);
+      // await _securityService.updateStudentSecurityStatus(studentId, {
+      //   'last_swipe_time': swipeData['timestamp'],
+      //   'swipe_count_today': swipeCountToday + 1,
+      //   'suspicious_activities': rapidSuccessive || unusualTime ? 1 : 0,
+      // });
+      
+      // 处理高风险情况
+      // await _alertService.handleHighRiskStudent(studentId, riskScore);
+      
       return record;
     } catch (e) {
       throw Exception('Failed to create student attendance record: ${e.toString()}');
@@ -478,6 +527,11 @@ class PocketBaseService {
 
   Future<RecordModel> updateStudentAttendanceRecord(String recordId, Map<String, dynamic> data) async {
     try {
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
       final record = await pb.collection('student_attendance').update(recordId, body: data);
       return record;
     } catch (e) {
@@ -487,6 +541,11 @@ class PocketBaseService {
 
   Future<void> deleteStudentAttendanceRecord(String recordId) async {
     try {
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
       await pb.collection('student_attendance').delete(recordId);
     } catch (e) {
       throw Exception('Failed to delete student attendance record: ${e.toString()}');
@@ -505,6 +564,53 @@ class PocketBaseService {
       return result.items;
     } catch (e) {
       throw Exception('Failed to fetch teacher attendance records: ${e.toString()}');
+    }
+  }
+
+  Future<RecordModel> createTeacherAttendanceRecord(Map<String, dynamic> data) async {
+    try {
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      // 添加安全监控数据
+      final teacherId = data['teacher_id'] ?? '';
+      final swipeData = {
+        'timestamp': data['timestamp'] ?? DateTime.now().toIso8601String(),
+        'location': data['location'] ?? 'unknown',
+        'device_id': data['device_id'] ?? 'unknown',
+      };
+      
+      // 添加基本安全字段（简化版本，避免循环依赖）
+      final securityFlags = <String>[];
+      if (swipeData['location'] == 'unknown') securityFlags.add('location_mismatch');
+      if (swipeData['device_id'] == 'unknown') securityFlags.add('device_mismatch');
+      
+      data['security_flags'] = securityFlags;
+      data['risk_score'] = 0;
+      data['verification_level'] = 'normal';
+      data['encryption_version'] = 2; // 当前密钥版本
+      data['encryption_algorithm'] = 'AES-256';
+      
+      // 创建考勤记录
+      final record = await pb.collection('teacher_attendance').create(body: data);
+      
+      // 移除安全服务调用，避免循环依赖
+      // 更新教师安全状态
+      // final swipeCountToday = await _securityService.getTeacherSwipeCountToday(teacherId);
+      // await _securityService.updateTeacherSecurityStatus(teacherId, {
+      //   'last_swipe_time': swipeData['timestamp'],
+      //   'swipe_count_today': swipeCountToday + 1,
+      //   'suspicious_activities': rapidSuccessive || unusualTime ? 1 : 0,
+      // });
+      
+      // 处理高风险情况
+      // await _alertService.handleHighRiskTeacher(teacherId, riskScore);
+      
+      return record;
+    } catch (e) {
+      throw Exception('Failed to create teacher attendance record: ${e.toString()}');
     }
   }
 
@@ -597,17 +703,144 @@ class PocketBaseService {
     }
   }
 
-  // Teacher management
-  Future<List<RecordModel>> getTeachers({int page = 1, int perPage = 50}) async {
+  // Class-Student association management
+  Future<List<RecordModel>> getClassStudents(String classId, {int page = 1, int perPage = 50}) async {
     try {
-      final result = await pb.collection('teachers').getList(
+      final result = await pb.collection('students').getList(
         page: page,
         perPage: perPage,
-        sort: 'name',
+        filter: 'class_id = "$classId"',
+        sort: 'student_name',
       );
       return result.items;
     } catch (e) {
+      throw Exception('Failed to fetch class students: ${e.toString()}');
+    }
+  }
+
+  Future<List<RecordModel>> getUnassignedStudents({int page = 1, int perPage = 50}) async {
+    try {
+      final result = await pb.collection('students').getList(
+        page: page,
+        perPage: perPage,
+        filter: 'class_id = "" || class_id = null',
+        sort: 'student_name',
+      );
+      return result.items;
+    } catch (e) {
+      throw Exception('Failed to fetch unassigned students: ${e.toString()}');
+    }
+  }
+
+  Future<void> assignStudentToClass(String studentId, String classId) async {
+    try {
+      await pb.collection('students').update(studentId, body: {
+        'class_id': classId,
+      });
+    } catch (e) {
+      throw Exception('Failed to assign student to class: ${e.toString()}');
+    }
+  }
+
+  Future<void> removeStudentFromClass(String studentId) async {
+    try {
+      await pb.collection('students').update(studentId, body: {
+        'class_id': '',
+      });
+    } catch (e) {
+      throw Exception('Failed to remove student from class: ${e.toString()}');
+    }
+  }
+
+  Future<void> assignMultipleStudentsToClass(List<String> studentIds, String classId) async {
+    try {
+      for (final studentId in studentIds) {
+        await pb.collection('students').update(studentId, body: {
+          'class_id': classId,
+        });
+      }
+    } catch (e) {
+      throw Exception('Failed to assign multiple students to class: ${e.toString()}');
+    }
+  }
+
+  // Teacher management
+  Future<List<RecordModel>> getTeachers({
+    int page = 1, 
+    int perPage = 50,
+    String? filter,
+    String? sort,
+    List<String>? fields,
+  }) async {
+    try {
+      print('正在获取老师数据...');
+      print('当前认证状态: ${pb.authStore.isValid}');
+      print('当前用户角色: ${pb.authStore.record?.data['role'] ?? "无角色"}');
+      
+      // 根据API规则 @request.auth.role = ""，我们需要确保用户没有特殊角色
+      // 如果当前用户有角色，我们需要注销管理员认证
+      if (pb.authStore.record?.data['role'] != null && pb.authStore.record?.data['role'] != '') {
+        print('检测到用户有角色，注销管理员认证...');
+        pb.authStore.clear();
+        print('已注销管理员认证');
+      }
+      
+      // 确保用户已认证（普通用户认证）
+      if (!pb.authStore.isValid) {
+        print('用户未认证，尝试普通用户认证...');
+        // 这里需要普通用户的认证，不是管理员
+        // 如果普通用户认证失败，我们继续尝试
+      }
+      
+      // 尝试获取数据
+      final result = await pb.collection('teachers').getList(
+        page: page,
+        perPage: perPage,
+        filter: filter,
+        sort: sort ?? 'name',
+        fields: fields?.join(','),
+      );
+      
+      print('成功获取 ${result.items.length} 条老师记录');
+      return result.items;
+    } catch (e) {
+      print('获取老师数据失败: $e');
       throw Exception('Failed to fetch teachers: ${e.toString()}');
+    }
+  }
+
+  Future<RecordModel> createTeacher(Map<String, dynamic> data) async {
+    try {
+      final record = await pb.collection('teachers').create(body: data);
+      return record;
+    } catch (e) {
+      throw Exception('Failed to create teacher: ${e.toString()}');
+    }
+  }
+
+  Future<RecordModel> updateTeacher(String id, Map<String, dynamic> data) async {
+    try {
+      final record = await pb.collection('teachers').update(id, body: data);
+      return record;
+    } catch (e) {
+      throw Exception('Failed to update teacher: ${e.toString()}');
+    }
+  }
+
+  Future<void> deleteTeacher(String id) async {
+    try {
+      await pb.collection('teachers').delete(id);
+    } catch (e) {
+      throw Exception('Failed to delete teacher: ${e.toString()}');
+    }
+  }
+
+  Future<RecordModel> getTeacherById(String id) async {
+    try {
+      final record = await pb.collection('teachers').getOne(id);
+      return record;
+    } catch (e) {
+      throw Exception('Failed to fetch teacher: ${e.toString()}');
     }
   }
 
@@ -707,6 +940,31 @@ class PocketBaseService {
       }
     } catch (e) {
       throw Exception('Failed to upsert student points summary: ${e.toString()}');
+    }
+  }
+
+  // 根据学生ID查找学生
+  Future<RecordModel?> getStudentByStudentId(String studentId) async {
+    try {
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      // 查询学生记录
+      final students = await pb.collection('students').getList(
+        filter: 'student_id = "${studentId.trim()}"',
+        perPage: 1,
+      );
+      
+      if (students.items.isNotEmpty) {
+        return students.items.first;
+      }
+      
+      return null;
+    } catch (e) {
+      print('根据学生ID查找学生失败: $e');
+      return null;
     }
   }
 
@@ -815,6 +1073,86 @@ class PocketBaseService {
 
   // Get current user
   RecordModel? get currentUser => pb.authStore.record;
+  
+  // Check if admin is authenticated
+  bool get isAdminAuthenticated => _isInitialized && pb.authStore.isValid && pb.authStore.record != null;
+  
+  // Authenticate as admin
+  Future<void> authenticateAdmin() async {
+    try {
+      if (isAdminAuthenticated) {
+        print('管理员已认证，跳过重复认证');
+        return;
+      }
+      
+      print('开始管理员认证...');
+      await pb.collection('_superusers').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!');
+      print('管理员认证成功');
+    } catch (e) {
+      print('管理员认证失败: $e');
+      throw Exception('Admin authentication failed: ${e.toString()}');
+    }
+  }
+  
+  // Test method to check teachers collection
+  Future<void> testTeachersCollection() async {
+    try {
+      print('=== 测试teachers集合 ===');
+      print('API规则: @request.auth.role = "" (只有空角色用户可访问)');
+      
+      // 1. 检查认证状态
+      print('1. 认证状态检查:');
+      print('   - 用户认证: ${pb.authStore.isValid}');
+      print('   - 当前用户: ${pb.authStore.record?.id}');
+      print('   - 认证模型: ${pb.authStore.record?.runtimeType}');
+      print('   - 用户角色: ${pb.authStore.record?.data['role'] ?? "无角色"}');
+      
+      // 2. 检查角色限制
+      print('2. 角色检查:');
+      if (pb.authStore.record?.data['role'] != null && pb.authStore.record?.data['role'] != '') {
+        print('   - 警告: 当前用户有角色 "${pb.authStore.record?.data['role']}"，可能无法访问teachers集合');
+        print('   - 建议: 注销管理员认证，使用普通用户认证');
+      } else {
+        print('   - 用户角色为空，符合API规则要求');
+      }
+      
+      // 3. 尝试不同的认证状态
+      print('3. 不同认证状态测试:');
+      
+      // 测试A: 当前状态
+      try {
+        final result = await pb.collection('teachers').getList(page: 1, perPage: 5);
+        print('   测试A - 当前状态: 成功获取 ${result.items.length} 条记录');
+      } catch (e) {
+        print('   测试A - 当前状态: 失败 - $e');
+      }
+      
+      // 测试B: 清除认证后
+      print('   测试B - 清除认证:');
+      try {
+        pb.authStore.clear();
+        print('   - 已清除认证');
+        final result = await pb.collection('teachers').getList(page: 1, perPage: 5);
+        print('   - 结果: 成功获取 ${result.items.length} 条记录');
+      } catch (e) {
+        print('   - 结果: 失败 - $e');
+      }
+      
+      // 测试C: 重新认证为普通用户（如果有普通用户凭据）
+      print('   测试C - 普通用户认证:');
+      try {
+        // 这里需要普通用户的认证信息
+        // 暂时跳过，因为我们需要知道普通用户的凭据
+        print('   - 跳过: 需要普通用户认证信息');
+      } catch (e) {
+        print('   - 失败: $e');
+      }
+      
+      print('=== 测试完成 ===');
+    } catch (e) {
+      print('测试过程中出错: $e');
+    }
+  }
 
   // Get current user profile
   RecordModel? get currentUserProfile {

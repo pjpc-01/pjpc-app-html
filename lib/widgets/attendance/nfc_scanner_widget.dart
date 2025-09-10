@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'package:provider/provider.dart';
+import 'package:pocketbase/pocketbase.dart';
 import '../../providers/attendance_provider.dart';
 import '../../services/pocketbase_service.dart';
+import '../../services/encryption_service.dart';
 import '../../theme/app_theme.dart';
 
 class NFCScannerWidget extends StatefulWidget {
@@ -19,6 +21,7 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
   late AnimationController _pulseController;
   late AnimationController _scanController;
   late Animation<double> _pulseAnimation;
+  final EncryptionService _encryptionService = EncryptionService();
   late Animation<double> _scanAnimation;
 
   @override
@@ -345,27 +348,61 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
 
   Future<void> _processNFCTag(dynamic tag) async {
     try {
-      // 1. 读取 NFC 得到 URL
-      final scannedUrl = await _extractUrlFromNfcTag(tag);
-      if (scannedUrl == null) {
-        _updateStatus('NFC卡中没有找到有效的URL', isError: true);
+      // 1. 读取 NFC 数据
+      final nfcData = await _extractDataFromNfcTag(tag);
+      if (nfcData == null || nfcData.isEmpty) {
+        _updateStatus('NFC卡中没有找到有效数据', isError: true);
         _stopScanning();
         return;
       }
 
+      _updateStatus('正在处理NFC数据...', isError: false);
+
+      // 2. 尝试解密NFC数据
+      String studentId = '';
+      bool isEncrypted = false;
+      
+      try {
+        // 检查是否是加密数据（格式: "encryptedData:salt"）
+        if (nfcData.contains(':')) {
+          final parts = nfcData.split(':');
+          if (parts.length == 2) {
+            studentId = _encryptionService.decryptNFCData(parts[0], parts[1]);
+            isEncrypted = true;
+          }
+        } else if (nfcData.contains('docs.google.com/forms') || nfcData.startsWith('http')) {
+          // URL格式（向后兼容）
+          studentId = nfcData;
+        } else {
+          // 可能是未加密的学生ID
+          studentId = nfcData;
+        }
+      } catch (e) {
+        // 解密失败，尝试作为普通数据使用
+        studentId = nfcData;
+        print('解密失败，使用原始数据: $e');
+      }
+
       _updateStatus('正在查找学生信息...', isError: false);
 
-      // 2. 查询 PocketBase 的 students 集合
-      final student = await PocketBaseService.instance.getStudentByNfcUrl(scannedUrl);
+      // 3. 根据数据类型查找学生
+      RecordModel? student;
+      if (isEncrypted || (!studentId.startsWith('http') && !studentId.contains('docs.google.com'))) {
+        // 使用学生ID查找
+        student = await PocketBaseService.instance.getStudentByStudentId(studentId);
+      } else {
+        // 使用URL查找（向后兼容）
+        student = await PocketBaseService.instance.getStudentByNfcUrl(studentId);
+      }
 
       if (student == null) {
-        _updateStatus('未找到对应的学生，请检查NFC卡中的URL是否正确', isError: true);
+        _updateStatus('未找到对应的学生，请检查NFC卡数据是否正确', isError: true);
         _stopScanning();
         return;
       }
 
       // 获取学生ID
-      final studentId = student.getStringValue("student_id") ?? 
+      final studentIdFromRecord = student.getStringValue("student_id") ?? 
                        student.getStringValue("studentId") ?? 
                        student.getStringValue("id");
       final studentName = student.getStringValue("student_name");
@@ -381,7 +418,7 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
       final teacherName = currentUser?.getStringValue("name") ?? currentUser?.getStringValue("email");
 
       await PocketBaseService.instance.createAttendanceRecord({
-        "student_id": studentId,
+        "student_id": studentIdFromRecord,
         "student_name": student.getStringValue("student_name"),
         "center": student.getStringValue("center"),
         "branch_name": student.getStringValue("branch_name"),
@@ -397,6 +434,40 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
     } catch (e) {
       _updateStatus('处理失败: $e', isError: true);
       _stopScanning();
+    }
+  }
+
+  // 从NFC标签提取数据（支持加密和URL格式）
+  Future<String?> _extractDataFromNfcTag(dynamic tag) async {
+    try {
+      if (tag.data is Map) {
+        final data = tag.data as Map;
+        // 尝试不同的数据格式
+        if (data.containsKey('ndef')) {
+          // NDEF格式
+          final ndefData = data['ndef'];
+          if (ndefData is Map && ndefData.containsKey('records')) {
+            final records = ndefData['records'] as List;
+            if (records.isNotEmpty) {
+              final record = records.first;
+              if (record is Map && record.containsKey('payload')) {
+                final payload = record['payload'] as List<int>;
+                return String.fromCharCodes(payload);
+              }
+            }
+          }
+        } else if (data.containsKey('text')) {
+          // 文本格式
+          return data['text'] as String;
+        } else if (data.containsKey('url')) {
+          // URL格式
+          return data['url'] as String;
+        }
+      }
+      return null;
+    } catch (e) {
+      print('提取NFC数据失败: $e');
+      return null;
     }
   }
 

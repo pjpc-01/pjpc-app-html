@@ -6,10 +6,12 @@ import 'providers/student_provider.dart';
 import 'providers/finance_provider.dart';
 import 'providers/attendance_provider.dart';
 import 'providers/payment_provider.dart';
-import 'providers/class_provider.dart';
+import 'providers/teacher_provider.dart';
 import 'providers/points_provider.dart';
 import 'providers/nfc_card_provider.dart';
 import 'screens/splash_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/home/home_screen.dart';
 import 'services/pocketbase_service.dart';
 import 'services/network_service.dart';
 import 'services/realtime_service.dart';
@@ -52,17 +54,66 @@ class MyApp extends StatelessWidget {
               previous ?? AttendanceProvider(pocketBaseService: pocketBaseService),
         ),
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
-        ChangeNotifierProvider(create: (_) => ClassProvider()),
+        ChangeNotifierProvider(create: (_) => TeacherProvider()),
         ChangeNotifierProvider(create: (_) => PointsProvider()),
         ChangeNotifierProvider(create: (_) => NfcCardProvider()),
       ],
-      child: MaterialApp(
-        title: 'PJPC School Management',
-        theme: AppTheme.lightTheme,
-        themeMode: ThemeMode.light,
-        home: const SplashScreen(),
-        debugShowCheckedModeBanner: false,
+      child: Consumer<AuthProvider>(
+        builder: (context, authProvider, child) {
+          return MaterialApp(
+            title: '温馨小屋 - 安亲补习中心',
+            theme: AppTheme.lightTheme,
+            themeMode: ThemeMode.light,
+            home: const AuthWrapper(),
+            debugShowCheckedModeBanner: false,
+          );
+        },
       ),
+    );
+  }
+}
+
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 延迟初始化，确保所有Provider都已准备好
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        _isInitialized = true;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return const SplashScreen();
+    }
+
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        // 如果正在加载，显示启动屏幕
+        if (authProvider.isLoading) {
+          return const SplashScreen();
+        }
+
+        // 根据认证状态决定显示哪个页面
+        if (authProvider.isAuthenticated) {
+          return const HomeScreen();
+        } else {
+          return const LoginScreen();
+        }
+      },
     );
   }
 }

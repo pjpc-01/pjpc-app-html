@@ -8,6 +8,7 @@ import '../../providers/student_provider.dart';
 import '../../providers/points_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../services/pocketbase_service.dart';
+import '../../services/encryption_service.dart';
 
 class PointsManagementScreen extends StatefulWidget {
   const PointsManagementScreen({super.key});
@@ -27,6 +28,11 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
   DateTime? _lastScanTime;
   late AnimationController _animationController;
   late Animation<double> _pulseAnimation;
+  late ScrollController _scrollController;
+  final EncryptionService _encryptionService = EncryptionService();
+  bool _showScrollToTop = false;
+  int _currentPage = 0;
+  static const int _itemsPerPage = 10;
 
   @override
   void initState() {
@@ -38,25 +44,55 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
     _pulseAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+    // 延迟加载数据，避免在构建过程中调用setState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
     _loadData();
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _animationController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.offset > 200) {
+      if (!_showScrollToTop) {
+        setState(() {
+          _showScrollToTop = true;
+        });
+      }
+    } else {
+      if (_showScrollToTop) {
+        setState(() {
+          _showScrollToTop = false;
+        });
+      }
+    }
+  }
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
   }
 
   Future<void> _loadData() async {
     try {
-      final studentProvider = context.read<StudentProvider>();
-      final pointsProvider = context.read<PointsProvider>();
-      await Future.wait([
-        studentProvider.loadStudents(),
-        pointsProvider.loadStudentPoints(),
-        pointsProvider.loadPointTransactions(),
-      ]);
+    final studentProvider = context.read<StudentProvider>();
+    final pointsProvider = context.read<PointsProvider>();
+    await Future.wait([
+      studentProvider.loadStudents(),
+      pointsProvider.loadStudentPoints(),
+      pointsProvider.loadPointTransactions(),
+    ]);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -72,14 +108,14 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
-          _buildModernAppBar(),
+          _buildModernHeader(),
           SliverToBoxAdapter(
             child: Column(
               children: [
-                _buildWelcomeSection(),
                 _buildQuickStats(),
                 const SizedBox(height: 16),
                 _buildScanStatusCard(),
@@ -99,138 +135,160 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
           ),
         ],
       ),
-      floatingActionButton: _buildSmartFab(),
+      floatingActionButton: _showScrollToTop ? _buildScrollToTopButton() : _buildSmartFab(),
     );
   }
 
-  Widget _buildModernAppBar() {
-    return SliverAppBar(
-      expandedHeight: 120,
-      floating: false,
-      pinned: true,
-      elevation: 0,
-      backgroundColor: AppTheme.primaryColor,
-      foregroundColor: Colors.white,
-      flexibleSpace: FlexibleSpaceBar(
-        title: const Text(
-          '积分管理',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+  Widget _buildModernHeader() {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFF59E0B),
+              Color(0xFFD97706),
+            ],
           ),
-        ),
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppTheme.primaryColor, AppTheme.primaryColor.withOpacity(0.8)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFF59E0B).withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
-          ),
-          child: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
               children: [
-                SizedBox(height: 40),
-                Icon(
-                  Icons.stars,
-                  color: Colors.white,
-                  size: 32,
-                ),
-                SizedBox(height: 8),
-                Text(
-                  '学生积分管理系统',
-                  style: TextStyle(
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.stars,
                     color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    size: 28,
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '积分管理',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '智能积分系统，激励学生学习成长',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Consumer<PointsProvider>(
+                  builder: (context, pointsProvider, child) {
+                    final totalTransactions = pointsProvider.pointTransactions.length;
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '$totalTransactions 笔交易',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
-          ),
+            const SizedBox(height: 20),
+            _buildPointsQuickActions(),
+          ],
         ),
       ),
-      actions: [
-        // 调试按钮 - 临时添加
-        IconButton(
-          tooltip: '测试积分操作',
-          icon: const Icon(Icons.bug_report),
-          onPressed: _testPointsOperation,
-        ),
-        IconButton(
-          tooltip: '扫描学生NFC卡',
-          icon: AnimatedBuilder(
-            animation: _pulseAnimation,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _isScanning ? _pulseAnimation.value : 1.0,
-                child: Icon(
-                  _isScanning ? Icons.nfc : Icons.nfc_outlined,
-                  color: _isScanning ? AppTheme.successColor : Colors.white,
-                ),
-              );
-            },
+    );
+  }
+
+  Widget _buildPointsQuickActions() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildActionButton(
+            'NFC扫描',
+            Icons.nfc,
+            const Color(0xFF3B82F6),
+            () => _startStudentScan(),
           ),
-          onPressed: _isScanning ? null : _startStudentScan,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionButton(
+            '添加积分',
+            Icons.add_circle,
+            const Color(0xFF10B981),
+            () => _showCustomPointsDialog('add_points'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionButton(
+            '积分兑换',
+            Icons.card_giftcard,
+            const Color(0xFF8B5CF6),
+            () => _openRedeemDialog(context),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildWelcomeSection() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppTheme.primaryColor.withOpacity(0.1), AppTheme.accentColor.withOpacity(0.1)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  Widget _buildActionButton(String title, IconData icon, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.3)),
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.white, size: 24),
+            const SizedBox(height: 6),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
             ),
-            child: const Icon(
-              Icons.emoji_events,
-              color: AppTheme.primaryColor,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '欢迎使用积分管理系统',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '管理学生积分，激励学习进步',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -242,7 +300,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
         // 计算所有学生的总积分
         int totalPoints = 0;
         for (final student in studentProvider.students) {
-          totalPoints += pointsProvider.getTotalPointsForStudent(student.id);
+          totalPoints += pointsProvider.getTotalPointsForStudent(student.id) ?? 0;
         }
         
         return Container(
@@ -481,7 +539,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                   ],
                 ),
               ),
-              IconButton(
+          IconButton(
                 onPressed: () {
                   if (_selectedStudent != null) {
                     _showPointsPanel(context, _selectedStudent!, allowActions: true);
@@ -489,9 +547,9 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                 },
                 icon: const Icon(Icons.arrow_forward),
                 color: AppTheme.primaryColor,
-              ),
-            ],
           ),
+        ],
+      ),
         ],
       ),
     );
@@ -543,11 +601,11 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             '积分排行榜',
                             style: TextStyle(
                               color: Colors.white,
@@ -694,7 +752,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
             child: Text(
               studentName.isNotEmpty ? studentName[0].toUpperCase() : '?',
               style: const TextStyle(
-                color: AppTheme.primaryColor,
+        color: AppTheme.primaryColor,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -704,9 +762,9 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
           
           // 学生信息
           Expanded(
-            child: Column(
+        child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          children: [
                 Text(
                   studentName,
                   style: const TextStyle(
@@ -714,14 +772,18 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                     fontWeight: FontWeight.w600,
                     color: AppTheme.textPrimary,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$studentId · $standard',
+                  '$studentId · $standard · ${student.getStringValue('branch')}',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppTheme.textSecondary,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ],
             ),
@@ -765,7 +827,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
     final leaderboard = <Map<String, dynamic>>[];
     
     for (final student in students) {
-      final points = pointsProvider.getTotalPointsForStudent(student.id);
+      final points = pointsProvider.getTotalPointsForStudent(student.id) ?? 0;
       leaderboard.add({
         'student': student,
         'points': points,
@@ -857,7 +919,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
             ),
           ),
           const SizedBox(width: 8),
-          Expanded(
+            Expanded(
             child: Text(
               text,
               style: const TextStyle(fontSize: 13),
@@ -888,18 +950,22 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
         ),
-        onChanged: (v) => setState(() => _searchQuery = v.trim()),
+        onChanged: (v) {
+          if (mounted) {
+            setState(() => _searchQuery = v.trim());
+          }
+        },
       ),
     );
   }
 
   Widget _buildStudentList() {
     return Consumer2<StudentProvider, PointsProvider>(
-      builder: (context, studentProvider, pointsProvider, child) {
-        final isLoading = studentProvider.isLoading || pointsProvider.isLoading;
-        final error = studentProvider.error ?? pointsProvider.error;
+                builder: (context, studentProvider, pointsProvider, child) {
+                  final isLoading = studentProvider.isLoading || pointsProvider.isLoading;
+                  final error = studentProvider.error ?? pointsProvider.error;
 
-        if (isLoading) {
+                  if (isLoading) {
           return Container(
             height: 200,
             decoration: BoxDecoration(
@@ -911,82 +977,259 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
               child: CircularProgressIndicator(color: AppTheme.primaryColor),
             ),
           );
-        }
+                  }
 
-        if (error != null) {
-          return _buildError(error);
-        }
+                  if (error != null) {
+                    return _buildError(error);
+                  }
 
-        List<RecordModel> students = studentProvider.students;
-        if (_searchQuery.isNotEmpty) {
-          students = studentProvider.searchStudents(_searchQuery);
-        }
+                  List<RecordModel> students = studentProvider.students;
+                  if (_searchQuery.isNotEmpty) {
+                    students = studentProvider.searchStudents(_searchQuery);
+                  }
 
-        if (students.isEmpty) {
-          return _buildEmpty();
+                  if (students.isEmpty) {
+                    return _buildEmpty();
+                  }
+
+        // 计算分页
+        final totalPages = (students.length / _itemsPerPage).ceil();
+        final startIndex = _currentPage * _itemsPerPage;
+        final endIndex = (startIndex + _itemsPerPage).clamp(0, students.length);
+        final currentStudents = students.sublist(startIndex, endIndex);
+        
+        // 重置页码如果超出范围
+        if (_currentPage >= totalPages && totalPages > 0) {
+          if (mounted) {
+            setState(() => _currentPage = totalPages - 1);
+          }
         }
 
         return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             color: AppTheme.cardColor,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppTheme.dividerColor),
             boxShadow: AppTheme.cardShadow,
           ),
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
+              // 标题栏
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppTheme.primaryColor.withOpacity(0.1), AppTheme.accentColor.withOpacity(0.1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.people,
-                      color: AppTheme.primaryColor,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '学生列表 (${students.length})',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.people,
                         color: AppTheme.primaryColor,
+                        size: 20,
                       ),
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '学生列表',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            '共 ${students.length} 名学生',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (totalPages > 1)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '第 ${_currentPage + 1} 页 / 共 $totalPages 页',
+                          style: TextStyle(
+                            color: AppTheme.primaryColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
-              const Divider(height: 1),
+              
+              // 学生列表
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: students.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final student = students[index];
-                  final name = student.getStringValue('student_name');
-                  final studentId = student.getStringValue('student_id');
-                  final standard = student.getStringValue('standard');
-                  final totalPoints = pointsProvider.getTotalPointsForStudent(student.id);
+                itemCount: currentStudents.length,
+                separatorBuilder: (_, __) => Divider(
+                  height: 1,
+                  color: AppTheme.dividerColor.withOpacity(0.5),
+                ),
+                    itemBuilder: (context, index) {
+                  final student = currentStudents[index];
+                      final name = student.getStringValue('student_name');
+                      final studentId = student.getStringValue('student_id');
+                      final standard = student.getStringValue('standard');
+                  final branch = student.getStringValue('branch');
+                  final totalPoints = pointsProvider.getTotalPointsForStudent(student.id) ?? 0;
 
-                  return ListTile(
-                    title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text('$studentId · $standard'),
-                    trailing: _buildPointsBadge(totalPoints),
-                    onTap: () {
-                      _selectedViaNfc = false;
-                      _showPointsPanel(context, student, allowActions: false);
-                    },
-                    leading: CircleAvatar(
-                      backgroundColor: AppTheme.primaryColor.withOpacity(0.12),
-                      child: Text(
-                        name.isNotEmpty ? name[0].toUpperCase() : '?',
-                        style: const TextStyle(color: AppTheme.primaryColor),
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    child: InkWell(
+                        onTap: () {
+                          _selectedViaNfc = false;
+                          _showPointsPanel(context, student, allowActions: false);
+                        },
+                      child: Row(
+                        children: [
+                          // 学生头像
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                          child: Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : '?',
+                              style: const TextStyle(
+                                color: AppTheme.primaryColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          
+                          // 学生信息
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '$studentId · $standard · $branch',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+                          
+                          // 积分徽章
+                          _buildPointsBadge(totalPoints),
+                          
+                          // 点击箭头
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.chevron_right,
+                            color: AppTheme.textSecondary,
+                            size: 20,
+                          ),
+                        ],
                       ),
                     ),
                   );
                 },
               ),
+              
+              // 分页控件
+              if (totalPages > 1)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundColor,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // 上一页按钮
+                      TextButton.icon(
+                        onPressed: _currentPage > 0 ? () {
+                          if (mounted) {
+                            setState(() => _currentPage--);
+                          }
+                        } : null,
+                        icon: const Icon(Icons.chevron_left, size: 20),
+                        label: const Text('上一页'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.primaryColor,
+                        ),
+                      ),
+                      
+                      // 页码指示器
+                      Row(
+                        children: List.generate(totalPages, (index) {
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: index == _currentPage 
+                                  ? AppTheme.primaryColor 
+                                  : AppTheme.textSecondary.withOpacity(0.3),
+                            ),
+                          );
+                        }),
+                      ),
+                      
+                      // 下一页按钮
+                      TextButton.icon(
+                        onPressed: _currentPage < totalPages - 1 ? () {
+                          if (mounted) {
+                            setState(() => _currentPage++);
+                          }
+                        } : null,
+                        icon: const Icon(Icons.chevron_right, size: 20),
+                        label: const Text('下一页'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         );
@@ -1026,24 +1269,24 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
 
   Widget _buildError(String error) {
     return Container(
-      padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.dividerColor),
       ),
-      child: Column(
-        children: [
-          const Icon(Icons.error_outline, color: AppTheme.errorColor, size: 40),
-          const SizedBox(height: 12),
-          Text(error, textAlign: TextAlign.center),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: _loadData,
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white),
-            child: const Text('重试'),
-          ),
-        ],
+        child: Column(
+          children: [
+            const Icon(Icons.error_outline, color: AppTheme.errorColor, size: 40),
+            const SizedBox(height: 12),
+            Text(error, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _loadData,
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white),
+              child: const Text('重试'),
+            ),
+          ],
       ),
     );
   }
@@ -1073,12 +1316,26 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
             TextButton(
               onPressed: () {
                 _searchController.clear();
-                setState(() => _searchQuery = '');
+                if (mounted) {
+                  setState(() => _searchQuery = '');
+                }
               },
               child: const Text('清除搜索'),
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildScrollToTopButton() {
+    return FloatingActionButton(
+      onPressed: _scrollToTop,
+      backgroundColor: const Color(0xFFF59E0B),
+      child: const Icon(
+        Icons.keyboard_arrow_up,
+        color: Colors.white,
+        size: 28,
       ),
     );
   }
@@ -1118,10 +1375,12 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
   Future<void> _stopScan() async {
     try {
       await FlutterNfcKit.finish();
-      setState(() {
-        _isScanning = false;
-        _scanStatus = '扫描已停止';
-      });
+      if (mounted) {
+        setState(() {
+          _isScanning = false;
+          _scanStatus = '扫描已停止';
+        });
+      }
       _animationController.stop();
     } catch (e) {
       // 忽略错误
@@ -1131,19 +1390,23 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
   Future<void> _startStudentScan() async {
     if (_isScanning) return;
     
-    setState(() {
-      _isScanning = true;
-      _scanStatus = '请将学生NFC卡片靠近设备...';
-    });
+    if (mounted) {
+      setState(() {
+        _isScanning = true;
+        _scanStatus = '请将学生NFC卡片靠近设备...';
+      });
+    }
     _animationController.repeat(reverse: true);
 
     try {
       final availability = await FlutterNfcKit.nfcAvailability;
       if (availability != NFCAvailability.available) {
-        setState(() {
-          _scanStatus = 'NFC不可用，请检查设备设置';
-          _isScanning = false;
-        });
+        if (mounted) {
+          setState(() {
+            _scanStatus = 'NFC不可用，请检查设备设置';
+            _isScanning = false;
+          });
+        }
         _animationController.stop();
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1157,28 +1420,30 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
 
       final tag = await FlutterNfcKit.poll(timeout: const Duration(seconds: 30));
       final records = await FlutterNfcKit.readNDEFRecords();
-      String? url;
+      String? nfcData;
       for (final rec in records) {
         final payload = rec.payload;
         if (payload == null || payload.isEmpty) continue;
         final content = String.fromCharCodes(payload);
-        if (content.contains('docs.google.com/forms') || content.startsWith('http')) {
-          url = content;
+        if (content.isNotEmpty) {
+          nfcData = content;
           break;
         }
       }
       await FlutterNfcKit.finish();
 
-      if (url == null) {
-        setState(() {
-          _scanStatus = '未在卡内发现URL';
-          _isScanning = false;
-        });
+      if (nfcData == null || nfcData.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _scanStatus = '未在卡内发现有效数据';
+            _isScanning = false;
+          });
+        }
         _animationController.stop();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('未在卡内发现URL'),
+              content: const Text('未在卡内发现有效数据'),
               backgroundColor: AppTheme.warningColor,
             ),
           );
@@ -1186,21 +1451,64 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
         return;
       }
 
-      setState(() {
-        _scanStatus = '正在查找学生信息...';
-      });
-
-      final student = await PocketBaseService.instance.getStudentByNfcUrl(url);
-      if (student == null) {
+      if (mounted) {
         setState(() {
-          _scanStatus = '未找到学生信息';
-          _isScanning = false;
+          _scanStatus = '正在处理NFC数据...';
         });
+      }
+
+      // 尝试解密NFC数据
+      String studentId = '';
+      bool isEncrypted = false;
+      
+      try {
+        // 检查是否是加密数据（格式: "encryptedData:salt"）
+        if (nfcData.contains(':')) {
+          final parts = nfcData.split(':');
+          if (parts.length == 2) {
+            studentId = _encryptionService.decryptNFCData(parts[0], parts[1]);
+            isEncrypted = true;
+          }
+        } else if (nfcData.contains('docs.google.com/forms') || nfcData.startsWith('http')) {
+          // URL格式（向后兼容）
+          studentId = nfcData;
+        } else {
+          // 可能是未加密的学生ID
+          studentId = nfcData;
+        }
+      } catch (e) {
+        // 解密失败，尝试作为普通数据使用
+        studentId = nfcData;
+        print('解密失败，使用原始数据: $e');
+      }
+
+      if (mounted) {
+        setState(() {
+          _scanStatus = '正在查找学生信息...';
+        });
+      }
+
+      // 根据数据类型查找学生
+      RecordModel? student;
+      if (isEncrypted || (!studentId.startsWith('http') && !studentId.contains('docs.google.com'))) {
+        // 使用学生ID查找
+        student = await PocketBaseService.instance.getStudentByStudentId(studentId);
+      } else {
+        // 使用URL查找（向后兼容）
+        student = await PocketBaseService.instance.getStudentByNfcUrl(studentId);
+      }
+      if (student == null) {
+        if (mounted) {
+          setState(() {
+            _scanStatus = '未找到学生信息';
+            _isScanning = false;
+          });
+        }
         _animationController.stop();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('未找到学生: $url'),
+              content: Text('未找到学生: $studentId'),
               backgroundColor: AppTheme.errorColor,
             ),
           );
@@ -1209,14 +1517,16 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
       }
 
       final studentName = student.getStringValue('student_name');
-      setState(() {
-        _selectedStudent = student;
-        _selectedViaNfc = true;
-        _isScanning = false;
-        _scanStatus = '扫描成功';
-        _lastScannedStudent = studentName;
-        _lastScanTime = DateTime.now();
-      });
+      if (mounted) {
+        setState(() {
+          _selectedStudent = student;
+          _selectedViaNfc = true;
+          _isScanning = false;
+          _scanStatus = '扫描成功';
+          _lastScannedStudent = studentName;
+          _lastScanTime = DateTime.now();
+        });
+      }
       _animationController.stop();
 
       if (mounted) {
@@ -1229,10 +1539,12 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
         _showPointsPanel(context, student, allowActions: true);
       }
     } catch (e) {
-      setState(() {
-        _scanStatus = '扫描失败: $e';
-        _isScanning = false;
-      });
+      if (mounted) {
+        setState(() {
+          _scanStatus = '扫描失败: $e';
+          _isScanning = false;
+        });
+      }
       _animationController.stop();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1620,7 +1932,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
       builder: (ctx) {
         return SizedBox(
           height: MediaQuery.of(ctx).size.height * 0.7,
-          child: Column(
+        child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
@@ -1637,7 +1949,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                         separatorBuilder: (_, __) => const Divider(height: 1),
                         itemBuilder: (context, index) {
                           final r = history[index];
-                          final points = r.getIntValue('points_change');
+                          final points = r.getIntValue('points_change') ?? 0;
                           final reason = r.getStringValue('reason');
                           final date = r.getStringValue('created');
                           final type = r.getStringValue('transaction_type');
@@ -1673,9 +1985,9 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                           border: Border.all(color: AppTheme.warningColor.withOpacity(0.3)),
                         ),
                         child: Row(
-                          children: [
+                      children: [
                             Icon(Icons.info_outline, color: AppTheme.warningColor, size: 20),
-                            const SizedBox(width: 8),
+                        const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 '请先通过NFC扫描学生卡以启用操作',
@@ -1738,7 +2050,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
-                          children: [
+                      children: [
                             Icon(Icons.lightbulb_outline, color: AppTheme.primaryColor, size: 16),
                             const SizedBox(width: 6),
                             Expanded(
@@ -1769,8 +2081,8 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
           backgroundColor: AppTheme.errorColor,
         ),
       );
-      return;
-    }
+        return;
+      }
 
     final amountController = TextEditingController();
     final reasonController = TextEditingController();
@@ -1787,7 +2099,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
         amountLabel = '增加积分数量';
         reasonLabel = '增加原因（可选）';
         primaryColor = AppTheme.successColor;
-        break;
+          break;
       case 'deduct_points':
         title = '扣除积分';
         amountLabel = '扣除积分数量';
@@ -1978,7 +2290,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                       backgroundColor: AppTheme.warningColor,
                     ),
                   );
-                  return;
+        return;
                 }
 
                 // 显示加载状态
@@ -2015,8 +2327,8 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                       backgroundColor: AppTheme.errorColor,
                     ),
                   );
-                  return;
-                }
+      return;
+    }
 
                 bool success = false;
                 String? errorMessage;
@@ -2038,7 +2350,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
 
                 if (mounted) {
                   Navigator.of(ctx).pop();
-                  if (success) {
+    if (success) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('$title成功'),
@@ -2074,180 +2386,6 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
     );
   }
 
-  Future<void> _triggerPresetAction(String action, int amount, {bool needProof = false}) async {
-    if (_selectedStudent == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('请先扫描学生卡')));
-      return;
-    }
-    // 二次验证老师卡
-    final ok = await _startTeacherScan();
-    if (!ok) return;
-
-    File? proof;
-    if (needProof) {
-      final picker = ImagePicker();
-      final picked = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
-      if (picked != null) proof = File(picked.path);
-    }
-
-    final provider = context.read<PointsProvider>();
-    final teacherId = PocketBaseService.instance.currentUser?.id ?? '';
-    bool success = false;
-    if (action == 'add_points') {
-      success = await provider.addPointsToStudent(_selectedStudent!.id, amount, 'preset', teacherId: teacherId);
-    } else if (action == 'deduct_points') {
-      success = await provider.deductPointsFromStudent(_selectedStudent!.id, amount, 'preset', teacherId: teacherId);
-    } else {
-      success = await provider.redeemWithProof(_selectedStudent!.id, amount, 'redeem', teacherId: teacherId, proofImage: proof);
-    }
-
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('操作成功')));
-    }
-  }
-
-  Future<void> _testPointsOperation() async {
-    // 详细的测试方法
-    final studentProvider = context.read<StudentProvider>();
-    if (studentProvider.students.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('没有学生数据，无法测试'),
-          backgroundColor: AppTheme.errorColor,
-        ),
-      );
-      return;
-    }
-
-    final testStudent = studentProvider.students.first;
-    final provider = context.read<PointsProvider>();
-    final teacherId = PocketBaseService.instance.currentUser?.id ?? '';
-
-    // 显示测试信息
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('积分操作测试'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('学生: ${testStudent.getStringValue('student_name')}'),
-            Text('学生ID: ${testStudent.id}'),
-            Text('老师ID: ${teacherId.isEmpty ? '未登录' : teacherId}'),
-            const SizedBox(height: 16),
-            const Text('将测试以下操作:'),
-            const Text('1. 创建积分交易记录'),
-            const Text('2. 更新学生积分汇总'),
-            const Text('3. 刷新界面数据'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              await _performDetailedTest(testStudent, teacherId);
-            },
-            child: const Text('开始测试'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _performDetailedTest(RecordModel testStudent, String teacherId) async {
-    final provider = context.read<PointsProvider>();
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('开始详细测试...'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-
-    try {
-      // 步骤1: 测试创建积分交易
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('步骤1: 创建积分交易记录...')),
-      );
-      
-      final success = await provider.addPointsToStudent(
-        testStudent.id, 
-        10, 
-        '详细测试 - 增加积分', 
-        teacherId: teacherId
-      );
-      
-      if (!success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('创建积分交易失败: ${provider.error ?? '未知错误'}'),
-            backgroundColor: AppTheme.errorColor,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-        return;
-      }
-
-      // 步骤2: 等待一下让数据同步
-      await Future.delayed(const Duration(seconds: 1));
-
-      // 步骤3: 测试扣除积分
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('步骤2: 测试扣除积分...')),
-      );
-      
-      final deductSuccess = await provider.deductPointsFromStudent(
-        testStudent.id, 
-        5, 
-        '详细测试 - 扣除积分', 
-        teacherId: teacherId
-      );
-
-      if (!deductSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('扣除积分失败: ${provider.error ?? '未知错误'}'),
-            backgroundColor: AppTheme.errorColor,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-        return;
-      }
-
-      // 步骤4: 刷新数据
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('步骤3: 刷新数据...')),
-      );
-      
-      await provider.loadStudentPoints();
-      await provider.loadPointTransactions();
-
-      // 显示最终结果
-      final currentPoints = provider.getTotalPointsForStudent(testStudent.id);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('测试完成！当前积分: $currentPoints'),
-          backgroundColor: AppTheme.successColor,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('测试异常: $e'),
-          backgroundColor: AppTheme.errorColor,
-          duration: const Duration(seconds: 5),
-        ),
-      );
-    }
-  }
 }
 
 // Simple expandable FAB implementation

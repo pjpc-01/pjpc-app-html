@@ -23,12 +23,46 @@ class ClassProvider with ChangeNotifier {
 
     try {
       _classes = await _pocketBaseService.getClasses();
+      // 为每个班级加载学生数量
+      await _loadStudentCounts();
       notifyListeners();
     } catch (e) {
       _setError('加载班级数据失败: ${e.toString()}');
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  // 为每个班级加载学生数量
+  Future<void> _loadStudentCounts() async {
+    for (int i = 0; i < _classes.length; i++) {
+      try {
+        final students = await _pocketBaseService.getClassStudents(_classes[i].id);
+        // 更新班级数据中的学生数量
+        final updatedData = Map<String, dynamic>.from(_classes[i].data);
+        updatedData['current_students'] = students.length;
+        _classes[i] = RecordModel.fromJson({
+          'id': _classes[i].id,
+          'created': _classes[i].created,
+          'updated': _classes[i].updated,
+          'collectionId': _classes[i].collectionId,
+          'collectionName': _classes[i].collectionName,
+          'data': updatedData,
+        });
+      } catch (e) {
+        // 如果获取学生数量失败，设置为0
+        final updatedData = Map<String, dynamic>.from(_classes[i].data);
+        updatedData['current_students'] = 0;
+        _classes[i] = RecordModel.fromJson({
+          'id': _classes[i].id,
+          'created': _classes[i].created,
+          'updated': _classes[i].updated,
+          'collectionId': _classes[i].collectionId,
+          'collectionName': _classes[i].collectionName,
+          'data': updatedData,
+        });
+      }
     }
   }
 
@@ -171,5 +205,84 @@ class ClassProvider with ChangeNotifier {
 
   void clearError() {
     _clearError();
+  }
+
+  // Class-Student association methods
+  Future<List<RecordModel>> getClassStudents(String classId) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final students = await _pocketBaseService.getClassStudents(classId);
+      return students;
+    } catch (e) {
+      _setError('加载班级学生失败: ${e.toString()}');
+      return [];
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<List<RecordModel>> getUnassignedStudents() async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final students = await _pocketBaseService.getUnassignedStudents();
+      return students;
+    } catch (e) {
+      _setError('加载未分配学生失败: ${e.toString()}');
+      return [];
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> assignStudentToClass(String studentId, String classId) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      await _pocketBaseService.assignStudentToClass(studentId, classId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError('分配学生到班级失败: ${e.toString()}');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> removeStudentFromClass(String studentId) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      await _pocketBaseService.removeStudentFromClass(studentId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError('从班级移除学生失败: ${e.toString()}');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> assignMultipleStudentsToClass(List<String> studentIds, String classId) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      await _pocketBaseService.assignMultipleStudentsToClass(studentIds, classId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError('批量分配学生到班级失败: ${e.toString()}');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
   }
 }

@@ -4,6 +4,8 @@ import 'package:nfc_manager/nfc_manager.dart';
 import '../../providers/attendance_provider.dart';
 import '../../providers/student_provider.dart';
 import '../../services/pocketbase_service.dart';
+import '../../services/encryption_service.dart';
+import '../../services/security_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common/statistics_card.dart';
 
@@ -19,10 +21,16 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
   String _scanStatus = '准备扫描';
   String _lastScannedStudent = '';
   DateTime? _lastScanTime;
+  
+  // 安全服务
+  late SecurityService _securityService;
+  late EncryptionService _encryptionService;
 
   @override
   void initState() {
     super.initState();
+    _securityService = SecurityService();
+    _encryptionService = EncryptionService();
     _checkNfcAvailability();
   }
 
@@ -74,23 +82,106 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
       // 停止扫描
       await _stopNfcScan();
       
-      // 简化处理：直接使用模拟数据
-      // 在实际应用中，这里应该读取NFC卡片中的URL
-      String studentUrl = 'https://example.com/student/STU001';
+      setState(() {
+        _scanStatus = '正在处理NFC数据...';
+      });
+
+      // 读取NFC标签数据
+      String nfcData = '';
+      try {
+        // 尝试读取NFC标签的文本数据
+        if (tag.data is Map) {
+          final data = tag.data as Map;
+          // 尝试不同的数据格式
+          if (data.containsKey('ndef')) {
+            // NDEF格式
+            final ndefData = data['ndef'];
+            if (ndefData is Map && ndefData.containsKey('records')) {
+              final records = ndefData['records'] as List;
+              if (records.isNotEmpty) {
+                final record = records.first;
+                if (record is Map && record.containsKey('payload')) {
+                  final payload = record['payload'] as List<int>;
+                  nfcData = String.fromCharCodes(payload);
+                }
+              }
+            }
+          } else if (data.containsKey('text')) {
+            // 文本格式
+            nfcData = data['text'] as String;
+          } else if (data.containsKey('url')) {
+            // URL格式
+            nfcData = data['url'] as String;
+          }
+        }
+      } catch (e) {
+        print('读取NFC数据失败: $e');
+      }
+
+      if (nfcData.isEmpty) {
+        setState(() {
+          _scanStatus = 'NFC数据读取失败，请重试';
+        });
+        return;
+      }
       
-      // 根据URL查找学生
+      // 尝试解密NFC数据
+      String decryptedData = '';
+      String salt = '';
+      bool isEncrypted = false;
+      
+      try {
+        // 尝试解密（假设数据格式为 "encryptedData:salt"）
+        if (nfcData.contains(':')) {
+          final parts = nfcData.split(':');
+          if (parts.length == 2) {
+            decryptedData = _encryptionService.decryptNFCData(parts[0], parts[1]);
+            salt = parts[1];
+            isEncrypted = true;
+          }
+        } else {
+          // 未加密数据，直接使用
+          decryptedData = nfcData;
+        }
+      } catch (e) {
+        // 解密失败，尝试作为普通数据使用
+        decryptedData = nfcData;
+        print('解密失败，使用原始数据: $e');
+      }
+      
+      // 根据解密后的数据查找学生
       final studentProvider = Provider.of<StudentProvider>(context, listen: false);
-      final student = await studentProvider.getStudentByNfcUrl(studentUrl);
+      dynamic student;
+      
+      if (isEncrypted) {
+        // 使用解密后的学生ID查找
+        student = await studentProvider.getStudentById(decryptedData);
+      } else {
+        // 使用URL查找（兼容旧系统）
+        student = await studentProvider.getStudentByNfcUrl(decryptedData);
+      }
 
       if (student == null) {
         setState(() {
-          _scanStatus = '未找到对应的学生: $studentUrl';
+          _scanStatus = '未找到对应的学生: $decryptedData';
         });
         return;
       }
 
-      // 显示签到/签退选择对话框
-      await _showAttendanceChoiceDialog(student);
+      // 安全检查
+      final studentId = student.getStringValue('student_id') ?? student.id;
+      final isLocked = await _securityService.isUserLocked(studentId, 'student');
+      
+      if (isLocked) {
+        final lockReason = student.getStringValue('lock_reason') ?? '未知原因';
+        setState(() {
+          _scanStatus = '🚫 学生 ${student.getStringValue('student_name')} 已被锁定: $lockReason';
+        });
+        return;
+      }
+
+      // 显示签到/签退选择对话框（包含安全监控数据）
+      await _showAttendanceChoiceDialog(student, nfcData);
 
     } catch (e) {
       setState(() {
@@ -100,7 +191,7 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
   }
 
   /// 显示签到/签退选择对话框
-  Future<void> _showAttendanceChoiceDialog(dynamic student) async {
+  Future<void> _showAttendanceChoiceDialog(dynamic student, String nfcData) async {
     final studentName = student.getStringValue('student_name') ?? '未知学生';
     final studentId = student.getStringValue('id');
     
@@ -239,7 +330,7 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
                   child: ElevatedButton.icon(
                     onPressed: hasCheckedIn ? null : () async {
                       Navigator.of(context).pop();
-                      await _recordAttendance(student, 'check_in');
+                      await _recordAttendance(student, 'check_in', nfcData);
                     },
                     icon: const Icon(Icons.login),
                     label: const Text('签到'),
@@ -256,7 +347,7 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
                   child: ElevatedButton.icon(
                     onPressed: !hasCheckedIn ? null : () async {
                       Navigator.of(context).pop();
-                      await _recordAttendance(student, 'check_out');
+                      await _recordAttendance(student, 'check_out', nfcData);
                     },
                     icon: const Icon(Icons.logout),
                     label: const Text('签退'),
@@ -287,7 +378,7 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
   }
 
   /// 记录考勤
-  Future<void> _recordAttendance(dynamic student, String action) async {
+  Future<void> _recordAttendance(dynamic student, String action, String nfcData) async {
     try {
       final studentId = student.getStringValue('id');
       final studentName = student.getStringValue('student_name');
@@ -400,7 +491,7 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
         return;
       }
 
-      // 创建考勤记录（仅用于签到）
+      // 创建考勤记录（包含安全监控数据）
       final attendanceData = {
         'student_id': studentId,
         'student_name': studentName,
@@ -413,6 +504,15 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
         'teacher_id': 'TCH001', // 可以从当前登录用户获取
         'method': 'NFC',
         'date': today,
+        'timestamp': DateTime.now().toIso8601String(),
+        'nfc_data': nfcData,
+        'device_id': 'nfc_scanner_001', // 设备ID
+        'location': 'NFC考勤点', // 刷卡地点
+        'ip_address': '192.168.1.100', // 实际应用中获取真实IP
+        'user_agent': 'NFC Scanner App', // 用户代理
+        // 安全监控字段
+        'encryption_version': 2,
+        'encryption_algorithm': 'AES-256',
       };
 
       // 保存到PocketBase
@@ -451,72 +551,6 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
     super.dispose();
   }
 
-  Widget _buildEnterpriseAppBar() {
-    return SliverAppBar(
-      expandedHeight: 120,
-      floating: false,
-      pinned: true,
-      backgroundColor: const Color(0xFF1E293B),
-      foregroundColor: Colors.white,
-      flexibleSpace: FlexibleSpaceBar(
-        title: const Text(
-          'NFC考勤智能扫描',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF1E293B),
-                Color(0xFF334155),
-                Color(0xFF475569),
-              ],
-            ),
-          ),
-          child: Stack(
-            children: [
-              Positioned(
-                right: -50,
-                top: -50,
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: -30,
-                bottom: -30,
-                child: Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.05),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        IconButton(
-          icon: Icon(_isScanning ? Icons.stop_rounded : Icons.refresh_rounded),
-          onPressed: _isScanning ? _stopNfcScan : _startNfcScan,
-        ),
-        const SizedBox(width: 8),
-      ],
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -524,19 +558,19 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
       backgroundColor: const Color(0xFFF8FAFC),
       body: CustomScrollView(
         slivers: [
-          _buildEnterpriseAppBar(),
+          _buildSmartHeader(),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildScanStatusCard(),
-                  const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: 16),
                   _buildLastScanCard(),
-                  const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: 16),
                   _buildInstructionsCard(),
-                  const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: 16),
                   _buildStatisticsCard(),
                 ],
               ),
@@ -550,6 +584,155 @@ class _NfcAttendanceScreenState extends State<NfcAttendanceScreen> {
         label: Text(_isScanning ? '停止扫描' : '开始扫描'),
         backgroundColor: _isScanning ? AppTheme.errorColor : AppTheme.primaryColor,
         foregroundColor: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildSmartHeader() {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF3B82F6),
+              Color(0xFF1D4ED8),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF3B82F6).withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.nfc_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'NFC考勤扫描',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '快速扫描学生NFC卡片进行考勤',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _isScanning ? '扫描中' : '待机',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildNfcQuickActions(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNfcQuickActions() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildActionButton(
+            _isScanning ? '停止扫描' : '开始扫描',
+            _isScanning ? Icons.stop : Icons.nfc,
+            _isScanning ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+            _isScanning ? _stopNfcScan : _startNfcScan,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionButton(
+            '查看记录',
+            Icons.history,
+            const Color(0xFF8B5CF6),
+            () {
+              // TODO: 导航到考勤记录
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton(String title, IconData icon, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: Colors.white,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

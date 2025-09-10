@@ -42,10 +42,10 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
     final isSmallScreen = screenHeight < 700 || screenWidth < 360;
     
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          _buildSliverAppBar(isSmallScreen),
+          _buildModernHeader(isSmallScreen),
           _buildStatsSection(isSmallScreen),
           _buildTabBar(isSmallScreen),
         ],
@@ -70,69 +70,183 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
     );
   }
 
-  Widget _buildSliverAppBar(bool isSmallScreen) {
-    return SliverAppBar(
-      expandedHeight: isSmallScreen ? 120 : 140,
-      floating: false,
-      pinned: true,
-      backgroundColor: AppTheme.primaryColor,
-      flexibleSpace: FlexibleSpaceBar(
-        titlePadding: EdgeInsets.only(
-          left: 16,
-          bottom: isSmallScreen ? 8 : 12,
-        ),
-        title: Text(
-          '考勤管理',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: isSmallScreen ? 16 : 18,
-          ),
-        ),
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppTheme.primaryColor,
-                AppTheme.primaryVariant,
-              ],
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(height: isSmallScreen ? 20 : 30),
-              Icon(
-                Icons.access_time,
-                color: Colors.white,
-                size: isSmallScreen ? 24 : 32,
-              ),
-              SizedBox(height: isSmallScreen ? 4 : 8),
-              Text(
-                '智能考勤系统',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: isSmallScreen ? 12 : 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              SizedBox(height: isSmallScreen ? 8 : 12),
+  Widget _buildModernHeader(bool isSmallScreen) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF10B981),
+              Color(0xFF059669),
             ],
           ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF10B981).withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.access_time,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '考勤管理',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '智能考勤系统，轻松管理学生出勤',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Consumer<AttendanceProvider>(
+                  builder: (context, attendanceProvider, child) {
+                    final totalRecords = attendanceProvider.attendanceRecords.length;
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '$totalRecords 条记录',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildAttendanceQuickActions(isSmallScreen),
+          ],
         ),
       ),
-      actions: [
-        IconButton(
-          onPressed: () => _showSearchDialog(context),
-          icon: const Icon(Icons.search, color: Colors.white),
+    );
+  }
+
+  Widget _buildAttendanceQuickActions(bool isSmallScreen) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildActionButton(
+            'NFC打卡',
+            Icons.nfc,
+            const Color(0xFF3B82F6),
+            () => _showNFCScanner(context),
+            isSmallScreen,
+          ),
         ),
-        IconButton(
-          onPressed: () => _showFilterDialog(context),
-          icon: const Icon(Icons.filter_list, color: Colors.white),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionButton(
+            '手动签到',
+            Icons.touch_app,
+            const Color(0xFFF59E0B),
+            () => _showManualCheckIn(),
+            isSmallScreen,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionButton(
+            '导出报告',
+            Icons.download,
+            const Color(0xFF8B5CF6),
+            () => _exportAttendanceReport(),
+            isSmallScreen,
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildActionButton(String title, IconData icon, Color color, VoidCallback onTap, bool isSmallScreen) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          vertical: isSmallScreen ? 12 : 16, 
+          horizontal: 8,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.white, size: isSmallScreen ? 20 : 24),
+            SizedBox(height: isSmallScreen ? 4 : 6),
+            Text(
+              title,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isSmallScreen ? 10 : 12,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showManualCheckIn() {
+    // TODO: 实现手动签到功能
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('手动签到功能开发中...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _exportAttendanceReport() {
+    // TODO: 实现导出考勤报告功能
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('导出报告功能开发中...'),
+        duration: Duration(seconds: 2),
+      ),
     );
   }
 

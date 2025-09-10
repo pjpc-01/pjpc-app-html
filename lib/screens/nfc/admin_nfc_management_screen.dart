@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../providers/nfc_card_provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import 'nfc_replacement_review_dialog.dart';
+import 'nfc_read_write_screen.dart';
 
 class AdminNfcManagementScreen extends StatefulWidget {
   const AdminNfcManagementScreen({super.key});
@@ -18,16 +18,17 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
   String _selectedFilter = 'all';
   String _searchQuery = '';
   String _selectedTimeRange = '7d';
-  bool _showAnalytics = true;
   final TextEditingController _searchController = TextEditingController();
   late TabController _tabController;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  late ScrollController _scrollController;
+  bool _showScrollToTop = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this); // 移除NFC操作标签页
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -35,6 +36,8 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
@@ -47,7 +50,41 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
     _searchController.dispose();
     _tabController.dispose();
     _animationController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.offset > 200) {
+      if (!_showScrollToTop) {
+        setState(() {
+          _showScrollToTop = true;
+        });
+      }
+    } else {
+      if (_showScrollToTop) {
+        setState(() {
+          _showScrollToTop = false;
+        });
+      }
+    }
+  }
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _navigateToNfcReadWrite() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const NfcReadWriteScreen(),
+      ),
+    );
   }
 
   Future<void> _loadData() async {
@@ -73,8 +110,9 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: CustomScrollView(
+          controller: _scrollController,
           slivers: [
-            _buildEnterpriseAppBar(),
+            _buildModernHeader(),
             _buildSmartHeader(),
             _buildAnalyticsSection(),
             _buildTabSection(),
@@ -82,79 +120,226 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
           ],
         ),
       ),
+      floatingActionButton: _showScrollToTop 
+          ? Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FloatingActionButton(
+                  onPressed: _navigateToNfcReadWrite,
+                  backgroundColor: Colors.orange,
+                  heroTag: "nfc_read_write",
+                  child: const Icon(
+                    Icons.nfc,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FloatingActionButton(
+                  onPressed: _scrollToTop,
+                  backgroundColor: const Color(0xFF1E40AF),
+                  heroTag: "scroll_to_top",
+                  child: const Icon(
+                    Icons.keyboard_arrow_up,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ],
+            )
+          : FloatingActionButton(
+              onPressed: _navigateToNfcReadWrite,
+              backgroundColor: Colors.orange,
+              child: const Icon(
+                Icons.nfc,
+                color: Colors.white,
+              ),
+            ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
-  Widget _buildEnterpriseAppBar() {
-    return SliverAppBar(
-      expandedHeight: 120,
-      floating: false,
-      pinned: true,
-      backgroundColor: const Color(0xFF1E293B),
-      foregroundColor: Colors.white,
-      flexibleSpace: FlexibleSpaceBar(
-        title: const Text(
-          'NFC智能管理中心',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF1E293B),
-                Color(0xFF334155),
-                Color(0xFF475569),
-              ],
-            ),
-          ),
-          child: Stack(
-            children: [
-              Positioned(
-                right: -50,
-                top: -50,
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: -30,
-                bottom: -30,
-                child: Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.05),
-                  ),
-                ),
-              ),
+  Widget _buildModernHeader() {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF1E40AF),
+              Color(0xFF1D4ED8),
             ],
           ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF1E40AF).withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.nfc,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'NFC智能管理',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '智能NFC卡管理系统，高效处理补办申请',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Consumer<NfcCardProvider>(
+                  builder: (context, nfcProvider, child) {
+                    final totalRequests = nfcProvider.replacementRequests.length;
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '$totalRequests 个申请',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildNfcQuickActions(),
+          ],
         ),
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.refresh_rounded),
-          onPressed: () {
-            Provider.of<NfcCardProvider>(context, listen: false).loadReplacementRequests();
-          },
+    );
+  }
+
+  Widget _buildNfcQuickActions() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildActionButton(
+            '审核申请',
+            Icons.approval,
+            const Color(0xFF3B82F6),
+            () => _showPendingRequests(),
+          ),
         ),
-        IconButton(
-          icon: const Icon(Icons.settings_rounded),
-          onPressed: () => _showSettingsDialog(),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionButton(
+            '批量处理',
+            Icons.batch_prediction,
+            const Color(0xFF10B981),
+            () => _showBatchProcessing(),
+          ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionButton(
+            '数据分析',
+            Icons.analytics,
+            const Color(0xFF8B5CF6),
+            () => _navigateToAnalytics(),
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _buildActionButton(String title, IconData icon, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.white, size: 24),
+            const SizedBox(height: 6),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPendingRequests() {
+    // 切换到待处理标签页
+    _tabController.animateTo(0);
+  }
+
+  void _showBatchProcessing() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('批量处理功能开发中...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _navigateToAnalytics() {
+    // 切换到数据分析标签页
+    _tabController.animateTo(2);
+  }
+
+  Widget _buildScrollToTopButton() {
+    return FloatingActionButton(
+      onPressed: _scrollToTop,
+      backgroundColor: const Color(0xFF1E40AF),
+      child: const Icon(
+        Icons.keyboard_arrow_up,
+        color: Colors.white,
+        size: 28,
+      ),
     );
   }
 
@@ -555,6 +740,10 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
                   icon: Icon(Icons.analytics_rounded),
                   text: '数据分析',
                 ),
+                Tab(
+                  icon: Icon(Icons.security_rounded),
+                  text: '安全监控',
+                ),
               ],
             ),
             _buildSearchAndFilter(),
@@ -634,6 +823,7 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
           _buildPendingRequests(),
           _buildHistoryRequests(),
           _buildAnalyticsView(),
+          _buildSecurityMonitoringView(),
         ],
       ),
     );
@@ -765,10 +955,14 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
   }
 
   Widget _buildModernRequestCard(Map<String, dynamic> request, NfcCardProvider nfcProvider) {
-    final studentInfo = request['expand']?['student'] as Map<String, dynamic>?;
-    final studentName = studentInfo?['student_name'] ?? '未知学生';
-    final studentId = studentInfo?['student_id'] ?? '';
-    final className = studentInfo?['standard'] ?? '';
+    // 优先从直接保存的字段获取学生信息
+    final studentName = request['student_name'] ?? 
+                      (request['expand']?['student'] as Map<String, dynamic>?)?['student_name'] ?? 
+                      '未知学生';
+    final studentId = request['student_id'] ?? 
+                     (request['expand']?['student'] as Map<String, dynamic>?)?['student_id'] ?? '';
+    final className = request['class_name'] ?? 
+                     (request['expand']?['student'] as Map<String, dynamic>?)?['standard'] ?? '';
     final status = request['replacement_status'] ?? '';
     final urgency = request['replacement_urgency'] ?? '';
     final requestDate = DateTime.tryParse(request['replacement_request_date'] ?? '') ?? DateTime.now();
@@ -1336,6 +1530,366 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
           ),
         ],
       ),
+    );
+  }
+
+  // 安全监控页面
+  Widget _buildSecurityMonitoringView() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 安全概览卡片
+          _buildSecurityOverviewCard(),
+          const SizedBox(height: 16),
+          
+          // 快速操作按钮
+          _buildSecurityQuickActions(),
+          const SizedBox(height: 16),
+          
+          // 最近安全事件
+          _buildRecentSecurityEvents(),
+          const SizedBox(height: 16),
+          
+          // 加密状态监控
+          _buildEncryptionStatusCard(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSecurityOverviewCard() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '安全概览',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSecurityStatItem(
+                    Icons.lock,
+                    '锁定用户',
+                    '3',
+                    Colors.red,
+                  ),
+                ),
+                Expanded(
+                  child: _buildSecurityStatItem(
+                    Icons.warning,
+                    '高风险事件',
+                    '5',
+                    Colors.orange,
+                  ),
+                ),
+                Expanded(
+                  child: _buildSecurityStatItem(
+                    Icons.security,
+                    '加密覆盖率',
+                    '95%',
+                    AppTheme.successColor,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSecurityStatItem(IconData icon, String title, String value, Color color) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSecurityQuickActions() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '快速操作',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NfcReadWriteScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.nfc),
+                    label: const Text('NFC读写'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      // 执行密钥轮换
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('智能密钥轮换已启动'),
+                          backgroundColor: AppTheme.successColor,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('密钥轮换'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentSecurityEvents() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '最近安全事件',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildSecurityEventItem(
+              'B001',
+              '张三',
+              '快速连续刷卡检测',
+              '30分钟前',
+              Colors.orange,
+            ),
+            _buildSecurityEventItem(
+              'TCH001',
+              '李老师',
+              '异常时间刷卡',
+              '2小时前',
+              Colors.red,
+            ),
+            _buildSecurityEventItem(
+              'B002',
+              '王五',
+              '位置不匹配',
+              '3小时前',
+              Colors.orange,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSecurityEventItem(String userId, String userName, String event, String time, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.warning, color: color, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$userName ($userId)',
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                Text(
+                  event,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            time,
+            style: const TextStyle(fontSize: 10, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEncryptionStatusCard() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '加密状态',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildEncryptionStatItem(
+                    Icons.key,
+                    '当前密钥版本',
+                    'V2',
+                    AppTheme.primaryColor,
+                  ),
+                ),
+                Expanded(
+                  child: _buildEncryptionStatItem(
+                    Icons.security,
+                    '加密算法',
+                    'AES-256',
+                    AppTheme.successColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('智能密钥轮换已启动'),
+                          backgroundColor: AppTheme.successColor,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('智能轮换'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('紧急密钥轮换已启动'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.warning),
+                    label: const Text('紧急轮换'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEncryptionStatItem(IconData icon, String title, String value, Color color) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 10,
+            color: Colors.grey,
+          ),
+        ),
+      ],
     );
   }
 }

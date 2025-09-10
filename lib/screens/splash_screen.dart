@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/common/app_logo.dart';
 import 'auth/login_screen.dart';
 import 'home/home_screen.dart';
 
@@ -11,138 +12,260 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
+class _SplashScreenState extends State<SplashScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _logoController;
+  late AnimationController _textController;
+  late Animation<double> _logoAnimation;
+  late Animation<double> _textAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
-    _setupAnimations();
-    _checkAuthStatus();
-  }
-
-  void _setupAnimations() {
-    _animationController = AnimationController(
-      duration: const Duration(seconds: 2),
+    
+    // Logo动画控制器
+    _logoController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    
+    // 文字动画控制器
+    _textController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(
+    // Logo缩放动画
+    _logoAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
+      parent: _logoController,
+      curve: Curves.elasticOut,
     ));
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.5,
+    // 文字淡入动画
+    _textAnimation = Tween<double>(
+      begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: const Interval(0.0, 0.5, curve: Curves.elasticOut),
+      parent: _textController,
+      curve: Curves.easeInOut,
     ));
 
-    _animationController.forward();
+    // 文字滑动动画
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.5),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _textController,
+      curve: Curves.easeOutBack,
+    ));
+
+    _startAnimations();
   }
 
-  Future<void> _checkAuthStatus() async {
-    await Future.delayed(const Duration(seconds: 3));
+  void _startAnimations() async {
+    // 启动logo动画
+    await _logoController.forward();
     
-    if (mounted) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
-      if (authProvider.isAuthenticated) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
-      }
+    // 延迟后启动文字动画
+    await Future.delayed(const Duration(milliseconds: 300));
+    await _textController.forward();
+    
+    // 延迟后检查登录状态并导航
+    await Future.delayed(const Duration(milliseconds: 1500));
+    _navigateToNextScreen();
+  }
+
+  void _navigateToNextScreen() async {
+    if (!mounted) return;
+    
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    if (authProvider.isAuthenticated) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
     }
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _logoController.dispose();
+    _textController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedBuilder(
-              animation: _animationController,
-              builder: (context, child) {
-                return FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: ScaleTransition(
-                    scale: _scaleAnimation,
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF1E3A8A), // 深蓝色
+              Color(0xFF3B82F6), // 蓝色
+              Color(0xFF60A5FA), // 浅蓝色
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo动画
+                AnimatedBuilder(
+                  animation: _logoAnimation,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: _logoAnimation.value,
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: const AppLogo(
+                          size: 120,
+                          showText: false,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                
+                const SizedBox(height: 40),
+                
+                // 文字动画
+                AnimatedBuilder(
+                  animation: _textAnimation,
+                  builder: (context, child) {
+                    return SlideTransition(
+                      position: _slideAnimation,
+                      child: FadeTransition(
+                        opacity: _textAnimation,
+                        child: Column(
+                          children: [
+                            // 主标题
+                            Text(
+                              '温馨小屋',
+                              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 32,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.3),
+                                    offset: const Offset(2, 2),
+                                    blurRadius: 4,
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.school,
-                            size: 60,
-                            color: Color(0xFF2563EB),
-                          ),
+                            ),
+                            
+                            const SizedBox(height: 8),
+                            
+                            // 副标题
+                            Text(
+                              '安亲补习中心',
+                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: Colors.white.withOpacity(0.9),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 20,
+                              ),
+                            ),
+                            
+                            const SizedBox(height: 4),
+                            
+                            // 英文标题
+                            Text(
+                              'Pusat Jagaan Prospek Cemerlang',
+                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: 16,
+                              ),
+                            ),
+                            
+                            const SizedBox(height: 8),
+                            
+                            // 系统名称
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                'PJPC 学校管理系统',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'PJPC School',
-                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  },
+                ),
+                
+                const SizedBox(height: 60),
+                
+                // 加载指示器
+                AnimatedBuilder(
+                  animation: _textAnimation,
+                  builder: (context, child) {
+                    return FadeTransition(
+                      opacity: _textAnimation,
+                      child: Column(
+                        children: [
+                          const CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            strokeWidth: 2,
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Management System',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white.withOpacity(0.9),
-                            fontWeight: FontWeight.w500,
+                          const SizedBox(height: 16),
+                          Text(
+                            '正在加载...',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.white.withOpacity(0.8),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 60),
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '正在加载...',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.white.withOpacity(0.8),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

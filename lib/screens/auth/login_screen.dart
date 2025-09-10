@@ -7,6 +7,7 @@ import '../../services/secure_storage_service.dart';
 import '../../services/error_handler_service.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/custom_button.dart';
+import '../../widgets/common/app_logo.dart';
 import '../home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -149,35 +150,49 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   // Logo and Title
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
-                        width: 1,
+                        color: Colors.white.withOpacity(0.3),
+                        width: 1.5,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
                     ),
                     child: Column(
                       children: [
-                        Icon(
-                          Icons.school,
-                          size: 60,
-                          color: Colors.white,
+                        const AppLogo(
+                          size: 100,
+                          showText: false,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                         Text(
                           'PJPC 学校管理系统',
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.3),
+                                offset: const Offset(1, 1),
+                                blurRadius: 2,
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'PJPC School Management System',
                           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withOpacity(0.9),
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],

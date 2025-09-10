@@ -52,24 +52,33 @@ class _NfcReplacementRequestDialogState extends State<NfcReplacementRequestDialo
   String _getStringValue(dynamic data, String key) {
     if (data == null) return '';
     
-    // 如果是RecordModel类型
-    if (data.toString().contains('RecordModel')) {
+    try {
+      // 如果是RecordModel类型，直接使用getStringValue方法
+      if (data.runtimeType.toString().contains('RecordModel')) {
+        return data.getStringValue(key) ?? '';
+      }
+      
+      // 如果是Map类型
+      if (data is Map<String, dynamic>) {
+        return data[key]?.toString() ?? '';
+      }
+      
+      // 尝试使用getStringValue方法（RecordModel类型）
       return data.getStringValue(key) ?? '';
+    } catch (e) {
+      // 如果出错，返回空字符串
+      return '';
     }
-    
-    // 如果是Map类型
-    if (data is Map<String, dynamic>) {
-      return data[key]?.toString() ?? '';
-    }
-    
-    return '';
   }
 
   @override
   Widget build(BuildContext context) {
-    final studentName = _getStringValue(widget.student, 'student_name').isEmpty ? '未知学生' : _getStringValue(widget.student, 'student_name');
+    final studentName = _getStringValue(widget.student, 'student_name');
     final studentId = _getStringValue(widget.student, 'student_id');
     final className = _getStringValue(widget.student, 'standard');
+    
+    // 确保学生姓名不为空
+    final displayName = studentName.isNotEmpty ? studentName : '未知学生';
 
     return AlertDialog(
       title: Row(
@@ -77,7 +86,7 @@ class _NfcReplacementRequestDialogState extends State<NfcReplacementRequestDialo
           CircleAvatar(
             backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
             child: Text(
-              studentName.isNotEmpty ? studentName[0].toUpperCase() : '?',
+              displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
               style: const TextStyle(
                 color: AppTheme.primaryColor,
                 fontWeight: FontWeight.bold,
@@ -94,7 +103,7 @@ class _NfcReplacementRequestDialogState extends State<NfcReplacementRequestDialo
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
                 Text(
-                  studentName,
+                  displayName,
                   style: TextStyle(
                     fontSize: 14,
                     color: AppTheme.textSecondary,
@@ -131,7 +140,7 @@ class _NfcReplacementRequestDialogState extends State<NfcReplacementRequestDialo
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text('姓名: $studentName'),
+                    Text('姓名: $displayName'),
                     Text('学号: $studentId'),
                     Text('班级: $className'),
                   ],
@@ -328,9 +337,13 @@ class _NfcReplacementRequestDialogState extends State<NfcReplacementRequestDialo
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final nfcProvider = Provider.of<NfcCardProvider>(context, listen: false);
 
+    // 重新获取学生信息
+    final studentName = _getStringValue(widget.student, 'student_name');
+    final displayName = studentName.isNotEmpty ? studentName : '未知学生';
+
     final success = await nfcProvider.submitReplacementRequest(
       studentId: widget.student.id ?? _getStringValue(widget.student, 'id'),
-      studentName: _getStringValue(widget.student, 'student_name').isEmpty ? '未知学生' : _getStringValue(widget.student, 'student_name'),
+      studentName: displayName,
       className: _getStringValue(widget.student, 'standard'),
       teacherId: authProvider.user?.id ?? '',
       reason: _selectedReason,
@@ -344,7 +357,7 @@ class _NfcReplacementRequestDialogState extends State<NfcReplacementRequestDialo
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${_getStringValue(widget.student, 'student_name').isEmpty ? '未知学生' : _getStringValue(widget.student, 'student_name')} 的NFC卡补办申请已提交'),
+          content: Text('$displayName 的NFC卡补办申请已提交'),
           backgroundColor: AppTheme.successColor,
         ),
       );

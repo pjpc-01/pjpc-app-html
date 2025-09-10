@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/attendance_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/common/app_logo.dart';
 import '../attendance/attendance_dashboard_screen.dart';
 import '../attendance/nfc_attendance_screen.dart';
 import '../student/student_management_screen.dart';
@@ -14,6 +16,8 @@ import '../../widgets/common/recent_activity_item.dart';
 import '../points/points_management_screen.dart';
 import '../nfc/teacher_nfc_management_screen.dart';
 import '../nfc/admin_nfc_management_screen.dart';
+import '../class/class_management_screen.dart';
+import '../teacher/teacher_management_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -96,12 +100,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class HomeDashboard extends StatelessWidget {
+class HomeDashboard extends StatefulWidget {
   const HomeDashboard({super.key});
+
+  @override
+  State<HomeDashboard> createState() => _HomeDashboardState();
+}
+
+class _HomeDashboardState extends State<HomeDashboard> {
+  @override
+  void initState() {
+    super.initState();
+    // 加载考勤数据
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AttendanceProvider>(context, listen: false).loadAttendanceRecords();
+    });
+  }
 
   Widget _buildModernAppBar() {
     return SliverAppBar(
-      expandedHeight: 120,
+      expandedHeight: 140,
       floating: false,
       pinned: true,
       backgroundColor: const Color(0xFF1E293B),
@@ -152,6 +170,15 @@ class HomeDashboard extends StatelessWidget {
                   ),
                 ),
               ),
+              // Logo
+              Positioned(
+                left: 20,
+                top: 20,
+                child: const AppLogo(
+                  size: 50,
+                  showText: false,
+                ),
+              ),
             ],
           ),
         ),
@@ -187,7 +214,6 @@ class HomeDashboard extends StatelessWidget {
       backgroundColor: const Color(0xFFF8FAFC),
       body: CustomScrollView(
         slivers: [
-          _buildModernAppBar(),
           SliverToBoxAdapter(
             child: Column(
               children: [
@@ -208,57 +234,67 @@ class HomeDashboard extends StatelessWidget {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final userName = authProvider.user?.getStringValue('name') ?? '用户';
-        final currentTime = DateTime.now();
-        final greeting = _getGreeting(currentTime.hour);
+        final userRole = authProvider.isAdmin ? '管理员' : 
+                        authProvider.isTeacher ? '教师' : '学生';
         
         return Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppTheme.primaryColor,
-                AppTheme.primaryVariant,
+                Color(0xFF3B82F6),
+                Color(0xFF1D4ED8),
+                Color(0xFF1E40AF),
               ],
             ),
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            boxShadow: AppTheme.elevatedShadow,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF3B82F6).withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Colors.white.withOpacity(0.2),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: const Icon(
-                      Icons.person,
+                      Icons.waving_hand_rounded,
                       color: Colors.white,
-                      size: 20,
+                      size: 24,
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '$greeting, $userName',
-                          style: AppTextStyles.headline5.copyWith(
+                          '欢迎回来，$userName！',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                             color: Colors.white,
-                            fontSize: 16,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         Text(
-                          _getCurrentDateStringChinese(),
-                          style: AppTextStyles.bodySmall.copyWith(
+                          '今天是美好的一天，继续加油！',
+                          style: TextStyle(
+                            fontSize: 14,
                             color: Colors.white.withOpacity(0.9),
-                            fontSize: 12,
                           ),
                         ),
                       ],
@@ -266,20 +302,84 @@ class HomeDashboard extends StatelessWidget {
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm,
-                      vertical: AppSpacing.xs,
+                      horizontal: 12,
+                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      _getCurrentTimeString(),
-                      style: AppTextStyles.bodySmall.copyWith(
+                      userRole,
+                      style: const TextStyle(
+                        fontSize: 12,
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
-                        fontSize: 11,
                       ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.calendar_today_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _getCurrentDateStringChinese(),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.access_time_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _getCurrentTimeString(),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -293,36 +393,49 @@ class HomeDashboard extends StatelessWidget {
 
   Widget _buildQuickActionsSection(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '快速操作',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF1E293B),
-            ),
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3B82F6),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '快速操作',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1E293B),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           GridView.count(
             crossAxisCount: 3,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 1.0,
+            childAspectRatio: 0.9,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
             children: [
@@ -337,6 +450,26 @@ class HomeDashboard extends StatelessWidget {
                 icon: Icons.people_rounded,
                 color: const Color(0xFF10B981),
                 onTap: () => _navigateToStudents(context),
+              ),
+              _buildModernActionCard(
+                title: '班级管理',
+                icon: Icons.class_rounded,
+                color: const Color(0xFF06B6D4),
+                onTap: () => _navigateToClassManagement(context),
+              ),
+              Consumer<AuthProvider>(
+                builder: (context, authProvider, child) {
+                  if (authProvider.isAdmin) {
+                    return _buildModernActionCard(
+                      title: '教师管理',
+                      icon: Icons.school_rounded,
+                      color: const Color(0xFF8B5CF6),
+                      onTap: () => _navigateToTeacherManagement(context),
+                    );
+                  } else {
+                    return const SizedBox.shrink();
+                  }
+                },
               ),
               _buildModernActionCard(
                 title: '作业成绩',
@@ -400,16 +533,16 @@ class HomeDashboard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: color.withOpacity(0.2),
-            width: 1,
+            color: color.withOpacity(0.15),
+            width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: color.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -417,27 +550,29 @@ class HomeDashboard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
                 icon,
                 color: color,
-                size: 24,
+                size: 28,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Text(
               title,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF374151),
               ),
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -446,148 +581,179 @@ class HomeDashboard extends StatelessWidget {
   }
 
   Widget _buildStatisticsSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Consumer<AttendanceProvider>(
+      builder: (context, attendanceProvider, child) {
+        // 计算今日统计数据
+        final today = DateTime.now();
+        final todayRecords = attendanceProvider.getTodaysAttendance();
+        
+        final checkInCount = todayRecords.where((r) => r.getStringValue('type') == 'check_in').length;
+        final checkOutCount = todayRecords.where((r) => r.getStringValue('type') == 'check_out').length;
+        final lateCount = todayRecords.where((r) => r.getStringValue('status') == 'late').length;
+        final absentCount = todayRecords.where((r) => r.getStringValue('status') == 'absent').length;
+        
+        // 计算出勤率（假设总学生数为50，这里可以根据实际情况调整）
+        final totalStudents = 50; // 可以从学生提供者获取实际数量
+        final attendanceRate = totalStudents > 0 ? ((checkInCount / totalStudents) * 100).round() : 0;
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '今日概览',
-              style: AppTextStyles.headline5,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '今日概览',
+                  style: AppTextStyles.headline5,
+                ),
+                TextButton(
+                  onPressed: () => _navigateToAttendance(context),
+                  child: const Text('详情'),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () => _navigateToAttendance(context),
-              child: const Text('详情'),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
+            const SizedBox(height: AppSpacing.sm),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              childAspectRatio: 1.4,
+              crossAxisSpacing: AppSpacing.sm,
+              mainAxisSpacing: AppSpacing.sm,
+              children: [
+                StatisticsCard(
+                  title: '今日签到',
+                  value: checkInCount.toString(),
+                  change: '',
+                  isPositive: true,
+                  icon: Icons.check_circle,
+                  color: AppTheme.successColor,
+                ),
+                StatisticsCard(
+                  title: '出勤率',
+                  value: '$attendanceRate%',
+                  change: '',
+                  isPositive: true,
+                  icon: Icons.trending_up,
+                  color: AppTheme.primaryColor,
+                ),
+                StatisticsCard(
+                  title: '迟到人数',
+                  value: lateCount.toString(),
+                  change: '',
+                  isPositive: lateCount == 0,
+                  icon: Icons.schedule,
+                  color: AppTheme.warningColor,
+                ),
+                StatisticsCard(
+                  title: '缺勤人数',
+                  value: absentCount.toString(),
+                  change: '',
+                  isPositive: absentCount == 0,
+                  icon: Icons.person_off,
+                  color: AppTheme.errorColor,
+                ),
+                StatisticsCard(
+                  title: '今日签退',
+                  value: checkOutCount.toString(),
+                  change: '',
+                  isPositive: true,
+                  icon: Icons.logout,
+                  color: AppTheme.primaryVariant,
+                ),
+                StatisticsCard(
+                  title: '总记录数',
+                  value: todayRecords.length.toString(),
+                  change: '',
+                  isPositive: true,
+                  icon: Icons.list_alt,
+                  color: AppTheme.accentColor,
+                ),
+              ],
             ),
           ],
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 1.4,
-          crossAxisSpacing: AppSpacing.sm,
-          mainAxisSpacing: AppSpacing.sm,
-          children: [
-            StatisticsCard(
-              title: '今日签到',
-              value: '24',
-              change: '+12%',
-              isPositive: true,
-              icon: Icons.check_circle,
-              color: AppTheme.successColor,
-            ),
-            StatisticsCard(
-              title: '出勤率',
-              value: '96%',
-              change: '+2%',
-              isPositive: true,
-              icon: Icons.trending_up,
-              color: AppTheme.primaryColor,
-            ),
-            StatisticsCard(
-              title: '迟到人数',
-              value: '3',
-              change: '-1',
-              isPositive: true,
-              icon: Icons.schedule,
-              color: AppTheme.warningColor,
-            ),
-            StatisticsCard(
-              title: '缺勤人数',
-              value: '1',
-              change: '0',
-              isPositive: true,
-              icon: Icons.person_off,
-              color: AppTheme.errorColor,
-            ),
-            StatisticsCard(
-              title: '本周累计加分',
-              value: '—',
-              change: '',
-              isPositive: true,
-              icon: Icons.stars,
-              color: AppTheme.primaryVariant,
-            ),
-            StatisticsCard(
-              title: '今日兑换次数',
-              value: '—',
-              change: '',
-              isPositive: true,
-              icon: Icons.card_giftcard,
-              color: AppTheme.accentColor,
-            ),
-          ],
-        ),
-      ],
+        );
+      },
     );
   }
 
   Widget _buildRecentActivitySection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Consumer<AttendanceProvider>(
+      builder: (context, attendanceProvider, child) {
+        // 获取最近的考勤记录
+        final recentRecords = attendanceProvider.getRecentAttendanceRecords(4);
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '最近活动',
-              style: AppTextStyles.headline4,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '最近活动',
+                  style: AppTextStyles.headline4,
+                ),
+                TextButton(
+                  onPressed: () => _navigateToAttendance(context),
+                  child: const Text('查看全部'),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () => _navigateToAttendance(context),
-              child: const Text('查看全部'),
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              decoration: BoxDecoration(
+                color: AppTheme.cardColor,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: AppTheme.dividerColor),
+                boxShadow: AppTheme.cardShadow,
+              ),
+              child: recentRecords.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Center(
+                        child: Text(
+                          '暂无最近活动',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Column(
+                      children: recentRecords.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final record = entry.value;
+                        final studentName = record.getStringValue('student_name') ?? '未知学生';
+                        final type = record.getStringValue('type') ?? '';
+                        final created = record.getStringValue('created') ?? '';
+                        
+                        final action = type == 'check_in' ? '签到' : '签退';
+                        final time = _formatTime(created);
+                        final status = 'success';
+                        
+                        return Column(
+                          children: [
+                            RecentActivityItem(
+                              studentName: studentName,
+                              action: action,
+                              time: time,
+                              status: status,
+                            ),
+                            if (index < recentRecords.length - 1) const Divider(height: 1),
+                          ],
+                        );
+                      }).toList(),
+                    ),
             ),
           ],
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.cardColor,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppTheme.dividerColor),
-            boxShadow: AppTheme.cardShadow,
-          ),
-          child: Column(
-            children: [
-              RecentActivityItem(
-                studentName: '系统',
-                action: '数据同步',
-                time: '刚刚',
-                status: 'success',
-              ),
-              const Divider(height: 1),
-              RecentActivityItem(
-                studentName: '系统',
-                action: '界面更新',
-                time: '刚刚',
-                status: 'success',
-              ),
-              const Divider(height: 1),
-              RecentActivityItem(
-                studentName: '系统',
-                action: '功能优化',
-                time: '刚刚',
-                status: 'success',
-              ),
-              const Divider(height: 1),
-              RecentActivityItem(
-                studentName: '系统',
-                action: '性能提升',
-                time: '刚刚',
-                status: 'success',
-              ),
-            ],
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -595,6 +761,26 @@ class HomeDashboard extends StatelessWidget {
     if (hour < 12) return '早上好';
     if (hour < 18) return '下午好';
     return '晚上好';
+  }
+
+  String _formatTime(String isoString) {
+    try {
+      final dateTime = DateTime.parse(isoString);
+      final now = DateTime.now();
+      final difference = now.difference(dateTime);
+
+      if (difference.inMinutes < 1) {
+        return '刚刚';
+      } else if (difference.inMinutes < 60) {
+        return '${difference.inMinutes}分钟前';
+      } else if (difference.inHours < 24) {
+        return '${difference.inHours}小时前';
+      } else {
+        return '${difference.inDays}天前';
+      }
+    } catch (e) {
+      return '未知时间';
+    }
   }
 
   String _getCurrentDateStringChinese() {
@@ -633,6 +819,24 @@ class HomeDashboard extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (context) => const StudentManagementScreen(),
+      ),
+    );
+  }
+
+  void _navigateToClassManagement(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ClassManagementScreen(),
+      ),
+    );
+  }
+
+  void _navigateToTeacherManagement(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TeacherManagementScreen(),
       ),
     );
   }
@@ -677,7 +881,7 @@ class HomeDashboard extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const AdminNfcManagementScreen(),
+        builder: (context) => AdminNfcManagementScreen(),
       ),
     );
   }

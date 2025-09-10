@@ -48,7 +48,7 @@
         android:required="false" />
     
     <application
-        android:label="pjpc_app_flutter"
+        android:label="温馨小屋"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="true"
