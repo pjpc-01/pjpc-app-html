@@ -27,7 +27,7 @@ import {
   AlertTriangle,
   Zap,
   Users,
-  Link,
+  Link as LinkIcon,
   ArrowLeft,
   Search,
   GraduationCap,
@@ -185,7 +185,7 @@ export default function StudentUrlsPage() {
                 <p className="text-sm font-medium text-gray-600">活跃卡片</p>
                 <p className="text-2xl font-bold text-orange-600">{stats.activeCards}</p>
               </div>
-              <Link className="h-8 w-8 text-orange-600" />
+              <LinkIcon className="h-8 w-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>

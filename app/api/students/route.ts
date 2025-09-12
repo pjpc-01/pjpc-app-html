@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase, authenticateAdmin } from '@/lib/pocketbase'
 
-// 静态导出配置
-export const dynamic = 'force-static'
+// 动态路由配置
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const center = searchParams.get('center')
     const status = searchParams.get('status')
-    const limit = parseInt(searchParams.get('limit') || '500')
+    const limit = parseInt(searchParams.get('limit') || '1000')
     const page = parseInt(searchParams.get('page') || '1')
 
     // 获取PocketBase实例
@@ -36,7 +36,20 @@ export async function GET(request: NextRequest) {
     const filters = []
 
     if (center) {
-      filters.push(`center = "${center}"`)
+      // 同时兼容字段名 center 与 Center，并且兼容多种写法（含/不含空格、大小写）
+      const c1 = center
+      const c2 = center.replace(/\s+/g, '') // 去空格: WX 01 -> WX01
+      const c3 = center.replace(/\s+/g, '-').toUpperCase() // WX 01 -> WX-01
+      const c4 = c2.toUpperCase() // WX01
+      const c5 = c2.toLowerCase() // wx01
+      const c6 = c1.toUpperCase() // WX 01
+      const variants = Array.from(new Set([c1, c2, c3, c4, c5, c6]))
+
+      const fieldVariants = variants
+        .map(v => `(center = "${v}" || Center = "${v}")`)
+        .join(' || ')
+
+      filters.push(`(${fieldVariants})`)
     }
 
     if (status) {
@@ -89,6 +102,8 @@ export async function GET(request: NextRequest) {
           center: student.center || '未指定',
           status: student.status || 'active',
           standard: student.standard || '未指定',
+          // 生日字段，供数字看板生日功能使用
+          dob: student.dob || student.dateOfBirth || null,
           studentUrl: student.studentUrl || '',
           created: student.created,
           updated: student.updated

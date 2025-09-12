@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const center = searchParams.get('center')
     const status = searchParams.get('status')
-    const limit = parseInt(searchParams.get('limit') || '100')
+    const limit = parseInt(searchParams.get('limit') || '1000')
     const page = parseInt(searchParams.get('page') || '1')
 
     // 获取PocketBase实例

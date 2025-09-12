@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const center = searchParams.get('center')
     const status = searchParams.get('status')
-    const limit = parseInt(searchParams.get('limit') || '100')
+    const limit = parseInt(searchParams.get('limit') || '1000')
     const page = parseInt(searchParams.get('page') || '1')
 
     // 获取PocketBase实例
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // 格式化学生数据 - 只使用最基本的字段
+      // 格式化学生数据 - 带上生日字段供生日榜使用
       const formattedStudents = students.items.map(student => {
         // 只返回最基本的字段，避免字段不匹配问题
         return {
@@ -82,6 +82,8 @@ export async function GET(request: NextRequest) {
           center: student.center || '未指定',
           status: student.status || 'active',
           standard: student.standard || '未指定',
+          // 生日字段（兼容多名称）
+          dob: (student as any).dob || (student as any).dateOfBirth || null,
           created: student.created,
           updated: student.updated
         };
