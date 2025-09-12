@@ -1,0 +1,1234 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
+import 'package:provider/provider.dart';
+import 'package:pocketbase/pocketbase.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import '../../providers/student_provider.dart';
+import '../../providers/points_provider.dart';
+import '../../providers/teacher_provider.dart';
+import '../../services/pocketbase_service.dart';
+import '../../services/encryption_service.dart';
+import '../../services/security_service.dart';
+import '../../theme/app_theme.dart';
+import '../../services/nfc_safe_scanner_service.dart';
+
+class PointsNFCScannerWidget extends StatefulWidget {
+  const PointsNFCScannerWidget({super.key});
+
+  @override
+  State<PointsNFCScannerWidget> createState() => _PointsNFCScannerWidgetState();
+}
+
+class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
+    with TickerProviderStateMixin {
+  bool _isScanning = false;
+  String _statusMessage = '准备扫描';
+  late AnimationController _pulseController;
+  late AnimationController _scanController;
+  late Animation<double> _pulseAnimation;
+  final EncryptionService _encryptionService = EncryptionService();
+  final SecurityService _securityService = SecurityService();
+  late Animation<double> _scanAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    );
+    _scanController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    
+    _pulseAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.2,
+    ).animate(CurvedAnimation(
+      parent: _pulseController,
+      curve: Curves.easeInOut,
+    ));
+    
+    _scanAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _scanController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    _scanController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenHeight < 700 || screenWidth < 360;
+    
+    return Container(
+      height: isSmallScreen ? screenHeight * 0.7 : screenHeight * 0.85,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFF8FAFC),
+            Color(0xFFF1F5F9),
+          ],
+        ),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(28),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildEnterpriseHeader(isSmallScreen),
+          Expanded(
+            child: _buildEnterpriseScannerContent(isSmallScreen),
+          ),
+          _buildEnterpriseActionButtons(isSmallScreen),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnterpriseHeader(bool isSmallScreen) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        isSmallScreen ? 20 : 24,
+        isSmallScreen ? 16 : 20,
+        isSmallScreen ? 20 : 24,
+        isSmallScreen ? 12 : 16,
+      ),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFF59E0B),
+            Color(0xFFD97706),
+          ],
+        ),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(28),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF59E0B).withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.stars,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '积分 NFC 扫描',
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 18 : 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                Text(
+                  '扫描学生卡进行积分操作',
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 12 : 14,
+                    color: Colors.white.withOpacity(0.8),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(
+                Icons.close,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnterpriseScannerContent(bool isSmallScreen) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(isSmallScreen ? 20 : 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildEnterpriseScannerCircle(),
+          SizedBox(height: isSmallScreen ? 24 : 32),
+          _buildEnterpriseStatusCard(),
+          SizedBox(height: isSmallScreen ? 20 : 24),
+          _buildEnterpriseInstructions(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnterpriseScannerCircle() {
+    return AnimatedBuilder(
+      animation: Listenable.merge([_pulseAnimation, _scanAnimation]),
+      builder: (context, child) {
+        return Container(
+          width: 240,
+          height: 240,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [
+                const Color(0xFFF59E0B).withOpacity(0.05),
+                const Color(0xFFF59E0B).withOpacity(0.15),
+                const Color(0xFFF59E0B).withOpacity(0.25),
+                const Color(0xFFF59E0B).withOpacity(0.4),
+              ],
+              stops: const [0.0, 0.3, 0.6, 1.0],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFF59E0B).withOpacity(0.2),
+                blurRadius: 30,
+                spreadRadius: 8,
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 15,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Transform.scale(
+            scale: _isScanning ? _pulseAnimation.value : 1.0,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: _isScanning 
+                    ? [
+                        const Color(0xFFF59E0B),
+                        const Color(0xFFD97706),
+                      ]
+                    : [
+                        const Color(0xFF6B7280),
+                        const Color(0xFF4B5563),
+                      ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: (_isScanning ? const Color(0xFFF59E0B) : const Color(0xFF6B7280))
+                        .withOpacity(0.4),
+                    blurRadius: 20,
+                    spreadRadius: 3,
+                  ),
+                ],
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 3,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Icon(
+                      _isScanning ? Icons.stars : Icons.stars_outlined,
+                      size: 60,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _isScanning ? '扫描中...' : '准备扫描',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEnterpriseStatusCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            const Color(0xFFF8FAFC),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+          BoxShadow(
+            color: _getStatusColor().withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(
+          color: _getStatusColor().withOpacity(0.2),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _getStatusColor().withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              _getStatusIcon(),
+              color: _getStatusColor(),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '系统状态',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF6B7280),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _statusMessage,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: _getStatusColor(),
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnterpriseInstructions() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFF8FAFC),
+            Color(0xFFF1F5F9),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFFF59E0B),
+                  Color(0xFFD97706),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.info_outline,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            '积分操作指南',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1F2937),
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                _buildInstructionStep('1', '确保NFC功能已开启'),
+                const SizedBox(height: 12),
+                _buildInstructionStep('2', '将学生NFC卡片靠近设备背面'),
+                const SizedBox(height: 12),
+                _buildInstructionStep('3', '保持卡片稳定直到扫描完成'),
+                const SizedBox(height: 12),
+                _buildInstructionStep('4', '扫描成功后可直接进行积分操作'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInstructionStep(String number, String text) {
+    return Row(
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFFF59E0B),
+                Color(0xFFD97706),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: Text(
+              number,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF374151),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEnterpriseActionButtons(bool isSmallScreen) {
+    return Container(
+      padding: EdgeInsets.all(isSmallScreen ? 20 : 24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFF8FAFC),
+            Color(0xFFF1F5F9),
+          ],
+        ),
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(28),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildEnterpriseActionButton(
+              _isScanning ? '停止扫描' : '开始扫描',
+              _isScanning ? Icons.stop_circle : Icons.play_circle,
+              _isScanning ? const Color(0xFFEF4444) : const Color(0xFFF59E0B),
+              _isScanning ? _stopScanning : _startScanning,
+              isSmallScreen,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnterpriseActionButton(
+    String text,
+    IconData icon,
+    Color color,
+    VoidCallback onPressed,
+    bool isSmallScreen,
+  ) {
+    return Container(
+      height: isSmallScreen ? 56 : 64,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color,
+            color.withOpacity(0.8),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onPressed,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  color: Colors.white,
+                  size: isSmallScreen ? 20 : 24,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  text,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: isSmallScreen ? 16 : 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor() {
+    if (_statusMessage.contains('成功')) return AppTheme.successColor;
+    if (_statusMessage.contains('失败') || _statusMessage.contains('错误')) return AppTheme.errorColor;
+    if (_statusMessage.contains('扫描中')) return const Color(0xFFF59E0B);
+    return AppTheme.textSecondary;
+  }
+
+  IconData _getStatusIcon() {
+    if (_statusMessage.contains('成功')) return Icons.check_circle;
+    if (_statusMessage.contains('失败') || _statusMessage.contains('错误')) return Icons.error;
+    if (_statusMessage.contains('扫描中')) return Icons.stars;
+    return Icons.info;
+  }
+
+  void _startScanning() async {
+    final isAvailable = await FlutterNfcKit.nfcAvailability;
+    if (isAvailable != NFCAvailability.available) {
+      _updateStatus('NFC功能不可用', isError: true);
+      return;
+    }
+
+    setState(() {
+      _isScanning = true;
+      _statusMessage = '正在扫描...';
+    });
+
+    _pulseController.repeat(reverse: true);
+    _scanController.forward();
+
+    try {
+      final result = await NFCSafeScannerService.instance.safeScanNFC(
+        timeout: const Duration(seconds: 10),
+        requireStudent: true,
+      );
+
+      if (!mounted) return;
+
+      if (result.isSuccess && result.student != null) {
+        final student = result.student!;
+        final studentName = student.getStringValue('student_name');
+        
+        _updateStatus('找到学生: $studentName', isError: false);
+
+        // 显示成功消息并关闭扫描器
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('扫描成功: $studentName'),
+            backgroundColor: AppTheme.successColor,
+          ),
+        );
+
+        // 关闭扫描器并打开积分面板
+        Navigator.pop(context);
+        
+        // 显示积分操作面板
+        _showPointsPanel(context, student);
+      } else {
+        _updateStatus(result.errorMessage ?? '扫描失败', isError: true);
+        _stopScanning();
+      }
+    } catch (e) {
+      _updateStatus('扫描失败: $e', isError: true);
+      _stopScanning();
+    }
+  }
+
+  void _stopScanning() {
+    FlutterNfcKit.finish();
+    setState(() {
+      _isScanning = false;
+      _statusMessage = '扫描已停止';
+    });
+    _pulseController.stop();
+    _scanController.reset();
+  }
+
+  void _updateStatus(String message, {bool isError = false}) {
+    setState(() {
+      _statusMessage = message;
+    });
+  }
+
+  void _showPointsPanel(BuildContext context, RecordModel student) {
+    final pointsProvider = context.read<PointsProvider>();
+    final history = pointsProvider.getPointsHistoryForStudent(student.id);
+
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return SizedBox(
+          height: MediaQuery.of(ctx).size.height * 0.7,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Text('积分操作 - ${student.getStringValue('student_name')}',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: history.isEmpty
+                    ? const Center(child: Text('暂无积分记录'))
+                    : ListView.separated(
+                        itemCount: history.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final r = history[index];
+                          final points = r.getIntValue('points_change') ?? 0;
+                          final reason = r.getStringValue('reason');
+                          final date = r.getStringValue('created');
+                          final type = r.getStringValue('transaction_type');
+                          final color = points >= 0 ? AppTheme.successColor : AppTheme.errorColor;
+                          return ListTile(
+                            leading: Icon(
+                              type == 'add_points'
+                                  ? Icons.trending_up
+                                  : type == 'redeem'
+                                      ? Icons.card_giftcard
+                                      : Icons.trending_down,
+                              color: color,
+                            ),
+                            title: Text('${points >= 0 ? '+' : ''}$points 分'),
+                            subtitle: Text(reason.isEmpty ? type : '$type · $reason'),
+                            trailing: Text(date),
+                          );
+                        },
+                      ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 积分操作按钮
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _showCustomPointsDialog('add_points', student),
+                            icon: const Icon(Icons.add),
+                            label: const Text('增加积分'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.successColor,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _showCustomPointsDialog('deduct_points', student),
+                            icon: const Icon(Icons.remove),
+                            label: const Text('扣除积分'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.errorColor,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _showCustomPointsDialog('redeem', student),
+                        icon: const Icon(Icons.card_giftcard),
+                        label: const Text('兑换礼物'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accentColor,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showCustomPointsDialog(String actionType, RecordModel student) async {
+    Navigator.pop(context); // 关闭积分面板
+    
+    final amountController = TextEditingController();
+    final reasonController = TextEditingController();
+    File? proof;
+
+    String title;
+    String amountLabel;
+    String reasonLabel;
+    Color primaryColor;
+
+    switch (actionType) {
+      case 'add_points':
+        title = '增加积分';
+        amountLabel = '增加积分数量';
+        reasonLabel = '增加原因（可选）';
+        primaryColor = AppTheme.successColor;
+        break;
+      case 'deduct_points':
+        title = '扣除积分';
+        amountLabel = '扣除积分数量';
+        reasonLabel = '扣除原因（可选）';
+        primaryColor = AppTheme.errorColor;
+        break;
+      case 'redeem':
+        title = '兑换礼物';
+        amountLabel = '兑换所需积分';
+        reasonLabel = '兑换说明';
+        primaryColor = AppTheme.accentColor;
+        break;
+      default:
+        return;
+    }
+
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text(title),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 学生信息显示
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
+                        child: Text(
+                          student.getStringValue('student_name').isNotEmpty 
+                              ? student.getStringValue('student_name')[0].toUpperCase() 
+                              : '?',
+                          style: const TextStyle(color: AppTheme.primaryColor),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              student.getStringValue('student_name'),
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              '${student.getStringValue('student_id')} · ${student.getStringValue('standard')}',
+                              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: amountLabel,
+                    hintText: '请输入积分数量',
+                    prefixIcon: Icon(
+                      actionType == 'add_points' ? Icons.add : 
+                      actionType == 'deduct_points' ? Icons.remove : Icons.card_giftcard,
+                      color: primaryColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: reasonController,
+                  decoration: InputDecoration(
+                    labelText: reasonLabel,
+                    hintText: '请输入${reasonLabel.replaceAll('（可选）', '').replaceAll('（', '').replaceAll('）', '')}',
+                    prefixIcon: const Icon(Icons.description, color: AppTheme.textSecondary),
+                  ),
+                  maxLines: 2,
+                ),
+                // 兑换时需要拍照凭证
+                if (actionType == 'redeem') ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            final picker = ImagePicker();
+                            final picked = await picker.pickImage(source: ImageSource.camera, imageQuality: 80);
+                            if (picked != null) {
+                              setState(() => proof = File(picked.path));
+                            }
+                          },
+                          icon: const Icon(Icons.camera_alt),
+                          label: const Text('拍照凭证'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            final picker = ImagePicker();
+                            final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+                            if (picked != null) {
+                              setState(() => proof = File(picked.path));
+                            }
+                          },
+                          icon: const Icon(Icons.photo_library),
+                          label: const Text('相册选择'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.secondaryColor,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: proof == null ? AppTheme.warningColor.withOpacity(0.1) : AppTheme.successColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: proof == null ? AppTheme.warningColor.withOpacity(0.3) : AppTheme.successColor.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          proof == null ? Icons.warning_outlined : Icons.check_circle,
+                          color: proof == null ? AppTheme.warningColor : AppTheme.successColor,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          proof == null ? '未选择凭证' : '已选择凭证',
+                          style: TextStyle(
+                            color: proof == null ? AppTheme.warningColor : AppTheme.successColor,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final amount = int.tryParse(amountController.text.trim()) ?? 0;
+                final reason = reasonController.text.trim();
+                
+                if (amount <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('请输入有效的积分数量'),
+                      backgroundColor: AppTheme.errorColor,
+                    ),
+                  );
+                  return;
+                }
+
+                if (actionType == 'redeem' && proof == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('兑换礼物需要拍照凭证'),
+                      backgroundColor: AppTheme.warningColor,
+                    ),
+                  );
+                  return;
+                }
+
+                // 显示加载状态
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Row(
+                      children: [
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 12),
+                        Text('正在处理...'),
+                      ],
+                    ),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+
+                // 二次验证老师卡
+                final teacherConfirmed = await _showTeacherVerificationDialog();
+                if (!teacherConfirmed) {
+                  return;
+                }
+
+                final provider = context.read<PointsProvider>();
+                final teacherId = PocketBaseService.instance.currentUser?.id ?? '';
+                
+                if (teacherId.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('无法获取老师ID，请重新登录'),
+                      backgroundColor: AppTheme.errorColor,
+                    ),
+                  );
+                  return;
+                }
+
+                bool success = false;
+                String? errorMessage;
+
+                try {
+                  if (actionType == 'add_points') {
+                    success = await provider.addPointsToStudent(student.id, amount, reason, teacherId: teacherId);
+                  } else if (actionType == 'deduct_points') {
+                    success = await provider.deductPointsFromStudent(student.id, amount, reason, teacherId: teacherId);
+                  } else if (actionType == 'redeem') {
+                    success = await provider.redeemWithProof(student.id, amount, reason, teacherId: teacherId, proofImage: proof);
+                  }
+                  
+                  errorMessage = provider.error;
+                } catch (e) {
+                  success = false;
+                  errorMessage = '操作异常: $e';
+                }
+
+                if (mounted) {
+                  Navigator.of(ctx).pop();
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('$title成功'),
+                        backgroundColor: AppTheme.successColor,
+                      ),
+                    );
+                  } else {
+                    // 显示错误信息
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(errorMessage ?? '操作失败，请重试'),
+                        backgroundColor: AppTheme.errorColor,
+                        duration: const Duration(seconds: 5),
+                        action: SnackBarAction(
+                          label: '重试',
+                          textColor: Colors.white,
+                          onPressed: () {
+                            // 重新打开对话框
+                            _showCustomPointsDialog(actionType, student);
+                          },
+                        ),
+                      ),
+                    );
+                  }
+                }
+              },
+              style: FilledButton.styleFrom(backgroundColor: primaryColor),
+              child: const Text('确定'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<bool> _showTeacherVerificationDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('老师卡验证'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.nfc,
+                size: 48,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(height: 16),
+              const Text('请将老师NFC卡靠近设备进行验证'),
+              const SizedBox(height: 16),
+              FutureBuilder<bool>(
+                future: _performTeacherScan(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Column(
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 8),
+                        Text('正在扫描...'),
+                      ],
+                    );
+                  } else if (snapshot.hasError) {
+                    return Column(
+                      children: [
+                        const Icon(Icons.error, color: AppTheme.errorColor, size: 32),
+                        const SizedBox(height: 8),
+                        Text('扫描失败: ${snapshot.error}'),
+                      ],
+                    );
+                  } else if (snapshot.data == true) {
+                    return const Column(
+                      children: [
+                        Icon(Icons.check_circle, color: AppTheme.successColor, size: 32),
+                        SizedBox(height: 8),
+                        Text('验证成功！'),
+                      ],
+                    );
+                  } else {
+                    return const Column(
+                      children: [
+                        Icon(Icons.cancel, color: AppTheme.errorColor, size: 32),
+                        SizedBox(height: 8),
+                        Text('验证失败'),
+                      ],
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final result = await _performTeacherScan();
+                if (result) {
+                  Navigator.of(ctx).pop(true);
+                }
+              },
+              child: const Text('重试'),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
+  }
+
+  Future<bool> _performTeacherScan() async {
+    try {
+      final result = await NFCSafeScannerService.instance.safeScanNFC(
+        timeout: const Duration(seconds: 10),
+        requireStudent: false,
+      );
+
+      if (!result.isSuccess) {
+        throw Exception(result.errorMessage ?? '扫描失败');
+      }
+
+      final raw = result.decryptedData ?? result.nfcData ?? '';
+      if (raw.isEmpty) {
+        throw Exception('未在卡内发现有效数据');
+      }
+
+      // 兼容 teacherId_random 或纯ID
+      final idx = raw.indexOf('_');
+      String teacherId = (idx > 0 ? raw.substring(0, idx) : raw)
+          .replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
+
+      // 查找老师（容错匹配）
+      final teacherProvider = Provider.of<TeacherProvider>(context, listen: false);
+      RecordModel? teacher;
+      
+      // 先按精确ID匹配
+      for (final t in teacherProvider.teachers) {
+        final raw = (t.data['user_id'] ?? t.data['teacher_id'] ?? '').toString();
+        final norm = raw.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
+        if (norm.toUpperCase() == teacherId.toUpperCase()) {
+          teacher = t;
+          break;
+        }
+      }
+      
+      // 如未命中，做容错查找
+      if (teacher == null) {
+        String _normalize(String s) => s.replaceAll(RegExp(r'[^A-Za-z0-9]'), '' ).toUpperCase();
+        final target = _normalize(teacherId);
+        for (final t in teacherProvider.teachers) {
+          final raw = (t.data['user_id'] ?? t.data['teacher_id'] ?? '').toString();
+          final norm = _normalize(raw);
+          if (norm == target || norm.contains(target) || target.contains(norm)) {
+            teacher = t;
+            break;
+          }
+        }
+      }
+      
+      if (teacher == null) {
+        throw Exception('未找到对应的老师记录: $teacherId');
+      }
+      
+      return true;
+    } catch (e) {
+      rethrow;
+    }
+  }
+}

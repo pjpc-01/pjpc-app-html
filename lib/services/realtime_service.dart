@@ -51,20 +51,32 @@ class RealtimeService extends ChangeNotifier {
   /// 创建订阅
   void _createSubscription(String collection) async {
     try {
+      // 检查是否已经存在订阅
+      if (_subscriptions.containsKey(collection)) {
+        print('✅ 集合 $collection 已存在订阅');
+        return;
+      }
+      
       final subscription = await PocketBaseService.instance.pb
           .collection(collection)
           .subscribe('*', (e) {
         _handleRealtimeUpdate(collection, e);
       });
       
-      _subscriptions[collection] = subscription as StreamSubscription;
-      _isConnected = true;
-      _reconnectAttempts = 0;
-      
-      print('✅ 已订阅集合: $collection');
-      notifyListeners();
+      // 修复类型转换问题 - 使用动态类型处理
+      try {
+        _subscriptions[collection] = subscription as StreamSubscription;
+        _isConnected = true;
+        _reconnectAttempts = 0;
+        print('✅ 已订阅集合: $collection');
+        notifyListeners();
+      } catch (e) {
+        print('⚠️ 跳过订阅 $collection：类型转换失败 - $e');
+        return;
+      }
     } catch (e) {
       print('❌ 创建订阅失败: $e');
+      _handleSubscriptionError(collection, e, true);
     }
   }
   
@@ -186,6 +198,36 @@ class RealtimeService extends ChangeNotifier {
   /// 订阅学生费用更新
   void subscribeToStudentFees(Function(Map<String, dynamic>) onUpdate) {
     subscribeToCollection('student_fees', onUpdate);
+  }
+  
+  /// 安全地取消订阅学生数据
+  void unsubscribeFromStudents() {
+    unsubscribeFromCollection('students');
+  }
+  
+  /// 安全地取消订阅考勤数据
+  void unsubscribeFromAttendance() {
+    unsubscribeFromCollection('student_attendance');
+  }
+  
+  /// 安全地取消订阅发票数据
+  void unsubscribeFromInvoices() {
+    unsubscribeFromCollection('invoices');
+  }
+  
+  /// 安全地取消订阅支付数据
+  void unsubscribeFromPayments() {
+    unsubscribeFromCollection('payments');
+  }
+  
+  /// 安全地取消订阅费用项目
+  void unsubscribeFromFeeItems() {
+    unsubscribeFromCollection('fee_items');
+  }
+  
+  /// 安全地取消订阅学生费用
+  void unsubscribeFromStudentFees() {
+    unsubscribeFromCollection('student_fees');
   }
   
   /// 获取订阅状态

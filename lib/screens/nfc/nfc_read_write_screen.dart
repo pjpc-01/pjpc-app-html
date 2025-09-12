@@ -1,8 +1,9 @@
+import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
-import 'package:nfc_manager/nfc_manager.dart';
 import 'package:ndef/record.dart'; 
 import 'package:provider/provider.dart';
 import 'package:pocketbase/pocketbase.dart';
@@ -11,8 +12,10 @@ import '../../services/security_service.dart';
 import '../../services/alert_service.dart';
 import '../../services/encryption_service.dart';
 import '../../services/pocketbase_service.dart';
+import '../../services/nfc_write_service.dart';
 import '../../providers/student_provider.dart';
 import '../../providers/teacher_provider.dart';
+import 'nfc_test_tool.dart';
 
 class NfcReadWriteScreen extends StatefulWidget {
   const NfcReadWriteScreen({super.key});
@@ -65,6 +68,8 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
     // 延迟加载数据，避免在build过程中调用setState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
+      // 确保先加载服务端密钥
+      _encryptionService.ensureKeysLoaded();
     });
   }
 
@@ -173,6 +178,15 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
     }
     
     return queryIndex == query.length;
+  }
+  
+  // 生成随机字符串
+  String _generateRandomString(int length) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    final random = Random();
+    return String.fromCharCodes(
+      Iterable.generate(length, (_) => chars.codeUnitAt(random.nextInt(chars.length)))
+    );
   }
   Future<void> _loadData() async {
     try {
@@ -589,34 +603,10 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
     _animationController.repeat();
 
     try {
-      // 使用flutter_nfc_kit进行NFC读取
-      NFCTag tag = await FlutterNfcKit.poll(
-        timeout: const Duration(seconds: 10),
-        iosMultipleTagMessage: "发现多个标签！请移除所有标签，然后重试。",
-        iosAlertMessage: "将设备靠近NFC标签"
-      );
+      // 统一走通用读取实现，避免与其它入口逻辑不一致
+      final readData = await _readFromNfcCard();
 
-      await FlutterNfcKit.setIosAlertMessage("正在读取...");
-      
-      // 读取NDEF记录
-      String? readData;
-      if (tag.ndefAvailable ?? false) {
-        List<dynamic> records = await FlutterNfcKit.readNDEFRecords(cached: false);
-        
-        for (var record in records) {
-          if (record.payload != null && record.payload!.isNotEmpty) {
-            final content = String.fromCharCodes(record.payload!);
-            if (content.isNotEmpty) {
-              readData = content;
-              break;
-            }
-          }
-        }
-      }
-
-      await FlutterNfcKit.finish();
-
-      if (readData != null && readData.isNotEmpty) {
+      if (readData.isNotEmpty) {
         // 尝试解密数据
         String decryptedData = readData;
         bool decryptionSuccessful = false;
@@ -626,7 +616,13 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
           if (readData.contains(':')) {
             final parts = readData.split(':');
             if (parts.length == 2) {
-              decryptedData = _encryptionService.decryptNFCData(parts[0], parts[1]);
+              await _encryptionService.ensureKeysLoaded();
+              final encryptedPart = parts[0].trim();
+              final saltPart = parts[1].trim();
+              final normalizedEncrypted = encryptedPart.replaceAll('-', '+').replaceAll('_', '/');
+              print('🔎 待解密数据: encrypted="'+normalizedEncrypted+'" salt="'+saltPart+'"');
+              _encryptionService.logAvailableVersions();
+              decryptedData = _encryptionService.decryptNFCData(normalizedEncrypted, saltPart);
               decryptionSuccessful = true;
               _isEncrypted = true;
               _encryptionStatus = '已解密';
@@ -878,6 +874,20 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
         backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bug_report),
+            tooltip: 'NFC测试工具',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NFCFixVerificationTool(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -1087,43 +1097,27 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
               
               return DropdownButtonFormField<String>(
                 value: _selectedStudentId,
-                  decoration: InputDecoration(
-                    labelText: '选择要写入NFC卡的学生',
+                decoration: InputDecoration(
+                  labelText: '选择要写入NFC卡的学生',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                   prefixIcon: const Icon(Icons.person),
                 ),
+                isExpanded: true,
                 items: students.map((student) {
-                  final studentId = (student.data['student_id'] ?? '').toString();
                   final studentName = (student.data['student_name'] ?? '').toString();
-                  final center = (student.data['center'] ?? '').toString();
+                  final studentId = (student.data['student_id'] ?? '').toString();
+                  
                   return DropdownMenuItem<String>(
                     value: student.id,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          studentName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '$studentId - $center',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ],
+                    child: Text(
+                      '$studentName ($studentId)',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   );
                 }).toList(),
@@ -1321,43 +1315,27 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
               
               return DropdownButtonFormField<String>(
                 value: _selectedTeacherId,
-                  decoration: InputDecoration(
-                    labelText: '选择要写入NFC卡的老师',
+                decoration: InputDecoration(
+                  labelText: '选择要写入NFC卡的老师',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                   prefixIcon: const Icon(Icons.school),
                 ),
+                isExpanded: true,
                 items: teachers.map((teacher) {
-                  final teacherId = (teacher.data['teacher_id'] ?? '').toString();
                   final teacherName = (teacher.data['name'] ?? '').toString();
-                  final department = (teacher.data['department'] ?? '').toString();
+                  final teacherId = (teacher.data['teacher_id'] ?? '').toString();
+                  
                   return DropdownMenuItem<String>(
                     value: teacher.id,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          teacherName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '$teacherId - $department',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ],
+                    child: Text(
+                      '$teacherName ($teacherId)',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   );
                 }).toList(),
@@ -1436,50 +1414,71 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
       final studentName = (student.data['student_name'] ?? '').toString();
       
       setState(() {
-        _nfcOperationStatus = '正在加密学生数据...';
+        _nfcOperationStatus = '正在准备学生数据...';
       });
 
-      // 加密学生数据
-      final salt = _encryptionService.generateSalt();
-      final encryptedData = _encryptionService.encryptNFCData(studentId, salt);
-      final finalData = '$encryptedData:$salt';
+      // 生成学生ID+随机字符串的组合数据
+      final randomString = _generateRandomString(8); // 生成8位随机字符串
+      final combinedData = '${studentId}_$randomString';
+      
+      setState(() {
+        _nfcOperationStatus = '正在准备学生数据...';
+      });
 
+      // 加密组合数据（确保密钥已加载）
+      String nfcData = combinedData;
+      try {
+        await _encryptionService.ensureKeysLoaded();
+        // 生成盐值
+        final salt = _generateRandomString(8);
+        final encryptedData = _encryptionService.encryptNFCData(combinedData, salt);
+        nfcData = '$encryptedData:$salt';
+        print('✅ 学生数据加密成功: $combinedData -> $nfcData');
+      } catch (e) {
+        print('⚠️ 学生数据加密失败，使用原始数据: $e');
+        // 继续使用原始组合数据
+      }
+      
       setState(() {
         _nfcOperationStatus = '请将NFC卡靠近设备...';
       });
 
-      // 使用 flutter_nfc_kit 写入NFC
-      await _writeToNfcCard(finalData);
+      // 写入数据到NFC卡
+      await _writeToNfcCard(nfcData);
 
-      // 更新学生记录
-      await _encryptionService.encryptStudentUID(_selectedStudentId!, studentId);
+      if (mounted) {
+        setState(() {
+          _nfcOperationStatus = 'NFC卡写入成功！';
+        });
 
-      setState(() {
-        _nfcOperationStatus = 'NFC卡写入成功！';
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$studentName 的NFC卡写入成功'),
-          backgroundColor: AppTheme.successColor,
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$studentName 的NFC卡写入成功'),
+            backgroundColor: AppTheme.successColor,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
 
     } catch (e) {
-      setState(() {
-        _nfcOperationStatus = '写入失败: $e';
-      });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('NFC卡写入失败: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        setState(() {
+          _nfcOperationStatus = '写入失败: $e';
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('NFC卡写入失败: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
-      setState(() {
-        _isNfcOperating = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isNfcOperating = false;
+        });
+      }
     }
   }
 
@@ -1497,54 +1496,84 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
       final teacherProvider = Provider.of<TeacherProvider>(context, listen: false);
       final teacher = teacherProvider.teachers.firstWhere((t) => t.id == _selectedTeacherId);
       
-      final teacherId = (teacher.data['teacher_id'] ?? '').toString();
+      final rawTeacherId = (teacher.data['user_id'] ?? teacher.data['teacher_id'] ?? '').toString();
+      // 仅允许字母数字，去除其他符号，保持与解密校验一致
+      final teacherId = rawTeacherId.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
+      if (teacherId.isEmpty) {
+        setState(() { _nfcOperationStatus = '老师ID为空：请先在后台为该老师设置teacher_id（字母数字）'; });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('老师ID为空：请在PocketBase完善 teacher_id 后再写卡')),
+        );
+        return;
+      }
       final teacherName = (teacher.data['name'] ?? '').toString();
       
       setState(() {
-        _nfcOperationStatus = '正在加密老师数据...';
+        _nfcOperationStatus = '正在准备老师数据...';
       });
 
-      // 加密老师数据
-      final salt = _encryptionService.generateSalt();
-      final encryptedData = _encryptionService.encryptNFCData(teacherId, salt);
-      final finalData = '$encryptedData:$salt';
+      // 生成老师ID+随机字符串的组合数据
+      final randomString = _generateRandomString(8); // 生成8位随机字符串
+      final combinedData = '${teacherId}_$randomString';
+      
+      setState(() {
+        _nfcOperationStatus = '正在准备老师数据...';
+      });
 
+      // 加密组合数据（确保密钥已加载）
+      String nfcData = combinedData;
+      try {
+        await _encryptionService.ensureKeysLoaded();
+        // 生成盐值
+        final salt = _generateRandomString(8);
+        final encryptedData = _encryptionService.encryptNFCData(combinedData, salt);
+        nfcData = '$encryptedData:$salt';
+        print('✅ 老师数据加密成功: $combinedData -> $nfcData');
+      } catch (e) {
+        print('⚠️ 老师数据加密失败，使用原始数据: $e');
+        // 继续使用原始组合数据
+      }
+      
       setState(() {
         _nfcOperationStatus = '请将NFC卡靠近设备...';
       });
 
-      // 使用 flutter_nfc_kit 写入NFC
-      await _writeToNfcCard(finalData);
+      // 写入数据到NFC卡
+      await _writeToNfcCard(nfcData);
 
-      // 更新老师记录
-      await _encryptionService.encryptTeacherUID(_selectedTeacherId!, teacherId);
+      if (mounted) {
+        setState(() {
+          _nfcOperationStatus = 'NFC卡写入成功！';
+        });
 
-      setState(() {
-        _nfcOperationStatus = 'NFC卡写入成功！';
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$teacherName 的NFC卡写入成功'),
-          backgroundColor: AppTheme.successColor,
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$teacherName 的NFC卡写入成功'),
+            backgroundColor: AppTheme.successColor,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
 
     } catch (e) {
-      setState(() {
-        _nfcOperationStatus = '写入失败: $e';
-      });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('NFC卡写入失败: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        setState(() {
+          _nfcOperationStatus = '写入失败: $e';
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('NFC卡写入失败: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
-      setState(() {
-        _isNfcOperating = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isNfcOperating = false;
+        });
+      }
     }
   }
 
@@ -1571,15 +1600,37 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
       });
 
       // 解密数据
+      String combinedData = '';
       String studentId = '';
       try {
         if (nfcData.contains(':')) {
           final parts = nfcData.split(':');
           if (parts.length == 2) {
-            studentId = _encryptionService.decryptNFCData(parts[0], parts[1]);
+            final encryptedPart = parts[0].trim();
+            final saltPart = parts[1].trim();
+            print('🔎 待解密数据: encrypted="'+encryptedPart+'" salt="'+saltPart+'"');
+            // 兼容可能的 url-safe base64
+            final normalizedEncrypted = encryptedPart.replaceAll('-', '+').replaceAll('_', '/');
+            _encryptionService.logAvailableVersions();
+            final decrypted = _encryptionService.decryptNFCData(normalizedEncrypted, saltPart);
+            print('🔓 解密明文: '+decrypted);
+            combinedData = decrypted;
           }
-      } else {
-          studentId = nfcData; // 未加密数据
+        } else {
+          combinedData = nfcData; // 未加密数据
+        }
+        
+        // 从组合数据中提取学生ID（格式：学生ID_随机字符串）
+        if (combinedData.contains('_')) {
+          final parts = combinedData.split('_');
+          if (parts.length >= 2) {
+            studentId = parts[0]; // 第一部分是学生ID
+            print('✅ 成功解析学生ID: $studentId (完整数据: $combinedData)');
+          } else {
+            studentId = combinedData; // 如果没有下划线，直接使用
+          }
+        } else {
+          studentId = combinedData; // 如果没有下划线，直接使用
         }
       } catch (e) {
         setState(() {
@@ -1592,12 +1643,27 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
         _nfcOperationStatus = '正在查找学生信息...';
       });
 
-      // 查找学生
+      // 查找学生（做规范化匹配，容错空格/大小写/前缀）
+      String _normalizeId(String s) => s.replaceAll(RegExp(r'\s+'), '').toUpperCase();
+      String _stripStu(String s) => s.replaceFirst(RegExp(r'^STU'), '');
+
+      final normalizedTarget = _stripStu(_normalizeId(studentId));
       final studentProvider = Provider.of<StudentProvider>(context, listen: false);
-      final student = studentProvider.students.firstWhere(
-        (s) => (s.data['student_id'] ?? '').toString() == studentId,
-        orElse: () => throw Exception('未找到学生'),
-      );
+
+      RecordModel? student;
+      for (final s in studentProvider.students) {
+        final raw = (s.data['student_id'] ?? '').toString();
+        final normalized = _stripStu(_normalizeId(raw));
+        if (normalized == normalizedTarget || raw.toUpperCase() == studentId.toUpperCase() || raw.toUpperCase().contains(studentId.toUpperCase())) {
+          student = s;
+          break;
+        }
+      }
+
+      if (student == null) {
+        print('❌ 未找到学生: target="$studentId" (normalized=$normalizedTarget)');
+        throw Exception('未找到学生');
+      }
 
       final studentName = (student.data['student_name'] ?? '').toString();
       final center = (student.data['center'] ?? '').toString();
@@ -1656,31 +1722,68 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
       // 解密数据
       String teacherId = '';
       try {
+        await _encryptionService.ensureKeysLoaded();
         if (nfcData.contains(':')) {
           final parts = nfcData.split(':');
           if (parts.length == 2) {
-            teacherId = _encryptionService.decryptNFCData(parts[0], parts[1]);
+            final encryptedPart = parts[0].trim();
+            final saltPart = parts[1].trim();
+            print('🔎 待解密数据: encrypted="'+encryptedPart+'" salt="'+saltPart+'"');
+            final normalizedEncrypted = encryptedPart.replaceAll('-', '+').replaceAll('_', '/');
+            _encryptionService.logAvailableVersions();
+            final decrypted = _encryptionService.decryptNFCData(normalizedEncrypted, saltPart);
+            print('🔓 解密明文: '+decrypted);
+            // 明文应为 老师ID_随机串，提取老师ID部分并规范化为字母数字
+            final idx = decrypted.indexOf('_');
+            final idPart = idx > 0 ? decrypted.substring(0, idx) : decrypted;
+            teacherId = idPart.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
+            print('🔓 提取老师ID: '+teacherId);
           }
         } else {
           teacherId = nfcData; // 未加密数据
         }
       } catch (e) {
-        setState(() {
-          _nfcOperationStatus = '数据解密失败';
-        });
-        return;
+        // 解密失败时，回退使用原始数据（兼容旧老师卡或明文卡）
+        print('🔴 老师卡解密失败，回退为原始数据: $e');
+        teacherId = nfcData;
       }
 
       setState(() {
         _nfcOperationStatus = '正在查找老师信息...';
       });
 
-      // 查找老师
+      // 查找老师（容错匹配）
       final teacherProvider = Provider.of<TeacherProvider>(context, listen: false);
-      final teacher = teacherProvider.teachers.firstWhere(
-        (t) => (t.data['teacher_id'] ?? '').toString() == teacherId,
-        orElse: () => throw Exception('未找到老师'),
-      );
+      RecordModel? teacher;
+      
+      // 先按精确ID匹配
+      for (final t in teacherProvider.teachers) {
+        final raw = (t.data['user_id'] ?? t.data['teacher_id'] ?? '').toString();
+        final norm = raw.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
+        if (norm.toUpperCase() == teacherId.toUpperCase()) {
+          teacher = t;
+          break;
+        }
+      }
+      
+      // 如未命中，做容错查找
+      if (teacher == null) {
+        String _normalize(String s) => s.replaceAll(RegExp(r'[^A-Za-z0-9]'), '').toUpperCase();
+        final target = _normalize(teacherId);
+        for (final t in teacherProvider.teachers) {
+          final raw = (t.data['user_id'] ?? t.data['teacher_id'] ?? '').toString();
+          final norm = _normalize(raw);
+          if (norm == target || norm.contains(target) || target.contains(norm)) {
+            teacher = t;
+            break;
+          }
+        }
+      }
+      
+      if (teacher == null) {
+        print('❌ 未找到老师: target="$teacherId"');
+        throw Exception('未找到老师');
+      }
 
       final teacherName = (teacher.data['name'] ?? '').toString();
       final department = (teacher.data['department'] ?? '').toString();
@@ -1714,9 +1817,19 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
     }
   }
 
-  // NFC写入实现
+  // NFC写入实现 - 使用NDEFRawRecord
   Future<void> _writeToNfcCard(String data) async {
     try {
+      print('📝 开始写入NFC数据: $data');
+      
+      // 检查NFC是否可用
+      final nfcAvailability = await FlutterNfcKit.nfcAvailability;
+      if (nfcAvailability != NFCAvailability.available) {
+        throw Exception('NFC不可用，请检查设备设置');
+      }
+      
+      print('✅ NFC可用，开始写入...');
+      
       // 使用 flutter_nfc_kit 写入NFC
       NFCTag tag = await FlutterNfcKit.poll(
         timeout: const Duration(seconds: 10),
@@ -1724,27 +1837,84 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
         iosAlertMessage: "将设备靠近要写入的NFC标签",
       );
 
+      print('📱 NFC标签检测成功: ${tag.type}');
+
       await FlutterNfcKit.setIosAlertMessage("正在写入...");
       
-      // 写入NDEF记录
+      // 检查标签是否支持NDEF
+      if (tag.ndefAvailable != true) {
+        await FlutterNfcKit.finish();
+        throw Exception('NFC卡不支持NDEF格式');
+      }
+      
+      print('🔐 写入数据: $data');
+
+      // 构造 NDEF Text 规范的 payload：status(UTF-8) + 'en' + 文本
+      final languageCode = 'en';
+      final langBytes = utf8.encode(languageCode);
+      final textBytes = utf8.encode(data);
+      final status = langBytes.length & 0x1F; // UTF-8 标识，最高位为0
+      final payloadBytes = <int>[status, ...langBytes, ...textBytes];
+
+      // 转换为十六进制字符串
+      final hexData = payloadBytes
+          .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+          .join('');
+      print('🔢 十六进制数据: $hexData');
+
+      // 使用NDEFRawRecord写入 - payload 与 type 需为十六进制字符串
       await FlutterNfcKit.writeNDEFRawRecords([
         NDEFRawRecord(
-          "",                     
-          data,                   // 加密后的数据
-          "T",                    
+          "",                     // id字段使用空字符串
+          hexData,                // payload使用十六进制字符串（NDEF Text）
+          "54",                  // type: 'T' 的十六进制表示
           TypeNameFormat.nfcWellKnown,
         )
       ]);
 
+      print('✅ NDEF记录写入成功');
+
       await FlutterNfcKit.finish();
+      print('🔒 NFC会话已关闭');
+      
+      // 添加缓冲时间
+      await Future.delayed(const Duration(milliseconds: 1500));
+      print('✅ NFC写入完成');
+      
     } catch (e) {
+      print('❌ NFC写入失败: $e');
+      
+      // 确保NFC会话被正确关闭
+      try {
+        await FlutterNfcKit.finish();
+        print('🔒 NFC会话已强制关闭');
+      } catch (_) {
+        print('⚠️ NFC会话关闭失败');
+      }
+      
+      // 检查是否是activity相关的错误
+      if (e.toString().contains('not attached to activity') || 
+          e.toString().contains('Activity')) {
+        throw Exception('NFC操作失败：应用状态异常，请重新打开应用后重试');
+      }
+      
       throw Exception('NFC写入失败: $e');
     }
   }
 
-  // NFC读取实现
+  // NFC读取实现 - 使用简化的方法
   Future<String> _readFromNfcCard() async {
     try {
+      print('📖 开始读取NFC数据...');
+      
+      // 检查NFC是否可用
+      final nfcAvailability = await FlutterNfcKit.nfcAvailability;
+      if (nfcAvailability != NFCAvailability.available) {
+        throw Exception('NFC不可用，请检查设备设置');
+      }
+      
+      print('✅ NFC可用，开始读取...');
+      
       // 使用 flutter_nfc_kit 读取NFC
       NFCTag tag = await FlutterNfcKit.poll(
         timeout: const Duration(seconds: 10),
@@ -1752,28 +1922,83 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
         iosAlertMessage: "将设备靠近NFC标签"
       );
 
+      print('📱 NFC标签检测成功: ${tag.type}');
+
       await FlutterNfcKit.setIosAlertMessage("正在读取...");
+      
+      // 检查标签是否支持NDEF
+      if (tag.ndefAvailable != true) {
+        await FlutterNfcKit.finish();
+        throw Exception('NFC卡不支持NDEF格式');
+      }
       
       // 读取NDEF记录
       String? readData;
-      if (tag.ndefAvailable ?? false) {
-        List<dynamic> records = await FlutterNfcKit.readNDEFRecords(cached: false);
-        
-        for (var record in records) {
-          if (record.payload != null && record.payload!.isNotEmpty) {
-            final content = String.fromCharCodes(record.payload!);
-            if (content.isNotEmpty) {
-              readData = content;
-              break;
+      List<dynamic> records = await FlutterNfcKit.readNDEFRecords(cached: false);
+      
+      print('📋 读取到 ${records.length} 条NDEF记录');
+      
+      for (var record in records) {
+        final payload = record.payload;
+        if (payload == null) continue;
+
+        try {
+          List<int> bytes;
+          if (payload is Uint8List) {
+            bytes = payload;
+          } else if (payload is List<int>) {
+            bytes = payload;
+          } else if (payload is String) {
+            // 十六进制字符串
+            final hexString = payload;
+            bytes = <int>[];
+            for (int i = 0; i < hexString.length; i += 2) {
+              bytes.add(int.parse(hexString.substring(i, i + 2), radix: 16));
             }
+          } else {
+            // 未知类型，跳过
+            continue;
           }
+
+          if (bytes.isEmpty) continue;
+
+          final status = bytes[0];
+          final languageCodeLength = status & 0x1F; // 低5位为语言码长度
+          final textStartIndex = 1 + languageCodeLength;
+          if (textStartIndex <= bytes.length) {
+            final textBytes = bytes.sublist(textStartIndex);
+            readData = utf8.decode(textBytes);
+            print('✅ 成功读取数据: $readData');
+            break;
+          }
+        } catch (e) {
+          print('⚠️ NDEF Text 解析失败: $e; payload类型=${payload.runtimeType}');
+          continue;
         }
       }
 
       await FlutterNfcKit.finish();
+      print('🔒 NFC会话已关闭');
       
       return readData ?? '';
+      
     } catch (e) {
+      print('❌ NFC读取失败: $e');
+      
+      // 确保NFC会话被正确关闭
+      try {
+        await FlutterNfcKit.finish();
+        print('🔒 NFC会话已强制关闭');
+      } catch (_) {
+        print('⚠️ NFC会话关闭失败');
+      }
+      
+      // 检查是否是activity相关的错误
+      if (e.toString().contains('not attached to activity') || 
+          e.toString().contains('Activity')) {
+        throw Exception('NFC操作失败：应用状态异常，请重新打开应用后重试');
+      }
+      
       throw Exception('NFC读取失败: $e');
     }
   }

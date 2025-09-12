@@ -23,7 +23,7 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AttendanceProvider>(context, listen: false).loadAttendanceRecords();
     });
@@ -53,20 +53,11 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
           controller: _tabController,
           children: [
             _buildAttendanceRecordsTab(isSmallScreen),
-            _buildNFCScannerTab(isSmallScreen),
             _buildAnalyticsTab(isSmallScreen),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showNFCScanner(context),
-        backgroundColor: AppTheme.primaryColor,
-        child: Icon(
-          Icons.nfc, 
-          color: Colors.white,
-          size: isSmallScreen ? 20 : 24,
-        ),
-      ),
+      floatingActionButton: _buildEnterpriseFloatingActionButton(isSmallScreen),
     );
   }
 
@@ -166,13 +157,7 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
     return Row(
       children: [
         Expanded(
-          child: _buildActionButton(
-            'NFC打卡',
-            Icons.nfc,
-            const Color(0xFF3B82F6),
-            () => _showNFCScanner(context),
-            isSmallScreen,
-          ),
+          child: _buildNfcActionButton(isSmallScreen),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -195,6 +180,77 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildNfcActionButton(bool isSmallScreen) {
+    return GestureDetector(
+      onTap: () => _showNFCScanner(context),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          vertical: isSmallScreen ? 14 : 18, 
+          horizontal: 12,
+        ),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF10B981),
+              Color(0xFF059669),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF10B981).withOpacity(0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
+            width: 1.5,
+          ),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.nfc,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            SizedBox(height: isSmallScreen ? 6 : 8),
+            Text(
+              'NFC打卡',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isSmallScreen ? 11 : 13,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: isSmallScreen ? 2 : 4),
+            Text(
+              '快速扫描',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: isSmallScreen ? 8 : 10,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -279,7 +335,6 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
           ),
           tabs: const [
             Tab(text: '考勤记录'),
-            Tab(text: 'NFC扫描'),
             Tab(text: '数据分析'),
           ],
         ),
@@ -310,9 +365,7 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
     );
   }
 
-  Widget _buildNFCScannerTab(bool isSmallScreen) {
-    return const NFCScannerWidget();
-  }
+  // 已精简：移除NFC扫描Tab，仅保留悬浮按钮入口
 
   Widget _buildAnalyticsTab(bool isSmallScreen) {
     return const Center(
@@ -371,6 +424,80 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
             child: const Text('重试'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEnterpriseFloatingActionButton(bool isSmallScreen) {
+    return Container(
+      width: isSmallScreen ? 64 : 72,
+      height: isSmallScreen ? 64 : 72,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF10B981),
+            Color(0xFF059669),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(isSmallScreen ? 32 : 36),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF10B981).withOpacity(0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+            spreadRadius: 2,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 2,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(isSmallScreen ? 32 : 36),
+          onTap: () => _showNFCScanner(context),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(isSmallScreen ? 32 : 36),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.nfc,
+                    color: Colors.white,
+                    size: isSmallScreen ? 20 : 24,
+                  ),
+                ),
+                SizedBox(height: isSmallScreen ? 2 : 4),
+                Text(
+                  'NFC',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: isSmallScreen ? 8 : 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

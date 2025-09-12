@@ -45,5 +45,12 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NFCReaderUsageDescription</key>
+	<string>此应用需要NFC功能来管理学生卡片和考勤系统</string>
+	<key>com.apple.developer.nfc.readersession.formats</key>
+	<array>
+		<string>TAG</string>
+		<string>NDEF</string>
+	</array>
 </dict>
 </plist>

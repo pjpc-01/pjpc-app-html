@@ -9,15 +9,15 @@ class EncryptionService {
   
   EncryptionService() : _pocketBaseService = PocketBaseService.instance;
   
-  // 多版本密钥支持（实际应用中应该从安全存储中获取）
-  static const Map<int, String> _masterKeys = {
+  // 多版本密钥表（优先从PocketBase加载，若失败则使用内置回退）
+  static Map<int, String> _masterKeys = {
     1: "PJPC_NFC_MASTER_KEY_V1_2024",
-    2: "PJPC_NFC_MASTER_KEY_V2_2024", 
+    2: "PJPC_NFC_MASTER_KEY_V2_2024",
     3: "PJPC_NFC_MASTER_KEY_V3_2024",
   };
   
-  // 当前使用的密钥版本
-  static const int _currentKeyVersion = 2;
+  // 当前使用的密钥版本（从服务端读取active，如失败则回退到2）
+  static int _currentKeyVersion = 2;
   
   // 加密算法
   static const String _algorithm = "AES-256";
@@ -41,6 +41,96 @@ class EncryptionService {
     final hash = sha256.convert(utf8.encode(combined));
     return hash.toString();
   }
+
+  // 从 PocketBase 加载密钥集合
+  Future<void> ensureKeysLoaded() async {
+    try {
+      final result = await _pocketBaseService.pb
+          .collection('encryption_keys')
+          .getList(perPage: 50, sort: '-created');
+
+      if (result.items.isEmpty) {
+        // 集合为空时，自动写入一个默认active密钥（回退值），避免解密失败
+        try {
+          await _pocketBaseService.pb.collection('encryption_keys').create(body: {
+            'version': _currentKeyVersion,
+            'master_key': _masterKeys[_currentKeyVersion],
+            'algorithm': _algorithm,
+            'status': 'active',
+            'notes': 'auto-seeded by app when collection was empty'
+          });
+          print('🔑 已自动初始化 encryption_keys 集合: version=${_currentKeyVersion}');
+        } catch (e) {
+          print('⚠️ 初始化 encryption_keys 集合失败: $e');
+        }
+        return;
+      }
+
+      final Map<int, String> loaded = {};
+      int? activeVersion;
+
+      for (final item in result.items) {
+        final ver = item.getIntValue('version');
+        final key = item.getStringValue('master_key');
+        final status = item.getStringValue('status') ?? 'active';
+        if (ver != null && key != null && key.isNotEmpty) {
+          loaded[ver] = key;
+          if (status == 'active') {
+            activeVersion = ver;
+          }
+        }
+      }
+
+      if (loaded.isNotEmpty) {
+        // 合并服务端密钥与内置密钥，优先采用服务端同版本值
+        final builtin = {
+          1: "PJPC_NFC_MASTER_KEY_V1_2024",
+          2: "PJPC_NFC_MASTER_KEY_V2_2024",
+          3: "PJPC_NFC_MASTER_KEY_V3_2024",
+        };
+        _masterKeys = {...builtin, ...loaded};
+        if (activeVersion != null) {
+          _currentKeyVersion = activeVersion!;
+        }
+        print('🔑 加载密钥成功: versions=${_masterKeys.keys.toList()} active=${_currentKeyVersion}');
+      } else {
+        // 如果加载的密钥为空，强制使用内置密钥
+        print('⚠️ 加载的密钥为空，使用内置密钥');
+        _masterKeys = {
+          1: "PJPC_NFC_MASTER_KEY_V1_2024",
+          2: "PJPC_NFC_MASTER_KEY_V2_2024",
+          3: "PJPC_NFC_MASTER_KEY_V3_2024",
+        };
+        _currentKeyVersion = 2;
+      }
+    } catch (e) {
+      print('⚠️ 加载PocketBase密钥失败，使用内置回退: $e');
+      // 确保内置密钥可用
+      _masterKeys = {
+        1: "PJPC_NFC_MASTER_KEY_V1_2024",
+        2: "PJPC_NFC_MASTER_KEY_V2_2024",
+        3: "PJPC_NFC_MASTER_KEY_V3_2024",
+      };
+      _currentKeyVersion = 2;
+    }
+  }
+
+  void logAvailableVersions() {
+    try {
+      print('🔐 本地可用密钥版本: ${_masterKeys.keys.toList()} (active=${_currentKeyVersion})');
+    } catch (_) {}
+  }
+
+  // 强制重置为内置密钥（用于调试）
+  void forceResetToBuiltinKeys() {
+    _masterKeys = {
+      1: "PJPC_NFC_MASTER_KEY_V1_2024",
+      2: "PJPC_NFC_MASTER_KEY_V2_2024",
+      3: "PJPC_NFC_MASTER_KEY_V3_2024",
+    };
+    _currentKeyVersion = 2;
+    print('🔑 已强制重置为内置密钥: version=${_currentKeyVersion}');
+  }
   
   // 简单的XOR加密（实际应用中应使用AES）
   String _encrypt(String data, String key) {
@@ -58,7 +148,17 @@ class EncryptionService {
   // 简单的XOR解密
   String _decrypt(String encryptedData, String key) {
     try {
-      final encryptedBytes = base64.decode(encryptedData);
+      // 兼容URL-safe与无填充的Base64
+      String _normalizeBase64(String s) {
+        s = s.replaceAll('-', '+').replaceAll('_', '/');
+        final mod = s.length % 4;
+        if (mod > 0) {
+          s = s + ('=' * (4 - mod));
+        }
+        return s;
+      }
+      final normalized = _normalizeBase64(encryptedData);
+      final encryptedBytes = base64.decode(normalized);
       final keyBytes = utf8.encode(key);
       final decrypted = <int>[];
       
@@ -78,6 +178,13 @@ class EncryptionService {
       final salt = generateSalt();
       final key = _generateEncryptionKey(salt);
       final encryptedUID = _encrypt(originalUID, key);
+      
+      // 先检查学生记录是否存在
+      try {
+        await _pocketBaseService.pb.collection('students').getOne(studentId);
+      } catch (e) {
+        throw Exception('学生记录不存在: $studentId');
+      }
       
       // 更新学生记录
       await _pocketBaseService.pb.collection('students').update(studentId, body: {
@@ -183,9 +290,12 @@ class EncryptionService {
       try {
         final key = _generateEncryptionKey(salt, version);
         final decrypted = _decrypt(encryptedData, key);
-        if (decrypted.isNotEmpty) {
+        if (_isLikelyValidNfcPlaintext(decrypted)) {
           print('使用密钥版本 $version 解密成功');
           return decrypted;
+        } else {
+          // 解密得到的内容不符合期望格式，继续尝试下一个版本
+          continue;
         }
       } catch (e) {
         // 继续尝试下一个版本
@@ -193,6 +303,20 @@ class EncryptionService {
       }
     }
     throw Exception('所有密钥版本都无法解密');
+  }
+
+  // 校验：明文必须为 ID_随机串，且两部分均为字母数字
+  bool _isLikelyValidNfcPlaintext(String plaintext) {
+    if (plaintext.isEmpty) return false;
+    final idx = plaintext.indexOf('_');
+    if (idx <= 0 || idx == plaintext.length - 1) return false;
+    final id = plaintext.substring(0, idx);
+    final rand = plaintext.substring(idx + 1);
+    final alnum = RegExp(r'^[A-Za-z0-9]+$');
+    if (!alnum.hasMatch(id) || !alnum.hasMatch(rand)) return false;
+    if (rand.length < 4 || rand.length > 64) return false;
+    if (id.length < 1 || id.length > 32) return false;
+    return true;
   }
   
   // 智能解密（根据版本信息）

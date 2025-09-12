@@ -120,40 +120,7 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
           ],
         ),
       ),
-      floatingActionButton: _showScrollToTop 
-          ? Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                FloatingActionButton(
-                  onPressed: _navigateToNfcReadWrite,
-                  backgroundColor: Colors.orange,
-                  heroTag: "nfc_read_write",
-                  child: const Icon(
-                    Icons.nfc,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                FloatingActionButton(
-                  onPressed: _scrollToTop,
-                  backgroundColor: const Color(0xFF1E40AF),
-                  heroTag: "scroll_to_top",
-                  child: const Icon(
-                    Icons.keyboard_arrow_up,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-              ],
-            )
-          : FloatingActionButton(
-              onPressed: _navigateToNfcReadWrite,
-              backgroundColor: Colors.orange,
-              child: const Icon(
-                Icons.nfc,
-                color: Colors.white,
-              ),
-            ),
+      floatingActionButton: _buildEnterpriseFloatingActionButton(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
@@ -162,7 +129,7 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
     return SliverToBoxAdapter(
       child: Container(
         margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
@@ -170,14 +137,20 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
             colors: [
               Color(0xFF1E40AF),
               Color(0xFF1D4ED8),
+              Color(0xFF2563EB),
             ],
           ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1E40AF).withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+              color: const Color(0xFF1E40AF).withOpacity(0.4),
+              blurRadius: 25,
+              offset: const Offset(0, 10),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
@@ -186,35 +159,41 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1.5,
+                    ),
                   ),
                   child: const Icon(
                     Icons.nfc,
                     color: Colors.white,
-                    size: 28,
+                    size: 32,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 20),
                 const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'NFC智能管理',
+                        'NFC 智能管理',
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
+                          letterSpacing: 0.5,
                         ),
                       ),
                       Text(
-                        '智能NFC卡管理系统，高效处理补办申请',
+                        '企业级NFC卡管理系统，高效处理补办申请',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 16,
                           color: Colors.white70,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -224,17 +203,22 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
                   builder: (context, nfcProvider, child) {
                     final totalRequests = nfcProvider.replacementRequests.length;
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1.5,
+                        ),
                       ),
                       child: Text(
                         '$totalRequests 个申请',
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.3,
                         ),
                       ),
                     );
@@ -242,7 +226,7 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             _buildNfcQuickActions(),
           ],
         ),
@@ -254,25 +238,25 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
     return Row(
       children: [
         Expanded(
-          child: _buildActionButton(
+          child: _buildEnterpriseActionButton(
             '审核申请',
             Icons.approval,
             const Color(0xFF3B82F6),
             () => _showPendingRequests(),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         Expanded(
-          child: _buildActionButton(
+          child: _buildEnterpriseActionButton(
             '批量处理',
             Icons.batch_prediction,
             const Color(0xFF10B981),
             () => _showBatchProcessing(),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         Expanded(
-          child: _buildActionButton(
+          child: _buildEnterpriseActionButton(
             '数据分析',
             Icons.analytics,
             const Color(0xFF8B5CF6),
@@ -283,26 +267,51 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
     );
   }
 
-  Widget _buildActionButton(String title, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildEnterpriseActionButton(String title, IconData icon, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.3)),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              color.withOpacity(0.2),
+              color.withOpacity(0.1),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           children: [
-            Icon(icon, color: Colors.white, size: 24),
-            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: Colors.white, size: 28),
+            ),
+            const SizedBox(height: 12),
             Text(
               title,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.3,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1890,6 +1899,80 @@ class _AdminNfcManagementScreenState extends State<AdminNfcManagementScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildEnterpriseFloatingActionButton() {
+    return Container(
+      width: 72,
+      height: 72,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFF59E0B),
+            Color(0xFFD97706),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(36),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF59E0B).withOpacity(0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+            spreadRadius: 2,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 2,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(36),
+          onTap: _navigateToNfcReadWrite,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(36),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.nfc,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'NFC',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

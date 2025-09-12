@@ -16,6 +16,7 @@ import '../../widgets/common/recent_activity_item.dart';
 import '../points/points_management_screen.dart';
 import '../nfc/teacher_nfc_management_screen.dart';
 import '../nfc/admin_nfc_management_screen.dart';
+import '../nfc/nfc_smart_management_screen.dart';
 import '../class/class_management_screen.dart';
 import '../teacher/teacher_management_screen.dart';
 
@@ -496,14 +497,14 @@ class _HomeDashboardState extends State<HomeDashboard> {
                       title: 'NFC管理',
                       icon: Icons.admin_panel_settings_rounded,
                       color: const Color(0xFFEF4444),
-                      onTap: () => _navigateToAdminNfcManagement(context),
+                      onTap: () => _navigateToNfcManagement(context),
                     );
                   } else if (authProvider.isTeacher) {
                     return _buildModernActionCard(
                       title: 'NFC管理',
                       icon: Icons.settings_rounded,
                       color: const Color(0xFFEF4444),
-                      onTap: () => _navigateToTeacherNfcManagement(context),
+                      onTap: () => _navigateToNfcManagement(context),
                     );
                   } else {
                     return _buildModernActionCard(
@@ -868,22 +869,34 @@ class _HomeDashboardState extends State<HomeDashboard> {
     );
   }
 
-  void _navigateToTeacherNfcManagement(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const TeacherNfcManagementScreen(),
-      ),
-    );
-  }
-
-  void _navigateToAdminNfcManagement(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AdminNfcManagementScreen(),
-      ),
-    );
+  void _navigateToNfcManagement(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    if (authProvider.isAdmin) {
+      // 管理员：显示高级NFC管理功能
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AdminNfcManagementScreen(),
+        ),
+      );
+    } else if (authProvider.isTeacher) {
+      // 教师：显示教师NFC管理功能
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const TeacherNfcManagementScreen(),
+        ),
+      );
+    } else {
+      // 学生：显示智能NFC管理功能
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const NFCSmartManagementScreen(),
+        ),
+      );
+    }
   }
 
   void _navigateToSettings(BuildContext context) {

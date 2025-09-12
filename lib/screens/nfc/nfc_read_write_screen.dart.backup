@@ -695,9 +695,9 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
       // 写入NFC数据
       await FlutterNfcKit.writeNDEFRawRecords([
         NDEFRawRecord(
-          "",                     
-          finalDataToWrite,       // payload (可能是加密数据)
-          "T",                    
+          "",                     // id字段使用空字符串
+          finalDataToWrite,       // payload使用字符串
+          "T",                    // type字段使用字符串
           TypeNameFormat.nfcWellKnown,
         )
       ]);
@@ -1149,6 +1149,11 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
   // NFC写入实现
   Future<void> _writeToNfcCard(String data) async {
     try {
+      // 检查数据长度
+      if (data.length > 1000) {
+        throw Exception('数据过长，无法写入NFC卡片');
+      }
+
       // 使用 flutter_nfc_kit 写入NFC
       NFCTag tag = await FlutterNfcKit.poll(
         timeout: const Duration(seconds: 10),
@@ -1158,12 +1163,15 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
 
       await FlutterNfcKit.setIosAlertMessage("正在写入...");
       
-      // 写入NDEF记录
+      // 将字符串转换为UTF-8字节数组
+      final dataBytes = utf8.encode(data);
+      
+      // 写入NDEF记录 - 使用正确的格式
       await FlutterNfcKit.writeNDEFRawRecords([
         NDEFRawRecord(
-          "",                     
-          data,                   // 加密后的数据
-          "T",                    
+          utf8.encode(""),  // id字段使用字节数组
+          dataBytes,        // payload使用字节数组
+          utf8.encode("T"), // type字段使用字节数组
           TypeNameFormat.nfcWellKnown,
         )
       ]);

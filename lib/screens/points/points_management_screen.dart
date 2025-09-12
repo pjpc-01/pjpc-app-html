@@ -3,12 +3,18 @@ import 'package:provider/provider.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import '../../providers/student_provider.dart';
 import '../../providers/points_provider.dart';
+import '../../providers/teacher_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../services/pocketbase_service.dart';
 import '../../services/encryption_service.dart';
+import '../../services/security_service.dart';
+import '../../services/nfc_safe_scanner_service.dart';
+import '../../widgets/points/points_nfc_scanner_widget.dart';
 
 class PointsManagementScreen extends StatefulWidget {
   const PointsManagementScreen({super.key});
@@ -30,6 +36,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
   late Animation<double> _pulseAnimation;
   late ScrollController _scrollController;
   final EncryptionService _encryptionService = EncryptionService();
+  final SecurityService _securityService = SecurityService();
   bool _showScrollToTop = false;
   int _currentPage = 0;
   static const int _itemsPerPage = 10;
@@ -143,7 +150,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
     return SliverToBoxAdapter(
       child: Container(
         margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
@@ -151,14 +158,20 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
             colors: [
               Color(0xFFF59E0B),
               Color(0xFFD97706),
+              Color(0xFFB45309),
             ],
           ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFF59E0B).withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+              color: const Color(0xFFF59E0B).withOpacity(0.4),
+              blurRadius: 25,
+              offset: const Offset(0, 10),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
@@ -167,18 +180,22 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1.5,
+                    ),
                   ),
                   child: const Icon(
                     Icons.stars,
                     color: Colors.white,
-                    size: 28,
+                    size: 32,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 20),
                 const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,16 +203,18 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                       Text(
                         '积分管理',
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
+                          letterSpacing: 0.5,
                         ),
                       ),
                       Text(
-                        '智能积分系统，激励学生学习成长',
+                        '企业级积分系统，激励学生学习成长',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 16,
                           color: Colors.white70,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -205,17 +224,22 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                   builder: (context, pointsProvider, child) {
                     final totalTransactions = pointsProvider.pointTransactions.length;
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1.5,
+                        ),
                       ),
                       child: Text(
                         '$totalTransactions 笔交易',
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.3,
                         ),
                       ),
                     );
@@ -223,7 +247,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             _buildPointsQuickActions(),
           ],
         ),
@@ -235,25 +259,25 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
     return Row(
       children: [
         Expanded(
-          child: _buildActionButton(
+          child: _buildEnterpriseActionButton(
             'NFC扫描',
             Icons.nfc,
             const Color(0xFF3B82F6),
             () => _startStudentScan(),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         Expanded(
-          child: _buildActionButton(
+          child: _buildEnterpriseActionButton(
             '添加积分',
             Icons.add_circle,
             const Color(0xFF10B981),
             () => _showCustomPointsDialog('add_points'),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         Expanded(
-          child: _buildActionButton(
+          child: _buildEnterpriseActionButton(
             '积分兑换',
             Icons.card_giftcard,
             const Color(0xFF8B5CF6),
@@ -264,26 +288,51 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
     );
   }
 
-  Widget _buildActionButton(String title, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildEnterpriseActionButton(String title, IconData icon, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.3)),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              color.withOpacity(0.2),
+              color.withOpacity(0.1),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           children: [
-            Icon(icon, color: Colors.white, size: 24),
-            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: Colors.white, size: 28),
+            ),
+            const SizedBox(height: 12),
             Text(
               title,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.3,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1329,13 +1378,75 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
   }
 
   Widget _buildScrollToTopButton() {
-    return FloatingActionButton(
-      onPressed: _scrollToTop,
-      backgroundColor: const Color(0xFFF59E0B),
-      child: const Icon(
-        Icons.keyboard_arrow_up,
-        color: Colors.white,
-        size: 28,
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFF59E0B),
+            Color(0xFFD97706),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF59E0B).withOpacity(0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+            spreadRadius: 2,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 2,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(32),
+          onTap: _scrollToTop,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(32),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.keyboard_arrow_up,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'TOP',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1388,174 +1499,13 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
   }
 
   Future<void> _startStudentScan() async {
-    if (_isScanning) return;
-    
-    if (mounted) {
-      setState(() {
-        _isScanning = true;
-        _scanStatus = '请将学生NFC卡片靠近设备...';
-      });
-    }
-    _animationController.repeat(reverse: true);
-
-    try {
-      final availability = await FlutterNfcKit.nfcAvailability;
-      if (availability != NFCAvailability.available) {
-        if (mounted) {
-          setState(() {
-            _scanStatus = 'NFC不可用，请检查设备设置';
-            _isScanning = false;
-          });
-        }
-        _animationController.stop();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('NFC不可用，请检查设备设置'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
-        return;
-      }
-
-      final tag = await FlutterNfcKit.poll(timeout: const Duration(seconds: 30));
-      final records = await FlutterNfcKit.readNDEFRecords();
-      String? nfcData;
-      for (final rec in records) {
-        final payload = rec.payload;
-        if (payload == null || payload.isEmpty) continue;
-        final content = String.fromCharCodes(payload);
-        if (content.isNotEmpty) {
-          nfcData = content;
-          break;
-        }
-      }
-      await FlutterNfcKit.finish();
-
-      if (nfcData == null || nfcData.isEmpty) {
-        if (mounted) {
-          setState(() {
-            _scanStatus = '未在卡内发现有效数据';
-            _isScanning = false;
-          });
-        }
-        _animationController.stop();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('未在卡内发现有效数据'),
-              backgroundColor: AppTheme.warningColor,
-            ),
-          );
-        }
-        return;
-      }
-
-      if (mounted) {
-        setState(() {
-          _scanStatus = '正在处理NFC数据...';
-        });
-      }
-
-      // 尝试解密NFC数据
-      String studentId = '';
-      bool isEncrypted = false;
-      
-      try {
-        // 检查是否是加密数据（格式: "encryptedData:salt"）
-        if (nfcData.contains(':')) {
-          final parts = nfcData.split(':');
-          if (parts.length == 2) {
-            studentId = _encryptionService.decryptNFCData(parts[0], parts[1]);
-            isEncrypted = true;
-          }
-        } else if (nfcData.contains('docs.google.com/forms') || nfcData.startsWith('http')) {
-          // URL格式（向后兼容）
-          studentId = nfcData;
-        } else {
-          // 可能是未加密的学生ID
-          studentId = nfcData;
-        }
-      } catch (e) {
-        // 解密失败，尝试作为普通数据使用
-        studentId = nfcData;
-        print('解密失败，使用原始数据: $e');
-      }
-
-      if (mounted) {
-        setState(() {
-          _scanStatus = '正在查找学生信息...';
-        });
-      }
-
-      // 根据数据类型查找学生
-      RecordModel? student;
-      if (isEncrypted || (!studentId.startsWith('http') && !studentId.contains('docs.google.com'))) {
-        // 使用学生ID查找
-        student = await PocketBaseService.instance.getStudentByStudentId(studentId);
-      } else {
-        // 使用URL查找（向后兼容）
-        student = await PocketBaseService.instance.getStudentByNfcUrl(studentId);
-      }
-      if (student == null) {
-        if (mounted) {
-          setState(() {
-            _scanStatus = '未找到学生信息';
-            _isScanning = false;
-          });
-        }
-        _animationController.stop();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('未找到学生: $studentId'),
-              backgroundColor: AppTheme.errorColor,
-            ),
-          );
-        }
-        return;
-      }
-
-      final studentName = student.getStringValue('student_name');
-      if (mounted) {
-        setState(() {
-          _selectedStudent = student;
-          _selectedViaNfc = true;
-          _isScanning = false;
-          _scanStatus = '扫描成功';
-          _lastScannedStudent = studentName;
-          _lastScanTime = DateTime.now();
-        });
-      }
-      _animationController.stop();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('扫描成功: $studentName'),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
-        _showPointsPanel(context, student, allowActions: true);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _scanStatus = '扫描失败: $e';
-          _isScanning = false;
-        });
-      }
-      _animationController.stop();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('扫描失败: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
-      }
-      try { await FlutterNfcKit.finish(); } catch (_) {}
-    }
+    // 弹出 NFC 扫描器窗口，就像考勤界面一样
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const PointsNFCScannerWidget(),
+    );
   }
 
   Future<bool> _showTeacherVerificationDialog() async {
@@ -1638,96 +1588,85 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
 
   Future<bool> _performTeacherScan() async {
     try {
-      final availability = await FlutterNfcKit.nfcAvailability;
-      if (availability != NFCAvailability.available) {
-        throw Exception('NFC不可用，请检查设备设置');
+      final result = await NFCSafeScannerService.instance.safeScanNFC(
+        timeout: const Duration(seconds: 10),
+        requireStudent: false,
+      );
+
+      if (!result.isSuccess) {
+        throw Exception(result.errorMessage ?? '扫描失败');
+      }
+
+      final raw = result.decryptedData ?? result.nfcData ?? '';
+      if (raw.isEmpty) {
+        throw Exception('未在卡内发现有效数据');
+      }
+
+      // 兼容 teacherId_random 或纯ID
+      final idx = raw.indexOf('_');
+      String teacherId = (idx > 0 ? raw.substring(0, idx) : raw)
+          .replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
+
+      // 查找老师（容错匹配）
+      final teacherProvider = Provider.of<TeacherProvider>(context, listen: false);
+      RecordModel? teacher;
+      
+      // 先按精确ID匹配
+      for (final t in teacherProvider.teachers) {
+        final raw = (t.data['user_id'] ?? t.data['teacher_id'] ?? '').toString();
+        final norm = raw.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
+        if (norm.toUpperCase() == teacherId.toUpperCase()) {
+          teacher = t;
+          break;
+        }
       }
       
-      final tag = await FlutterNfcKit.poll(timeout: const Duration(seconds: 30));
-      final cardHex = (tag.id ?? '').toUpperCase();
-      await FlutterNfcKit.finish();
-      
-      if (cardHex.isEmpty) {
-        throw Exception('未检测到NFC卡');
-      }
-      
-      final teacher = await PocketBaseService.instance.getTeacherByCardId(cardHex);
+      // 如未命中，做容错查找
       if (teacher == null) {
-        throw Exception('未找到对应的老师记录: $cardHex');
+        String _normalize(String s) => s.replaceAll(RegExp(r'[^A-Za-z0-9]'), '' ).toUpperCase();
+        final target = _normalize(teacherId);
+        for (final t in teacherProvider.teachers) {
+          final raw = (t.data['user_id'] ?? t.data['teacher_id'] ?? '').toString();
+          final norm = _normalize(raw);
+          if (norm == target || norm.contains(target) || target.contains(norm)) {
+            teacher = t;
+            break;
+          }
+        }
+      }
+      
+      if (teacher == null) {
+        throw Exception('未找到对应的老师记录: $teacherId');
       }
       
       return true;
     } catch (e) {
-      try { await FlutterNfcKit.finish(); } catch (_) {}
       rethrow;
     }
   }
 
   Future<bool> _startTeacherScan() async {
     try {
-      final availability = await FlutterNfcKit.nfcAvailability;
-      if (availability != NFCAvailability.available) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('NFC不可用，请检查设备设置'),
-              backgroundColor: AppTheme.errorColor,
-            ),
-          );
-        }
-        return false;
-      }
-      
       // 显示扫描提示
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('请将老师NFC卡靠近设备...'),
-            duration: Duration(seconds: 3),
+            duration: Duration(seconds: 2),
           ),
         );
       }
-      
-      final tag = await FlutterNfcKit.poll(timeout: const Duration(seconds: 30));
-      final cardHex = (tag.id ?? '').toUpperCase();
-      await FlutterNfcKit.finish();
-      
-      if (cardHex.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('未检测到NFC卡，请重试'),
-              backgroundColor: AppTheme.errorColor,
-            ),
-          );
-        }
-        return false;
-      }
-      
-      // 查找老师
-      final teacher = await PocketBaseService.instance.getTeacherByCardId(cardHex);
-      if (teacher == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('未找到对应的老师记录: $cardHex'),
-              backgroundColor: AppTheme.errorColor,
-            ),
-          );
-        }
-        return false;
-      }
-      
-      // 验证成功
+
+      final ok = await _performTeacherScan();
+      if (!ok) return false;
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('老师卡验证成功: ${teacher.getStringValue('teacher_name')}'),
-            backgroundColor: AppTheme.successColor,
+          const SnackBar(
+            content: Text('老师卡验证成功'),
           ),
         );
       }
-      
       return true;
     } catch (e) {
       if (mounted) {
@@ -1738,7 +1677,6 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
           ),
         );
       }
-      try { await FlutterNfcKit.finish(); } catch (_) {}
       return false;
     }
   }

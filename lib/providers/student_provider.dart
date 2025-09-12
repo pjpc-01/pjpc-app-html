@@ -21,20 +21,35 @@ class StudentProvider with ChangeNotifier {
   
   /// 设置实时更新
   void _setupRealtimeUpdates() {
-    // 订阅学生数据更新
-    app_realtime.RealtimeService.instance.subscribeToStudents((data) {
-      _handleStudentUpdate(data);
-    });
-    
-    // 订阅费用项目更新
-    app_realtime.RealtimeService.instance.subscribeToFeeItems((data) {
-      _handleFeeItemUpdate(data);
-    });
-    
-    // 订阅学生费用更新
-    app_realtime.RealtimeService.instance.subscribeToStudentFees((data) {
-      _handleStudentFeeUpdate(data);
-    });
+    try {
+      // 订阅学生数据更新
+      app_realtime.RealtimeService.instance.subscribeToStudents((data) {
+        _handleStudentUpdate(data);
+      });
+      
+      // 订阅费用项目更新
+      app_realtime.RealtimeService.instance.subscribeToFeeItems((data) {
+        _handleFeeItemUpdate(data);
+      });
+      
+      // 订阅学生费用更新
+      app_realtime.RealtimeService.instance.subscribeToStudentFees((data) {
+        _handleStudentFeeUpdate(data);
+      });
+    } catch (e) {
+      print('❌ 设置实时更新失败: $e');
+    }
+  }
+  
+  /// 清理实时更新
+  void _cleanupRealtimeUpdates() {
+    try {
+      app_realtime.RealtimeService.instance.unsubscribeFromStudents();
+      app_realtime.RealtimeService.instance.unsubscribeFromFeeItems();
+      app_realtime.RealtimeService.instance.unsubscribeFromStudentFees();
+    } catch (e) {
+      print('❌ 清理实时更新失败: $e');
+    }
   }
   
   /// 处理学生数据更新
@@ -365,5 +380,11 @@ class StudentProvider with ChangeNotifier {
     } catch (e) {
       return null;
     }
+  }
+  
+  @override
+  void dispose() {
+    _cleanupRealtimeUpdates();
+    super.dispose();
   }
 }

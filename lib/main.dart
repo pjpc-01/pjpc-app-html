@@ -15,10 +15,14 @@ import 'screens/home/home_screen.dart';
 import 'services/pocketbase_service.dart';
 import 'services/network_service.dart';
 import 'services/realtime_service.dart';
+import 'services/crash_prevention_service.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize crash prevention service
+  CrashPreventionService.instance.initialize();
   
   // Initialize shared preferences
   final prefs = await SharedPreferences.getInstance();

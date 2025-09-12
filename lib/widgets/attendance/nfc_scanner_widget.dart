@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 import '../../providers/attendance_provider.dart';
 import '../../services/pocketbase_service.dart';
 import '../../services/encryption_service.dart';
+import '../../services/security_service.dart';
+import '../../providers/student_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../services/nfc_safe_scanner_service.dart';
 
 class NFCScannerWidget extends StatefulWidget {
   const NFCScannerWidget({super.key});
@@ -22,6 +27,7 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
   late AnimationController _scanController;
   late Animation<double> _pulseAnimation;
   final EncryptionService _encryptionService = EncryptionService();
+  final SecurityService _securityService = SecurityService();
   late Animation<double> _scanAnimation;
 
   @override
@@ -63,58 +69,122 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final isSmallScreen = screenHeight < 700;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenHeight < 700 || screenWidth < 360;
     
     return Container(
-      height: isSmallScreen ? screenHeight * 0.6 : screenHeight * 0.8,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadius.xl),
+      height: isSmallScreen ? screenHeight * 0.7 : screenHeight * 0.85,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFF8FAFC),
+            Color(0xFFF1F5F9),
+          ],
         ),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(28),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          _buildHeader(isSmallScreen),
+          _buildEnterpriseHeader(isSmallScreen),
           Expanded(
-            child: _buildScannerContent(isSmallScreen),
+            child: _buildEnterpriseScannerContent(isSmallScreen),
           ),
-          _buildActionButtons(),
+          _buildEnterpriseActionButtons(isSmallScreen),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(bool isSmallScreen) {
+  Widget _buildEnterpriseHeader(bool isSmallScreen) {
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? AppSpacing.md : AppSpacing.lg),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: AppTheme.dividerColor),
+      padding: EdgeInsets.fromLTRB(
+        isSmallScreen ? 20 : 24,
+        isSmallScreen ? 16 : 20,
+        isSmallScreen ? 20 : 24,
+        isSmallScreen ? 12 : 16,
+      ),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF10B981),
+            Color(0xFF059669),
+          ],
         ),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(28),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF10B981).withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.nfc,
-            color: AppTheme.primaryColor,
-            size: isSmallScreen ? 20 : 24,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(
-            'NFC考勤扫描',
-            style: TextStyle(
-              fontSize: isSmallScreen ? 16 : 18,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.nfc,
+              color: Colors.white,
+              size: 24,
             ),
           ),
-          const Spacer(),
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: Icon(
-              Icons.close,
-              size: isSmallScreen ? 20 : 24,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'NFC 智能考勤',
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 18 : 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                Text(
+                  '企业级考勤管理系统',
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 12 : 14,
+                    color: Colors.white.withOpacity(0.8),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(
+                Icons.close,
+                color: Colors.white,
+                size: 24,
+              ),
             ),
           ),
         ],
@@ -122,44 +192,50 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
     );
   }
 
-  Widget _buildScannerContent(bool isSmallScreen) {
+  Widget _buildEnterpriseScannerContent(bool isSmallScreen) {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(isSmallScreen ? AppSpacing.lg : AppSpacing.xl),
+      padding: EdgeInsets.all(isSmallScreen ? 20 : 24),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildScannerCircle(),
-          SizedBox(height: isSmallScreen ? AppSpacing.lg : AppSpacing.xl),
-          _buildStatusMessage(),
-          SizedBox(height: isSmallScreen ? AppSpacing.md : AppSpacing.lg),
-          _buildInstructions(),
+          _buildEnterpriseScannerCircle(),
+          SizedBox(height: isSmallScreen ? 24 : 32),
+          _buildEnterpriseStatusCard(),
+          SizedBox(height: isSmallScreen ? 20 : 24),
+          _buildEnterpriseInstructions(),
         ],
       ),
     );
   }
 
-  Widget _buildScannerCircle() {
+  Widget _buildEnterpriseScannerCircle() {
     return AnimatedBuilder(
       animation: Listenable.merge([_pulseAnimation, _scanAnimation]),
       builder: (context, child) {
         return Container(
-          width: 200,
-          height: 200,
+          width: 240,
+          height: 240,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: RadialGradient(
               colors: [
-                AppTheme.primaryColor.withOpacity(0.1),
-                AppTheme.primaryColor.withOpacity(0.3),
-                AppTheme.primaryColor.withOpacity(0.6),
+                const Color(0xFF10B981).withOpacity(0.05),
+                const Color(0xFF10B981).withOpacity(0.15),
+                const Color(0xFF10B981).withOpacity(0.25),
+                const Color(0xFF10B981).withOpacity(0.4),
               ],
-              stops: const [0.0, 0.5, 1.0],
+              stops: const [0.0, 0.3, 0.6, 1.0],
             ),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryColor.withOpacity(0.3),
-                blurRadius: 20,
-                spreadRadius: 5,
+                color: const Color(0xFF10B981).withOpacity(0.2),
+                blurRadius: 30,
+                spreadRadius: 8,
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 15,
+                spreadRadius: 2,
               ),
             ],
           ),
@@ -168,20 +244,58 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _isScanning ? AppTheme.primaryColor : AppTheme.textTertiary,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: _isScanning 
+                    ? [
+                        const Color(0xFF10B981),
+                        const Color(0xFF059669),
+                      ]
+                    : [
+                        const Color(0xFF6B7280),
+                        const Color(0xFF4B5563),
+                      ],
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: (_isScanning ? AppTheme.primaryColor : AppTheme.textTertiary)
-                        .withOpacity(0.3),
-                    blurRadius: 15,
-                    spreadRadius: 2,
+                    color: (_isScanning ? const Color(0xFF10B981) : const Color(0xFF6B7280))
+                        .withOpacity(0.4),
+                    blurRadius: 20,
+                    spreadRadius: 3,
                   ),
                 ],
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 3,
+                ),
               ),
-              child: Icon(
-                _isScanning ? Icons.nfc : Icons.nfc_outlined,
-                size: 80,
-                color: Colors.white,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Icon(
+                      _isScanning ? Icons.nfc : Icons.nfc_outlined,
+                      size: 60,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _isScanning ? '扫描中...' : '准备扫描',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -190,33 +304,76 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
     );
   }
 
-  Widget _buildStatusMessage() {
+  Widget _buildEnterpriseStatusCard() {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
-      ),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: _getStatusColor().withOpacity(0.1),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            const Color(0xFFF8FAFC),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+          BoxShadow(
+            color: _getStatusColor().withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
         border: Border.all(
-          color: _getStatusColor().withOpacity(0.3),
+          color: _getStatusColor().withOpacity(0.2),
+          width: 1.5,
         ),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            _getStatusIcon(),
-            color: _getStatusColor(),
-            size: 20,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(
-            _statusMessage,
-            style: AppTextStyles.bodyLarge.copyWith(
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _getStatusColor().withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              _getStatusIcon(),
               color: _getStatusColor(),
-              fontWeight: FontWeight.w600,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '系统状态',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF6B7280),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _statusMessage,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: _getStatusColor(),
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -224,65 +381,220 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
     );
   }
 
-  Widget _buildInstructions() {
+  Widget _buildEnterpriseInstructions() {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppTheme.dividerColor),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFF8FAFC),
+            Color(0xFFF1F5F9),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 1,
+        ),
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.info_outline,
-            color: AppTheme.primaryColor,
-            size: 32,
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFF10B981),
+                  Color(0xFF059669),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.info_outline,
+              color: Colors.white,
+              size: 28,
+            ),
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: 16),
           const Text(
-            '使用说明',
-            style: AppTextStyles.headline6,
+            '使用指南',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1F2937),
+              letterSpacing: 0.5,
+            ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          const Text(
-            '1. 确保NFC功能已开启\n'
-            '2. 将学生NFC卡片靠近设备背面\n'
-            '3. 保持卡片稳定直到扫描完成\n'
-            '4. 系统将自动识别学生并记录考勤',
-            style: AppTextStyles.bodyMedium,
-            textAlign: TextAlign.center,
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                _buildInstructionStep('1', '确保NFC功能已开启'),
+                const SizedBox(height: 12),
+                _buildInstructionStep('2', '将学生NFC卡片靠近设备背面'),
+                const SizedBox(height: 12),
+                _buildInstructionStep('3', '保持卡片稳定直到扫描完成'),
+                const SizedBox(height: 12),
+                _buildInstructionStep('4', '系统将自动识别学生并记录考勤'),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionButtons() {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: const BoxDecoration(
-        border: Border(
-          top: BorderSide(color: AppTheme.dividerColor),
+  Widget _buildInstructionStep(String number, String text) {
+    return Row(
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF10B981),
+                Color(0xFF059669),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: Text(
+              number,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
         ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF374151),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEnterpriseActionButtons(bool isSmallScreen) {
+    return Container(
+      padding: EdgeInsets.all(isSmallScreen ? 20 : 24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFF8FAFC),
+            Color(0xFFF1F5F9),
+          ],
+        ),
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(28),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -3),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Expanded(
-            child: OutlinedButton.icon(
-              onPressed: _isScanning ? _stopScanning : _startScanning,
-              icon: Icon(_isScanning ? Icons.stop : Icons.play_arrow),
-              label: Text(_isScanning ? '停止扫描' : '开始扫描'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: _isScanning ? AppTheme.errorColor : AppTheme.primaryColor,
-                side: BorderSide(
-                  color: _isScanning ? AppTheme.errorColor : AppTheme.primaryColor,
-                ),
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-              ),
+            child: _buildEnterpriseActionButton(
+              _isScanning ? '停止扫描' : '开始扫描',
+              _isScanning ? Icons.stop_circle : Icons.play_circle,
+              _isScanning ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+              _isScanning ? _stopScanning : _startScanning,
+              isSmallScreen,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEnterpriseActionButton(
+    String text,
+    IconData icon,
+    Color color,
+    VoidCallback onPressed,
+    bool isSmallScreen,
+  ) {
+    return Container(
+      height: isSmallScreen ? 56 : 64,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color,
+            color.withOpacity(0.8),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onPressed,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  color: Colors.white,
+                  size: isSmallScreen ? 20 : 24,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  text,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: isSmallScreen ? 16 : 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -320,19 +632,70 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
     _scanController.forward();
 
     try {
-      await FlutterNfcKit.poll(
-        timeout: Duration(seconds: 30),
-        iosAlertMessage: "请将NFC卡靠近设备",
-        iosMultipleTagMessage: "检测到多个NFC标签，请只使用一个",
-      ).then((tag) async {
-        await _processNFCTag(tag);
-      }).catchError((error) {
-        _updateStatus('NFC扫描失败: $error', isError: true);
+      final result = await NFCSafeScannerService.instance.safeScanNFC(
+        timeout: const Duration(seconds: 10),
+        requireStudent: true,
+      );
+
+      if (!mounted) return;
+
+      if (result.isSuccess && result.student != null) {
+        _updateStatus('找到学生: ${result.student!.getStringValue('student_name')}', isError: false);
+
+        try {
+          final now = DateTime.now().toIso8601String();
+          final student = result.student!;
+          final studentIdFromRecord = student.getStringValue("student_id") ??
+              student.getStringValue("studentId") ??
+              student.getStringValue("id");
+          final currentUser = PocketBaseService.instance.currentUser;
+          final teacherId = currentUser?.getStringValue("id");
+          final teacherName = currentUser?.getStringValue("name") ?? currentUser?.getStringValue("email");
+
+          await PocketBaseService.instance.createAttendanceRecord({
+            "student_id": studentIdFromRecord,
+            "student_name": student.getStringValue("student_name"),
+            "center": student.getStringValue("center"),
+            "branch_name": student.getStringValue("branch_name"),
+            "teacher_id": teacherId,
+            "teacher_name": teacherName,
+            "check_in": now,
+            "status": "present",
+            "notes": "NFC扫描签到",
+          });
+
+          _updateStatus('考勤记录成功: ${student.getStringValue('student_name')}', isError: false);
+        } catch (e) {
+          _updateStatus('记录考勤失败: $e', isError: true);
+        }
+
         _stopScanning();
-      });
+      } else {
+        _updateStatus(result.errorMessage ?? '扫描失败', isError: true);
+        _stopScanning();
+      }
     } catch (e) {
       _updateStatus('扫描失败: $e', isError: true);
       _stopScanning();
+    }
+  }
+  
+  /// 检查Activity状态
+  Future<void> _checkActivityState() async {
+    try {
+      // 添加短暂延迟确保Activity已附加
+      await Future.delayed(const Duration(milliseconds: 200));
+      
+      // 检查NFC可用性作为Activity状态检查
+      final availability = await FlutterNfcKit.nfcAvailability;
+      if (availability == NFCAvailability.not_supported) {
+        throw Exception('NFC not supported');
+      }
+    } catch (e) {
+      if (e.toString().contains('not attached to activity')) {
+        throw Exception('Activity not attached, please restart the app');
+      }
+      rethrow;
     }
   }
 
@@ -358,41 +721,64 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
 
       _updateStatus('正在处理NFC数据...', isError: false);
 
-      // 2. 尝试解密NFC数据
+      // 2. 尝试解密NFC数据（与管理界面一致）
       String studentId = '';
       bool isEncrypted = false;
-      
       try {
-        // 检查是否是加密数据（格式: "encryptedData:salt"）
+        await _encryptionService.ensureKeysLoaded();
         if (nfcData.contains(':')) {
           final parts = nfcData.split(':');
           if (parts.length == 2) {
-            studentId = _encryptionService.decryptNFCData(parts[0], parts[1]);
+            final encryptedPart = parts[0].trim();
+            final saltPart = parts[1].trim();
+            final normalizedEncrypted = encryptedPart.replaceAll('-', '+').replaceAll('_', '/');
+            final decrypted = _encryptionService.decryptNFCData(normalizedEncrypted, saltPart);
+            // 明文应为 学号_随机串
+            final idx = decrypted.indexOf('_');
+            studentId = idx > 0 ? decrypted.substring(0, idx) : decrypted;
             isEncrypted = true;
+            print('🔓 解密成功: plaintext='+decrypted+' → studentId='+studentId);
           }
         } else if (nfcData.contains('docs.google.com/forms') || nfcData.startsWith('http')) {
-          // URL格式（向后兼容）
+          // 兼容旧URL卡
           studentId = nfcData;
         } else {
-          // 可能是未加密的学生ID
+          // 未加密纯ID
           studentId = nfcData;
         }
       } catch (e) {
-        // 解密失败，尝试作为普通数据使用
+        print('🔴 解密失败，使用原始数据: $e');
         studentId = nfcData;
-        print('解密失败，使用原始数据: $e');
       }
 
       _updateStatus('正在查找学生信息...', isError: false);
 
-      // 3. 根据数据类型查找学生
+      // 3. 根据数据类型查找学生（容错匹配）
       RecordModel? student;
-      if (isEncrypted || (!studentId.startsWith('http') && !studentId.contains('docs.google.com'))) {
-        // 使用学生ID查找
-        student = await PocketBaseService.instance.getStudentByStudentId(studentId);
-      } else {
-        // 使用URL查找（向后兼容）
-        student = await PocketBaseService.instance.getStudentByNfcUrl(studentId);
+      try {
+        if (isEncrypted || (!studentId.startsWith('http') && !studentId.contains('docs.google.com'))) {
+          // 先按精确ID匹配
+          student = await PocketBaseService.instance.getStudentByStudentId(studentId);
+          // 如未命中，做一次容错查找（本地列表）
+          if (student == null) {
+            final provider = Provider.of<StudentProvider>(context, listen: false);
+            String _normalize(String s) => s.replaceAll(RegExp(r'\s+'), '').toUpperCase();
+            String _stripStu(String s) => s.replaceFirst(RegExp(r'^STU'), '');
+            final target = _stripStu(_normalize(studentId));
+            for (final s in provider.students) {
+              final raw = (s.data['student_id'] ?? '').toString();
+              final norm = _stripStu(_normalize(raw));
+              if (norm == target) { student = s; break; }
+            }
+          }
+        } else {
+          student = await PocketBaseService.instance.getStudentByNfcUrl(studentId);
+        }
+      } catch (e) {
+        print('查找学生失败: $e');
+        _updateStatus('查找学生信息失败: $e', isError: true);
+        _stopScanning();
+        return;
       }
 
       if (student == null) {
@@ -406,64 +792,118 @@ class _NFCScannerWidgetState extends State<NFCScannerWidget>
                        student.getStringValue("studentId") ?? 
                        student.getStringValue("id");
       final studentName = student.getStringValue("student_name");
+      
+      // 安全检查
+      bool isLocked = false;
+      try {
+        isLocked = await _securityService.isUserLocked(studentIdFromRecord, 'student');
+      } catch (e) {
+        print('安全检查失败: $e');
+        // 安全检查失败时，允许继续操作
+        isLocked = false;
+      }
+      
+      if (isLocked) {
+        final lockReason = student.getStringValue('lock_reason') ?? '未知原因';
+        _updateStatus('🚫 学生 $studentName 已被锁定: $lockReason', isError: true);
+        _stopScanning();
+        return;
+      }
+      
       _updateStatus('找到学生: $studentName', isError: false);
 
-      // 3. 记录考勤
-      final today = DateTime.now().toIso8601String().split("T").first;
-      final now = DateTime.now().toIso8601String();
+      // 4. 记录考勤
+      try {
+        final today = DateTime.now().toIso8601String().split("T").first;
+        final now = DateTime.now().toIso8601String();
 
-      // 获取当前登录用户信息
-      final currentUser = PocketBaseService.instance.currentUser;
-      final teacherId = currentUser?.getStringValue("id");
-      final teacherName = currentUser?.getStringValue("name") ?? currentUser?.getStringValue("email");
+        // 获取当前登录用户信息
+        final currentUser = PocketBaseService.instance.currentUser;
+        final teacherId = currentUser?.getStringValue("id");
+        final teacherName = currentUser?.getStringValue("name") ?? currentUser?.getStringValue("email");
 
-      await PocketBaseService.instance.createAttendanceRecord({
-        "student_id": studentIdFromRecord,
-        "student_name": student.getStringValue("student_name"),
-        "center": student.getStringValue("center"),
-        "branch_name": student.getStringValue("branch_name"),
-        "teacher_id": teacherId,
-        "teacher_name": teacherName,
-        "check_in": now,
-        "status": "present",
-        "notes": "NFC扫描签到",
-      });
-      _updateStatus('考勤记录成功: $studentName', isError: false);
-      _stopScanning();
+        await PocketBaseService.instance.createAttendanceRecord({
+          "student_id": studentIdFromRecord,
+          "student_name": student.getStringValue("student_name"),
+          "center": student.getStringValue("center"),
+          "branch_name": student.getStringValue("branch_name"),
+          "teacher_id": teacherId,
+          "teacher_name": teacherName,
+          "check_in": now,
+          "status": "present",
+          "notes": "NFC扫描签到",
+        });
+        _updateStatus('考勤记录成功: $studentName', isError: false);
+        _stopScanning();
+      } catch (e) {
+        print('记录考勤失败: $e');
+        _updateStatus('记录考勤失败: $e', isError: true);
+        _stopScanning();
+      }
 
     } catch (e) {
+      print('处理NFC标签失败: $e');
       _updateStatus('处理失败: $e', isError: true);
       _stopScanning();
     }
   }
 
-  // 从NFC标签提取数据（支持加密和URL格式）
+  // 从NFC标签提取数据（支持加密和URL格式）- 与管理界面保持一致
   Future<String?> _extractDataFromNfcTag(dynamic tag) async {
     try {
-      if (tag.data is Map) {
-        final data = tag.data as Map;
-        // 尝试不同的数据格式
-        if (data.containsKey('ndef')) {
-          // NDEF格式
-          final ndefData = data['ndef'];
-          if (ndefData is Map && ndefData.containsKey('records')) {
-            final records = ndefData['records'] as List;
-            if (records.isNotEmpty) {
-              final record = records.first;
-              if (record is Map && record.containsKey('payload')) {
-                final payload = record['payload'] as List<int>;
-                return String.fromCharCodes(payload);
+      // 使用新的API读取NDEF记录
+      if (tag.ndefAvailable == true) {
+        final records = await FlutterNfcKit.readNDEFRecords(cached: false);
+        
+        print('📋 读取到 ${records.length} 条NDEF记录');
+        
+        for (var record in records) {
+          final payload = record.payload;
+          if (payload == null) continue;
+
+          try {
+            List<int> bytes;
+            if (payload is Uint8List) {
+              bytes = payload;
+            } else if (payload is List<int>) {
+              bytes = payload;
+            } else if (payload is String) {
+              // 十六进制字符串
+              final hexString = payload as String;
+              bytes = <int>[];
+              for (int i = 0; i < hexString.length; i += 2) {
+                bytes.add(int.parse(hexString.substring(i, i + 2), radix: 16));
+              }
+            } else {
+              // 未知类型，跳过
+              continue;
+            }
+
+            if (bytes.isEmpty) continue;
+
+            final status = bytes[0];
+            final languageCodeLength = status & 0x1F; // 低5位为语言码长度
+            final textStartIndex = 1 + languageCodeLength;
+            if (textStartIndex <= bytes.length) {
+              final textBytes = bytes.sublist(textStartIndex);
+              final content = utf8.decode(textBytes);
+              if (content.isNotEmpty) {
+                print('✅ 成功读取数据: $content');
+                return content;
               }
             }
+          } catch (e) {
+            print('⚠️ NDEF Text 解析失败: $e; payload类型=${payload.runtimeType}');
+            continue;
           }
-        } else if (data.containsKey('text')) {
-          // 文本格式
-          return data['text'] as String;
-        } else if (data.containsKey('url')) {
-          // URL格式
-          return data['url'] as String;
         }
       }
+      
+      // 备用方法：尝试从标签ID获取数据
+      if (tag.id != null && tag.id!.isNotEmpty) {
+        return tag.id!.toUpperCase();
+      }
+      
       return null;
     } catch (e) {
       print('提取NFC数据失败: $e');

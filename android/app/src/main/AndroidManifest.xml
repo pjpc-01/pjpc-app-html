@@ -61,7 +61,10 @@
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:screenOrientation="portrait"
+            android:keepScreenOn="false"
+            android:noHistory="false">
             <!-- Specifies an Android theme to apply to this Activity as soon as
                  the Android process has started. This theme is visible to the user
                  while the Flutter UI initializes. After that, this theme continues
@@ -75,33 +78,9 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
             
-            <!-- NFC Intent Filter - 最高优先级，阻止浏览器 -->
-            <intent-filter android:priority="2147483647">
-                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="text/plain" />
-            </intent-filter>
-            <intent-filter android:priority="2147483647">
-                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="http" />
-            </intent-filter>
-            <intent-filter android:priority="2147483647">
-                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="https" />
-            </intent-filter>
-            <intent-filter android:priority="2147483647">
+            <!-- 简化的NFC Intent Filter -->
+            <intent-filter>
                 <action android:name="android.nfc.action.TAG_DISCOVERED" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-            <intent-filter android:priority="2147483647">
-                <action android:name="android.nfc.action.TECH_DISCOVERED" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-            <!-- 拦截所有NFC相关的intent -->
-            <intent-filter android:priority="2147483647">
-                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>

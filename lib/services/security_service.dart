@@ -15,11 +15,12 @@ class SecurityService {
       final result = await _pocketBaseService.pb.collection('student_attendance').getList(
         filter: 'student_id = "$studentId" && created > "$fiveMinutesAgo"',
         perPage: 10,
-      );
+      ).timeout(Duration(seconds: 3));
       
       return result.items.length > 3; // 5分钟内超过3次刷卡
     } catch (e) {
       print('检测快速连续刷卡失败: $e');
+      // 检测失败时，默认不认为是快速刷卡
       return false;
     }
   }
@@ -33,11 +34,12 @@ class SecurityService {
       final result = await _pocketBaseService.pb.collection('teacher_attendance').getList(
         filter: 'teacher_id = "$teacherId" && created > "$fiveMinutesAgo"',
         perPage: 10,
-      );
+      ).timeout(Duration(seconds: 3));
       
       return result.items.length > 3; // 5分钟内超过3次刷卡
     } catch (e) {
       print('检测教师快速连续刷卡失败: $e');
+      // 检测失败时，默认不认为是快速刷卡
       return false;
     }
   }
@@ -151,7 +153,11 @@ class SecurityService {
   Future<bool> isUserLocked(String userId, String userType) async {
     try {
       final collection = userType == 'student' ? 'students' : 'teachers';
-      final user = await _pocketBaseService.pb.collection(collection).getOne(userId);
+      
+      // 添加超时和错误处理
+      final user = await _pocketBaseService.pb.collection(collection)
+          .getOne(userId)
+          .timeout(Duration(seconds: 5));
       
       final securityStatus = user.getStringValue('security_status');
       final autoLockUntil = user.getStringValue('auto_lock_until');
@@ -159,10 +165,17 @@ class SecurityService {
       if (securityStatus == 'locked') {
         // 检查是否已过锁定时间
         if (autoLockUntil != null) {
-          final lockUntil = DateTime.parse(autoLockUntil);
-          if (DateTime.now().isAfter(lockUntil)) {
-            // 自动解锁
-            await _unlockUser(userId, userType, '自动解锁（锁定时间已过）');
+          try {
+            final lockUntil = DateTime.parse(autoLockUntil);
+            if (DateTime.now().isAfter(lockUntil)) {
+              // 自动解锁
+              await _unlockUser(userId, userType, '自动解锁（锁定时间已过）');
+              return false;
+            }
+          } catch (e) {
+            print('解析锁定时间失败: $e');
+            // 解析失败时，认为锁定已过期
+            await _unlockUser(userId, userType, '自动解锁（时间解析失败）');
             return false;
           }
         }
@@ -172,6 +185,7 @@ class SecurityService {
       return false;
     } catch (e) {
       print('检查用户锁定状态失败: $e');
+      // 检查失败时，默认不锁定用户，避免阻塞正常操作
       return false;
     }
   }
