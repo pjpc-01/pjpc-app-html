@@ -216,35 +216,76 @@ class _ParentProfileScreenState extends State<ParentProfileScreen>
   }
 
   Widget _buildQuickStats() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            '关联学生',
-            '0',
-            Icons.child_care,
-            const Color(0xFF10B981),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            '本月出勤',
-            '0',
-            Icons.access_time,
-            const Color(0xFF3B82F6),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            '通知消息',
-            '0',
-            Icons.notifications,
-            const Color(0xFFF59E0B),
-          ),
-        ),
-      ],
+    return Consumer2<StudentProvider, AttendanceProvider>(
+      builder: (context, studentProvider, attendanceProvider, child) {
+        // 获取关联的学生数量
+        final linkedStudents = studentProvider.students.where((student) {
+          final parentEmail = student.getStringValue('parent_email');
+          final parentPhone = student.getStringValue('parent_phone');
+          // 这里可以根据当前用户的邮箱或电话匹配
+          return parentEmail != null || parentPhone != null;
+        }).length;
+        
+        // 计算所有关联学生的本月出勤情况
+        final now = DateTime.now();
+        final thisMonth = now.month;
+        final thisYear = now.year;
+        
+        int totalAttendance = 0;
+        for (final student in studentProvider.students) {
+          final studentRecords = attendanceProvider.attendanceRecords.where((record) {
+            final recordStudentId = record.getStringValue('student_id') ?? 
+                                   record.getStringValue('student') ??
+                                   record.getStringValue('user_id');
+            final recordStudentName = record.getStringValue('student_name');
+            final studentName = student.getStringValue('student_name');
+            
+            return recordStudentId == student.id || 
+                   recordStudentName == studentName;
+          }).toList();
+          
+          final monthRecords = studentRecords.where((r) {
+            final date = DateTime.tryParse(r.getStringValue('date') ?? '');
+            return date != null && date.month == thisMonth && date.year == thisYear;
+          }).toList();
+          
+          totalAttendance += monthRecords.length;
+        }
+        
+        // 通知消息数量（这里可以集成通知系统）
+        final notificationCount = 0; // 暂时设为0，后续可以集成通知系统
+        
+        return Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                '关联学生',
+                '$linkedStudents',
+                Icons.child_care,
+                const Color(0xFF10B981),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                '本月出勤',
+                '$totalAttendance',
+                Icons.access_time,
+                const Color(0xFF3B82F6),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                '通知消息',
+                '$notificationCount',
+                Icons.notifications,
+                const Color(0xFFF59E0B),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

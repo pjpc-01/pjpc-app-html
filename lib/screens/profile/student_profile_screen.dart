@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/attendance_provider.dart';
-import '../../providers/student_provider.dart';
 import '../../theme/app_theme.dart';
 
 class StudentProfileScreen extends StatefulWidget {
@@ -214,35 +213,88 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
   }
 
   Widget _buildQuickStats() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            '本月出勤',
-            '0',
-            Icons.access_time,
-            const Color(0xFF10B981),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            '当前积分',
-            '0',
-            Icons.stars,
-            const Color(0xFFF59E0B),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            '迟到次数',
-            '0',
-            Icons.schedule,
-            const Color(0xFFEF4444),
-          ),
-        ),
-      ],
+    return Consumer2<AttendanceProvider, AuthProvider>(
+      builder: (context, attendanceProvider, authProvider, child) {
+        final currentUser = authProvider.user;
+        final allRecords = attendanceProvider.attendanceRecords;
+        
+        // 过滤当前学生的记录
+        final records = allRecords.where((record) {
+          final recordStudentId = record.getStringValue('student_id') ?? 
+                                 record.getStringValue('student') ??
+                                 record.getStringValue('user_id');
+          final recordStudentName = record.getStringValue('student_name');
+          final currentUserName = currentUser?.getStringValue('student_name');
+          
+          return recordStudentId == currentUser?.id || 
+                 recordStudentName == currentUserName ||
+                 recordStudentId == currentUserName;
+        }).toList();
+        
+        // 计算统计数据
+        final now = DateTime.now();
+        final thisMonth = now.month;
+        final thisYear = now.year;
+        
+        // 本月记录
+        final monthRecords = records.where((r) {
+          final date = DateTime.tryParse(r.getStringValue('date') ?? '');
+          return date != null && date.month == thisMonth && date.year == thisYear;
+        }).toList();
+        
+        // 完整考勤天数（有签到和签退）
+        final completeDays = monthRecords.where((r) {
+          final checkIn = r.getStringValue('check_in_time');
+          final checkOut = r.getStringValue('check_out_time');
+          return checkIn != null && checkIn.isNotEmpty && checkOut != null && checkOut.isNotEmpty;
+        }).length;
+        
+        // 迟到次数（签到时间晚于8:30）
+        final lateCount = monthRecords.where((r) {
+          final checkIn = r.getStringValue('check_in_time');
+          if (checkIn == null || checkIn.isEmpty) return false;
+          try {
+            final checkInTime = DateTime.parse('2023-01-01 $checkIn');
+            return checkInTime.hour > 8 || (checkInTime.hour == 8 && checkInTime.minute > 30);
+          } catch (e) {
+            return false;
+          }
+        }).length;
+        
+        // 当前积分（从用户信息获取）
+        final currentPoints = currentUser?.getStringValue('current_points') ?? '0';
+        
+        return Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                '本月出勤',
+                '$completeDays',
+                Icons.access_time,
+                const Color(0xFF10B981),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                '当前积分',
+                currentPoints,
+                Icons.stars,
+                const Color(0xFFF59E0B),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                '迟到次数',
+                '$lateCount',
+                Icons.schedule,
+                const Color(0xFFEF4444),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

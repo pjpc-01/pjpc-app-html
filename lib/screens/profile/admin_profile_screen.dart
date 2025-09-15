@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:pocketbase/pocketbase.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/attendance_provider.dart';
+import '../../providers/student_provider.dart';
 import '../../theme/app_theme.dart';
 
 class AdminProfileScreen extends StatefulWidget {
@@ -214,35 +215,56 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
   }
 
   Widget _buildQuickStats() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            '总学生数',
-            '0',
-            Icons.people,
-            const Color(0xFF10B981),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            '总教师数',
-            '2',
-            Icons.school,
-            const Color(0xFF3B82F6),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            '今日考勤',
-            '0',
-            Icons.access_time,
-            const Color(0xFFF59E0B),
-          ),
-        ),
-      ],
+    return Consumer2<StudentProvider, AttendanceProvider>(
+      builder: (context, studentProvider, attendanceProvider, child) {
+        // 获取实际的学生和教师数量
+        final totalStudents = studentProvider.students.length;
+        
+        // 计算今日考勤记录数
+        final today = DateTime.now().toIso8601String().split('T')[0];
+        final todayAttendance = attendanceProvider.attendanceRecords.where((record) {
+          final recordDate = record.getStringValue('date');
+          return recordDate == today;
+        }).length;
+        
+        // 计算教师数量（从考勤记录中获取唯一教师）
+        final uniqueTeachers = attendanceProvider.teacherAttendanceRecords
+            .map((record) => record.getStringValue('teacher_name'))
+            .where((name) => name != null && name.isNotEmpty)
+            .toSet()
+            .length;
+        
+        return Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                '总学生数',
+                '$totalStudents',
+                Icons.people,
+                const Color(0xFF10B981),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                '总教师数',
+                '$uniqueTeachers',
+                Icons.school,
+                const Color(0xFF3B82F6),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                '今日考勤',
+                '$todayAttendance',
+                Icons.access_time,
+                const Color(0xFFF59E0B),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

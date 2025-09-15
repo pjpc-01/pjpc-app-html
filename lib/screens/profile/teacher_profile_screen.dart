@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/attendance_provider.dart';
-import '../../services/pocketbase_service.dart';
 import '../../theme/app_theme.dart';
 
 class TeacherProfileScreen extends StatefulWidget {
@@ -49,87 +48,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen>
     }
   }
 
-  Future<void> _createTestAttendanceRecord() async {
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
-      final currentUser = authProvider.user;
-      
-      if (currentUser == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('用户信息获取失败')),
-        );
-        return;
-      }
 
-      final record = {
-        'teacher_id': currentUser.id,
-        'teacher_name': currentUser.getStringValue('name') ?? '测试教师',
-        'type': 'check_in',
-        'date': DateTime.now().toIso8601String().split('T')[0],
-        'timestamp': DateTime.now().toIso8601String(),
-        'location': 'NFC扫描',
-        'device_id': 'mobile_app',
-        'user_type': 'teacher',
-      };
-
-      final success = await attendanceProvider.createAttendanceRecord(record);
-      
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('教师签到成功'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        // 重新加载数据
-        await _loadData();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('教师签到失败'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('教师签到失败: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  Future<void> _debugAttendanceData() async {
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
-      final currentUser = authProvider.user;
-      
-      
-      if (attendanceProvider.teacherAttendanceRecords.isNotEmpty) {
-      }
-      
-      // 重新加载数据
-      await _loadData();
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('调试信息已输出到控制台'),
-          backgroundColor: Colors.blue,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('调试失败: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
 
   String _formatTime(String? timeString) {
     if (timeString == null) return '';
@@ -235,105 +154,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen>
     );
   }
 
-  Future<void> _createTestTeacherRecord() async {
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final currentUser = authProvider.user;
-      
-      if (currentUser == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('用户信息获取失败')),
-        );
-        return;
-      }
 
-      // 创建教师记录
-      final teacherData = {
-        'name': currentUser.getStringValue('name') ?? '测试教师',
-        'email': currentUser.getStringValue('email') ?? 'test@example.com',
-        'phone': currentUser.getStringValue('phone') ?? '1234567890',
-        'teacher_id': 'T${DateTime.now().millisecondsSinceEpoch}',
-        'department': '测试部门',
-        'position': '测试职位',
-        'nfc_card_number': '04AE7EA6682681', // 使用你的NFC卡号
-        'nfc_card_issued_date': DateTime.now().toIso8601String().split('T')[0],
-        'nfc_card_expiry_date': DateTime.now().add(const Duration(days: 365)).toIso8601String().split('T')[0],
-        'user_id': currentUser.id,
-        'status': 'active',
-      };
-
-
-      final record = await PocketBaseService.instance.pb.collection('teachers').create(body: teacherData);
-      
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('测试教师记录创建成功！现在可以使用NFC卡进行考勤了'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('创建测试教师记录失败: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  Future<void> _createTeacherCheckOutRecord() async {
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
-      final currentUser = authProvider.user;
-      
-      if (currentUser == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('用户信息获取失败')),
-        );
-        return;
-      }
-
-      final record = {
-        'teacher_id': currentUser.id,
-        'teacher_name': currentUser.getStringValue('name') ?? '测试教师',
-        'type': 'check_out',
-        'date': DateTime.now().toIso8601String().split('T')[0],
-        'timestamp': DateTime.now().toIso8601String(),
-        'location': 'NFC扫描',
-        'device_id': 'mobile_app',
-        'user_type': 'teacher',
-      };
-
-      final success = await attendanceProvider.createAttendanceRecord(record);
-      
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('教师签退记录创建成功'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        // 重新加载数据
-        await _loadData();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('教师签退记录创建失败'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('创建教师签退记录失败: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
 
   void _showLogoutDialog() {
     showDialog(
@@ -503,38 +324,96 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen>
   }
 
   Widget _buildQuickStats() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            '本月出勤',
-            '0',
-            '天',
-            Icons.access_time,
-            const Color(0xFF10B981),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            '迟到次数',
-            '0',
-            '次',
-            Icons.schedule,
-            const Color(0xFFF59E0B),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            '请假天数',
-            '0',
-            '天',
-            Icons.event_busy,
-            const Color(0xFFEF4444),
-          ),
-        ),
-      ],
+    return Consumer2<AttendanceProvider, AuthProvider>(
+      builder: (context, attendanceProvider, authProvider, child) {
+        final currentUser = authProvider.user;
+        final allRecords = attendanceProvider.teacherAttendanceRecords;
+        
+        // 过滤当前用户的记录
+        final records = allRecords.where((record) {
+          final recordTeacherId = record.getStringValue('teacher_id') ?? 
+                                 record.getStringValue('teacher_user_id') ?? 
+                                 record.getStringValue('teacher') ??
+                                 record.getStringValue('user_id') ??
+                                 record.getStringValue('teacher_name');
+          final recordTeacherName = record.getStringValue('teacher_name');
+          final currentUserName = currentUser?.getStringValue('name');
+          
+          return recordTeacherId == currentUser?.id || 
+                 recordTeacherName == currentUserName ||
+                 recordTeacherId == currentUserName;
+        }).toList();
+        
+        // 计算统计数据
+        final now = DateTime.now();
+        final thisMonth = now.month;
+        final thisYear = now.year;
+        
+        // 本月记录
+        final monthRecords = records.where((r) {
+          final date = DateTime.tryParse(r.getStringValue('date') ?? '');
+          return date != null && date.month == thisMonth && date.year == thisYear;
+        }).toList();
+        
+        // 完整考勤天数（有签到和签退）
+        final completeDays = monthRecords.where((r) {
+          final checkIn = r.getStringValue('check_in');
+          final checkOut = r.getStringValue('check_out');
+          return checkIn != null && checkIn.isNotEmpty && checkOut != null && checkOut.isNotEmpty;
+        }).length;
+        
+        // 迟到次数（签到时间晚于9:00）
+        final lateCount = monthRecords.where((r) {
+          final checkIn = r.getStringValue('check_in');
+          if (checkIn == null || checkIn.isEmpty) return false;
+          try {
+            final checkInTime = DateTime.parse(checkIn);
+            return checkInTime.hour > 9 || (checkInTime.hour == 9 && checkInTime.minute > 0);
+          } catch (e) {
+            return false;
+          }
+        }).length;
+        
+        // 请假天数（状态为请假）
+        final leaveDays = monthRecords.where((r) {
+          final status = r.getStringValue('status')?.toLowerCase();
+          return status == 'leave' || status == 'absent' || status == 'sick';
+        }).length;
+        
+        return Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                '本月出勤',
+                '$completeDays',
+                '天',
+                Icons.access_time,
+                const Color(0xFF10B981),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                '迟到次数',
+                '$lateCount',
+                '次',
+                Icons.schedule,
+                const Color(0xFFF59E0B),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                '请假天数',
+                '$leaveDays',
+                '天',
+                Icons.event_busy,
+                const Color(0xFFEF4444),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -661,21 +540,6 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen>
                     color: Colors.grey,
                   ),
                 ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => _createTestAttendanceRecord(),
-                  child: const Text('创建测试考勤记录'),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => _debugAttendanceData(),
-                  child: const Text('调试考勤数据'),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => _createTestTeacherRecord(),
-                  child: const Text('创建测试教师记录'),
-                ),
               ],
             ),
           );
@@ -714,27 +578,6 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen>
                     color: Colors.grey[600],
                   ),
                 ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _createTestAttendanceRecord,
-                  child: const Text('创建测试记录'),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: _debugAttendanceData,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                  ),
-                  child: const Text('调试数据'),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: _createTestTeacherRecord,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                  ),
-                  child: const Text('创建教师考勤记录'),
-                ),
               ],
             ),
           );
@@ -766,39 +609,6 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen>
                       color: Colors.grey[600],
                       fontSize: 14,
                     ),
-                  ),
-                ],
-              ),
-            ),
-            // 调试按钮区域
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(
-                    onPressed: _createTestAttendanceRecord,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('签到'),
-                  ),
-                  ElevatedButton(
-                    onPressed: _createTeacherCheckOutRecord,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('签退'),
-                  ),
-                  ElevatedButton(
-                    onPressed: _debugAttendanceData,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('调试'),
                   ),
                 ],
               ),
@@ -1169,317 +979,9 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen>
     );
   }
 
-  // 测试合并逻辑
-  Future<void> _testMergeLogic() async {
-    try {
-      final currentUser = Provider.of<AuthProvider>(context, listen: false).user;
-      if (currentUser == null) return;
 
-      
-      // 先创建一个签到记录
-      final checkInData = {
-        'teacher_id': currentUser.id,
-        'teacher_name': currentUser.getStringValue('name') ?? '测试教师',
-        'type': 'check_in',
-        'date': DateTime.now().toIso8601String().split('T')[0],
-        'timestamp': DateTime.now().toIso8601String(),
-        'location': '测试合并',
-        'device_id': 'test_app',
-        'user_type': 'teacher',
-      };
-      
-      await PocketBaseService.instance.createTeacherAttendanceRecord(checkInData);
-      
-      // 等待一秒
-      await Future.delayed(const Duration(seconds: 1));
-      
-      // 再创建一个签退记录（应该合并到同一个记录）
-      final checkOutData = {
-        'teacher_id': currentUser.id,
-        'teacher_name': currentUser.getStringValue('name') ?? '测试教师',
-        'type': 'check_out',
-        'date': DateTime.now().toIso8601String().split('T')[0],
-        'timestamp': DateTime.now().toIso8601String(),
-        'location': '测试合并',
-        'device_id': 'test_app',
-        'user_type': 'teacher',
-      };
-      
-      await PocketBaseService.instance.createTeacherAttendanceRecord(checkOutData);
-      
-      // 刷新数据
-      await _loadData();
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('测试合并完成，请查看记录'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('测试合并失败: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
 
-  // 清理重复记录
-  Future<void> _cleanDuplicateRecords() async {
-    try {
-      final currentUser = Provider.of<AuthProvider>(context, listen: false).user;
-      if (currentUser == null) return;
 
-      
-      // 获取所有记录
-      final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
-      final records = attendanceProvider.teacherAttendanceRecords;
-      
-      // 按日期分组
-      final Map<String, List<dynamic>> groupedByDate = {};
-      for (final record in records) {
-        final date = record.getStringValue('date');
-        if (date != null) {
-          groupedByDate.putIfAbsent(date, () => []).add(record);
-        }
-      }
-      
-      int mergedCount = 0;
-      
-      // 处理每个日期的记录
-      for (final entry in groupedByDate.entries) {
-        final date = entry.key;
-        final dayRecords = entry.value;
-        
-        if (dayRecords.length > 1) {
-          
-          // 找到第一个记录作为主记录
-          final mainRecord = dayRecords.first;
-          String? finalCheckIn = mainRecord.getStringValue('check_in');
-          String? finalCheckOut = mainRecord.getStringValue('check_out');
-          
-          // 合并所有记录的签到签退时间
-          for (final record in dayRecords) {
-            final checkIn = record.getStringValue('check_in');
-            final checkOut = record.getStringValue('check_out');
-            
-            if (checkIn != null && checkIn.isNotEmpty) {
-              finalCheckIn = checkIn;
-            }
-            if (checkOut != null && checkOut.isNotEmpty) {
-              finalCheckOut = checkOut;
-            }
-          }
-          
-          // 更新主记录
-          final updateData = <String, dynamic>{};
-          if (finalCheckIn != null && finalCheckIn.isNotEmpty) {
-            updateData['check_in'] = finalCheckIn;
-          }
-          if (finalCheckOut != null && finalCheckOut.isNotEmpty) {
-            updateData['check_out'] = finalCheckOut;
-          }
-          updateData['status'] = 'present';
-          
-          if (updateData.isNotEmpty) {
-            await PocketBaseService.instance.updateTeacherAttendanceRecord(
-              mainRecord.id, 
-              updateData
-            );
-          }
-          
-          // 删除其他重复记录
-          for (int i = 1; i < dayRecords.length; i++) {
-            await PocketBaseService.instance.deleteTeacherAttendanceRecord(
-              dayRecords[i].id
-            );
-            mergedCount++;
-          }
-        }
-      }
-      
-      // 刷新数据
-      await _loadData();
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('清理完成，合并了 $mergedCount 条重复记录'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('清理失败: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  // 简单合并测试
-  Future<void> _simpleMergeTest() async {
-    try {
-      final currentUser = Provider.of<AuthProvider>(context, listen: false).user;
-      if (currentUser == null) return;
-
-      
-      // 使用固定的测试日期
-      final testDate = '2025-09-16';
-      
-      // 先创建一个签到记录
-      final checkInData = {
-        'teacher_id': currentUser.id,
-        'teacher_name': currentUser.getStringValue('name') ?? '测试教师',
-        'type': 'check_in',
-        'date': testDate,
-        'timestamp': DateTime.now().toIso8601String(),
-        'location': '简单测试',
-        'device_id': 'simple_test',
-        'user_type': 'teacher',
-      };
-      
-      final result1 = await PocketBaseService.instance.createTeacherAttendanceRecord(checkInData);
-      
-      // 等待一秒
-      await Future.delayed(const Duration(seconds: 1));
-      
-      // 再创建一个签退记录（应该合并到同一个记录）
-      final checkOutData = {
-        'teacher_id': currentUser.id,
-        'teacher_name': currentUser.getStringValue('name') ?? '测试教师',
-        'type': 'check_out',
-        'date': testDate,
-        'timestamp': DateTime.now().toIso8601String(),
-        'location': '简单测试',
-        'device_id': 'simple_test',
-        'user_type': 'teacher',
-      };
-      
-      final result2 = await PocketBaseService.instance.createTeacherAttendanceRecord(checkOutData);
-      
-      // 检查是否合并
-      if (result1.id == result2.id) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ 合并测试成功！'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('❌ 合并测试失败！'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-      
-      // 刷新数据
-      await _loadData();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('简单合并测试失败: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  // 测试新逻辑：完整考勤后创建新记录
-  Future<void> _testNewLogic() async {
-    try {
-      final currentUser = Provider.of<AuthProvider>(context, listen: false).user;
-      if (currentUser == null) return;
-
-      
-      // 使用固定的测试日期
-      final testDate = '2025-09-17';
-      
-      // 第一步：创建签到记录
-      final checkInData = {
-        'teacher_id': currentUser.id,
-        'teacher_name': currentUser.getStringValue('name') ?? '测试教师',
-        'type': 'check_in',
-        'date': testDate,
-        'timestamp': DateTime.now().toIso8601String(),
-        'location': '新逻辑测试',
-        'device_id': 'new_logic_test',
-        'user_type': 'teacher',
-      };
-      
-      final result1 = await PocketBaseService.instance.createTeacherAttendanceRecord(checkInData);
-      
-      // 等待一秒
-      await Future.delayed(const Duration(seconds: 1));
-      
-      // 第二步：创建签退记录（应该合并到同一个记录）
-      final checkOutData = {
-        'teacher_id': currentUser.id,
-        'teacher_name': currentUser.getStringValue('name') ?? '测试教师',
-        'type': 'check_out',
-        'date': testDate,
-        'timestamp': DateTime.now().toIso8601String(),
-        'location': '新逻辑测试',
-        'device_id': 'new_logic_test',
-        'user_type': 'teacher',
-      };
-      
-      final result2 = await PocketBaseService.instance.createTeacherAttendanceRecord(checkOutData);
-      
-      // 检查是否合并
-      if (result1.id == result2.id) {
-      } else {
-      }
-      
-      // 等待一秒
-      await Future.delayed(const Duration(seconds: 1));
-      
-      // 第三步：再次创建签到记录（应该创建新记录，因为已有完整考勤）
-      final checkInData2 = {
-        'teacher_id': currentUser.id,
-        'teacher_name': currentUser.getStringValue('name') ?? '测试教师',
-        'type': 'check_in',
-        'date': testDate,
-        'timestamp': DateTime.now().toIso8601String(),
-        'location': '新逻辑测试2',
-        'device_id': 'new_logic_test2',
-        'user_type': 'teacher',
-      };
-      
-      final result3 = await PocketBaseService.instance.createTeacherAttendanceRecord(checkInData2);
-      
-      // 检查是否创建了新记录
-      if (result3.id != result1.id) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ 新逻辑测试成功！完整考勤后创建新记录'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('❌ 新逻辑测试失败！'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-      
-      // 刷新数据
-      await _loadData();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('新逻辑测试失败: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
 
   // 企业级考勤概览卡片
   Widget _buildAttendanceOverview(List<dynamic> records) {
@@ -1724,76 +1226,6 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen>
               ],
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildActionButton(
-                    '签到',
-                    Icons.login,
-                    Colors.green,
-                    _createTestAttendanceRecord,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildActionButton(
-                    '签退',
-                    Icons.logout,
-                    Colors.orange,
-                    _createTeacherCheckOutRecord,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildActionButton(
-                    '调试',
-                    Icons.bug_report,
-                    Colors.blue,
-                    _debugAttendanceData,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildActionButton(
-                    '测试合并',
-                    Icons.merge,
-                    Colors.purple,
-                    _testMergeLogic,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildActionButton(
-                    '清理重复',
-                    Icons.cleaning_services,
-                    Colors.red,
-                    _cleanDuplicateRecords,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildActionButton(
-                    '简单测试',
-                    Icons.science,
-                    Colors.teal,
-                    _simpleMergeTest,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildActionButton(
-                    '新逻辑测试',
-                    Icons.new_releases,
-                    Colors.indigo,
-                    _testNewLogic,
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
