@@ -459,8 +459,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
         final userRole = authProvider.roleDisplayName;
         
         return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          padding: const EdgeInsets.all(32),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
@@ -471,12 +471,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 Color(0xFF1E40AF),
               ],
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
                 color: const Color(0xFF3B82F6).withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+                blurRadius: 15,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -486,18 +486,18 @@ class _HomeDashboardState extends State<HomeDashboard> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
                       Icons.waving_hand_rounded,
                       color: Colors.white,
-                      size: 24,
+                      size: 20,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -505,12 +505,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         Text(
                           '欢迎回来，$userName！',
                           style: const TextStyle(
-                            fontSize: 20,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Text(
                           '今天是美好的一天，继续加油！',
                           style: TextStyle(

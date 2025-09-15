@@ -481,10 +481,10 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.dividerColor),
         boxShadow: AppTheme.cardShadow,
       ),

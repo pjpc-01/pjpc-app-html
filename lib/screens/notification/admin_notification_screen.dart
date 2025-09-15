@@ -455,26 +455,26 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen>
     final message = notification.getStringValue('message') ?? '无内容';
     
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: const Color(0xFF3B82F6),
-          width: 2,
+          width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
         children: [
           ListTile(
-            contentPadding: const EdgeInsets.all(20),
+            contentPadding: const EdgeInsets.all(16),
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(

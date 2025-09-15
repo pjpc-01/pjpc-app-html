@@ -55,8 +55,8 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
   Widget _buildSmartHeader() {
     return SliverToBoxAdapter(
       child: Container(
-        margin: const EdgeInsets.all(8),
-        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.all(6),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
@@ -66,12 +66,12 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
               Color(0xFF1D4ED8),
             ],
           ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF3B82F6).withOpacity(0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -806,40 +806,40 @@ class _StudentManagementScreenState extends State<StudentManagementScreen> {
     final parentPhone = student.getStringValue('parents_phone') ?? '';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
         ),
         child: InkWell(
         onTap: () => _showStudentActions(student),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
           child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           child: Row(
               children: [
               // 学生头像
                       Container(
-                width: 40,
-                height: 40,
+                width: 36,
+                height: 36,
                         decoration: BoxDecoration(
                       color: _getStatusColor(status).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                     ),
                     child: Icon(
                       Icons.person_rounded,
                       color: _getStatusColor(status),
-                  size: 20,
+                  size: 18,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
               // 学生基本信息
                 Expanded(
                   child: Column(

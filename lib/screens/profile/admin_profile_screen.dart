@@ -273,25 +273,25 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
-      padding: EdgeInsets.all(AppSpacing.md),
+      padding: EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Column(
         children: [
           Icon(
             icon,
             color: Colors.white,
-            size: 16,
+            size: 14,
           ),
-          SizedBox(height: AppSpacing.sm),
+          SizedBox(height: AppSpacing.xs),
           Text(
             value,
             style: AppTextStyles.headline4.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: 18,
+              fontSize: 16,
             ),
           ),
           SizedBox(height: AppSpacing.xs),
@@ -299,7 +299,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
             title,
             style: AppTextStyles.bodySmall.copyWith(
               color: Colors.white70,
-              fontSize: 11,
+              fontSize: 10,
             ),
             textAlign: TextAlign.center,
           ),
