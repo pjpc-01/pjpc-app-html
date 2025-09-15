@@ -382,33 +382,33 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSectionTitle('基本信息'),
               _buildBasicInfoSection(),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.sm),
               
               _buildSectionTitle('学校信息'),
               _buildSchoolInfoSection(),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.sm),
               
               _buildSectionTitle('家长信息'),
               _buildParentInfoSection(),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.sm),
               
               _buildSectionTitle('其他信息'),
               _buildOtherInfoSection(),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.sm),
               
               _buildSectionTitle('接送信息'),
               _buildPickupInfoSection(),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.sm),
               
               _buildSectionTitle('注册和学费信息'),
               _buildRegistrationInfoSection(),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.sm),
               
               _buildActionButtons(),
             ],
@@ -420,12 +420,13 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Text(
         title,
         style: AppTextStyles.headline6.copyWith(
           color: AppTheme.primaryColor,
           fontWeight: FontWeight.w600,
+          fontSize: 16,
         ),
       ),
     );
@@ -434,7 +435,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
   Widget _buildBasicInfoSection() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           children: [
             Row(
@@ -476,10 +477,10 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             // 学号生成提示
             if (!widget.isEdit) _buildStudentIdHint(),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             // BGT选择
             Row(
               children: [
@@ -542,7 +543,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
                 Expanded(
@@ -577,7 +578,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             CustomTextField(
               controller: _nricPassportController,
               label: 'NRIC/护照号码',
@@ -585,7 +586,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
               prefixIcon: const Icon(Icons.credit_card),
               keyboardType: TextInputType.text,
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
                 Expanded(
@@ -663,11 +664,11 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
   Widget _buildSchoolInfoSection() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           children: [
             _buildSchoolSelector(),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
                 Expanded(
@@ -728,7 +729,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             CustomTextField(
               controller: _branchController,
               label: '分校',
@@ -744,7 +745,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
   Widget _buildParentInfoSection() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           children: [
             CustomTextField(
@@ -753,7 +754,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
               hintText: '请输入家长姓名',
               prefixIcon: const Icon(Icons.person_outline),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
                 Expanded(
@@ -777,9 +778,9 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             const Divider(),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               '紧急联络人',
               style: AppTextStyles.bodyLarge.copyWith(
@@ -787,14 +788,14 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                 color: AppTheme.primaryColor,
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             CustomTextField(
               controller: _emergencyContactNameController,
               label: '紧急联络人姓名',
               hintText: '请输入紧急联络人姓名',
               prefixIcon: const Icon(Icons.emergency),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             CustomTextField(
               controller: _emergencyContactPhoneController,
               label: '紧急联络电话',
@@ -811,7 +812,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
   Widget _buildOtherInfoSection() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           children: [
             Row(
@@ -837,7 +838,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             CustomTextField(
               controller: _addressController,
               label: '家庭地址',
@@ -845,16 +846,16 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
               prefixIcon: const Icon(Icons.home),
               maxLines: 2,
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             CustomTextField(
               controller: _nfcUrlController,
               label: 'NFC URL',
               hintText: '请输入NFC URL（可选）',
               prefixIcon: const Icon(Icons.nfc),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             const Divider(),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               '健康信息',
               style: AppTextStyles.bodyLarge.copyWith(
@@ -862,7 +863,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                 color: AppTheme.primaryColor,
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             CustomTextField(
               controller: _healthInfoController,
               label: '健康/过敏记录',
@@ -870,9 +871,9 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
               prefixIcon: const Icon(Icons.medical_services),
               maxLines: 3,
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             const Divider(),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             CustomTextField(
               controller: _notesController,
               label: '备注',
@@ -895,7 +896,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
             child: const Text('取消'),
           ),
         ),
-        const SizedBox(width: AppSpacing.md),
+        const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: CustomButton(
             onPressed: _isLoading ? null : _saveStudent,
@@ -1241,7 +1242,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
   Widget _buildPickupInfoSection() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           children: [
             Text(
@@ -1251,7 +1252,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                 color: AppTheme.primaryColor,
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<String>(
               value: _getSafeDropdownValue(_selectedPickupMethod, _pickupMethods),
               decoration: const InputDecoration(
@@ -1285,11 +1286,11 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                 color: AppTheme.textSecondary,
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             _buildAuthorizedPersonCard('授权接送人1', _authorizedPerson1NameController, _authorizedPerson1PhoneController, _authorizedPerson1RelationController),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             _buildAuthorizedPersonCard('授权接送人2', _authorizedPerson2NameController, _authorizedPerson2PhoneController, _authorizedPerson2RelationController),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             _buildAuthorizedPersonCard('授权接送人3', _authorizedPerson3NameController, _authorizedPerson3PhoneController, _authorizedPerson3RelationController),
           ],
         ),
@@ -1312,14 +1313,14 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             CustomTextField(
               controller: nameController,
               label: '姓名',
               hintText: '接送人姓名',
               prefixIcon: const Icon(Icons.person),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
                 Expanded(
@@ -1346,7 +1347,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
   Widget _buildRegistrationInfoSection() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           children: [
             Row(
@@ -1413,7 +1414,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                 color: AppTheme.primaryColor,
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
