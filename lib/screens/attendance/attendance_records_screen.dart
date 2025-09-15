@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/attendance_provider.dart';
 import '../../providers/student_provider.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/common/unified_components.dart';
 
 class AttendanceRecordsScreen extends StatefulWidget {
   const AttendanceRecordsScreen({super.key});

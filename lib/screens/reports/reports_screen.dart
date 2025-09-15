@@ -33,7 +33,10 @@ class _ReportsScreenState extends State<ReportsScreen> with TickerProviderStateM
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadReports();
+    // 延迟加载数据以避免在构建过程中调用setState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadReports();
+    });
   }
 
   @override

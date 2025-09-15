@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:provider/provider.dart';
 import '../services/pocketbase_service.dart';
 import '../services/error_handler_service.dart';
 import '../services/realtime_service.dart' as app_realtime;
+import 'auth_provider.dart';
+import 'teacher_provider.dart';
 
 class StudentProvider with ChangeNotifier {
   final PocketBaseService _pocketBaseService;
+  AuthProvider? _authProvider;
+  BuildContext? _context;
   
   bool _isLoading = false;
   String? _error;
@@ -14,10 +19,27 @@ class StudentProvider with ChangeNotifier {
   List<RecordModel> _studentFees = [];
   Map<String, bool> _expandedCategories = {};
 
-  StudentProvider({PocketBaseService? pocketBaseService}) 
-      : _pocketBaseService = pocketBaseService ?? PocketBaseService.instance {
+  StudentProvider({PocketBaseService? pocketBaseService, AuthProvider? authProvider}) 
+      : _pocketBaseService = pocketBaseService ?? PocketBaseService.instance,
+        _authProvider = authProvider {
     _setupRealtimeUpdates();
   }
+  
+  /// 设置AuthProvider引用
+  void setAuthProvider(AuthProvider authProvider) {
+    _authProvider = authProvider;
+  }
+  
+  void setContext(BuildContext context) {
+    _context = context;
+  }
+  
+  /// 当教师数据更新时重新过滤学生
+  void onTeacherDataUpdated() {
+    print('教师数据已更新，重新过滤学生数据');
+    notifyListeners();
+  }
+
   
   /// 设置实时更新
   void _setupRealtimeUpdates() {
@@ -350,6 +372,204 @@ class StudentProvider with ChangeNotifier {
              studentId.toLowerCase().contains(searchQuery) ||
              standard.toLowerCase().contains(searchQuery);
     }).toList();
+  }
+
+  /// 根据用户角色过滤学生数据
+  List<RecordModel> getFilteredStudentsByRole() {
+    if (_authProvider == null) return _students;
+    
+    // 管理员可以查看所有学生
+    if (_authProvider!.isAdmin) {
+      return _students;
+    }
+    
+    // 老师只能查看自己班级的学生
+    if (_authProvider!.isTeacher) {
+      return _getStudentsForTeacher();
+    }
+    
+    // 家长只能查看自己的孩子
+    if (_authProvider!.isParent) {
+      return _getStudentsForParent();
+    }
+    
+    // 其他角色返回空列表
+    return [];
+  }
+
+  /// 获取老师班级的学生
+  List<RecordModel> _getStudentsForTeacher() {
+    if (_authProvider?.userProfile == null) return [];
+    
+    // 获取当前用户的邮箱，用于查找对应的教师记录
+    final userEmail = _authProvider!.userProfile!.getStringValue('email') ?? '';
+    if (userEmail.isEmpty) {
+      print('用户邮箱为空');
+      return [];
+    }
+    
+    print('正在查找教师记录，邮箱: $userEmail');
+    
+    // 通过邮箱查找对应的教师记录
+    final teacherRecord = _getTeacherByEmail(userEmail);
+    if (teacherRecord == null) {
+      print('未找到教师记录，邮箱: $userEmail');
+      return [];
+    }
+    
+    print('找到教师记录: ${teacherRecord.getStringValue('name')}');
+    
+    // 获取老师负责的班级
+    final teacherClasses = teacherRecord.getStringValue('assigned_classes') ?? '';
+    if (teacherClasses.isEmpty) {
+      print('教师没有分配班级');
+      return [];
+    }
+    
+    print('教师分配的班级: $teacherClasses');
+    
+    // 获取老师分配的中心（relation字段）
+    final teacherCenterId = teacherRecord.getStringValue('center_assignment') ?? '';
+    
+    // 解析班级列表（假设用逗号分隔）
+    final classList = teacherClasses.split(',').map((c) => c.trim()).toList();
+    
+    print('解析后的班级列表: $classList');
+    print('当前学生总数: ${_students.length}');
+    
+    final filteredStudents = _students.where((student) {
+      final studentClass = student.getStringValue('standard');
+      final studentCenter = student.getStringValue('center');
+      
+      // 检查班级匹配
+      final classMatch = classList.contains(studentClass);
+      
+      if (classMatch) {
+        print('匹配到学生: ${student.getStringValue('student_name')} - 班级: $studentClass');
+      }
+      
+      // 如果老师有分配中心，还要检查中心匹配
+      // 注意：center_assignment是relation字段，存储的是中心记录的ID
+      // 而学生的center字段是select类型，存储的是中心名称/代码
+      if (teacherCenterId.isNotEmpty) {
+        // 这里需要根据中心ID获取中心名称进行匹配
+        // 暂时先跳过中心匹配，只按班级匹配
+        // TODO: 实现中心ID到中心名称的转换逻辑
+        return classMatch;
+      }
+      
+      return classMatch;
+    }).toList();
+    
+    print('过滤后的学生数量: ${filteredStudents.length}');
+    return filteredStudents;
+  }
+
+  /// 通过邮箱获取教师记录
+  RecordModel? _getTeacherByEmail(String email) {
+    if (_context == null) {
+      print('Context为空，无法获取教师记录');
+      return null;
+    }
+    
+    try {
+      // 从教师提供者获取教师数据
+      final teacherProvider = Provider.of<TeacherProvider>(_context!, listen: false);
+      
+      if (teacherProvider.teachers.isEmpty) {
+        print('教师列表为空，等待数据加载...');
+        return null;
+      }
+      
+      print('教师列表数量: ${teacherProvider.teachers.length}');
+      print('查找邮箱: $email');
+      
+      for (final teacher in teacherProvider.teachers) {
+        final teacherEmail = teacher.getStringValue('email');
+        print('教师邮箱: $teacherEmail');
+        if (teacherEmail == email) {
+          print('找到匹配的教师: ${teacher.getStringValue('name')}');
+          return teacher;
+        }
+      }
+      
+      print('未找到匹配的教师记录');
+      return null;
+    } catch (e) {
+      print('获取教师记录失败: $e');
+      // 如果无法获取TeacherProvider，返回null而不是抛出异常
+      return null;
+    }
+  }
+
+  /// 获取家长的孩子
+  List<RecordModel> _getStudentsForParent() {
+    if (_authProvider?.userProfile == null) return [];
+    
+    // 获取家长的邮箱或手机号
+    final parentEmail = _authProvider!.userProfile!.getStringValue('email') ?? '';
+    final parentPhone = _authProvider!.userProfile!.getStringValue('phone') ?? '';
+    
+    return _students.where((student) {
+      final studentParentEmail = student.getStringValue('parent_email') ?? '';
+      final studentParentPhone = student.getStringValue('parent_phone') ?? '';
+      
+      return studentParentEmail == parentEmail || studentParentPhone == parentPhone;
+    }).toList();
+  }
+
+  /// 检查用户是否有权限查看特定学生
+  bool canViewStudent(String studentId) {
+    if (_authProvider == null) return false;
+    
+    // 管理员可以查看所有学生
+    if (_authProvider!.isAdmin) return true;
+    
+    // 老师只能查看自己班级的学生
+    if (_authProvider!.isTeacher) {
+      final filteredStudents = _getStudentsForTeacher();
+      return filteredStudents.any((s) => s.id == studentId);
+    }
+    
+    // 家长只能查看自己的孩子
+    if (_authProvider!.isParent) {
+      final filteredStudents = _getStudentsForParent();
+      return filteredStudents.any((s) => s.id == studentId);
+    }
+    
+    return false;
+  }
+
+  /// 检查用户是否有权限编辑特定学生
+  bool canEditStudent(String studentId) {
+    if (_authProvider == null) return false;
+    
+    // 管理员可以编辑所有学生
+    if (_authProvider!.isAdmin) return true;
+    
+    // 老师只能编辑自己班级学生的部分信息（不能编辑基本信息）
+    if (_authProvider!.isTeacher) {
+      return canViewStudent(studentId);
+    }
+    
+    // 家长和会计不能编辑学生信息
+    return false;
+  }
+
+  /// 检查用户是否有权限添加学生
+  bool canAddStudent() {
+    if (_authProvider == null) return false;
+    
+    // 只有管理员可以添加学生
+    return _authProvider!.isAdmin;
+  }
+
+  /// 检查用户是否有权限删除学生
+  bool canDeleteStudent(String studentId) {
+    if (_authProvider == null) return false;
+    
+    // 只有管理员可以删除学生
+    return _authProvider!.isAdmin;
   }
 
   void _setLoading(bool loading) {

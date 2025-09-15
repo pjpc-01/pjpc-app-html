@@ -666,12 +666,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           children: [
-            CustomTextField(
-              controller: _schoolNameController,
-              label: '学校名称',
-              hintText: '请输入就读学校名称',
-              prefixIcon: const Icon(Icons.school),
-            ),
+            _buildSchoolSelector(),
             const SizedBox(height: AppSpacing.md),
             Row(
               children: [
@@ -941,6 +936,147 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
     return '${date.year}年${date.month}月${date.day}日';
   }
 
+  Widget _buildSchoolSelector() {
+    final commonSchools = [
+      'SJKC Pu Chong Utama',
+      'SJKC Bandar Puteri',
+      'SJKC Bandar Kinrara',
+      'SJKC Taman Putra',
+      'SJKC Bandar Puchong Jaya',
+      'SK Bandar Puteri',
+      'SK Bandar Kinrara',
+      'SK Taman Putra',
+      '其他学校'
+    ];
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '学校名称',
+          style: AppTextStyles.bodyMedium.copyWith(
+            fontWeight: FontWeight.w500,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        
+        // 常用学校按钮
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: commonSchools.map((school) {
+            final isSelected = _schoolNameController.text == school;
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _schoolNameController.text = school;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppTheme.primaryColor : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected ? AppTheme.primaryColor : Colors.grey[300]!,
+                  ),
+                ),
+                child: Text(
+                  school,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : AppTheme.textPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        
+        const SizedBox(height: 12),
+        
+        // 自定义输入
+        CustomTextField(
+          controller: _schoolNameController,
+          label: '自定义学校',
+          hintText: '输入其他学校名称',
+          prefixIcon: const Icon(Icons.edit),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRelationSelector(TextEditingController controller) {
+    final commonRelations = [
+      '父亲', '母亲', '爷爷', '奶奶', '外公', '外婆', 
+      '叔叔', '阿姨', '哥哥', '姐姐', '保姆', '其他'
+    ];
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '关系',
+          style: AppTextStyles.bodyMedium.copyWith(
+            fontWeight: FontWeight.w500,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        
+        // 常用关系按钮
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: commonRelations.map((relation) {
+            final isSelected = controller.text == relation;
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  controller.text = relation;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppTheme.primaryColor : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? AppTheme.primaryColor : Colors.grey[300]!,
+                  ),
+                ),
+                child: Text(
+                  relation,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : AppTheme.textPrimary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        
+        const SizedBox(height: 8),
+        
+        // 自定义输入
+        TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: '自定义关系',
+            hintText: '输入其他关系',
+            prefixIcon: const Icon(Icons.edit, size: 18),
+            border: const OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<void> _saveStudent() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -1197,12 +1333,7 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
-                  child: CustomTextField(
-                    controller: relationController,
-                    label: '关系',
-                    hintText: '与学生关系',
-                    prefixIcon: const Icon(Icons.family_restroom),
-                  ),
+                  child: _buildRelationSelector(relationController),
                 ),
               ],
             ),

@@ -27,7 +27,7 @@ class AttendanceSummaryCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppTheme.dividerColor),
         boxShadow: AppTheme.cardShadow,
       ),
@@ -46,7 +46,7 @@ class AttendanceSummaryCard extends StatelessWidget {
                 child: Icon(
                   icon,
                   color: color,
-                  size: 20,
+                  size: 16,
                 ),
               ),
               if (change != null)

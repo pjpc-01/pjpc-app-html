@@ -73,10 +73,14 @@ class _AddEditTeacherScreenState extends State<AddEditTeacherScreen> {
   final _nfcCardNumberController = TextEditingController();
   final _teacherUrlController = TextEditingController();
   final _childrenCountController = TextEditingController();
+  final _assignedClassesController = TextEditingController();
+  List<String> _selectedClasses = [];
 
   String _selectedStatus = 'active';
   String _selectedMaritalStatus = 'Single';
   String _selectedPermissions = 'normal_teacher';
+  String _selectedRole = 'teacher';
+  String _selectedCenterAssignment = '';
   DateTime? _hireDate;
   DateTime? _nfcCardIssuedDate;
   DateTime? _nfcCardExpiryDate;
@@ -91,6 +95,12 @@ class _AddEditTeacherScreenState extends State<AddEditTeacherScreen> {
   final List<String> _statuses = ['active', 'inactive'];
   final List<String> _maritalStatuses = ['Single', 'Married', 'Divorced', 'Separated'];
   final List<String> _permissions = ['normal_teacher', 'senior_teacher'];
+  final List<String> _roles = ['admin', 'teacher', 'parent', 'accountant'];
+  List<String> _centers = []; // 从centers集合动态获取
+  final List<String> _availableClasses = [
+    '一年级', '二年级', '三年级', '四年级', '五年级', '六年级',
+    '中一', '中二', '中三', '中四', '中五', '中六'
+  ];
 
   @override
   void initState() {
@@ -99,10 +109,67 @@ class _AddEditTeacherScreenState extends State<AddEditTeacherScreen> {
       _loadTeacherData();
     }
     
+    // 加载分行数据
+    _loadCenters();
+    
     // 添加智能操作监听器
     _setupSmartListeners();
+    
+    // 确保教师数据是最新的
+    _refreshTeacherData();
   }
   
+  // 加载分行数据
+  Future<void> _loadCenters() async {
+    try {
+      final pocketBaseService = Provider.of<PocketBaseService>(context, listen: false);
+      final centers = await pocketBaseService.getCenters();
+      
+      // 调试信息：打印所有分行数据
+      print('=== 分行数据调试 ===');
+      for (int i = 0; i < centers.length; i++) {
+        final center = centers[i];
+        print('分行 $i: ID=${center.id}, 代码=${center.getStringValue('code')}, 名称=${center.getStringValue('name')}');
+      }
+      
+      setState(() {
+        // 优先使用代码，如果没有代码则使用名称
+        _centers = centers.map((center) {
+          final code = center.getStringValue('code') ?? '';
+          final name = center.getStringValue('name') ?? '';
+          return code.isNotEmpty ? code : name;
+        }).toList();
+        _centers.removeWhere((value) => value.isEmpty); // 移除空值
+        
+        print('最终分行列表: $_centers');
+      });
+    } catch (e) {
+      // 如果加载失败，使用默认值
+      setState(() {
+        _centers = ['WX 01', 'WX 02', 'WX 03', 'WX 04']; // 默认分行代码
+      });
+    }
+  }
+
+  // 刷新教师数据
+  Future<void> _refreshTeacherData() async {
+    try {
+      // 延迟执行，避免在 build 过程中调用
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          final teacherProvider = Provider.of<TeacherProvider>(context, listen: false);
+          await teacherProvider.refreshTeachers();
+        } catch (e) {
+          // 静默处理错误，不影响界面加载
+          print('刷新教师数据失败: $e');
+        }
+      });
+    } catch (e) {
+      // 静默处理错误，不影响界面加载
+      print('刷新教师数据失败: $e');
+    }
+  }
+
   void _setupSmartListeners() {
     // 监听邮箱输入变化
     _emailController.addListener(_onEmailChanged);
@@ -131,10 +198,11 @@ class _AddEditTeacherScreenState extends State<AddEditTeacherScreen> {
     _nfcCardNumberController.dispose();
     _teacherUrlController.dispose();
     _childrenCountController.dispose();
+    _assignedClassesController.dispose();
     super.dispose();
   }
 
-  void _loadTeacherData() {
+  Future<void> _loadTeacherData() async {
     final teacher = widget.teacherData;
     _nameController.text = teacher.getStringValue('name') ?? '';
     _emailController.text = teacher.getStringValue('email') ?? '';
@@ -152,10 +220,44 @@ class _AddEditTeacherScreenState extends State<AddEditTeacherScreen> {
     _nfcCardNumberController.text = teacher.getStringValue('nfc_card_number') ?? '';
     _teacherUrlController.text = teacher.getStringValue('teacher_url') ?? '';
     _childrenCountController.text = teacher.getStringValue('childrenCount')?.toString() ?? '';
+    // 处理分配的班级
+    final assignedClasses = teacher.getStringValue('assigned_classes') ?? '';
+    if (assignedClasses.isNotEmpty) {
+      _selectedClasses = assignedClasses.split(',').map((c) => c.trim()).toList();
+    } else {
+      _selectedClasses = [];
+    }
+    _assignedClassesController.text = assignedClasses;
     
     _selectedStatus = teacher.getStringValue('status') ?? 'active';
     _selectedMaritalStatus = teacher.getStringValue('maritalStatus') ?? 'Single';
     _selectedPermissions = teacher.getStringValue('permissions') ?? 'normal_teacher';
+    
+    // 确保角色值在有效列表中
+    final roleValue = teacher.getStringValue('role') ?? 'teacher';
+    _selectedRole = _roles.contains(roleValue) ? roleValue : 'teacher';
+    
+    // 确保中心分配值在有效列表中
+    // center_assignment 是关联字段，需要根据 ID 查找对应的名称
+    final centerAssignmentId = teacher.getStringValue('center_assignment') ?? '';
+    if (centerAssignmentId.isNotEmpty) {
+      try {
+        final pocketBaseService = Provider.of<PocketBaseService>(context, listen: false);
+        final centers = await pocketBaseService.getCenters();
+        final matchingCenter = centers.firstWhere(
+          (center) => center.id == centerAssignmentId,
+          orElse: () => throw Exception('未找到匹配的分行'),
+        );
+        // 优先显示代码，如果没有代码则显示名称
+        _selectedCenterAssignment = matchingCenter.getStringValue('code') ?? 
+                                   matchingCenter.getStringValue('name') ?? '';
+      } catch (e) {
+        print('加载分行信息失败: $e');
+        _selectedCenterAssignment = '';
+      }
+    } else {
+      _selectedCenterAssignment = '';
+    }
     
     final hireDateStr = teacher.getStringValue('hireDate');
     if (hireDateStr != null) {
@@ -204,7 +306,8 @@ class _AddEditTeacherScreenState extends State<AddEditTeacherScreen> {
   }
 
   void _validateEmail(String email) {
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    // 更宽松的邮箱验证
+    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
     if (!emailRegex.hasMatch(email)) {
       _showValidationMessage('邮箱格式不正确', isError: true);
     } else {
@@ -213,7 +316,8 @@ class _AddEditTeacherScreenState extends State<AddEditTeacherScreen> {
   }
 
   void _validatePhone(String phone) {
-    final phoneRegex = RegExp(r'^[0-9+\-\s()]{10,15}$');
+    // 更宽松的电话号码验证，支持马来西亚电话号码格式
+    final phoneRegex = RegExp(r'^[0-9+\-\s()]{8,15}$');
     if (!phoneRegex.hasMatch(phone)) {
       _showValidationMessage('电话号码格式不正确', isError: true);
     } else {
@@ -471,6 +575,8 @@ class _AddEditTeacherScreenState extends State<AddEditTeacherScreen> {
                   _buildWorkInfoCard(),
                   const SizedBox(height: 16),
                   _buildNfcInfoCard(),
+                  const SizedBox(height: 16),
+                  _buildPermissionCard(),
                   const SizedBox(height: 24),
                   _buildActionButtons(),
                 ],
@@ -526,7 +632,7 @@ class _AddEditTeacherScreenState extends State<AddEditTeacherScreen> {
                       if (value == null || value.isEmpty) {
                         return '请输入邮箱';
                       }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                      if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
                         return '请输入有效的邮箱地址';
                       }
                       return null;
@@ -544,6 +650,15 @@ class _AddEditTeacherScreenState extends State<AddEditTeacherScreen> {
                     label: '电话',
                     icon: Icons.phone,
                     keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return '请输入电话号码';
+                      }
+                      if (!RegExp(r'^[0-9+\-\s()]{8,15}$').hasMatch(value)) {
+                        return '请输入有效的电话号码';
+                      }
+                      return null;
+                    },
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -1045,33 +1160,110 @@ class _AddEditTeacherScreenState extends State<AddEditTeacherScreen> {
     try {
       final teacherProvider = Provider.of<TeacherProvider>(context, listen: false);
       
-      final teacherData = {
-        'name': _nameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'nric': _nricController.text.trim(),
-        'address': _addressController.text.trim(),
-        'epfNo': int.tryParse(_epfNoController.text) ?? 0,
-        'socsoNo': int.tryParse(_socsoNoController.text) ?? 0,
-        'bankName': _selectedBank,
-        'bankAccountNo': int.tryParse(_bankAccountNoController.text) ?? 0,
-        'bankAccountName': _bankAccountNameController.text.trim(),
-        'idNumber': int.tryParse(_idNumberController.text) ?? 0,
-        'department': _selectedDepartment,
-        'position': _selectedPosition,
-        'nfc_card_number': _nfcCardNumberController.text.trim(),
-        'teacher_url': _teacherUrlController.text.trim(),
-        'childrenCount': int.tryParse(_childrenCountController.text) ?? 0,
-        'status': _selectedStatus,
-        'maritalStatus': _selectedMaritalStatus,
-        'permissions': _selectedPermissions,
-        'hireDate': _hireDate?.toIso8601String(),
-        'nfc_card_issued_date': _nfcCardIssuedDate?.toIso8601String(),
-        'nfc_card_expiry_date': _nfcCardExpiryDate?.toIso8601String(),
-      };
+      // 准备教师数据，过滤空值
+      final teacherData = <String, dynamic>{};
+      
+      // 基本信息
+      if (_nameController.text.trim().isNotEmpty) {
+        teacherData['name'] = _nameController.text.trim();
+      }
+      if (_emailController.text.trim().isNotEmpty) {
+        teacherData['email'] = _emailController.text.trim();
+      }
+      if (_phoneController.text.trim().isNotEmpty) {
+        teacherData['phone'] = _phoneController.text.trim();
+      }
+      if (_nricController.text.trim().isNotEmpty) {
+        teacherData['nric'] = _nricController.text.trim();
+      }
+      if (_addressController.text.trim().isNotEmpty) {
+        teacherData['address'] = _addressController.text.trim();
+      }
+      
+      // 数字字段
+      if (_epfNoController.text.trim().isNotEmpty) {
+        teacherData['epfNo'] = int.tryParse(_epfNoController.text) ?? 0;
+      }
+      if (_socsoNoController.text.trim().isNotEmpty) {
+        teacherData['socsoNo'] = int.tryParse(_socsoNoController.text) ?? 0;
+      }
+      if (_bankAccountNoController.text.trim().isNotEmpty) {
+        teacherData['bankAccountNo'] = int.tryParse(_bankAccountNoController.text) ?? 0;
+      }
+      if (_idNumberController.text.trim().isNotEmpty) {
+        teacherData['idNumber'] = int.tryParse(_idNumberController.text) ?? 0;
+      }
+      if (_childrenCountController.text.trim().isNotEmpty) {
+        teacherData['childrenCount'] = int.tryParse(_childrenCountController.text) ?? 0;
+      }
+      
+      // 选择字段
+      if (_selectedBank.isNotEmpty) {
+        teacherData['bankName'] = _selectedBank;
+      }
+      if (_bankAccountNameController.text.trim().isNotEmpty) {
+        teacherData['bankAccountName'] = _bankAccountNameController.text.trim();
+      }
+      if (_selectedDepartment.isNotEmpty) {
+        teacherData['department'] = _selectedDepartment;
+      }
+      if (_selectedPosition.isNotEmpty) {
+        teacherData['position'] = _selectedPosition;
+      }
+      if (_nfcCardNumberController.text.trim().isNotEmpty) {
+        teacherData['nfc_card_number'] = _nfcCardNumberController.text.trim();
+      }
+      if (_teacherUrlController.text.trim().isNotEmpty) {
+        teacherData['teacher_url'] = _teacherUrlController.text.trim();
+      }
+      // 分配的班级
+      if (_selectedClasses.isNotEmpty) {
+        teacherData['assigned_classes'] = _selectedClasses.join(',');
+      }
+      
+      // 状态和权限
+      teacherData['status'] = _selectedStatus;
+      teacherData['maritalStatus'] = _selectedMaritalStatus;
+      teacherData['permissions'] = _selectedPermissions;
+      teacherData['role'] = _selectedRole;
+      
+      // 分行分配 - 需要找到对应的 center ID
+      if (_selectedCenterAssignment.isNotEmpty) {
+        try {
+          final pocketBaseService = Provider.of<PocketBaseService>(context, listen: false);
+          final centers = await pocketBaseService.getCenters();
+          final matchingCenter = centers.firstWhere(
+            (center) => center.getStringValue('code') == _selectedCenterAssignment ||
+                       center.getStringValue('name') == _selectedCenterAssignment,
+            orElse: () => throw Exception('未找到匹配的分行'),
+          );
+          teacherData['center_assignment'] = matchingCenter.id;
+          print('找到匹配的分行: ${matchingCenter.id} - ${matchingCenter.getStringValue('code')} - ${matchingCenter.getStringValue('name')}');
+        } catch (e) {
+          print('分行匹配失败: $e');
+          // 如果找不到匹配的分行，不设置 center_assignment 字段
+        }
+      }
+      
+      // 日期字段
+      if (_hireDate != null) {
+        teacherData['hireDate'] = _hireDate!.toIso8601String();
+      }
+      if (_nfcCardIssuedDate != null) {
+        teacherData['nfc_card_issued_date'] = _nfcCardIssuedDate!.toIso8601String();
+      }
+      if (_nfcCardExpiryDate != null) {
+        teacherData['nfc_card_expiry_date'] = _nfcCardExpiryDate!.toIso8601String();
+      }
 
       bool success;
       if (widget.teacherData != null) {
+        // 添加调试信息
+        print('正在更新教师记录:');
+        print('教师ID: ${widget.teacherData.id}');
+        print('教师姓名: ${widget.teacherData.getStringValue('name')}');
+        print('更新数据: $teacherData');
+        
         success = await teacherProvider.updateTeacher(widget.teacherData.id, teacherData);
       } else {
         success = await teacherProvider.createTeacher(teacherData);
@@ -1087,6 +1279,28 @@ class _AddEditTeacherScreenState extends State<AddEditTeacherScreen> {
           ),
         );
         Navigator.pop(context);
+      } else if (!success && mounted) {
+        // 如果更新失败，提供刷新选项
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('更新失败，可能是数据不同步'),
+            backgroundColor: const Color(0xFFEF4444),
+            action: SnackBarAction(
+              label: '刷新数据',
+              textColor: Colors.white,
+              onPressed: () async {
+                final teacherProvider = Provider.of<TeacherProvider>(context, listen: false);
+                await teacherProvider.forceRefreshTeachers();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('数据已刷新，请重试'),
+                    backgroundColor: Color(0xFF10B981),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1146,6 +1360,191 @@ class _AddEditTeacherScreenState extends State<AddEditTeacherScreen> {
               }
             },
             child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPermissionCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.security, color: Colors.purple[600], size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  '权限管理',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.purple[600],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // 用户角色
+            DropdownButtonFormField<String>(
+              value: _roles.contains(_selectedRole) ? _selectedRole : null,
+              decoration: InputDecoration(
+                labelText: '用户角色 *',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              items: _roles.map((role) {
+                return DropdownMenuItem(
+                  value: role,
+                  child: Text(role == 'admin' ? '管理员' : 
+                             role == 'teacher' ? '老师' : 
+                             role == 'parent' ? '家长' : '会计'),
+                );
+              }).toList(),
+              onChanged: (value) => setState(() => _selectedRole = value!),
+            ),
+            const SizedBox(height: 16),
+            // 分配的中心
+            DropdownButtonFormField<String>(
+              value: _centers.contains(_selectedCenterAssignment) ? _selectedCenterAssignment : null,
+              decoration: InputDecoration(
+                labelText: '分配的中心',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              items: _centers.map((center) {
+                return DropdownMenuItem(
+                  value: center,
+                  child: Text(center),
+                );
+              }).toList(),
+              onChanged: (value) => setState(() => _selectedCenterAssignment = value ?? ''),
+            ),
+            const SizedBox(height: 16),
+            // 分配的班级
+            _buildClassSelectionField(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClassSelectionField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '分配的班级',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey[700],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              // 显示已选中的班级
+              ..._selectedClasses.map((className) => Chip(
+                label: Text(className),
+                deleteIcon: const Icon(Icons.close, size: 18),
+                onDeleted: () {
+                  setState(() {
+                    _selectedClasses.remove(className);
+                    _updateAssignedClassesText();
+                  });
+                },
+                backgroundColor: const Color(0xFF3B82F6).withOpacity(0.1),
+                labelStyle: const TextStyle(color: Color(0xFF3B82F6)),
+              )),
+              // 添加班级按钮
+              InkWell(
+                onTap: _showClassSelectionDialog,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey[400]!, style: BorderStyle.solid),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add, size: 18, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        '添加班级',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_selectedClasses.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              '请选择要分配的班级',
+              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+            ),
+          ),
+      ],
+    );
+  }
+
+  void _updateAssignedClassesText() {
+    _assignedClassesController.text = _selectedClasses.join(',');
+  }
+
+  void _showClassSelectionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('选择班级'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: _availableClasses.length,
+            itemBuilder: (context, index) {
+              final className = _availableClasses[index];
+              final isSelected = _selectedClasses.contains(className);
+              
+              return CheckboxListTile(
+                title: Text(className),
+                value: isSelected,
+                onChanged: (bool? value) {
+                  setState(() {
+                    if (value == true) {
+                      _selectedClasses.add(className);
+                    } else {
+                      _selectedClasses.remove(className);
+                    }
+                    _updateAssignedClassesText();
+                  });
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('完成'),
           ),
         ],
       ),

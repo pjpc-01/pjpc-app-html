@@ -44,10 +44,29 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => NetworkService.instance),
         ChangeNotifierProvider(create: (_) => RealtimeService.instance),
         ChangeNotifierProvider(create: (context) => AuthProvider(prefs)),
-        ChangeNotifierProxyProvider<PocketBaseService, StudentProvider>(
-          create: (context) => StudentProvider(pocketBaseService: context.read<PocketBaseService>()),
-          update: (context, pocketBaseService, previous) => 
-              previous ?? StudentProvider(pocketBaseService: pocketBaseService),
+        ChangeNotifierProvider(create: (context) => TeacherProvider()),
+        ChangeNotifierProxyProvider2<PocketBaseService, AuthProvider, StudentProvider>(
+          create: (context) {
+            final provider = StudentProvider(
+              pocketBaseService: context.read<PocketBaseService>(),
+              authProvider: context.read<AuthProvider>(),
+            );
+            provider.setContext(context);
+            return provider;
+          },
+          update: (context, pocketBaseService, authProvider, previous) {
+            if (previous != null) {
+              previous.setAuthProvider(authProvider);
+              previous.setContext(context);
+              return previous;
+            }
+            final provider = StudentProvider(
+              pocketBaseService: pocketBaseService,
+              authProvider: authProvider,
+            );
+            provider.setContext(context);
+            return provider;
+          },
         ),
         ChangeNotifierProvider(create: (_) => ClassProvider()),
         ChangeNotifierProvider(create: (_) => FinanceProvider()),
@@ -57,7 +76,6 @@ class MyApp extends StatelessWidget {
               previous ?? AttendanceProvider(pocketBaseService: pocketBaseService),
         ),
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
-        ChangeNotifierProvider(create: (_) => TeacherProvider()),
         ChangeNotifierProvider(create: (_) => PointsProvider()),
         ChangeNotifierProvider(create: (_) => NfcCardProvider()),
         ChangeNotifierProxyProvider<PocketBaseService, NotificationProvider>(
@@ -73,6 +91,11 @@ class MyApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             themeMode: ThemeMode.light,
             home: const AuthWrapper(),
+            routes: {
+              '/login': (context) => const LoginScreen(),
+              '/home': (context) => const HomeScreen(),
+              '/attendance': (context) => const HomeScreen(), // 临时路由，后续可以创建专门的考勤页面
+            },
             debugShowCheckedModeBanner: false,
           );
         },

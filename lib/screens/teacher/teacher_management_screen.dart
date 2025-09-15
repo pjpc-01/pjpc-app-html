@@ -77,6 +77,52 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen>
     );
   }
 
+  // 强制刷新数据
+  Future<void> _forceRefreshData() async {
+    try {
+      final teacherProvider = context.read<TeacherProvider>();
+      
+      // 显示加载提示
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('正在强制刷新数据...'),
+          backgroundColor: Color(0xFF3B82F6),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      
+      // 强制刷新
+      await teacherProvider.forceRefreshTeachers();
+      
+      // 显示结果
+      if (teacherProvider.teachers.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⚠️ 服务器端没有教师记录！请检查数据或添加新教师'),
+            backgroundColor: Color(0xFFEF4444),
+            duration: Duration(seconds: 5),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ 刷新成功！找到 ${teacherProvider.teachers.length} 个教师记录'),
+            backgroundColor: const Color(0xFF10B981),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('刷新失败: $e'),
+          backgroundColor: const Color(0xFFEF4444),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -218,6 +264,15 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen>
             Icons.analytics,
             const Color(0xFF8B5CF6),
             () => _showStatistics(),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionButton(
+            '强制刷新',
+            Icons.refresh,
+            const Color(0xFFEF4444),
+            () => _forceRefreshData(),
           ),
         ),
       ],
@@ -466,38 +521,45 @@ class _TeacherManagementScreenState extends State<TeacherManagementScreen>
 
         if (teacherProvider.error != null) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: Color(0xFFEF4444),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Color(0xFFEF4444),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '加载失败',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      teacherProvider.error!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => teacherProvider.loadTeachers(),
+                      child: const Text('重试'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  '加载失败',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1F2937),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  teacherProvider.error!,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF64748B),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => teacherProvider.loadTeachers(),
-                  child: const Text('重试'),
-                ),
-              ],
+              ),
             ),
           );
         }

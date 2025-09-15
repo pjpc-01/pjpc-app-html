@@ -8,8 +8,16 @@ class TeacherProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   List<RecordModel> _teachers = [];
+  
+  // 回调函数，当教师数据更新时调用
+  Function()? _onDataUpdated;
 
   TeacherProvider() : _pocketBaseService = PocketBaseService.instance;
+
+  // 设置数据更新回调
+  void setOnDataUpdated(Function() callback) {
+    _onDataUpdated = callback;
+  }
 
   // Getters
   bool get isLoading => _isLoading;
@@ -30,6 +38,9 @@ class TeacherProvider with ChangeNotifier {
       }
       
       notifyListeners();
+      
+      // 通知其他Provider数据已更新
+      _onDataUpdated?.call();
     } catch (e) {
       _setError('加载教师数据失败: ${e.toString()}');
     } finally {
@@ -62,15 +73,56 @@ class TeacherProvider with ChangeNotifier {
     _clearError();
 
     try {
-      final record = await _pocketBaseService.updateTeacher(id, data);
-      final index = _teachers.indexWhere((t) => t.id == id);
-      if (index != -1) {
-        _teachers[index] = record;
-        notifyListeners();
+      // 调试信息：检查本地教师列表
+      print('本地教师列表中的ID: ${_teachers.map((t) => t.id).toList()}');
+      print('查找的ID: $id');
+      
+      // 尝试使用简化的更新方法
+      try {
+        final record = await _pocketBaseService.updateTeacherSimple(id, data);
+        final index = _teachers.indexWhere((t) => t.id == id);
+        if (index != -1) {
+          _teachers[index] = record;
+          notifyListeners();
+        } else {
+          // 如果本地没有找到，添加到列表中
+          _teachers.add(record);
+          notifyListeners();
+        }
+        return true;
+      } catch (simpleError) {
+        print('简化更新失败，尝试完整更新: $simpleError');
+        
+        // 如果简化更新失败，尝试完整的更新方法
+        final record = await _pocketBaseService.updateTeacher(id, data);
+        final index = _teachers.indexWhere((t) => t.id == id);
+        if (index != -1) {
+          _teachers[index] = record;
+          notifyListeners();
+        } else {
+          // 如果本地没有找到，添加到列表中
+          _teachers.add(record);
+          notifyListeners();
+        }
+        return true;
       }
-      return true;
     } catch (e) {
-      _setError('更新教师失败: ${e.toString()}');
+      // 提供更详细的错误信息
+      String errorMessage = '更新教师失败: ${e.toString()}';
+      
+      if (e.toString().contains('404')) {
+        errorMessage = '教师记录不存在 (ID: $id)。可能的原因：\n'
+            '1. 记录已被删除\n'
+            '2. ID 不正确\n'
+            '3. 权限不足\n\n'
+            '建议：刷新教师列表后重试';
+      } else if (e.toString().contains('403')) {
+        errorMessage = '权限不足，无法更新教师记录';
+      } else if (e.toString().contains('400')) {
+        errorMessage = '数据格式错误，请检查输入信息';
+      }
+      
+      _setError(errorMessage);
       return false;
     } finally {
       _setLoading(false);
@@ -102,6 +154,49 @@ class TeacherProvider with ChangeNotifier {
     } catch (e) {
       return null;
     }
+  }
+
+  // 强制刷新教师数据（清除本地缓存）
+  Future<void> forceRefreshTeachers() async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      print('=== 强制刷新教师数据 ===');
+      print('清除前本地教师数量: ${_teachers.length}');
+      
+      // 清除本地缓存
+      _teachers.clear();
+      
+      // 重新加载数据
+      _teachers = await _pocketBaseService.getTeachers();
+      
+      print('强制刷新完成，教师数量: ${_teachers.length}');
+      print('教师ID列表: ${_teachers.map((t) => t.id).toList()}');
+      
+      if (_teachers.isEmpty) {
+        print('⚠️ 警告：服务器端没有教师记录！');
+        _setError('服务器端没有教师记录，请检查数据或添加新教师');
+      }
+      
+      notifyListeners();
+    } catch (e) {
+      print('强制刷新失败: $e');
+      _setError('强制刷新教师数据失败: ${e.toString()}');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Refresh teachers data
+  Future<void> refreshTeachers() async {
+    await loadTeachers();
+  }
+
+  // Check if teacher exists
+  bool teacherExists(String id) {
+    return _teachers.any((t) => t.id == id);
   }
 
   // Get active teachers

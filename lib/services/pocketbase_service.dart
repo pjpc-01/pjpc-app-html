@@ -1075,6 +1075,23 @@ class PocketBaseService {
     }
   }
 
+  // 获取所有用户
+  Future<List<RecordModel>> getAllUsers({int perPage = 200}) async {
+    try {
+      await authenticateAdmin();
+      
+      final result = await pb.collection('users').getList(
+        perPage: perPage,
+        sort: '-created',
+      );
+      
+      return result.items;
+    } catch (e) {
+      print('获取用户列表失败: $e');
+      return [];
+    }
+  }
+
   // Teacher management
   Future<List<RecordModel>> getTeachers({
     int page = 1, 
@@ -1084,91 +1101,66 @@ class PocketBaseService {
     List<String>? fields,
   }) async {
     try {
+      print('=== 获取教师列表 ===');
+      print('当前认证状态: ${pb.authStore.isValid}');
+      print('当前用户角色: ${pb.authStore.record?.data['role']}');
       
-      // 检查当前认证状态和角色
-      final currentRole = pb.authStore.record?.data['role'];
-      
-      // 如果用户有角色（管理员），teachers集合API规则要求空角色用户
-      if (currentRole != null && currentRole != '') {
-        
-        try {
-          // 保存当前认证状态
-          final currentAuth = pb.authStore.record;
-          final currentToken = pb.authStore.token;
-          
-          // 清除认证
-          pb.authStore.clear();
-          
-          // 尝试无认证查询
-          try {
-            final result = await pb.collection('teachers').getList(
-              page: page,
-              perPage: perPage,
-              filter: filter,
-              sort: sort ?? 'name',
-              fields: fields?.join(','),
-            );
-            
-            // 恢复认证
-            if (currentAuth != null && currentToken != null) {
-              pb.authStore.save(currentToken, currentAuth);
-            }
-            
-            
-            // 打印前几条记录用于调试
-            for (int i = 0; i < result.items.length && i < 3; i++) {
-              final teacher = result.items[i];
-            }
-            
-            return result.items;
-          } catch (e) {
-            
-            // 恢复认证
-            if (currentAuth != null && currentToken != null) {
-              pb.authStore.save(currentToken, currentAuth);
-            }
-            
-            throw e;
-          }
-        } catch (e) {
-          throw Exception('无法访问teachers集合，权限问题: ${e.toString()}');
-        }
-      }
-      
-      // 确保用户已认证（对于无角色用户）
+      // 确保用户已认证
       if (!pb.authStore.isValid) {
+        print('用户未认证，尝试认证...');
         try {
           await authenticateAdmin();
+          print('认证成功');
         } catch (e) {
+          print('认证失败: $e');
           throw Exception('用户未认证，请重新登录');
         }
       }
       
       // 尝试获取数据
+      print('尝试获取教师数据...');
       final result = await pb.collection('teachers').getList(
         page: page,
         perPage: perPage,
         filter: filter,
-        sort: sort ?? 'name', // 使用name字段排序，根据文档这个字段存在
+        sort: sort ?? 'name',
         fields: fields?.join(','),
       );
       
+      print('获取到 ${result.items.length} 个教师记录');
       
       // 打印前几条记录用于调试
       for (int i = 0; i < result.items.length && i < 3; i++) {
         final teacher = result.items[i];
+        print('教师 $i: ID=${teacher.id}, 姓名=${teacher.getStringValue('name')}');
       }
       
       return result.items;
     } catch (e) {
+      print('获取教师列表失败: $e');
       
-      // 尝试直接查询看看是否有权限问题
+      // 尝试备用方法
       try {
-        final directResult = await pb.collection('teachers').getList();
-      } catch (directError) {
+        print('尝试备用方法：清除认证后查询');
+        pb.authStore.clear();
+        final result = await pb.collection('teachers').getList(
+          page: page,
+          perPage: perPage,
+          filter: filter,
+          sort: sort ?? 'name',
+          fields: fields?.join(','),
+        );
+        
+        print('备用方法成功，获取到 ${result.items.length} 个教师记录');
+        
+        // 恢复认证
+        await authenticateAdmin();
+        
+        return result.items;
+      } catch (backupError) {
+        print('备用方法也失败: $backupError');
+        throw Exception('Failed to fetch teachers: ${e.toString()}');
       }
-      
-      throw Exception('Failed to fetch teachers: ${e.toString()}');
     }
   }
 
@@ -1181,11 +1173,200 @@ class PocketBaseService {
     }
   }
 
-  Future<RecordModel> updateTeacher(String id, Map<String, dynamic> data) async {
+  // 调试方法：直接获取服务器端教师记录
+  Future<RecordModel?> getTeacherByIdFromServer(String id) async {
     try {
-      final record = await pb.collection('teachers').update(id, body: data);
+      print('=== 服务器端教师记录查询 ===');
+      print('查询ID: $id');
+      
+      // 强制重新认证
+      await authenticateAdmin();
+      
+      // 直接查询服务器端记录
+      final record = await pb.collection('teachers').getOne(id);
+      print('服务器端记录找到: ${record.id}');
+      print('记录名称: ${record.getStringValue('name')}');
+      print('记录邮箱: ${record.getStringValue('email')}');
+      print('记录状态: ${record.getStringValue('status')}');
+      
       return record;
     } catch (e) {
+      print('服务器端记录查询失败: $e');
+      return null;
+    }
+  }
+
+  // 调试方法：获取服务器端所有教师记录
+  Future<List<RecordModel>> getAllTeachersFromServer() async {
+    try {
+      print('=== 获取服务器端所有教师记录 ===');
+      
+      // 强制重新认证
+      await authenticateAdmin();
+      
+      // 尝试多种查询方法
+      List<RecordModel> teachers = [];
+      
+      // 方法1：直接查询
+      try {
+        print('尝试方法1：直接查询');
+        final result = await pb.collection('teachers').getList(perPage: 200);
+        teachers = result.items;
+        print('方法1成功，记录数量: ${teachers.length}');
+      } catch (e1) {
+        print('方法1失败: $e1');
+        
+        // 方法2：清除认证后查询
+        try {
+          print('尝试方法2：清除认证后查询');
+          pb.authStore.clear();
+          final result = await pb.collection('teachers').getList(perPage: 200);
+          teachers = result.items;
+          print('方法2成功，记录数量: ${teachers.length}');
+          
+          // 恢复认证
+          await authenticateAdmin();
+        } catch (e2) {
+          print('方法2失败: $e2');
+          
+          // 方法3：使用不同的认证方式
+          try {
+            print('尝试方法3：使用users集合认证');
+            await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!');
+            final result = await pb.collection('teachers').getList(perPage: 200);
+            teachers = result.items;
+            print('方法3成功，记录数量: ${teachers.length}');
+          } catch (e3) {
+            print('方法3失败: $e3');
+            throw Exception('所有查询方法都失败了');
+          }
+        }
+      }
+      
+      print('最终服务器端教师记录数量: ${teachers.length}');
+      
+      for (int i = 0; i < teachers.length; i++) {
+        final teacher = teachers[i];
+        print('教师 $i: ID=${teacher.id}, 姓名=${teacher.getStringValue('name')}, 邮箱=${teacher.getStringValue('email')}');
+      }
+      
+      return teachers;
+    } catch (e) {
+      print('获取服务器端教师记录失败: $e');
+      return [];
+    }
+  }
+
+  // 简化的教师更新方法
+  Future<RecordModel> updateTeacherSimple(String id, Map<String, dynamic> data) async {
+    try {
+      print('=== 简化教师更新 ===');
+      print('更新ID: $id');
+      print('更新数据: $data');
+      
+      // 先获取服务器端所有记录，看看实际的ID
+      final serverTeachers = await getAllTeachersFromServer();
+      
+      // 尝试通过邮箱找到正确的ID
+      final email = data['email'];
+      if (email != null) {
+        final matchingTeacher = serverTeachers.firstWhere(
+          (t) => t.getStringValue('email') == email,
+          orElse: () => throw Exception('未找到匹配的教师记录'),
+        );
+        
+        print('通过邮箱找到匹配的教师: ID=${matchingTeacher.id}, 姓名=${matchingTeacher.getStringValue('name')}');
+        
+        // 使用找到的正确ID进行更新
+        final record = await pb.collection('teachers').update(matchingTeacher.id, body: data);
+        print('简化更新成功: ${record.id}');
+        return record;
+      }
+      
+      // 如果无法通过邮箱匹配，直接尝试更新
+      final record = await pb.collection('teachers').update(id, body: data);
+      print('简化更新成功: ${record.id}');
+      return record;
+    } catch (e) {
+      print('简化更新失败: $e');
+      throw Exception('简化更新失败: ${e.toString()}');
+    }
+  }
+
+  Future<RecordModel> updateTeacher(String id, Map<String, dynamic> data) async {
+    try {
+      // 强制重新认证以确保权限
+      try {
+        await authenticateAdmin();
+        print('重新认证成功');
+      } catch (authError) {
+        print('重新认证失败: $authError');
+        throw Exception('用户未认证，请重新登录: ${authError.toString()}');
+      }
+
+      // 调试信息
+      print('=== 教师更新调试信息 ===');
+      print('尝试更新教师记录 ID: $id');
+      print('更新数据: $data');
+      print('当前认证状态: ${pb.authStore.isValid}');
+      print('当前用户ID: ${pb.authStore.model?.id}');
+      print('当前用户邮箱: ${pb.authStore.model?.getStringValue('email')}');
+      print('当前用户角色: ${pb.authStore.model?.getStringValue('role')}');
+      print('认证令牌: ${pb.authStore.token}');
+      print('========================');
+
+      // 测试管理员权限
+      try {
+        print('测试管理员权限...');
+        final testResult = await pb.collection('teachers').getList(perPage: 1);
+        print('权限测试成功，可以访问teachers集合');
+      } catch (permError) {
+        print('权限测试失败: $permError');
+        throw Exception('管理员权限不足，无法访问teachers集合: ${permError.toString()}');
+      }
+
+      // 验证服务器端记录状态
+      try {
+        print('验证服务器端记录状态...');
+        final serverRecord = await pb.collection('teachers').getOne(id);
+        print('服务器端记录存在: ${serverRecord.id}');
+        print('服务器端记录名称: ${serverRecord.getStringValue('name')}');
+        print('服务器端记录邮箱: ${serverRecord.getStringValue('email')}');
+        print('服务器端记录状态: ${serverRecord.getStringValue('status')}');
+        
+        // 如果验证成功，尝试更新记录
+        print('开始更新记录...');
+        final record = await pb.collection('teachers').update(id, body: data);
+        print('更新成功，返回记录: ${record.id}');
+        return record;
+      } catch (serverError) {
+        print('服务器端记录验证失败: $serverError');
+        if (serverError.toString().contains('404')) {
+          // 尝试使用调试方法再次查询
+          print('尝试使用调试方法查询...');
+          final debugRecord = await getTeacherByIdFromServer(id);
+          if (debugRecord != null) {
+            print('调试方法找到记录，尝试更新...');
+            try {
+              final record = await pb.collection('teachers').update(id, body: data);
+              print('调试更新成功: ${record.id}');
+              return record;
+            } catch (updateError) {
+              print('调试更新失败: $updateError');
+              throw Exception('记录存在但更新失败: ${updateError.toString()}');
+            }
+          } else {
+            throw Exception('服务器端记录不存在 (ID: $id)。可能的原因：\n'
+                '1. 记录已被删除\n'
+                '2. 本地缓存过期\n'
+                '3. 数据不同步\n\n'
+                '建议：刷新教师列表后重试');
+          }
+        }
+        throw Exception('无法验证服务器端记录: ${serverError.toString()}');
+      }
+    } catch (e) {
+      print('更新失败: $e');
       throw Exception('Failed to update teacher: ${e.toString()}');
     }
   }
@@ -1805,7 +1986,16 @@ class PocketBaseService {
         return;
       }
       
-      await pb.collection('_superusers').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!');
+      // 尝试使用 users 集合而不是 _superusers
+      try {
+        await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!');
+        print('使用 users 集合认证成功');
+      } catch (usersError) {
+        print('users 集合认证失败: $usersError');
+        // 如果 users 集合失败，尝试 _superusers
+        await pb.collection('_superusers').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!');
+        print('使用 _superusers 集合认证成功');
+      }
     } catch (e) {
       throw Exception('Admin authentication failed: ${e.toString()}');
     }
@@ -1832,6 +2022,65 @@ class PocketBaseService {
     }
   }
 
+  // 获取所有通知（管理员专用）
+  Future<List<RecordModel>> getAllNotifications({
+    int page = 1,
+    int perPage = 200,
+  }) async {
+    try {
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      print('=== 获取所有通知（管理员） ===');
+      print('当前认证状态: ${pb.authStore.isValid}');
+      
+      final result = await pb.collection('notifications').getList(
+        page: page,
+        perPage: perPage,
+        sort: '-created',
+      );
+      
+      print('获取到 ${result.items.length} 个通知记录');
+      
+      // 打印前几个通知的详细信息
+      for (int i = 0; i < result.items.length && i < 5; i++) {
+        final notification = result.items[i];
+        print('通知 $i: recipient_role=${notification.getStringValue('recipient_role')}, title=${notification.getStringValue('title')}, created=${notification.created}');
+      }
+      
+      return result.items;
+    } catch (e) {
+      print('获取所有通知失败: $e');
+      throw Exception('Failed to fetch all notifications: ${e.toString()}');
+    }
+  }
+
+  // 根据角色获取通知
+  Future<List<RecordModel>> getNotificationsForRole(String role) async {
+    try {
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      print('获取角色 $role 的通知');
+      
+      final result = await pb.collection('notifications').getList(
+        page: 1,
+        perPage: 100,
+        sort: '-created',
+        filter: 'recipient_role = "$role"',
+      );
+      
+      print('获取到 ${result.items.length} 个 $role 角色的通知');
+      
+      return result.items;
+    } catch (e) {
+      print('获取 $role 角色通知失败: $e');
+      return [];
+    }
+  }
+
   // Notification management
   Future<List<RecordModel>> getNotifications({
     String? userId,
@@ -1844,14 +2093,32 @@ class PocketBaseService {
         throw Exception('User not authenticated. Please login first.');
       }
       
+      // 获取当前用户信息
+      final currentUser = pb.authStore.record;
+      final userRole = currentUser?.getStringValue('role') ?? '';
+      final userEmail = currentUser?.getStringValue('email') ?? '';
+      
+      print('=== 获取通知列表 ===');
+      print('当前认证状态: ${pb.authStore.isValid}');
+      print('当前用户角色: $userRole');
+      print('当前用户邮箱: $userEmail');
+      
       String filter = '';
-      if (userId != null) {
-        filter += 'user_id = "$userId"';
+      
+      // 根据用户角色过滤通知
+      if (userRole.isNotEmpty) {
+        filter = '(recipient_role = "$userRole" || recipient_role = "all")';
+      } else {
+        // 如果没有角色信息，获取所有通知
+        print('警告: 用户没有角色信息，获取所有通知');
       }
+      
       if (isRead != null) {
         if (filter.isNotEmpty) filter += ' && ';
         filter += 'is_read = $isRead';
       }
+      
+      print('过滤条件: $filter');
       
       final result = await pb.collection('notifications').getList(
         page: page,
@@ -1860,8 +2127,26 @@ class PocketBaseService {
         filter: filter.isNotEmpty ? filter : null,
       );
       
+      print('获取到 ${result.items.length} 个通知记录');
+      
+      // 如果没有找到通知，尝试获取所有通知（用于调试）
+      if (result.items.isEmpty) {
+        print('没有找到通知，尝试获取所有通知进行调试...');
+        final allResult = await pb.collection('notifications').getList(
+          page: 1,
+          perPage: 10,
+          sort: '-created',
+        );
+        print('数据库中总共有 ${allResult.items.length} 个通知');
+        for (int i = 0; i < allResult.items.length; i++) {
+          final notification = allResult.items[i];
+          print('通知 $i: recipient_role=${notification.getStringValue('recipient_role')}, title=${notification.getStringValue('title')}, created=${notification.created}');
+        }
+      }
+      
       return result.items;
     } catch (e) {
+      print('获取通知失败: $e');
       throw Exception('Failed to fetch notifications: ${e.toString()}');
     }
   }
@@ -1872,8 +2157,15 @@ class PocketBaseService {
         throw Exception('User not authenticated. Please login first.');
       }
       
+      // 获取当前通知记录
+      final notification = await pb.collection('notifications').getOne(notificationId);
+      final currentReadCount = notification.getIntValue('read_count') ?? 0;
+      
+      // 更新通知状态和已读计数
       await pb.collection('notifications').update(notificationId, body: {
         'is_read': isRead,
+        'read_count': isRead ? currentReadCount + 1 : currentReadCount,
+        'read_at': isRead ? DateTime.now().toIso8601String() : null,
       });
     } catch (e) {
       throw Exception('Failed to update notification status: ${e.toString()}');
@@ -1886,9 +2178,42 @@ class PocketBaseService {
         throw Exception('User not authenticated. Please login first.');
       }
       
-      final record = await pb.collection('notifications').create(body: data);
+      // 计算接收者总数
+      final recipientRole = data['recipient_role'] ?? 'all';
+      int totalCount = 0;
+      
+      if (recipientRole == 'all') {
+        // 获取所有用户数量
+        final users = await getAllUsers();
+        totalCount = users.length;
+      } else {
+        // 根据角色获取用户数量
+        final users = await getAllUsers();
+        totalCount = users.where((user) {
+          final userRole = user.getStringValue('role') ?? '';
+          return userRole.toLowerCase() == recipientRole.toLowerCase();
+        }).length;
+      }
+      
+      // 添加统计信息
+      final notificationData = {
+        ...data,
+        'read_count': 0,
+        'total_count': totalCount,
+        'created_at': DateTime.now().toIso8601String(),
+      };
+      
+      // 如果sender_id为空或无效，移除该字段
+      if (notificationData['sender_id'] == null || notificationData['sender_id'] == '') {
+        notificationData.remove('sender_id');
+      }
+      
+      print('创建通知数据: $notificationData');
+      
+      final record = await pb.collection('notifications').create(body: notificationData);
       return record;
     } catch (e) {
+      print('创建通知失败: $e');
       throw Exception('Failed to create notification: ${e.toString()}');
     }
   }
@@ -1956,6 +2281,49 @@ class PocketBaseService {
       return records.items.isNotEmpty ? records.items.first : throw Exception('Teacher not found');
     } catch (e) {
       throw Exception('Failed to get teacher by NFC ID: ${e.toString()}');
+    }
+  }
+
+  // 获取所有分行
+  Future<List<RecordModel>> getCenters() async {
+    try {
+      final records = await pb.collection('centers').getList(
+        perPage: 200,
+        sort: 'name',
+      );
+      return records.items;
+    } catch (e) {
+      throw Exception('Failed to get centers: ${e.toString()}');
+    }
+  }
+
+  // 创建分行
+  Future<bool> createCenter(Map<String, dynamic> data) async {
+    try {
+      await pb.collection('centers').create(body: data);
+      return true;
+    } catch (e) {
+      throw Exception('Failed to create center: ${e.toString()}');
+    }
+  }
+
+  // 更新分行
+  Future<bool> updateCenter(String id, Map<String, dynamic> data) async {
+    try {
+      await pb.collection('centers').update(id, body: data);
+      return true;
+    } catch (e) {
+      throw Exception('Failed to update center: ${e.toString()}');
+    }
+  }
+
+  // 删除分行
+  Future<bool> deleteCenter(String id) async {
+    try {
+      await pb.collection('centers').delete(id);
+      return true;
+    } catch (e) {
+      throw Exception('Failed to delete center: ${e.toString()}');
     }
   }
 

@@ -50,14 +50,58 @@ class NotificationProvider with ChangeNotifier {
         throw Exception('用户未认证，请先登录');
       }
       
-      _notifications = await _pocketBaseService.getNotifications(
-        perPage: 100,
-      );
+      // 获取当前用户角色
+      final currentUser = _pocketBaseService.pb.authStore.record;
+      final userRole = currentUser?.getStringValue('role') ?? '';
+      
+      print('=== NotificationProvider 加载通知 ===');
+      print('用户角色: $userRole');
+      
+      List<RecordModel> allNotifications = [];
+      
+      if (userRole == 'admin') {
+        // 管理员可以看到所有通知
+        print('管理员用户，获取所有通知...');
+        _notifications = await _pocketBaseService.getAllNotifications(perPage: 200);
+      } else if (userRole.isNotEmpty) {
+        // 其他角色获取发送给当前角色的通知
+        final roleNotifications = await _pocketBaseService.getNotifications(
+          perPage: 100,
+        );
+        allNotifications.addAll(roleNotifications);
+        
+        // 获取发送给所有用户的通知
+        final allUserNotifications = await _pocketBaseService.getNotificationsForRole('all');
+        allNotifications.addAll(allUserNotifications);
+        
+        // 去重
+        final seenIds = <String>{};
+        _notifications = allNotifications.where((notification) {
+          if (seenIds.contains(notification.id)) {
+            return false;
+          }
+          seenIds.add(notification.id);
+          return true;
+        }).toList();
+      } else {
+        // 如果没有角色信息，获取所有通知
+        _notifications = await _pocketBaseService.getNotifications(
+          perPage: 100,
+        );
+      }
       
       // 过滤未读通知
       _unreadNotifications = _notifications.where((notification) {
         return !(notification.getBoolValue('is_read') ?? false);
       }).toList();
+      
+      print('加载到 ${_notifications.length} 个通知，其中 ${_unreadNotifications.length} 个未读');
+      
+      // 打印前几个通知的详细信息用于调试
+      for (int i = 0; i < _notifications.length && i < 3; i++) {
+        final notification = _notifications[i];
+        print('通知 $i: ID=${notification.id}, 标题=${notification.getStringValue('title')}, 接收者=${notification.getStringValue('recipient_role')}');
+      }
       
       notifyListeners();
     } catch (e) {
@@ -79,6 +123,10 @@ class NotificationProvider with ChangeNotifier {
         final updatedData = Map<String, dynamic>.from(notification.data);
         updatedData['is_read'] = true;
         updatedData['read_at'] = DateTime.now().toIso8601String();
+        
+        // 增加已读计数
+        final currentReadCount = notification.getIntValue('read_count') ?? 0;
+        updatedData['read_count'] = currentReadCount + 1;
         
         _notifications[index] = RecordModel.fromJson({
           'id': notification.id,
@@ -137,14 +185,14 @@ class NotificationProvider with ChangeNotifier {
     required String title,
     required String message,
     required String type,
-    required String recipientId,
+    required String recipientRole,
   }) async {
     try {
       await _pocketBaseService.createNotification({
         'title': title,
         'message': message,
         'type': type,
-        'recipient_id': recipientId,
+        'recipient_role': recipientRole,
       });
       
       // 重新加载通知列表

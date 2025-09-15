@@ -22,7 +22,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _loadData();
+    // 延迟加载数据，避免在构建过程中调用 setState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   @override
@@ -270,33 +273,33 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Column(
         children: [
           Icon(
             icon,
             color: Colors.white,
-            size: 24,
+            size: 16,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: AppSpacing.sm),
           Text(
             value,
-            style: const TextStyle(
+            style: AppTextStyles.headline4.copyWith(
               color: Colors.white,
-              fontSize: 20,
               fontWeight: FontWeight.bold,
+              fontSize: 18,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: AppSpacing.xs),
           Text(
             title,
-            style: const TextStyle(
+            style: AppTextStyles.bodySmall.copyWith(
               color: Colors.white70,
-              fontSize: 12,
+              fontSize: 11,
             ),
             textAlign: TextAlign.center,
           ),

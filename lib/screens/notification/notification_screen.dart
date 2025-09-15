@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:pocketbase/pocketbase.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/pocketbase_service.dart';
 import '../../theme/app_theme.dart';
 
 class NotificationScreen extends StatefulWidget {
@@ -35,6 +36,19 @@ class _NotificationScreenState extends State<NotificationScreen>
     _scrollController.addListener(_onScroll);
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 添加调试信息
+      final authProvider = context.read<AuthProvider>();
+      final pocketBaseService = PocketBaseService.instance;
+      final currentUser = pocketBaseService.pb.authStore.record;
+      
+      print('=== 教师通知屏幕初始化 ===');
+      print('当前用户ID: ${currentUser?.id}');
+      print('当前用户角色: ${currentUser?.getStringValue('role')}');
+      print('当前用户邮箱: ${currentUser?.getStringValue('email')}');
+      print('AuthProvider.isTeacher: ${authProvider.isTeacher}');
+      print('AuthProvider.isAdmin: ${authProvider.isAdmin}');
+      print('========================');
+      
       context.read<NotificationProvider>().loadNotifications();
       _animationController.forward();
     });

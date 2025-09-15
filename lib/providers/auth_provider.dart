@@ -14,6 +14,11 @@ class AuthProvider with ChangeNotifier {
   RecordModel? _user;
   RecordModel? _userProfile;
   String _connectionStatus = 'disconnected';
+  
+  // 多角色支持
+  List<String> _userRoles = [];
+  String _activeRole = '';
+  bool _roleSwitchingEnabled = false;
 
   AuthProvider(this._prefs) : _pocketBaseService = PocketBaseService.instance {
     _initializeAuth();
@@ -26,17 +31,103 @@ class AuthProvider with ChangeNotifier {
   RecordModel? get userProfile => _userProfile;
   String get connectionStatus => _connectionStatus;
   bool get isAuthenticated => _pocketBaseService.isAuthenticated;
+  
+  // 多角色相关getters
+  List<String> get userRoles => _userRoles;
+  String get activeRole => _activeRole;
+  bool get roleSwitchingEnabled => _roleSwitchingEnabled;
+  bool get hasMultipleRoles => _userRoles.length > 1;
 
   void _initializeAuth() {
     _user = _pocketBaseService.currentUser;
     _userProfile = _pocketBaseService.currentUserProfile;
     if (_user != null) {
       _connectionStatus = 'connected';
+      _initializeUserRoles();
     }
     notifyListeners();
     
     // 尝试自动登录
     _attemptAutoLogin();
+  }
+  
+  /// 初始化用户角色
+  void _initializeUserRoles() {
+    if (_userProfile == null) return;
+    
+    final userEmail = _userProfile!.getStringValue('email') ?? '';
+    final userRole = _userProfile!.getStringValue('role') ?? '';
+    
+    // 通过邮箱识别多角色用户
+    _userRoles = _getRolesByEmail(userEmail);
+    
+    // 设置当前激活角色
+    _activeRole = _userProfile!.getStringValue('active_role') ?? 
+                  (_userRoles.isNotEmpty ? _userRoles.first : userRole);
+    
+    // 检查是否允许多角色切换
+    _roleSwitchingEnabled = _userRoles.length > 1;
+    
+    // 异步检查teachers集合
+    _checkTeacherRolesAsync(userEmail);
+  }
+  
+  /// 异步检查teachers集合中的角色
+  Future<void> _checkTeacherRolesAsync(String email) async {
+    try {
+      // 检查teachers集合中是否有对应邮箱的记录
+      final teachers = await _pocketBaseService.getTeachers();
+      
+      final teacherRecord = teachers.firstWhere(
+        (teacher) => teacher.getStringValue('email') == email,
+        orElse: () => throw Exception('No teacher found'),
+      );
+      
+      // 如果找到teacher记录，添加teacher角色
+      if (teacherRecord != null) {
+        final currentRoles = List<String>.from(_userRoles);
+        if (!currentRoles.contains('teacher')) {
+          currentRoles.add('teacher');
+          _userRoles = currentRoles;
+          _roleSwitchingEnabled = _userRoles.length > 1;
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      // 没有找到teacher记录，保持原有角色
+    }
+  }
+  
+  /// 根据邮箱获取用户角色
+  List<String> _getRolesByEmail(String email) {
+    // 从配置文件获取多角色用户映射
+    final multiRoleUsers = _getMultiRoleUsersConfig();
+    
+    // 检查是否为多角色用户
+    if (multiRoleUsers.containsKey(email)) {
+      return multiRoleUsers[email]!;
+    }
+    
+    // 单一角色用户，从role字段获取
+    final singleRole = _userProfile?.getStringValue('role') ?? '';
+    return singleRole.isNotEmpty ? [singleRole] : [];
+  }
+  
+  /// 通过邮箱检查teachers集合中的角色
+  List<String> _getTeacherRolesByEmail(String email) {
+    // 这里需要检查teachers集合中是否有对应邮箱的记录
+    // 如果有，说明用户既是users中的用户，也是teachers中的教师
+    // 可以根据需要返回多个角色
+    
+    // 注意：这里需要异步获取teachers数据，但当前方法是同步的
+    // 可以考虑在初始化时预先加载teachers数据
+    return [];
+  }
+  
+  /// 获取多角色用户配置
+  Map<String, List<String>> _getMultiRoleUsersConfig() {
+    // 返回空配置，让系统完全基于数据库智能识别
+    return {};
   }
   
   /// 尝试自动登录
@@ -176,24 +267,62 @@ class AuthProvider with ChangeNotifier {
 
   // Check if user has specific role
   bool hasRole(String role) {
-    return _userProfile?.getStringValue('role') == role;
+    return _userRoles.contains(role);
+  }
+  
+  // 切换角色
+  Future<void> switchRole(String newRole) async {
+    if (!_userRoles.contains(newRole)) {
+      throw Exception('用户没有 $newRole 角色权限');
+    }
+    
+    _activeRole = newRole;
+    await _saveActiveRole(newRole);
+    notifyListeners();
+  }
+  
+  // 保存当前激活角色
+  Future<void> _saveActiveRole(String role) async {
+    try {
+      await _prefs.setString('active_role', role);
+    } catch (e) {
+      print('保存激活角色失败: $e');
+    }
   }
 
-  // Check if user is admin
-  bool get isAdmin => hasRole('admin');
+  // Check if user is admin (基于当前激活角色)
+  bool get isAdmin {
+    return _activeRole == 'admin' || (_activeRole.isEmpty && (_userProfile?.getStringValue('role') ?? '') == 'admin');
+  }
 
-  // Check if user is teacher
-  bool get isTeacher => hasRole('teacher');
+  // Check if user is teacher (基于当前激活角色)
+  bool get isTeacher {
+    return _activeRole == 'teacher' || (_activeRole.isEmpty && (_userProfile?.getStringValue('role') ?? '') == 'teacher');
+  }
 
-  // Check if user is parent
-  bool get isParent => hasRole('parent');
+  // Check if user is parent (基于当前激活角色)
+  bool get isParent {
+    return _activeRole == 'parent' || (_activeRole.isEmpty && (_userProfile?.getStringValue('role') ?? '') == 'parent');
+  }
 
-  // Check if user is accountant
-  bool get isAccountant => hasRole('accountant');
+  // Check if user is accountant (基于当前激活角色)
+  bool get isAccountant {
+    return _activeRole == 'accountant' || (_activeRole.isEmpty && (_userProfile?.getStringValue('role') ?? '') == 'accountant');
+  }
 
-  // Get user role display name
+  // Get user role display name (基于当前激活角色)
   String get roleDisplayName {
-    switch (_userProfile?.getStringValue('role')) {
+    // 如果_activeRole为空，尝试从role字段获取
+    if (_activeRole.isEmpty) {
+      final fallbackRole = _userProfile?.getStringValue('role') ?? '';
+      return getRoleDisplayName(fallbackRole);
+    }
+    return getRoleDisplayName(_activeRole);
+  }
+  
+  // 获取角色显示名称
+  String getRoleDisplayName(String role) {
+    switch (role) {
       case 'admin':
         return '管理员';
       case 'teacher':
@@ -205,6 +334,11 @@ class AuthProvider with ChangeNotifier {
       default:
         return '用户';
     }
+  }
+  
+  // 获取所有角色的显示名称
+  List<String> get roleDisplayNames {
+    return _userRoles.map((role) => getRoleDisplayName(role)).toList();
   }
 
   // Check if user account is pending approval
