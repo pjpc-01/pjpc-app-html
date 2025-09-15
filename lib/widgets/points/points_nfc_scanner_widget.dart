@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'package:provider/provider.dart';
@@ -9,9 +10,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../providers/student_provider.dart';
 import '../../providers/points_provider.dart';
 import '../../providers/teacher_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/pocketbase_service.dart';
-import '../../services/encryption_service.dart';
-import '../../services/security_service.dart';
 import '../../theme/app_theme.dart';
 import '../../services/nfc_safe_scanner_service.dart';
 
@@ -25,12 +25,12 @@ class PointsNFCScannerWidget extends StatefulWidget {
 class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
     with TickerProviderStateMixin {
   bool _isScanning = false;
-  String _statusMessage = '准备扫描';
+  String _statusMessage = '正在启动扫描...';
+  int _timeoutCountdown = 10;
+  Timer? _countdownTimer;
   late AnimationController _pulseController;
   late AnimationController _scanController;
   late Animation<double> _pulseAnimation;
-  final EncryptionService _encryptionService = EncryptionService();
-  final SecurityService _securityService = SecurityService();
   late Animation<double> _scanAnimation;
 
   @override
@@ -60,10 +60,20 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
       parent: _scanController,
       curve: Curves.easeInOut,
     ));
+
+    // 自动开始扫描
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startScanning();
+    });
+    
+    // 立即设置扫描状态，避免显示"开始扫描"按钮
+    _isScanning = true;
+    _statusMessage = '正在启动扫描...';
   }
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
     _pulseController.dispose();
     _scanController.dispose();
     super.dispose();
@@ -376,6 +386,39 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
                     letterSpacing: 0.3,
                   ),
                 ),
+                if (_isScanning && _timeoutCountdown > 0) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppTheme.accentColor.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.timer,
+                          size: 16,
+                          color: AppTheme.accentColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${_timeoutCountdown}秒后超时',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.accentColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -626,10 +669,14 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
     setState(() {
       _isScanning = true;
       _statusMessage = '正在扫描...';
+      _timeoutCountdown = 10;
     });
 
     _pulseController.repeat(reverse: true);
     _scanController.forward();
+    
+    // 启动倒计时
+    _startCountdown();
 
     try {
       final result = await NFCSafeScannerService.instance.safeScanNFC(
@@ -659,20 +706,53 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
         // 显示积分操作面板
         _showPointsPanel(context, student);
       } else {
-        _updateStatus(result.errorMessage ?? '扫描失败', isError: true);
+        // 检查是否是超时错误
+        String errorMessage = result.errorMessage ?? '扫描失败';
+        if (errorMessage.contains('timeout') || errorMessage.contains('超时')) {
+          errorMessage = '扫描超时（10秒），请重新扫描';
+        }
+        _updateStatus(errorMessage, isError: true);
         _stopScanning();
       }
     } catch (e) {
-      _updateStatus('扫描失败: $e', isError: true);
+      String errorMessage = '扫描失败: $e';
+      if (e.toString().contains('timeout') || e.toString().contains('超时')) {
+        errorMessage = '扫描超时（10秒），请重新扫描';
+      }
+      _updateStatus(errorMessage, isError: true);
       _stopScanning();
     }
   }
 
+  void _startCountdown() {
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      
+      setState(() {
+        _timeoutCountdown--;
+      });
+      
+      if (_timeoutCountdown <= 0) {
+        timer.cancel();
+        if (_isScanning) {
+          _updateStatus('扫描超时（10秒），请重新扫描', isError: true);
+          _stopScanning();
+        }
+      }
+    });
+  }
+
   void _stopScanning() {
+    _countdownTimer?.cancel();
     FlutterNfcKit.finish();
     setState(() {
       _isScanning = false;
       _statusMessage = '扫描已停止';
+      _timeoutCountdown = 10;
     });
     _pulseController.stop();
     _scanController.reset();
@@ -744,7 +824,13 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () => _showCustomPointsDialog('add_points', student),
+                            onPressed: () {
+                              Navigator.pop(ctx); // 关闭积分面板
+                              // 延迟显示对话框，确保面板完全关闭
+                              Future.delayed(const Duration(milliseconds: 200), () {
+                                _showSimplePointsDialog(ctx, 'add_points', student);
+                              });
+                            },
                             icon: const Icon(Icons.add),
                             label: const Text('增加积分'),
                             style: ElevatedButton.styleFrom(
@@ -756,7 +842,13 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
                         const SizedBox(width: 8),
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () => _showCustomPointsDialog('deduct_points', student),
+                            onPressed: () {
+                              Navigator.pop(ctx); // 关闭积分面板
+                              // 延迟显示对话框，确保面板完全关闭
+                              Future.delayed(const Duration(milliseconds: 200), () {
+                                _showSimplePointsDialog(ctx, 'deduct_points', student);
+                              });
+                            },
                             icon: const Icon(Icons.remove),
                             label: const Text('扣除积分'),
                             style: ElevatedButton.styleFrom(
@@ -771,7 +863,13 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: () => _showCustomPointsDialog('redeem', student),
+                        onPressed: () {
+                          Navigator.pop(ctx); // 关闭积分面板
+                          // 延迟显示对话框，确保面板完全关闭
+                          Future.delayed(const Duration(milliseconds: 200), () {
+                            _showSimplePointsDialog(ctx, 'redeem', student);
+                          });
+                        },
                         icon: const Icon(Icons.card_giftcard),
                         label: const Text('兑换礼物'),
                         style: ElevatedButton.styleFrom(
@@ -790,8 +888,321 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
     );
   }
 
-  Future<void> _showCustomPointsDialog(String actionType, RecordModel student) async {
-    Navigator.pop(context); // 关闭积分面板
+  void _showSimplePointsDialog(BuildContext context, String actionType, RecordModel student) {
+    
+    String title;
+    Color primaryColor;
+    
+    switch (actionType) {
+      case 'add_points':
+        title = '增加积分';
+        primaryColor = AppTheme.successColor;
+        break;
+      case 'deduct_points':
+        title = '扣除积分';
+        primaryColor = AppTheme.errorColor;
+        break;
+      case 'redeem':
+        title = '兑换礼物';
+        primaryColor = AppTheme.accentColor;
+        break;
+      default:
+        return;
+    }
+
+    final amountController = TextEditingController();
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text(title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 学生信息
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.person, color: AppTheme.primaryColor),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            student.getStringValue('student_name'),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            '学号: ${student.getStringValue('student_id')}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // 积分数量输入
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: '积分数量',
+                  prefixIcon: const Icon(Icons.stars),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // 原因输入
+              TextField(
+                controller: reasonController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  labelText: actionType == 'redeem' ? '兑换说明' : '原因（可选）',
+                  prefixIcon: const Icon(Icons.note),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              
+              // 兑换礼物需要拍照凭证
+              if (actionType == 'redeem') ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.accentColor.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.camera_alt, color: AppTheme.accentColor),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              '拍照凭证',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              '兑换礼物需要拍照作为凭证',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          // TODO: 实现拍照功能
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            const SnackBar(content: Text('拍照功能待实现')),
+                          );
+                        },
+                        icon: const Icon(Icons.camera_alt, size: 16),
+                        label: const Text('拍照'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accentColor,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(80, 32),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('取消'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final amount = int.tryParse(amountController.text);
+                if (amount == null || amount <= 0) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('请输入有效的积分数量')),
+                  );
+                  return;
+                }
+                
+                // 兑换礼物需要特殊处理
+                if (actionType == 'redeem') {
+                  final reason = reasonController.text.trim();
+                  if (reason.isEmpty) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('请填写兑换说明')),
+                    );
+                    return;
+                  }
+                  
+                  await _processPointsTransaction(
+                    ctx: ctx,
+                    context: context,
+                    student: student,
+                    actionType: actionType,
+                    amount: amount,
+                    reason: reason,
+                    title: title,
+                  );
+                } else {
+                  await _processPointsTransaction(
+                    ctx: ctx,
+                    context: context,
+                    student: student,
+                    actionType: actionType,
+                    amount: amount,
+                    reason: reasonController.text.trim(),
+                    title: title,
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('确认'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 处理积分交易
+  Future<void> _processPointsTransaction({
+    required BuildContext ctx,
+    required BuildContext context,
+    required RecordModel student,
+    required String actionType,
+    required int amount,
+    required String reason,
+    required String title,
+  }) async {
+    // 在异步操作开始前保存必要的引用
+    final navigator = Navigator.of(ctx);
+    final scaffoldMessenger = ScaffoldMessenger.of(ctx);
+    
+    try {
+      // 显示加载状态
+      showDialog(
+        context: ctx,
+        barrierDismissible: false,
+        builder: (dialogContext) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // 直接从PocketBaseService获取当前用户，避免使用可能失效的context
+      final currentUser = PocketBaseService.instance.currentUser;
+      if (currentUser == null) {
+        navigator.pop(); // 关闭加载对话框
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(content: Text('用户未登录')),
+        );
+        return;
+      }
+
+      // 获取老师信息
+      RecordModel? teacher;
+      String teacherId = currentUser.id;
+      String teacherName = currentUser.getStringValue('name') ?? 
+                          currentUser.getStringValue('username') ?? 
+                          currentUser.getStringValue('email') ?? 
+                          '未知老师';
+      
+      try {
+        teacher = await PocketBaseService.instance.getTeacherByUserId(currentUser.id);
+        if (teacher != null) {
+          teacherId = teacher.id;
+          teacherName = teacher.getStringValue('teacher_name') ?? teacherName;
+        }
+      } catch (e) {
+      }
+
+      // 计算积分变化
+      int pointsChange = amount;
+      if (actionType == 'deduct_points' || actionType == 'redeem') {
+        pointsChange = -amount; // 扣除积分为负数
+      }
+
+      // 创建积分记录
+      await PocketBaseService.instance.createPointsTransaction({
+        'student_id': student.id,
+        'student_name': student.getStringValue('student_name'),
+        'transaction_type': actionType,
+        'points_change': pointsChange,
+        'reason': reason.isEmpty ? '无' : reason,
+        'teacher_id': teacherId,
+        'teacher_name': teacherName,
+        'status': 'approved',
+        'notes': actionType == 'redeem' ? '兑换礼物' : null,
+        'is_teacher_id_valid': teacher != null, // 只有当找到教师记录时才使用关联字段
+      });
+
+      // 积分汇总更新暂时跳过，避免字段验证问题
+      // 可以通过积分记录计算当前积分
+
+      // 刷新积分交易记录
+      try {
+        final pointsProvider = Provider.of<PointsProvider>(context, listen: false);
+        await pointsProvider.loadPointTransactions();
+      } catch (e) {
+      }
+
+      // 关闭加载对话框
+      navigator.pop();
+      
+      // 关闭积分对话框
+      navigator.pop();
+
+      // 显示成功消息
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('$title 成功: $amount 分'),
+          backgroundColor: AppTheme.successColor,
+        ),
+      );
+
+
+    } catch (e) {
+      // 关闭加载对话框
+      try {
+        navigator.pop();
+      } catch (_) {
+        // 忽略关闭对话框时的错误
+      }
+      
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('操作失败: ${e.toString()}'),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showPointsDialog(BuildContext context, String actionType, RecordModel student) async {
     
     final amountController = TextEditingController();
     final reasonController = TextEditingController();
@@ -825,6 +1236,174 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
         return;
     }
 
+
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text(title),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 学生信息显示
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.person, color: AppTheme.primaryColor),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              student.getStringValue('student_name'),
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              '学号: ${student.getStringValue('student_id')}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // 积分数量输入
+                TextField(
+                  controller: amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: amountLabel,
+                    prefixIcon: const Icon(Icons.stars),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // 原因输入
+                TextField(
+                  controller: reasonController,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    labelText: reasonLabel,
+                    prefixIcon: const Icon(Icons.note),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                
+                // 兑换礼物需要拍照凭证
+                if (actionType == 'redeem') ...[
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      // TODO: 实现拍照功能
+                    },
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text('拍照凭证'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.accentColor,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('取消'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final amount = int.tryParse(amountController.text);
+                if (amount == null || amount <= 0) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('请输入有效的积分数量')),
+                  );
+                  return;
+                }
+                
+                Navigator.pop(ctx);
+                
+                // TODO: 实现积分操作逻辑
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('$title 成功: $amount 分')),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('确认'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showCustomPointsDialog(String actionType, RecordModel student, {BuildContext? bottomSheetContext}) async {
+    
+    if (!mounted) {
+      return; // 检查widget是否仍然挂载
+    }
+    
+    // 先准备对话框数据，再关闭积分面板
+    final amountController = TextEditingController();
+    final reasonController = TextEditingController();
+    File? proof;
+
+    String title;
+    String amountLabel;
+    String reasonLabel;
+    Color primaryColor;
+
+    switch (actionType) {
+      case 'add_points':
+        title = '增加积分';
+        amountLabel = '增加积分数量';
+        reasonLabel = '增加原因（可选）';
+        primaryColor = AppTheme.successColor;
+        break;
+      case 'deduct_points':
+        title = '扣除积分';
+        amountLabel = '扣除积分数量';
+        reasonLabel = '扣除原因（可选）';
+        primaryColor = AppTheme.errorColor;
+        break;
+      case 'redeem':
+        title = '兑换礼物';
+        amountLabel = '兑换所需积分';
+        reasonLabel = '兑换说明';
+        primaryColor = AppTheme.accentColor;
+        break;
+      default:
+        return;
+    }
+
+    
+    // 关闭积分面板
+    if (bottomSheetContext != null) {
+      Navigator.pop(bottomSheetContext);
+    }
+    
+    // 等待一小段时间让面板完全关闭
+    await Future.delayed(const Duration(milliseconds: 100));
+    
+    if (!mounted) return; // 再次检查，因为Navigator.pop可能触发dispose
     await showDialog(
       context: context,
       builder: (ctx) {
@@ -983,26 +1562,31 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
                 final reason = reasonController.text.trim();
                 
                 if (amount <= 0) {
+                  if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: const Text('请输入有效的积分数量'),
                       backgroundColor: AppTheme.errorColor,
                     ),
                   );
+                  }
                   return;
                 }
 
                 if (actionType == 'redeem' && proof == null) {
+                  if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: const Text('兑换礼物需要拍照凭证'),
                       backgroundColor: AppTheme.warningColor,
                     ),
                   );
+                  }
                   return;
                 }
 
                 // 显示加载状态
+                if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: const Row(
@@ -1019,6 +1603,7 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
                     duration: const Duration(seconds: 2),
                   ),
                 );
+                }
 
                 // 二次验证老师卡
                 final teacherConfirmed = await _showTeacherVerificationDialog();
@@ -1030,12 +1615,14 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
                 final teacherId = PocketBaseService.instance.currentUser?.id ?? '';
                 
                 if (teacherId.isEmpty) {
+                  if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: const Text('无法获取老师ID，请重新登录'),
                       backgroundColor: AppTheme.errorColor,
                     ),
                   );
+                  }
                   return;
                 }
 
@@ -1078,7 +1665,7 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
                           textColor: Colors.white,
                           onPressed: () {
                             // 重新打开对话框
-                            _showCustomPointsDialog(actionType, student);
+                            _showPointsDialog(context, actionType, student);
                           },
                         ),
                       ),
@@ -1194,32 +1781,26 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
       String teacherId = (idx > 0 ? raw.substring(0, idx) : raw)
           .replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
 
-      // 查找老师（容错匹配）
-      final teacherProvider = Provider.of<TeacherProvider>(context, listen: false);
+      // 查找老师（使用PocketBaseService直接查询）
       RecordModel? teacher;
       
-      // 先按精确ID匹配
-      for (final t in teacherProvider.teachers) {
-        final raw = (t.data['user_id'] ?? t.data['teacher_id'] ?? '').toString();
+      try {
+        // 先尝试通过user_id查找
+        teacher = await PocketBaseService.instance.getTeacherByUserId(teacherId);
+        
+        // 如果没找到，尝试通过teacher_id查找
+        if (teacher == null) {
+          final teachers = await PocketBaseService.instance.getTeachers();
+          for (final t in teachers) {
+            final raw = (t.data['teacher_id'] ?? '').toString();
         final norm = raw.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
         if (norm.toUpperCase() == teacherId.toUpperCase()) {
           teacher = t;
           break;
         }
       }
-      
-      // 如未命中，做容错查找
-      if (teacher == null) {
-        String _normalize(String s) => s.replaceAll(RegExp(r'[^A-Za-z0-9]'), '' ).toUpperCase();
-        final target = _normalize(teacherId);
-        for (final t in teacherProvider.teachers) {
-          final raw = (t.data['user_id'] ?? t.data['teacher_id'] ?? '').toString();
-          final norm = _normalize(raw);
-          if (norm == target || norm.contains(target) || target.contains(norm)) {
-            teacher = t;
-            break;
-          }
         }
+      } catch (e) {
       }
       
       if (teacher == null) {

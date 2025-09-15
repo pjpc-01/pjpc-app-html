@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/attendance_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/attendance/nfc_scanner_widget.dart';
+import '../../widgets/attendance/attendance_nfc_scanner_widget.dart';
 import '../../widgets/attendance/attendance_stats_grid.dart';
 import '../../widgets/attendance/attendance_records_list.dart';
 import '../../widgets/attendance/attendance_filters.dart';
@@ -507,7 +507,7 @@ class _AttendanceDashboardScreenState extends State<AttendanceDashboardScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const NFCScannerWidget(),
+      builder: (context) => const AttendanceNFCScannerWidget(),
     );
   }
 

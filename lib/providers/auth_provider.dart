@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/pocketbase_service.dart';
-import '../services/secure_storage_service.dart';
 import '../services/error_handler_service.dart';
 import '../services/network_service.dart';
 
@@ -44,16 +43,16 @@ class AuthProvider with ChangeNotifier {
   Future<void> _attemptAutoLogin() async {
     try {
       // 检查是否有保存的凭据
-      if (await SecureStorageService.hasCredentials()) {
-        final credentials = await SecureStorageService.getCredentials();
-        if (credentials['email'] != null && credentials['password'] != null) {
-          // 直接调用登录，不进行网络检查
-          await _performLogin(credentials['email']!, credentials['password']!);
-        }
+      final email = _prefs.getString('saved_email');
+      final password = _prefs.getString('saved_password');
+      if (email != null && password != null) {
+        // 直接调用登录，不进行网络检查
+        await _performLogin(email, password);
       }
     } catch (e) {
       // 自动登录失败时清除凭据
-      await SecureStorageService.clearCredentials();
+      await _prefs.remove('saved_email');
+      await _prefs.remove('saved_password');
     }
   }
   
@@ -68,9 +67,9 @@ class AuthProvider with ChangeNotifier {
       _userProfile = authData.record;
       _connectionStatus = 'connected';
       
-      // 使用安全存储保存凭据
-      await SecureStorageService.saveCredentials(email, password);
-      await SecureStorageService.saveUserData(authData.record.data);
+      // 保存凭据到SharedPreferences
+      await _prefs.setString('saved_email', email);
+      await _prefs.setString('saved_password', password);
       
       // 保存登录状态到SharedPreferences
       await _prefs.setBool('is_logged_in', true);
@@ -135,8 +134,9 @@ class AuthProvider with ChangeNotifier {
       _userProfile = null;
       _connectionStatus = 'disconnected';
       
-      // 清除安全存储
-      await SecureStorageService.clearCredentials();
+      // 清除保存的凭据
+      await _prefs.remove('saved_email');
+      await _prefs.remove('saved_password');
       
       // Clear saved login state
       await _prefs.remove('is_logged_in');
@@ -215,5 +215,33 @@ class AuthProvider with ChangeNotifier {
   // Check if user account is suspended
   bool get isSuspended {
     return _userProfile?.getStringValue('status') == 'suspended';
+  }
+  
+  // 检查认证状态并尝试自动重新认证
+  Future<bool> checkAuthStatusWithReauth() async {
+    // 如果当前认证有效，直接返回true
+    if (_pocketBaseService.isAuthenticated && _user != null) {
+      return true;
+    }
+    
+    // 尝试自动重新认证
+    try {
+      await _attemptAutoLogin();
+      return _pocketBaseService.isAuthenticated && _user != null;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  // 刷新用户信息
+  Future<void> refreshUserInfo() async {
+    try {
+      if (_pocketBaseService.isAuthenticated) {
+        _user = _pocketBaseService.currentUser;
+        _userProfile = _pocketBaseService.currentUserProfile;
+        notifyListeners();
+      }
+    } catch (e) {
+    }
   }
 }

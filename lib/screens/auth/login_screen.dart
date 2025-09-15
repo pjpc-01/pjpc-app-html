@@ -3,10 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/pocketbase_service.dart';
-import '../../services/secure_storage_service.dart';
 import '../../services/error_handler_service.dart';
-import '../../widgets/custom_text_field.dart';
-import '../../widgets/custom_button.dart';
+import '../../widgets/common/custom_text_field.dart';
+import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/app_logo.dart';
 import '../home/home_screen.dart';
 
@@ -44,22 +43,23 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // 尝试使用安全存储的凭据自动登录
-    if (await SecureStorageService.hasCredentials()) {
+    // 尝试使用保存的凭据自动登录
+    final email = await SharedPreferences.getInstance().then((prefs) => prefs.getString('saved_email'));
+    final password = await SharedPreferences.getInstance().then((prefs) => prefs.getString('saved_password'));
+    if (email != null && password != null) {
       try {
-        final credentials = await SecureStorageService.getCredentials();
-        if (credentials['email'] != null && credentials['password'] != null) {
-          await authProvider.login(credentials['email']!, credentials['password']!);
-          if (authProvider.isAuthenticated && mounted) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
-            );
-          }
+        await authProvider.login(email, password);
+        if (authProvider.isAuthenticated && mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+          );
         }
       } catch (e) {
         // 自动登录失败，显示登录界面
         // 清除无效凭据
-        await SecureStorageService.clearCredentials();
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('saved_email');
+        await prefs.remove('saved_password');
       }
     }
   }
@@ -103,25 +103,19 @@ class _LoginScreenState extends State<LoginScreen> {
       email: _emailController.text.trim(),
       password: _passwordController.text,
       passwordConfirm: _passwordController.text,
-      name: _emailController.text.split('@')[0],
-      role: 'admin',
+      name: _emailController.text.split('@')[0], // 使用邮箱前缀作为默认名称
+      role: 'student', // 默认角色
     );
 
     if (authProvider.isAuthenticated && mounted) {
-      // 保存登录凭据
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('saved_email', _emailController.text.trim());
-      await prefs.setString('saved_password', _passwordController.text);
-      
       Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
     } else if (authProvider.error != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authProvider.error!),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      ErrorHandlerService.showErrorSnackBar(
+        context,
+        authProvider.error!,
+        null,
       );
     }
   }
@@ -144,212 +138,218 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Logo and Title
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 1.5,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Logo and Title
+                    Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        const AppLogo(
-                          size: 100,
-                          showText: false,
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'PJPC 学校管理系统',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withOpacity(0.3),
-                                offset: const Offset(1, 1),
-                                blurRadius: 2,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'PJPC School Management System',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.white.withOpacity(0.9),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // Login Form
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Form(
-                      key: _formKey,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          const AppLogo(
+                            size: 80,
+                            showText: false,
+                          ),
+                          const SizedBox(height: 24),
                           Text(
-                            _isRegisterMode ? '注册账户' : '登录账户',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            'PJPC 学校管理系统',
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1E3A8A),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Email Field
-                          CustomTextField(
-                            controller: _emailController,
-                            labelText: '邮箱地址',
-                            hintText: '请输入邮箱地址',
-                            keyboardType: TextInputType.emailAddress,
-                            prefixIcon: Icons.email_outlined,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return '请输入邮箱地址';
-                              }
-                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                                return '请输入有效的邮箱地址';
-                              }
-                              return null;
-                            },
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Password Field
-                          CustomTextField(
-                            controller: _passwordController,
-                            labelText: '密码',
-                            hintText: '请输入密码',
-                            obscureText: _obscurePassword,
-                            prefixIcon: Icons.lock_outlined,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return '请输入密码';
-                              }
-                              if (value.length < 6) {
-                                return '密码至少需要6个字符';
-                              }
-                              return null;
-                            },
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // Login/Register Button
-                          Consumer<AuthProvider>(
-                            builder: (context, authProvider, child) {
-                              return CustomButton(
-                                text: _isRegisterMode ? '注册' : '登录',
-                                onPressed: authProvider.isLoading ? null : 
-                                    (_isRegisterMode ? _handleRegister : _handleLogin),
-                                isLoading: authProvider.isLoading,
-                              );
-                            },
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Toggle Mode Button
-                          TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _isRegisterMode = !_isRegisterMode;
-                              });
-                            },
-                            child: Text(
-                              _isRegisterMode 
-                                  ? '已有账户？点击登录' 
-                                  : '没有账户？点击注册',
-                              style: TextStyle(
-                                color: Theme.of(context).primaryColor,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Server Info
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.blue.withOpacity(0.3),
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.info_outline,
-                                  color: Colors.blue[700],
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    '服务器: 已连接',
-                                    style: TextStyle(
-                                      color: Colors.green[700],
-                                      fontSize: 12,
-                                    ),
-                                  ),
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  offset: const Offset(1, 1),
+                                  blurRadius: 2,
                                 ),
                               ],
                             ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'PJPC School Management System',
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: Colors.white.withOpacity(0.9),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+
+                    const SizedBox(height: 48),
+
+                    // Login Form
+                    Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              _isRegisterMode ? '注册账户' : '登录账户',
+                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF1E3A8A),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 32),
+
+                            // Email Field
+                            CustomTextField(
+                              controller: _emailController,
+                              label: '邮箱地址',
+                              hintText: '请输入邮箱地址',
+                              keyboardType: TextInputType.emailAddress,
+                              prefixIcon: const Icon(Icons.email_outlined),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return '请输入邮箱地址';
+                                }
+                                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                                  return '请输入有效的邮箱地址';
+                                }
+                                return null;
+                              },
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Password Field
+                            CustomTextField(
+                              controller: _passwordController,
+                              label: '密码',
+                              hintText: '请输入密码',
+                              obscureText: _obscurePassword,
+                              prefixIcon: const Icon(Icons.lock_outlined),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return '请输入密码';
+                                }
+                                if (value.length < 6) {
+                                  return '密码长度至少6位';
+                                }
+                                return null;
+                              },
+                            ),
+
+                            const SizedBox(height: 32),
+
+                            // Login/Register Button
+                            Consumer<AuthProvider>(
+                              builder: (context, authProvider, child) {
+                                return CustomButton(
+                                  text: _isRegisterMode ? '注册' : '登录',
+                                  onPressed: authProvider.isLoading ? null : 
+                                      (_isRegisterMode ? _handleRegister : _handleLogin),
+                                  isLoading: authProvider.isLoading,
+                                );
+                              },
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Toggle Mode Button
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isRegisterMode = !_isRegisterMode;
+                                });
+                              },
+                              child: Text(
+                                _isRegisterMode 
+                                    ? '已有账户？点击登录' 
+                                    : '没有账户？点击注册',
+                                style: TextStyle(
+                                  color: Theme.of(context).primaryColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Server Info
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.blue.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline,
+                                    color: Colors.blue[700],
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      '服务器: 已连接',
+                                      style: TextStyle(
+                                        color: Colors.green[700],
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

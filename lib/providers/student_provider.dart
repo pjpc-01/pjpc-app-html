@@ -37,7 +37,6 @@ class StudentProvider with ChangeNotifier {
         _handleStudentFeeUpdate(data);
       });
     } catch (e) {
-      print('❌ 设置实时更新失败: $e');
     }
   }
   
@@ -48,7 +47,6 @@ class StudentProvider with ChangeNotifier {
       app_realtime.RealtimeService.instance.unsubscribeFromFeeItems();
       app_realtime.RealtimeService.instance.unsubscribeFromStudentFees();
     } catch (e) {
-      print('❌ 清理实时更新失败: $e');
     }
   }
   

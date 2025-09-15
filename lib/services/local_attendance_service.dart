@@ -17,7 +17,6 @@ class LocalAttendanceService {
       
       return [];
     } catch (e) {
-      print('Error loading local attendance records: $e');
       return [];
     }
   }
@@ -39,9 +38,7 @@ class LocalAttendanceService {
       final recordsJson = json.encode(existingRecords);
       await prefs.setString(_attendanceKey, recordsJson);
       
-      print('Saved attendance record: ${record['student_name']} - ${record['type']}');
     } catch (e) {
-      print('Error saving attendance record: $e');
     }
   }
   
@@ -103,9 +100,7 @@ class LocalAttendanceService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_attendanceKey);
-      print('Cleared all attendance records');
     } catch (e) {
-      print('Error clearing attendance records: $e');
     }
   }
 }

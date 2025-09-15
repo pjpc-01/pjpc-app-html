@@ -19,7 +19,6 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      print('初始化考勤记录屏幕');
       Provider.of<AttendanceProvider>(context, listen: false).loadAttendanceRecords();
     });
   }
@@ -266,8 +265,6 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
                 }
 
                 final filteredRecords = _getFilteredRecords(attendanceProvider.attendanceRecords);
-                print('考勤记录数量: ${attendanceProvider.attendanceRecords.length}');
-                print('过滤后记录数量: ${filteredRecords.length}');
 
                 if (filteredRecords.isEmpty) {
                   return Center(
@@ -552,7 +549,6 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
   }
 
   void _showEditRecordDialog(dynamic record) {
-    print('显示编辑对话框 - 学生: ${record.getStringValue('student_name')}');
     final studentName = record.getStringValue('student_name') ?? '';
     final type = record.getStringValue('type') ?? '';
     final date = record.getStringValue('date') ?? '';
@@ -664,7 +660,6 @@ class _AttendanceRecordsScreenState extends State<AttendanceRecordsScreen> {
   }
 
   void _showDeleteConfirmDialog(dynamic record) {
-    print('显示删除确认对话框 - 学生: ${record.getStringValue('student_name')}');
     final studentName = record.getStringValue('student_name') ?? '';
     final type = record.getStringValue('type') ?? '';
 

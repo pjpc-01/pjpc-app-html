@@ -151,12 +151,6 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
     final genderValue = student.getStringValue('gender') ?? 'male';
     _selectedGender = genderValue.toLowerCase() == 'female' ? 'female' : 'male';
     
-    // 调试信息
-    print('原始性别值: $genderValue, 转换后: $_selectedGender');
-    print('中心值: $_selectedCenter, 可用中心: $_availableCenters');
-    print('班级值: ${_standardController.text}, 可用班级: $_availableStandards');
-    print('安全中心值: ${_getSafeDropdownValue(_selectedCenter, _availableCenters)}');
-    print('安全班级值: ${_getSafeDropdownValue(_standardController.text, _availableStandards)}');
     
     // 从学号中提取BGT类型
     final studentId = student.getStringValue('student_id') ?? '';

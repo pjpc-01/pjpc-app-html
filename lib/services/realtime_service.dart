@@ -35,7 +35,6 @@ class RealtimeService extends ChangeNotifier {
       
       // 如果已经订阅，直接返回
       if (_subscriptions.containsKey(collection)) {
-        print('✅ 集合 $collection 已订阅，添加监听器');
         return;
       }
       
@@ -43,7 +42,6 @@ class RealtimeService extends ChangeNotifier {
       _createSubscription(collection);
       
     } catch (e) {
-      print('❌ 订阅集合 $collection 失败: $e');
       _handleSubscriptionError(collection, e, autoReconnect);
     }
   }
@@ -53,7 +51,6 @@ class RealtimeService extends ChangeNotifier {
     try {
       // 检查是否已经存在订阅
       if (_subscriptions.containsKey(collection)) {
-        print('✅ 集合 $collection 已存在订阅');
         return;
       }
       
@@ -68,14 +65,11 @@ class RealtimeService extends ChangeNotifier {
         _subscriptions[collection] = subscription as StreamSubscription;
         _isConnected = true;
         _reconnectAttempts = 0;
-        print('✅ 已订阅集合: $collection');
         notifyListeners();
       } catch (e) {
-        print('⚠️ 跳过订阅 $collection：类型转换失败 - $e');
         return;
       }
     } catch (e) {
-      print('❌ 创建订阅失败: $e');
       _handleSubscriptionError(collection, e, true);
     }
   }
@@ -90,11 +84,9 @@ class RealtimeService extends ChangeNotifier {
       // 清除监听器
       _listeners.remove(collection);
       
-      print('✅ 已取消订阅集合: $collection');
       notifyListeners();
       
     } catch (e) {
-      print('❌ 取消订阅集合 $collection 失败: $e');
     }
   }
   
@@ -108,11 +100,9 @@ class RealtimeService extends ChangeNotifier {
       _listeners.clear();
       _isConnected = false;
       
-      print('✅ 已取消所有订阅');
       notifyListeners();
       
     } catch (e) {
-      print('❌ 取消所有订阅失败: $e');
     }
   }
   
@@ -126,10 +116,8 @@ class RealtimeService extends ChangeNotifier {
         }
       }
       
-      print('📡 收到 $collection 实时更新: ${e.action ?? 'unknown'}');
       
     } catch (e) {
-      print('❌ 处理实时更新失败: $e');
     }
   }
   
@@ -141,7 +129,6 @@ class RealtimeService extends ChangeNotifier {
     if (autoReconnect && _reconnectAttempts < _maxReconnectAttempts) {
       _scheduleReconnect(collection);
     } else {
-      print('❌ 订阅 $collection 失败，已达到最大重试次数');
     }
   }
   
@@ -150,7 +137,6 @@ class RealtimeService extends ChangeNotifier {
     _reconnectAttempts++;
     final delay = Duration(seconds: _reconnectAttempts * 2);
     
-    print('🔄 将在 ${delay.inSeconds} 秒后重连 $collection (尝试 $_reconnectAttempts/$_maxReconnectAttempts)');
     
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(delay, () {
@@ -166,7 +152,6 @@ class RealtimeService extends ChangeNotifier {
         subscribeToCollection(collection, listeners.first);
       }
     } catch (e) {
-      print('❌ 重连到 $collection 失败: $e');
     }
   }
   
@@ -242,7 +227,6 @@ class RealtimeService extends ChangeNotifier {
   
   /// 手动重连所有订阅
   Future<void> reconnectAll() async {
-    print('🔄 开始重连所有订阅...');
     
     final collections = _listeners.keys.toList();
     unsubscribeAll();
@@ -254,7 +238,6 @@ class RealtimeService extends ChangeNotifier {
       }
     }
     
-    print('✅ 重连完成');
   }
   
   /// 检查连接状态
@@ -263,7 +246,6 @@ class RealtimeService extends ChangeNotifier {
       // 这里可以添加连接检查逻辑
       return _isConnected;
     } catch (e) {
-      print('❌ 检查连接状态失败: $e');
       return false;
     }
   }

@@ -8,6 +8,8 @@ class AttendanceProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   List<RecordModel> _attendanceRecords = [];
+  List<RecordModel> _teacherAttendanceRecords = [];
+  List<Map<String, dynamic>> _attendanceReports = [];
   Map<String, dynamic> _attendanceStats = {};
 
   AttendanceProvider({PocketBaseService? pocketBaseService}) 
@@ -17,7 +19,104 @@ class AttendanceProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   List<RecordModel> get attendanceRecords => _attendanceRecords;
+  List<RecordModel> get teacherAttendanceRecords => _teacherAttendanceRecords;
+  List<Map<String, dynamic>> get attendanceReports => _attendanceReports;
   Map<String, dynamic> get attendanceStats => _attendanceStats;
+  Map<String, dynamic> get teacherAttendanceStats => _calculateTeacherAttendanceStats();
+
+  // Load teacher attendance records
+  Future<void> loadTeacherAttendanceRecords() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _teacherAttendanceRecords = await _pocketBaseService.getTeacherAttendanceRecords();
+    } catch (e) {
+      _error = '加载教师考勤记录失败: ${e.toString()}';
+      _teacherAttendanceRecords = [];
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Load attendance reports
+  Future<void> loadAttendanceReports({String period = 'week'}) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      // Load both student and teacher attendance records
+      await loadAttendanceRecords();
+      await loadTeacherAttendanceRecords();
+      
+      // Generate reports based on period
+      _generateAttendanceReports(period);
+    } catch (e) {
+      _error = '加载考勤报告失败: ${e.toString()}';
+      _attendanceReports = [];
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Export attendance report
+  Map<String, dynamic> exportAttendanceReport() {
+    return {
+      'student_records': _attendanceRecords.map((r) => r.data).toList(),
+      'teacher_records': _teacherAttendanceRecords.map((r) => r.data).toList(),
+      'reports': _attendanceReports,
+      'stats': _attendanceStats,
+      'export_date': DateTime.now().toIso8601String(),
+    };
+  }
+
+  void _generateAttendanceReports(String period) {
+    _attendanceReports.clear();
+    
+    final now = DateTime.now();
+    DateTime startDate;
+    
+    switch (period) {
+      case 'day':
+        startDate = DateTime(now.year, now.month, now.day);
+        break;
+      case 'week':
+        startDate = now.subtract(Duration(days: now.weekday - 1));
+        break;
+      case 'month':
+        startDate = DateTime(now.year, now.month, 1);
+        break;
+      default:
+        startDate = now.subtract(const Duration(days: 7));
+    }
+    
+    // Generate daily reports
+    for (int i = 0; i < 7; i++) {
+      final date = startDate.add(Duration(days: i));
+      final dayRecords = getAttendanceRecordsByDate(date);
+      final teacherDayRecords = _teacherAttendanceRecords.where((r) {
+        final recordDate = DateTime.tryParse(r.getStringValue('date') ?? '');
+        return recordDate != null && 
+               recordDate.year == date.year &&
+               recordDate.month == date.month &&
+               recordDate.day == date.day;
+      }).toList();
+      
+      _attendanceReports.add({
+        'date': date.toIso8601String().split('T')[0],
+        'student_check_ins': dayRecords.where((r) => r.getStringValue('type') == 'check_in').length,
+        'student_check_outs': dayRecords.where((r) => r.getStringValue('type') == 'check_out').length,
+        'teacher_check_ins': teacherDayRecords.where((r) => r.getStringValue('type') == 'check_in').length,
+        'teacher_check_outs': teacherDayRecords.where((r) => r.getStringValue('type') == 'check_out').length,
+        'late_count': dayRecords.where((r) => r.getStringValue('status') == 'late').length,
+        'absent_count': dayRecords.where((r) => r.getStringValue('status') == 'absent').length,
+      });
+    }
+  }
 
   // Load attendance records
   Future<void> loadAttendanceRecords() async {
@@ -42,8 +141,19 @@ class AttendanceProvider with ChangeNotifier {
     _clearError();
 
     try {
-      final record = await _pocketBaseService.createStudentAttendanceRecord(data);
-      _attendanceRecords.add(record);
+      // 判断是学生还是教师考勤记录
+      if (data.containsKey('student_id') || data.containsKey('student_name')) {
+        // 学生考勤记录
+        final record = await _pocketBaseService.createStudentAttendanceRecord(data);
+        _attendanceRecords.add(record);
+      } else if (data.containsKey('teacher_id') || data.containsKey('teacher_name')) {
+        // 教师考勤记录
+        final record = await _pocketBaseService.createTeacherAttendanceRecord(data);
+        _teacherAttendanceRecords.add(record);
+      } else {
+        throw Exception('无法确定考勤记录类型');
+      }
+      
       notifyListeners();
       return true;
     } catch (e) {
@@ -210,6 +320,46 @@ class AttendanceProvider with ChangeNotifier {
 
   void clearError() {
     _clearError();
+  }
+
+  Map<String, dynamic> _calculateTeacherAttendanceStats() {
+    final today = DateTime.now();
+    final todayRecords = _teacherAttendanceRecords.where((r) {
+      final recordDate = DateTime.tryParse(r.getStringValue('date') ?? '');
+      return recordDate != null && 
+             recordDate.year == today.year &&
+             recordDate.month == today.month &&
+             recordDate.day == today.day;
+    }).toList();
+
+    final thisWeekRecords = _teacherAttendanceRecords.where((r) {
+      final recordDate = DateTime.tryParse(r.getStringValue('date') ?? '');
+      if (recordDate == null) return false;
+      
+      final weekStart = today.subtract(Duration(days: today.weekday - 1));
+      return recordDate.isAfter(weekStart.subtract(const Duration(days: 1))) &&
+             recordDate.isBefore(today.add(const Duration(days: 1)));
+    }).toList();
+
+    final thisMonthRecords = _teacherAttendanceRecords.where((r) {
+      final recordDate = DateTime.tryParse(r.getStringValue('date') ?? '');
+      if (recordDate == null) return false;
+      
+      return recordDate.year == today.year && recordDate.month == today.month;
+    }).toList();
+
+    final checkInToday = todayRecords.where((r) => r.getStringValue('type') == 'check_in').length;
+    final checkOutToday = todayRecords.where((r) => r.getStringValue('type') == 'check_out').length;
+    final checkInThisWeek = thisWeekRecords.where((r) => r.getStringValue('type') == 'check_in').length;
+    final checkInThisMonth = thisMonthRecords.where((r) => r.getStringValue('type') == 'check_in').length;
+
+    return {
+      'today_check_in': checkInToday,
+      'today_check_out': checkOutToday,
+      'this_week_check_in': checkInThisWeek,
+      'this_month_check_in': checkInThisMonth,
+      'total_records': _teacherAttendanceRecords.length,
+    };
   }
 
   // Mark student as late

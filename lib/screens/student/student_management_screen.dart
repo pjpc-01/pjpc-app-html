@@ -122,8 +122,8 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
   Widget _buildSmartHeader() {
     return SliverToBoxAdapter(
       child: Container(
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.all(20),
+        margin: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
@@ -133,12 +133,12 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
               Color(0xFF1D4ED8),
             ],
           ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               color: const Color(0xFF3B82F6).withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -147,18 +147,18 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Icon(
                     Icons.school,
                     color: Colors.white,
-                    size: 28,
+                    size: 32,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 20),
                 const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,7 +166,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
                       Text(
                         '我的学生',
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
@@ -512,19 +512,19 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
 
   Widget _buildSmartSearchAndFilter() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       child: Column(
         children: [
           // 智能搜索框
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
@@ -532,10 +532,10 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: '🔍 搜索学生姓名、学号或班级...',
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF3B82F6)),
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF3B82F6), size: 24),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, color: Color(0xFF64748B)),
+                        icon: const Icon(Icons.clear, color: Color(0xFF64748B), size: 24),
                         onPressed: () {
                           _searchController.clear();
                           setState(() {
@@ -545,7 +545,7 @@ class _StudentManagementScreenState extends State<StudentManagementScreen>
                       )
                     : null,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               ),
               onChanged: (value) {
                 setState(() {

@@ -91,7 +91,6 @@ class _AddEditClassScreenState extends State<AddEditClassScreen> {
         _teachers = teachers;
       });
     } catch (e) {
-      print('加载教师列表失败: $e');
     }
   }
 

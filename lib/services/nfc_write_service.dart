@@ -17,7 +17,6 @@ class NFCWriteService {
     Duration timeout = const Duration(seconds: 10),
   }) async {
     try {
-      print('📝 开始写入文本数据: $text');
       
       // 检查NFC可用性
       final availability = await FlutterNfcKit.nfcAvailability;
@@ -25,7 +24,6 @@ class NFCWriteService {
         return NFCWriteResult.error('NFC不可用，请检查设备设置');
       }
       
-      print('✅ NFC可用，开始写入...');
       
       // 开始扫描NFC卡
       final tag = await FlutterNfcKit.poll(
@@ -34,7 +32,6 @@ class NFCWriteService {
         iosAlertMessage: "将设备靠近NFC标签"
       );
       
-      print('📱 NFC标签检测成功: ${tag.type}');
       
       // 检查标签是否支持NDEF
       if (tag.ndefAvailable != true) {
@@ -52,29 +49,21 @@ class NFCWriteService {
         )
       ]);
       
-      print('✅ NDEF记录写入成功');
       
       // 关闭NFC会话
       await FlutterNfcKit.finish();
-      print('🔒 NFC会话已关闭');
       
       // 添加缓冲时间
-      print('⏳ 等待1.5秒缓冲时间...');
       await Future.delayed(const Duration(milliseconds: 1500));
-      print('✅ 缓冲时间结束');
       
-      print('✅ 文本写入成功: $text');
       return NFCWriteResult.success('文本写入成功: $text');
       
     } catch (e) {
-      print('❌ 文本写入失败: $e');
       
       // 确保NFC会话被正确关闭
       try {
         await FlutterNfcKit.finish();
-        print('🔒 NFC会话已强制关闭');
       } catch (_) {
-        print('⚠️ NFC会话关闭失败');
       }
       
       return NFCWriteResult.error('写入失败: $e');
@@ -87,7 +76,6 @@ class NFCWriteService {
     Duration timeout = const Duration(seconds: 10),
   }) async {
     try {
-      print('👨‍🎓 开始写入学生ID: $studentId');
       
       // 检查NFC可用性
       final availability = await FlutterNfcKit.nfcAvailability;
@@ -95,7 +83,6 @@ class NFCWriteService {
         return NFCWriteResult.error('NFC不可用，请检查设备设置');
       }
       
-      print('✅ NFC可用，开始写入...');
       
       // 开始扫描NFC卡
       final tag = await FlutterNfcKit.poll(
@@ -104,7 +91,6 @@ class NFCWriteService {
         iosAlertMessage: "将设备靠近NFC标签"
       );
       
-      print('📱 NFC标签检测成功: ${tag.type}');
       
       // 检查标签是否支持NDEF
       if (tag.ndefAvailable != true) {
@@ -116,7 +102,6 @@ class NFCWriteService {
       final randomString = _generateRandomString(8);
       final combinedData = '${studentId}_$randomString';
       
-      print('🔐 生成组合数据: $combinedData');
       
       // 使用原始NDEF记录格式写入学生ID+随机字符串
       await FlutterNfcKit.writeNDEFRawRecords([
@@ -128,29 +113,21 @@ class NFCWriteService {
         )
       ]);
       
-      print('✅ 学生ID记录写入成功');
       
       // 关闭NFC会话
       await FlutterNfcKit.finish();
-      print('🔒 NFC会话已关闭');
       
       // 添加缓冲时间
-      print('⏳ 等待1.5秒缓冲时间...');
       await Future.delayed(const Duration(milliseconds: 1500));
-      print('✅ 缓冲时间结束');
       
-      print('✅ 学生ID写入成功: $combinedData');
       return NFCWriteResult.success('学生ID写入成功: $combinedData');
       
     } catch (e) {
-      print('❌ 学生ID写入失败: $e');
       
       // 确保NFC会话被正确关闭
       try {
         await FlutterNfcKit.finish();
-        print('🔒 NFC会话已强制关闭');
       } catch (_) {
-        print('⚠️ NFC会话关闭失败');
       }
       
       return NFCWriteResult.error('写入失败: $e');

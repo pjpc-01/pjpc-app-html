@@ -18,14 +18,12 @@ class AppStateManager {
   void startNfcOperation() {
     _isNfcOperationActive = true;
     _preventAppBackgrounding();
-    print('🔒 NFC操作开始，防止应用后台化');
   }
   
   /// 结束NFC操作
   void endNfcOperation() {
     _isNfcOperationActive = false;
     _stopPreventingBackgrounding();
-    print('🔓 NFC操作结束，恢复正常应用状态');
   }
   
   /// 防止应用进入后台
@@ -108,22 +106,17 @@ class _NFCScanStateManagerState extends State<NFCScanStateManager>
     
     switch (state) {
       case AppLifecycleState.resumed:
-        print('📱 应用恢复前台');
         break;
       case AppLifecycleState.paused:
         if (AppStateManager.instance.isNfcOperationActive) {
-          print('⚠️ NFC操作中，应用被暂停');
           // 可以在这里添加特殊处理
         }
         break;
       case AppLifecycleState.detached:
-        print('📱 应用被分离');
         break;
       case AppLifecycleState.inactive:
-        print('📱 应用变为非活跃状态');
         break;
       case AppLifecycleState.hidden:
-        print('📱 应用被隐藏');
         break;
     }
   }

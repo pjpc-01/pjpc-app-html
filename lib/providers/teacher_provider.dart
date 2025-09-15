@@ -23,6 +23,12 @@ class TeacherProvider with ChangeNotifier {
 
     try {
       _teachers = await _pocketBaseService.getTeachers();
+      
+      // 打印教师详细信息
+      for (int i = 0; i < _teachers.length; i++) {
+        final teacher = _teachers[i];
+      }
+      
       notifyListeners();
     } catch (e) {
       _setError('加载教师数据失败: ${e.toString()}');

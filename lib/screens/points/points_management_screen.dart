@@ -11,8 +11,6 @@ import '../../providers/points_provider.dart';
 import '../../providers/teacher_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../services/pocketbase_service.dart';
-import '../../services/encryption_service.dart';
-import '../../services/security_service.dart';
 import '../../services/nfc_safe_scanner_service.dart';
 import '../../widgets/points/points_nfc_scanner_widget.dart';
 
@@ -35,8 +33,6 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
   late AnimationController _animationController;
   late Animation<double> _pulseAnimation;
   late ScrollController _scrollController;
-  final EncryptionService _encryptionService = EncryptionService();
-  final SecurityService _securityService = SecurityService();
   bool _showScrollToTop = false;
   int _currentPage = 0;
   static const int _itemsPerPage = 10;
@@ -123,26 +119,17 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
           SliverToBoxAdapter(
             child: Column(
               children: [
-                _buildQuickStats(),
-                const SizedBox(height: 16),
-                _buildScanStatusCard(),
-                const SizedBox(height: 16),
-                _buildLastScanCard(),
-                const SizedBox(height: 16),
-                _buildInstructionsCard(),
-                const SizedBox(height: 16),
-                _buildLeaderboardCard(),
-                const SizedBox(height: 16),
                 _buildSearchBar(),
                 const SizedBox(height: 16),
                 _buildStudentList(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 80), // 为浮标按钮留出空间
               ],
             ),
           ),
         ],
       ),
       floatingActionButton: _showScrollToTop ? _buildScrollToTopButton() : _buildSmartFab(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -220,31 +207,6 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                     ],
                   ),
                 ),
-                Consumer<PointsProvider>(
-                  builder: (context, pointsProvider, child) {
-                    final totalTransactions = pointsProvider.pointTransactions.length;
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(25),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Text(
-                        '$totalTransactions 笔交易',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    );
-                  },
-                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -259,32 +221,169 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
     return Row(
       children: [
         Expanded(
-          child: _buildEnterpriseActionButton(
+          child: _buildSimpleActionButton(
             'NFC扫描',
             Icons.nfc,
-            const Color(0xFF3B82F6),
             () => _startStudentScan(),
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 12),
         Expanded(
-          child: _buildEnterpriseActionButton(
+          child: _buildSimpleActionButton(
             '添加积分',
-            Icons.add_circle,
-            const Color(0xFF10B981),
+            Icons.add_circle_outline,
             () => _showCustomPointsDialog('add_points'),
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 12),
         Expanded(
-          child: _buildEnterpriseActionButton(
+          child: _buildSimpleActionButton(
             '积分兑换',
-            Icons.card_giftcard,
-            const Color(0xFF8B5CF6),
+            Icons.card_giftcard_outlined,
             () => _openRedeemDialog(context),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSimpleActionButton(String title, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernActionButton(String title, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: Colors.white,
+              size: 24,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFriendlyActionButton(String title, IconData icon, Color color, String description, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              color.withOpacity(0.15),
+              color.withOpacity(0.08),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: color.withOpacity(0.3),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: TextStyle(
+                color: color,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              description,
+              style: TextStyle(
+                color: color.withOpacity(0.8),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -901,83 +1000,6 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
     }
   }
 
-  Widget _buildInstructionsCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.dividerColor),
-        boxShadow: AppTheme.cardShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.help_outline,
-                color: AppTheme.primaryColor,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '操作指南',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _buildInstructionItem('1', '点击右上角NFC图标扫描学生卡'),
-          _buildInstructionItem('2', '扫描成功后可直接进行积分操作'),
-          _buildInstructionItem('3', '也可以从下方列表选择学生'),
-          _buildInstructionItem('4', '所有操作都需要老师卡验证'),
-          _buildInstructionItem('5', '兑换礼物需要拍照凭证'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInstructionItem(String number, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 20,
-            height: 20,
-            decoration: const BoxDecoration(
-              color: AppTheme.primaryColor,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                number,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-            Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 13),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildSearchBar() {
     return Container(
@@ -1041,18 +1063,8 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                     return _buildEmpty();
                   }
 
-        // 计算分页
-        final totalPages = (students.length / _itemsPerPage).ceil();
-        final startIndex = _currentPage * _itemsPerPage;
-        final endIndex = (startIndex + _itemsPerPage).clamp(0, students.length);
-        final currentStudents = students.sublist(startIndex, endIndex);
-        
-        // 重置页码如果超出范围
-        if (_currentPage >= totalPages && totalPages > 0) {
-          if (mounted) {
-            setState(() => _currentPage = totalPages - 1);
-          }
-        }
+        // 只显示前10个学生，进一步减少页面长度
+        final displayStudents = students.take(10).toList();
 
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -1066,13 +1078,9 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
             children: [
               // 标题栏
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppTheme.primaryColor.withOpacity(0.1), AppTheme.accentColor.withOpacity(0.1)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: AppTheme.primaryColor.withOpacity(0.05),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(16),
                     topRight: Radius.circular(16),
@@ -1080,57 +1088,20 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.people,
-                        color: AppTheme.primaryColor,
-                        size: 20,
+                    Icon(
+                      Icons.people,
+                      color: AppTheme.primaryColor,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '学生列表 (${displayStudents.length})',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '学生列表',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            '共 ${students.length} 名学生',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (totalPages > 1)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '第 ${_currentPage + 1} 页 / 共 $totalPages 页',
-                          style: TextStyle(
-                            color: AppTheme.primaryColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -1139,13 +1110,13 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: currentStudents.length,
+                itemCount: displayStudents.length,
                 separatorBuilder: (_, __) => Divider(
                   height: 1,
                   color: AppTheme.dividerColor.withOpacity(0.5),
                 ),
                     itemBuilder: (context, index) {
-                  final student = currentStudents[index];
+                  final student = displayStudents[index];
                       final name = student.getStringValue('student_name');
                       final studentId = student.getStringValue('student_id');
                       final standard = student.getStringValue('standard');
@@ -1153,7 +1124,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                   final totalPoints = pointsProvider.getTotalPointsForStudent(student.id) ?? 0;
 
                   return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: InkWell(
                         onTap: () {
                           _selectedViaNfc = false;
@@ -1163,18 +1134,18 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                         children: [
                           // 学生头像
                           CircleAvatar(
-                            radius: 20,
+                            radius: 18,
                             backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-                          child: Text(
-                            name.isNotEmpty ? name[0].toUpperCase() : '?',
+                            child: Text(
+                              name.isNotEmpty ? name[0].toUpperCase() : '?',
                               style: const TextStyle(
                                 color: AppTheme.primaryColor,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                                fontSize: 14,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 12),
                           
                           // 学生信息
                           Expanded(
@@ -1184,32 +1155,31 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                                 Text(
                                   name,
                                   style: const TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: AppTheme.textPrimary,
                                   ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 2),
                                 Text(
-                                  '$studentId · $standard · $branch',
+                                  '$studentId · $standard',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     color: AppTheme.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
                           
                           // 积分徽章
                           _buildPointsBadge(totalPoints),
-                          
-                          // 点击箭头
                           const SizedBox(width: 8),
                           Icon(
                             Icons.chevron_right,
-                            color: AppTheme.textSecondary,
-                            size: 20,
+                            color: AppTheme.textSecondary.withOpacity(0.6),
+                            size: 16,
                           ),
                         ],
                       ),
@@ -1217,68 +1187,6 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                   );
                 },
               ),
-              
-              // 分页控件
-              if (totalPages > 1)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.backgroundColor,
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(16),
-                      bottomRight: Radius.circular(16),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // 上一页按钮
-                      TextButton.icon(
-                        onPressed: _currentPage > 0 ? () {
-                          if (mounted) {
-                            setState(() => _currentPage--);
-                          }
-                        } : null,
-                        icon: const Icon(Icons.chevron_left, size: 20),
-                        label: const Text('上一页'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppTheme.primaryColor,
-                        ),
-                      ),
-                      
-                      // 页码指示器
-                      Row(
-                        children: List.generate(totalPages, (index) {
-                          return Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 2),
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: index == _currentPage 
-                                  ? AppTheme.primaryColor 
-                                  : AppTheme.textSecondary.withOpacity(0.3),
-                            ),
-                          );
-                        }),
-                      ),
-                      
-                      // 下一页按钮
-                      TextButton.icon(
-                        onPressed: _currentPage < totalPages - 1 ? () {
-                          if (mounted) {
-                            setState(() => _currentPage++);
-                          }
-                        } : null,
-                        icon: const Icon(Icons.chevron_right, size: 20),
-                        label: const Text('下一页'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppTheme.primaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
             ],
           ),
         );
@@ -1288,30 +1196,31 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
 
   Widget _buildPointsBadge(int points) {
     Color color;
+    
     if (points >= 100) {
-      color = AppTheme.successColor;
+      color = const Color(0xFF10B981); // 绿色
     } else if (points >= 50) {
-      color = AppTheme.accentColor;
+      color = const Color(0xFF3B82F6); // 蓝色
     } else if (points >= 0) {
-      color = AppTheme.primaryColor;
+      color = const Color(0xFF8B5CF6); // 紫色
     } else {
-      color = AppTheme.errorColor;
+      color = const Color(0xFFEF4444); // 红色
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.5)),
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3), width: 0.5),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(points >= 0 ? Icons.add_task : Icons.remove_circle, color: color, size: 16),
-          const SizedBox(width: 6),
-          Text('$points 分', style: TextStyle(color: color, fontWeight: FontWeight.w600)),
-        ],
+      child: Text(
+        '$points',
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+          fontSize: 10,
+        ),
       ),
     );
   }

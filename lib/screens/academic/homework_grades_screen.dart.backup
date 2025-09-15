@@ -1,0 +1,2067 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:pocketbase/pocketbase.dart';
+import '../../providers/student_provider.dart';
+import '../../providers/teacher_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/pocketbase_service.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/common/statistics_card.dart';
+
+class HomeworkGradesScreen extends StatefulWidget {
+  const HomeworkGradesScreen({super.key});
+
+  @override
+  State<HomeworkGradesScreen> createState() => _HomeworkGradesScreenState();
+}
+
+class _HomeworkGradesScreenState extends State<HomeworkGradesScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedClass = '全部班级';
+  String _selectedSubject = '全部科目';
+  
+  // 作业相关状态
+  List<RecordModel> _homeworks = [];
+  List<RecordModel> _grades = [];
+  bool _isLoading = false;
+  String _error = '';
+  
+  // 智能布置作业相关
+  final PocketBaseService _pocketBaseService = PocketBaseService.instance;
+  final _homeworkFormKey = GlobalKey<FormState>();
+  
+  // 获取认证提供者
+  AuthProvider get authProvider => Provider.of<AuthProvider>(context, listen: false);
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _dueDateController = TextEditingController();
+  String _selectedSubjectForHomework = '';
+  String _selectedClassForHomework = '';
+  String _selectedGrade = '';
+  List<String> _selectedStudents = [];
+  String _difficultyLevel = 'medium';
+  bool _isSubmittingHomework = false;
+  List<String> _attachedFiles = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    _loadData();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _searchController.dispose();
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _dueDateController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _error = '';
+    });
+
+    try {
+      // 加载作业和成绩数据
+      await _loadHomeworks();
+      await _loadGrades();
+    } catch (e) {
+      setState(() {
+        _error = '加载数据失败: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadHomeworks() async {
+    try {
+      // 这里应该从PocketBase加载真实的作业数据
+      // 暂时使用空列表
+      _homeworks = [];
+    } catch (e) {
+      throw Exception('加载作业失败: $e');
+    }
+  }
+
+  Future<void> _loadGrades() async {
+    try {
+      // 这里应该从PocketBase加载真实的成绩数据
+      // 暂时使用空列表
+      _grades = [];
+    } catch (e) {
+      throw Exception('加载成绩失败: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenHeight < 700 || screenWidth < 360;
+    
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          _buildModernHeader(isSmallScreen),
+          _buildStatsSection(isSmallScreen),
+          _buildTabBar(isSmallScreen),
+        ],
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildHomeworkTab(),
+            _buildGradesTab(),
+            _buildStatisticsTab(),
+          ],
+        ),
+      ),
+      floatingActionButton: _buildEnterpriseFloatingActionButton(isSmallScreen),
+    );
+  }
+
+  Widget _buildModernHeader(bool isSmallScreen) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+              Color(0xFF3B82F6),
+              Color(0xFF1D4ED8),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF3B82F6).withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+              child: Column(
+                children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.assignment,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _getPageTitle(),
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 20 : 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _getPageSubtitle(),
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 12 : 14,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                ],
+              ),
+            ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _getVersionLabel(),
+                    style: TextStyle(
+                      fontSize: isSmallScreen ? 10 : 12,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildSearchBar(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: '搜索学生、作业或成绩...',
+          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+          prefixIcon: const Icon(Icons.search, color: Color(0xFF3B82F6)),
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.filter_list, color: Color(0xFF3B82F6)),
+            onPressed: _showFilterDialog,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+        ),
+        onChanged: (value) {
+          setState(() {});
+        },
+      ),
+    );
+  }
+
+  Widget _buildStatsSection(bool isSmallScreen) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                '待批改',
+                '${_homeworks.length}',
+                Icons.assignment_turned_in,
+                const Color(0xFFF59E0B),
+                isSmallScreen,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                '已录入',
+                '${_grades.length}',
+                Icons.check_circle,
+                const Color(0xFF10B981),
+                isSmallScreen,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                '平均分',
+                _grades.isNotEmpty ? '85.6' : '--',
+                Icons.trending_up,
+                const Color(0xFF3B82F6),
+                isSmallScreen,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color color, bool isSmallScreen) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: isSmallScreen ? 20 : 24),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: isSmallScreen ? 16 : 20,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF1E293B),
+            ),
+          ),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: isSmallScreen ? 10 : 12,
+              color: const Color(0xFF64748B),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabBar(bool isSmallScreen) {
+    return SliverToBoxAdapter(
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: TabBar(
+          controller: _tabController,
+          labelColor: const Color(0xFF3B82F6),
+          unselectedLabelColor: const Color(0xFF64748B),
+          indicator: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+            ),
+          ),
+          indicatorSize: TabBarIndicatorSize.tab,
+          dividerColor: Colors.transparent,
+          tabs: [
+            Tab(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.assignment, size: 16),
+                  const SizedBox(width: 4),
+                  Text(isSmallScreen ? '作业' : '作业管理'),
+                ],
+              ),
+            ),
+            Tab(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.grade, size: 16),
+                  const SizedBox(width: 4),
+                  Text(isSmallScreen ? '成绩' : '成绩录入'),
+                ],
+              ),
+            ),
+            Tab(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.analytics, size: 16),
+                  const SizedBox(width: 4),
+                  Text(isSmallScreen ? '统计' : '统计分析'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHomeworkTab() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_error.isNotEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.red[300],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _error,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Color(0xFF64748B),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadData,
+              child: const Text('重试'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          if (_homeworks.isEmpty)
+            _buildEmptyState(
+              Icons.assignment_outlined,
+              '暂无作业',
+              '还没有布置任何作业',
+              '点击右下角按钮智能布置作业',
+            )
+          else
+            ..._homeworks.map((homework) => _buildHomeworkCard(homework)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGradesTab() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          if (_grades.isEmpty)
+            _buildEmptyState(
+              Icons.grade_outlined,
+              '暂无成绩',
+              '还没有录入任何成绩',
+              '布置作业后可以录入成绩',
+            )
+          else
+            ..._grades.map((grade) => _buildGradeCard(grade)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatisticsTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildEmptyState(
+            Icons.analytics_outlined,
+            '暂无数据',
+            '还没有足够的数据进行统计',
+            '录入更多成绩后查看统计',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(IconData icon, String title, String subtitle, String hint) {
+    return Container(
+      padding: const EdgeInsets.all(40),
+        child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              icon,
+              size: 64,
+              color: const Color(0xFF3B82F6),
+            ),
+          ),
+          const SizedBox(height: 24),
+            Text(
+            title,
+            style: const TextStyle(
+              fontSize: 24,
+                fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Color(0xFF64748B),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            hint,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF94A3B8),
+            ),
+            textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildHomeworkCard(RecordModel homework) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(20),
+        leading: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF3B82F6).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(
+            Icons.assignment,
+            color: Color(0xFF3B82F6),
+            size: 24,
+          ),
+        ),
+        title: Text(
+          homework.getStringValue('title') ?? '无标题',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E293B),
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
+            Text(
+              homework.getStringValue('description') ?? '',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF64748B),
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    homework.getStringValue('subject') ?? '未知科目',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF10B981),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '截止: ${homework.getStringValue('due_date') ?? '未设置'}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == 'edit') {
+              _editHomework(homework);
+            } else if (value == 'delete') {
+              _deleteHomework(homework.id);
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'edit',
+              child: Row(
+              children: [
+                  Icon(Icons.edit, color: Color(0xFF3B82F6)),
+                  SizedBox(width: 8),
+                  Text('编辑'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'delete',
+              child: Row(
+                children: [
+                  Icon(Icons.delete, color: Color(0xFFEF4444)),
+                  SizedBox(width: 8),
+                  Text('删除'),
+                ],
+                  ),
+                ),
+              ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGradeCard(RecordModel grade) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(20),
+        leading: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF10B981).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(
+            Icons.grade,
+            color: Color(0xFF10B981),
+            size: 24,
+          ),
+        ),
+        title: Text(
+          grade.getStringValue('student_name') ?? '未知学生',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E293B),
+          ),
+        ),
+        subtitle: Text(
+          grade.getStringValue('subject') ?? '未知科目',
+          style: const TextStyle(
+            fontSize: 14,
+            color: Color(0xFF64748B),
+          ),
+        ),
+        trailing: Text(
+          '${grade.getIntValue('score') ?? 0}分',
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E293B),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEnterpriseFloatingActionButton(bool isSmallScreen) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF3B82F6).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: FloatingActionButton.extended(
+        onPressed: () => _showSmartHomeworkDialog(),
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        icon: const Icon(Icons.auto_awesome, size: 20),
+        label: Text(
+          '智能布置',
+          style: TextStyle(
+            fontSize: isSmallScreen ? 14 : 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showSmartHomeworkDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+      shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+      ),
+          title: Row(
+          children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3B82F6).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.auto_awesome,
+                  color: Color(0xFF3B82F6),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text('智能布置作业'),
+            ],
+          ),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.8,
+            child: Form(
+              key: _homeworkFormKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+              children: [
+                    _buildSmartSuggestions(),
+                    const SizedBox(height: 20),
+                    _buildHomeworkForm(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                '取消',
+                style: TextStyle(
+                  color: Color(0xFF64748B),
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: _isSubmittingHomework ? null : _submitHomework,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF3B82F6),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: _isSubmittingHomework
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('布置作业'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSmartSuggestions() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F9FF),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF3B82F6).withOpacity(0.2),
+        ),
+      ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.lightbulb,
+                color: Color(0xFF3B82F6),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                '马来西亚教育智能建议',
+                style: TextStyle(
+                  fontSize: 16,
+                fontWeight: FontWeight.bold,
+                  color: Color(0xFF3B82F6),
+              ),
+            ),
+          ],
+        ),
+          const SizedBox(height: 12),
+          ..._getGradeSpecificSuggestions(),
+        ],
+      ),
+    );
+  }
+
+  // 根据老师身份获取年级选项
+  List<DropdownMenuItem<String>> _getGradeOptions() {
+    if (isPrimaryTeacher) {
+      // 小学老师只能选择小学年级
+      return const [
+        DropdownMenuItem(value: 'std1', child: Text('一年级 (Standard 1)')),
+        DropdownMenuItem(value: 'std2', child: Text('二年级 (Standard 2)')),
+        DropdownMenuItem(value: 'std3', child: Text('三年级 (Standard 3)')),
+        DropdownMenuItem(value: 'std4', child: Text('四年级 (Standard 4)')),
+        DropdownMenuItem(value: 'std5', child: Text('五年级 (Standard 5)')),
+        DropdownMenuItem(value: 'std6', child: Text('六年级 (Standard 6)')),
+      ];
+    } else if (isSecondaryTeacher) {
+      // 中学老师只能选择中学年级
+      return const [
+        DropdownMenuItem(value: 'frm1', child: Text('中一 (Form 1)')),
+        DropdownMenuItem(value: 'frm2', child: Text('中二 (Form 2)')),
+        DropdownMenuItem(value: 'frm3', child: Text('中三 (Form 3)')),
+        DropdownMenuItem(value: 'frm4', child: Text('中四 (Form 4)')),
+        DropdownMenuItem(value: 'frm5', child: Text('中五 (Form 5)')),
+      ];
+    } else {
+      // 默认显示所有年级
+      return const [
+        DropdownMenuItem(value: 'std1', child: Text('一年级 (Standard 1)')),
+        DropdownMenuItem(value: 'std2', child: Text('二年级 (Standard 2)')),
+        DropdownMenuItem(value: 'std3', child: Text('三年级 (Standard 3)')),
+        DropdownMenuItem(value: 'std4', child: Text('四年级 (Standard 4)')),
+        DropdownMenuItem(value: 'std5', child: Text('五年级 (Standard 5)')),
+        DropdownMenuItem(value: 'std6', child: Text('六年级 (Standard 6)')),
+        DropdownMenuItem(value: 'frm1', child: Text('中一 (Form 1)')),
+        DropdownMenuItem(value: 'frm2', child: Text('中二 (Form 2)')),
+        DropdownMenuItem(value: 'frm3', child: Text('中三 (Form 3)')),
+        DropdownMenuItem(value: 'frm4', child: Text('中四 (Form 4)')),
+        DropdownMenuItem(value: 'frm5', child: Text('中五 (Form 5)')),
+      ];
+    }
+  }
+
+  List<Widget> _getGradeSpecificSuggestions() {
+    if (_selectedGrade.isEmpty) {
+      // 默认建议
+      return [
+        _buildSuggestionChip('数学练习', '基础运算与问题解决'),
+        _buildSuggestionChip('马来文阅读', '阅读理解与语法练习'),
+        _buildSuggestionChip('英文词汇', '英语单词记忆与运用'),
+        _buildSuggestionChip('科学实验', '动手实践与观察记录'),
+        _buildSuggestionChip('华文练习', '华文阅读与写作'),
+        _buildSuggestionChip('道德教育', '价值观与品格培养'),
+      ];
+    }
+
+    // 根据年级生成特定建议
+    if (_selectedGrade.startsWith('std')) {
+      // 小学建议
+      return [
+        _buildSuggestionChip('数学基础', '加减乘除运算练习'),
+        _buildSuggestionChip('马来文识字', '基础词汇与拼音练习'),
+        _buildSuggestionChip('英文ABC', '字母与简单单词学习'),
+        _buildSuggestionChip('科学观察', '自然现象观察记录'),
+        _buildSuggestionChip('华文笔画', '汉字书写与认字练习'),
+        _buildSuggestionChip('品德故事', '道德故事与价值观学习'),
+      ];
+    } else if (_selectedGrade.startsWith('frm')) {
+      // 中学建议
+      return [
+        _buildSuggestionChip('数学解题', '代数与几何问题解决'),
+        _buildSuggestionChip('马来文作文', '写作技巧与语法应用'),
+        _buildSuggestionChip('英文阅读', '阅读理解与词汇扩展'),
+        _buildSuggestionChip('科学实验', '物理化学实验报告'),
+        _buildSuggestionChip('华文文学', '现代文学与古典诗词'),
+        _buildSuggestionChip('历史研究', '马来西亚历史与地理'),
+      ];
+    }
+
+    return [];
+  }
+
+  Widget _buildSuggestionChip(String title, String description) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: () {
+          _titleController.text = title;
+          _descriptionController.text = description;
+          _autoSelectSubject(title);
+        },
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: const Color(0xFFE2E8F0),
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.add_circle_outline,
+                color: Color(0xFF3B82F6),
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHomeworkForm() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSmartSuggestions(),
+          const SizedBox(height: 24),
+          _buildFormProgress(),
+          const SizedBox(height: 24),
+          Form(
+            key: _homeworkFormKey,
+            child: Column(
+              children: [
+                _buildSmartFormField(
+                  '作业标题',
+                  '输入作业标题',
+                  Icons.title,
+                  TextFormField(
+                    controller: _titleController,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFF3B82F6)),
+                      ),
+                      hintText: '例如：数学练习第3章',
+                      prefixIcon: Icon(Icons.edit, color: Color(0xFF3B82F6)),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return '请输入作业标题';
+                      }
+                      if (value.length < 3) {
+                        return '标题至少需要3个字符';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _buildSmartFormField(
+                  '作业描述',
+                  '详细描述作业内容',
+                  Icons.description,
+                  TextFormField(
+                    controller: _descriptionController,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFF3B82F6)),
+                      ),
+                      hintText: '请详细描述作业要求和内容...',
+                      prefixIcon: Icon(Icons.article, color: Color(0xFF3B82F6)),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return '请输入作业描述';
+                      }
+                      if (value.length < 10) {
+                        return '描述至少需要10个字符';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _buildGradeSubjectRow(),
+                const SizedBox(height: 20),
+                _buildDueDateFileRow(),
+                const SizedBox(height: 20),
+                _buildDifficultySection(),
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+          _buildActionButtons(),
+        ],
+      ),
+    );
+  }
+                '年级',
+                '选择年级',
+                DropdownButtonFormField<String>(
+                  value: _selectedGrade.isEmpty ? null : _selectedGrade,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF3B82F6)),
+                    ),
+                  ),
+                  hint: const Text('选择年级'),
+                  items: _getGradeOptions(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedGrade = value ?? '';
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '请选择年级';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildFormField(
+                '科目',
+                '选择科目',
+                DropdownButtonFormField<String>(
+                  value: _selectedSubjectForHomework.isEmpty ? null : _selectedSubjectForHomework,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF3B82F6)),
+                    ),
+                  ),
+                  hint: const Text('选择科目'),
+                  items: const [
+                    DropdownMenuItem(value: 'math', child: Text('数学 (Mathematics)')),
+                    DropdownMenuItem(value: 'malay', child: Text('马来文 (Bahasa Melayu)')),
+                    DropdownMenuItem(value: 'english', child: Text('英文 (English)')),
+                    DropdownMenuItem(value: 'chinese', child: Text('华文 (Chinese)')),
+                    DropdownMenuItem(value: 'science', child: Text('科学 (Science)')),
+                    DropdownMenuItem(value: 'moral', child: Text('道德教育 (Moral Education)')),
+                    DropdownMenuItem(value: 'history', child: Text('历史 (History)')),
+                    DropdownMenuItem(value: 'geography', child: Text('地理 (Geography)')),
+                    DropdownMenuItem(value: 'art', child: Text('美术 (Art)')),
+                    DropdownMenuItem(value: 'pe', child: Text('体育 (Physical Education)')),
+                    DropdownMenuItem(value: 'music', child: Text('音乐 (Music)')),
+                    DropdownMenuItem(value: 'ict', child: Text('资讯科技 (ICT)')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedSubjectForHomework = value ?? '';
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '请选择科目';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildFormField(
+                '截止日期',
+                '设置截止日期',
+                TextFormField(
+                  controller: _dueDateController,
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    hintText: '选择截止日期',
+                    border: OutlineInputBorder(),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF3B82F6)),
+                    ),
+                    suffixIcon: Icon(Icons.calendar_today, color: Color(0xFF3B82F6)),
+                  ),
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now().add(const Duration(days: 1)),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 30)),
+                    );
+                    if (date != null) {
+                      _dueDateController.text = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                    }
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '请选择截止日期';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+        children: [
+            Expanded(
+              child: _buildFormField(
+                '难度等级',
+                '选择难度',
+                DropdownButtonFormField<String>(
+                  value: _difficultyLevel,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF3B82F6)),
+                    ),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'easy', child: Text('简单')),
+                    DropdownMenuItem(value: 'medium', child: Text('中等')),
+                    DropdownMenuItem(value: 'hard', child: Text('困难')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _difficultyLevel = value ?? 'medium';
+                    });
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildFileUploadSection(),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // 文件上传区域
+  Widget _buildFileUploadSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '附件上传',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF374151),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: const Color(0xFFE2E8F0),
+              style: BorderStyle.solid,
+            ),
+            borderRadius: BorderRadius.circular(8),
+            color: const Color(0xFFF9FAFB),
+      ),
+      child: Column(
+        children: [
+              Icon(
+                Icons.cloud_upload_outlined,
+                size: 32,
+                color: const Color(0xFF3B82F6).withOpacity(0.6),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '点击上传文件或照片',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF6B7280),
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                '支持 PDF, DOC, DOCX, JPG, PNG 格式',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF9CA3AF),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                  _buildUploadButton(
+                    '照片',
+                    Icons.photo_camera,
+                    () => _uploadFile('image'),
+                  ),
+                  _buildUploadButton(
+                    '文件',
+                    Icons.attach_file,
+                    () => _uploadFile('document'),
+                  ),
+                ],
+                ),
+              ],
+            ),
+          ),
+        if (_attachedFiles.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _buildAttachedFilesList(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildUploadButton(String label, IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF3B82F6),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white, size: 16),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttachedFilesList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '已上传文件',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF374151),
+          ),
+        ),
+        const SizedBox(height: 8),
+        ..._attachedFiles.map((file) => Container(
+          margin: const EdgeInsets.only(bottom: 4),
+          padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                file.contains('.pdf') ? Icons.picture_as_pdf : Icons.image,
+                size: 16,
+                color: const Color(0xFF3B82F6),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+        child: Text(
+                  file,
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ),
+              InkWell(
+                onTap: () => _removeFile(file),
+                child: const Icon(
+                  Icons.close,
+                  size: 16,
+                  color: Color(0xFFEF4444),
+                ),
+              ),
+            ],
+          ),
+        )),
+      ],
+    );
+  }
+
+  void _uploadFile(String type) {
+    // 模拟文件上传
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    String fileName;
+    
+    if (type == 'image') {
+      fileName = 'homework_image_$timestamp.jpg';
+    } else {
+      fileName = 'homework_document_$timestamp.pdf';
+    }
+    
+    setState(() {
+      _attachedFiles.add(fileName);
+    });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('已上传$fileName'),
+        backgroundColor: const Color(0xFF10B981),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _removeFile(String fileName) {
+    setState(() {
+      _attachedFiles.remove(fileName);
+    });
+  }
+
+  // 根据老师身份获取页面标题
+  String _getPageTitle() {
+    if (isPrimaryTeacher) {
+      return '小学作业管理';
+    } else if (isSecondaryTeacher) {
+      return '国中作业管理';
+    } else {
+      return '作业与成绩管理';
+    }
+  }
+
+  // 根据老师身份获取页面副标题
+  String _getPageSubtitle() {
+    if (isPrimaryTeacher) {
+      return '马来西亚小学智能作业系统';
+    } else if (isSecondaryTeacher) {
+      return '马来西亚国中智能作业系统';
+    } else {
+      return '马来西亚小学与国中智能作业系统';
+    }
+  }
+
+  // 根据老师身份获取版本标签
+  String _getVersionLabel() {
+    if (isPrimaryTeacher) {
+      return '小学版';
+    } else if (isSecondaryTeacher) {
+      return '国中版';
+    } else {
+      return '马来西亚版';
+    }
+  }
+
+  // 检测老师是教小学还是中学
+  bool get isPrimaryTeacher {
+    // 根据老师的部门、职位等字段来判断
+    final department = authProvider.userProfile?.getStringValue('department') ?? '';
+    final position = authProvider.userProfile?.getStringValue('position') ?? '';
+    
+    // 判断逻辑：部门或职位包含小学相关关键词
+    final deptLower = department.toLowerCase();
+    final posLower = position.toLowerCase();
+    
+    return deptLower.contains('primary') || 
+           deptLower.contains('小学') ||
+           deptLower.contains('standard') ||
+           posLower.contains('primary') ||
+           posLower.contains('小学') ||
+           posLower.contains('standard');
+  }
+
+  bool get isSecondaryTeacher {
+    return !isPrimaryTeacher;
+  }
+
+  void _autoSelectSubject(String title) {
+    // 根据作业标题自动选择相应的科目
+    if (title.contains('数学') || title.contains('Math')) {
+      _selectedSubjectForHomework = 'math';
+    } else if (title.contains('马来文') || title.contains('Bahasa')) {
+      _selectedSubjectForHomework = 'malay';
+    } else if (title.contains('英文') || title.contains('English')) {
+      _selectedSubjectForHomework = 'english';
+    } else if (title.contains('华文') || title.contains('Chinese')) {
+      _selectedSubjectForHomework = 'chinese';
+    } else if (title.contains('科学') || title.contains('Science')) {
+      _selectedSubjectForHomework = 'science';
+    } else if (title.contains('道德') || title.contains('Moral')) {
+      _selectedSubjectForHomework = 'moral';
+    } else if (title.contains('历史') || title.contains('History')) {
+      _selectedSubjectForHomework = 'history';
+    } else if (title.contains('地理') || title.contains('Geography')) {
+      _selectedSubjectForHomework = 'geography';
+    }
+    
+    setState(() {});
+  }
+
+  // 智能表单进度指示器
+  Widget _buildFormProgress() {
+    int completedFields = 0;
+    int totalFields = 5;
+    
+    if (_titleController.text.isNotEmpty) completedFields++;
+    if (_descriptionController.text.isNotEmpty) completedFields++;
+    if (_selectedGrade.isNotEmpty) completedFields++;
+    if (_selectedSubjectForHomework.isNotEmpty) completedFields++;
+    if (_dueDateController.text.isNotEmpty) completedFields++;
+    
+    double progress = completedFields / totalFields;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.track_changes, color: Color(0xFF3B82F6), size: 20),
+              const SizedBox(width: 8),
+          Text(
+                '表单完成度',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF374151),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${(progress * 100).toInt()}%',
+                style: const TextStyle(
+                  fontSize: 14,
+              fontWeight: FontWeight.bold,
+                  color: Color(0xFF3B82F6),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: progress,
+            backgroundColor: const Color(0xFFE2E8F0),
+            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+            minHeight: 6,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '已完成 $completedFields/$totalFields 个必填字段',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 智能表单字段组件
+  Widget _buildSmartFormField(String title, String subtitle, IconData icon, Widget child) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+          Container(
+                padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+                  color: const Color(0xFF3B82F6).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: const Color(0xFF3B82F6),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF374151),
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF6B7280),
+            ),
+          ),
+        ],
+      ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+
+  // 年级和科目行
+  Widget _buildGradeSubjectRow() {
+    return Row(
+          children: [
+        Expanded(
+          child: _buildSmartFormField(
+            '年级',
+            '选择年级',
+            Icons.school,
+            DropdownButtonFormField<String>(
+              value: _selectedGrade.isEmpty ? null : _selectedGrade,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFF3B82F6)),
+                ),
+                hintText: '选择年级',
+                prefixIcon: Icon(Icons.grade, color: Color(0xFF3B82F6)),
+              ),
+              items: _getGradeOptions(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedGrade = value ?? '';
+                });
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return '请选择年级';
+                }
+                return null;
+              },
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildSmartFormField(
+            '科目',
+            '选择科目',
+            Icons.subject,
+            DropdownButtonFormField<String>(
+              value: _selectedSubjectForHomework.isEmpty ? null : _selectedSubjectForHomework,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFF3B82F6)),
+                ),
+                hintText: '选择科目',
+                prefixIcon: Icon(Icons.book, color: Color(0xFF3B82F6)),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'math', child: Text('数学 (Mathematics)')),
+                DropdownMenuItem(value: 'malay', child: Text('马来文 (Bahasa Melayu)')),
+                DropdownMenuItem(value: 'english', child: Text('英文 (English)')),
+                DropdownMenuItem(value: 'chinese', child: Text('华文 (Chinese)')),
+                DropdownMenuItem(value: 'science', child: Text('科学 (Science)')),
+                DropdownMenuItem(value: 'moral', child: Text('道德教育 (Moral Education)')),
+                DropdownMenuItem(value: 'history', child: Text('历史 (History)')),
+                DropdownMenuItem(value: 'geography', child: Text('地理 (Geography)')),
+                DropdownMenuItem(value: 'art', child: Text('美术 (Art)')),
+                DropdownMenuItem(value: 'pe', child: Text('体育 (Physical Education)')),
+                DropdownMenuItem(value: 'music', child: Text('音乐 (Music)')),
+                DropdownMenuItem(value: 'ict', child: Text('资讯科技 (ICT)')),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedSubjectForHomework = value ?? '';
+                });
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return '请选择科目';
+                }
+                return null;
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 截止日期和文件上传行
+  Widget _buildDueDateFileRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildSmartFormField(
+            '截止日期',
+            '选择截止日期',
+            Icons.calendar_today,
+            TextFormField(
+              controller: _dueDateController,
+              readOnly: true,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Color(0xFF3B82F6)),
+                ),
+                hintText: '选择截止日期',
+                prefixIcon: Icon(Icons.event, color: Color(0xFF3B82F6)),
+                suffixIcon: Icon(Icons.arrow_drop_down, color: Color(0xFF3B82F6)),
+              ),
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now().add(const Duration(days: 1)),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (date != null) {
+                  _dueDateController.text = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                }
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return '请选择截止日期';
+                }
+                return null;
+              },
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildFileUploadSection(),
+        ),
+      ],
+    );
+  }
+
+  // 难度等级部分
+  Widget _buildDifficultySection() {
+    return _buildSmartFormField(
+      '难度等级',
+      '选择作业难度',
+      Icons.speed,
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            _buildDifficultyOption('easy', '简单', Icons.sentiment_very_satisfied, const Color(0xFF10B981)),
+            const SizedBox(width: 12),
+            _buildDifficultyOption('medium', '中等', Icons.sentiment_neutral, const Color(0xFFF59E0B)),
+            const SizedBox(width: 12),
+            _buildDifficultyOption('hard', '困难', Icons.sentiment_very_dissatisfied, const Color(0xFFEF4444)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDifficultyOption(String value, String label, IconData icon, Color color) {
+    final isSelected = _difficultyLevel == value;
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _difficultyLevel = value;
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? color.withOpacity(0.1) : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isSelected ? color : const Color(0xFFE2E8F0),
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? color : const Color(0xFF6B7280),
+                size: 24,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  color: isSelected ? color : const Color(0xFF6B7280),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 操作按钮
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6B7280),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              '取消',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _isSubmittingHomework ? null : _submitHomework,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3B82F6),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: _isSubmittingHomework
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Text(
+                    '布置作业',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFormField(String title, String subtitle, Widget child) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1E293B),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Color(0xFF64748B),
+          ),
+        ),
+        const SizedBox(height: 8),
+        child,
+      ],
+    );
+  }
+
+  Future<void> _submitHomework() async {
+    if (!_homeworkFormKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isSubmittingHomework = true;
+    });
+
+    try {
+      // 这里应该调用PocketBase服务创建作业
+      // 暂时模拟成功
+      await Future.delayed(const Duration(seconds: 2));
+      
+      // 显示成功消息
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('作业布置成功！'),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
+        Navigator.pop(context);
+        
+        // 清空表单
+        _titleController.clear();
+        _descriptionController.clear();
+        _dueDateController.clear();
+        _selectedSubjectForHomework = '';
+        _selectedClassForHomework = '';
+        _selectedGrade = '';
+        _selectedStudents.clear();
+        _difficultyLevel = 'medium';
+        _attachedFiles.clear();
+        
+        // 重新加载数据
+        await _loadData();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('布置失败: $e'),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmittingHomework = false;
+        });
+      }
+    }
+  }
+
+  void _editHomework(RecordModel homework) {
+    // 编辑作业功能
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('编辑功能开发中'),
+        backgroundColor: Color(0xFFF59E0B),
+      ),
+    );
+  }
+
+  void _deleteHomework(String homeworkId) {
+    // 删除作业功能
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('删除功能开发中'),
+        backgroundColor: Color(0xFFF59E0B),
+      ),
+    );
+  }
+
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.filter_list,
+                color: Color(0xFF3B82F6),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text('筛选条件'),
+          ],
+        ),
+        content: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                Icons.construction,
+                size: 48,
+                color: const Color(0xFFF59E0B),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                '功能开发中',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '筛选功能正在开发中，敬请期待！',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF64748B),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              '知道了',
+              style: TextStyle(
+                color: Color(0xFF3B82F6),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

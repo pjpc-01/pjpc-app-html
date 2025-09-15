@@ -3,26 +3,24 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/auth_provider.dart';
 import 'providers/student_provider.dart';
+import 'providers/class_provider.dart';
 import 'providers/finance_provider.dart';
 import 'providers/attendance_provider.dart';
 import 'providers/payment_provider.dart';
 import 'providers/teacher_provider.dart';
 import 'providers/points_provider.dart';
 import 'providers/nfc_card_provider.dart';
+import 'providers/notification_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'services/pocketbase_service.dart';
 import 'services/network_service.dart';
 import 'services/realtime_service.dart';
-import 'services/crash_prevention_service.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize crash prevention service
-  CrashPreventionService.instance.initialize();
   
   // Initialize shared preferences
   final prefs = await SharedPreferences.getInstance();
@@ -51,6 +49,7 @@ class MyApp extends StatelessWidget {
           update: (context, pocketBaseService, previous) => 
               previous ?? StudentProvider(pocketBaseService: pocketBaseService),
         ),
+        ChangeNotifierProvider(create: (_) => ClassProvider()),
         ChangeNotifierProvider(create: (_) => FinanceProvider()),
         ChangeNotifierProxyProvider<PocketBaseService, AttendanceProvider>(
           create: (context) => AttendanceProvider(pocketBaseService: context.read<PocketBaseService>()),
@@ -61,6 +60,11 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TeacherProvider()),
         ChangeNotifierProvider(create: (_) => PointsProvider()),
         ChangeNotifierProvider(create: (_) => NfcCardProvider()),
+        ChangeNotifierProxyProvider<PocketBaseService, NotificationProvider>(
+          create: (context) => NotificationProvider(pocketBaseService: context.read<PocketBaseService>()),
+          update: (context, pocketBaseService, previous) => 
+              previous ?? NotificationProvider(pocketBaseService: pocketBaseService),
+        ),
       ],
       child: Consumer<AuthProvider>(
         builder: (context, authProvider, child) {

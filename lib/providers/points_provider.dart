@@ -157,13 +157,20 @@ class PointsProvider with ChangeNotifier {
 
   // Get total points for student
   int getTotalPointsForStudent(String studentId) {
+    // 优先使用积分汇总
     final summary = _summaryByStudentId[studentId];
     if (summary != null) return summary.getIntValue('current_points');
-    // fallback to local aggregation if summary not loaded
-    final studentPointRecords = _studentPoints.where((p) => p.getStringValue('student') == studentId).toList();
+    
+    // 从积分交易记录中计算当前积分
+    final transactions = _pointTransactions.where((t) => t.getStringValue('student_id') == studentId).toList();
     int total = 0;
-    for (final record in studentPointRecords) {
-      total += record.getIntValue('points');
+    for (final transaction in transactions) {
+      final pointsChange = transaction.getIntValue('points_change') ?? 0;
+      final status = transaction.getStringValue('status');
+      // 只计算已批准的积分变化
+      if (status == 'approved') {
+        total += pointsChange;
+      }
     }
     return total;
   }

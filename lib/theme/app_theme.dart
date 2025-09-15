@@ -21,6 +21,25 @@ class AppTheme {
   static const Color textSecondary = Color(0xFF6B7280);
   static const Color textTertiary = Color(0xFF9CA3AF);
   
+  // 文本样式
+  static const TextStyle headingStyle = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.bold,
+    color: textPrimary,
+  );
+  
+  static const TextStyle bodyStyle = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.normal,
+    color: textSecondary,
+  );
+  
+  static const TextStyle captionStyle = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.normal,
+    color: textTertiary,
+  );
+  
   // 阴影
   static const List<BoxShadow> cardShadow = [
     BoxShadow(
@@ -219,6 +238,7 @@ class AppSpacing {
 
 // 企业级圆角
 class AppRadius {
+  static const double xs = 2.0;
   static const double sm = 4.0;
   static const double md = 8.0;
   static const double lg = 12.0;

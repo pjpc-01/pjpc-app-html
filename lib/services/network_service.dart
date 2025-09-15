@@ -27,17 +27,14 @@ class NetworkService extends ChangeNotifier {
     _subscription = _connectivity.onConnectivityChanged.listen(
       _updateConnectionStatus,
       onError: (error) {
-        print('❌ 网络状态监听错误: $error');
       },
     );
-    print('✅ 网络状态监听已启动');
   }
   
   /// 停止监听网络状态
   void stopListening() {
     _subscription?.cancel();
     _subscription = null;
-    print('✅ 网络状态监听已停止');
   }
   
   /// 更新连接状态
@@ -57,10 +54,8 @@ class NetworkService extends ChangeNotifier {
       notifyListeners();
       
       if (_isConnected) {
-        print('✅ 网络已连接: ${_getConnectionTypeString()}');
         _onConnectionRestored();
       } else {
-        print('❌ 网络已断开');
         _onConnectionLost();
       }
     }
@@ -73,7 +68,6 @@ class NetworkService extends ChangeNotifier {
       _updateConnectionStatus(result);
       return _isConnected;
     } catch (e) {
-      print('❌ 检查网络连接失败: $e');
       return false;
     }
   }

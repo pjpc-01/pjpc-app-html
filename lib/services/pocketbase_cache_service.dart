@@ -53,7 +53,6 @@ class PocketBaseCacheService {
       _queryCache[collection] = queryParams;
     }
     
-    print('✅ 已缓存 $collection 数据: ${data.length} 条记录');
   }
   
   /// 获取缓存数据
@@ -71,7 +70,6 @@ class PocketBaseCacheService {
     _memoryCache.remove(collection);
     _lastUpdate.remove(collection);
     _queryCache.remove(collection);
-    print('✅ 已清除 $collection 缓存');
   }
   
   /// 清除所有缓存
@@ -79,7 +77,6 @@ class PocketBaseCacheService {
     _memoryCache.clear();
     _lastUpdate.clear();
     _queryCache.clear();
-    print('✅ 已清除所有缓存');
   }
   
   /// 获取缓存统计信息
@@ -114,9 +111,7 @@ class PocketBaseCacheService {
         await prefs.setString(key, entry.value.toIso8601String());
       }
       
-      print('✅ 缓存已持久化到本地存储');
     } catch (e) {
-      print('❌ 持久化缓存失败: $e');
     }
   }
   
@@ -125,7 +120,6 @@ class PocketBaseCacheService {
     try {
       // 暂时禁用持久化缓存恢复，避免 RecordModel 创建问题
       // 只使用内存缓存
-      print('⚠️ 持久化缓存恢复已禁用，仅使用内存缓存');
       
       // 清理过期的本地存储缓存
       final prefs = await SharedPreferences.getInstance();
@@ -136,9 +130,7 @@ class PocketBaseCacheService {
         await prefs.remove(timestampKey);
       }
       
-      print('✅ 已清理本地存储缓存');
     } catch (e) {
-      print('❌ 清理本地存储缓存失败: $e');
     }
   }
   
@@ -159,18 +151,15 @@ class PocketBaseCacheService {
     }
     
     if (expiredCollections.isNotEmpty) {
-      print('✅ 已清理过期缓存: ${expiredCollections.join(', ')}');
     }
   }
   
   /// 预加载常用数据
   static Future<void> preloadCommonData() async {
-    print('🔄 开始预加载常用数据...');
     
     // 这里可以添加预加载逻辑
     // 例如：预加载学生列表、费用项目等
     
-    print('✅ 常用数据预加载完成');
   }
   
   /// 检查缓存健康状态

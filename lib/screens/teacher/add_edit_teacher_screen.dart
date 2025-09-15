@@ -339,7 +339,6 @@ class _AddEditTeacherScreenState extends State<AddEditTeacherScreen> {
         }
       }
     } catch (e) {
-      print('自动填充失败: $e');
     } finally {
       _isAutoFilling = false;
     }

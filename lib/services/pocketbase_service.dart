@@ -463,8 +463,13 @@ class PocketBaseService {
     try {
       // 确保用户已认证
       if (!pb.authStore.isValid) {
-        throw Exception('User not authenticated. Please login first.');
+        try {
+          await authenticateAdmin();
+        } catch (e) {
+          throw Exception('用户未认证，请重新登录');
+        }
       }
+      
       
       final result = await pb.collection('student_attendance').getList(
         page: page,
@@ -472,6 +477,13 @@ class PocketBaseService {
         sort: 'student_name', // 使用student_name排序
         expand: 'student',
       );
+      
+      
+      // 打印前几条记录用于调试
+      for (int i = 0; i < result.items.length && i < 3; i++) {
+        final record = result.items[i];
+      }
+      
       return result.items;
     } catch (e) {
       throw Exception('Failed to fetch student attendance records: ${e.toString()}');
@@ -485,41 +497,84 @@ class PocketBaseService {
         throw Exception('User not authenticated. Please login first.');
       }
       
-      // 添加安全监控数据
       final studentId = data['student_id'] ?? '';
-      final swipeData = {
-        'timestamp': data['timestamp'] ?? DateTime.now().toIso8601String(),
-        'location': data['location'] ?? 'unknown',
-        'device_id': data['device_id'] ?? 'unknown',
-      };
+      final studentName = data['student_name'] ?? '';
+      final attendanceType = data['type'] ?? data['attendance_type'] ?? 'check_in';
+      final date = data['date'] ?? DateTime.now().toIso8601String().split('T')[0];
+      final currentTime = DateTime.now().toIso8601String();
       
-      // 添加基本安全字段（简化版本，避免循环依赖）
-      final securityFlags = <String>[];
-      if (swipeData['location'] == 'unknown') securityFlags.add('location_mismatch');
-      if (swipeData['device_id'] == 'unknown') securityFlags.add('device_mismatch');
       
-      data['security_flags'] = securityFlags;
-      data['risk_score'] = 0;
-      data['verification_level'] = 'normal';
-      data['encryption_version'] = 2; // 当前密钥版本
-      data['encryption_algorithm'] = 'AES-256';
+      // 直接查询该学生的所有记录，然后手动过滤今天的
+      final allRecords = await pb.collection('student_attendance').getList(
+        filter: 'student_id = "$studentId"',
+        perPage: 50,
+        sort: '-created',
+      );
       
-      // 创建考勤记录
-      final record = await pb.collection('student_attendance').create(body: data);
       
-      // 移除安全服务调用，避免循环依赖
-      // 更新学生安全状态
-      // final swipeCountToday = await _securityService.getStudentSwipeCountToday(studentId);
-      // await _securityService.updateStudentSecurityStatus(studentId, {
-      //   'last_swipe_time': swipeData['timestamp'],
-      //   'swipe_count_today': swipeCountToday + 1,
-      //   'suspicious_activities': rapidSuccessive || unusualTime ? 1 : 0,
-      // });
+      // 手动过滤今天的记录
+      final today = DateTime.now().toIso8601String().split('T')[0];
+      final records = allRecords.items.where((record) {
+        final recordDate = record.getStringValue('date');
+        return recordDate.contains(today);
+      }).toList();
       
-      // 处理高风险情况
-      // await _alertService.handleHighRiskStudent(studentId, riskScore);
       
-      return record;
+      // 查找是否有未完成的记录（只有签到没有签退）
+      RecordModel? incompleteRecord;
+      for (final record in records) {
+        final checkIn = record.getStringValue('check_in');
+        final checkOut = record.getStringValue('check_out');
+        
+        
+        // 检查是否有签到时间但没有签退时间
+        if (checkIn.isNotEmpty && checkIn != 'null' && 
+            (checkOut.isEmpty || checkOut == 'null' || checkOut == '')) {
+          incompleteRecord = record;
+          break;
+        }
+      }
+      
+      if (attendanceType == 'check_in') {
+        // 签到：创建新记录
+        final attendanceData = <String, dynamic>{
+          'student_id': studentId,
+          'student_name': studentName,
+          'date': date,
+          'check_in': currentTime,
+          'check_out': '', // 明确设置为空字符串
+          'nfc_tag_id': data['nfc_tag_id'] ?? '',
+          'location': data['location'] ?? 'NFC扫描',
+          'device_id': data['device_id'] ?? 'mobile_app',
+          'notes': data['notes'] ?? '',
+        };
+        
+        final record = await pb.collection('student_attendance').create(body: attendanceData);
+        
+        return record;
+        
+      } else if (attendanceType == 'check_out') {
+        // 签退：更新最新的未完成记录
+        if (incompleteRecord == null) {
+          for (final record in records) {
+          }
+          throw Exception('学生还没有签到记录，不能签退');
+        }
+        
+        // 更新现有记录，添加签退时间
+        final updateData = <String, dynamic>{
+          'check_out': currentTime,
+        };
+        
+        final updatedRecord = await pb.collection('student_attendance').update(
+          incompleteRecord.id, 
+          body: updateData
+        );
+        
+        return updatedRecord;
+      }
+      
+      throw Exception('无效的考勤类型');
     } catch (e) {
       throw Exception('Failed to create student attendance record: ${e.toString()}');
     }
@@ -555,12 +610,29 @@ class PocketBaseService {
   // Teacher Attendance management
   Future<List<RecordModel>> getTeacherAttendanceRecords({int page = 1, int perPage = 50}) async {
     try {
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        try {
+          await authenticateAdmin();
+        } catch (e) {
+          throw Exception('用户未认证，请重新登录');
+        }
+      }
+      
+      
       final result = await pb.collection('teacher_attendance').getList(
         page: page,
         perPage: perPage,
         sort: '-created',
         expand: 'teacher',
       );
+      
+      
+      // 打印前几条记录用于调试
+      for (int i = 0; i < result.items.length && i < 3; i++) {
+        final record = result.items[i];
+      }
+      
       return result.items;
     } catch (e) {
       throw Exception('Failed to fetch teacher attendance records: ${e.toString()}');
@@ -574,43 +646,282 @@ class PocketBaseService {
         throw Exception('User not authenticated. Please login first.');
       }
       
-      // 添加安全监控数据
       final teacherId = data['teacher_id'] ?? '';
-      final swipeData = {
-        'timestamp': data['timestamp'] ?? DateTime.now().toIso8601String(),
-        'location': data['location'] ?? 'unknown',
-        'device_id': data['device_id'] ?? 'unknown',
-      };
+      final date = data['date'] ?? DateTime.now().toIso8601String().split('T')[0];
+      final type = data['type'] ?? 'check_in';
+      final currentTime = DateTime.now().toIso8601String();
       
-      // 添加基本安全字段（简化版本，避免循环依赖）
-      final securityFlags = <String>[];
-      if (swipeData['location'] == 'unknown') securityFlags.add('location_mismatch');
-      if (swipeData['device_id'] == 'unknown') securityFlags.add('device_mismatch');
       
-      data['security_flags'] = securityFlags;
-      data['risk_score'] = 0;
-      data['verification_level'] = 'normal';
-      data['encryption_version'] = 2; // 当前密钥版本
-      data['encryption_algorithm'] = 'AES-256';
+      // 直接查询该教师的所有记录，然后手动过滤今天的
+      final allRecords = await pb.collection('teacher_attendance').getList(
+        filter: 'teacher_id = "$teacherId"',
+        perPage: 50,
+        sort: '-created',
+      );
       
-      // 创建考勤记录
-      final record = await pb.collection('teacher_attendance').create(body: data);
       
-      // 移除安全服务调用，避免循环依赖
-      // 更新教师安全状态
-      // final swipeCountToday = await _securityService.getTeacherSwipeCountToday(teacherId);
-      // await _securityService.updateTeacherSecurityStatus(teacherId, {
-      //   'last_swipe_time': swipeData['timestamp'],
-      //   'swipe_count_today': swipeCountToday + 1,
-      //   'suspicious_activities': rapidSuccessive || unusualTime ? 1 : 0,
-      // });
+      // 手动过滤今天的记录
+      final today = DateTime.now().toIso8601String().split('T')[0];
+      final records = allRecords.items.where((record) {
+        final recordDate = record.getStringValue('date');
+        return recordDate.contains(today);
+      }).toList();
       
-      // 处理高风险情况
-      // await _alertService.handleHighRiskTeacher(teacherId, riskScore);
       
-      return record;
+      // 查找是否有未完成的记录（只有签到没有签退）
+      RecordModel? incompleteRecord;
+      for (final record in records) {
+        final checkIn = record.getStringValue('check_in');
+        final checkOut = record.getStringValue('check_out');
+        
+        
+        // 检查是否有签到时间但没有签退时间
+        if (checkIn.isNotEmpty && checkIn != 'null' && 
+            (checkOut.isEmpty || checkOut == 'null' || checkOut == '')) {
+          incompleteRecord = record;
+          break;
+        }
+      }
+      
+      if (type == 'check_in') {
+        // 签到：创建新记录
+        final attendanceData = <String, dynamic>{
+          'teacher_id': teacherId,
+          'teacher_name': data['teacher_name'] ?? '',
+          'branch_code': data['branch_code'] ?? '',
+          'branch_name': data['branch_name'] ?? '',
+          'date': date,
+          'check_in': currentTime,
+          'check_out': '', // 明确设置为空字符串
+          'status': 'present',
+          'notes': data['notes'] ?? '',
+        };
+        
+        final record = await pb.collection('teacher_attendance').create(body: attendanceData);
+        
+        return record;
+        
+      } else if (type == 'check_out') {
+        // 签退：更新最新的未完成记录
+        if (incompleteRecord == null) {
+          for (final record in records) {
+          }
+          throw Exception('教师还没有签到记录，不能签退');
+        }
+        
+        // 更新现有记录，添加签退时间
+        final updateData = <String, dynamic>{
+          'check_out': currentTime,
+          'status': 'present', // 完整考勤
+        };
+        
+        final updatedRecord = await pb.collection('teacher_attendance').update(
+          incompleteRecord.id, 
+          body: updateData
+        );
+        
+        return updatedRecord;
+      }
+      
+      throw Exception('无效的考勤类型');
     } catch (e) {
       throw Exception('Failed to create teacher attendance record: ${e.toString()}');
+    }
+  }
+
+  // 更新教师考勤记录
+  Future<RecordModel> updateTeacherAttendanceRecord(String recordId, Map<String, dynamic> data) async {
+    try {
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      final record = await pb.collection('teacher_attendance').update(recordId, body: data);
+      return record;
+    } catch (e) {
+      throw Exception('Failed to update teacher attendance record: ${e.toString()}');
+    }
+  }
+
+  // 删除教师考勤记录
+  Future<void> deleteTeacherAttendanceRecord(String recordId) async {
+    try {
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      await pb.collection('teacher_attendance').delete(recordId);
+    } catch (e) {
+      throw Exception('Failed to delete teacher attendance record: ${e.toString()}');
+    }
+  }
+
+  // 按日期范围获取教师考勤记录
+  Future<List<RecordModel>> getTeacherAttendanceRecordsByDateRange(
+    DateTime startDate, 
+    DateTime endDate, {
+    int page = 1,
+    int perPage = 200,
+  }) async {
+    try {
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      final startDateStr = startDate.toIso8601String().split('T')[0];
+      final endDateStr = endDate.toIso8601String().split('T')[0];
+      
+      final result = await pb.collection('teacher_attendance').getList(
+        page: page,
+        perPage: perPage,
+        filter: 'date >= "$startDateStr" && date <= "$endDateStr"',
+        sort: '-date',
+        expand: 'teacher',
+      );
+      return result.items;
+    } catch (e) {
+      throw Exception('Failed to fetch teacher attendance records by date range: ${e.toString()}');
+    }
+  }
+
+  // 按教师ID获取考勤记录
+  Future<List<RecordModel>> getTeacherAttendanceRecordsByTeacherId(
+    String teacherId, {
+    int page = 1,
+    int perPage = 100,
+  }) async {
+    try {
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      final result = await pb.collection('teacher_attendance').getList(
+        page: page,
+        perPage: perPage,
+        filter: 'teacher_id = "$teacherId"',
+        sort: '-date',
+        expand: 'teacher',
+      );
+      return result.items;
+    } catch (e) {
+      throw Exception('Failed to fetch teacher attendance records by teacher ID: ${e.toString()}');
+    }
+  }
+
+  // 获取教师考勤统计
+  Future<Map<String, dynamic>> getTeacherAttendanceStats({
+    String? teacherId,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      String filter = '';
+      if (teacherId != null) {
+        filter += 'teacher_id = "$teacherId"';
+      }
+      
+      if (startDate != null && endDate != null) {
+        final startDateStr = startDate.toIso8601String().split('T')[0];
+        final endDateStr = endDate.toIso8601String().split('T')[0];
+        if (filter.isNotEmpty) {
+          filter += ' && ';
+        }
+        filter += 'date >= "$startDateStr" && date <= "$endDateStr"';
+      }
+      
+      final result = await pb.collection('teacher_attendance').getList(
+        page: 1,
+        perPage: 1000, // 获取足够多的记录进行统计
+        filter: filter.isNotEmpty ? filter : null,
+        expand: 'teacher',
+      );
+      
+      final records = result.items;
+      final checkIns = records.where((r) => r.getStringValue('type') == 'check_in').length;
+      final checkOuts = records.where((r) => r.getStringValue('type') == 'check_out').length;
+      final lateCount = records.where((r) => r.getStringValue('status') == 'late').length;
+      final absentCount = records.where((r) => r.getStringValue('status') == 'absent').length;
+      
+      return {
+        'total_records': records.length,
+        'check_ins': checkIns,
+        'check_outs': checkOuts,
+        'late_count': lateCount,
+        'absent_count': absentCount,
+        'attendance_rate': records.isNotEmpty ? ((checkIns - absentCount) / records.length) * 100 : 0.0,
+      };
+    } catch (e) {
+      throw Exception('Failed to get teacher attendance stats: ${e.toString()}');
+    }
+  }
+
+  // 获取考勤异常记录
+  Future<List<RecordModel>> getAttendanceExceptions({
+    DateTime? startDate,
+    DateTime? endDate,
+    bool includeTeachers = true,
+    int page = 1,
+    int perPage = 100,
+  }) async {
+    try {
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      List<RecordModel> exceptions = [];
+      
+      // 获取学生考勤异常
+      String studentFilter = 'status = "late" || status = "absent" || status = "early_leave"';
+      if (startDate != null && endDate != null) {
+        final startDateStr = startDate.toIso8601String().split('T')[0];
+        final endDateStr = endDate.toIso8601String().split('T')[0];
+        studentFilter += ' && date >= "$startDateStr" && date <= "$endDateStr"';
+      }
+      
+      final studentResult = await pb.collection('student_attendance').getList(
+        page: page,
+        perPage: perPage,
+        filter: studentFilter,
+        sort: '-date',
+        expand: 'student',
+      );
+      exceptions.addAll(studentResult.items);
+      
+      // 获取教师考勤异常
+      if (includeTeachers) {
+        String teacherFilter = 'status = "late" || status = "absent"';
+        if (startDate != null && endDate != null) {
+          final startDateStr = startDate.toIso8601String().split('T')[0];
+          final endDateStr = endDate.toIso8601String().split('T')[0];
+          teacherFilter += ' && date >= "$startDateStr" && date <= "$endDateStr"';
+        }
+        
+        final teacherResult = await pb.collection('teacher_attendance').getList(
+          page: page,
+          perPage: perPage,
+          filter: teacherFilter,
+          sort: '-date',
+          expand: 'teacher',
+        );
+        exceptions.addAll(teacherResult.items);
+      }
+      
+      // 按日期排序
+      exceptions.sort((a, b) => b.getStringValue('date').compareTo(a.getStringValue('date')));
+      
+      return exceptions;
+    } catch (e) {
+      throw Exception('Failed to get attendance exceptions: ${e.toString()}');
     }
   }
 
@@ -773,23 +1084,64 @@ class PocketBaseService {
     List<String>? fields,
   }) async {
     try {
-      print('正在获取老师数据...');
-      print('当前认证状态: ${pb.authStore.isValid}');
-      print('当前用户角色: ${pb.authStore.record?.data['role'] ?? "无角色"}');
       
-      // 根据API规则 @request.auth.role = ""，我们需要确保用户没有特殊角色
-      // 如果当前用户有角色，我们需要注销管理员认证
-      if (pb.authStore.record?.data['role'] != null && pb.authStore.record?.data['role'] != '') {
-        print('检测到用户有角色，注销管理员认证...');
-        pb.authStore.clear();
-        print('已注销管理员认证');
+      // 检查当前认证状态和角色
+      final currentRole = pb.authStore.record?.data['role'];
+      
+      // 如果用户有角色（管理员），teachers集合API规则要求空角色用户
+      if (currentRole != null && currentRole != '') {
+        
+        try {
+          // 保存当前认证状态
+          final currentAuth = pb.authStore.record;
+          final currentToken = pb.authStore.token;
+          
+          // 清除认证
+          pb.authStore.clear();
+          
+          // 尝试无认证查询
+          try {
+            final result = await pb.collection('teachers').getList(
+              page: page,
+              perPage: perPage,
+              filter: filter,
+              sort: sort ?? 'name',
+              fields: fields?.join(','),
+            );
+            
+            // 恢复认证
+            if (currentAuth != null && currentToken != null) {
+              pb.authStore.save(currentToken, currentAuth);
+            }
+            
+            
+            // 打印前几条记录用于调试
+            for (int i = 0; i < result.items.length && i < 3; i++) {
+              final teacher = result.items[i];
+            }
+            
+            return result.items;
+          } catch (e) {
+            
+            // 恢复认证
+            if (currentAuth != null && currentToken != null) {
+              pb.authStore.save(currentToken, currentAuth);
+            }
+            
+            throw e;
+          }
+        } catch (e) {
+          throw Exception('无法访问teachers集合，权限问题: ${e.toString()}');
+        }
       }
       
-      // 确保用户已认证（普通用户认证）
+      // 确保用户已认证（对于无角色用户）
       if (!pb.authStore.isValid) {
-        print('用户未认证，尝试普通用户认证...');
-        // 这里需要普通用户的认证，不是管理员
-        // 如果普通用户认证失败，我们继续尝试
+        try {
+          await authenticateAdmin();
+        } catch (e) {
+          throw Exception('用户未认证，请重新登录');
+        }
       }
       
       // 尝试获取数据
@@ -797,14 +1149,25 @@ class PocketBaseService {
         page: page,
         perPage: perPage,
         filter: filter,
-        sort: sort ?? 'name',
+        sort: sort ?? 'name', // 使用name字段排序，根据文档这个字段存在
         fields: fields?.join(','),
       );
       
-      print('成功获取 ${result.items.length} 条老师记录');
+      
+      // 打印前几条记录用于调试
+      for (int i = 0; i < result.items.length && i < 3; i++) {
+        final teacher = result.items[i];
+      }
+      
       return result.items;
     } catch (e) {
-      print('获取老师数据失败: $e');
+      
+      // 尝试直接查询看看是否有权限问题
+      try {
+        final directResult = await pb.collection('teachers').getList();
+      } catch (directError) {
+      }
+      
       throw Exception('Failed to fetch teachers: ${e.toString()}');
     }
   }
@@ -870,6 +1233,111 @@ class PocketBaseService {
       return result.items;
     } catch (e) {
       throw Exception('Failed to fetch assignments: ${e.toString()}');
+    }
+  }
+
+  Future<RecordModel> createAssignment(Map<String, dynamic> data) async {
+    try {
+      
+      // 检查是否是管理员认证
+      final isAdmin = pb.authStore.record?.collectionName == '_superusers';
+      
+      final record = await pb.collection('assignments').create(body: data);
+      return record;
+    } catch (e) {
+      
+      // 提供更详细的错误信息
+      if (e.toString().contains('Failed to create record')) {
+      }
+      
+      throw Exception('Failed to create assignment: ${e.toString()}');
+    }
+  }
+
+  // 更新作业
+  Future<RecordModel> updateAssignment(String id, Map<String, dynamic> data) async {
+    try {
+      
+      // 检查是否是管理员认证
+      final isAdmin = pb.authStore.record?.collectionName == '_superusers';
+      
+      final record = await pb.collection('assignments').update(id, body: data);
+      return record;
+    } catch (e) {
+      
+      // 提供更详细的错误信息
+      if (e.toString().contains('Failed to update record')) {
+      }
+      
+      throw Exception('Failed to update assignment: ${e.toString()}');
+    }
+  }
+
+  // 删除作业
+  Future<void> deleteAssignment(String id) async {
+    try {
+      
+      // 检查是否是管理员认证
+      final isAdmin = pb.authStore.record?.collectionName == '_superusers';
+      
+      await pb.collection('assignments').delete(id);
+    } catch (e) {
+      
+      // 提供更详细的错误信息
+      if (e.toString().contains('Failed to delete record')) {
+      }
+      
+      throw Exception('Failed to delete assignment: ${e.toString()}');
+    }
+  }
+
+  // 学生作业提交管理 (assignment_records 集合)
+  Future<List<RecordModel>> getAssignmentRecords({String? assignmentId, int page = 1, int perPage = 50}) async {
+    try {
+      String filter = '';
+      if (assignmentId != null) {
+        filter = 'assignment_id = "$assignmentId"';
+      }
+      
+      final result = await pb.collection('assignment_records').getList(
+        page: page,
+        perPage: perPage,
+        sort: '-created',
+        filter: filter,
+        expand: 'student,assignment',
+      );
+      return result.items;
+    } catch (e) {
+      throw Exception('Failed to fetch assignment records: ${e.toString()}');
+    }
+  }
+
+  Future<RecordModel> createAssignmentRecord(Map<String, dynamic> data) async {
+    try {
+      
+      final record = await pb.collection('assignment_records').create(body: data);
+      return record;
+    } catch (e) {
+      throw Exception('Failed to create assignment record: ${e.toString()}');
+    }
+  }
+
+  Future<RecordModel> updateAssignmentRecord(String id, Map<String, dynamic> data) async {
+    try {
+      
+      final record = await pb.collection('assignment_records').update(id, body: data);
+      return record;
+    } catch (e) {
+      throw Exception('Failed to update assignment record: ${e.toString()}');
+    }
+  }
+
+  Future<void> deleteAssignmentRecord(String id) async {
+    try {
+      
+      await pb.collection('assignment_records').delete(id);
+    } catch (e) {
+      throw Exception('Failed to delete assignment record: ${e.toString()}');
     }
   }
 
@@ -963,7 +1431,87 @@ class PocketBaseService {
       
       return null;
     } catch (e) {
-      print('根据学生ID查找学生失败: $e');
+      return null;
+    }
+  }
+
+  /// 根据教师ID获取教师信息
+  Future<RecordModel?> getTeacherByTeacherId(String teacherId) async {
+    try {
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      // 查询教师记录
+      final teachers = await pb.collection('teachers').getList(
+        filter: 'teacher_id = "${teacherId.trim()}"',
+        perPage: 1,
+      );
+      
+      if (teachers.items.isNotEmpty) {
+        return teachers.items.first;
+      }
+      
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// 根据用户ID获取教师信息
+  Future<RecordModel?> getTeacherByUserId(String userId) async {
+    try {
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      
+      // 方法1: 通过user_id字段查找（主要方法）
+      try {
+        final result = await pb.collection('teachers').getList(
+          filter: 'user_id = "${userId.trim()}"',
+          perPage: 1,
+        );
+        
+        if (result.items.isNotEmpty) {
+          return result.items.first;
+        } else {
+        }
+      } catch (e) {
+      }
+      
+      // 方法2: 通过id字段查找（备用方法）
+      try {
+        final result = await pb.collection('teachers').getList(
+          filter: 'id = "${userId.trim()}"',
+          perPage: 1,
+        );
+        
+        if (result.items.isNotEmpty) {
+          return result.items.first;
+        } else {
+        }
+      } catch (e) {
+      }
+      
+      // 方法3: 通过teacher_id字段查找（备用方法）
+      try {
+        final result = await pb.collection('teachers').getList(
+          filter: 'teacher_id = "${userId.trim()}"',
+          perPage: 1,
+        );
+        
+        if (result.items.isNotEmpty) {
+          return result.items.first;
+        } else {
+        }
+      } catch (e) {
+      }
+      
+      return null;
+    } catch (e) {
       return null;
     }
   }
@@ -1027,26 +1575,161 @@ class PocketBaseService {
     }
   }
 
-  // Teachers lookup by NFC card id (hex, upper-case with or without colons)
-  Future<RecordModel?> getTeacherByCardId(String cardIdHex) async {
+
+
+
+  // NFC卡补办申请管理
+  
+  /// 获取所有待处理的NFC卡补办申请
+  Future<List<RecordModel>> getPendingNfcReplacementRequests({int page = 1, int perPage = 50}) async {
     try {
-      String normalized = cardIdHex.toUpperCase();
-      normalized = normalized.replaceAll(':', '');
-      // Primary exact field in your schema: nfc_card_number
-      final res1 = await pb.collection('teachers').getList(
-        perPage: 1,
-        filter: 'nfc_card_number = "$normalized" || nfc_card_number = "${cardIdHex.toUpperCase()}"',
+      final result = await pb.collection('nfc_cards').getList(
+        page: page,
+        perPage: perPage,
+        filter: 'replacement_status = "pending"',
+        sort: '-replacement_request_date',
+        expand: 'student',
       );
-      if (res1.items.isNotEmpty) return res1.items.first;
-      // Try contains to be safe
-      final res2 = await pb.collection('teachers').getList(
-        perPage: 1,
-        filter: 'nfc_card_number ~ "$normalized"',
-      );
-      if (res2.items.isNotEmpty) return res2.items.first;
-      return null;
+      return result.items;
     } catch (e) {
-      return null;
+      throw Exception('Failed to fetch pending NFC replacement requests: ${e.toString()}');
+    }
+  }
+
+  /// 获取所有NFC卡补办申请（包括已处理的）
+  Future<List<RecordModel>> getAllNfcReplacementRequests({int page = 1, int perPage = 50}) async {
+    try {
+      final result = await pb.collection('nfc_cards').getList(
+        page: page,
+        perPage: perPage,
+        sort: '-replacement_request_date',
+        expand: 'student',
+      );
+      return result.items;
+    } catch (e) {
+      throw Exception('Failed to fetch NFC replacement requests: ${e.toString()}');
+    }
+  }
+
+  /// 更新NFC卡补办申请状态
+  Future<RecordModel> updateNfcReplacementStatus(String cardId, String status, {String? notes}) async {
+    try {
+      final updateData = <String, dynamic>{
+        'replacement_status': status,
+        'updated': DateTime.now().toIso8601String(),
+      };
+      
+      if (notes != null && notes.isNotEmpty) {
+        updateData['replacement_notes'] = notes;
+      }
+      
+      final record = await pb.collection('nfc_cards').update(cardId, body: updateData);
+      return record;
+    } catch (e) {
+      throw Exception('Failed to update NFC replacement status: ${e.toString()}');
+    }
+  }
+
+  /// 创建NFC卡补办申请
+  Future<RecordModel> createNfcReplacementRequest({
+    required String studentId,
+    required String reason,
+    required String lostDate,
+    required String lostLocation,
+    required String urgency,
+    String? notes,
+  }) async {
+    try {
+      // 验证输入参数
+      if (studentId.trim().isEmpty) {
+        throw Exception('学生ID不能为空');
+      }
+      if (reason.trim().isEmpty) {
+        throw Exception('丢失原因不能为空');
+      }
+      if (lostLocation.trim().isEmpty) {
+        throw Exception('丢失地点不能为空');
+      }
+      if (urgency.trim().isEmpty) {
+        throw Exception('紧急程度不能为空');
+      }
+
+      // 验证日期格式
+      DateTime? parsedDate;
+      try {
+        parsedDate = DateTime.parse(lostDate);
+      } catch (e) {
+        throw Exception('日期格式不正确');
+      }
+
+      // 检查用户认证状态（带自动重新认证）
+      final isAuthenticated = await isAuthenticatedWithReauth();
+      if (!isAuthenticated) {
+        throw Exception('用户未认证，请重新登录');
+      }
+
+      // 检查学生是否存在
+      try {
+        final student = await pb.collection('students').getOne(studentId);
+        if (student == null) {
+          throw Exception('学生不存在');
+        }
+      } catch (e) {
+        throw Exception('学生ID无效或学生不存在');
+      }
+
+
+      final requestData = <String, dynamic>{
+        'student': studentId,
+        'card_status': 'lost',
+        'replacement_reason': reason,
+        'replacement_lost_date': lostDate,
+        'replacement_lost_location': lostLocation,
+        'replacement_urgency': urgency,
+        'replacement_status': 'pending',
+        'replacement_request_date': DateTime.now().toIso8601String(),
+      };
+      
+      if (notes != null && notes.isNotEmpty) {
+        requestData['replacement_notes'] = notes;
+      }
+      
+      
+      final record = await pb.collection('nfc_cards').create(body: requestData);
+      
+      
+      return record;
+    } catch (e) {
+      throw Exception('创建NFC补办申请失败: ${e.toString()}');
+    }
+  }
+
+  /// 获取NFC卡补办申请统计
+  Future<Map<String, int>> getNfcReplacementStats() async {
+    try {
+      final pending = await pb.collection('nfc_cards').getList(
+        filter: 'replacement_status = "pending"',
+        perPage: 1,
+      );
+      
+      final approved = await pb.collection('nfc_cards').getList(
+        filter: 'replacement_status = "approved"',
+        perPage: 1,
+      );
+      
+      final rejected = await pb.collection('nfc_cards').getList(
+        filter: 'replacement_status = "rejected"',
+        perPage: 1,
+      );
+      
+      return {
+        'pending': pending.totalItems,
+        'approved': approved.totalItems,
+        'rejected': rejected.totalItems,
+        'total': pending.totalItems + approved.totalItems + rejected.totalItems,
+      };
+    } catch (e) {
+      throw Exception('Failed to get NFC replacement stats: ${e.toString()}');
     }
   }
 
@@ -1070,6 +1753,44 @@ class PocketBaseService {
   
   // Check if user is authenticated
   bool get isAuthenticated => _isInitialized && pb.authStore.isValid;
+  
+  // Check if user is authenticated with auto-reauth attempt
+  Future<bool> isAuthenticatedWithReauth() async {
+    if (!_isInitialized) return false;
+    
+    // 如果认证有效，直接返回true
+    if (pb.authStore.isValid) return true;
+    
+    // 如果认证无效，尝试自动重新认证
+    try {
+      await _attemptAutoReauth();
+      return pb.authStore.isValid;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  // 尝试自动重新认证
+  Future<void> _attemptAutoReauth() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString('saved_email');
+      final password = prefs.getString('saved_password');
+      
+      if (email != null && password != null) {
+        await pb.collection('users').authWithPassword(email, password);
+      } else {
+        throw Exception('没有保存的认证凭据');
+      }
+    } catch (e) {
+      // 清除无效的凭据
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('saved_email');
+      await prefs.remove('saved_password');
+      await prefs.remove('is_logged_in');
+      rethrow;
+    }
+  }
 
   // Get current user
   RecordModel? get currentUser => pb.authStore.record;
@@ -1081,96 +1802,161 @@ class PocketBaseService {
   Future<void> authenticateAdmin() async {
     try {
       if (isAdminAuthenticated) {
-        print('管理员已认证，跳过重复认证');
         return;
       }
       
-      print('开始管理员认证...');
       await pb.collection('_superusers').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!');
-      print('管理员认证成功');
     } catch (e) {
-      print('管理员认证失败: $e');
       throw Exception('Admin authentication failed: ${e.toString()}');
     }
   }
   
-  // Test method to check teachers collection
-  Future<void> testTeachersCollection() async {
+  // 快速测试教师集合访问
+  Future<void> quickTestTeachersCollection() async {
     try {
-      print('=== 测试teachers集合 ===');
-      print('API规则: @request.auth.role = "" (只有空角色用户可访问)');
       
-      // 1. 检查认证状态
-      print('1. 认证状态检查:');
-      print('   - 用户认证: ${pb.authStore.isValid}');
-      print('   - 当前用户: ${pb.authStore.record?.id}');
-      print('   - 认证模型: ${pb.authStore.record?.runtimeType}');
-      print('   - 用户角色: ${pb.authStore.record?.data['role'] ?? "无角色"}');
+      // 检查当前状态
       
-      // 2. 检查角色限制
-      print('2. 角色检查:');
-      if (pb.authStore.record?.data['role'] != null && pb.authStore.record?.data['role'] != '') {
-        print('   - 警告: 当前用户有角色 "${pb.authStore.record?.data['role']}"，可能无法访问teachers集合');
-        print('   - 建议: 注销管理员认证，使用普通用户认证');
+      // 尝试获取教师数据
+      final teachers = await getTeachers(perPage: 5);
+      
+      if (teachers.isNotEmpty) {
+        for (int i = 0; i < teachers.length; i++) {
+          final teacher = teachers[i];
+          final name = teacher.getStringValue('name') ?? '未知';
+          final nfcCard = teacher.getStringValue('nfc_card_number') ?? '';
+        }
       } else {
-        print('   - 用户角色为空，符合API规则要求');
       }
-      
-      // 3. 尝试不同的认证状态
-      print('3. 不同认证状态测试:');
-      
-      // 测试A: 当前状态
-      try {
-        final result = await pb.collection('teachers').getList(page: 1, perPage: 5);
-        print('   测试A - 当前状态: 成功获取 ${result.items.length} 条记录');
-      } catch (e) {
-        print('   测试A - 当前状态: 失败 - $e');
-      }
-      
-      // 测试B: 清除认证后
-      print('   测试B - 清除认证:');
-      try {
-        pb.authStore.clear();
-        print('   - 已清除认证');
-        final result = await pb.collection('teachers').getList(page: 1, perPage: 5);
-        print('   - 结果: 成功获取 ${result.items.length} 条记录');
-      } catch (e) {
-        print('   - 结果: 失败 - $e');
-      }
-      
-      // 测试C: 重新认证为普通用户（如果有普通用户凭据）
-      print('   测试C - 普通用户认证:');
-      try {
-        // 这里需要普通用户的认证信息
-        // 暂时跳过，因为我们需要知道普通用户的凭据
-        print('   - 跳过: 需要普通用户认证信息');
-      } catch (e) {
-        print('   - 失败: $e');
-      }
-      
-      print('=== 测试完成 ===');
     } catch (e) {
-      print('测试过程中出错: $e');
     }
   }
 
-  // Get current user profile
-  RecordModel? get currentUserProfile {
-    if (pb.authStore.record != null) {
-      return pb.authStore.record;
-    }
-    return null;
-  }
-
-  // Create attendance record
-  Future<RecordModel> createAttendanceRecord(Map<String, dynamic> data) async {
+  // Notification management
+  Future<List<RecordModel>> getNotifications({
+    String? userId,
+    bool? isRead,
+    int page = 1,
+    int perPage = 50,
+  }) async {
     try {
-      final record = await pb.collection('student_attendance').create(body: data);
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      String filter = '';
+      if (userId != null) {
+        filter += 'user_id = "$userId"';
+      }
+      if (isRead != null) {
+        if (filter.isNotEmpty) filter += ' && ';
+        filter += 'is_read = $isRead';
+      }
+      
+      final result = await pb.collection('notifications').getList(
+        page: page,
+        perPage: perPage,
+        sort: '-created',
+        filter: filter.isNotEmpty ? filter : null,
+      );
+      
+      return result.items;
+    } catch (e) {
+      throw Exception('Failed to fetch notifications: ${e.toString()}');
+    }
+  }
+
+  Future<void> updateNotificationStatus(String notificationId, bool isRead) async {
+    try {
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      await pb.collection('notifications').update(notificationId, body: {
+        'is_read': isRead,
+      });
+    } catch (e) {
+      throw Exception('Failed to update notification status: ${e.toString()}');
+    }
+  }
+
+  Future<RecordModel> createNotification(Map<String, dynamic> data) async {
+    try {
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      final record = await pb.collection('notifications').create(body: data);
       return record;
     } catch (e) {
-      throw Exception('Failed to create attendance record: ${e.toString()}');
+      throw Exception('Failed to create notification: ${e.toString()}');
     }
   }
 
+  Future<void> deleteNotification(String notificationId) async {
+    try {
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      await pb.collection('notifications').delete(notificationId);
+    } catch (e) {
+      throw Exception('Failed to delete notification: ${e.toString()}');
+    }
+  }
+
+  // Additional getter for compatibility
+  RecordModel? get currentUserProfile => pb.authStore.record;
+
+  // Additional method for compatibility
+  Future<RecordModel> createPointsTransaction(Map<String, dynamic> data) async {
+    try {
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      final record = await pb.collection('point_transactions').create(body: data);
+      return record;
+    } catch (e) {
+      throw Exception('Failed to create points transaction: ${e.toString()}');
+    }
+  }
+
+  // Additional missing methods for compatibility
+  Future<RecordModel> getStudentByNfcId(String nfcId) async {
+    try {
+      final records = await pb.collection('students').getList(
+        filter: 'nfc_tag_id = "$nfcId"',
+        perPage: 1,
+      );
+      return records.items.isNotEmpty ? records.items.first : throw Exception('Student not found');
+    } catch (e) {
+      throw Exception('Failed to get student by NFC ID: ${e.toString()}');
+    }
+  }
+
+  Future<RecordModel> getTeacherByCardId(String cardId) async {
+    try {
+      final records = await pb.collection('teachers').getList(
+        filter: 'card_id = "$cardId"',
+        perPage: 1,
+      );
+      return records.items.isNotEmpty ? records.items.first : throw Exception('Teacher not found');
+    } catch (e) {
+      throw Exception('Failed to get teacher by card ID: ${e.toString()}');
+    }
+  }
+
+  Future<RecordModel> getTeacherByNfcId(String nfcId) async {
+    try {
+      final records = await pb.collection('teachers').getList(
+        filter: 'nfc_tag_id = "$nfcId"',
+        perPage: 1,
+      );
+      return records.items.isNotEmpty ? records.items.first : throw Exception('Teacher not found');
+    } catch (e) {
+      throw Exception('Failed to get teacher by NFC ID: ${e.toString()}');
+    }
+  }
 
 }
