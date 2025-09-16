@@ -15,16 +15,12 @@ import '../settings/settings_screen.dart';
 import '../notification/notification_screen.dart';
 import '../profile/profile_screen.dart';
 import '../notification/admin_notification_screen.dart';
-import '../../widgets/common/quick_action_card.dart';
-import '../../widgets/common/statistics_card.dart';
 import '../../widgets/common/recent_activity_item.dart';
-import '../../widgets/common/role_switcher_widget.dart';
 import '../points/points_management_screen.dart';
 import '../nfc/nfc_management_screen.dart';
 import '../class/class_management_screen.dart';
 import '../teacher/teacher_management_screen.dart';
 import '../../widgets/attendance/attendance_nfc_scanner_widget.dart';
-import '../../services/permission_manager.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -36,10 +32,16 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  // 根据用户角色动态生成屏幕列表
+  // 即时屏幕列表：直接响应角色变化，无缓存延迟
   List<Widget> get _screens {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
+    // 即时处理：如果用户信息未加载，返回默认屏幕
+    if (authProvider.userProfile == null) {
+      return [const HomeDashboard()];
+    }
+    
+    // 即时响应：直接根据当前角色生成屏幕列表，无缓存
     if (authProvider.isAdmin) {
       return [
         const HomeDashboard(),
@@ -65,10 +67,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // 根据用户角色动态生成导航栏项目
+  // 即时导航栏：直接响应角色变化，无缓存延迟
   List<BottomNavigationBarItem> get _navigationItems {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
+    // 即时处理：如果用户信息未加载，返回默认导航
+    if (authProvider.userProfile == null) {
+      return const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.dashboard_outlined),
+          activeIcon: Icon(Icons.dashboard),
+          label: '首页',
+        ),
+      ];
+    }
+    
+    // 即时响应：直接根据当前角色生成导航栏，无缓存
     if (authProvider.isAdmin) {
       return const [
         BottomNavigationBarItem(
@@ -146,6 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,7 +178,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: BottomNavigationBar(
           currentIndex: _selectedIndex,
-          onTap: (index) => setState(() => _selectedIndex = index),
+          onTap: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
           selectedItemColor: AppTheme.primaryColor,
@@ -179,8 +198,11 @@ class _HomeScreenState extends State<HomeScreen> {
           items: _navigationItems,
         ),
       ),
+      // 移除全局的角色切换按钮，只在主页仪表板中显示
     );
   }
+
+  // 角色切换对话框方法已移动到HomeDashboard中
 }
 
 class HomeDashboard extends StatefulWidget {
@@ -191,15 +213,59 @@ class HomeDashboard extends StatefulWidget {
 }
 
 class _HomeDashboardState extends State<HomeDashboard> {
+  bool _hasLoadedData = false;
+
   @override
   void initState() {
     super.initState();
-    // 加载数据
+    _loadDataIfNeeded();
+  }
+
+  void _loadDataIfNeeded() {
+    if (_hasLoadedData) return;
+    
+    // 智能预加载：立即开始加载，不显示加载状态
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AttendanceProvider>(context, listen: false).loadAttendanceRecords();
-      Provider.of<StudentProvider>(context, listen: false).loadStudents();
-      Provider.of<NotificationProvider>(context, listen: false).loadNotifications();
+      // 立即开始加载，无延迟
+      if (!mounted) return;
+      
+      try {
+        // 静默并行加载数据
+        Future.wait([
+          Provider.of<AttendanceProvider>(context, listen: false).loadAttendanceRecords(),
+          Provider.of<StudentProvider>(context, listen: false).loadStudents(),
+          Provider.of<NotificationProvider>(context, listen: false).loadNotifications(),
+        ]).then((_) {
+          if (mounted) {
+            setState(() {
+              _hasLoadedData = true;
+            });
+          }
+        }).catchError((e) {
+          // 静默处理错误，不影响用户体验
+          if (mounted) {
+            setState(() {
+              _hasLoadedData = true;
+            });
+          }
+        });
+      } catch (e) {
+        // 静默处理错误
+        if (mounted) {
+          setState(() {
+            _hasLoadedData = true;
+          });
+        }
+      }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 当依赖项变化时，重新加载数据
+    _hasLoadedData = false;
+    _loadDataIfNeeded();
   }
 
   Widget _buildModernAppBar() {
@@ -429,25 +495,204 @@ class _HomeDashboardState extends State<HomeDashboard> {
     return months[month - 1];
   }
 
+  // 角色切换对话框方法
+  void _showRoleSelectionDialog(BuildContext context, AuthProvider authProvider) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                Icons.swap_horiz_rounded,
+                color: AppTheme.primaryColor,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              const Text('切换角色'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '选择您要切换的身份：',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...authProvider.userRoles.map((role) {
+                final isActive = role == authProvider.activeRole;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isActive 
+                            ? AppTheme.primaryColor.withOpacity(0.1)
+                            : AppTheme.surfaceColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isActive 
+                              ? AppTheme.primaryColor
+                              : AppTheme.dividerColor,
+                          width: isActive ? 2 : 1,
+                        ),
+                      ),
+                      child: Icon(
+                        _getRoleIcon(role),
+                        color: isActive 
+                            ? AppTheme.primaryColor
+                            : AppTheme.textSecondary,
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(
+                      authProvider.getRoleDisplayName(role),
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                        color: isActive ? AppTheme.primaryColor : AppTheme.textPrimary,
+                      ),
+                    ),
+                    subtitle: Text(
+                      _getRoleDescription(role),
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                    trailing: isActive
+                        ? Icon(
+                            Icons.check_circle,
+                            color: AppTheme.primaryColor,
+                            size: 24,
+                          )
+                        : null,
+                    onTap: isActive ? null : () async {
+                      try {
+                        // 即时角色切换：立即关闭对话框并切换角色
+                        Navigator.of(context).pop();
+                        
+                        // 立即切换角色，触发UI更新
+                        await authProvider.switchRole(role);
+                        
+                        // 角色切换完成，UI会自动更新
+                        
+                        // 即时提示：简洁的成功反馈
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('已切换到${authProvider.getRoleDisplayName(role)}'),
+                              backgroundColor: AppTheme.successColor,
+                              duration: const Duration(milliseconds: 800),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        // 静默处理错误，不影响用户体验
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('切换失败，请重试'),
+                              backgroundColor: AppTheme.errorColor,
+                              duration: const Duration(milliseconds: 800),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    tileColor: isActive 
+                        ? AppTheme.primaryColor.withOpacity(0.05)
+                        : null,
+                  ),
+                );
+              }).toList(),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('取消'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  IconData _getRoleIcon(String role) {
+    switch (role) {
+      case 'admin':
+        return Icons.admin_panel_settings_rounded;
+      case 'teacher':
+        return Icons.school_rounded;
+      case 'parent':
+        return Icons.family_restroom_rounded;
+      case 'accountant':
+        return Icons.account_balance_rounded;
+      default:
+        return Icons.person_rounded;
+    }
+  }
+
+  String _getRoleDescription(String role) {
+    switch (role) {
+      case 'admin':
+        return '系统管理员，拥有所有权限';
+      case 'teacher':
+        return '教师身份，管理班级和学生';
+      case 'parent':
+        return '家长身份，查看孩子信息';
+      case 'accountant':
+        return '会计身份，管理财务数据';
+      default:
+        return '用户身份';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
             child: Column(
               children: [
                 _buildWelcomeSection(context),
-                const RoleSwitcherWidget(), // 添加角色切换器
+              const SizedBox(height: 20),
                 _buildQuickActionsSection(context),
+              const SizedBox(height: 20),
                 _buildStatisticsSection(context),
+              const SizedBox(height: 20),
                 _buildRecentActivitySection(context),
                 const SizedBox(height: 20),
               ],
             ),
           ),
-        ],
+      ),
+      // 只在主页仪表板中显示角色切换按钮
+      floatingActionButton: Consumer<AuthProvider>(
+        builder: (context, authProvider, child) {
+          // 只有当用户有多个角色时才显示浮动按钮
+          if (authProvider.userProfile == null || !authProvider.hasMultipleRoles) {
+            return const SizedBox.shrink();
+          }
+          
+          return FloatingActionButton(
+            onPressed: () => _showRoleSelectionDialog(context, authProvider),
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
+            child: const Icon(Icons.swap_horiz_rounded),
+            tooltip: '切换角色',
+          );
+        },
       ),
     );
   }
@@ -455,30 +700,19 @@ class _HomeDashboardState extends State<HomeDashboard> {
   Widget _buildWelcomeSection(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
+        // 智能处理：静默处理加载状态，提供流畅体验
+        if (!authProvider.isAuthenticated || authProvider.userProfile == null) {
+          return const SizedBox.shrink();
+        }
+        
         final userName = authProvider.user?.getStringValue('name') ?? '用户';
         final userRole = authProvider.roleDisplayName;
         
         return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF3B82F6),
-                Color(0xFF1D4ED8),
-                Color(0xFF1E40AF),
-              ],
-            ),
+            color: const Color(0xFF3B82F6),
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF3B82F6).withOpacity(0.3),
-                blurRadius: 15,
-                offset: const Offset(0, 6),
-              ),
-            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -521,6 +755,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
                       ],
                     ),
                   ),
+                  Row(
+                    children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -538,6 +774,24 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => _navigateToNotification(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.notifications_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -614,18 +868,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
   Widget _buildQuickActionsSection(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -654,115 +901,78 @@ class _HomeDashboardState extends State<HomeDashboard> {
           const SizedBox(height: 28),
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
+              // 智能处理：如果用户未认证，静默重定向到登录
+              if (!authProvider.isAuthenticated) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                });
+                return const SizedBox.shrink();
+              }
+              
+              // 智能处理：如果userProfile为空，使用默认数据继续渲染
+              if (authProvider.userProfile == null) {
+                // 静默处理，不显示加载状态
+                return const SizedBox.shrink();
+              }
+              
               if (authProvider.isAdmin) {
-                // 管理员工作台 - 3x3网格
-                return GridView.count(
-                  crossAxisCount: 3,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  childAspectRatio: 1.2,
-                  crossAxisSpacing: AppSpacing.md,
-                  mainAxisSpacing: AppSpacing.md,
+                // 管理员工作台 - 使用Column+Row布局
+                return Column(
                   children: [
-                    _buildModernActionCard(
-                      title: '学生管理',
-                      icon: Icons.people_rounded,
-                      color: const Color(0xFF10B981),
-                      onTap: () => _navigateToStudents(context),
+                    Row(
+                      children: [
+                        Expanded(child: _buildModernActionCard(title: '学生管理', icon: Icons.people_rounded, color: const Color(0xFF10B981), onTap: () => _navigateToStudents(context))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildModernActionCard(title: '教师管理', icon: Icons.school_rounded, color: const Color(0xFF8B5CF6), onTap: () => _navigateToTeacherManagement(context))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildModernActionCard(title: '班级管理', icon: Icons.class_rounded, color: const Color(0xFF06B6D4), onTap: () => _navigateToClassManagement(context))),
+                      ],
                     ),
-                    _buildModernActionCard(
-                      title: '教师管理',
-                      icon: Icons.school_rounded,
-                      color: const Color(0xFF8B5CF6),
-                      onTap: () => _navigateToTeacherManagement(context),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: _buildModernActionCard(title: 'NFC管理', icon: Icons.admin_panel_settings_rounded, color: const Color(0xFFEF4444), onTap: () => _navigateToNfcManagement(context))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildModernActionCard(title: '考勤管理', icon: Icons.assessment_rounded, color: const Color(0xFF3B82F6), onTap: () => _navigateToAttendance(context))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildModernActionCard(title: '积分管理', icon: Icons.stars_rounded, color: const Color(0xFFEC4899), onTap: () => _navigateToPoints(context))),
+                      ],
                     ),
-                    _buildModernActionCard(
-                      title: '班级管理',
-                      icon: Icons.class_rounded,
-                      color: const Color(0xFF06B6D4),
-                      onTap: () => _navigateToClassManagement(context),
-                    ),
-                    _buildModernActionCard(
-                      title: 'NFC管理',
-                      icon: Icons.admin_panel_settings_rounded,
-                      color: const Color(0xFFEF4444),
-                      onTap: () => _navigateToNfcManagement(context),
-                    ),
-                    _buildModernActionCard(
-                      title: '考勤管理',
-                      icon: Icons.assessment_rounded,
-                      color: const Color(0xFF3B82F6),
-                      onTap: () => _navigateToReports(context),
-                    ),
-                    _buildModernActionCard(
-                      title: '积分管理',
-                      icon: Icons.stars_rounded,
-                      color: const Color(0xFFEC4899),
-                      onTap: () => _navigateToPoints(context),
-                    ),
-                    _buildModernActionCard(
-                      title: '通知管理',
-                      icon: Icons.notifications_active_rounded,
-                      color: const Color(0xFF10B981),
-                      onTap: () => _navigateToAdminNotification(context),
-                    ),
-                    _buildModernActionCard(
-                      title: '报告统计',
-                      icon: Icons.analytics_rounded,
-                      color: const Color(0xFFF59E0B),
-                      onTap: () => _navigateToReports(context),
-                    ),
-                    _buildModernActionCard(
-                      title: '系统设置',
-                      icon: Icons.settings_rounded,
-                      color: const Color(0xFF6B7280),
-                      onTap: () => _navigateToSettings(context),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: _buildModernActionCard(title: '通知管理', icon: Icons.notifications_active_rounded, color: const Color(0xFF10B981), onTap: () => _navigateToAdminNotification(context))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildModernActionCard(title: '报告统计', icon: Icons.analytics_rounded, color: const Color(0xFFF59E0B), onTap: () => _navigateToReports(context))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildModernActionCard(title: '系统设置', icon: Icons.settings_rounded, color: const Color(0xFF6B7280), onTap: () => _navigateToSettings(context))),
+                      ],
                     ),
                   ],
                 );
               } else if (authProvider.isTeacher) {
-                // 教师工作台 - 2x3网格
-                return GridView.count(
-                  crossAxisCount: 3,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  childAspectRatio: 1.2,
-                  crossAxisSpacing: AppSpacing.md,
-                  mainAxisSpacing: AppSpacing.md,
+                // 教师工作台 - 使用Column+Row布局
+                return Column(
                   children: [
-                    _buildModernActionCard(
-                      title: '我的学生',
-                      icon: Icons.people_rounded,
-                      color: const Color(0xFF10B981),
-                      onTap: () => _navigateToStudents(context),
+                    Row(
+                      children: [
+                        Expanded(child: _buildModernActionCard(title: '我的学生', icon: Icons.people_rounded, color: const Color(0xFF10B981), onTap: () => _navigateToStudents(context))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildModernActionCard(title: '我的班级', icon: Icons.class_rounded, color: const Color(0xFF06B6D4), onTap: () => _navigateToClassManagement(context))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildModernActionCard(title: 'NFC考勤', icon: Icons.nfc_rounded, color: const Color(0xFF3B82F6), onTap: () => _navigateToNfcAttendance(context))),
+                      ],
                     ),
-                    _buildModernActionCard(
-                      title: '我的班级',
-                      icon: Icons.class_rounded,
-                      color: const Color(0xFF06B6D4),
-                      onTap: () => _navigateToClassManagement(context),
-                    ),
-                    _buildModernActionCard(
-                      title: 'NFC考勤',
-                      icon: Icons.nfc_rounded,
-                      color: const Color(0xFF3B82F6),
-                      onTap: () => _navigateToNfcAttendance(context),
-                    ),
-                    _buildModernActionCard(
-                      title: '作业成绩',
-                      icon: Icons.assignment_rounded,
-                      color: const Color(0xFFF59E0B),
-                      onTap: () => _navigateToHomeworkGrades(context),
-                    ),
-                    _buildModernActionCard(
-                      title: '积分管理',
-                      icon: Icons.stars_rounded,
-                      color: const Color(0xFFEC4899),
-                      onTap: () => _navigateToPoints(context),
-                    ),
-                    Consumer<NotificationProvider>(
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: _buildModernActionCard(title: '作业成绩', icon: Icons.assignment_rounded, color: const Color(0xFFF59E0B), onTap: () => _navigateToHomeworkGrades(context))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildModernActionCard(title: '积分管理', icon: Icons.stars_rounded, color: const Color(0xFFEC4899), onTap: () => _navigateToPoints(context))),
+                        const SizedBox(width: 12),
+                        Expanded(child: Consumer<NotificationProvider>(
                       builder: (context, notificationProvider, child) {
-                        return _buildNotificationActionCard(
+                        return _buildModernActionCardWithBadge(
                           title: '通知公告',
                           icon: Icons.notifications_rounded,
                           color: const Color(0xFF10B981),
@@ -770,30 +980,23 @@ class _HomeDashboardState extends State<HomeDashboard> {
                           onTap: () => _navigateToNotification(context),
                         );
                       },
+                        )),
+                      ],
                     ),
                   ],
                 );
               } else {
-                // 其他角色 - 基础功能
-                return GridView.count(
-                  crossAxisCount: 3,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  childAspectRatio: 1.2,
-                  crossAxisSpacing: AppSpacing.md,
-                  mainAxisSpacing: AppSpacing.md,
+                // 其他角色 - 使用Column+Row布局
+                return Column(
                   children: [
-                    _buildModernActionCard(
-                      title: '积分管理',
-                      icon: Icons.stars_rounded,
-                      color: const Color(0xFFEC4899),
-                      onTap: () => _navigateToPoints(context),
-                    ),
-                    _buildModernActionCard(
-                      title: '系统设置',
-                      icon: Icons.settings_rounded,
-                      color: const Color(0xFF6B7280),
-                      onTap: () => _navigateToSettings(context),
+                    Row(
+                      children: [
+                        Expanded(child: _buildModernActionCard(title: '积分管理', icon: Icons.stars_rounded, color: const Color(0xFFEC4899), onTap: () => _navigateToPoints(context))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildModernActionCard(title: '系统设置', icon: Icons.settings_rounded, color: const Color(0xFF6B7280), onTap: () => _navigateToSettings(context))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildModernActionCard(title: '通知公告', icon: Icons.notifications_rounded, color: const Color(0xFF10B981), onTap: () => _navigateToNotification(context))),
+                      ],
                     ),
                   ],
                 );
@@ -813,6 +1016,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
   }) {
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Container(
         padding: EdgeInsets.all(AppSpacing.sm),
         decoration: BoxDecoration(
@@ -857,6 +1061,89 @@ class _HomeDashboardState extends State<HomeDashboard> {
     );
   }
 
+  Widget _buildModernActionCardWithBadge({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required int unreadCount,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: EdgeInsets.all(AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: AppTheme.cardColor,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppTheme.dividerColor),
+          boxShadow: AppTheme.cardShadow,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 20,
+                  ),
+                ),
+                if (unreadCount > 0)
+                  Positioned(
+                    top: -2,
+                    right: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEF4444),
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        unreadCount > 99 ? '99+' : '$unreadCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.xs),
+            Flexible(
+              child: Text(
+                title,
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildNotificationActionCard({
     required String title,
     required IconData icon,
@@ -866,6 +1153,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
   }) {
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -962,13 +1250,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
         final attendanceRate = totalStudents > 0 ? ((checkInCount / totalStudents) * 100).round() : 0;
         
         return Container(
-          margin: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-          padding: EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppTheme.cardColor,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppTheme.dividerColor),
-            boxShadow: AppTheme.cardShadow,
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -982,11 +1268,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         width: 4,
                         height: 28,
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
+                          color: const Color(0xFF3B82F6),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      SizedBox(width: AppSpacing.md),
+                      const SizedBox(width: 16),
                       Text(
                         '今日概览',
                         style: AppTextStyles.headline5,
@@ -1005,63 +1291,34 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 ],
               ),
               const SizedBox(height: 24),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: 1.2,
-                crossAxisSpacing: AppSpacing.md,
-                mainAxisSpacing: AppSpacing.md,
+              SizedBox(
+                child: Column(
               children: [
-                StatisticsCard(
-                  title: '今日签到',
-                  value: checkInCount.toString(),
-                  change: '',
-                  isPositive: true,
-                  icon: Icons.check_circle,
-                  color: AppTheme.successColor,
+                    Row(
+                      children: [
+                        Expanded(child: _buildStatCard('今日签到', checkInCount.toString(), Icons.check_circle, AppTheme.successColor)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildStatCard('出勤率', '$attendanceRate%', Icons.trending_up, AppTheme.primaryColor)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: _buildStatCard('迟到人数', lateCount.toString(), Icons.schedule, AppTheme.warningColor)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildStatCard('缺勤人数', absentCount.toString(), Icons.person_off, AppTheme.errorColor)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: _buildStatCard('今日签退', checkOutCount.toString(), Icons.logout, AppTheme.primaryVariant)),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildStatCard('总记录数', todayRecords.length.toString(), Icons.list_alt, AppTheme.accentColor)),
+                      ],
+                    ),
+                  ],
                 ),
-                StatisticsCard(
-                  title: '出勤率',
-                  value: '$attendanceRate%',
-                  change: '',
-                  isPositive: true,
-                  icon: Icons.trending_up,
-                  color: AppTheme.primaryColor,
-                ),
-                StatisticsCard(
-                  title: '迟到人数',
-                  value: lateCount.toString(),
-                  change: '',
-                  isPositive: lateCount == 0,
-                  icon: Icons.schedule,
-                  color: AppTheme.warningColor,
-                ),
-                StatisticsCard(
-                  title: '缺勤人数',
-                  value: absentCount.toString(),
-                  change: '',
-                  isPositive: absentCount == 0,
-                  icon: Icons.person_off,
-                  color: AppTheme.errorColor,
-                ),
-                StatisticsCard(
-                  title: '今日签退',
-                  value: checkOutCount.toString(),
-                  change: '',
-                  isPositive: true,
-                  icon: Icons.logout,
-                  color: AppTheme.primaryVariant,
-                ),
-                StatisticsCard(
-                  title: '总记录数',
-                  value: todayRecords.length.toString(),
-                  change: '',
-                  isPositive: true,
-                  icon: Icons.list_alt,
-                  color: AppTheme.accentColor,
-                ),
-              ],
             ),
           ],
         ),
@@ -1077,13 +1334,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
         final recentRecords = attendanceProvider.getRecentAttendanceRecords(4);
         
         return Container(
-          margin: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-          padding: EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppTheme.cardColor,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppTheme.dividerColor),
-            boxShadow: AppTheme.cardShadow,
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1197,6 +1452,48 @@ class _HomeDashboardState extends State<HomeDashboard> {
     } catch (e) {
       return '未知时间';
     }
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.dividerColor),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   String _getCurrentDateStringChinese() {

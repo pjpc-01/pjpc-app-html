@@ -55,18 +55,25 @@ class AuthProvider with ChangeNotifier {
   void _initializeUserRoles() {
     if (_userProfile == null) return;
     
-    final userEmail = _userProfile!.getStringValue('email') ?? '';
-    final userRole = _userProfile!.getStringValue('role') ?? '';
+    final userEmail = _userProfile?.getStringValue('email') ?? '';
+    final userRole = _userProfile?.getStringValue('role') ?? '';
+    
+    print('=== 初始化用户角色 ===');
+    print('用户邮箱: $userEmail');
+    print('用户角色: $userRole');
     
     // 通过邮箱识别多角色用户
     _userRoles = _getRolesByEmail(userEmail);
+    print('初始角色列表: $_userRoles');
     
     // 设置当前激活角色
-    _activeRole = _userProfile!.getStringValue('active_role') ?? 
+    _activeRole = _userProfile?.getStringValue('active_role') ?? 
                   (_userRoles.isNotEmpty ? _userRoles.first : userRole);
+    print('当前激活角色: $_activeRole');
     
     // 检查是否允许多角色切换
     _roleSwitchingEnabled = _userRoles.length > 1;
+    print('角色切换启用: $_roleSwitchingEnabled');
     
     // 异步检查teachers集合
     _checkTeacherRolesAsync(userEmail);
@@ -75,26 +82,43 @@ class AuthProvider with ChangeNotifier {
   /// 异步检查teachers集合中的角色
   Future<void> _checkTeacherRolesAsync(String email) async {
     try {
+      print('=== 开始检查teacher角色 ===');
+      print('检查邮箱: $email');
+      
       // 检查teachers集合中是否有对应邮箱的记录
       final teachers = await _pocketBaseService.getTeachers();
+      print('获取到 ${teachers.length} 个teacher记录');
       
-      final teacherRecord = teachers.firstWhere(
-        (teacher) => teacher.getStringValue('email') == email,
-        orElse: () => throw Exception('No teacher found'),
-      );
+      // 查找匹配的teacher记录
+      RecordModel? teacherRecord;
+      for (final teacher in teachers) {
+        final teacherEmail = teacher.getStringValue('email');
+        print('检查teacher邮箱: $teacherEmail');
+        if (teacherEmail == email) {
+          teacherRecord = teacher;
+          break;
+        }
+      }
       
       // 如果找到teacher记录，添加teacher角色
       if (teacherRecord != null) {
+        print('找到匹配的teacher记录: ${teacherRecord.getStringValue('name')}');
         final currentRoles = List<String>.from(_userRoles);
         if (!currentRoles.contains('teacher')) {
           currentRoles.add('teacher');
           _userRoles = currentRoles;
           _roleSwitchingEnabled = _userRoles.length > 1;
+          print('更新用户角色: $_userRoles');
+          print('角色切换启用: $_roleSwitchingEnabled');
           notifyListeners();
+        } else {
+          print('用户已有teacher角色');
         }
+      } else {
+        print('未找到匹配的teacher记录');
       }
     } catch (e) {
-      // 没有找到teacher记录，保持原有角色
+      print('检查teacher角色时出错: $e');
     }
   }
   
@@ -157,6 +181,9 @@ class AuthProvider with ChangeNotifier {
       _user = authData.record;
       _userProfile = authData.record;
       _connectionStatus = 'connected';
+      
+      // 初始化用户角色（登录后）
+      _initializeUserRoles();
       
       // 保存凭据到SharedPreferences
       await _prefs.setString('saved_email', email);
@@ -292,21 +319,25 @@ class AuthProvider with ChangeNotifier {
 
   // Check if user is admin (基于当前激活角色)
   bool get isAdmin {
+    if (_userProfile == null) return false;
     return _activeRole == 'admin' || (_activeRole.isEmpty && (_userProfile?.getStringValue('role') ?? '') == 'admin');
   }
 
   // Check if user is teacher (基于当前激活角色)
   bool get isTeacher {
+    if (_userProfile == null) return false;
     return _activeRole == 'teacher' || (_activeRole.isEmpty && (_userProfile?.getStringValue('role') ?? '') == 'teacher');
   }
 
   // Check if user is parent (基于当前激活角色)
   bool get isParent {
+    if (_userProfile == null) return false;
     return _activeRole == 'parent' || (_activeRole.isEmpty && (_userProfile?.getStringValue('role') ?? '') == 'parent');
   }
 
   // Check if user is accountant (基于当前激活角色)
   bool get isAccountant {
+    if (_userProfile == null) return false;
     return _activeRole == 'accountant' || (_activeRole.isEmpty && (_userProfile?.getStringValue('role') ?? '') == 'accountant');
   }
 

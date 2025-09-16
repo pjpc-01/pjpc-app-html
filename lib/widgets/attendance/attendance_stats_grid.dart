@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/attendance_provider.dart';
+import '../../providers/student_provider.dart';
 import '../../theme/app_theme.dart';
 
 class AttendanceStatsGrid extends StatelessWidget {
@@ -51,6 +52,7 @@ class AttendanceStatsGrid extends StatelessWidget {
               isPositive: stats['absentChange'] <= 0,
               icon: Icons.person_off,
               color: AppTheme.errorColor,
+              onTap: () => _showAbsentStudentsDialog(context, stats['absentStudents']),
             ),
           ],
         );
@@ -65,8 +67,9 @@ class AttendanceStatsGrid extends StatelessWidget {
     required bool isPositive,
     required IconData icon,
     required Color color,
+    VoidCallback? onTap,
   }) {
-    return Container(
+    Widget cardContent = Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppTheme.cardColor,
@@ -148,6 +151,16 @@ class AttendanceStatsGrid extends StatelessWidget {
         ],
       ),
     );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: cardContent,
+      );
+    }
+    
+    return cardContent;
   }
 
   Map<String, dynamic> _calculateStats(List<dynamic> records) {
@@ -207,6 +220,14 @@ class AttendanceStatsGrid extends StatelessWidget {
     
     final yesterdayAbsentCount = totalStudents - yesterdayCheckIns;
     
+    // 获取已签到的学生ID列表
+    final checkedInStudentIds = todayRecords.map((record) => 
+      getValue(record, 'student_id')
+    ).toSet();
+    
+    // 获取未签到学生列表（这里需要从StudentProvider获取所有学生）
+    final absentStudents = <Map<String, dynamic>>[];
+    
     return {
       'todayCheckIns': todayCheckIns,
       'todayChange': todayChange,
@@ -216,6 +237,237 @@ class AttendanceStatsGrid extends StatelessWidget {
       'lateChange': lateCount - yesterdayLateCount,
       'absentCount': absentCount,
       'absentChange': absentCount - yesterdayAbsentCount,
+      'absentStudents': absentStudents,
+      'checkedInStudentIds': checkedInStudentIds,
     };
+  }
+
+  void _showAbsentStudentsDialog(BuildContext context, List<Map<String, dynamic>> absentStudents) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Consumer<StudentProvider>(
+          builder: (context, studentProvider, child) {
+            // 获取所有学生
+            final allStudents = studentProvider.getFilteredStudentsByRole();
+            
+            // 调试：打印学生数据
+            print('=== 学生数据调试 ===');
+            print('总学生数: ${allStudents.length}');
+            if (allStudents.isNotEmpty) {
+              final firstStudent = allStudents.first;
+              print('第一个学生数据:');
+              print('- ID: ${firstStudent.id}');
+              print('- student_name: ${firstStudent.getStringValue('student_name')}');
+              print('- student_id: ${firstStudent.getStringValue('student_id')}');
+              print('- standard: ${firstStudent.getStringValue('standard')}');
+              print('- center: ${firstStudent.getStringValue('center')}');
+              print('- status: ${firstStudent.getStringValue('status')}');
+              print('- teacher_id: ${firstStudent.getStringValue('teacher_id')}');
+              print('- branch_name: ${firstStudent.getStringValue('branch_name')}');
+              print('- 所有字段: ${firstStudent.data.keys.toList()}');
+            }
+            
+            // 获取今日已签到的学生ID
+            final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+            final todayRecords = attendanceProvider.getTodaysAttendance();
+            final checkedInStudentIds = todayRecords.map((record) => 
+              record.getStringValue('student_id')
+            ).toSet();
+            
+            // 找出未签到的学生
+            final absentStudents = allStudents.where((student) {
+              final studentId = student.getStringValue('student_id') ?? student.id;
+              return !checkedInStudentIds.contains(studentId);
+            }).toList();
+            
+            return AlertDialog(
+              title: Row(
+                children: [
+                  Icon(
+                    Icons.person_off,
+                    color: AppTheme.errorColor,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text('未签到学生'),
+                ],
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 400,
+                child: absentStudents.isEmpty
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              size: 48,
+                              color: Colors.green,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              '所有学生都已签到',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: absentStudents.length,
+                        itemBuilder: (context, index) {
+                          final student = absentStudents[index];
+                          final studentName = student.getStringValue('student_name') ?? '未知学生';
+                          final studentId = student.getStringValue('student_id') ?? '';
+                          final standard = student.getStringValue('standard') ?? '';
+                          final center = student.getStringValue('center') ?? '';
+                          final status = student.getStringValue('status') ?? '';
+                          final teacherId = student.getStringValue('teacher_id') ?? '';
+                          final branchName = student.getStringValue('branch_name') ?? '';
+                          
+                          // 调试：打印每个学生的详细信息
+                          print('学生 $index: $studentName');
+                          print('  - center: "$center"');
+                          print('  - status: "$status"');
+                          print('  - teacher_id: "$teacherId"');
+                          print('  - branch_name: "$branchName"');
+                          
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.backgroundColor,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppTheme.dividerColor),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.errorColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Icon(
+                                    Icons.person_off,
+                                    color: AppTheme.errorColor,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        studentName,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      if (studentId.isNotEmpty) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '学号: $studentId',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                      if (standard.isNotEmpty) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '班级: $standard',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                      if (center.isNotEmpty) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '中心: $center',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                      if (status.isNotEmpty) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '状态: $status',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                      if (teacherId.isNotEmpty) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '教师ID: $teacherId',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                      if (branchName.isNotEmpty) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '分校: $branchName',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.errorColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    '未签到',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: AppTheme.errorColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('关闭'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 }

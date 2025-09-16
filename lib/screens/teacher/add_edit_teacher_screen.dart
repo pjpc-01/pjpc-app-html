@@ -169,7 +169,7 @@ class _AddEditTeacherScreenState extends State<AddEditTeacherScreen> {
       print('刷新教师数据失败: $e');
     }
   }
-
+  
   void _setupSmartListeners() {
     // 监听邮箱输入变化
     _emailController.addListener(_onEmailChanged);

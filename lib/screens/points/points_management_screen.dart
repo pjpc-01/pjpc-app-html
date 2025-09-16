@@ -3,15 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'dart:io';
-import 'dart:convert';
-import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import '../../providers/student_provider.dart';
 import '../../providers/points_provider.dart';
-import '../../providers/teacher_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../services/pocketbase_service.dart';
-import '../../services/nfc_safe_scanner_service.dart';
 import '../../widgets/points/points_nfc_scanner_widget.dart';
 
 class PointsManagementScreen extends StatefulWidget {
@@ -1417,178 +1413,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
     );
   }
 
-  Future<bool> _showTeacherVerificationDialog() async {
-    return await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('老师卡验证'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.nfc,
-                size: 48,
-                color: AppTheme.primaryColor,
-              ),
-              const SizedBox(height: 16),
-              const Text('请将老师NFC卡靠近设备进行验证'),
-              const SizedBox(height: 16),
-              FutureBuilder<bool>(
-                future: _performTeacherScan(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Column(
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 8),
-                        Text('正在扫描...'),
-                      ],
-                    );
-                  } else if (snapshot.hasError) {
-                    return Column(
-                      children: [
-                        const Icon(Icons.error, color: AppTheme.errorColor, size: 32),
-                        const SizedBox(height: 8),
-                        Text('扫描失败: ${snapshot.error}'),
-                      ],
-                    );
-                  } else if (snapshot.data == true) {
-                    return const Column(
-                      children: [
-                        Icon(Icons.check_circle, color: AppTheme.successColor, size: 32),
-                        SizedBox(height: 8),
-                        Text('验证成功！'),
-                      ],
-                    );
-                  } else {
-                    return const Column(
-                      children: [
-                        Icon(Icons.cancel, color: AppTheme.errorColor, size: 32),
-                        SizedBox(height: 8),
-                        Text('验证失败'),
-                      ],
-                    );
-                  }
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                final result = await _performTeacherScan();
-                if (result) {
-                  Navigator.of(ctx).pop(true);
-                }
-              },
-              child: const Text('重试'),
-            ),
-          ],
-        );
-      },
-    ) ?? false;
-  }
-
-  Future<bool> _performTeacherScan() async {
-    try {
-      final result = await NFCSafeScannerService.instance.safeScanNFC(
-        timeout: const Duration(seconds: 10),
-        requireStudent: false,
-      );
-
-      if (!result.isSuccess) {
-        throw Exception(result.errorMessage ?? '扫描失败');
-      }
-
-      final raw = result.decryptedData ?? result.nfcData ?? '';
-      if (raw.isEmpty) {
-        throw Exception('未在卡内发现有效数据');
-      }
-
-      // 兼容 teacherId_random 或纯ID
-      final idx = raw.indexOf('_');
-      String teacherId = (idx > 0 ? raw.substring(0, idx) : raw)
-          .replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
-
-      // 查找老师（容错匹配）
-      final teacherProvider = Provider.of<TeacherProvider>(context, listen: false);
-      RecordModel? teacher;
-      
-      // 先按精确ID匹配
-      for (final t in teacherProvider.teachers) {
-        final raw = (t.data['user_id'] ?? t.data['teacher_id'] ?? '').toString();
-        final norm = raw.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
-        if (norm.toUpperCase() == teacherId.toUpperCase()) {
-          teacher = t;
-          break;
-        }
-      }
-      
-      // 如未命中，做容错查找
-      if (teacher == null) {
-        String _normalize(String s) => s.replaceAll(RegExp(r'[^A-Za-z0-9]'), '' ).toUpperCase();
-        final target = _normalize(teacherId);
-        for (final t in teacherProvider.teachers) {
-          final raw = (t.data['user_id'] ?? t.data['teacher_id'] ?? '').toString();
-          final norm = _normalize(raw);
-          if (norm == target || norm.contains(target) || target.contains(norm)) {
-            teacher = t;
-            break;
-          }
-        }
-      }
-      
-      if (teacher == null) {
-        throw Exception('未找到对应的老师记录: $teacherId');
-      }
-      
-      return true;
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  Future<bool> _startTeacherScan() async {
-    try {
-      // 显示扫描提示
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('请将老师NFC卡靠近设备...'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-
-      final ok = await _performTeacherScan();
-      if (!ok) return false;
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('老师卡验证成功'),
-          ),
-        );
-      }
-      return true;
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('老师卡扫描失败: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
-      }
-      return false;
-    }
-  }
+  // 教师验证方法已移除，简化积分操作流程
 
   Future<void> _openPointsDialog(BuildContext context, {required bool isAdd}) async {
     final studentProvider = context.read<StudentProvider>();
@@ -1642,15 +1467,27 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                 final amount = int.tryParse(amountController.text.trim()) ?? 0;
                 final reason = reasonController.text.trim();
                 if (amount <= 0) return;
-                // 二次验证：请老师扫描卡片
-                final teacherConfirmed = await _startTeacherScan();
-                if (!teacherConfirmed) return;
+                // 教师验证步骤已移除，直接进行积分操作
                 final teacherId = PocketBaseService.instance.currentUser?.id ?? '';
+                
+                // 获取正确的教师记录ID
+                String actualTeacherId = teacherId;
+                try {
+                  final teacher = await PocketBaseService.instance.getTeacherByUserId(teacherId);
+                  if (teacher != null) {
+                    actualTeacherId = teacher.id; // 使用教师记录的真实ID
+                  } else {
+                    print('警告: 找不到教师记录，使用用户ID: $teacherId');
+                  }
+                } catch (e) {
+                  print('获取教师信息失败: $e');
+                }
+                
                 bool ok;
                 if (isAdd) {
-                  ok = await pointsProvider.addPointsToStudent(selectedStudent!.id, amount, reason, teacherId: teacherId);
+                  ok = await pointsProvider.addPointsToStudent(selectedStudent!.id, amount, reason, teacherId: actualTeacherId);
                 } else {
-                  ok = await pointsProvider.deductPointsFromStudent(selectedStudent!.id, amount, reason, teacherId: teacherId);
+                  ok = await pointsProvider.deductPointsFromStudent(selectedStudent!.id, amount, reason, teacherId: actualTeacherId);
                 }
                 if (ok && mounted) {
                   Navigator.of(ctx).pop();
@@ -1744,8 +1581,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                 final amount = int.tryParse(amountController.text.trim()) ?? 0;
                 final reason = reasonController.text.trim();
                 if (amount <= 0) return;
-                final teacherConfirmed = await _startTeacherScan();
-                if (!teacherConfirmed) return;
+                // 教师验证步骤已移除，直接进行积分兑换操作
                 final teacherId = PocketBaseService.instance.currentUser?.id ?? '';
                 final ok = await pointsProvider.redeemWithProof(
                   selectedStudent!.id,
@@ -2158,11 +1994,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                   ),
                 );
 
-                // 二次验证老师卡
-                final teacherConfirmed = await _showTeacherVerificationDialog();
-                if (!teacherConfirmed) {
-                  return;
-                }
+                // 教师验证步骤已移除，直接进行积分操作
 
                 final provider = context.read<PointsProvider>();
                 final teacherId = PocketBaseService.instance.currentUser?.id ?? '';
@@ -2174,19 +2006,32 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                       backgroundColor: AppTheme.errorColor,
                     ),
                   );
-      return;
-    }
+                  return;
+                }
+
+                // 获取正确的教师记录ID
+                String actualTeacherId = teacherId;
+                try {
+                  final teacher = await PocketBaseService.instance.getTeacherByUserId(teacherId);
+                  if (teacher != null) {
+                    actualTeacherId = teacher.id; // 使用教师记录的真实ID
+                  } else {
+                    print('警告: 找不到教师记录，使用用户ID: $teacherId');
+                  }
+                } catch (e) {
+                  print('获取教师信息失败: $e');
+                }
 
                 bool success = false;
                 String? errorMessage;
 
                 try {
                   if (actionType == 'add_points') {
-                    success = await provider.addPointsToStudent(_selectedStudent!.id, amount, reason, teacherId: teacherId);
+                    success = await provider.addPointsToStudent(_selectedStudent!.id, amount, reason, teacherId: actualTeacherId);
                   } else if (actionType == 'deduct_points') {
-                    success = await provider.deductPointsFromStudent(_selectedStudent!.id, amount, reason, teacherId: teacherId);
+                    success = await provider.deductPointsFromStudent(_selectedStudent!.id, amount, reason, teacherId: actualTeacherId);
                   } else if (actionType == 'redeem') {
-                    success = await provider.redeemWithProof(_selectedStudent!.id, amount, reason, teacherId: teacherId, proofImage: proof);
+                    success = await provider.redeemWithProof(_selectedStudent!.id, amount, reason, teacherId: actualTeacherId, proofImage: proof);
                   }
                   
                   errorMessage = provider.error;

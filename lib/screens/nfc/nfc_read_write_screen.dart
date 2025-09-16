@@ -9,7 +9,6 @@ import 'package:provider/provider.dart';
 import 'package:pocketbase/pocketbase.dart';
 import '../../theme/app_theme.dart';
 import '../../services/pocketbase_service.dart';
-import '../../services/nfc_write_service.dart';
 import '../../providers/student_provider.dart';
 import '../../providers/teacher_provider.dart';
 import '../../services/unified_field_mapper.dart';
@@ -480,7 +479,7 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
       final availability = await FlutterNfcKit.nfcAvailability;
       if (availability != NFCAvailability.available) {
         setState(() {
-          _scanStatus = 'NFC功能不可用';
+          _scanStatus = 'NFC功能不可用，请检查设备设置';
           _isScanning = false;
         });
         return;
@@ -496,14 +495,22 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
       String? readData;
       
       try {
-        
         // 直接使用标签ID作为考勤数据
-        if (tag.id != null && tag.id!.isNotEmpty) {
-          readData = tag.id!;
-      } else {
+        if (tag.id.isNotEmpty) {
+          readData = tag.id;
+        } else {
+          setState(() {
+            _scanStatus = 'NFC卡中没有找到有效数据';
+            _isScanning = false;
+          });
+          return;
         }
-        
-        } catch (e) {
+      } catch (e) {
+        setState(() {
+          _scanStatus = '读取NFC数据失败: $e';
+          _isScanning = false;
+        });
+        return;
       }
 
       await FlutterNfcKit.finish();
@@ -522,8 +529,19 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
         });
       }
     } catch (e) {
+      String errorMessage = '读取失败';
+      if (e.toString().contains('timeout')) {
+        errorMessage = '扫描超时，请重新尝试';
+      } else if (e.toString().contains('cancelled')) {
+        errorMessage = '扫描已取消';
+      } else if (e.toString().contains('not available')) {
+        errorMessage = 'NFC功能不可用';
+      } else {
+        errorMessage = '读取失败: ${e.toString()}';
+      }
+      
       setState(() {
-        _scanStatus = '读取失败: $e';
+        _scanStatus = errorMessage;
       });
     } finally {
       setState(() {
@@ -534,34 +552,35 @@ class _NfcReadWriteScreenState extends State<NfcReadWriteScreen>
 
   Future<void> _findUserByNfcData(String nfcData) async {
     try {
-      // 尝试作为学生ID查找
-      final student = await _pocketBaseService.getStudentByStudentId(nfcData);
+      // 首先尝试通过NFC ID查找学生
+      final student = await _pocketBaseService.getStudentByNfcId(nfcData);
       if (student != null) {
         setState(() {
           _selectedStudentId = student.id;
           _currentMode = 'student';
-          _nfcOperationStatus = '找到学生: ${student.getStringValue('student_name')}';
+          _nfcOperationStatus = '✅ 找到学生: ${student.getStringValue('student_name') ?? '未知学生'}\nNFC ID: $nfcData';
         });
         return;
       }
       
-      // 尝试作为教师ID查找
-      final teacher = await _pocketBaseService.getTeacherByTeacherId(nfcData);
+      // 尝试通过NFC ID查找教师
+      final teacher = await _pocketBaseService.getTeacherByNfcId(nfcData);
       if (teacher != null) {
         setState(() {
           _selectedTeacherId = teacher.id;
           _currentMode = 'teacher';
-          _nfcOperationStatus = '找到教师: ${teacher.getStringValue('teacher_name')}';
+          _nfcOperationStatus = '✅ 找到教师: ${teacher.getStringValue('name') ?? '未知教师'}\nNFC ID: $nfcData';
         });
         return;
       }
       
+      // 如果都没找到，显示友好的提示信息
       setState(() {
-        _nfcOperationStatus = '未找到对应的用户';
+        _nfcOperationStatus = '❌ 未找到该NFC卡的拥有者信息\n\n可能的原因:\n• NFC卡未分配给任何用户\n• NFC ID格式不匹配\n• 数据库中没有相关记录\n\nNFC ID: $nfcData\n\n建议:\n• 检查NFC卡是否正确分配\n• 联系管理员进行卡片分配';
       });
     } catch (e) {
       setState(() {
-        _nfcOperationStatus = '查找用户失败: $e';
+        _nfcOperationStatus = '❌ 查找用户失败\n\n错误信息: $e\n\nNFC ID: $nfcData\n\n建议:\n• 检查网络连接\n• 重新尝试扫描\n• 联系技术支持';
       });
     }
   }

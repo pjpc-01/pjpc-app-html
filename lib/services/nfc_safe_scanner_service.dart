@@ -1,8 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
-import 'package:ndef/record.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'pocketbase_service.dart';
 import 'app_state_manager.dart';
@@ -18,7 +15,6 @@ class NFCSafeScannerService {
   // 防重复扫描机制
   bool _isScanning = false;
   DateTime? _lastScanTime;
-  String? _lastScanData;
   
   /// 扫描NFC卡片
   /// [timeout] 扫描超时时间
@@ -66,8 +62,8 @@ class NFCSafeScannerService {
       try {
         
         // 直接使用标签ID作为考勤数据
-        if (tag.id != null && tag.id!.isNotEmpty) {
-          nfcData = tag.id!;
+        if (tag.id.isNotEmpty) {
+          nfcData = tag.id;
         } else {
         }
         
@@ -133,11 +129,27 @@ class NFCSafeScannerService {
   /// 查找学生
   Future<RecordModel?> _findStudent(String nfcData) async {
     try {
+      // 尝试多种格式的NFC数据
+      List<String> nfcVariants = [
+        nfcData, // 原始格式
+        nfcData.toUpperCase(), // 大写
+        nfcData.toLowerCase(), // 小写
+        nfcData.replaceAll(':', ''), // 去除冒号
+        nfcData.toUpperCase().replaceAll(':', ''), // 大写+去除冒号
+        nfcData.toLowerCase().replaceAll(':', ''), // 小写+去除冒号
+        nfcData.replaceAll(' ', ''), // 去除空格
+        nfcData.replaceAll(RegExp(r'[^A-Za-z0-9]'), ''), // 只保留字母数字
+      ];
       
-      // 首先尝试作为NFC卡号查找学生
-      final student = await PocketBaseService.instance.getStudentByNfcId(nfcData);
-      if (student != null) {
-        return student;
+      // 去重
+      nfcVariants = nfcVariants.toSet().toList();
+      
+      // 尝试使用 cardNumber 字段查找学生（主要字段）
+      for (String variant in nfcVariants) {
+        final student = await PocketBaseService.instance.getStudentByNfcId(variant);
+        if (student != null) {
+          return student;
+        }
       }
       
       return null;

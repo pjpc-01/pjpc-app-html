@@ -3,14 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import '../../providers/student_provider.dart';
 import '../../providers/points_provider.dart';
-import '../../providers/teacher_provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../services/pocketbase_service.dart';
 import '../../theme/app_theme.dart';
 import '../../services/nfc_safe_scanner_service.dart';
@@ -767,6 +762,7 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
   void _showPointsPanel(BuildContext context, RecordModel student) {
     final pointsProvider = context.read<PointsProvider>();
     final history = pointsProvider.getPointsHistoryForStudent(student.id);
+    final totalPoints = pointsProvider.getTotalPointsForStudent(student.id);
 
     showModalBottomSheet(
       context: context,
@@ -780,8 +776,37 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Text('积分操作 - ${student.getStringValue('student_name')}',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('积分操作 - ${student.getStringValue('student_name')}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.stars, size: 16, color: AppTheme.primaryColor),
+                          const SizedBox(width: 4),
+                          Text(
+                            '当前积分: $totalPoints',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const Divider(height: 1),
               Expanded(
@@ -889,6 +914,8 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
   }
 
   void _showSimplePointsDialog(BuildContext context, String actionType, RecordModel student) {
+    final pointsProvider = context.read<PointsProvider>();
+    final totalPoints = pointsProvider.getTotalPointsForStudent(student.id);
     
     String title;
     Color primaryColor;
@@ -928,23 +955,51 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
                   color: AppTheme.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Row(
+                child: Column(
                   children: [
-                    Icon(Icons.person, color: AppTheme.primaryColor),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            student.getStringValue('student_name'),
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                    Row(
+                      children: [
+                        Icon(Icons.person, color: AppTheme.primaryColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                student.getStringValue('student_name'),
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                '学号: ${student.getStringValue('student_id')}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
                           ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.stars, size: 16, color: AppTheme.primaryColor),
+                          const SizedBox(width: 4),
                           Text(
-                            '学号: ${student.getStringValue('student_id')}',
+                            '当前积分: $totalPoints',
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.primaryColor,
                             ),
                           ),
                         ],
@@ -1134,10 +1189,14 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
       try {
         teacher = await PocketBaseService.instance.getTeacherByUserId(currentUser.id);
         if (teacher != null) {
-          teacherId = teacher.id;
-          teacherName = teacher.getStringValue('teacher_name') ?? teacherName;
+          teacherId = teacher.id; // 使用教师记录的真实ID
+          teacherName = teacher.getStringValue('name') ?? teacherName;
+        } else {
+          // 如果找不到教师记录，使用用户ID作为备用
+          print('警告: 找不到教师记录，使用用户ID: ${currentUser.id}');
         }
       } catch (e) {
+        print('获取教师信息失败: $e');
       }
 
       // 计算积分变化
@@ -1146,19 +1205,15 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
         pointsChange = -amount; // 扣除积分为负数
       }
 
-      // 创建积分记录
-      await PocketBaseService.instance.createPointsTransaction({
-        'student_id': student.id,
-        'student_name': student.getStringValue('student_name'),
-        'transaction_type': actionType,
-        'points_change': pointsChange,
-        'reason': reason.isEmpty ? '无' : reason,
-        'teacher_id': teacherId,
-        'teacher_name': teacherName,
-        'status': 'approved',
-        'notes': actionType == 'redeem' ? '兑换礼物' : null,
-        'is_teacher_id_valid': teacher != null, // 只有当找到教师记录时才使用关联字段
-      });
+      // 创建积分记录 - 使用正确的createPointTransaction方法
+      await PocketBaseService.instance.createPointTransaction(
+        studentId: student.id,
+        teacherId: teacherId, // 使用正确的教师ID
+        pointsChange: pointsChange,
+        transactionType: actionType,
+        reason: reason.isEmpty ? '无' : reason,
+        proofImage: actionType == 'redeem' ? null : null, // 如果需要图片凭证
+      );
 
       // 积分汇总更新暂时跳过，避免字段验证问题
       // 可以通过积分记录计算当前积分
@@ -1203,6 +1258,8 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
   }
 
   Future<void> _showPointsDialog(BuildContext context, String actionType, RecordModel student) async {
+    final pointsProvider = context.read<PointsProvider>();
+    final totalPoints = pointsProvider.getTotalPointsForStudent(student.id);
     
     final amountController = TextEditingController();
     final reasonController = TextEditingController();
@@ -1253,23 +1310,51 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
                     color: AppTheme.primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Row(
+                  child: Column(
                     children: [
-                      Icon(Icons.person, color: AppTheme.primaryColor),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              student.getStringValue('student_name'),
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                      Row(
+                        children: [
+                          Icon(Icons.person, color: AppTheme.primaryColor),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  student.getStringValue('student_name'),
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  '学号: ${student.getStringValue('student_id')}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
                             ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.stars, size: 16, color: AppTheme.primaryColor),
+                            const SizedBox(width: 4),
                             Text(
-                              '学号: ${student.getStringValue('student_id')}',
+                              '当前积分: $totalPoints',
                               style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.primaryColor,
                               ),
                             ),
                           ],
@@ -1356,6 +1441,8 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
   }
 
   Future<void> _showCustomPointsDialog(String actionType, RecordModel student, {BuildContext? bottomSheetContext}) async {
+    final pointsProvider = context.read<PointsProvider>();
+    final totalPoints = pointsProvider.getTotalPointsForStudent(student.id);
     
     if (!mounted) {
       return; // 检查widget是否仍然挂载
@@ -1422,29 +1509,57 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
                   ),
-                  child: Row(
+                  child: Column(
                     children: [
-                      CircleAvatar(
-                        backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
-                        child: Text(
-                          student.getStringValue('student_name').isNotEmpty 
-                              ? student.getStringValue('student_name')[0].toUpperCase() 
-                              : '?',
-                          style: const TextStyle(color: AppTheme.primaryColor),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              student.getStringValue('student_name'),
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
+                            child: Text(
+                              student.getStringValue('student_name').isNotEmpty 
+                                  ? student.getStringValue('student_name')[0].toUpperCase() 
+                                  : '?',
+                              style: const TextStyle(color: AppTheme.primaryColor),
                             ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  student.getStringValue('student_name'),
+                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                Text(
+                                  '${student.getStringValue('student_id')} · ${student.getStringValue('standard')}',
+                                  style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.stars, size: 16, color: AppTheme.primaryColor),
+                            const SizedBox(width: 4),
                             Text(
-                              '${student.getStringValue('student_id')} · ${student.getStringValue('standard')}',
-                              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                              '当前积分: $totalPoints',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.primaryColor,
+                              ),
                             ),
                           ],
                         ),
@@ -1605,11 +1720,7 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
                 );
                 }
 
-                // 二次验证老师卡
-                final teacherConfirmed = await _showTeacherVerificationDialog();
-                if (!teacherConfirmed) {
-                  return;
-                }
+                // 教师验证步骤已移除，直接进行积分操作
 
                 final provider = context.read<PointsProvider>();
                 final teacherId = PocketBaseService.instance.currentUser?.id ?? '';
@@ -1682,134 +1793,5 @@ class _PointsNFCScannerWidgetState extends State<PointsNFCScannerWidget>
     );
   }
 
-  Future<bool> _showTeacherVerificationDialog() async {
-    return await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text('老师卡验证'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.nfc,
-                size: 48,
-                color: AppTheme.primaryColor,
-              ),
-              const SizedBox(height: 16),
-              const Text('请将老师NFC卡靠近设备进行验证'),
-              const SizedBox(height: 16),
-              FutureBuilder<bool>(
-                future: _performTeacherScan(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Column(
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 8),
-                        Text('正在扫描...'),
-                      ],
-                    );
-                  } else if (snapshot.hasError) {
-                    return Column(
-                      children: [
-                        const Icon(Icons.error, color: AppTheme.errorColor, size: 32),
-                        const SizedBox(height: 8),
-                        Text('扫描失败: ${snapshot.error}'),
-                      ],
-                    );
-                  } else if (snapshot.data == true) {
-                    return const Column(
-                      children: [
-                        Icon(Icons.check_circle, color: AppTheme.successColor, size: 32),
-                        SizedBox(height: 8),
-                        Text('验证成功！'),
-                      ],
-                    );
-                  } else {
-                    return const Column(
-                      children: [
-                        Icon(Icons.cancel, color: AppTheme.errorColor, size: 32),
-                        SizedBox(height: 8),
-                        Text('验证失败'),
-                      ],
-                    );
-                  }
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                final result = await _performTeacherScan();
-                if (result) {
-                  Navigator.of(ctx).pop(true);
-                }
-              },
-              child: const Text('重试'),
-            ),
-          ],
-        );
-      },
-    ) ?? false;
-  }
-
-  Future<bool> _performTeacherScan() async {
-    try {
-      final result = await NFCSafeScannerService.instance.safeScanNFC(
-        timeout: const Duration(seconds: 10),
-        requireStudent: false,
-      );
-
-      if (!result.isSuccess) {
-        throw Exception(result.errorMessage ?? '扫描失败');
-      }
-
-      final raw = result.decryptedData ?? result.nfcData ?? '';
-      if (raw.isEmpty) {
-        throw Exception('未在卡内发现有效数据');
-      }
-
-      // 兼容 teacherId_random 或纯ID
-      final idx = raw.indexOf('_');
-      String teacherId = (idx > 0 ? raw.substring(0, idx) : raw)
-          .replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
-
-      // 查找老师（使用PocketBaseService直接查询）
-      RecordModel? teacher;
-      
-      try {
-        // 先尝试通过user_id查找
-        teacher = await PocketBaseService.instance.getTeacherByUserId(teacherId);
-        
-        // 如果没找到，尝试通过teacher_id查找
-        if (teacher == null) {
-          final teachers = await PocketBaseService.instance.getTeachers();
-          for (final t in teachers) {
-            final raw = (t.data['teacher_id'] ?? '').toString();
-        final norm = raw.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
-        if (norm.toUpperCase() == teacherId.toUpperCase()) {
-          teacher = t;
-          break;
-        }
-      }
-        }
-      } catch (e) {
-      }
-      
-      if (teacher == null) {
-        throw Exception('未找到对应的老师记录: $teacherId');
-      }
-      
-      return true;
-    } catch (e) {
-      rethrow;
-    }
-  }
+  // 教师验证方法已移除，简化积分操作流程
 }

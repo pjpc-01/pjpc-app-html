@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/attendance_provider.dart';
 import '../../theme/app_theme.dart';
+import '../nfc/nfc_management_screen.dart';
+import '../attendance/attendance_records_screen.dart';
 
 class TeacherProfileScreen extends StatefulWidget {
   const TeacherProfileScreen({super.key});
@@ -869,14 +871,28 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen>
               'NFC卡补办',
               Icons.card_membership,
               () {
-                // NFC卡补办
+                // 导航到NFC管理页面的补办功能
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NfcManagementScreen(
+                      initialTab: 2, // 补办申请标签页
+                    ),
+                  ),
+                );
               },
             ),
             _buildSettingsItem(
               'NFC使用记录',
               Icons.history,
               () {
-                // NFC使用记录
+                // 导航到考勤记录页面查看NFC使用记录
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AttendanceRecordsScreen(),
+                  ),
+                );
               },
             ),
           ]),

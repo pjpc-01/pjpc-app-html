@@ -10,6 +10,11 @@ class RoleSwitcherWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
+        // 添加空值检查
+        if (authProvider.userProfile == null) {
+          return const SizedBox.shrink();
+        }
+        
         // 如果用户没有多个角色，不显示切换器
         if (!authProvider.hasMultipleRoles) {
           return const SizedBox.shrink();

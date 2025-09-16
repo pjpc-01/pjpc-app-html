@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 
 /// 统一的AppBar组件
 class UnifiedAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -51,7 +51,7 @@ class UnifiedCard extends StatelessWidget {
   final Color? backgroundColor;
   final double? elevation;
   final BorderRadius? borderRadius;
-  final Border? border;
+  final BorderSide? border;
   final List<BoxShadow>? boxShadow;
 
   const UnifiedCard({

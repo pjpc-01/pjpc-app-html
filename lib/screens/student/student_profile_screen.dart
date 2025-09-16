@@ -5,7 +5,6 @@ import '../../providers/attendance_provider.dart';
 import '../../providers/points_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common/statistics_card.dart';
-import 'add_edit_student_screen.dart';
 
 class StudentProfileScreen extends StatefulWidget {
   final String studentId;
@@ -77,7 +76,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
           return CustomScrollView(
             slivers: [
               _buildModernHeader(student),
-              _buildQuickActions(student),
               _buildStudentInfo(student),
               _buildRecentActivity(student),
             ],
@@ -295,127 +293,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
     }
   }
 
-  Widget _buildQuickActions(dynamic student) {
-    return SliverToBoxAdapter(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '快速操作',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildActionButton(
-                    '编辑信息',
-                    Icons.edit,
-                    const Color(0xFF3B82F6),
-                    () => _editStudent(student),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildActionButton(
-                    '积分管理',
-                    Icons.stars,
-                    const Color(0xFFF59E0B),
-                    () => _managePoints(student),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildActionButton(
-                    '考勤记录',
-                    Icons.access_time,
-                    const Color(0xFF10B981),
-                    () => _viewAttendance(student),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildActionButton(String title, IconData icon, Color color, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: TextStyle(
-                color: color,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  void _editStudent(dynamic student) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddEditStudentScreen(student: student),
-      ),
-    );
-  }
-
-  void _managePoints(dynamic student) {
-    // TODO: 实现积分管理功能
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('积分管理功能开发中...'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
-
-  void _viewAttendance(dynamic student) {
-    // TODO: 实现考勤记录查看功能
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('考勤记录功能开发中...'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
 
   Widget _buildStudentInfo(dynamic student) {
     return SliverToBoxAdapter(
@@ -450,7 +329,14 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
             _buildInfoRow('班级', student.getStringValue('standard') ?? '未知'),
             _buildInfoRow('中心', student.getStringValue('center') ?? '未知'),
             _buildInfoRow('年龄', '${student.getStringValue('age') ?? '未知'}岁'),
+            _buildInfoRow('性别', student.getStringValue('gender') ?? '未知'),
+            _buildInfoRow('出生日期', _formatDate(student.getStringValue('dob'))),
+            _buildInfoRow('家长电话', student.getStringValue('parents_phone') ?? '未填写'),
+            _buildInfoRow('家庭地址', student.getStringValue('home_address') ?? '未填写'),
+            _buildInfoRow('NFC标签ID', student.getStringValue('cardNumber') ?? '未分配'),
+            _buildInfoRow('状态', student.getStringValue('status') ?? '未知'),
             _buildInfoRow('注册时间', _formatDate(student.getStringValue('created'))),
+            _buildInfoRow('最后更新', _formatDate(student.getStringValue('updated'))),
           ],
         ),
       ),
@@ -525,26 +411,14 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
               ),
             ),
             const SizedBox(height: 16),
-            _buildActivityItem(
-              Icons.stars,
-              '获得积分',
-              '+10 积分',
-              '2小时前',
-              const Color(0xFFF59E0B),
-            ),
-            _buildActivityItem(
-              Icons.access_time,
-              '考勤打卡',
-              '正常出勤',
-              '今天 08:30',
-              const Color(0xFF10B981),
-            ),
-            _buildActivityItem(
-              Icons.edit,
-              '信息更新',
-              '更新了联系方式',
-              '昨天',
-              const Color(0xFF3B82F6),
+            const Center(
+              child: Text(
+                '暂无活动记录',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
             ),
           ],
         ),
@@ -820,36 +694,37 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
           _buildInfoCard(
             '学业统计',
             [
-              _buildInfoRow('总出勤率', '95.5%'),
-              _buildInfoRow('平均成绩', '85.2分'),
-              _buildInfoRow('作业完成率', '98.3%'),
-              _buildInfoRow('参与活动', '12次'),
-              _buildInfoRow('获得奖项', '3个'),
-              _buildInfoRow('学习积分', '1,250分'),
+              const Center(
+                child: Text(
+                  '暂无统计数据',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
           _buildInfoCard(
             '科目成绩',
             [
-              _buildSubjectGradeRow('数学', '92', 'A+'),
-              _buildSubjectGradeRow('语文', '88', 'A'),
-              _buildSubjectGradeRow('英语', '85', 'A-'),
-              _buildSubjectGradeRow('物理', '90', 'A+'),
-              _buildSubjectGradeRow('化学', '87', 'A'),
-              _buildSubjectGradeRow('生物', '83', 'B+'),
+              const Center(
+                child: Text(
+                  '暂无成绩记录',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
           _buildInfoCard(
             '学习记录',
             [
-              _buildInfoRow('最近更新', '系统数据已同步'),
-              _buildInfoRow('最近作业', '2024-01-14 语文作文'),
-              _buildInfoRow('学习计划', '已完成本周计划'),
-              _buildInfoRow('学习目标', '提高英语成绩'),
-              _buildInfoRow('学习习惯', '良好'),
-              _buildInfoRow('学习态度', '积极'),
+              _buildInfoRow('最近更新', _formatDate(student.getStringValue('updated'))),
             ],
           ),
         ],
@@ -901,6 +776,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
             [
               _buildInfoRow('姓名', student.getStringValue('emergencyContactName') ?? '未知'),
               _buildInfoRow('手机号', student.getStringValue('emergencyContactPhone') ?? '未知'),
+              _buildInfoRow('关系', student.getStringValue('emergencyContactRelation') ?? '未知'),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -913,16 +789,18 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
           ),
           const SizedBox(height: AppSpacing.lg),
           _buildInfoCard(
-            '家长参与',
+            '接送信息',
             [
-              _buildInfoRow('家长会参与', '积极'),
-              _buildInfoRow('志愿者活动', '3次'),
-              _buildInfoRow('家校沟通', '良好'),
-              _buildInfoRow('教育理念', '注重全面发展'),
-              _buildInfoRow('关注重点', '学习成绩'),
-              _buildInfoRow('配合度', '高'),
+              _buildInfoRow('接送方式', student.getStringValue('pickupMethod') ?? '未填写'),
+              _buildInfoRow('授权接送人1', student.getStringValue('authorizedPickup1Name') ?? '未填写'),
+              _buildInfoRow('授权接送人1电话', student.getStringValue('authorizedPickup1Phone') ?? '未填写'),
+              _buildInfoRow('授权接送人2', student.getStringValue('authorizedPickup2Name') ?? '未填写'),
+              _buildInfoRow('授权接送人2电话', student.getStringValue('authorizedPickup2Phone') ?? '未填写'),
+              _buildInfoRow('授权接送人3', student.getStringValue('authorizedPickup3Name') ?? '未填写'),
+              _buildInfoRow('授权接送人3电话', student.getStringValue('authorizedPickup3Phone') ?? '未填写'),
             ],
           ),
+          const SizedBox(height: AppSpacing.lg),
         ],
       ),
     );

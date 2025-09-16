@@ -402,6 +402,11 @@ class StudentProvider with ChangeNotifier {
     if (_authProvider?.userProfile == null) return [];
     
     // 获取当前用户的邮箱，用于查找对应的教师记录
+    if (_authProvider?.userProfile == null) {
+      print('用户配置文件为空');
+      return [];
+    }
+    
     final userEmail = _authProvider!.userProfile!.getStringValue('email') ?? '';
     if (userEmail.isEmpty) {
       print('用户邮箱为空');
@@ -544,15 +549,10 @@ class StudentProvider with ChangeNotifier {
   bool canEditStudent(String studentId) {
     if (_authProvider == null) return false;
     
-    // 管理员可以编辑所有学生
+    // 只有管理员可以编辑学生信息
     if (_authProvider!.isAdmin) return true;
     
-    // 老师只能编辑自己班级学生的部分信息（不能编辑基本信息）
-    if (_authProvider!.isTeacher) {
-      return canViewStudent(studentId);
-    }
-    
-    // 家长和会计不能编辑学生信息
+    // 教师、家长和会计都不能编辑学生信息
     return false;
   }
 

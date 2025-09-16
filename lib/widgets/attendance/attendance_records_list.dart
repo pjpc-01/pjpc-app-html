@@ -95,11 +95,27 @@ class AttendanceRecordsList extends StatelessWidget {
     }
     
     final studentName = getValue('student_name').isEmpty ? '未知学生' : getValue('student_name');
-    final checkInTime = getValue('check_in_time').isEmpty ? '--' : getValue('check_in_time');
+    final checkInTime = getValue('check_in').isEmpty ? '--' : getValue('check_in');
+    final checkOutTime = getValue('check_out').isEmpty ? '--' : getValue('check_out');
     final status = getValue('status').isEmpty ? 'unknown' : getValue('status');
     final type = getValue('type').isEmpty ? 'check_in' : getValue('type');
+    final attendanceType = getValue('attendance_type').isEmpty ? type : getValue('attendance_type');
     final notes = getValue('notes');
     final date = getValue('date');
+    final timestamp = getValue('timestamp');
+    final created = getValue('created');
+
+    // 根据记录类型确定显示的时间
+    String displayTime = '--';
+    if (attendanceType == 'check_in' && checkInTime != '--') {
+      displayTime = checkInTime;
+    } else if (attendanceType == 'check_out' && checkOutTime != '--') {
+      displayTime = checkOutTime;
+    } else if (timestamp.isNotEmpty) {
+      displayTime = timestamp;
+    } else if (created.isNotEmpty) {
+      displayTime = created;
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -135,7 +151,7 @@ class AttendanceRecordsList extends StatelessWidget {
                           ),
                           const SizedBox(height: AppSpacing.xs),
                           Text(
-                            _getTypeText(type),
+                            _getTypeText(attendanceType),
                             style: AppTextStyles.bodySmall.copyWith(
                               color: AppTheme.textSecondary,
                             ),
@@ -143,7 +159,7 @@ class AttendanceRecordsList extends StatelessWidget {
                         ],
                       ),
                     ),
-                    _buildTimeInfo(checkInTime, date),
+                    _buildTimeInfo(displayTime, attendanceType, date),
                   ],
                 ),
                 if (notes.isNotEmpty) ...[
@@ -237,17 +253,41 @@ class AttendanceRecordsList extends StatelessWidget {
     );
   }
 
-  Widget _buildTimeInfo(String checkInTime, String date) {
+  Widget _buildTimeInfo(String displayTime, String attendanceType, String date) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text(
-          checkInTime,
-          style: AppTextStyles.bodyLarge.copyWith(
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+        // 显示时间信息
+        if (displayTime != '--') ...[
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                attendanceType == 'check_in' ? Icons.login : Icons.logout,
+                size: 14,
+                color: attendanceType == 'check_in' ? AppTheme.successColor : AppTheme.primaryColor,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                _formatTime(displayTime),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: attendanceType == 'check_in' ? AppTheme.successColor : AppTheme.primaryColor,
+                ),
+              ),
+            ],
           ),
-        ),
+        ],
+        // 如果没有时间信息，显示默认状态
+        if (displayTime == '--') ...[
+          Text(
+            '未记录',
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textTertiary,
+            ),
+          ),
+        ],
         const SizedBox(height: AppSpacing.xs),
         Text(
           _formatDate(date),
@@ -339,13 +379,25 @@ class AttendanceRecordsList extends StatelessWidget {
   String _getTypeText(String type) {
     switch (type.toLowerCase()) {
       case 'check_in':
-        return 'NFC签到';
+        return '签到';
+      case 'check_out':
+        return '签退';
       case 'late':
         return '迟到';
       case 'absent':
         return '缺勤';
       default:
-        return 'NFC签到';
+        return '考勤记录';
+    }
+  }
+
+  String _formatTime(String timeString) {
+    if (timeString.isEmpty || timeString == '--') return '--';
+    try {
+      final dateTime = DateTime.parse(timeString);
+      return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return timeString;
     }
   }
 
@@ -387,8 +439,8 @@ class AttendanceRecordsList extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildDetailRow('学生姓名', getValue('student_name').isEmpty ? '--' : getValue('student_name')),
-            _buildDetailRow('签到时间', getValue('check_in_time').isEmpty ? '--' : getValue('check_in_time')),
-            _buildDetailRow('签退时间', getValue('check_out_time').isEmpty ? '--' : getValue('check_out_time')),
+            _buildDetailRow('签到时间', getValue('check_in').isEmpty ? '--' : getValue('check_in')),
+            _buildDetailRow('签退时间', getValue('check_out').isEmpty ? '--' : getValue('check_out')),
             _buildDetailRow('状态', getValue('status').isEmpty ? '--' : getValue('status')),
             _buildDetailRow('类型', getValue('type').isEmpty ? '--' : getValue('type')),
             _buildDetailRow('日期', getValue('date').isEmpty ? '--' : getValue('date')),

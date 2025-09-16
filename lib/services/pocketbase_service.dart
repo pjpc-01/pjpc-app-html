@@ -1648,6 +1648,8 @@ class PocketBaseService {
         throw Exception('User not authenticated. Please login first.');
       }
       
+      print('=== 教师查找开始 ===');
+      print('查找用户ID: $userId');
       
       // 方法1: 通过user_id字段查找（主要方法）
       try {
@@ -1657,10 +1659,13 @@ class PocketBaseService {
         );
         
         if (result.items.isNotEmpty) {
+          print('✅ 通过user_id字段找到教师: ${result.items.first.getStringValue('name')}');
           return result.items.first;
         } else {
+          print('❌ 通过user_id字段未找到教师');
         }
       } catch (e) {
+        print('❌ user_id字段查找失败: $e');
       }
       
       // 方法2: 通过id字段查找（备用方法）
@@ -1671,10 +1676,13 @@ class PocketBaseService {
         );
         
         if (result.items.isNotEmpty) {
+          print('✅ 通过id字段找到教师: ${result.items.first.getStringValue('name')}');
           return result.items.first;
         } else {
+          print('❌ 通过id字段未找到教师');
         }
       } catch (e) {
+        print('❌ id字段查找失败: $e');
       }
       
       // 方法3: 通过teacher_id字段查找（备用方法）
@@ -1685,14 +1693,132 @@ class PocketBaseService {
         );
         
         if (result.items.isNotEmpty) {
+          print('✅ 通过teacher_id字段找到教师: ${result.items.first.getStringValue('name')}');
           return result.items.first;
         } else {
+          print('❌ 通过teacher_id字段未找到教师');
         }
       } catch (e) {
+        print('❌ teacher_id字段查找失败: $e');
       }
       
+      // 方法4: 通过电邮查找（新增方法）
+      try {
+        // 获取当前用户的邮箱
+        final currentUser = pb.authStore.record;
+        if (currentUser != null) {
+          final userEmail = currentUser.getStringValue('email');
+          if (userEmail != null && userEmail.isNotEmpty) {
+            print('🔍 尝试通过电邮查找: $userEmail');
+            
+            final result = await pb.collection('teachers').getList(
+              filter: 'email = "${userEmail.trim()}"',
+              perPage: 1,
+            );
+            
+            if (result.items.isNotEmpty) {
+              print('✅ 通过电邮找到教师: ${result.items.first.getStringValue('name')}');
+              return result.items.first;
+            } else {
+              print('❌ 通过电邮未找到教师');
+            }
+          } else {
+            print('❌ 当前用户没有邮箱信息');
+          }
+        } else {
+          print('❌ 无法获取当前用户信息');
+        }
+      } catch (e) {
+        print('❌ 电邮查找失败: $e');
+      }
+      
+      // 方法5: 通过用户名查找（备用方法）
+      try {
+        final currentUser = pb.authStore.record;
+        if (currentUser != null) {
+          final userName = currentUser.getStringValue('name');
+          if (userName != null && userName.isNotEmpty) {
+            print('🔍 尝试通过用户名查找: $userName');
+            
+            final result = await pb.collection('teachers').getList(
+              filter: 'name = "${userName.trim()}"',
+              perPage: 1,
+            );
+            
+            if (result.items.isNotEmpty) {
+              print('✅ 通过用户名找到教师: ${result.items.first.getStringValue('name')}');
+              return result.items.first;
+            } else {
+              print('❌ 通过用户名未找到教师');
+            }
+          }
+        }
+      } catch (e) {
+        print('❌ 用户名查找失败: $e');
+      }
+      
+      print('❌ 所有查找方法都失败，未找到教师记录');
       return null;
     } catch (e) {
+      print('❌ 教师查找过程出错: $e');
+      return null;
+    }
+  }
+
+  /// 根据电邮获取教师信息
+  Future<RecordModel?> getTeacherByEmail(String email) async {
+    try {
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      print('=== 通过电邮查找教师 ===');
+      print('查找电邮: $email');
+      
+      final result = await pb.collection('teachers').getList(
+        filter: 'email = "${email.trim()}"',
+        perPage: 1,
+      );
+      
+      if (result.items.isNotEmpty) {
+        print('✅ 通过电邮找到教师: ${result.items.first.getStringValue('name')}');
+        return result.items.first;
+      } else {
+        print('❌ 通过电邮未找到教师');
+        return null;
+      }
+    } catch (e) {
+      print('❌ 电邮查找失败: $e');
+      return null;
+    }
+  }
+
+  /// 根据用户名获取教师信息
+  Future<RecordModel?> getTeacherByName(String name) async {
+    try {
+      // 确保用户已认证
+      if (!pb.authStore.isValid) {
+        throw Exception('User not authenticated. Please login first.');
+      }
+      
+      print('=== 通过用户名查找教师 ===');
+      print('查找用户名: $name');
+      
+      final result = await pb.collection('teachers').getList(
+        filter: 'name = "${name.trim()}"',
+        perPage: 1,
+      );
+      
+      if (result.items.isNotEmpty) {
+        print('✅ 通过用户名找到教师: ${result.items.first.getStringValue('name')}');
+        return result.items.first;
+      } else {
+        print('❌ 通过用户名未找到教师');
+        return null;
+      }
+    } catch (e) {
+      print('❌ 用户名查找失败: $e');
       return null;
     }
   }
@@ -2248,39 +2374,72 @@ class PocketBaseService {
   }
 
   // Additional missing methods for compatibility
-  Future<RecordModel> getStudentByNfcId(String nfcId) async {
+  Future<RecordModel?> getStudentByNfcId(String nfcId) async {
     try {
+      // 尝试使用 cardNumber 字段查找学生（这是学生集合中实际使用的字段）
       final records = await pb.collection('students').getList(
+        filter: 'cardNumber = "$nfcId"',
+        perPage: 1,
+      );
+      if (records.items.isNotEmpty) {
+        return records.items.first;
+      }
+      
+      // 如果没找到，尝试使用 nfc_tag_id 字段（备用字段）
+      final records2 = await pb.collection('students').getList(
         filter: 'nfc_tag_id = "$nfcId"',
         perPage: 1,
       );
-      return records.items.isNotEmpty ? records.items.first : throw Exception('Student not found');
+      return records2.items.isNotEmpty ? records2.items.first : null;
     } catch (e) {
-      throw Exception('Failed to get student by NFC ID: ${e.toString()}');
+      print('Failed to get student by NFC ID: ${e.toString()}');
+      return null;
     }
   }
 
-  Future<RecordModel> getTeacherByCardId(String cardId) async {
+  Future<RecordModel?> getTeacherByCardId(String cardId) async {
     try {
+      // 尝试使用 nfc_card_number 字段查找教师（主要字段）
       final records = await pb.collection('teachers').getList(
+        filter: 'nfc_card_number = "$cardId"',
+        perPage: 1,
+      );
+      if (records.items.isNotEmpty) {
+        return records.items.first;
+      }
+      
+      // 如果没找到，尝试使用 card_id 字段（备用字段）
+      final records2 = await pb.collection('teachers').getList(
         filter: 'card_id = "$cardId"',
         perPage: 1,
       );
-      return records.items.isNotEmpty ? records.items.first : throw Exception('Teacher not found');
+      return records2.items.isNotEmpty ? records2.items.first : null;
     } catch (e) {
-      throw Exception('Failed to get teacher by card ID: ${e.toString()}');
+      print('Failed to get teacher by card ID: ${e.toString()}');
+      return null;
     }
   }
 
-  Future<RecordModel> getTeacherByNfcId(String nfcId) async {
+  Future<RecordModel?> getTeacherByNfcId(String nfcId) async {
     try {
+      // 尝试使用 nfc_card_number 字段查找教师（这是教师集合中实际使用的字段）
       final records = await pb.collection('teachers').getList(
+        filter: 'nfc_card_number = "$nfcId"',
+        perPage: 1,
+      );
+      if (records.items.isNotEmpty) {
+        return records.items.first;
+      }
+      
+      // 如果没找到，尝试使用 nfc_tag_id 字段（备用字段）
+      final records2 = await pb.collection('teachers').getList(
         filter: 'nfc_tag_id = "$nfcId"',
         perPage: 1,
       );
-      return records.items.isNotEmpty ? records.items.first : throw Exception('Teacher not found');
+      return records2.items.isNotEmpty ? records2.items.first : null;
     } catch (e) {
-      throw Exception('Failed to get teacher by NFC ID: ${e.toString()}');
+      print('Failed to get teacher by NFC ID: ${e.toString()}');
+      return null;
     }
   }
 

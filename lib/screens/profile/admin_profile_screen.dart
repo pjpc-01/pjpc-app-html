@@ -321,7 +321,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
           tabs: const [
             Tab(text: '个人信息', icon: Icon(Icons.person, size: 16)),
             Tab(text: '考勤记录', icon: Icon(Icons.access_time, size: 16)),
-            Tab(text: '系统设置', icon: Icon(Icons.settings, size: 16)),
+            Tab(text: '个人设置', icon: Icon(Icons.account_circle, size: 16)),
             Tab(text: '数据统计', icon: Icon(Icons.analytics, size: 16)),
           ],
         ),
@@ -537,7 +537,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildSettingsCard('账户设置', [
+          _buildSettingsCard('个人账户设置', [
             _buildSettingsItem(
               '修改密码',
               Icons.lock,
@@ -559,28 +559,35 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
                 // 更新电话
               },
             ),
+            _buildSettingsItem(
+              '编辑个人资料',
+              Icons.edit,
+              () {
+                // 编辑个人资料
+              },
+            ),
           ]),
           const SizedBox(height: 16),
-          _buildSettingsCard('系统设置', [
+          _buildSettingsCard('应用设置', [
             _buildSettingsItem(
-              '备份数据',
-              Icons.backup,
+              '通知设置',
+              Icons.notifications,
               () {
-                // 备份数据
+                // 通知设置
               },
             ),
             _buildSettingsItem(
-              '系统日志',
-              Icons.description,
+              '主题设置',
+              Icons.palette,
               () {
-                // 查看系统日志
+                // 主题设置
               },
             ),
             _buildSettingsItem(
-              '清理缓存',
-              Icons.cleaning_services,
+              '语言设置',
+              Icons.language,
               () {
-                // 清理缓存
+                // 语言设置
               },
             ),
           ]),
@@ -590,6 +597,24 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
               '退出登录',
               Icons.logout,
               () => _showLogoutDialog(),
+            ),
+          ]),
+          const SizedBox(height: 16),
+          _buildSettingsCard('系统管理', [
+            _buildSettingsItem(
+              '系统设置',
+              Icons.settings,
+              () {
+                // 导航到系统设置页面
+                Navigator.pushNamed(context, '/settings');
+              },
+            ),
+            _buildSettingsItem(
+              '数据备份',
+              Icons.backup,
+              () {
+                // 数据备份
+              },
             ),
           ]),
         ],

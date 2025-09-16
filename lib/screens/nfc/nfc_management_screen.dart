@@ -10,7 +10,9 @@ import '../../providers/teacher_provider.dart';
 import '../../services/unified_field_mapper.dart';
 
 class NfcManagementScreen extends StatefulWidget {
-  const NfcManagementScreen({super.key});
+  final int? initialTab;
+  
+  const NfcManagementScreen({super.key, this.initialTab});
 
   @override
   State<NfcManagementScreen> createState() => _NfcManagementScreenState();
@@ -63,6 +65,13 @@ class _NfcManagementScreenState extends State<NfcManagementScreen>
     // 根据用户角色决定标签页数量
     final isAdmin = context.read<AuthProvider>().isAdmin;
     _tabController = TabController(length: isAdmin ? 3 : 1, vsync: this);
+    
+    // 如果有指定的初始标签页，设置到该标签页
+    if (widget.initialTab != null && widget.initialTab! < _tabController.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _tabController.animateTo(widget.initialTab!);
+      });
+    }
     _pulseController = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
@@ -1820,8 +1829,35 @@ class _NfcManagementScreenState extends State<NfcManagementScreen>
 
   Future<void> _scanNfcCard() async {
     try {
-      final tag = await FlutterNfcKit.poll();
+      // 检查NFC可用性
+      final availability = await FlutterNfcKit.nfcAvailability;
+      if (availability != NFCAvailability.available) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('NFC功能不可用，请检查设备设置'),
+            backgroundColor: Color(0xFFEF4444),
+          ),
+        );
+        return;
+      }
+
+      final tag = await FlutterNfcKit.poll(
+        timeout: const Duration(seconds: 10),
+        iosMultipleTagMessage: '检测到多个标签，请只使用一个标签',
+        iosAlertMessage: '请将NFC标签靠近设备',
+      );
+      
       final scannedId = tag.id;
+      
+      if (scannedId.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('NFC卡中没有找到有效数据'),
+            backgroundColor: Color(0xFFEF4444),
+          ),
+        );
+        return;
+      }
       
       setState(() {
         _scannedNfcId = scannedId;
@@ -1834,9 +1870,20 @@ class _NfcManagementScreenState extends State<NfcManagementScreen>
       }
       
     } catch (e) {
+      String errorMessage = '扫描失败';
+      if (e.toString().contains('timeout')) {
+        errorMessage = '扫描超时，请重新尝试';
+      } else if (e.toString().contains('cancelled')) {
+        errorMessage = '扫描已取消';
+      } else if (e.toString().contains('not available')) {
+        errorMessage = 'NFC功能不可用';
+      } else {
+        errorMessage = '扫描失败: ${e.toString()}';
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('扫描失败: $e'),
+          content: Text(errorMessage),
           backgroundColor: const Color(0xFFEF4444),
         ),
       );
@@ -1844,7 +1891,7 @@ class _NfcManagementScreenState extends State<NfcManagementScreen>
   }
 
   Future<void> _findCardOwner(String nfcId) async {
-    if (nfcId == null || nfcId.isEmpty) return;
+    if (nfcId.isEmpty) return;
     
     setState(() {
       _isCheckingCard = true;
@@ -1859,8 +1906,8 @@ class _NfcManagementScreenState extends State<NfcManagementScreen>
         final studentId = student.getStringValue('student_id') ?? 'N/A';
         final center = student.getStringValue('center') ?? 'N/A';
         
-      setState(() {
-          _cardOwnerInfo = '学生: $studentName\n学号: $studentId\n分行: $center';
+        setState(() {
+          _cardOwnerInfo = '✅ 找到学生信息\n\n学生姓名: $studentName\n学号: $studentId\n分行: $center\n\nNFC ID: $nfcId';
           _scannedCardId = nfcId;
         });
         return;
@@ -1873,21 +1920,21 @@ class _NfcManagementScreenState extends State<NfcManagementScreen>
         final teacherId = teacher.getStringValue('teacher_id') ?? 'N/A';
         
         setState(() {
-          _cardOwnerInfo = '教师: $teacherName\n工号: $teacherId';
+          _cardOwnerInfo = '✅ 找到教师信息\n\n教师姓名: $teacherName\n工号: $teacherId\n\nNFC ID: $nfcId';
           _scannedCardId = nfcId;
         });
         return;
       }
 
-      // 如果都没找到
+      // 如果都没找到，显示友好的提示信息
       setState(() {
-        _cardOwnerInfo = '未找到该NFC卡的拥有者信息\nNFC ID: $nfcId';
+        _cardOwnerInfo = '❌ 未找到该NFC卡的拥有者信息\n\n可能的原因:\n• NFC卡未分配给任何用户\n• NFC ID格式不匹配\n• 数据库中没有相关记录\n\nNFC ID: $nfcId\n\n建议:\n• 检查NFC卡是否正确分配\n• 联系管理员进行卡片分配';
         _scannedCardId = nfcId;
       });
 
     } catch (e) {
       setState(() {
-        _cardOwnerInfo = '查找卡片拥有者失败: $e';
+        _cardOwnerInfo = '❌ 查找卡片拥有者失败\n\n错误信息: $e\n\nNFC ID: $nfcId\n\n建议:\n• 检查网络连接\n• 重新尝试扫描\n• 联系技术支持';
         _scannedCardId = nfcId;
       });
     } finally {

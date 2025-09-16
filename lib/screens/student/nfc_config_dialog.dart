@@ -119,16 +119,16 @@ class _NfcConfigDialogState extends State<NfcConfigDialog> {
           
           CustomTextField(
             controller: _nfcUrlController,
-            label: 'NFC URL',
-            hintText: '请输入NFC URL',
+            label: 'NFC标识符',
+            hintText: '请输入NFC标识符（URL格式）',
             prefixIcon: const Icon(Icons.link),
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return '请输入NFC URL';
+                return '请输入NFC标识符';
               }
               final uri = Uri.tryParse(value);
               if (uri == null || !uri.hasAbsolutePath) {
-                return '请输入有效的URL';
+                return '请输入有效的URL格式标识符';
               }
               return null;
             },
@@ -183,7 +183,7 @@ class _NfcConfigDialogState extends State<NfcConfigDialog> {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
-              'NFC URL是学生NFC卡片中存储的唯一标识符，用于考勤识别。',
+              'NFC标识符是学生NFC卡片中存储的唯一标识符，用于考勤识别。',
               style: AppTextStyles.bodySmall.copyWith(
                 color: AppTheme.primaryColor,
               ),
@@ -214,8 +214,8 @@ class _NfcConfigDialogState extends State<NfcConfigDialog> {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            '1. NFC URL应该是完整的URL地址\n'
-            '2. 确保URL在系统中是唯一的\n'
+            '1. NFC标识符应该是完整的URL地址格式\n'
+            '2. 确保标识符在系统中是唯一的\n'
             '3. 卡片状态影响考勤功能的使用\n'
             '4. 保存后需要重新扫描NFC卡片才能生效',
             style: AppTextStyles.bodySmall.copyWith(

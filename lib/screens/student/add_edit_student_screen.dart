@@ -71,8 +71,14 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
   @override
   void initState() {
     super.initState();
+    print('=== initState ===');
+    print('isEdit: ${widget.isEdit}');
+    print('student: ${widget.student?.id}');
     if (widget.isEdit && widget.student != null) {
+      print('调用_populateForm');
       _populateForm();
+    } else {
+      print('不调用_populateForm');
     }
     // 延迟加载可用选项，避免在构建过程中调用setState
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -115,6 +121,16 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
 
   void _populateForm() {
     final student = widget.student;
+    print('=== 编辑模式数据加载 ===');
+    print('isEdit: ${widget.isEdit}');
+    print('student: ${student?.id}');
+    print('学生姓名: ${student?.getStringValue('student_name')}');
+    print('学号: ${student?.getStringValue('student_id')}');
+    print('状态: ${student?.getStringValue('status')}');
+    print('服务类型: ${student?.getStringValue('service_type')}');
+    print('性别: ${student?.getStringValue('gender')}');
+    print('BGT: ${student?.getStringValue('bgt')}');
+    
     _nameController.text = student.getStringValue('student_name') ?? '';
     _studentIdController.text = student.getStringValue('student_id') ?? '';
     _standardController.text = student.getStringValue('standard') ?? '';
@@ -156,6 +172,9 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
     final studentId = student.getStringValue('student_id') ?? '';
     if (studentId.isNotEmpty) {
       _selectedBGT = studentId[0];
+    } else {
+      // 如果没有学号，从数据库中的BGT字段读取
+      _selectedBGT = student.getStringValue('bgt') ?? 'B';
     }
     
     final birthDateStr = student.getStringValue('birth_date');
@@ -366,49 +385,60 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: Text(widget.isEdit ? '编辑学生' : '添加学生'),
-        backgroundColor: AppTheme.primaryColor,
+        title: Text(
+          widget.isEdit ? '编辑学生' : '添加学生',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: const Color(0xFF1E40AF),
         foregroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
         actions: [
           if (widget.isEdit)
             IconButton(
               onPressed: _showDeleteDialog,
-              icon: const Icon(Icons.delete),
+              icon: const Icon(Icons.delete_rounded, size: 20),
               tooltip: '删除学生',
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white.withOpacity(0.1),
+                foregroundColor: Colors.white,
+              ),
             ),
         ],
       ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSectionTitle('基本信息'),
               _buildBasicInfoSection(),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: 12),
               
               _buildSectionTitle('学校信息'),
               _buildSchoolInfoSection(),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: 12),
               
               _buildSectionTitle('家长信息'),
               _buildParentInfoSection(),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: 12),
               
               _buildSectionTitle('其他信息'),
               _buildOtherInfoSection(),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: 12),
               
               _buildSectionTitle('接送信息'),
               _buildPickupInfoSection(),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: 12),
               
               _buildSectionTitle('注册和学费信息'),
               _buildRegistrationInfoSection(),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: 16),
               
               _buildActionButtons(),
             ],
@@ -420,13 +450,13 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         title,
-        style: AppTextStyles.headline6.copyWith(
-          color: AppTheme.primaryColor,
+        style: const TextStyle(
+          fontSize: 14,
           fontWeight: FontWeight.w600,
-          fontSize: 16,
+          color: Color(0xFF1E40AF),
         ),
       ),
     );
@@ -434,62 +464,60 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
 
   Widget _buildBasicInfoSection() {
     return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: Color(0xFFE5E7EB)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(12),
         child: Column(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: CustomTextField(
-                    controller: _nameController,
-                    label: '学生姓名',
-                    hintText: '请输入学生姓名',
-                    prefixIcon: const Icon(Icons.person),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '请输入学生姓名';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: CustomTextField(
-                    controller: _studentIdController,
-                    label: '学号',
-                    hintText: '自动生成',
-                    prefixIcon: const Icon(Icons.badge),
-                    enabled: widget.isEdit, // 编辑模式可以修改学号
-                    suffixIcon: !widget.isEdit ? IconButton(
-                      icon: const Icon(Icons.refresh),
-                      onPressed: _generateSmartStudentId,
-                      tooltip: '重新生成学号',
-                    ) : null,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '请输入学号';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              ],
+            CustomTextField(
+              controller: _nameController,
+              label: '学生姓名',
+              hintText: '请输入学生姓名',
+              prefixIcon: const Icon(Icons.person_rounded, size: 18),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return '请输入学生姓名';
+                }
+                return null;
+              },
             ),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: 12),
+            CustomTextField(
+              controller: _studentIdController,
+              label: '学号',
+              hintText: widget.isEdit ? '显示原学号' : '自动生成',
+              prefixIcon: const Icon(Icons.badge_rounded, size: 18),
+              enabled: widget.isEdit ? false : true,
+              suffixIcon: !widget.isEdit ? IconButton(
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                onPressed: _generateSmartStudentId,
+                tooltip: '重新生成学号',
+              ) : null,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return '请输入学号';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 8),
             // 学号生成提示
             if (!widget.isEdit) _buildStudentIdHint(),
-            const SizedBox(height: AppSpacing.sm),
-            // BGT选择
+            const SizedBox(height: 8),
+            // BGT选择和中心选择
             Row(
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _getSafeDropdownValue(_selectedBGT, ['B', 'G', 'T']),
                     decoration: const InputDecoration(
-                      labelText: '性别/类型',
-                      prefixIcon: Icon(Icons.person_outline),
+                      labelText: '学生类型',
+                      prefixIcon: Icon(Icons.person_outline_rounded, size: 18),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                     items: const [
                       DropdownMenuItem(value: 'B', child: Text('B - 男生')),
@@ -505,18 +533,21 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                           _selectedGender = 'female';
                         }
                       });
-                      _generateSmartStudentId();
+                      if (!widget.isEdit && _studentIdController.text.isNotEmpty) {
+                        _generateSmartStudentId();
+                      }
                     },
                   ),
                 ),
-                const SizedBox(width: AppSpacing.md),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _availableCenters.isEmpty 
                     ? const TextField(
                         decoration: InputDecoration(
                           labelText: '中心',
-                          prefixIcon: Icon(Icons.location_on),
+                          prefixIcon: Icon(Icons.location_on_rounded, size: 18),
                           hintText: '正在加载...',
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         ),
                         enabled: false,
                       )
@@ -524,7 +555,8 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                         value: _getSafeDropdownValue(_selectedCenter, _availableCenters),
                         decoration: const InputDecoration(
                           labelText: '中心',
-                          prefixIcon: Icon(Icons.location_on),
+                          prefixIcon: Icon(Icons.location_on_rounded, size: 18),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         ),
                         items: _availableCenters.map((center) {
                           return DropdownMenuItem(
@@ -532,35 +564,22 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                             child: Text(center),
                           );
                         }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedCenter = value!;
-                        _centerController.text = value;
-                      });
-                      _generateSmartStudentId();
-                    },
-                  ),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedCenter = value!;
+                            _centerController.text = value;
+                          });
+                          if (!widget.isEdit) {
+                            _generateSmartStudentId();
+                          }
+                        },
+                      ),
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: _getSafeDropdownValue(_selectedGender, ['male', 'female']),
-                    decoration: const InputDecoration(
-                      labelText: '性别',
-                      prefixIcon: Icon(Icons.person_outline),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'male', child: Text('男')),
-                      DropdownMenuItem(value: 'female', child: Text('女')),
-                    ],
-                    onChanged: _selectedBGT == 'T' ? (value) => setState(() => _selectedGender = value!) : null,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _getSafeDropdownValue(_selectedStatus, ['active', 'inactive', 'graduated']),
@@ -574,6 +593,27 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                       DropdownMenuItem(value: 'graduated', child: Text('毕业')),
                     ],
                     onChanged: (value) => setState(() => _selectedStatus = value!),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _getSafeDropdownValue(_selectedServiceType, _serviceTypes),
+                    decoration: const InputDecoration(
+                      labelText: '服务类型',
+                      prefixIcon: Icon(Icons.work),
+                    ),
+                    items: _serviceTypes.map((type) {
+                      return DropdownMenuItem(
+                        value: type,
+                        child: Text(type),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedServiceType = value!;
+                      });
+                    },
                   ),
                 ),
               ],
@@ -706,27 +746,6 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
                     },
                   ),
                 ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: _getSafeDropdownValue(_selectedServiceType, _serviceTypes),
-                    decoration: const InputDecoration(
-                      labelText: '服务类型',
-                      prefixIcon: Icon(Icons.work),
-                    ),
-                    items: _serviceTypes.map((type) {
-                      return DropdownMenuItem(
-                        value: type,
-                        child: Text(type),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedServiceType = value!;
-                      });
-                    },
-                  ),
-                ),
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -849,8 +868,8 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
             const SizedBox(height: AppSpacing.sm),
             CustomTextField(
               controller: _nfcUrlController,
-              label: 'NFC URL',
-              hintText: '请输入NFC URL（可选）',
+              label: 'NFC标签ID',
+              hintText: '请输入NFC标签ID（可选）',
               prefixIcon: const Icon(Icons.nfc),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -893,15 +912,39 @@ class _AddEditStudentScreenState extends State<AddEditStudentScreen> {
         Expanded(
           child: OutlinedButton(
             onPressed: _isLoading ? null : () => Navigator.pop(context),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF6B7280),
+              side: const BorderSide(color: Color(0xFFE5E7EB)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
             child: const Text('取消'),
           ),
         ),
-        const SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: 8),
         Expanded(
-          child: CustomButton(
+          child: ElevatedButton(
             onPressed: _isLoading ? null : _saveStudent,
-            text: widget.isEdit ? '更新' : '添加',
-            isLoading: _isLoading,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1E40AF),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+            child: _isLoading 
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text(widget.isEdit ? '更新' : '添加'),
           ),
         ),
       ],
