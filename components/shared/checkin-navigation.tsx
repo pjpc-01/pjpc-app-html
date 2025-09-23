@@ -48,7 +48,7 @@ export default function CheckInNavigation() {
                 <div className="text-2xl font-bold text-blue-600">RFID</div>
                 <div className="text-xs text-gray-500">传统门禁系统</div>
               </div>
-              <Link href="/attendance">
+              <Link href="/unified-attendance">
                 <Button className="flex items-center gap-2">
                   进入系统
                   <ArrowRight className="h-4 w-4" />
@@ -84,7 +84,7 @@ export default function CheckInNavigation() {
                 <div className="text-2xl font-bold text-green-600">NFC</div>
                 <div className="text-xs text-gray-500">现代智能系统</div>
               </div>
-              <Link href="/attendance">
+              <Link href="/unified-attendance">
                 <Button className="flex items-center gap-2">
                   进入系统
                   <ArrowRight className="h-4 w-4" />
@@ -120,7 +120,7 @@ export default function CheckInNavigation() {
                 <div className="text-2xl font-bold text-orange-600">手机</div>
                 <div className="text-xs text-gray-500">移动NFC系统</div>
               </div>
-                          <Link href="/attendance">
+                          <Link href="/unified-attendance">
               <Button className="flex items-center gap-2">
                 进入系统
                 <ArrowRight className="h-4 w-4" />
@@ -160,7 +160,7 @@ export default function CheckInNavigation() {
                 <div className="text-2xl font-bold text-purple-600">统一</div>
                 <div className="text-xs text-gray-500">新打卡系统</div>
               </div>
-              <Link href="/attendance?center=test-center">
+              <Link href="/unified-attendance">
                 <Button className="flex items-center gap-2">
                   进入系统
                   <ArrowRight className="h-4 w-4" />

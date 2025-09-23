@@ -1,258 +1,201 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPocketBase, authenticateAdmin } from '@/lib/pocketbase'
+import PocketBase from 'pocketbase'
 
-// 动态路由配置
-export const dynamic = 'force-dynamic'
+const pb = new PocketBase('http://pjpc.tplinkdns.com:8090')
 
-export async function GET(request: NextRequest) {
+export async function GET() {
+  const debugInfo = {
+    timestamp: new Date().toISOString(),
+    server: 'http://pjpc.tplinkdns.com:8090',
+    steps: [] as Array<{step: string; status: string; message: string; data?: any}>
+  }
+  
   try {
-    const { searchParams } = new URL(request.url)
-    const center = searchParams.get('center')
-    const status = searchParams.get('status')
-    const limit = parseInt(searchParams.get('limit') || '1000')
-    const page = parseInt(searchParams.get('page') || '1')
-
-    // 获取PocketBase实例
-    const pb = await getPocketBase()
+    console.log('🔍 API: 开始获取学生数据...')
+    console.log('🌐 API: 连接到PocketBase服务器:', debugInfo.server)
     
-    // 使用优化的管理员认证
+    // 步骤1: 测试PocketBase连接
+    console.log('🔍 API: 测试PocketBase连接...')
     try {
-      await authenticateAdmin()
-      console.log('✅ 管理员认证成功')
-    } catch (authError) {
-      console.error('❌ 管理员认证失败:', authError)
-      return NextResponse.json(
-        { 
-          success: false,
-          error: 'PocketBase认证失败', 
-          details: '无法以管理员身份登录'
-        },
-        { status: 500 }
-      )
-    }
-    
-    // 构建过滤条件
-    let filter = ''
-    const filters = []
-
-    if (center) {
-      // 同时兼容字段名 center 与 Center，并且兼容多种写法（含/不含空格、大小写）
-      const c1 = center
-      const c2 = center.replace(/\s+/g, '') // 去空格: WX 01 -> WX01
-      const c3 = center.replace(/\s+/g, '-').toUpperCase() // WX 01 -> WX-01
-      const c4 = c2.toUpperCase() // WX01
-      const c5 = c2.toLowerCase() // wx01
-      const c6 = c1.toUpperCase() // WX 01
-      const variants = Array.from(new Set([c1, c2, c3, c4, c5, c6]))
-
-      const fieldVariants = variants
-        .map(v => `(center = "${v}" || Center = "${v}")`)
-        .join(' || ')
-
-      filters.push(`(${fieldVariants})`)
+      const healthResponse = await fetch(`${debugInfo.server}/api/health`)
+      debugInfo.steps.push({ 
+        step: 'health_check', 
+        status: 'success', 
+        message: 'PocketBase连接正常' 
+      })
+      console.log('✅ API: PocketBase连接正常')
+    } catch (healthError: any) {
+      debugInfo.steps.push({ 
+        step: 'health_check', 
+        status: 'error', 
+        message: healthError.message 
+      })
+      console.log('❌ API: PocketBase连接失败:', healthError.message)
     }
 
-    if (status) {
-      filters.push(`status = "${status}"`)
-    }
-
-    if (filters.length > 0) {
-      filter = filters.join(' && ')
-    }
-
+    // 步骤2: 检查students集合
+    console.log('🔍 API: 检查students集合...')
     try {
-      // 确保认证状态有效
-      if (!pb.authStore.isValid) {
-        console.log('⚠️ 认证状态无效，重新认证...')
-        await authenticateAdmin()
-      }
-      
-      console.log('🔍 开始获取学生数据...')
-      console.log('🔑 认证状态:', pb.authStore.isValid ? '有效' : '无效')
-      console.log('🔑 认证模型:', pb.authStore.model ? '已设置' : '未设置')
-      
-      // 从PocketBase获取学生数据
-      const students = await pb.collection('students').getList(page, limit, {
-        sort: 'student_name',
-        filter: filter || undefined
+      await pb.collection('students').getList(1, 1)
+      debugInfo.steps.push({ 
+        step: 'collection_check', 
+        status: 'success', 
+        message: 'students集合存在' 
       })
+      console.log('✅ API: students集合存在')
+    } catch (collectionError: any) {
+      debugInfo.steps.push({ step: 'collection_check', status: 'error', message: collectionError.message })
+      console.log('❌ API: students集合检查失败:', collectionError.message)
+    }
 
-      console.log(`✅ 成功获取 ${students.items.length} 个学生记录`);
-
-      // 如果集合为空，返回空数组
-      if (!students.items || students.items.length === 0) {
-        console.log('⚠️ students 集合为空，返回空数组');
-        return NextResponse.json({
-          success: true,
-          students: [],
-          totalItems: 0,
-          totalPages: 0,
-          page: 1,
-          perPage: limit
-        });
-      }
-
-      // 格式化学生数据
-      const formattedStudents = students.items.map(student => {
-        console.log('📝 原始学生数据:', student)
-        return {
-          id: student.id,
-          student_id: student.student_id || student.id || '无学号',
-          student_name: student.student_name || student.name || student.full_name || '未知姓名',
-          center: student.center || '未指定',
-          status: student.status || 'active',
-          standard: student.standard || '未指定',
-          // 生日字段，供数字看板生日功能使用
-          dob: student.dob || student.dateOfBirth || null,
-          studentUrl: student.studentUrl || '',
-          created: student.created,
-          updated: student.updated
-        };
+    // 步骤3: 管理员认证
+    console.log('🔍 API: 管理员认证...')
+    try {
+      await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+      debugInfo.steps.push({ 
+        step: 'admin_auth', 
+        status: 'success', 
+        message: '管理员认证成功'
       })
+      console.log('✅ API: 管理员认证成功')
+    } catch (authError: any) {
+      debugInfo.steps.push({ 
+        step: 'admin_auth', 
+        status: 'error', 
+        message: authError.message
+      })
+      console.log('❌ API: 管理员认证失败:', authError.message)
+    }
 
-      return NextResponse.json({
-        success: true,
-        students: formattedStudents,
+    // 步骤4: 尝试获取学生数据
+    console.log('🔍 API: 尝试获取学生数据...')
+    const students = await pb.collection('students').getList(1, 500)
+    debugInfo.steps.push({ 
+      step: 'get_students', 
+      status: 'success', 
+      message: `成功获取 ${students.items.length} 个学生记录`,
+      data: {
         totalItems: students.totalItems,
         totalPages: students.totalPages,
         page: students.page,
         perPage: students.perPage
-      })
-    } catch (collectionError) {
-      console.error('访问students集合失败:', collectionError)
-      
-      // 尝试列出所有集合来诊断问题
-      try {
-        const collections = await pb.collections.getFullList()
-        console.log('可用集合:', collections.map(c => c.name))
-        
-        return NextResponse.json({
-          success: false,
-          error: '访问students集合失败',
-          details: collectionError instanceof Error ? collectionError.message : '未知错误',
-          availableCollections: collections.map(c => c.name)
-        }, { status: 500 })
-      } catch (listError) {
-        console.error('无法列出集合:', listError)
-        return NextResponse.json({
-          success: false,
-          error: '访问students集合失败',
-          details: collectionError instanceof Error ? collectionError.message : '未知错误'
-        }, { status: 500 })
       }
+    })
+    console.log(`✅ API: 获取到 ${students.items.length} 个学生数据`)
+    
+    if (students.items.length > 0) {
+      console.log('🔍 API: 前3个学生数据:', students.items.slice(0, 3))
+      debugInfo.steps.push({ 
+        step: 'sample_data', 
+        status: 'success', 
+        message: '学生数据样本',
+        data: students.items.slice(0, 3)
+      })
+    } else {
+      console.log('⚠️ API: students集合为空，请检查数据库')
+      debugInfo.steps.push({ 
+        step: 'empty_collection', 
+        status: 'warning', 
+        message: 'students集合为空'
+      })
     }
+    
+    return NextResponse.json({ 
+      success: true,
+      students: students.items,
+      total: students.totalItems,
+      debug: debugInfo
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      }
+    })
   } catch (error: any) {
-    console.error('获取学生数据失败:', error)
-    return NextResponse.json(
-      { 
-        success: false,
-        error: '获取学生数据失败', 
-        details: error.message || '未知错误'
-      },
-      { status: 500 }
-    )
+    console.error('❌ API: 获取学生数据失败:', error)
+    console.error('❌ API: 错误详情:', {
+      message: error.message,
+      status: error.status,
+      data: error.data,
+      response: error.response
+    })
+    
+    debugInfo.steps.push({ 
+      step: 'error', 
+      status: 'error', 
+      message: error.message || '未知错误'
+    })
+    
+    return NextResponse.json({
+      success: false,
+      error: '获取学生数据失败',
+      message: error.message || '未知错误',
+      details: error,
+      debug: debugInfo
+    }, { status: 500 })
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json()
-    console.log('📝 收到添加学生请求:', body)
-
-    // 获取PocketBase实例
-    const pb = await getPocketBase()
+    console.log('🔍 API: 开始更新学生数据...')
     
-    // 使用优化的管理员认证
-    try {
-      await authenticateAdmin()
-      console.log('✅ 管理员认证成功')
-    } catch (authError) {
-      console.error('❌ 管理员认证失败:', authError)
-      return NextResponse.json(
-        { 
-          success: false,
-          error: 'PocketBase认证失败', 
-          details: '无法以管理员身份登录'
-        },
-        { status: 500 }
-      )
-    }
-
-    try {
-      // 确保认证状态有效
-      if (!pb.authStore.isValid) {
-        console.log('⚠️ 认证状态无效，重新认证...')
-        await authenticateAdmin()
-      }
-
-      // 准备学生数据
-      const studentData = {
-        student_name: body.student_name || '未命名学生',
-        student_id: body.student_id || '',
-        standard: body.standard || '',
-        center: body.center || 'WX 01',
-        status: body.status || 'active',
-        gender: body.gender || 'male',
-        serviceType: body.serviceType || 'afterschool',
-        dob: body.dob || '',
-        parentName: body.parentName || '',
-        email: body.email || '',
-        // 扩展信息
-        nric: body.nric || '',
-        school: body.school || '',
-        parentPhone: body.parentPhone || '',
-        emergencyContact: body.emergencyContact || '',
-        emergencyPhone: body.emergencyPhone || '',
-        healthInfo: body.healthInfo || '',
-        pickupMethod: body.pickupMethod || 'parent',
-        // 接送安排
-        authorizedPickup1Name: body.authorizedPickup1Name || '',
-        authorizedPickup1Phone: body.authorizedPickup1Phone || '',
-        authorizedPickup1Relation: body.authorizedPickup1Relation || '',
-        authorizedPickup2Name: body.authorizedPickup2Name || '',
-        authorizedPickup2Phone: body.authorizedPickup2Phone || '',
-        authorizedPickup2Relation: body.authorizedPickup2Relation || '',
-        authorizedPickup3Name: body.authorizedPickup3Name || '',
-        authorizedPickup3Phone: body.authorizedPickup3Phone || '',
-        authorizedPickup3Relation: body.authorizedPickup3Relation || '',
-        registrationDate: body.registrationDate || new Date().toISOString().split('T')[0],
-        tuitionStatus: body.tuitionStatus || 'pending',
-        birthCertificate: body.birthCertificate || null,
-        avatar: body.avatar || null
-      }
-
-      console.log('💾 准备保存的学生数据:', studentData)
-
-      // 创建学生记录
-      const newStudent = await pb.collection('students').create(studentData)
-      
-      console.log('✅ 学生创建成功:', newStudent.id)
-
-      return NextResponse.json({
-        success: true,
-        student: newStudent,
-        message: '学生添加成功'
-      })
-
-    } catch (createError: any) {
-      console.error('❌ 创建学生失败:', createError)
-      
+    const body = await request.json()
+    console.log('🔍 API: 接收到的请求体:', body)
+    
+    const { id, studentId, cardNumber } = body
+    
+    const studentIdToUpdate = id || studentId
+    console.log('🔍 API: 要更新的学生ID:', studentIdToUpdate)
+    console.log('🔍 API: 卡号:', cardNumber)
+    
+    if (!studentIdToUpdate) {
+      console.log('❌ API: 学生ID为空')
       return NextResponse.json({
         success: false,
-        error: '创建学生失败',
-        details: createError instanceof Error ? createError.message : '未知错误'
-      }, { status: 500 })
+        error: '学生ID不能为空'
+      }, { status: 400 })
     }
-
+    
+    // 管理员认证
+    await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+    
+    // 更新学生数据
+    const updateData: any = {}
+    if (cardNumber) updateData.cardNumber = cardNumber
+    
+    console.log('🔍 API: 更新数据:', updateData)
+    
+    const updatedStudent = await pb.collection('students').update(studentIdToUpdate, updateData)
+    
+    console.log('✅ API: 学生数据更新成功:', updatedStudent.student_name)
+    console.log('✅ API: 更新后的卡号:', updatedStudent.cardNumber)
+    
+    return NextResponse.json({
+      success: true,
+      message: '学生数据更新成功',
+      student: updatedStudent
+    })
+    
   } catch (error: any) {
-    console.error('❌ 处理添加学生请求失败:', error)
-    return NextResponse.json(
-      { 
-        success: false,
-        error: '处理请求失败', 
-        details: error.message || '未知错误'
-      },
-      { status: 500 }
-    )
+    console.error('❌ API: 更新学生数据失败:', error)
+    
+    return NextResponse.json({
+      success: false,
+      error: '更新学生数据失败',
+      message: error.message || '未知错误'
+    }, { status: 500 })
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  })
 }

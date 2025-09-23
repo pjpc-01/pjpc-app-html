@@ -1,5 +1,4 @@
 // 教师工作台核心组件导出
-export { default as TeacherDashboard } from './TeacherDashboard'
 export { default as StudentManagement } from './StudentManagement'
 export { default as CourseManagement } from './CourseManagement'
 export { default as AttendanceManagement } from './AttendanceManagement'

@@ -16,6 +16,7 @@ import {
   Key,
   Smartphone
 } from "lucide-react"
+import { scanNfcTag, findTeacherByNfcData } from '@/lib/nfc-scanner'
 
 interface Teacher {
   id: string
@@ -74,35 +75,101 @@ export default function TeacherAuthModal({
 
       const teachers: Teacher[] = data.data.items || []
       
-      // 方法1: 通过教师ID匹配
-      let foundTeacher = teachers.find(t => t.id === teacherData)
+      console.log('🔍 开始处理教师身份验证数据:', teacherData)
       
-      // 方法2: 通过teacherUrl匹配
-      if (!foundTeacher) {
-        foundTeacher = teachers.find(t => t.teacherUrl === teacherData)
+      // 生成NFC数据格式变体（参考移动应用的_findTeacher方法）
+      const nfcVariants = [
+        teacherData,                    // 原始格式
+        teacherData.toUpperCase(),      // 大写
+        teacherData.toLowerCase(),      // 小写
+        teacherData.replaceAll(':', ''), // 去除冒号
+        teacherData.replaceAll('-', ''), // 去除连字符
+        teacherData.replaceAll(' ', ''), // 去除空格
+        teacherData.replace(/[^a-zA-Z0-9]/g, ''), // 只保留字母数字
+      ]
+
+      console.log('🔍 NFC数据格式变体:', nfcVariants)
+      
+      // 方法1: 优先通过nfc_card_number匹配（教师的主要身份识别方式）
+      let foundTeacher = null
+      for (const variant of nfcVariants) {
+        foundTeacher = teachers.find(t => t.nfc_card_number === variant)
+        if (foundTeacher) {
+          console.log('✅ 通过nfc_card_number找到教师:', foundTeacher.name, '(格式:', variant, ')')
+          break
+        }
       }
       
-      // 方法3: 通过nfc_card_number匹配
+      // 方法2: 通过nfc_tag_id匹配（备用方式）
       if (!foundTeacher) {
-        foundTeacher = teachers.find(t => t.nfc_card_number === teacherData)
+        for (const variant of nfcVariants) {
+          foundTeacher = teachers.find(t => (t as any).nfc_tag_id === variant)
+          if (foundTeacher) {
+            console.log('✅ 通过nfc_tag_id找到教师:', foundTeacher.name, '(格式:', variant, ')')
+            break
+          }
+        }
       }
       
-      // 方法4: 通过URL包含关系匹配
+      // 方法3: 通过教师ID匹配（备用方式）
       if (!foundTeacher) {
-        foundTeacher = teachers.find(t => 
-          t.teacherUrl && teacherData.includes(t.teacherUrl.split('/').pop() || '')
-        )
+        for (const variant of nfcVariants) {
+          foundTeacher = teachers.find(t => t.id === variant)
+          if (foundTeacher) {
+            console.log('✅ 通过教师ID找到教师:', foundTeacher.name, '(格式:', variant, ')')
+            break
+          }
+        }
       }
       
-      // 方法5: 通过教师姓名匹配（手动输入时）
+      // 方法4: 通过teacherUrl匹配（兼容旧系统）
+      if (!foundTeacher) {
+        for (const variant of nfcVariants) {
+          foundTeacher = teachers.find(t => t.teacherUrl === variant)
+          if (foundTeacher) {
+            console.log('✅ 通过teacherUrl找到教师:', foundTeacher.name, '(格式:', variant, ')')
+            break
+          }
+        }
+      }
+      
+      // 方法5: 通过URL包含关系匹配
+      if (!foundTeacher) {
+        for (const variant of nfcVariants) {
+          foundTeacher = teachers.find(t => 
+            t.teacherUrl && variant.includes(t.teacherUrl.split('/').pop() || '')
+          )
+          if (foundTeacher) {
+            console.log('✅ 通过URL包含关系找到教师:', foundTeacher.name, '(格式:', variant, ')')
+            break
+          }
+        }
+      }
+      
+      // 方法6: 通过教师姓名匹配（手动输入时）
       if (!foundTeacher && authMethod === 'manual') {
         foundTeacher = teachers.find(t => 
           t.teacher_name?.toLowerCase().includes(teacherData.toLowerCase()) ||
           t.name?.toLowerCase().includes(teacherData.toLowerCase())
         )
+        if (foundTeacher) {
+          console.log('✅ 通过教师姓名找到教师:', foundTeacher.name)
+        }
       }
 
       if (!foundTeacher) {
+        console.log('❌ 未找到匹配的教师信息')
+        console.log('🔍 调试信息:')
+        console.log('  输入数据:', teacherData)
+        console.log('  教师总数:', teachers.length)
+        console.log('  有nfc_card_number的教师数:', teachers.filter(t => t.nfc_card_number).length)
+        console.log('  有nfc_tag_id的教师数:', teachers.filter(t => (t as any).nfc_tag_id).length)
+        console.log('  可用教师NFC数据:', teachers.map(t => ({ 
+          id: t.id, 
+          name: t.name, 
+          nfc_card_number: t.nfc_card_number,
+          nfc_tag_id: (t as any).nfc_tag_id
+        })).filter(t => t.nfc_card_number || t.nfc_tag_id))
         throw new Error('未找到匹配的教师信息')
       }
 
@@ -155,36 +222,58 @@ export default function TeacherAuthModal({
           const { message } = event
           let nfcData = ""
           
+          console.log('🔍 NFC读取事件:', event)
+          console.log('📋 NFC记录数量:', message.records.length)
+          
           // 解析 NDEF 记录
           for (const record of message.records) {
+            console.log('📋 处理记录:', {
+              recordType: record.recordType,
+              dataLength: record.data.length,
+              data: record.data
+            })
+            
             if (record.recordType === "url") {
               nfcData = decodeNfcText(record.data)
+              console.log('✅ 从URL记录读取数据:', nfcData)
               break
             }
             if (record.recordType === "text") {
               const txt = decodeNfcText(record.data)
+              console.log('✅ 从文本记录读取数据:', txt)
               if (txt?.startsWith("http")) {
                 nfcData = txt
               } else {
+                // 如果不是URL，直接使用文本内容作为NFC数据
                 nfcData = txt
+              }
+            }
+            // 处理其他类型的记录
+            if (record.recordType === "empty" || record.recordType === "unknown") {
+              // 对于空记录或未知类型，尝试直接使用数据
+              const txt = decodeNfcText(record.data)
+              if (txt && txt.trim()) {
+                nfcData = txt
+                console.log('✅ 从其他记录读取数据:', nfcData)
               }
             }
           }
 
           if (!nfcData) {
+            console.log('❌ 未读取到有效数据')
             setError("未读取到有效数据，请确认卡片已正确写入")
             return
           }
 
-          console.log('NFC读取的数据:', nfcData)
+          console.log('🔍 NFC读取的数据:', nfcData)
           const teacher = await validateTeacher(nfcData)
           if (teacher) {
             onTeacherAuthenticated(teacher)
             onClose()
           }
         } catch (e) {
-          console.error(e)
-          setError("解析NFC数据出错")
+          console.error('NFC数据处理失败:', e)
+          setError("解析NFC数据出错: " + (e as Error).message)
         } finally {
           setNfcActive(false)
         }

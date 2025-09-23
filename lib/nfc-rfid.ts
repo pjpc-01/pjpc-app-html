@@ -503,71 +503,7 @@ export class UnifiedCardSystem {
     return randomCard.cardNumber
   }
 
-  // ==================== URL访问管理 ====================
-  
-  async accessStudentUrl(studentId: string): Promise<{
-    success: boolean
-    url: string | null
-    studentName: string | null
-    accessTime: Date
-    message: string
-  }> {
-    const card = await this.getCardByStudentId(studentId)
-    if (!card) {
-      return {
-        success: false,
-        url: null,
-        studentName: null,
-        accessTime: new Date(),
-        message: '学生不存在'
-      }
-    }
 
-    if (!card.studentUrl) {
-      return {
-        success: false,
-        url: null,
-        studentName: card.studentName,
-        accessTime: new Date(),
-        message: '该学生没有配置专属网址'
-      }
-    }
-
-    // 更新最近的打卡记录，标记URL已访问
-    const recentRecord = this.attendanceRecords.find(record => 
-      record.studentId === studentId && 
-      record.timestamp > new Date(Date.now() - 24 * 60 * 60 * 1000) // 24小时内
-    )
-    
-    if (recentRecord) {
-      recentRecord.urlAccessed = true
-      recentRecord.notes = recentRecord.notes + ' | URL已访问'
-    }
-
-    return {
-      success: true,
-      url: card.studentUrl,
-      studentName: card.studentName,
-      accessTime: new Date(),
-      message: 'URL访问成功'
-    }
-  }
-
-  async getStudentUrl(studentId: string): Promise<string | null> {
-    const card = await this.getCardByStudentId(studentId)
-    return card?.studentUrl || null
-  }
-
-  async updateStudentUrl(studentId: string, newUrl: string): Promise<boolean> {
-    const card = await this.getCardByStudentId(studentId)
-    if (!card) {
-      return false
-    }
-
-    card.studentUrl = newUrl
-    card.updatedAt = new Date()
-    return true
-  }
 
   // ==================== 设备健康检查 ====================
   

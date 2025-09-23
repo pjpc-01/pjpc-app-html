@@ -68,7 +68,7 @@ export function InvoiceCreateDialog({
 
   const studentsWithAmounts = students.map(student => ({
     ...student,
-    amount: 1200 // This should be calculated from actual fee data
+    amount: student.monthlyFee || 1200 // 使用学生的实际月费，默认为1200
   }))
 
   // Filter students by selected grades (show all if no grades selected)
@@ -76,7 +76,7 @@ export function InvoiceCreateDialog({
     .filter(student => selectedGrades.length === 0 || selectedGrades.includes(student.grade))
     .map(student => ({
       ...student,
-      amount: 1200 // This should be calculated from actual fee data
+      amount: student.monthlyFee || 1200 // 使用学生的实际月费，默认为1200
     }))
 
   // Get selected student objects

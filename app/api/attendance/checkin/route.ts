@@ -1,133 +1,225 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { nfcManager } from '@/lib/nfc-rfid'
+import PocketBase from 'pocketbase'
 
-// 静态导出配置
-export const dynamic = 'force-static'
+// 创建PocketBase实例
+const pb = new PocketBase('http://pjpc.tplinkdns.com:8090')
 
-export async function POST(request: NextRequest) {
-  let deviceType: string | undefined
-  
+// 管理员认证
+async function authenticateAdmin() {
   try {
+    await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+    console.log('✅ 管理员认证成功')
+    return true
+  } catch (error) {
+    console.error('❌ 管理员认证失败:', error)
+    return false
+  }
+}
+
+// POST - NFC自动考勤
+export async function POST(request: NextRequest) {
+  try {
+    console.log('📱 NFC自动考勤请求')
+    
+    // 管理员认证
+    const authSuccess = await authenticateAdmin()
+    if (!authSuccess) {
+      return NextResponse.json({ error: '认证失败' }, { status: 401 })
+    }
+    
+    // 获取请求数据
     const body = await request.json()
     const { 
-      uid, 
-      deviceType: reqDeviceType, 
-      deviceId, 
-      deviceName, 
-      location, 
-      frequency 
+      studentId, 
+      center, 
+      timestamp, 
+      method = 'nfc_card_number', 
+      nfcType = 'hardware_id',
+      notes = ''
     } = body
-
-    deviceType = reqDeviceType
-
-    // 验证必要参数
-    if (!uid || !deviceType || !deviceId || !deviceName || !location) {
-      return NextResponse.json(
-        { error: 'Missing required parameters' },
-        { status: 400 }
-      )
-    }
-
-    // 验证设备类型
-    if (!['RFID', 'NFC'].includes(deviceType)) {
-      return NextResponse.json(
-        { error: 'Invalid device type. Must be RFID or NFC' },
-        { status: 400 }
-      )
-    }
-
-    // 验证频率
-    if (deviceType === 'RFID' && frequency !== '125KHz') {
-      return NextResponse.json(
-        { error: 'RFID devices must use 125KHz frequency' },
-        { status: 400 }
-      )
-    }
-
-    if (deviceType === 'NFC' && frequency !== '13.56MHz') {
-      return NextResponse.json(
-        { error: 'NFC devices must use 13.56MHz frequency' },
-        { status: 400 }
-      )
-    }
-
-    // 处理打卡 - 使用统一的API
-    console.log(`Processing attendance for card: ${uid}, device: ${deviceType}`)
     
-    const attendanceRecord = await nfcManager.processAttendance(
-      uid, // 使用UID作为cardNumber
-      deviceId,
-      deviceName,
-      location,
-      {
-        deviceType: deviceType as 'RFID' | 'NFC',
-        frequency,
-        uid
+    console.log('📋 NFC考勤数据:', { studentId, center, method, nfcType })
+    
+    // 验证必需字段
+    if (!studentId || !center) {
+      return NextResponse.json(
+        { error: '缺少必需参数: studentId, center' },
+        { status: 400 }
+      )
+    }
+    
+    // 获取学生信息
+    const studentResponse = await pb.collection('students').getList(1, 1, {
+      filter: `student_id = "${studentId}"`
+    })
+    
+    if (studentResponse.items.length === 0) {
+      return NextResponse.json(
+        { error: '学生不存在' },
+        { status: 404 }
+      )
+    }
+    
+    const student = studentResponse.items[0]
+    const now = new Date()
+    const today = now.toISOString().split('T')[0]
+    
+    // 检查今天是否已经考勤
+    const existingRecord = await pb.collection('student_attendance').getList(1, 1, {
+      filter: `student_id = "${studentId}" && center = "${center}" && date = "${today}"`
+    })
+    
+    if (existingRecord.items.length > 0) {
+      console.log('⚠️ 今天已经考勤过了')
+      return NextResponse.json({
+        success: true,
+        message: '今天已经考勤过了',
+        data: existingRecord.items[0],
+        student: {
+          id: studentId,
+          name: student.student_name
+        }
+      })
+    }
+    
+    // 智能签到/签退逻辑
+    const checkinTimestamp = now.toISOString()
+    
+    // 检查今天是否已有考勤记录
+    const existingRecords = await pb.collection('student_attendance').getList(1, 1, {
+      filter: `student_id = "${studentId}" && center = "${center}" && date = "${today}"`,
+      sort: '-created'
+    })
+    
+    console.log('🔍 检查现有记录:', {
+      studentId,
+      center,
+      today,
+      existingCount: existingRecords.items.length,
+      existingRecord: existingRecords.items[0] || null
+    })
+    
+    let record = null
+    let action = ''
+    
+    if (existingRecords.items.length === 0) {
+      // 第一次操作 - 签到
+      const attendanceData = {
+        student_id: studentId,
+        student_name: student.student_name,
+        center: center,
+        branch_name: center,
+        date: today,
+        check_in: checkinTimestamp,
+        check_out: null,
+        status: 'present',
+        notes: notes || `NFC自动考勤 - ${method}`,
+        teacher_id: 'system',
+        teacher_name: '系统',
+        device_info: JSON.stringify({ 
+          method, 
+          nfcType, 
+          timestamp: timestamp || now.toISOString(),
+          source: 'nfc_auto'
+        }),
+        method: method,
+        timestamp: now.toISOString()
       }
-    )
-
+      
+      record = await pb.collection('student_attendance').create(attendanceData)
+      action = '签到'
+      console.log('✅ 学生签到成功:', student.student_name)
+      
+    } else {
+      // 已有记录，检查是否可以签退
+      const existingRecord = existingRecords.items[0]
+      
+      console.log('🔍 检查现有记录状态:', {
+        hasCheckIn: !!existingRecord.check_in,
+        hasCheckOut: !!existingRecord.check_out,
+        checkIn: existingRecord.check_in,
+        checkOut: existingRecord.check_out
+      })
+      
+      if (existingRecord.check_out) {
+        // 已经完成签到签退，创建新的记录（允许多次签到签退）
+        console.log('🔄 已有完整记录，创建新的签到记录...')
+        
+        const attendanceData = {
+          student_id: studentId,
+          student_name: student.student_name,
+          center: center,
+          branch_name: center,
+          date: today,
+          check_in: checkinTimestamp,
+          check_out: null,
+          status: 'present',
+          notes: notes || `NFC自动考勤 - ${method} (第${existingRecords.items.length + 1}次)`,
+          teacher_id: 'system',
+          teacher_name: '系统',
+          device_info: JSON.stringify({ 
+            method, 
+            nfcType, 
+            timestamp: timestamp || now.toISOString(),
+            source: 'nfc_auto'
+          }),
+          method: method,
+          timestamp: now.toISOString()
+        }
+        
+        record = await pb.collection('student_attendance').create(attendanceData)
+        action = '签到'
+        console.log('✅ 学生新签到成功:', student.student_name)
+        
+      } else {
+        // 可以签退
+        console.log('🔄 开始执行签退更新...')
+        
+        const updateData = {
+          check_out: checkinTimestamp,
+          notes: existingRecord.notes + ` | NFC自动签退 - ${method}`,
+          device_info: JSON.stringify({
+            ...JSON.parse(existingRecord.device_info || '{}'),
+            checkOut: {
+              method,
+              nfcType,
+              timestamp: checkinTimestamp,
+              source: 'nfc_auto'
+            }
+          })
+        }
+        
+        console.log('🔍 签退更新数据:', updateData)
+        
+        record = await pb.collection('student_attendance').update(existingRecord.id, updateData)
+        
+        console.log('✅ 签退更新结果:', record)
+        
+        action = '签退'
+        console.log('✅ 学生签退成功:', student.student_name)
+      }
+    }
+    
     return NextResponse.json({
       success: true,
-      data: attendanceRecord,
-      message: `${deviceType} attendance recorded successfully`,
-      deviceInfo: {
-        type: deviceType,
-        frequency,
-        location
+      data: record,
+      action: action,
+      message: `NFC${action}记录成功`,
+      student: {
+        id: studentId,
+        name: student.student_name
       }
     })
-
-  } catch (error) {
-    console.error(`${deviceType || 'Unknown'} attendance error:`, error)
     
+  } catch (error) {
+    console.error('❌ NFC考勤记录失败:', error)
     return NextResponse.json(
       { 
-        error: error instanceof Error ? error.message : 'Failed to process attendance',
-        success: false
+        success: false,
+        error: '考勤记录失败',
+        details: error instanceof Error ? error.message : '未知错误'
       },
       { status: 500 }
     )
   }
 }
-
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const studentId = searchParams.get('studentId')
-    const deviceType = searchParams.get('deviceType') // RFID or NFC
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
-    const limit = parseInt(searchParams.get('limit') || '100')
-
-    // 解析日期
-    const start = startDate ? new Date(startDate) : undefined
-    const end = endDate ? new Date(endDate) : undefined
-
-    // 获取打卡记录
-    const records = await nfcManager.getAttendanceRecords(
-      studentId || undefined,
-      start,
-      end,
-      limit,
-      deviceType || undefined
-    )
-
-    return NextResponse.json({
-      success: true,
-      data: records,
-      count: records.length,
-      deviceType: deviceType || 'all'
-    })
-
-  } catch (error) {
-    console.error('Error fetching attendance records:', error)
-    
-    return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : 'Failed to fetch records',
-        success: false
-      },
-      { status: 500 }
-    )
-  }
-} 

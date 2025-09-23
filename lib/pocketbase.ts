@@ -113,12 +113,7 @@ const getPocketBaseUrl = async (): Promise<string> => {
   try {
     const bestUrl = await detectNetworkEnvironment()
     // 确保返回字符串
-    if (typeof bestUrl === 'string') {
-      return bestUrl
-    } else if (bestUrl && typeof bestUrl === 'object' && 'url' in bestUrl) {
-      return bestUrl.url
-    }
-    throw new Error('Invalid URL format')
+    return String(bestUrl)
   } catch (error) {
     console.error('❌ 网络环境检测失败，使用默认DDNS配置:', error)
     // 默认使用DDNS地址
@@ -187,9 +182,21 @@ export const checkPocketBaseConnection = async () => {
     const pb = await getPocketBase()
     
     // 测试连接 - 使用PocketBase的根端点而不是/api/health
-    // 如果baseUrl是代理路径，直接使用它；否则添加根路径
-    const testUrl = pb.baseUrl.startsWith('/api/') ? pb.baseUrl : `${pb.baseUrl}/`
-    const response = await fetch(testUrl, {
+    // 如果baseUrl是代理路径，确保路径正确
+    const testUrl = pb.baseUrl.startsWith('/api/') ? pb.baseUrl.replace(/\/$/, '') : `${pb.baseUrl}/`
+    console.log('🔍 checkPocketBaseConnection 调试信息:', {
+      baseUrl: pb.baseUrl,
+      testUrl: testUrl,
+      isApiPath: pb.baseUrl.startsWith('/api/'),
+      protocol: window.location.protocol,
+      host: window.location.host
+    })
+    
+    // 在HTTPS环境下，确保使用正确的协议
+    const fullUrl = testUrl.startsWith('/') ? `${window.location.protocol}//${window.location.host}${testUrl}` : testUrl
+    console.log('🔍 完整URL:', fullUrl)
+    
+    const response = await fetch(fullUrl, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     })

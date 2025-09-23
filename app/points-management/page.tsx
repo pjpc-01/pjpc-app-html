@@ -84,6 +84,7 @@ export default function PointsManagement() {
 
   // 加载数据
   useEffect(() => {
+    console.log('🚀 组件初始化，开始加载数据...')
     loadLeaderboard()
     fetchStudents()
     fetchTeachers()
@@ -91,10 +92,18 @@ export default function PointsManagement() {
 
   const loadLeaderboard = async () => {
     try {
+      console.log('🔄 开始加载积分排行榜...')
       const data = await getPointsLeaderboard()
+      console.log('📊 积分排行榜数据:', data)
+      console.log('📊 积分记录数量:', data.items?.length || 0)
+      console.log('📊 数据类型:', typeof data)
+      console.log('📊 数据键:', Object.keys(data))
       setLeaderboard(data.items || [])
+      console.log('✅ 积分排行榜加载完成，设置到状态:', data.items || [])
     } catch (error) {
-      console.error('加载积分排行榜失败:', error)
+      console.error('❌ 加载积分排行榜失败:', error)
+      console.error('❌ 错误详情:', error instanceof Error ? error.message : '未知错误')
+      console.error('❌ 错误堆栈:', error instanceof Error ? error.stack : '无堆栈信息')
     }
   }
 
@@ -922,6 +931,12 @@ export default function PointsManagement() {
                     <TableBody>
                       {filteredStudents.map((student) => {
                         const studentPoints = leaderboard.find(item => item.student_id === student.id)
+                        console.log(`🔍 学生 ${student.student_name} (${student.id}):`, {
+                          studentId: student.id,
+                          hasStudentPoints: !!studentPoints,
+                          studentPoints: studentPoints,
+                          leaderboardLength: leaderboard.length
+                        })
                         return (
                           <TableRow key={student.id}>
                             <TableCell className="font-medium">{student.student_name}</TableCell>

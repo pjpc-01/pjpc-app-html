@@ -19,6 +19,7 @@ import {
   Globe,
   Trophy,
   Star,
+  RefreshCw,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -176,10 +177,16 @@ export default function ManagementTab({ stats, statsLoading, setActiveTab }: Man
                 <p className="text-xs text-muted-foreground">
                   今日出勤
                 </p>
-                <div className="mt-2">
-                  <Link href="/attendance">
+                <div className="mt-2 space-y-2">
+                  <Link href="/unified-attendance">
                     <Button variant="outline" size="sm" className="w-full">
                       查看考勤
+                      <ArrowRight className="ml-2 h-3 w-3" />
+                    </Button>
+                  </Link>
+                  <Link href="/attendance-management">
+                    <Button variant="outline" size="sm" className="w-full">
+                      AI企业级考勤系统
                       <ArrowRight className="ml-2 h-3 w-3" />
                     </Button>
                   </Link>
@@ -194,45 +201,77 @@ export default function ManagementTab({ stats, statsLoading, setActiveTab }: Man
       {!statsLoading && (
         <div className="mb-6">
           <h2 className="text-lg font-medium mb-4 text-gray-700">设备状态监控</h2>
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Smartphone className="h-5 w-5 text-teal-600" />
-                设备运行状态
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm font-medium">主入口读卡器</span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Smartphone className="h-5 w-5 text-teal-600" />
+                  设备运行状态
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm font-medium">主入口读卡器</span>
+                    </div>
+                    <Badge className="bg-green-100 text-green-800">
+                      {stats?.devices?.mainReader || '在线'}
+                    </Badge>
                   </div>
-                  <Badge className="bg-green-100 text-green-800">
-                    {stats?.devices?.mainReader || '在线'}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm font-medium">侧门读卡器</span>
+                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm font-medium">侧门读卡器</span>
+                    </div>
+                    <Badge className="bg-green-100 text-green-800">
+                      {stats?.devices?.sideReader || '在线'}
+                    </Badge>
                   </div>
-                  <Badge className="bg-green-100 text-green-800">
-                    {stats?.devices?.sideReader || '在线'}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    <span className="text-sm font-medium">备用读卡器</span>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                      <span className="text-sm font-medium">备用读卡器</span>
+                    </div>
+                    <Badge variant="secondary">
+                      {stats?.devices?.backupReader || '离线'}
+                    </Badge>
                   </div>
-                  <Badge variant="secondary">
-                    {stats?.devices?.backupReader || '离线'}
-                  </Badge>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5 text-purple-600" />
+                  NFC测试工具
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-sm text-gray-600">
+                  使用虚拟数据测试NFC读取和写入功能，无需真实NFC设备
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  <Link href="/nfc-virtual-test">
+                    <Button variant="outline" size="sm" className="w-full">
+                      <Database className="mr-2 h-4 w-4" />
+                      NFC虚拟测试
+                      <ArrowRight className="ml-2 h-3 w-3" />
+                    </Button>
+                  </Link>
+                  <Link href="/nfc-encryption-test">
+                    <Button variant="outline" size="sm" className="w-full">
+                      <Shield className="mr-2 h-4 w-4" />
+                      NFC加密测试
+                      <ArrowRight className="ml-2 h-3 w-3" />
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
 
@@ -266,6 +305,12 @@ export default function ManagementTab({ stats, statsLoading, setActiveTab }: Man
             <Button variant="outline" className="w-full h-16 flex flex-col items-center gap-2">
               <Globe className="h-6 w-6" />
               <span>WiFi管理</span>
+            </Button>
+          </Link>
+          <Link href="/unified-attendance">
+            <Button variant="outline" className="w-full h-16 flex flex-col items-center gap-2">
+              <CreditCard className="h-6 w-6" />
+              <span>统一考勤</span>
             </Button>
           </Link>
         </div>

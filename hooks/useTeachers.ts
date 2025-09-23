@@ -33,6 +33,9 @@ export interface Teacher {
   bankName?: string
   bankAccountName?: string
   bankAccountNo?: string
+  // NFC/卡片相关字段
+  cardNumber?: string
+  teacherUrl?: string
   created?: string
   updated?: string
 }

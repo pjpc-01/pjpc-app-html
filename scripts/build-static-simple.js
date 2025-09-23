@@ -6,7 +6,6 @@ console.log('🚀 开始构建简化静态版本...')
 
 // 要排除的目录列表
 const excludeDirs = [
-  'app/mobile-checkin/[centerId]',
   'app/student-points/[cardNumber]',
   'app/teacher-points/[cardNumber]'
 ]

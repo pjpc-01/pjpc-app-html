@@ -10,8 +10,9 @@ interface Teacher {
   position?: string
   department?: string
   status?: string
+  avatar?: string
   teacherUrl?: string
-  nfc_card_number?: string
+  cardNumber?: string
 }
 
 export function useCurrentTeacher() {
@@ -41,14 +42,14 @@ export function useCurrentTeacher() {
       console.log('📋 通过用户ID查找结果:', data)
       
       // 如果通过用户ID找不到，则通过邮箱查找
-      if (!data.success || data.data.items.length === 0) {
+      if (!data.success || !data.data?.items || data.data.items.length === 0) {
         console.log('🔍 通过用户ID未找到，尝试通过邮箱查找:', user.email)
         response = await fetch(`/api/teachers?email=${encodeURIComponent(user.email)}`)
         data = await response.json()
         console.log('📋 通过邮箱查找结果:', data)
       }
       
-      if (data.success && data.data.items.length > 0) {
+      if (data.success && data.data?.items && data.data.items.length > 0) {
         const teacherData = data.data.items[0]
         console.log('✅ 找到教师信息:', teacherData)
         setTeacher(teacherData)

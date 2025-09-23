@@ -121,8 +121,38 @@ export default function TeacherNFCScanner({
             
             setLastScannedCard(cardData)
             
-            // 查找教师信息
-            await findTeacherByNFC(cardData)
+            // 统一通过后端API做标准化匹配（教师/学生都支持）
+            try {
+              const resp = await fetch('/api/nfc/read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  nfcData: cardData,
+                  deviceInfo: { deviceName: 'TeacherNFCScanner' },
+                  centerId
+                })
+              })
+              const data = await resp.json()
+              if (resp.ok && data.success && data.user?.type === 'teacher') {
+                setSuccess(`找到教师: ${data.user.name}`)
+                stopNFCScan()
+                onTeacherFound({
+                  id: data.user.id,
+                  name: data.user.name,
+                  email: '',
+                  nfc_card_number: '',
+                  position: '',
+                  department: '',
+                  status: 'active'
+                })
+                return
+              }
+              setError('未找到对应的教师信息')
+              onError('未找到对应的教师信息')
+            } catch (e: any) {
+              setError('查询教师失败: ' + e.message)
+              onError('查询教师失败: ' + e.message)
+            }
             
           }
         } catch (error: any) {
@@ -155,52 +185,7 @@ export default function TeacherNFCScanner({
     console.log('🛑 NFC扫描已停止')
   }
 
-  // 根据NFC卡号查找教师
-  const findTeacherByNFC = async (cardNumber: string) => {
-    try {
-      setError(null)
-      
-      // 调用教师API查找
-      const response = await fetch(`/api/teachers?nfcCard=${encodeURIComponent(cardNumber)}`)
-      const data = await response.json()
-      
-      if (data.success && data.data && data.data.length > 0) {
-        const teacher = data.data[0]
-        
-        // 检查教师状态
-        if (teacher.status !== 'active') {
-          setError(`教师 ${teacher.name} 状态异常，无法进行考勤`)
-          onError(`教师状态异常: ${teacher.status}`)
-          return
-        }
-        
-        // 检查是否属于当前中心
-        if (centerId && teacher.center_id && teacher.center_id !== centerId) {
-          setError(`教师 ${teacher.name} 不属于当前中心`)
-          onError(`教师不属于当前中心`)
-          return
-        }
-        
-        console.log('✅ 找到教师:', teacher)
-        setSuccess(`找到教师: ${teacher.name}`)
-        
-        // 停止扫描
-        stopNFCScan()
-        
-        // 回调成功
-        onTeacherFound(teacher)
-        
-      } else {
-        setError('未找到对应的教师信息')
-        onError('未找到对应的教师信息')
-      }
-      
-    } catch (error: any) {
-      console.error('❌ 查找教师失败:', error)
-      setError('查找教师失败: ' + error.message)
-      onError('查找教师失败: ' + error.message)
-    }
-  }
+  // 删除旧的本地查找函数，统一交由 /api/nfc/read 处理
 
   // 重置组件
   const resetScanner = () => {
