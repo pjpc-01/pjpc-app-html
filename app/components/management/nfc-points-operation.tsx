@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,6 +28,7 @@ import {
   Calendar,
   Award,
   AlertTriangle,
+  AlertCircle,
   Wifi,
   WifiOff,
   Smartphone,
@@ -35,6 +36,7 @@ import {
 } from "lucide-react"
 import { usePoints } from '@/hooks/usePoints'
 import { useStudents } from '@/hooks/useStudents'
+import { useTeachers } from '@/hooks/useTeachers'
 import { useCurrentTeacher } from '@/hooks/useCurrentTeacher'
 import { StudentPoints, PointTransaction, PointTransactionCreateData } from '@/types/points'
 
@@ -43,6 +45,7 @@ type OperationStep = 'scan-student' | 'view-points' | 'scan-teacher' | 'operatio
 export default function NFCPointsOperation() {
   const { teacher } = useCurrentTeacher()
   const { students } = useStudents()
+  const { teachers } = useTeachers()
   const { 
     loading, 
     error, 
@@ -57,6 +60,14 @@ export default function NFCPointsOperation() {
   const [transactions, setTransactions] = useState<PointTransaction[]>([])
   const [verifiedTeacher, setVerifiedTeacher] = useState<any>(null)
   
+  // 智能功能状态
+  const [autoCompleteSuggestions, setAutoCompleteSuggestions] = useState<any[]>([])
+  const [recentStudents, setRecentStudents] = useState<any[]>([])
+  const [favoriteStudents, setFavoriteStudents] = useState<any[]>([])
+  const [quickActions, setQuickActions] = useState<any[]>([])
+  const [smartTips, setSmartTips] = useState<string[]>([])
+  const [operationHistory, setOperationHistory] = useState<any[]>([])
+  
   // 积分操作状态
   const [operationType, setOperationType] = useState<'add_points' | 'deduct_points' | 'redeem_gift'>('add_points')
   const [selectedOperationType, setSelectedOperationType] = useState<'add_points' | 'deduct_points' | 'redeem_gift' | null>(null)
@@ -70,142 +81,20 @@ export default function NFCPointsOperation() {
   const [studentCardNumber, setStudentCardNumber] = useState<string>('')
   const [teacherCardNumber, setTeacherCardNumber] = useState<string>('')
   
-  // NFC功能状态
-  const [nfcSupported, setNfcSupported] = useState<boolean>(false)
-  const [nfcPermission, setNfcPermission] = useState<PermissionState | null>(null)
-  const [isHttps, setIsHttps] = useState<boolean>(false)
-  const [nfcStatus, setNfcStatus] = useState<string>('检测中...')
+  // HID读卡器状态
+  const [isHIDReady, setIsHIDReady] = useState<boolean>(true)
   const [isScanning, setIsScanning] = useState<boolean>(false)
+  const [lastCardNumber, setLastCardNumber] = useState<string>('')
+  
+  // 防重复扫描
+  const lastProcessedCard = useRef<string>('')
+  const lastProcessTime = useRef<number>(0)
+  
+  // 键盘监听状态
+  const [inputBuffer, setInputBuffer] = useState('')
+  const [lastInputTime, setLastInputTime] = useState(0)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // 初始化NFC功能检测
-  useEffect(() => {
-    checkNFCSupport()
-  }, [])
-
-  // 检查NFC支持
-  const checkNFCSupport = async () => {
-    // 检查HTTPS
-    const https = window.location.protocol === 'https:'
-    setIsHttps(https)
-    
-    // 检查NFC API支持
-    const supported = 'NDEFReader' in window
-    setNfcSupported(supported)
-    
-    if (supported && https) {
-      try {
-        const permission = await navigator.permissions.query({ name: 'nfc' as PermissionName })
-        setNfcPermission(permission.state)
-        
-        if (permission.state === 'granted') {
-          setNfcStatus('NFC功能可用')
-        } else if (permission.state === 'prompt') {
-          setNfcStatus('需要用户授权')
-        } else {
-          setNfcStatus('NFC权限被拒绝')
-        }
-      } catch (error) {
-        setNfcStatus('无法检查NFC权限')
-      }
-    } else if (!https) {
-      setNfcStatus('需要HTTPS连接')
-    } else {
-      setNfcStatus('浏览器不支持NFC')
-    }
-  }
-
-  // 请求NFC权限
-  const requestNFCPermission = async () => {
-    if (!nfcSupported) return
-
-    try {
-      const reader = new (window as any).NDEFReader()
-      await reader.scan()
-      setNfcPermission('granted')
-      setNfcStatus('NFC功能可用')
-    } catch (error) {
-      console.error('NFC权限请求失败:', error)
-      setNfcPermission('denied')
-      setNfcStatus('NFC权限被拒绝')
-    }
-  }
-
-  // NFC文本解码函数（完全参考考勤系统）
-  const decodeNfcText = (data: any) => {
-    try {
-      // data 为 DataView
-      // 按NDEF文本记录规范解析，或直接尝试UTF-8解码
-      const dec = new TextDecoder("utf-8")
-      // 一些浏览器直接给 ArrayBuffer
-      // @ts-ignore
-      const buf = data?.buffer ? data.buffer : data
-      return dec.decode(buf)
-    } catch {
-      return ""
-    }
-  }
-
-  // 真正的NFC读取功能（完全参考考勤系统实现）
-  const scanNFCCard = async (): Promise<string | null> => {
-    if (!nfcSupported || nfcPermission !== 'granted') {
-      throw new Error('NFC功能不可用')
-    }
-
-    return new Promise((resolve, reject) => {
-      const reader = new (window as any).NDEFReader()
-      setIsScanning(true)
-      
-      const timeout = setTimeout(() => {
-        reader.abort()
-        setIsScanning(false)
-        reject(new Error('NFC读取超时，请重试'))
-      }, 10000) // 10秒超时
-
-      reader.addEventListener('reading', (event: any) => {
-        clearTimeout(timeout)
-        setIsScanning(false)
-        
-        try {
-          const { message } = event
-          // 解析 NDEF 记录：优先拿 URL（完全参考考勤系统）
-          let urlFromTag = ""
-          for (const record of message.records) {
-            if (record.recordType === "url") {
-              urlFromTag = decodeNfcText(record.data)
-              break
-            }
-            if (record.recordType === "text") {
-              const txt = decodeNfcText(record.data)
-              // 允许把 URL 写在 TEXT 里
-              if (txt?.startsWith("http")) urlFromTag = txt
-            }
-          }
-          
-          if (!urlFromTag) {
-            reject(new Error('未读到URL，请确认卡片已写入专属链接'))
-            return
-          }
-          
-          console.log('NFC读取成功:', { event, urlFromTag })
-          resolve(urlFromTag)
-        } catch (error) {
-          reject(new Error('NFC数据解析失败'))
-        }
-      })
-
-      reader.addEventListener('readingerror', (event: any) => {
-        clearTimeout(timeout)
-        setIsScanning(false)
-        reject(new Error('NFC读取失败'))
-      })
-
-      reader.scan().catch((error: any) => {
-        clearTimeout(timeout)
-        setIsScanning(false)
-        reject(error)
-      })
-    })
-  }
 
   // 加载学生积分详情
   const loadStudentPoints = async (studentId: string) => {
@@ -213,174 +102,348 @@ export default function NFCPointsOperation() {
       const data = await getStudentPoints(studentId)
       setStudentPoints(data.student_points)
       setTransactions(data.transactions.items || [])
-    } catch (error) {
+      
+      // 智能分析学生积分情况
+      analyzeStudentPoints(data.student_points, data.transactions.items || [])
+      } catch (error) {
       console.error('加载学生积分失败:', error)
     }
   }
 
-  // 处理学生NFC卡扫描
+  // 智能分析学生积分情况
+  const analyzeStudentPoints = (points: StudentPoints, transactions: PointTransaction[]) => {
+    const tips: string[] = []
+    
+    // 积分余额分析
+    if (points.current_points < 10) {
+      tips.push('该学生积分余额较低，建议给予鼓励')
+    } else if (points.current_points > 100) {
+      tips.push('该学生积分充足，可以推荐兑换礼品')
+    }
+    
+    // 最近活动分析
+    const recentTransactions = transactions.slice(0, 5)
+    const recentEarned = recentTransactions.filter(t => t.transaction_type === 'add_points').length
+    const recentSpent = recentTransactions.filter(t => t.transaction_type === 'deduct_points' || t.transaction_type === 'redeem_gift').length
+    
+    if (recentEarned > recentSpent) {
+      tips.push('该学生最近表现积极，积分增长良好')
+    } else if (recentSpent > recentEarned) {
+      tips.push('该学生最近兑换较多，可以给予更多积分机会')
+    }
+    
+    // 积分趋势分析
+    const lastWeekTransactions = transactions.filter(t => {
+      const transactionDate = new Date(t.created)
+      const weekAgo = new Date()
+      weekAgo.setDate(weekAgo.getDate() - 7)
+      return transactionDate > weekAgo
+    })
+    
+    if (lastWeekTransactions.length === 0) {
+      tips.push('该学生本周暂无积分活动，建议关注')
+    }
+    
+    setSmartTips(tips)
+  }
+
+  // 智能推荐快速操作
+  const generateQuickActions = (student: any) => {
+    const actions = []
+    
+    // 根据积分余额推荐操作
+    if (studentPoints && studentPoints.current_points < 20) {
+      actions.push({
+        type: 'add_points',
+        points: '10',
+        reason: '鼓励参与',
+        icon: 'Plus',
+        color: 'green'
+      })
+    }
+    
+    if (studentPoints && studentPoints.current_points > 50) {
+      actions.push({
+        type: 'redeem_gift',
+        gift: '小礼品',
+        points: '20',
+        icon: 'Gift',
+        color: 'blue'
+      })
+    }
+    
+    // 根据最近活动推荐
+    const recentEarned = transactions.filter(t => t.transaction_type === 'add_points').length
+    if (recentEarned > 3) {
+      actions.push({
+        type: 'add_points',
+        points: '5',
+        reason: '持续表现优秀',
+        icon: 'Award',
+        color: 'gold'
+      })
+    }
+    
+    setQuickActions(actions)
+  }
+
+  // 智能搜索建议
+  const handleCardNumberInput = (value: string) => {
+    setStudentCardNumber(value)
+    
+    if (value.length >= 2) {
+      // 根据输入提供智能建议
+      const suggestions = students.filter(s => 
+        s.student_name?.toLowerCase().includes(value.toLowerCase()) ||
+        s.student_id?.includes(value) ||
+        s.cardNumber?.includes(value)
+      ).slice(0, 5)
+      
+      setAutoCompleteSuggestions(suggestions)
+    } else {
+      setAutoCompleteSuggestions([])
+    }
+  }
+
+  // 添加学生到最近使用
+  const addToRecentStudents = (student: any) => {
+    const recent = recentStudents.filter(s => s.id !== student.id)
+    recent.unshift(student)
+    setRecentStudents(recent.slice(0, 5))
+  }
+
+  // 添加到收藏
+  const toggleFavoriteStudent = (student: any) => {
+    const isFavorite = favoriteStudents.some(s => s.id === student.id)
+    if (isFavorite) {
+      setFavoriteStudents(favoriteStudents.filter(s => s.id !== student.id))
+    } else {
+      setFavoriteStudents([...favoriteStudents, student])
+    }
+  }
+
+
+  // 处理学生卡片扫描
   const handleStudentCardScan = async () => {
     if (!studentCardNumber.trim()) {
-      alert('请输入学生NFC卡号或URL')
+      alert('请输入学生卡片号码')
       return
     }
 
     await processStudentCard(studentCardNumber.trim())
   }
 
-  // 处理真正的NFC扫描
-  const handleNFCCardScan = async () => {
-    try {
-      const nfcData = await scanNFCCard()
-      if (nfcData) {
-        await processStudentCard(nfcData)
-      }
-    } catch (error) {
-      console.error('NFC扫描失败:', error)
-      alert('NFC扫描失败: ' + (error as Error).message)
+  // 根据卡号查找学生 - 使用与考勤系统相同的逻辑
+  const findStudentByCard = (cardNumber: string) => {
+    const trimmed = cardNumber.trim()
+    console.log('🔍 查找学生，原始卡号:', cardNumber)
+    console.log('🔍 查找学生，清理后卡号:', trimmed)
+    console.log('🔍 卡号长度:', trimmed.length)
+    console.log('🔍 学生总数:', students.length)
+    
+    // 显示前几个学生的卡号用于调试
+    console.log('🔍 前5个学生的卡号:', students.slice(0, 5).map(s => ({
+      name: s.student_name,
+      cardNumber: s.cardNumber,
+      student_id: s.student_id
+    })))
+    
+    // 查找学生 - 精确匹配
+    let student = students.find(s => s.cardNumber === trimmed)
+    if (student) {
+      console.log('✅ 精确匹配找到学生:', student.student_name, student.cardNumber)
+      return student
     }
+    
+    // 查找学生 - 去除前导零后匹配
+    const trimmedNoLeadingZeros = trimmed.replace(/^0+/, '')
+    if (trimmedNoLeadingZeros !== trimmed) {
+      console.log('🔍 尝试去除前导零后匹配:', trimmedNoLeadingZeros)
+      student = students.find(s => s.cardNumber === trimmedNoLeadingZeros)
+      if (student) {
+        console.log('✅ 去除前导零后找到学生:', student.student_name, student.cardNumber)
+        return student
+      }
+    }
+    
+    // 查找学生 - 添加前导零后匹配
+    if (trimmed.length < 10) {
+      const paddedCardNumber = trimmed.padStart(10, '0')
+      console.log('🔍 尝试添加前导零后匹配:', paddedCardNumber)
+      student = students.find(s => s.cardNumber === paddedCardNumber)
+      if (student) {
+        console.log('✅ 添加前导零后找到学生:', student.student_name, student.cardNumber)
+        return student
+      }
+    }
+    
+    // 查找学生 - 通过student_id匹配
+    student = students.find(s => s.student_id === trimmed)
+    if (student) {
+      console.log('✅ 通过student_id找到学生:', student.student_name, student.student_id)
+      return student
+    }
+    
+    console.log('❌ 未找到学生')
+    return null
   }
 
-  // 处理学生卡片数据（完全参考考勤系统实现）
-  const processStudentCard = async (cardData: string) => {
+  // 处理学生卡片数据 - 使用简单的卡号查找逻辑
+  const processStudentCard = async (cardNumber: string) => {
     try {
-      let foundStudent = null
-      const urlFromTag = cardData
+      console.log('🔍 开始处理学生卡片数据:', cardNumber)
+      setIsScanning(true)
 
-      // 方法1: 通过URL参数查找（如果URL包含参数）- 完全参考考勤系统
-      try {
-        const u = new URL(urlFromTag)
-        const sid = u.searchParams.get("student_id") || ""
-        const sname = u.searchParams.get("name") || ""
-        if (sid) {
-          foundStudent = students.find(s => s.student_id === sid)
+      // 等待一下，确保数据完全加载
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // 检查学生数据是否已加载
+      if (students.length === 0) {
+        console.log('⚠️ 学生数据尚未加载，等待数据加载...')
+        // 等待学生数据加载，最多等待3秒
+        let attempts = 0
+        while (students.length === 0 && attempts < 30) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+          attempts++
         }
-        if (!foundStudent && sname) {
-          foundStudent = students.find(s => s.student_name === sname)
-        }
-      } catch (e) {
-        // URL解析失败，继续尝试其他方法
-      }
-      
-      // 方法2: 通过studentUrl字段直接匹配（不限制中心）
-      if (!foundStudent) {
-        foundStudent = students.find(s => s.studentUrl && s.studentUrl === urlFromTag)
-      }
-      
-      // 方法3: 通过URL包含关系匹配（处理URL可能略有不同的情况）
-      if (!foundStudent) {
-        foundStudent = students.find(s => s.studentUrl && urlFromTag.includes(s.studentUrl.split('/').pop() || ''))
-      }
-      
-      // 方法4: 通过student_id匹配
-      if (!foundStudent) {
-        foundStudent = students.find(s => s.student_id === urlFromTag)
-      }
-      
-      // 方法5: 通过cardNumber匹配（备用方案）
-      if (!foundStudent) {
-        foundStudent = students.find(s => s.cardNumber === urlFromTag)
-      }
-      
-      // 方法6: 尝试模糊匹配
-      if (!foundStudent) {
-        console.log('🔍 NFC调试信息:')
-        console.log('  NFC读取的URL:', urlFromTag)
-        console.log('  学生总数:', students.length)
-        console.log('  有URL的学生数:', students.filter(s => s.studentUrl).length)
-        console.log('  有cardNumber的学生数:', students.filter(s => s.cardNumber).length)
-        console.log('  可用学生URLs:', students.map(s => ({ id: s.student_id, name: s.student_name, url: s.studentUrl })).filter(s => s.url))
-        console.log('  可用学生卡号:', students.map(s => ({ id: s.student_id, name: s.student_name, cardNumber: s.cardNumber })).filter(s => s.cardNumber))
         
-        // 尝试模糊匹配
-        const fuzzyMatch = students.find(s => 
-          s.studentUrl && 
-          (s.studentUrl.includes(urlFromTag.split('/').pop() || '') || 
-           urlFromTag.includes(s.studentUrl.split('/').pop() || ''))
-        )
-        
-        if (fuzzyMatch) {
-          console.log('🎯 找到模糊匹配:', fuzzyMatch.student_name, fuzzyMatch.student_id)
-          foundStudent = fuzzyMatch
+        if (students.length === 0) {
+          console.log('❌ 学生数据加载超时')
+          setIsScanning(false)
+          return
         }
       }
 
+      console.log('✅ 学生数据已加载，总数:', students.length)
+
+      // 直接通过卡号查找学生
+      const foundStudent = findStudentByCard(cardNumber)
+
       if (!foundStudent) {
-        alert('找不到对应的学生，请检查NFC卡信息或学生名单')
+        console.log('❌ 未找到学生，卡号:', cardNumber)
+        console.log('🔍 可用学生卡号:', students.slice(0, 10).map(s => s.cardNumber))
+        setIsScanning(false)
         return
       }
 
       setSelectedStudent(foundStudent)
+      addToRecentStudents(foundStudent)
       await loadStudentPoints(foundStudent.id)
+      generateQuickActions(foundStudent)
       setCurrentStep('view-points')
+      setIsScanning(false)
     } catch (error) {
-      console.error('扫描学生卡片失败:', error)
-      alert('扫描学生卡片失败，请重试')
+      console.error('处理学生卡片失败:', error)
+      alert('处理学生卡片失败: ' + (error as Error).message)
+      setIsScanning(false)
     }
   }
 
-  // 处理教师NFC卡扫描
+  // 根据卡号查找教师 - 使用与考勤系统相同的逻辑
+  const findTeacherByCard = (cardNumber: string) => {
+    const trimmed = cardNumber.trim()
+    console.log('🔍 查找教师，原始卡号:', cardNumber)
+    console.log('🔍 查找教师，清理后卡号:', trimmed)
+    console.log('🔍 教师总数:', teachers.length)
+    
+    // 显示前几个教师的卡号用于调试
+    console.log('🔍 前5个教师的卡号:', teachers.slice(0, 5).map(t => ({
+      name: t.teacher_name,
+      cardNumber: (t as any).cardNumber,
+      teacher_id: t.teacher_id
+    })))
+    
+    // 查找教师 - 精确匹配
+    let teacher = teachers.find(t => (t as any).cardNumber === trimmed)
+    if (teacher) {
+      console.log('✅ 精确匹配找到教师:', teacher.teacher_name, (teacher as any).cardNumber)
+      return teacher
+    }
+    
+    // 查找教师 - 去除前导零后匹配
+    const trimmedNoLeadingZeros = trimmed.replace(/^0+/, '')
+    if (trimmedNoLeadingZeros !== trimmed) {
+      console.log('🔍 尝试去除前导零后匹配教师:', trimmedNoLeadingZeros)
+      teacher = teachers.find(t => (t as any).cardNumber === trimmedNoLeadingZeros)
+      if (teacher) {
+        console.log('✅ 去除前导零后找到教师:', teacher.teacher_name, (teacher as any).cardNumber)
+        return teacher
+      }
+    }
+    
+    // 查找教师 - 添加前导零后匹配
+    if (trimmed.length < 10) {
+      const paddedCardNumber = trimmed.padStart(10, '0')
+      console.log('🔍 尝试添加前导零后匹配教师:', paddedCardNumber)
+      teacher = teachers.find(t => (t as any).cardNumber === paddedCardNumber)
+      if (teacher) {
+        console.log('✅ 添加前导零后找到教师:', teacher.teacher_name, (teacher as any).cardNumber)
+        return teacher
+      }
+    }
+    
+    // 查找教师 - 通过teacher_id匹配
+    teacher = teachers.find(t => t.teacher_id === trimmed)
+    if (teacher) {
+      console.log('✅ 通过teacher_id找到教师:', teacher.teacher_name, teacher.teacher_id)
+      return teacher
+    }
+    
+    console.log('❌ 未找到教师')
+    return null
+  }
+
+  // 处理教师卡片扫描 - 使用简单的卡号查找逻辑
   const handleTeacherCardScan = async () => {
     if (!teacherCardNumber.trim()) {
-      alert('请输入教师NFC卡号或URL')
+      alert('请输入教师卡片号码')
       return
     }
 
     try {
-      let foundTeacher = null
-      const nfcData = teacherCardNumber.trim()
+      console.log('🔍 开始处理教师卡片数据:', teacherCardNumber)
+      setIsScanning(true)
 
-      // 方法1: 通过teacherUrl字段直接匹配
-      if (teacher?.teacherUrl && teacher.teacherUrl === nfcData) {
-        foundTeacher = teacher
-      }
-      
-      // 方法2: 通过URL包含关系匹配（处理URL可能略有不同的情况）
-      if (!foundTeacher && teacher?.teacherUrl && nfcData.includes(teacher.teacherUrl.split('/').pop() || '')) {
-        foundTeacher = teacher
-      }
-      
-      // 方法3: 通过nfc_card_number匹配
-      if (!foundTeacher && teacher?.nfc_card_number === nfcData) {
-        foundTeacher = teacher
-      }
-      
-      // 方法4: 通过教师ID匹配
-      if (!foundTeacher && teacher?.id === nfcData) {
-        foundTeacher = teacher
-      }
-      
-      // 方法5: 尝试模糊匹配
-      if (!foundTeacher) {
-        console.log('🔍 教师NFC调试信息:')
-        console.log('  NFC读取的数据:', nfcData)
-        console.log('  当前教师信息:', teacher)
-        console.log('  教师URL:', teacher?.teacherUrl)
-        console.log('  教师NFC卡号:', teacher?.nfc_card_number)
+      // 等待一下，确保数据完全加载
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // 检查教师数据是否已加载
+      if (teachers.length === 0) {
+        console.log('⚠️ 教师数据尚未加载，等待数据加载...')
+        // 等待教师数据加载，最多等待3秒
+        let attempts = 0
+        while (teachers.length === 0 && attempts < 30) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+          attempts++
+        }
         
-        // 尝试模糊匹配
-        if (teacher && (
-          (teacher.teacherUrl && 
-           (teacher.teacherUrl.includes(nfcData.split('/').pop() || '') || 
-            nfcData.includes(teacher.teacherUrl.split('/').pop() || ''))) ||
-          (teacher.nfc_card_number && teacher.nfc_card_number.includes(nfcData)) ||
-          (teacher.id && teacher.id.includes(nfcData))
-        )) {
-          console.log('🎯 找到教师模糊匹配:', teacher.teacher_name || teacher.name)
-          foundTeacher = teacher
+        if (teachers.length === 0) {
+          console.log('❌ 教师数据加载超时')
+          setIsScanning(false)
+          return
         }
       }
 
+      console.log('✅ 教师数据已加载，总数:', teachers.length)
+
+      // 直接通过卡号查找教师
+      const foundTeacher = findTeacherByCard(teacherCardNumber)
+
       if (!foundTeacher) {
-        alert('教师身份验证失败，请检查NFC卡信息或教师信息')
+        console.log('❌ 未找到教师，卡号:', teacherCardNumber)
+        console.log('🔍 可用教师卡号:', teachers.slice(0, 10).map(t => t.cardNumber))
+        setIsScanning(false)
         return
       }
 
+      // 接受任何有效的教师卡片
       setVerifiedTeacher(foundTeacher)
       setCurrentStep('operation')
+      setIsScanning(false)
     } catch (error) {
       console.error('教师身份验证失败:', error)
-      alert('教师身份验证失败，请重试')
+      alert('教师身份验证失败: ' + (error as Error).message)
+      setIsScanning(false)
     }
   }
 
@@ -402,7 +465,9 @@ export default function NFCPointsOperation() {
         reason: reason,
         proof_image: proofImage || undefined,
         gift_name: giftName || undefined,
-        gift_points: giftPoints ? parseInt(giftPoints) : undefined
+        gift_points: giftPoints ? parseInt(giftPoints) : undefined,
+        status: 'approved',
+        season_number: 1
       }
 
       await createPointTransaction(transactionData)
@@ -432,7 +497,132 @@ export default function NFCPointsOperation() {
     setGiftPoints('')
     setSelectedOperationType(null)
     setOperationType('add_points')
+    setLastCardNumber('')
   }
+
+  // 键盘监听处理HID读卡器输入
+  const handleKeyPress = useCallback((e: KeyboardEvent) => {
+    // 只在扫描学生或教师步骤时监听
+    if (currentStep !== 'scan-student' && currentStep !== 'scan-teacher') {
+      return
+    }
+
+    const now = Date.now()
+    
+    // 处理Enter键 - 立即处理输入
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      
+      // 清除超时
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+      
+      const cardNumber = inputBuffer.trim()
+      const cleanedCardNumber = cardNumber.replace(/\D/g, '')
+      
+      if (cleanedCardNumber && cleanedCardNumber.length >= 4) {
+        console.log('Enter键触发处理，卡号:', cleanedCardNumber)
+        
+        // 防重复处理
+        if (now - lastProcessTime.current < 3000 && lastProcessedCard.current === cleanedCardNumber) {
+          console.log('防重复扫描：忽略重复卡片')
+          setInputBuffer('')
+          setIsScanning(false)
+          return
+        }
+        
+        // 更新防重复状态
+        lastProcessedCard.current = cleanedCardNumber
+        lastProcessTime.current = now
+        
+        if (currentStep === 'scan-student') {
+          setLastCardNumber(cleanedCardNumber)
+          setStudentCardNumber(cleanedCardNumber)
+          processStudentCard(cleanedCardNumber)
+        } else if (currentStep === 'scan-teacher') {
+          setTeacherCardNumber(cleanedCardNumber)
+          handleTeacherCardScan()
+        }
+      }
+      
+      setInputBuffer('')
+      setIsScanning(false)
+      return
+    }
+
+    // 忽略特殊键（如Shift、Ctrl等）
+    if (e.key.length > 1) {
+      return
+    }
+    
+    // 如果输入间隔超过500ms，重置缓冲区
+    if (now - lastInputTime > 500) {
+      setInputBuffer('')
+      setIsScanning(false)
+    }
+    
+    setLastInputTime(now)
+    setIsScanning(true)
+    
+    // 清除之前的超时
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+    
+    // 处理输入
+    const newBuffer = inputBuffer + e.key
+    setInputBuffer(newBuffer)
+    
+    // 设置新的超时，如果500ms内没有新输入，认为输入完成
+    timeoutRef.current = setTimeout(() => {
+      const cardNumber = newBuffer.trim()
+      
+      // 清理卡号：只保留数字
+      const cleanedCardNumber = cardNumber.replace(/\D/g, '')
+      
+      if (cleanedCardNumber && cleanedCardNumber.length >= 4) {
+        console.log('超时触发处理，卡号:', cleanedCardNumber)
+        
+        // 防重复处理
+        const now = Date.now()
+        if (now - lastProcessTime.current < 3000 && lastProcessedCard.current === cleanedCardNumber) {
+          console.log('防重复扫描：忽略重复卡片')
+          setInputBuffer('')
+          setIsScanning(false)
+          return
+        }
+        
+        // 更新防重复状态
+        lastProcessedCard.current = cleanedCardNumber
+        lastProcessTime.current = now
+        
+        if (currentStep === 'scan-student') {
+          setLastCardNumber(cleanedCardNumber)
+          setStudentCardNumber(cleanedCardNumber)
+          processStudentCard(cleanedCardNumber)
+        } else if (currentStep === 'scan-teacher') {
+          setTeacherCardNumber(cleanedCardNumber)
+          handleTeacherCardScan()
+        }
+      }
+      
+      setInputBuffer('')
+      setIsScanning(false)
+    }, 500) // 减少到500ms
+  }, [inputBuffer, lastInputTime, currentStep, processStudentCard, handleTeacherCardScan])
+
+  // 添加键盘监听
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyPress)
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress)
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [handleKeyPress])
 
   // 获取交易类型图标
   const getTransactionTypeIcon = (type: string) => {
@@ -479,15 +669,15 @@ export default function NFCPointsOperation() {
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       {/* 页面标题 */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">NFC积分操作系统</h1>
-        <p className="text-gray-600">通过NFC卡片进行安全的积分操作</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">HID积分操作系统</h1>
+        <p className="text-gray-600">通过HID读卡器进行安全的积分操作</p>
       </div>
 
       {/* 步骤指示器 */}
       <div className="flex items-center justify-center mb-8">
         <div className="flex items-center space-x-4">
           {[
-            { step: 'scan-student', label: '扫描学生卡', icon: CreditCard },
+            { step: 'scan-student', label: '扫描学生卡片', icon: CreditCard },
             { step: 'view-points', label: '查看积分', icon: Trophy },
             { step: 'scan-teacher', label: '验证教师', icon: Shield },
             { 
@@ -516,143 +706,186 @@ export default function NFCPointsOperation() {
         </div>
       </div>
 
-      {/* NFC功能状态提示 */}
+      {/* HID读卡器状态提示 */}
       {currentStep === 'scan-student' && (
         <Card className="mb-4">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Info className="h-5 w-5" />
-              NFC功能状态
+              HID读卡器状态
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {nfcStatus === 'NFC功能可用' ? (
                   <CheckCircle className="h-5 w-5 text-green-500" />
-                ) : (
-                  <XCircle className="h-5 w-5 text-red-500" />
-                )}
-                <span className="font-medium">{nfcStatus}</span>
+              <span className="font-medium">HID读卡器已就绪</span>
               </div>
-              {nfcStatus !== 'NFC功能可用' && (
-                <Button 
-                  onClick={() => window.open('/nfc-test', '_blank')} 
-                  variant="outline" 
-                  size="sm"
-                >
-                  诊断NFC问题
-                </Button>
-              )}
-            </div>
-            
-            {!isHttps && (
-              <Alert className="mt-3">
-                <WifiOff className="h-4 w-4" />
-                <AlertDescription>
-                  需要HTTPS连接才能使用NFC功能。请使用 https:// 访问网站。
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            {nfcSupported && nfcPermission !== 'granted' && (
-              <Alert className="mt-3">
-                <Shield className="h-4 w-4" />
-                <AlertDescription>
-                  NFC权限未授权。点击下方"请求NFC权限"按钮进行授权。
-                </AlertDescription>
-              </Alert>
-            )}
+            <p className="text-sm text-gray-600 mt-2">
+              请将卡片放在HID读卡器上，或使用手动输入功能
+            </p>
           </CardContent>
         </Card>
       )}
 
-      {/* 步骤1: 扫描学生NFC卡 */}
+        {/* 步骤1: 扫描学生卡片 */}
       {currentStep === 'scan-student' && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
-              扫描学生NFC卡
+                扫描学生卡片
             </CardTitle>
-            <CardDescription>请扫描学生的NFC卡片以获取学生信息</CardDescription>
+              <CardDescription>请将学生卡片放在HID读卡器上，系统会自动识别并查找学生信息</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* NFC扫描按钮 */}
-            {nfcSupported && nfcPermission === 'granted' && (
-              <div className="space-y-2">
+              {/* 快速访问 */}
+              {(recentStudents.length > 0 || favoriteStudents.length > 0) && (
+                <div className="space-y-4">
+                  {/* 收藏的学生 */}
+                  {favoriteStudents.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                        <span className="text-red-500">❤️</span>
+                        收藏学生
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {favoriteStudents.slice(0, 5).map((student) => (
                 <Button 
-                  onClick={handleNFCCardScan} 
-                  className="w-full bg-blue-600 hover:bg-blue-700" 
-                  disabled={isScanning || loading}
-                >
-                  {isScanning ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      正在扫描NFC卡片...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      扫描NFC卡片
-                    </>
-                  )}
+                            key={student.id}
+                            variant="outline"
+                            size="sm"
+                            className="h-auto p-2 flex flex-col items-center gap-1"
+                            onClick={() => {
+                              setStudentCardNumber(student.cardNumber || student.student_id || '')
+                              processStudentCard(student.cardNumber || student.student_id || '')
+                            }}
+                          >
+                            <span className="font-medium text-xs">{student.student_name}</span>
+                            <span className="text-xs text-gray-500">{student.student_id}</span>
                 </Button>
-                <p className="text-sm text-gray-500 text-center">
-                  将NFC卡片靠近设备背面进行扫描
-                </p>
+                        ))}
+                      </div>
               </div>
             )}
 
-            {/* 权限请求按钮 */}
-            {nfcSupported && nfcPermission !== 'granted' && (
+                  {/* 最近使用的学生 */}
+                  {recentStudents.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        最近使用
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {recentStudents.slice(0, 5).map((student) => (
               <Button 
-                onClick={requestNFCPermission} 
-                className="w-full bg-green-600 hover:bg-green-700"
-              >
-                <Shield className="h-4 w-4 mr-2" />
-                请求NFC权限
+                            key={student.id}
+                            variant="outline"
+                            size="sm"
+                            className="h-auto p-2 flex flex-col items-center gap-1"
+                            onClick={() => {
+                              setStudentCardNumber(student.cardNumber || student.student_id || '')
+                              processStudentCard(student.cardNumber || student.student_id || '')
+                            }}
+                          >
+                            <span className="font-medium text-xs">{student.student_name}</span>
+                            <span className="text-xs text-gray-500">{student.student_id}</span>
               </Button>
-            )}
-
-            {/* 分隔线 */}
-            {(nfcSupported && nfcPermission === 'granted') && (
-              <div className="flex items-center gap-4">
-                <div className="flex-1 h-px bg-gray-300"></div>
-                <span className="text-sm text-gray-500">或</span>
-                <div className="flex-1 h-px bg-gray-300"></div>
+                        ))}
+                      </div>
               </div>
             )}
-
-            {/* 手动输入 */}
-            <div>
-              <Label htmlFor="student-card">手动输入学生信息</Label>
+              </div>
+            )}
+            {/* HID读卡器组件 */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="bg-green-600">
+                  自动模式
+                </Badge>
+                {isScanning && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="animate-pulse">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      读取中...
+                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsScanning(false)
+                        setInputBuffer('')
+                        if (timeoutRef.current) {
+                          clearTimeout(timeoutRef.current)
+                          timeoutRef.current = null
+                        }
+                      }}
+                      className="h-6 text-xs"
+                    >
+                      停止
+                    </Button>
+                  </div>
+                )}
+              </div>
+              
+              <div className="relative">
               <Input
-                id="student-card"
-                value={studentCardNumber}
-                onChange={(e) => setStudentCardNumber(e.target.value)}
-                placeholder="请输入学生NFC卡号、URL或学号"
-                className="mt-1"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                支持：NFC卡号、学生URL、学号(student_id)
-              </p>
+                  placeholder="将学生卡片放在HID读卡器上，系统会自动识别..."
+                  value={lastCardNumber}
+                  readOnly
+                  className="font-mono text-lg pr-10 bg-gray-50"
+                />
+                {lastCardNumber && (
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => {
+                        setLastCardNumber("")
+                        setStudentCardNumber("")
+                      }}
+                      title="清除输入"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
             </div>
             
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <CreditCard className="h-4 w-4" />
+                <span>将卡片放在HID读卡器上，系统会自动读取10位数字（配置：10 no.in D + Enter）</span>
+              </div>
+            </div>
+
+            {/* 当前扫描的卡号 */}
+            {lastCardNumber && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between">
+            <div>
+                    <p className="text-sm font-medium text-blue-900">已扫描卡号</p>
+                    <p className="text-2xl font-mono text-blue-600">{lastCardNumber}</p>
+                    {isScanning && (
+                      <p className="text-sm text-blue-600 mt-1 flex items-center gap-2">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        正在自动查找学生...
+                      </p>
+                    )}
+            </div>
             <Button 
-              onClick={handleStudentCardScan} 
-              className="w-full" 
-              disabled={loading || !studentCardNumber.trim()}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  处理中...
-                </>
-              ) : (
-                '确认学生信息'
-              )}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setLastCardNumber("")
+                      setStudentCardNumber("")
+                    }}
+                  >
+                    清除
             </Button>
+                </div>
+              </div>
+            )}
+
           </CardContent>
         </Card>
       )}
@@ -660,12 +893,93 @@ export default function NFCPointsOperation() {
       {/* 步骤2: 查看学生积分信息 */}
       {currentStep === 'view-points' && selectedStudent && studentPoints && (
         <div className="space-y-6">
+          {/* 智能提示 */}
+          {smartTips.length > 0 && (
+            <Card className="border-blue-200 bg-blue-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-blue-900">
+                  <AlertCircle className="h-5 w-5" />
+                  智能分析
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {smartTips.map((tip, index) => (
+                    <li key={index} className="flex items-start gap-2 text-blue-800">
+                      <span className="text-blue-600 mt-1">•</span>
+                      <span className="text-sm">{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 快速操作建议 */}
+          {quickActions.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5" />
+                  推荐操作
+                </CardTitle>
+                <CardDescription>基于学生积分情况智能推荐的操作</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {quickActions.map((action, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      className="h-auto p-4 flex flex-col items-center gap-2 hover:shadow-md transition-shadow"
+                      onClick={() => {
+                        if (action.type === 'add_points') {
+                          setOperationType('add_points')
+                          setPointsChange(action.points)
+                          setReason(action.reason)
+                          setCurrentStep('scan-teacher')
+                        } else if (action.type === 'redeem_gift') {
+                          setOperationType('redeem_gift')
+                          setGiftName(action.gift)
+                          setGiftPoints(action.points)
+                          setCurrentStep('scan-teacher')
+                        }
+                      }}
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        action.color === 'green' ? 'bg-green-100 text-green-600' :
+                        action.color === 'blue' ? 'bg-blue-100 text-blue-600' :
+                        'bg-yellow-100 text-yellow-600'
+                      }`}>
+                        {action.icon === 'Plus' && <Plus className="h-5 w-5" />}
+                        {action.icon === 'Gift' && <Gift className="h-5 w-5" />}
+                        {action.icon === 'Award' && <Award className="h-5 w-5" />}
+                      </div>
+                      <div className="text-center">
+                        <p className="font-medium text-sm">{action.reason || action.gift}</p>
+                        <p className="text-xs text-gray-500">{action.points}积分</p>
+                      </div>
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* 学生信息卡片 */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
                 学生信息
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleFavoriteStudent(selectedStudent)}
+                  className="ml-auto"
+                >
+                  {favoriteStudents.some(s => s.id === selectedStudent.id) ? '❤️' : '🤍'}
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -854,7 +1168,7 @@ export default function NFCPointsOperation() {
         </div>
       )}
 
-      {/* 步骤3: 扫描教师NFC卡 */}
+      {/* 步骤3: 扫描教师卡片 */}
       {currentStep === 'scan-teacher' && (
         <Card>
           <CardHeader>
@@ -862,37 +1176,71 @@ export default function NFCPointsOperation() {
               <Shield className="h-5 w-5" />
               教师身份验证
             </CardTitle>
-            <CardDescription>请扫描教师的NFC卡片以验证身份，确保操作安全</CardDescription>
+            <CardDescription>请将教师卡片放在HID读卡器上，系统会自动识别并验证身份</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-                         <div>
-               <Label htmlFor="teacher-card">教师NFC卡号/URL</Label>
-               <Input
-                 id="teacher-card"
-                 value={teacherCardNumber}
-                 onChange={(e) => setTeacherCardNumber(e.target.value)}
-                 placeholder="请输入或扫描教师NFC卡号、URL或教师ID"
-                 className="mt-1"
-               />
-               <p className="text-sm text-gray-500 mt-1">
-                 支持：教师URL、NFC卡号、教师ID
-               </p>
-             </div>
-            <div className="flex gap-4">
-              <Button onClick={handleTeacherCardScan} className="flex-1" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    验证中...
-                  </>
-                ) : (
-                  '验证教师身份'
+            {/* HID读卡器组件 */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="bg-green-600">
+                  自动模式
+                </Badge>
+                {isScanning && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="animate-pulse">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      读取中...
+                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsScanning(false)
+                        setInputBuffer('')
+                        if (timeoutRef.current) {
+                          clearTimeout(timeoutRef.current)
+                          timeoutRef.current = null
+                        }
+                      }}
+                      className="h-6 text-xs"
+                    >
+                      停止
+                    </Button>
+                  </div>
                 )}
-              </Button>
-              <Button variant="outline" onClick={() => setCurrentStep('view-points')}>
-                返回
-              </Button>
+              </div>
+              
+              <div className="relative">
+               <Input
+                  placeholder="将教师卡片放在HID读卡器上，系统会自动识别..."
+                 value={teacherCardNumber}
+                  readOnly
+                  className="font-mono text-lg pr-10 bg-gray-50"
+                />
+                {teacherCardNumber && (
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => {
+                        setTeacherCardNumber("")
+                      }}
+                      title="清除输入"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+             </div>
+                )}
             </div>
+              
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Shield className="h-4 w-4" />
+                <span>将卡片放在HID读卡器上，系统会自动读取10位数字（配置：10 no.in D + Enter）</span>
+              </div>
+            </div>
+
+
           </CardContent>
         </Card>
       )}
@@ -1090,3 +1438,4 @@ export default function NFCPointsOperation() {
     </div>
   )
 }
+

@@ -36,8 +36,8 @@ export async function GET(request: NextRequest) {
     const path = url.pathname.replace('/api/pocketbase-proxy', '')
     const searchParams = url.searchParams.toString()
     
-    // 如果路径为空，返回PocketBase API信息
-    if (path === '') {
+    // 如果路径为空或只有斜杠，返回PocketBase API信息
+    if (path === '' || path === '/') {
       return NextResponse.json({
         message: 'PocketBase Proxy API',
         status: 'active',
@@ -97,8 +97,8 @@ export async function POST(request: NextRequest) {
     const path = url.pathname.replace('/api/pocketbase-proxy', '')
     const body = await request.text()
     
-    // 如果路径为空，返回PocketBase API信息
-    if (path === '') {
+    // 如果路径为空或只有斜杠，返回PocketBase API信息
+    if (path === '' || path === '/') {
       return NextResponse.json({
         message: 'PocketBase Proxy API',
         status: 'active',

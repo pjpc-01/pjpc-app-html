@@ -31,7 +31,7 @@ export interface Teacher {
   
   // NFC/URL相关字段
   teacherUrl?: string
-  nfc_card_number?: string
+  cardNumber?: string
   
   // 系统字段
   created: string
@@ -73,7 +73,7 @@ export interface TeacherCreateData {
   
   // NFC/URL相关字段
   teacherUrl?: string
-  nfc_card_number?: string
+  cardNumber?: string
 }
 
 export interface TeacherUpdateData extends Partial<TeacherCreateData> {
@@ -157,7 +157,7 @@ export const getAllTeachers = async (): Promise<Teacher[]> => {
         bankAccountNo: item.bankAccountNo || '',
         // NFC/URL相关字段
         teacherUrl: item.teacherUrl || '',
-        nfc_card_number: item.nfc_card_number || '',
+        cardNumber: item.cardNumber || '',
         created: item.created,
         updated: item.updated
       }

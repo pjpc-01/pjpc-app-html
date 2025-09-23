@@ -46,7 +46,7 @@ export interface PointTransaction {
       teacher_name?: string
       name?: string
       email?: string
-      nfc_card_number?: string
+      cardNumber?: string
     }
   }
 }
@@ -61,6 +61,7 @@ export interface PointTransactionCreateData {
   gift_name?: string
   gift_points?: number
   status?: 'pending' | 'approved'
+  season_number?: number
 }
 
 export interface TeacherWithNFC {
@@ -68,7 +69,7 @@ export interface TeacherWithNFC {
   teacher_name?: string
   name?: string
   email?: string
-  nfc_card_number?: string
+  cardNumber?: string
   permissions?: 'normal_teacher' | 'senior_teacher' | 'admin'
   nfc_card_issued_date?: string
   nfc_card_expiry_date?: string

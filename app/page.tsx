@@ -8,7 +8,6 @@ import { GraduationCap, Bell, Settings, LogOut, UserCheck, Wifi, WifiOff, AlertT
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import SecureLoginForm from "@/app/components/systems/auth/secure-login-form"
 import AdminDashboard from "./components/dashboards/admin-dashboard"
-import TeacherDashboard from "./components/dashboards/teacher-dashboard"
 import ParentDashboard from "./components/dashboards/parent-dashboard"
 import AccountantDashboard from "./components/dashboards/accountant-dashboard"
 import ErrorBoundary from "@/components/shared/error-boundary"

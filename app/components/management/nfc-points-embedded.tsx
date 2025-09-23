@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,6 +34,7 @@ import { usePoints } from '@/hooks/usePoints'
 import { useStudents } from '@/hooks/useStudents'
 import { useCurrentTeacher } from '@/hooks/useCurrentTeacher'
 import { StudentPoints, PointTransaction, PointTransactionCreateData } from '@/types/points'
+import HIDCardReader from '@/components/hid-reader/HIDCardReader'
 
 type OperationStep = 'scan-student' | 'view-points' | 'scan-teacher' | 'operation' | 'success'
 
@@ -67,21 +68,65 @@ export default function NFCPointsEmbedded() {
   const [studentCardNumber, setStudentCardNumber] = useState<string>('')
   const [teacherCardNumber, setTeacherCardNumber] = useState<string>('')
   
-  // NFC支持状态
+  // HID读卡器状态
+  const [isHIDReady, setIsHIDReady] = useState<boolean>(true)
+  const [lastCardNumber, setLastCardNumber] = useState<string>('')
+  
+  // NFC状态
   const [nfcSupported, setNfcSupported] = useState<boolean | null>(null)
-  const [nfcScanning, setNfcScanning] = useState(false)
+  const [nfcScanning, setNfcScanning] = useState<boolean>(false)
+  
+  // 防重复扫描
+  const lastProcessedCard = useRef<string>('')
+  const lastProcessTime = useRef<number>(0)
 
-  // 检测NFC支持
+  // 检查NFC支持
   useEffect(() => {
-    const checkNFCSupport = () => {
-      if (typeof window !== 'undefined') {
-        const supported = 'NDEFReader' in window
-        setNfcSupported(supported)
-        console.log('NFC支持状态:', supported)
-      }
+    if (typeof window !== 'undefined' && 'NDEFReader' in window) {
+      setNfcSupported(true)
+    } else {
+      setNfcSupported(false)
     }
-    checkNFCSupport()
   }, [])
+
+  // HID读卡器处理函数 - 添加防重复和延迟处理
+  const handleHIDCardRead = (cardNumber: string) => {
+    console.log('HID读卡器原始读取到卡号:', cardNumber)
+    
+    // 清理卡号：只保留数字
+    const cleanedCardNumber = cardNumber.replace(/\D/g, '')
+    console.log('HID读卡器清理后卡号:', cleanedCardNumber)
+    
+    if (!cleanedCardNumber) {
+      console.log('❌ 清理后卡号为空，忽略')
+      return
+    }
+    
+    const now = Date.now()
+    
+    // 防重复扫描：同一张卡在3秒内重复扫描，忽略
+    if (now - lastProcessTime.current < 3000 && lastProcessedCard.current === cleanedCardNumber) {
+      console.log('防重复扫描：忽略重复卡片')
+      return
+    }
+    
+    // 更新防重复状态
+    lastProcessedCard.current = cleanedCardNumber
+    lastProcessTime.current = now
+    
+    setLastCardNumber(cleanedCardNumber)
+    setStudentCardNumber(cleanedCardNumber)
+    
+    // 添加延迟，让用户有时间看到扫描结果
+    setTimeout(() => {
+      processStudentData(cleanedCardNumber)
+    }, 1000) // 1秒延迟
+  }
+
+  const handleHIDCardError = (error: string) => {
+    console.error('HID读卡器错误:', error)
+    alert('读卡器错误: ' + error)
+  }
 
   // 加载学生积分详情
   const loadStudentPoints = async (studentId: string) => {
@@ -115,11 +160,42 @@ export default function NFCPointsEmbedded() {
       console.log('NFC扫描已启动，等待卡片...')
       
       ndef.addEventListener('reading', async (event: any) => {
-        const decoder = new TextDecoder()
-        const nfcData = decoder.decode(event.message.records[0].data)
-        console.log('NFC扫描到数据:', nfcData)
-        setNfcScanning(false)
-        await processStudentData(nfcData)
+        try {
+          const { message } = event
+          let nfcData = ""
+          let tagId = ""
+          
+          // 提取标签ID
+          if (event.serialNumber) {
+            tagId = event.serialNumber
+          }
+          
+          // 解析NDEF记录
+          for (const record of message.records) {
+            if (record.recordType === "url") {
+              nfcData = record.data ? new TextDecoder().decode(record.data) : ""
+            } else if (record.recordType === "text") {
+              nfcData = record.data ? new TextDecoder().decode(record.data) : ""
+            } else if (record.recordType === "empty") {
+              // 空记录，尝试从标签ID获取数据
+              nfcData = tagId
+            }
+          }
+          
+          // 如果没有从记录中获取到数据，使用标签ID
+          if (!nfcData && tagId) {
+            nfcData = tagId
+          }
+          
+          console.log('NFC扫描到数据:', nfcData)
+          setNfcScanning(false)
+          await processStudentData(nfcData)
+        } catch (error) {
+          console.error('NFC数据解析失败:', error)
+          setNfcScanning(false)
+          setLoading(false)
+          alert('NFC数据解析失败，请重试')
+        }
       })
       
       // 超时处理
@@ -155,36 +231,105 @@ export default function NFCPointsEmbedded() {
     await processStudentData(studentCardNumber.trim())
   }
 
-  // 处理学生数据（NFC扫描或手动输入）
-  const processStudentData = async (nfcData: string) => {
+  // 根据卡号查找学生 - 使用与考勤系统相同的逻辑
+  const findStudentByCard = (cardNumber: string) => {
+    const trimmed = cardNumber.trim()
+    console.log('🔍 查找学生，原始卡号:', cardNumber)
+    console.log('🔍 查找学生，清理后卡号:', trimmed)
+    console.log('🔍 卡号长度:', trimmed.length)
+    console.log('🔍 学生总数:', students.length)
+    
+    // 显示前几个学生的卡号用于调试
+    console.log('🔍 前5个学生的卡号:', students.slice(0, 5).map(s => ({
+      name: s.student_name,
+      cardNumber: s.cardNumber,
+      student_id: s.student_id
+    })))
+    
+    // 查找学生 - 精确匹配
+    let student = students.find(s => s.cardNumber === trimmed)
+    if (student) {
+      console.log('✅ 精确匹配找到学生:', student.student_name, student.cardNumber)
+      return student
+    }
+    
+    // 查找学生 - 去除前导零后匹配
+    const trimmedNoLeadingZeros = trimmed.replace(/^0+/, '')
+    if (trimmedNoLeadingZeros !== trimmed) {
+      console.log('🔍 尝试去除前导零后匹配:', trimmedNoLeadingZeros)
+      student = students.find(s => s.cardNumber === trimmedNoLeadingZeros)
+      if (student) {
+        console.log('✅ 去除前导零后找到学生:', student.student_name, student.cardNumber)
+        return student
+      }
+    }
+    
+    // 查找学生 - 添加前导零后匹配
+    if (trimmed.length < 10) {
+      const paddedCardNumber = trimmed.padStart(10, '0')
+      console.log('🔍 尝试添加前导零后匹配:', paddedCardNumber)
+      student = students.find(s => s.cardNumber === paddedCardNumber)
+      if (student) {
+        console.log('✅ 添加前导零后找到学生:', student.student_name, student.cardNumber)
+        return student
+      }
+    }
+    
+    // 查找学生 - 通过student_id匹配
+    student = students.find(s => s.student_id === trimmed)
+    if (student) {
+      console.log('✅ 通过student_id找到学生:', student.student_name, student.student_id)
+      return student
+    }
+    
+    console.log('❌ 未找到学生')
+    return null
+  }
+
+  // 处理学生数据（HID读卡器扫描或手动输入）
+  const processStudentData = async (cardNumber: string) => {
     try {
-      let foundStudent = null
+      console.log('🔍 开始处理学生数据:', cardNumber)
+      setLoading(true)
 
-      // 方法1: 通过studentUrl字段直接匹配
-      foundStudent = students.find(s => s.studentUrl && s.studentUrl === nfcData)
-      
-      // 方法2: 通过URL包含关系匹配（处理URL可能略有不同的情况）
-      if (!foundStudent) {
-        foundStudent = students.find(s => s.studentUrl && nfcData.includes(s.studentUrl.split('/').pop() || ''))
-      }
-      
-      // 方法3: 通过student_id匹配
-      if (!foundStudent) {
-        foundStudent = students.find(s => s.student_id === nfcData)
+      // 等待一下，确保数据完全加载
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // 检查学生数据是否已加载
+      if (students.length === 0) {
+        console.log('⚠️ 学生数据尚未加载，等待数据加载...')
+        // 等待学生数据加载，最多等待3秒
+        let attempts = 0
+        while (students.length === 0 && attempts < 30) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+          attempts++
+        }
+        
+        if (students.length === 0) {
+          alert('学生数据尚未加载完成，请稍后再试')
+          setLoading(false)
+          return
+        }
       }
 
-      if (foundStudent) {
-        setSelectedStudent(foundStudent)
-        await loadStudentPoints(foundStudent.id)
-        setCurrentStep('view-points')
+      console.log('✅ 学生数据已加载，总数:', students.length)
+
+      // 直接通过卡号查找学生
+      const foundStudent = findStudentByCard(cardNumber)
+
+      if (!foundStudent) {
+        alert('未找到对应的学生信息，请检查卡片是否正确')
         setLoading(false)
-      } else {
-        alert('未找到匹配的学生，请检查NFC卡号或URL是否正确')
-        setLoading(false)
+        return
       }
+
+      setSelectedStudent(foundStudent)
+      await loadStudentPoints(foundStudent.id)
+      setCurrentStep('view-points')
+      setLoading(false)
     } catch (error) {
       console.error('处理学生数据失败:', error)
-      alert('处理失败，请重试')
+      alert('处理失败: ' + (error as Error).message)
       setLoading(false)
     }
   }
@@ -222,9 +367,11 @@ export default function NFCPointsEmbedded() {
       const transactionData: PointTransactionCreateData = {
         student_id: selectedStudent.id,
         teacher_id: verifiedTeacher.id,
-        operation_type: selectedOperationType!,
+        transaction_type: selectedOperationType || 'add_points',
         points_change: parseInt(pointsChange),
         reason: reason,
+        status: 'approved', // 默认状态为已批准
+        season_number: 1, // 默认赛季为1
         gift_name: selectedOperationType === 'redeem_gift' ? giftName : undefined,
         gift_points: selectedOperationType === 'redeem_gift' ? parseInt(giftPoints) : undefined
       }
@@ -428,7 +575,7 @@ export default function NFCPointsEmbedded() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">总积分</p>
-                  <p className="font-semibold text-lg">{studentPoints.total_points}</p>
+                  <p className="font-semibold text-lg">{studentPoints.total_earned}</p>
                 </div>
               </div>
             </CardContent>
