@@ -28,7 +28,7 @@ async function processAttendance(
     // 标准化center字段格式
     const normalizedCenter = center.trim().toUpperCase()
     
-    tvLog('🚀 开始考勤处理 - 使用测试数据版本', { 
+    tvLog('🚀 开始考勤处理', { 
       cardNumber, 
       originalCenter: center, 
       normalizedCenter,
@@ -51,7 +51,7 @@ async function processAttendance(
             allStudents = studentData.data
             tvLog('获取到真实学生数据', { 
               count: allStudents.length,
-              sampleStudents: allStudents.slice(0, 2).map(s => ({
+              sampleStudents: allStudents.slice(0, 2).map((s: any) => ({
                 student_id: s.student_id,
                 student_name: s.student_name,
                 cardNumber: s.cardNumber,
@@ -59,66 +59,16 @@ async function processAttendance(
               }))
             })
           } else {
-            tvLog('真实学生数据为空，使用测试数据', { 
+            tvLog('未获取到学生数据', { 
               success: studentData.success,
               error: studentData.error,
               dataLength: studentData.data?.length || 0
             })
-            
-            // 使用测试学生数据
-            allStudents = [
-              {
-                id: 'test-1',
-                student_id: 'B6',
-                student_name: 'Kalkin Parthipan 卡信',
-                cardNumber: '0000000000',
-                center: 'WX 01'
-              },
-              {
-                id: 'test-2', 
-                student_id: 'G4',
-                student_name: 'Chan Ying Shuang 陈萤霜',
-                cardNumber: '1111111111',
-                center: 'WX 01'
-              },
-              {
-                id: 'test-3',
-                student_id: 'B2',
-                student_name: 'Lim Zhe Min 林哲名',
-                cardNumber: '2222222222',
-                center: 'WX 01'
-              }
-            ]
           }
         } catch (error) {
-          tvLog('获取学生数据失败，使用测试数据', { 
+          tvLog('获取学生数据失败', { 
             error: error instanceof Error ? error.message : String(error)
           })
-          
-          // 使用测试学生数据
-          allStudents = [
-            {
-              id: 'test-1',
-              student_id: 'B6',
-              student_name: 'Kalkin Parthipan 卡信',
-              cardNumber: '0000000000',
-              center: 'WX 01'
-            },
-            {
-              id: 'test-2', 
-              student_id: 'G4',
-              student_name: 'Chan Ying Shuang 陈萤霜',
-              cardNumber: '1111111111',
-              center: 'WX 01'
-            },
-            {
-              id: 'test-3',
-              student_id: 'B2',
-              student_name: 'Lim Zhe Min 林哲名',
-              cardNumber: '2222222222',
-              center: 'WX 01'
-            }
-          ]
         }
         
         // 获取教师数据
@@ -130,7 +80,7 @@ async function processAttendance(
             allTeachers = teacherData.data
             tvLog('获取到真实教师数据', { 
               count: allTeachers.length,
-              sampleTeachers: allTeachers.slice(0, 2).map(t => ({
+              sampleTeachers: allTeachers.slice(0, 2).map((t: any) => ({
                 teacher_id: t.teacher_id || t.id,
                 teacher_name: t.teacher_name || t.name,
                 cardNumber: t.cardNumber,
@@ -138,70 +88,30 @@ async function processAttendance(
               }))
             })
           } else {
-            tvLog('真实教师数据为空，使用测试数据', { 
+            tvLog('未获取到教师数据', { 
               success: teacherData.success,
               error: teacherData.error,
               dataLength: teacherData.data?.length || 0
             })
-            
-            // 使用测试教师数据
-            allTeachers = [
-              {
-                id: 'teacher-1',
-                teacher_id: 'T001',
-                teacher_name: '测试教师',
-                cardNumber: '3333333333',
-                center: 'WX 01'
-              }
-            ]
           }
         } catch (error) {
-          tvLog('获取教师数据失败，使用测试数据', { 
+          tvLog('获取教师数据失败', { 
             error: error instanceof Error ? error.message : String(error)
           })
-          
-          // 使用测试教师数据
-          allTeachers = [
-            {
-              id: 'teacher-1',
-              teacher_id: 'T001',
-              teacher_name: '测试教师',
-              cardNumber: '3333333333',
-              center: 'WX 01'
-            }
-          ]
         }
     
     tvLog('数据准备完成', { 
       studentsCount: allStudents.length,
-      teachersCount: allTeachers.length,
-      sampleStudents: allStudents.slice(0, 2).map(s => ({
-        student_id: s.student_id,
-        student_name: s.student_name,
-        cardNumber: s.cardNumber,
-        center: s.center
-      })),
-      sampleTeachers: allTeachers.slice(0, 2).map(t => ({
-        teacher_id: t.teacher_id || t.id,
-        teacher_name: t.teacher_name || t.name,
-        cardNumber: t.cardNumber,
-        center: t.center
-      }))
+      teachersCount: allTeachers.length
     })
     
     tvLog('学生数据检查', { 
       originalStudentsCount: students.length,
-      totalStudentsCount: allStudents.length,
-      sampleStudents: allStudents.slice(0, 2).map(s => ({
-        student_id: s.student_id,
-        student_name: s.student_name,
-        cardNumber: s.cardNumber,
-        center: s.center
-      }))
+      totalStudentsCount: allStudents.length
     })
 
     // 查找学生 - 支持多种center字段格式
-    const student = allStudents.find(s => {
+    const student = allStudents.find((s: any) => {
       if (s.cardNumber !== cardNumber) return false
       
       const studentCenter = s.center || s.Center || s.centre || s.branch || ''
@@ -240,7 +150,7 @@ async function processAttendance(
     }
 
     // 查找教师 - 支持多种center字段格式
-    const teacher = allTeachers.find(t => {
+    const teacher = allTeachers.find((t: any) => {
       if (t.cardNumber !== cardNumber) return false
       
       const teacherCenter = t.center || t.Center || t.centre || t.branch || ''
@@ -421,7 +331,7 @@ export default function NFCBackgroundRunner({
 
   // 处理NFC卡片检测
   const handleCardDetected = async (data: string, readerType: NFCReaderType) => {
-    tvLog('🔥 NFC卡片检测开始 - 最新版本', { cardData: data, readerType, center, isProcessing: isProcessingRef.current })
+    tvLog('NFC卡片检测开始', { cardData: data, readerType, center, isProcessing: isProcessingRef.current })
     
     if (isProcessingRef.current) {
       tvLog('跳过处理：正在处理中', { cardData: data, center })
@@ -442,18 +352,11 @@ export default function NFCBackgroundRunner({
         cardData = { uid: data, type: 'Raw Data' }
       }
 
-      // 添加调试信息
       tvLog('开始处理考勤', { 
         nfcData: cardData.uid || data, 
         studentsCount: students.length, 
         teachersCount: teachers.length,
-        center,
-        sampleStudents: students.slice(0, 3).map(s => ({
-          student_id: s.student_id,
-          student_name: s.student_name,
-          hasCardNumber: !!s.cardNumber,
-          cardNumber: s.cardNumber
-        }))
+        center
       })
 
       // 使用独立的考勤处理
