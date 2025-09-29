@@ -335,7 +335,16 @@ export default function TVBoardByCenter() {
   return (
     <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
       {/* NFC 后台运行器 */}
-      <NFCBackgroundRunner center={center} enabled={true} />
+      <NFCBackgroundRunner 
+        center={center} 
+        enabled={true}
+        students={students}
+        teachers={[]} // TODO: 添加教师数据获取
+        onCardRead={(cardData) => {
+          // 处理读卡成功后的逻辑
+          console.log('NFC读卡成功:', cardData)
+        }}
+      />
       
       {/* 安全区域布局 */}
       <SafeAreaLayout>
