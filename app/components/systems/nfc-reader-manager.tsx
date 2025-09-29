@@ -143,11 +143,6 @@ export default function NFCReaderManager({
     }
   }
 
-  // 手动测试
-  const testWithMockData = () => {
-    const mockData = '279331994012644548'
-    processNFCCard(mockData)
-  }
 
   // 清空结果
   const clearResults = () => {
@@ -223,14 +218,6 @@ export default function NFCReaderManager({
 
         {/* 控制按钮 */}
         <div className="flex gap-2 justify-center">
-          <Button 
-            onClick={testWithMockData}
-            variant="outline"
-            className="h-10"
-          >
-            <Play className="h-4 w-4 mr-1" />
-            测试
-          </Button>
           
           <Button 
             onClick={clearResults}

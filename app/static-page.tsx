@@ -1,199 +1,176 @@
 "use client"
 
-import React, { useState } from "react"
+import React from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { GraduationCap, Bell, Settings, LogOut, UserCheck, Wifi, WifiOff, AlertTriangle, CreditCard } from "lucide-react"
-import SecureLoginForm from "@/app/components/systems/auth/secure-login-form"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertTriangle as AlertTriangleIcon, Mail, Clock } from "lucide-react"
+import { GraduationCap, Users, CreditCard, BarChart3, Settings, Bell } from "lucide-react"
 
-export default function StaticPage() {
-  const [activeTab, setActiveTab] = useState("login")
+interface StaticPageProps {
+  className?: string
+}
 
+export default function StaticPage({ className = "" }: StaticPageProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 顶部导航栏 */}
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <GraduationCap className="h-8 w-8 text-blue-600" />
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">PJPC安亲班管理系统</h1>
-                <p className="text-sm text-gray-500">专业的安亲班教育管理解决方案</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                <Wifi className="h-3 w-3 mr-1" />
-                系统在线
-              </Badge>
-            </div>
-          </div>
+    <div className={`min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 ${className}`}>
+      <div className="container mx-auto px-4 py-8">
+        {/* 页面标题 */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            欢迎使用安亲班管理系统
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            一个现代化的教育管理平台，帮助您更好地管理学生、教师和财务信息
+          </p>
         </div>
-      </nav>
 
-      {/* 主要内容区域 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* 左侧：登录表单 */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserCheck className="h-5 w-5" />
-                  用户登录
-                </CardTitle>
-                <CardDescription>
-                  使用您的账户登录系统，开始管理安亲班事务
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <SecureLoginForm />
-              </CardContent>
-            </Card>
+        {/* 功能卡片网格 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {/* 学生管理 */}
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <GraduationCap className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">学生管理</CardTitle>
+                  <CardDescription>管理学生信息和积分系统</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 mb-4">
+                完整的学生档案管理，包括基本信息、积分记录、考勤统计等。
+              </p>
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                核心功能
+              </Badge>
+            </CardContent>
+          </Card>
 
-            {/* 系统状态 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wifi className="h-5 w-5" />
-                  系统状态
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">PocketBase连接</span>
-                  <Badge variant="outline" className="bg-green-50 text-green-700">
-                    正常
-                  </Badge>
+          {/* 教师管理 */}
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Users className="w-6 h-6 text-green-600" />
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">数据库状态</span>
-                  <Badge variant="outline" className="bg-green-50 text-green-700">
-                    在线
-                  </Badge>
+                <div>
+                  <CardTitle className="text-xl">教师管理</CardTitle>
+                  <CardDescription>教师信息和权限管理</CardDescription>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">系统版本</span>
-                  <Badge variant="outline">
-                    v2.0.0
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 mb-4">
+                教师账户管理，权限分配，教学任务安排等功能。
+              </p>
+              <Badge variant="secondary" className="bg-green-100 text-green-800">
+                管理功能
+              </Badge>
+            </CardContent>
+          </Card>
 
-          {/* 右侧：功能介绍 */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <GraduationCap className="h-5 w-5" />
-                  系统功能
-                </CardTitle>
-                <CardDescription>
-                  PJPC安亲班管理系统提供全面的教育管理解决方案
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <UserCheck className="h-4 w-4 text-blue-600" />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">考勤管理</h3>
-                      <p className="text-sm text-gray-600">学生和教师考勤记录，支持NFC卡片签到</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                        <GraduationCap className="h-4 w-4 text-green-600" />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">学生管理</h3>
-                      <p className="text-sm text-gray-600">学生信息管理，成绩跟踪，家长沟通</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <CreditCard className="h-4 w-4 text-purple-600" />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">财务管理</h3>
-                      <p className="text-sm text-gray-600">费用管理，发票生成，财务报表</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                        <Settings className="h-4 w-4 text-orange-600" />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">系统管理</h3>
-                      <p className="text-sm text-gray-600">用户权限管理，系统配置，数据备份</p>
-                    </div>
-                  </div>
+          {/* 财务管理 */}
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <CreditCard className="w-6 h-6 text-purple-600" />
                 </div>
-              </CardContent>
-            </Card>
+                <div>
+                  <CardTitle className="text-xl">财务管理</CardTitle>
+                  <CardDescription>学费和支出管理</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 mb-4">
+                学费收取，发票管理，财务报表生成等功能。
+              </p>
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                财务功能
+              </Badge>
+            </CardContent>
+          </Card>
 
-            {/* 快速访问 */}
-            <Card>
-              <CardHeader>
-                <CardTitle>快速访问</CardTitle>
-                <CardDescription>
-                  常用功能的快速入口
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button variant="outline" className="h-12 flex flex-col items-center gap-1">
-                    <UserCheck className="h-4 w-4" />
-                    <span className="text-xs">考勤管理</span>
-                  </Button>
-                  <Button variant="outline" className="h-12 flex flex-col items-center gap-1">
-                    <GraduationCap className="h-4 w-4" />
-                    <span className="text-xs">学生管理</span>
-                  </Button>
-                  <Button variant="outline" className="h-12 flex flex-col items-center gap-1">
-                    <CreditCard className="h-4 w-4" />
-                    <span className="text-xs">财务管理</span>
-                  </Button>
-                  <Button variant="outline" className="h-12 flex flex-col items-center gap-1">
-                    <Settings className="h-4 w-4" />
-                    <span className="text-xs">系统设置</span>
-                  </Button>
+          {/* 数据分析 */}
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <BarChart3 className="w-6 h-6 text-orange-600" />
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+                <div>
+                  <CardTitle className="text-xl">数据分析</CardTitle>
+                  <CardDescription>统计报表和趋势分析</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 mb-4">
+                学生表现分析，财务统计，考勤报告等数据可视化。
+              </p>
+              <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                分析功能
+              </Badge>
+            </CardContent>
+          </Card>
+
+          {/* 系统设置 */}
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-gray-100 rounded-lg">
+                  <Settings className="w-6 h-6 text-gray-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">系统设置</CardTitle>
+                  <CardDescription>系统配置和参数调整</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 mb-4">
+                系统参数配置，用户权限管理，数据备份等功能。
+              </p>
+              <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+                系统功能
+              </Badge>
+            </CardContent>
+          </Card>
+
+          {/* 通知中心 */}
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <Bell className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">通知中心</CardTitle>
+                  <CardDescription>消息和提醒管理</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 mb-4">
+                系统通知，重要提醒，消息推送等功能。
+              </p>
+              <Badge variant="secondary" className="bg-red-100 text-red-800">
+                通知功能
+              </Badge>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 底部信息 */}
+        <div className="text-center text-gray-500">
+          <p className="mb-2">© 2024 安亲班管理系统. 保留所有权利.</p>
+          <p className="text-sm">版本 1.0.0 | 技术支持: 系统管理员</p>
         </div>
       </div>
-
-      {/* 底部信息 */}
-      <footer className="bg-white border-t mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="text-center text-sm text-gray-500">
-            <p>© 2024 PJPC安亲班管理系统. 保留所有权利.</p>
-                               <p className="mt-1">技术支持: 系统管理员 | 版本: v2.0.0 | 部署时间: {new Date().toLocaleString()}</p>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }

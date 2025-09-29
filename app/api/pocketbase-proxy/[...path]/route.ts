@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import https from 'https'
+import { authenticateAdmin } from '@/lib/auth-utils'
+import PocketBase from 'pocketbase'
 
-// 尝试多个PocketBase服务器地址
-const POCKETBASE_URLS = [
-  'http://localhost:8090',  // 本地开发
-  'http://192.168.0.59:8090',  // 局域网
-  'http://pjpc.tplinkdns.com:8090'  // DDNS
-]
-
-// 选择可用的PocketBase URL
-const POCKETBASE_URL = POCKETBASE_URLS[2] // 使用DDNS地址
+// 从环境变量获取PocketBase URL
+const POCKETBASE_URL = process.env.POCKETBASE_URL || 'http://pjpc.tplinkdns.com:8090'
 
 // 创建忽略SSL证书的fetch函数
 const fetchWithIgnoreSSL = async (url: string, options: RequestInit = {}) => {
@@ -51,37 +46,98 @@ export async function GET(request: NextRequest) {
         timestamp: new Date().toISOString()
       })
     }
-    
-    const finalPath = path
-    const targetUrl = `${POCKETBASE_URL}${finalPath}${searchParams ? `?${searchParams}` : ''}`
+
+    // 对于需要认证的集合，先进行管理员认证
+    const pb = new PocketBase(POCKETBASE_URL)
+    try {
+      await authenticateAdmin(pb)
+      console.log('✅ Proxy: 管理员认证成功')
+    } catch (authError) {
+      console.error('❌ Proxy: 管理员认证失败:', authError)
+      return NextResponse.json(
+        { error: '认证失败', details: authError instanceof Error ? authError.message : '未知错误' },
+        { status: 401 }
+      )
+    }
     
     console.log('🔍 Proxy GET request:', {
       originalPath: path,
-      finalPath,
-      targetUrl,
       searchParams
     })
     
-    const response = await fetchWithIgnoreSSL(targetUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        // 传递原始请求的headers
-        ...Object.fromEntries(request.headers.entries())
+    // 使用已认证的PocketBase实例直接获取数据
+    let result
+    try {
+      if (path.includes('/api/collections/') && path.includes('/records')) {
+        // 解析集合名称和参数
+        const pathParts = path.split('/')
+        const collectionIndex = pathParts.indexOf('collections')
+        const collectionName = pathParts[collectionIndex + 1]
+        
+        // 解析查询参数
+        const page = parseInt(searchParams.match(/page=(\d+)/)?.[1] || '1')
+        const perPage = parseInt(searchParams.match(/perPage=(\d+)/)?.[1] || '100')
+        const filter = searchParams.match(/filter=([^&]+)/)?.[1]
+        const sort = searchParams.match(/sort=([^&]+)/)?.[1]
+        
+        // 构建查询选项
+        const options: any = {}
+        if (filter) options.filter = decodeURIComponent(filter)
+        if (sort) options.sort = decodeURIComponent(sort)
+        
+        console.log(`📊 获取集合 ${collectionName}:`, { page, perPage, options })
+        
+        // 获取数据
+        try {
+          result = await pb.collection(collectionName).getList(page, perPage, options)
+        } catch (collectionError: any) {
+          console.error(`❌ 获取集合 ${collectionName} 失败:`, collectionError)
+          
+          // 如果集合不存在或没有权限，返回空结果而不是错误
+          if (collectionError.status === 400 || collectionError.status === 404 || collectionError.status === 403) {
+            console.log(`⚠️ 集合 ${collectionName} 可能不存在或无权限，返回空结果`)
+            result = {
+              items: [],
+              totalItems: 0,
+              page: page,
+              perPage: perPage,
+              totalPages: 0
+            }
+          } else {
+            throw collectionError
+          }
+        }
+      } else {
+        // 其他请求仍然使用fetch
+        const finalPath = path
+        const targetUrl = `${POCKETBASE_URL}${finalPath}${searchParams ? `?${searchParams}` : ''}`
+        
+        const response = await fetchWithIgnoreSSL(targetUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': pb.authStore.token,
+            ...Object.fromEntries(request.headers.entries())
+          }
+        })
+        
+        result = await response.json()
       }
-    })
-    
-    const data = await response.text()
-    
-    return new NextResponse(data, {
-      status: response.status,
-      headers: {
-        'Content-Type': response.headers.get('Content-Type') || 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      }
-    })
+      
+      return NextResponse.json(result, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        }
+      })
+    } catch (fetchError) {
+      console.error('❌ Proxy: 数据获取失败:', fetchError)
+      return NextResponse.json(
+        { error: '数据获取失败', details: fetchError instanceof Error ? fetchError.message : '未知错误' },
+        { status: 500 }
+      )
+    }
   } catch (error) {
     console.error('❌ Proxy GET error:', error)
     return NextResponse.json(

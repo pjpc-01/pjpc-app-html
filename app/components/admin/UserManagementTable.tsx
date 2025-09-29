@@ -91,7 +91,7 @@ export default function UserManagementTable({
   const [dateFilter, setDateFilter] = useState<string>('all')
 
   // 过滤用户
-  const filteredUsers = users.filter(user => {
+  const filteredUsers = (users || []).filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || user.status === statusFilter
@@ -254,7 +254,7 @@ export default function UserManagementTable({
               <TableRow key={user.id}>
                 <TableCell>
                   <Checkbox
-                    checked={selectedUsers.includes(user.id)}
+                    checked={selectedUsers.has(user.id)}
                     onCheckedChange={(checked) => onSelectUser(user.id, checked as boolean)}
                   />
                 </TableCell>

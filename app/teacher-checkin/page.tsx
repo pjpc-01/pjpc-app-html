@@ -1,9 +1,8 @@
 "use client"
 
 import { useSearchParams } from "next/navigation"
-import Link from "next/link"
-import { XCircle } from "lucide-react"
-import UnifiedAttendanceSystem from "../components/attendance/UnifiedAttendanceSystem"
+import PageLayout from "@/components/layouts/PageLayout"
+import TeacherAttendanceSystem from "../components/attendance/TeacherAttendanceSystem"
 
 export default function TeacherCheckinPage() {
   const searchParams = useSearchParams()
@@ -11,21 +10,18 @@ export default function TeacherCheckinPage() {
   const teacherId = searchParams.get('teacherId')
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 返回链接 */}
-      <div className="p-4">
-        <Link href="/teacher-workspace" className="inline-flex items-center text-blue-600 hover:text-blue-800">
-          <XCircle className="h-4 w-4 mr-2 rotate-45" />
-          返回教师工作台
-        </Link>
-      </div>
-
-      {/* 统一考勤系统 - 教师视图 */}
-      <UnifiedAttendanceSystem 
-        userRole="teacher" 
+    <PageLayout
+      title="教师考勤管理"
+      description="管理所有教师的考勤记录、统计分析"
+      backUrl="/"
+      userRole="teacher"
+      status="系统正常"
+      background="from-blue-50 to-indigo-100"
+    >
+      <TeacherAttendanceSystem 
         centerId={centerId || undefined}
         teacherId={teacherId || undefined}
       />
-    </div>
+    </PageLayout>
   )
 }

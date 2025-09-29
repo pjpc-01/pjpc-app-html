@@ -250,3 +250,42 @@ const payments = await pb.collection('payments').getList(1, 50, {
 ```
 
 This design ensures your school fee management system is robust, scalable, and maintains data integrity throughout the entire fee lifecycle.
+
+## 🔄 实际数据库结构更新 (2025-09-29)
+
+### 重要发现和修复
+
+#### 1. 集合ID映射
+- **Teachers**: `pbc_2907260911`
+- **Students**: `pbc_3827815851` 
+- **Classes**: `pbc_2478702895`
+- **Centers**: `pbc_2011403882`
+
+#### 2. 关键字段修复
+- **Classes 查询**: 使用 `center.name = "WX 01"` 而不是 `center = "WX 01"`
+- **Teachers 权限**: 支持 `"normal_teacher"`, `"senior_teacher"`, `"admin"`
+- **字段验证**: 基于实际数据库结构进行字段验证
+
+#### 3. 新增文件
+- `collections_list.json` - 完整的集合列表和ID映射
+- `field_mappings.md` - 详细的字段映射和查询语法说明
+
+#### 4. API 修复状态
+- ✅ **Classes API** - 查询语法已修复
+- ✅ **Points API** - 字段验证已优化
+- ✅ **Students API** - 字段过滤已实现
+- ⚠️ **Teachers API** - 部分字段仍需调整
+
+### 使用建议
+
+1. **查询关系字段**: 始终使用 `relation_field.name` 语法
+2. **字段验证**: 参考 `field_mappings.md` 中的有效字段列表
+3. **API 开发**: 基于实际数据库结构进行字段映射
+4. **错误处理**: 实现适当的字段验证和错误处理
+
+### 相关文件
+- `collections_list.json` - 所有集合的完整列表
+- `field_mappings.md` - 字段映射和查询语法指南
+- `teachers.json` - 更新后的教师集合结构
+- `students.json` - 更新后的学生集合结构
+- `classes.json` - 更新后的班级集合结构

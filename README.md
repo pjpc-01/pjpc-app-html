@@ -138,14 +138,6 @@ pjpc-app-html/
 3. Share your Google Sheets with the service account email
 4. Add the service account JSON to environment variables
 
-## 📊 Data Import
-
-The system supports importing student data from Google Sheets:
-
-1. Go to `/data-import` page
-2. Download the template or use your own Google Sheets
-3. Enter the Spreadsheet ID
-4. Preview and import data
 
 ### Supported Column Formats
 

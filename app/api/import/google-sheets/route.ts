@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     // 确保 PocketBase 认证
     if (!pb.authStore.isValid) {
       try {
-        await pb.collection('users').authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        await pb.collection('users').authWithPassword(process.env.POCKETBASE_ADMIN_EMAIL, process.env.POCKETBASE_ADMIN_PASSWORD)
         console.log('✅ API 路由中认证成功')
       } catch (authError) {
         console.error('❌ API 路由中认证失败:', authError)

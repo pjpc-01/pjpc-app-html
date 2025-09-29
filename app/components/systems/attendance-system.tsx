@@ -4,8 +4,11 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import PageLayout from "@/components/layouts/PageLayout"
+import TabbedPage from "@/components/layouts/TabbedPage"
+import StatsGrid from "@/components/ui/StatsGrid"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import NFCAttendanceSystem from "./nfc-attendance-system"
 import {
   Clock,

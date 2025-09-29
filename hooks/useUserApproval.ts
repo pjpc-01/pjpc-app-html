@@ -52,10 +52,7 @@ export function useUserApproval() {
       if (!pb.authStore.isValid) {
         console.log('未认证，尝试使用管理员账户登录...')
         try {
-          const authData = await pb.collection('users').authWithPassword(
-            'pjpcemerlang@gmail.com',
-            '0122270775Sw!'
-          )
+          const authData = await pb.collection('users').authWithPassword(process.env.POCKETBASE_ADMIN_EMAIL, process.env.POCKETBASE_ADMIN_PASSWORD)
           console.log('管理员登录成功:', authData.record.email)
         } catch (loginError) {
           console.error('管理员登录失败:', loginError)

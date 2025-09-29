@@ -13,6 +13,7 @@ interface Teacher {
   avatar?: string
   teacherUrl?: string
   cardNumber?: string
+  center_assignment?: string
 }
 
 export function useCurrentTeacher() {
@@ -56,7 +57,9 @@ export function useCurrentTeacher() {
         setError(null)
       } else {
         console.log('❌ 未找到对应的教师记录')
-        setError('未找到对应的教师记录')
+        console.log('💡 建议：需要在teachers表中创建对应的教师记录')
+        console.log('📋 用户信息:', { userId: user.id, email: user.email })
+        setError('未找到对应的教师记录，请联系管理员创建教师档案')
       }
     } catch (err) {
       console.error('❌ 获取教师信息失败:', err)

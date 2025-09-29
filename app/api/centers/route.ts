@@ -1,46 +1,91 @@
 import { NextRequest, NextResponse } from 'next/server'
-import PocketBase from 'pocketbase'
-
-// 静态导出配置
-export const dynamic = 'force-static'
-
-const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL || 'http://192.168.0.59:8090')
+import { getPocketBase } from '@/lib/pocketbase'
+import { authenticateAdmin } from '@/lib/auth-utils'
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const centerId = searchParams.get('id')
+    const pb = await getPocketBase()
+    
+    // 管理员认证
+    try {
+      await authenticateAdmin(pb)
+      console.log('✅ 管理员认证成功')
+    } catch (authError) {
+      console.error('❌ 管理员认证失败:', authError)
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'PocketBase认证失败', 
+          details: authError instanceof Error ? authError.message : '未知认证错误'
+        },
+        { status: 401 }
+      )
+    }
 
-    if (centerId) {
-      // 获取特定中心信息
-      try {
-        const record = await pb.collection('centers').getOne(centerId)
-        return NextResponse.json({
-          success: true,
-          data: record
-        })
-      } catch (error) {
-        return NextResponse.json(
-          { error: '中心不存在' },
-          { status: 404 }
-        )
-      }
-    } else {
-      // 获取所有中心列表
-      const records = await pb.collection('centers').getList(1, 100, {
-        sort: 'name'
+    // 从学生数据中提取centers
+    try {
+      const students = await pb.collection('students').getFullList({
+        fields: 'id,student_id,student_name,center,status'
       })
 
+      // 统计每个center的学生数量
+      const centerMap = new Map<string, number>()
+      
+      students.forEach((student: any) => {
+        const center = student?.center ?? student?.Center ?? student?.centre ?? student?.branch
+        if (center && student?.status === 'active') {
+          centerMap.set(center, (centerMap.get(center) || 0) + 1)
+        }
+      })
+
+      // 转换为数组格式
+      const centers = Array.from(centerMap.entries()).map(([name, count]) => ({
+        id: name,
+        name: name,
+        count: count
+      }))
+
+      // 如果没有找到centers，返回默认值
+      if (centers.length === 0) {
+        return NextResponse.json({
+          success: true,
+          data: [
+            { id: 'WX 01', name: 'WX 01', count: 0 },
+            { id: 'WX 02', name: 'WX 02', count: 0 },
+            { id: 'WX 03', name: 'WX 03', count: 0 }
+          ]
+        })
+      }
+
+      console.log(`✅ 获取到 ${centers.length} 个centers`)
+      
       return NextResponse.json({
         success: true,
-        data: records.items
+        data: centers
+      })
+
+    } catch (studentsError) {
+      console.error('❌ 获取学生数据失败:', studentsError)
+      
+      // 返回默认centers
+      return NextResponse.json({
+        success: true,
+        data: [
+          { id: 'WX 01', name: 'WX 01', count: 0 },
+          { id: 'WX 02', name: 'WX 02', count: 0 },
+          { id: 'WX 03', name: 'WX 03', count: 0 }
+        ]
       })
     }
 
   } catch (error) {
-    console.error('获取中心信息失败:', error)
+    console.error('❌ 获取centers失败:', error)
     return NextResponse.json(
-      { error: '获取中心信息失败' },
+      { 
+        success: false,
+        error: '获取centers失败',
+        details: error instanceof Error ? error.message : '未知错误'
+      },
       { status: 500 }
     )
   }

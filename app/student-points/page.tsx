@@ -22,6 +22,7 @@ import {
 import { useStudents } from '@/hooks/useStudents'
 import { usePoints } from '@/hooks/usePoints'
 import { StudentPoints, PointTransaction } from '@/types/points'
+import PageLayout from '@/components/layouts/PageLayout'
 
 export default function StudentPointsPage() {
   const searchParams = useSearchParams()
@@ -314,7 +315,13 @@ export default function StudentPointsPage() {
 
   // 显示查询表单
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <PageLayout
+      title="学生积分查询"
+      description="请输入学生NFC卡号、学号或姓名查询积分信息"
+      userRole="admin"
+      status="系统正常"
+      background="bg-gray-50"
+    >
       <div className="max-w-md mx-auto">
         <Card>
           <CardHeader className="text-center">
@@ -412,6 +419,6 @@ export default function StudentPointsPage() {
           </Card>
         )}
       </div>
-    </div>
+    </PageLayout>
   )
 }

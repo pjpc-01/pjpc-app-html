@@ -1,7 +1,9 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState, useMemo, useEffect, useCallback } from "react"
+import PageLayout from "@/components/layouts/PageLayout"
+import TabbedPage from "@/components/layouts/TabbedPage"
+import StatsGrid from "@/components/ui/StatsGrid"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -65,6 +67,7 @@ import {
 } from "lucide-react"
 import { useStudents } from "@/hooks/useStudents"
 import { Student } from "@/hooks/useStudents"
+import { usePagination } from "@/hooks/usePagination"
 import { convertGradeToChinese } from "../student/utils"
 import StudentForm from "../student/StudentForm"
 import StudentDetails from "../student/StudentDetails"
@@ -73,15 +76,30 @@ import StudentAnalytics from "../student/StudentAnalytics"
 import BulkOperations from "../student/BulkOperations"
 
 interface FilterState {
+  // 基本信息筛选
   searchTerm: string
   selectedGrade: string
-  selectedStatus: string
   selectedCenter: string
+  selectedStatus: string
   selectedGender: string
+  selectedLevel: string
+  
+  // 年龄和入学筛选
   ageRange: [number, number]
   enrollmentYear: string
+  enrollmentDateRange: { from: Date | undefined; to: Date | undefined }
+  
+  // 联系信息筛选
   hasPhone: boolean
   hasEmail: boolean
+  hasAddress: boolean
+  
+  // 学术信息筛选
+  hasGrades: boolean
+  hasAssignments: boolean
+  attendanceRate: [number, number]
+  
+  // 排序
   sortBy: string
   sortOrder: 'asc' | 'desc'
   dateRange: {
@@ -91,116 +109,71 @@ interface FilterState {
   quickFilters: string[]
 }
 
-export default function StudentManagementPage() {
-  const { students, loading, error, refetch, updateStudent, deleteStudent, addStudent } = useStudents()
+// 筛选函数
+const applySearchFilter = (student: Student, searchTerm: string) => {
+  if (!searchTerm) return true
+  const query = searchTerm.toLowerCase()
+  return (
+    student.student_name?.toLowerCase().includes(query) ||
+    student.student_id?.toLowerCase().includes(query) ||
+    student.standard?.toLowerCase().includes(query) ||
+    student.parentName?.toLowerCase().includes(query) ||
+    student.email?.toLowerCase().includes(query) ||
+    student.status?.toLowerCase().includes(query)
+  )
+}
+
+const applyGradeFilter = (student: Student, selectedGrade: string) => 
+  !selectedGrade || selectedGrade === "all" || student.standard === selectedGrade
+
+const applyStatusFilter = (student: Student, selectedStatus: string) => 
+  !selectedStatus || selectedStatus === "all" || student.status === selectedStatus
+
+const applyCenterFilter = (student: Student, selectedCenter: string) => 
+  !selectedCenter || selectedCenter === "all" || student.center === selectedCenter
+
+const applyGenderFilter = (student: Student, selectedGender: string) => 
+  !selectedGender || selectedGender === "all" || student.gender === selectedGender
+
+const applyLevelFilter = (student: Student, selectedLevel: string) => 
+  !selectedLevel || selectedLevel === "all" || student.level === selectedLevel
+
+const applyQuickFilter = (student: Student, quickFilters: string[]) => {
+  if (!quickFilters.length) return true
   
-  // 状态管理
-  const [selectedStudents, setSelectedStudents] = useState<string[]>([])
-  const [filters, setFilters] = useState<FilterState>({
-    searchTerm: "",
-    selectedGrade: "all",
-    selectedStatus: "all",
-    selectedCenter: "",
-    selectedGender: "",
-    ageRange: [0, 25],
-    enrollmentYear: "",
-    hasPhone: false,
-    hasEmail: false,
-    sortBy: "name",
-    sortOrder: 'asc',
-    dateRange: { from: undefined, to: undefined },
-    quickFilters: []
-  })
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [editingStudent, setEditingStudent] = useState<Student | null>(null)
-  const [viewingStudent, setViewingStudent] = useState<Student | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize] = useState(20)
-  const [viewMode, setViewMode] = useState<'table' | 'grid' | 'analytics'>('table')
-  const [savedFilters, setSavedFilters] = useState<{ name: string; filters: FilterState }[]>([])
-
-  // 获取筛选选项
-  const filterOptions = useMemo(() => {
-    const grades = Array.from(new Set(students.map(s => s.standard).filter(Boolean))).sort()
-    const statuses = Array.from(new Set(students.map(s => s.status).filter(Boolean))).sort()
-    const centers = Array.from(new Set(students.map(s => s.parentName).filter(Boolean))).sort()
-    
-    return { grades, statuses, centers }
-  }, [students])
-
-  // 筛选和排序学生数据
-  const filteredStudents = useMemo(() => {
-    let filtered = students
-
-    // 搜索筛选
-    if (filters.searchTerm) {
-      const lowerSearchTerm = filters.searchTerm.toLowerCase()
-      filtered = filtered.filter(student => 
-        student.student_name?.toLowerCase().includes(lowerSearchTerm) ||
-        student.student_id?.toLowerCase().includes(lowerSearchTerm) ||
-        student.standard?.toLowerCase().includes(lowerSearchTerm) ||
-        student.parentName?.toLowerCase().includes(lowerSearchTerm) ||
-        student.email?.toLowerCase().includes(lowerSearchTerm) ||
-        student.status?.toLowerCase().includes(lowerSearchTerm)
-      )
-    }
-
-    // 年级筛选
-    if (filters.selectedGrade && filters.selectedGrade !== "all") {
-      filtered = filtered.filter(student => student.standard === filters.selectedGrade)
-    }
-
-    // 状态筛选
-    if (filters.selectedStatus && filters.selectedStatus !== "all") {
-      filtered = filtered.filter(student => student.status === filters.selectedStatus)
-    }
-
-    // 中心筛选
-    if (filters.selectedCenter) {
-      filtered = filtered.filter(student => student.parentName === filters.selectedCenter)
-    }
-
-    // 快速筛选
-    filters.quickFilters.forEach(filterId => {
+  return quickFilters.every(filterId => {
       switch (filterId) {
         case 'primary':
-          filtered = filtered.filter(student => {
             const grade = student.standard || ''
             return grade.includes('一年级') || grade.includes('二年级') || grade.includes('三年级') || 
                    grade.includes('四年级') || grade.includes('五年级') || grade.includes('六年级') ||
                    grade === '1' || grade === '2' || grade === '3' || grade === '4' || grade === '5' || grade === '6'
-          })
-          break
         case 'secondary':
-          filtered = filtered.filter(student => {
-            const grade = student.standard || ''
-            return grade.includes('初一') || grade.includes('初二') || grade.includes('初三') || 
-                   grade.includes('高一') || grade.includes('高二') || grade.includes('高三') ||
-                   grade === '7' || grade === '8' || grade === '9' || grade === '10' || grade === '11' || grade === '12'
-          })
-          break
+        const secondaryGrade = student.standard || ''
+        return secondaryGrade.includes('初一') || secondaryGrade.includes('初二') || secondaryGrade.includes('初三') || 
+               secondaryGrade.includes('高一') || secondaryGrade.includes('高二') || secondaryGrade.includes('高三') ||
+               secondaryGrade === '7' || secondaryGrade === '8' || secondaryGrade === '9' || secondaryGrade === '10' || secondaryGrade === '11' || secondaryGrade === '12'
         case 'active':
-          filtered = filtered.filter(student => student.status === 'active')
-          break
+        return student.status === 'active'
         case 'inactive':
-          filtered = filtered.filter(student => student.status !== 'active')
-          break
+        return student.status !== 'active'
         case 'has-phone':
-          filtered = filtered.filter(student => student.parentName && student.parentName.trim() !== '')
-          break
+        return student.parentPhone && student.parentPhone.trim() !== ''
         case 'has-email':
-          filtered = filtered.filter(student => student.email && student.email.trim() !== '')
-          break
+        return student.email && student.email.trim() !== ''
+      default:
+        return true
       }
     })
+}
 
-    // 排序
-    filtered.sort((a, b) => {
+const applySorting = (a: Student, b: Student, sortBy: string, sortOrder: 'asc' | 'desc') => {
+  if (!sortBy) return 0
+  
       let aValue: any
       let bValue: any
 
-      switch (filters.sortBy) {
+  switch (sortBy) {
         case 'name':
           aValue = a.student_name || ''
           bValue = b.student_name || ''
@@ -221,29 +194,110 @@ export default function StudentManagementPage() {
           aValue = a.parentName || ''
           bValue = b.parentName || ''
           break
+    case 'center':
+      aValue = a.center || ''
+      bValue = b.center || ''
+          break
         default:
-          aValue = a.student_name || ''
-          bValue = b.student_name || ''
-      }
+      return 0
+  }
 
-      if (filters.sortOrder === 'asc') {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
-      } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
-      }
-    })
+  if (aValue == null) return 1
+  if (bValue == null) return -1
 
-    return filtered
+  if (typeof aValue === "string" && typeof bValue === "string") {
+    return sortOrder === "asc"
+      ? aValue.localeCompare(bValue)
+      : bValue.localeCompare(aValue)
+  }
+
+  if (typeof aValue === "number" && typeof bValue === "number") {
+    return sortOrder === "asc" ? aValue - bValue : bValue - aValue
+  }
+
+  return 0
+}
+
+const applyFilters = (students: Student[], filters: FilterState) => {
+  return students
+    .filter(student => applySearchFilter(student, filters.searchTerm))
+    .filter(student => applyGradeFilter(student, filters.selectedGrade))
+    .filter(student => applyStatusFilter(student, filters.selectedStatus))
+    .filter(student => applyCenterFilter(student, filters.selectedCenter))
+    .filter(student => applyGenderFilter(student, filters.selectedGender))
+    .filter(student => applyLevelFilter(student, filters.selectedLevel))
+    .filter(student => applyQuickFilter(student, filters.quickFilters))
+    .sort((a, b) => applySorting(a, b, filters.sortBy, filters.sortOrder))
+}
+
+export default function StudentManagementPage() {
+  const { students, loading, error, refetch, updateStudent, deleteStudent, addStudent } = useStudents()
+  
+  // 状态管理
+  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set())
+  const [filters, setFilters] = useState<FilterState>({
+    searchTerm: "",
+    selectedGrade: "all",
+    selectedCenter: "",
+    selectedStatus: "all",
+    selectedGender: "",
+    selectedLevel: "",
+    ageRange: [0, 25],
+    enrollmentYear: "",
+    enrollmentDateRange: { from: undefined, to: undefined },
+    hasPhone: false,
+    hasEmail: false,
+    hasAddress: false,
+    hasGrades: false,
+    hasAssignments: false,
+    attendanceRate: [0, 100],
+    sortBy: "name",
+    sortOrder: 'asc',
+    dateRange: { from: undefined, to: undefined },
+    quickFilters: []
+  })
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null)
+  const [viewingStudent, setViewingStudent] = useState<Student | null>(null)
+  const [viewMode, setViewMode] = useState<'table' | 'grid' | 'analytics'>('table')
+  const [savedFilters, setSavedFilters] = useState<{ name: string; filters: FilterState }[]>([])
+
+  // 获取筛选选项
+  const filterOptions = useMemo(() => {
+    const grades = Array.from(new Set(students.map(s => s.standard).filter(Boolean))).sort()
+    const statuses = Array.from(new Set(students.map(s => s.status).filter(Boolean))).sort()
+    const centers = Array.from(new Set(students.map(s => s.center).filter(Boolean))).sort()
+    
+    return { grades, statuses, centers }
+  }, [students])
+
+  // 筛选和排序学生数据
+  const filteredStudents = useMemo(() => {
+    if (students.length === 0) return []
+    return applyFilters(students, filters)
   }, [students, filters])
 
   // 分页
-  const paginatedStudents = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize
-    const endIndex = startIndex + pageSize
-    return filteredStudents.slice(startIndex, endIndex)
-  }, [filteredStudents, currentPage, pageSize])
-
-  const totalPages = Math.ceil(filteredStudents.length / pageSize)
+  const {
+    currentPage,
+    totalPages,
+    paginatedData: paginatedStudents,
+    totalItems,
+    startIndex,
+    endIndex,
+    setCurrentPage,
+    nextPage,
+    prevPage,
+    goToFirstPage,
+    goToLastPage,
+    canGoNext,
+    canGoPrev
+  } = usePagination({
+    data: filteredStudents,
+    pageSize: 20,
+    initialPage: 1
+  })
 
   // 统计数据
   const stats = useMemo(() => {
@@ -319,7 +373,7 @@ export default function StudentManagementPage() {
       for (const studentId of selectedStudents) {
         await deleteStudent(studentId)
       }
-      setSelectedStudents([])
+      setSelectedStudents(new Set())
       refetch()
     } catch (error) {
       console.error("Error bulk deleting students:", error)
@@ -331,7 +385,7 @@ export default function StudentManagementPage() {
       for (const studentId of selectedStudents) {
         await updateStudent(studentId, updates)
       }
-      setSelectedStudents([])
+      setSelectedStudents(new Set())
       refetch()
     } catch (error) {
       console.error("Error bulk updating students:", error)
@@ -339,7 +393,7 @@ export default function StudentManagementPage() {
   }
 
   const handleBulkExport = (format: 'csv' | 'excel' | 'pdf') => {
-    const selectedStudentData = students.filter(student => selectedStudents.includes(student.id))
+    const selectedStudentData = students.filter(student => selectedStudents.has(student.id))
     console.log(`Exporting ${selectedStudentData.length} students as ${format}`)
     // 这里可以实现实际的导出逻辑
   }
@@ -350,43 +404,56 @@ export default function StudentManagementPage() {
   }
 
   const handleBulkMessage = async (message: string, type: 'email' | 'sms') => {
-    const selectedStudentData = students.filter(student => selectedStudents.includes(student.id))
+    const selectedStudentData = students.filter(student => selectedStudents.has(student.id))
     console.log(`Sending ${type} message to ${selectedStudentData.length} students: ${message}`)
     // 这里可以实现实际的消息发送逻辑
   }
 
   const handleSelectStudent = (studentId: string, checked: boolean) => {
+    setSelectedStudents(prev => {
+      const newSet = new Set(prev)
     if (checked) {
-      setSelectedStudents(prev => [...prev, studentId])
+        newSet.add(studentId)
     } else {
-      setSelectedStudents(prev => prev.filter(id => id !== studentId))
+        newSet.delete(studentId)
     }
+      return newSet
+    })
   }
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedStudents(filteredStudents.map(student => student.id))
+      setSelectedStudents(new Set(filteredStudents.map(student => student.id)))
     } else {
-      setSelectedStudents([])
+      setSelectedStudents(new Set())
     }
   }
 
   const clearFilters = () => {
-    setFilters({
+    console.log('🔍 清除筛选条件...')
+    const clearedFilters: FilterState = {
       searchTerm: "",
-      selectedGrade: "",
-      selectedStatus: "",
+      selectedGrade: "all",
       selectedCenter: "",
+      selectedStatus: "all",
       selectedGender: "",
+      selectedLevel: "",
       ageRange: [0, 25],
       enrollmentYear: "",
+      enrollmentDateRange: { from: undefined, to: undefined },
       hasPhone: false,
       hasEmail: false,
+      hasAddress: false,
+      hasGrades: false,
+      hasAssignments: false,
+      attendanceRate: [0, 100],
       sortBy: "name",
       sortOrder: 'asc',
       dateRange: { from: undefined, to: undefined },
       quickFilters: []
-    })
+    }
+    console.log('🔍 清除后的筛选条件:', clearedFilters)
+    setFilters(clearedFilters)
     setCurrentPage(1)
   }
 
@@ -427,113 +494,167 @@ export default function StudentManagementPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* 页面标题和操作栏 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">学生管理系统</h1>
-          <p className="text-gray-600 mt-1">管理学生档案、学习进度和出勤记录</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* 页面标题和操作栏 */}
+        <div className="bg-white rounded-2xl shadow-lg border border-white/20 p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                    学生管理系统
+                  </h1>
+                  <p className="text-gray-600 mt-1">智能管理学生档案、学习进度和出勤记录</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={refetch} 
+                disabled={loading}
+                className="bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/80"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                刷新
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/80"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                导出
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/80"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                导入
+              </Button>
+              <Button 
+                onClick={() => setIsAddDialogOpen(true)}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                添加学生
+              </Button>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={refetch} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            刷新
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            导出
-          </Button>
-          <Button variant="outline" size="sm">
-            <Upload className="h-4 w-4 mr-2" />
-            导入
-          </Button>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            添加学生
-          </Button>
-        </div>
-      </div>
 
-      {/* 统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">总学生数</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
-                <p className="text-xs text-blue-600 flex items-center mt-1">
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  实时数据
-                </p>
+        {/* 统计卡片 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="bg-white/80 backdrop-blur-sm border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full -translate-y-16 translate-x-16 opacity-30"></div>
+            <CardContent className="p-6 relative">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-600">总学生数</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                    {stats.total}
+                  </p>
+                  <p className="text-xs text-blue-600 flex items-center">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    实时数据
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
               </div>
-              <Users className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">在读学生</p>
-                <p className="text-2xl font-bold text-green-600">{stats.active}</p>
-                <p className="text-xs text-green-600 flex items-center mt-1">
-                  <UserCheck className="h-3 w-3 mr-1" />
-                  活跃状态
-                </p>
+          <Card className="bg-white/80 backdrop-blur-sm border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-100 to-green-200 rounded-full -translate-y-16 translate-x-16 opacity-30"></div>
+            <CardContent className="p-6 relative">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-600">在读学生</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+                    {stats.active}
+                  </p>
+                  <p className="text-xs text-green-600 flex items-center">
+                    <UserCheck className="h-3 w-3 mr-1" />
+                    活跃状态
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <UserCheck className="h-6 w-6 text-white" />
+                </div>
               </div>
-              <UserCheck className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">小学生</p>
-                <p className="text-2xl font-bold text-orange-600">{stats.primaryCount}</p>
-                <p className="text-xs text-orange-600 flex items-center mt-1">
-                  <GraduationCap className="h-3 w-3 mr-1" />
-                  一年级到六年级
-                </p>
+          <Card className="bg-white/80 backdrop-blur-sm border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full -translate-y-16 translate-x-16 opacity-30"></div>
+            <CardContent className="p-6 relative">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-600">小学生</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent">
+                    {stats.primaryCount}
+                  </p>
+                  <p className="text-xs text-orange-600 flex items-center">
+                    <GraduationCap className="h-3 w-3 mr-1" />
+                    一年级到六年级
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <GraduationCap className="h-6 w-6 text-white" />
+                </div>
               </div>
-              <GraduationCap className="h-8 w-8 text-orange-600" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">中学生</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.secondaryCount}</p>
-                <p className="text-xs text-purple-600 flex items-center mt-1">
-                  <GraduationCap className="h-3 w-3 mr-1" />
-                  初一到高三
-                </p>
+          <Card className="bg-white/80 backdrop-blur-sm border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full -translate-y-16 translate-x-16 opacity-30"></div>
+            <CardContent className="p-6 relative">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-600">中学生</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
+                    {stats.secondaryCount}
+                  </p>
+                  <p className="text-xs text-purple-600 flex items-center">
+                    <GraduationCap className="h-3 w-3 mr-1" />
+                    初一到高三
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <GraduationCap className="h-6 w-6 text-white" />
+                </div>
               </div>
-              <GraduationCap className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
       </div>
 
       {/* 企业级筛选组件 */}
       <AdvancedFilters
-        filters={filters}
-        onFiltersChange={setFilters}
-        onSaveFilter={handleSaveFilter}
-        onLoadFilter={handleLoadFilter}
-        savedFilters={savedFilters}
+        students={students}
+        onFiltersChange={useCallback((newFilters) => {
+          console.log('🔍 学生管理: 收到筛选条件更新:', newFilters)
+          setFilters(prev => ({
+            ...prev,
+            ...newFilters,
+            dateRange: newFilters.enrollmentDateRange || { from: undefined, to: undefined }
+          }))
+        }, [])}
+        onClearFilters={clearFilters}
       />
 
       {/* 批量操作组件 */}
       <BulkOperations
-        selectedStudents={students.filter(student => selectedStudents.includes(student.id))}
-        onClearSelection={() => setSelectedStudents([])}
+        selectedStudents={students.filter(student => selectedStudents.has(student.id))}
+        onClearSelection={() => setSelectedStudents(new Set())}
         onBulkUpdate={handleBulkUpdate}
         onBulkDelete={handleBulkDelete}
         onBulkExport={handleBulkExport}
@@ -541,45 +662,60 @@ export default function StudentManagementPage() {
         onBulkMessage={handleBulkMessage}
       />
 
-      {/* 视图模式切换 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant={viewMode === 'table' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('table')}
-          >
-            <Table className="h-4 w-4 mr-2" />
-            表格视图
-          </Button>
-          <Button
-            variant={viewMode === 'grid' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('grid')}
-          >
-            <BarChart3 className="h-4 w-4 mr-2" />
-            网格视图
-          </Button>
-          <Button
-            variant={viewMode === 'analytics' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('analytics')}
-          >
-            <PieChart className="h-4 w-4 mr-2" />
-            数据分析
-          </Button>
-        </div>
+        {/* 视图模式切换和统计信息 */}
+        <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-2xl shadow-lg p-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className={viewMode === 'table' ? 'bg-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}
+                >
+                  <Table className="h-4 w-4 mr-2" />
+                  表格视图
+                </Button>
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className={viewMode === 'grid' ? 'bg-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}
+                >
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  网格视图
+                </Button>
+                <Button
+                  variant={viewMode === 'analytics' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('analytics')}
+                  className={viewMode === 'analytics' ? 'bg-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}
+                >
+                  <PieChart className="h-4 w-4 mr-2" />
+                  数据分析
+                </Button>
+              </div>
+            </div>
 
-        {/* 筛选结果统计 */}
-        <div className="text-sm text-gray-600">
-          显示 {filteredStudents.length} 个学生
-          {filters.searchTerm && (
-            <span className="ml-2">
-              (搜索: &quot;{filters.searchTerm}&quot;)
-            </span>
-          )}
+            {/* 筛选结果统计 */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg">
+                <Users className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">
+                  显示 {filteredStudents.length} 个学生
+                </span>
+              </div>
+              {filters.searchTerm && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-orange-50 rounded-lg">
+                  <Search className="h-4 w-4 text-orange-600" />
+                  <span className="text-sm text-orange-800">
+                    搜索: &quot;{filters.searchTerm}&quot;
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
 
       {/* 学生列表 */}
       {viewMode === 'table' && (
@@ -607,15 +743,15 @@ export default function StudentManagementPage() {
                   </div>
                 </div>
               ) : (
-                <Card className="border-0 shadow-sm">
+                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg rounded-2xl overflow-hidden">
           <CardContent className="p-0">
             <div className="overflow-x-auto min-w-full">
               <Table className="border-collapse w-full">
                 <TableHeader>
-                  <TableRow className="bg-gray-50 border-b-2 border-gray-200">
+                  <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
                     <TableHead className="w-12 px-4 py-3">
                       <Checkbox
-                        checked={selectedStudents.length === filteredStudents.length && filteredStudents.length > 0}
+                        checked={selectedStudents.size === filteredStudents.length && filteredStudents.length > 0}
                         onCheckedChange={handleSelectAll}
                       />
                     </TableHead>
@@ -629,24 +765,31 @@ export default function StudentManagementPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedStudents.map((student) => (
-                    <TableRow key={student.id} className="hover:bg-gray-50 transition-colors border-b border-gray-100">
+                  {paginatedStudents.map((student, index) => (
+                    <TableRow key={student.id} className={`hover:bg-blue-50/50 transition-all duration-200 border-b border-gray-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
                       <TableCell className="px-4 py-3">
                         <Checkbox
-                          checked={selectedStudents.includes(student.id)}
+                          checked={selectedStudents.has(student.id)}
                           onCheckedChange={(checked) => handleSelectStudent(student.id, checked as boolean)}
                         />
                       </TableCell>
-                      <TableCell className="px-4 py-3">
+                      <TableCell className="px-4 py-4">
                         <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                            {student.student_name?.charAt(0) || 'S'}
+                          </div>
                           <div className="flex-1">
-                            <div className="font-semibold text-base">{student.student_name}</div>
+                            <div className="font-semibold text-base text-gray-900">{student.student_name}</div>
                             <div className="text-sm text-gray-600 font-medium">学号: {student.student_id}</div>
                           </div>
                           {student.status && (
                             <Badge 
                               variant={student.status === 'active' ? 'default' : 'secondary'}
-                              className="text-xs"
+                              className={`text-xs px-2 py-1 ${
+                                student.status === 'active' 
+                                  ? 'bg-green-100 text-green-800 border-green-200' 
+                                  : 'bg-gray-100 text-gray-800 border-gray-200'
+                              }`}
                             >
                               {student.status === 'active' ? '在读' : '离校'}
                             </Badge>
@@ -654,20 +797,28 @@ export default function StudentManagementPage() {
                         </div>
                       </TableCell>
                       <TableCell className="px-4 py-3">
-                        <Badge variant="outline" className="font-medium">
+                        <Badge variant="outline" className="font-medium bg-blue-50 text-blue-800 border-blue-200">
                           {convertGradeToChinese(student.standard || '')}
                         </Badge>
                       </TableCell>
                       <TableCell className="px-4 py-3">
-                        <Badge variant="secondary" className="font-medium">
+                        <Badge variant="secondary" className="font-medium bg-purple-50 text-purple-800 border-purple-200">
                           {student.center || '未设置'}
                         </Badge>
                       </TableCell>
                       <TableCell className="px-4 py-3">
-                        <Badge variant="outline" className="text-gray-600">
-                          {student.serviceType === 'afterschool' ? '课后班' : 
-                           student.serviceType === 'tuition' ? '补习班' : 
-                           student.serviceType || '未知'}
+                        <Badge variant="outline" className="text-gray-600 bg-orange-50 text-orange-800 border-orange-200">
+                          {(() => {
+                            console.log('🔍 学生服务类型调试:', {
+                              student_name: student.student_name,
+                              student_id: student.student_id,
+                              services: student.services,
+                              hasServices: 'services' in student
+                            })
+                            return student.services === 'Daycare' ? '日托服务' : 
+                                   student.services === 'Tuition' ? '补习服务' : 
+                                   student.services || '未知'
+                          })()}
                         </Badge>
                       </TableCell>
                       <TableCell className="px-4 py-3">
@@ -694,7 +845,7 @@ export default function StudentManagementPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
+                            className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-all duration-200"
                             onClick={() => setViewingStudent(student)}
                             title="查看详情"
                           >
@@ -703,7 +854,7 @@ export default function StudentManagementPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600"
+                            className="h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600 rounded-lg transition-all duration-200"
                             onClick={() => setEditingStudent(student)}
                             title="编辑学生"
                           >
@@ -712,7 +863,7 @@ export default function StudentManagementPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                            className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all duration-200"
                             onClick={() => handleDeleteStudent(student.id)}
                             title="删除学生"
                           >
@@ -804,14 +955,14 @@ export default function StudentManagementPage() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-600">
-            显示第 {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredStudents.length)} 条，
+            显示第 {startIndex + 1} - {Math.min(endIndex, filteredStudents.length)} 条，
             共 {filteredStudents.length} 条记录
           </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              onClick={prevPage}
               disabled={currentPage === 1}
             >
               上一页
@@ -847,7 +998,7 @@ export default function StudentManagementPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              onClick={nextPage}
               disabled={currentPage === totalPages}
             >
               下一页
@@ -869,18 +1020,21 @@ export default function StudentManagementPage() {
         onSubmit={editingStudent ? handleUpdateStudent : handleAddStudent}
       />
 
-      <StudentDetails
-        open={!!viewingStudent}
-        student={viewingStudent}
-        onOpenChange={(open: boolean) => {
-          if (!open) setViewingStudent(null)
-        }}
-        onEdit={(student: Student) => {
-          setViewingStudent(null)
-          setEditingStudent(student)
-        }}
-        onDelete={handleDeleteStudent}
-      />
+      {viewingStudent && (
+        <StudentDetails
+          open={!!viewingStudent}
+          student={viewingStudent}
+          onOpenChange={(open: boolean) => {
+            if (!open) setViewingStudent(null)
+          }}
+          onEdit={() => {
+            setViewingStudent(null)
+            setEditingStudent(viewingStudent)
+          }}
+          onDelete={() => handleDeleteStudent(viewingStudent.id)}
+        />
+      )}
+      </div>
     </div>
   )
 }

@@ -65,71 +65,52 @@ export function AttendanceAnalytics() {
   const [selectedPeriod, setSelectedPeriod] = useState('month')
   const [selectedDepartment, setSelectedDepartment] = useState('all')
 
-  // 模拟数据
+  // 获取真实考勤数据
   useEffect(() => {
-    const mockAnalytics: AttendanceAnalytics = {
-      totalEmployees: 25,
-      averageAttendanceRate: 87.5,
-      lateArrivals: 12,
-      earlyDepartures: 8,
-      overtimeHours: 45,
-      absentDays: 15,
-      topPerformers: [
-        { name: 'Ahmad Rahman', attendanceRate: 98.5, department: '教学部' },
-        { name: 'Siti Aminah', attendanceRate: 96.2, department: '行政部' },
-        { name: 'Muhammad Ali', attendanceRate: 94.8, department: '教学部' },
-        { name: 'Fatimah Zahra', attendanceRate: 92.1, department: '支持部' }
-      ],
-      departmentStats: [
-        { department: '教学部', attendanceRate: 89.2, totalEmployees: 12 },
-        { department: '行政部', attendanceRate: 85.7, totalEmployees: 6 },
-        { department: '支持部', attendanceRate: 88.9, totalEmployees: 7 }
-      ],
-      monthlyTrend: [
-        { month: '2023-10', attendanceRate: 85.2, totalHours: 1680 },
-        { month: '2023-11', attendanceRate: 87.1, totalHours: 1720 },
-        { month: '2023-12', attendanceRate: 86.8, totalHours: 1690 },
-        { month: '2024-01', attendanceRate: 87.5, totalHours: 1750 }
-      ],
-      timeDistribution: [
-        { timeSlot: '07:00-08:00', checkIns: 5, checkOuts: 0 },
-        { timeSlot: '08:00-09:00', checkIns: 15, checkOuts: 0 },
-        { timeSlot: '09:00-10:00', checkIns: 5, checkOuts: 0 },
-        { timeSlot: '17:00-18:00', checkIns: 0, checkOuts: 12 },
-        { timeSlot: '18:00-19:00', checkIns: 0, checkOuts: 8 },
-        { timeSlot: '19:00-20:00', checkIns: 0, checkOuts: 5 }
-      ]
+    const fetchAttendanceData = async () => {
+      try {
+        // 这里需要导入PocketBase，但由于这是组件文件，我们通过API获取数据
+        const response = await fetch('/api/attendance/analytics')
+        if (response.ok) {
+          const data = await response.json()
+          setAnalytics(data.analytics)
+          setInsights(data.insights)
+        } else {
+          // 如果API不可用，使用默认数据
+          setAnalytics({
+            totalEmployees: 0,
+            averageAttendanceRate: 0,
+            lateArrivals: 0,
+            earlyDepartures: 0,
+            overtimeHours: 0,
+            absentDays: 0,
+            topPerformers: [],
+            departmentStats: [],
+            monthlyTrend: [],
+            timeDistribution: []
+          })
+          setInsights([])
+        }
+      } catch (error) {
+        console.error('获取考勤数据失败:', error)
+        // 使用默认数据
+        setAnalytics({
+          totalEmployees: 0,
+          averageAttendanceRate: 0,
+          lateArrivals: 0,
+          earlyDepartures: 0,
+          overtimeHours: 0,
+          absentDays: 0,
+          topPerformers: [],
+          departmentStats: [],
+          monthlyTrend: [],
+          timeDistribution: []
+        })
+        setInsights([])
+      }
     }
 
-    const mockInsights: AttendanceInsight[] = [
-      {
-        type: 'positive',
-        title: '出勤率持续改善',
-        description: '本月平均出勤率比上月提升了1.2%，达到87.5%',
-        impact: 'high'
-      },
-      {
-        type: 'negative',
-        title: '迟到现象需要关注',
-        description: '本周有12次迟到记录，主要集中在周一和周二',
-        impact: 'medium'
-      },
-      {
-        type: 'neutral',
-        title: '加班时间合理',
-        description: '本月总加班时间45小时，平均每人1.8小时，在合理范围内',
-        impact: 'low'
-      },
-      {
-        type: 'positive',
-        title: '教学部表现优秀',
-        description: '教学部平均出勤率89.2%，在所有部门中排名第一',
-        impact: 'high'
-      }
-    ]
-
-    setAnalytics(mockAnalytics)
-    setInsights(mockInsights)
+    fetchAttendanceData()
   }, [])
 
   const getInsightIcon = (type: string) => {

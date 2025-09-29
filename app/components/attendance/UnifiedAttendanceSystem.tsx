@@ -94,13 +94,15 @@ interface UnifiedAttendanceSystemProps {
   centerId?: string
   teacherId?: string
   studentId?: string
+  showStudents?: boolean
 }
 
 export default function UnifiedAttendanceSystem({ 
   userRole = 'admin', 
   centerId, 
   teacherId, 
-  studentId 
+  studentId,
+  showStudents = true
 }: UnifiedAttendanceSystemProps) {
   // 基础状态
   const [students, setStudents] = useState<Student[]>([])
@@ -145,8 +147,10 @@ export default function UnifiedAttendanceSystem({
     }, 3000)
   }, [])
 
-  // 获取学生数据
+  // 获取学生数据 - 只有管理员且允许显示学生数据时才获取
   const fetchStudents = async () => {
+    if (userRole !== 'admin' || !showStudents) return
+    
     try {
       const response = await fetch('/api/students')
       const data = await response.json()
@@ -162,8 +166,10 @@ export default function UnifiedAttendanceSystem({
     }
   }
 
-  // 获取教师数据
+  // 获取教师数据 - 只有管理员且不限制只显示学生数据时才获取
   const fetchTeachers = async () => {
+    if (userRole !== 'admin' || showStudents === true) return
+    
     try {
       const response = await fetch('/api/teachers')
       const data = await response.json()
@@ -195,15 +201,15 @@ export default function UnifiedAttendanceSystem({
       const allRecords: AttendanceRecord[] = []
       let totalRecords = 0
 
-      // 获取学生考勤记录
-      if (userRole === 'admin' || userRole === 'teacher' || filters.type === 'all' || filters.type === 'student') {
+      // 获取学生考勤记录 - 只有管理员且允许显示学生数据时才获取学生考勤
+      if (userRole === 'admin' && showStudents && (filters.type === 'all' || filters.type === 'student')) {
         const studentResponse = await fetch(`/api/student-attendance?${searchParams.toString()}`)
         const studentData = await studentResponse.json()
         
         if (studentData.success && studentData.records) {
           const studentRecords = studentData.records.map((record: any) => ({
             ...record,
-            type: 'student',
+            type: 'student', // API已经过滤了教师数据，所以这里都是学生
             name: record.student_name,
             id_field: record.student_id
           }))
@@ -212,10 +218,15 @@ export default function UnifiedAttendanceSystem({
         }
       }
 
-      // 获取教师考勤记录
-      if (userRole === 'admin' || filters.type === 'all' || filters.type === 'teacher') {
+      // 获取教师考勤记录 - 只有管理员且不限制只显示学生数据时才获取教师考勤
+      if ((userRole === 'admin' && showStudents !== true) || userRole === 'teacher' || filters.type === 'all' || filters.type === 'teacher') {
         const teacherParams = new URLSearchParams(searchParams)
         teacherParams.append('type', 'teacher')
+        
+        // 如果是教师角色，只获取自己的考勤记录
+        if (userRole === 'teacher' && teacherId) {
+          teacherParams.append('teacherId', teacherId)
+        }
         
         const teacherResponse = await fetch(`/api/teacher-attendance?${teacherParams.toString()}`)
         const teacherData = await teacherResponse.json()
@@ -450,11 +461,19 @@ export default function UnifiedAttendanceSystem({
       setLoading(true)
       
       try {
-        await Promise.all([
-          fetchStudents(),
-          fetchTeachers(),
-          fetchAttendanceRecords()
-        ])
+        const promises = [fetchAttendanceRecords()]
+        
+        // 只有管理员且允许显示学生数据时才获取学生数据
+        if (userRole === 'admin' && showStudents) {
+          promises.unshift(fetchStudents())
+        }
+        
+        // 只有管理员且不限制只显示学生数据时才获取教师数据
+        if (userRole === 'admin' && showStudents !== true) {
+          promises.push(fetchTeachers())
+        }
+        
+        await Promise.all(promises)
       } catch (error) {
         console.error('数据初始化失败:', error)
       } finally {
@@ -463,7 +482,7 @@ export default function UnifiedAttendanceSystem({
     }
     
     initData()
-  }, [])
+  }, [userRole, showStudents])
 
   // 当过滤条件变化时重新获取数据
   useEffect(() => {
@@ -484,7 +503,7 @@ export default function UnifiedAttendanceSystem({
     const earlyLeave = todayRecords.filter(record => record.status === 'early_leave').length
     
     return {
-      totalStudents: students.length,
+      totalStudents: showStudents ? students.length : 0,
       totalTeachers: teachers.length,
       todayPresent: present,
       todayAbsent: absent,
@@ -553,18 +572,7 @@ export default function UnifiedAttendanceSystem({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* 页面标题 */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">统一考勤管理系统</h1>
-          <p className="text-gray-600">
-            {userRole === 'admin' && '管理员视图 - 管理所有考勤'}
-            {userRole === 'teacher' && '教师视图 - 管理学生考勤'}
-            {userRole === 'student' && '学生视图 - 查看个人考勤'}
-            {userRole === 'parent' && '家长视图 - 查看孩子考勤'}
-          </p>
-        </div>
+    <div className="space-y-6">
 
         {/* 消息提示 */}
         {error && (
@@ -581,19 +589,21 @@ export default function UnifiedAttendanceSystem({
 
         {/* 统计卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <GraduationCap className="h-5 w-5 text-blue-600" />
+          {userRole === 'admin' && showStudents && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <GraduationCap className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold">{stats.totalStudents}</div>
+                    <div className="text-sm text-gray-500">总学生数</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold">{stats.totalStudents}</div>
-                  <div className="text-sm text-gray-500">总学生数</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
           
           <Card>
             <CardContent className="p-4">
@@ -640,7 +650,7 @@ export default function UnifiedAttendanceSystem({
 
         {/* 主要功能标签页 */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className={`grid w-full ${userRole === 'teacher' || !showStudents ? 'grid-cols-3' : 'grid-cols-4'}`}>
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
               总览
@@ -653,10 +663,12 @@ export default function UnifiedAttendanceSystem({
               <Calendar className="h-4 w-4" />
               考勤记录
             </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              统计报表
-            </TabsTrigger>
+            {userRole === 'admin' && showStudents && (
+              <TabsTrigger value="reports" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                统计报表
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* 总览标签页 */}
@@ -769,7 +781,7 @@ export default function UnifiedAttendanceSystem({
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">
-                            {currentUserType === 'student' ? '学生' : '教师'}: {(currentUser as any)?.student_name || (currentUser as any)?.name}
+                            {userRole === 'teacher' ? '教师' : (currentUserType === 'student' ? '学生' : '教师')}: {(currentUser as any)?.student_name || (currentUser as any)?.name}
                           </p>
                           <p className="text-sm text-gray-600">
                             卡号: {currentCard}
@@ -812,64 +824,110 @@ export default function UnifiedAttendanceSystem({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">日期</label>
-                    <Input
-                      type="date"
-                      value={filters.date}
-                      onChange={(e) => setFilters(prev => ({ ...prev, date: e.target.value }))}
-                    />
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-1 block">日期</label>
+                      <Input
+                        type="date"
+                        value={filters.date}
+                        onChange={(e) => setFilters(prev => ({ ...prev, date: e.target.value }))}
+                        className="w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-1 block">姓名</label>
+                      <Input
+                        placeholder="输入姓名"
+                        value={filters.name}
+                        onChange={(e) => setFilters(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-1 block">中心</label>
+                      <select 
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={filters.center}
+                        onChange={(e) => setFilters(prev => ({ ...prev, center: e.target.value }))}
+                      >
+                        <option value="all">全部中心</option>
+                        <option value="WX 01">WX 01</option>
+                        <option value="WX 02">WX 02</option>
+                        <option value="总校">总校</option>
+                        <option value="分校">分校</option>
+                        <option value="中心A">中心A</option>
+                        <option value="中心B">中心B</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-1 block">状态</label>
+                      <select 
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={filters.status}
+                        onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                      >
+                        <option value="all">全部状态</option>
+                        <option value="present">出勤</option>
+                        <option value="absent">缺勤</option>
+                        <option value="late">迟到</option>
+                        <option value="early_leave">早退</option>
+                        <option value="pending">待确认</option>
+                        <option value="excused">请假</option>
+                      </select>
+                    </div>
+                    
+                    {userRole === 'admin' && showStudents && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-1 block">类型</label>
+                        <select 
+                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          value={filters.type}
+                          onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+                        >
+                          <option value="all">全部类型</option>
+                          <option value="student">学生</option>
+                          <option value="teacher">教师/员工</option>
+                        </select>
+                      </div>
+                    )}
                   </div>
                   
-                  <div>
-                    <label className="text-sm font-medium">姓名</label>
-                    <Input
-                      placeholder="输入姓名"
-                      value={filters.name}
-                      onChange={(e) => setFilters(prev => ({ ...prev, name: e.target.value }))}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium">中心</label>
-                    <select 
-                      className="w-full p-2 border rounded-md"
-                      value={filters.center}
-                      onChange={(e) => setFilters(prev => ({ ...prev, center: e.target.value }))}
-                    >
-                      <option value="all">全部中心</option>
-                      <option value="总校">总校</option>
-                      <option value="分校">分校</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium">状态</label>
-                    <select 
-                      className="w-full p-2 border rounded-md"
-                      value={filters.status}
-                      onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                    >
-                      <option value="all">全部状态</option>
-                      <option value="present">出勤</option>
-                      <option value="absent">缺勤</option>
-                      <option value="late">迟到</option>
-                      <option value="early_leave">早退</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium">类型</label>
-                    <select 
-                      className="w-full p-2 border rounded-md"
-                      value={filters.type}
-                      onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-                    >
-                      <option value="all">全部类型</option>
-                      <option value="student">学生</option>
-                      <option value="teacher">教师/员工</option>
-                    </select>
+                  {/* 操作按钮 */}
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFilters({
+                          date: '',
+                          name: '',
+                          center: 'all',
+                          status: 'all',
+                          type: 'all'
+                        })}
+                        className="flex items-center gap-2"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                        重置筛选
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchAttendanceRecords}
+                        className="flex items-center gap-2"
+                      >
+                        <Search className="h-4 w-4" />
+                        搜索
+                      </Button>
+                    </div>
+                    
+                    <div className="text-sm text-gray-500">
+                      共 {attendanceRecords.length} 条记录
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -1014,7 +1072,6 @@ export default function UnifiedAttendanceSystem({
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
     </div>
   )
 }

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import PocketBase from 'pocketbase'
-
-const pb = new PocketBase('http://pjpc.tplinkdns.com:8090')
+import { getPocketBase } from '@/lib/pocketbase-optimized'
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,23 +42,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 进行管理员认证（因为集合有创建规则）
+    // 使用优化的PocketBase实例（自动处理认证）
+    const pb = await getPocketBase()
     console.log('🔍 开始处理教师考勤记录...')
     console.log('🔍 处理类型:', type)
-    
-    try {
-      await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-      console.log('✅ 管理员认证成功')
-    } catch (authError) {
-      console.error('❌ 管理员认证失败:', authError)
-      return NextResponse.json(
-        { 
-          error: 'PocketBase认证失败', 
-          details: '无法以管理员身份登录'
-        },
-        { status: 500 }
-      )
-    }
+    console.log('✅ PocketBase实例已就绪，认证状态:', pb.authStore.isValid ? '有效' : '无效')
 
     if (type === 'mark-absence') {
       // 标记学生缺席
@@ -105,7 +91,7 @@ export async function POST(request: NextRequest) {
       const startOfDay = `${today} 00:00:00`
       const endOfDay = `${today} 23:59:59`
       const existingRecords = await pb.collection('teacher_attendance').getList(1, 1, {
-        filter: `teacher_id = "${teacherId}" && branch_code = "${branchId || centerId}" && date >= "${startOfDay}" && date <= "${endOfDay}"`,
+        filter: `teacher_id = "${teacherId}" && (branch_code = "${branchId || centerId}" || branch_name = "${branchName || centerName || centerId}") && date = "${today}"`,
         sort: '-created'
       })
       
@@ -229,49 +215,67 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date') || new Date().toISOString().split('T')[0]
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
+    const teacherName = searchParams.get('teacherName')
+    const status = searchParams.get('status')
     const type = searchParams.get('type') // 'teacher' 或 'student'
     
-    console.log('🔍 API接收到的参数:', { centerId, date, startDate, endDate, type })
+    console.log('🔍 API接收到的参数:', { centerId, date, startDate, endDate, teacherName, status, type })
 
-    // 进行管理员认证（因为集合有查看规则）
+    // 使用优化的PocketBase实例（自动处理认证）
+    const pb = await getPocketBase()
     console.log('🔍 开始获取考勤数据...')
-    
-    try {
-      await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-      console.log('✅ 管理员认证成功')
-    } catch (authError) {
-      console.error('❌ 管理员认证失败:', authError)
-      return NextResponse.json(
-        { 
-          error: 'PocketBase认证失败', 
-          details: '无法以管理员身份登录'
-        },
-        { status: 500 }
-      )
-    }
+    console.log('✅ PocketBase实例已就绪，认证状态:', pb.authStore.isValid ? '有效' : '无效')
 
     if (type === 'teacher') {
-      // 简单查询：获取所有教师考勤记录，然后在前端过滤
-      const records = await pb.collection('teacher_attendance').getList(1, 100, {
+      // 构建过滤条件
+      let filter = ''
+      if (centerId) {
+        filter += `(branch_code = "${centerId}" || branch_name = "${centerId}")`
+      }
+      if (date) {
+        if (filter) filter += ' && '
+        filter += `date = "${date}"`
+      }
+      if (startDate) {
+        if (filter) filter += ' && '
+        filter += `date >= "${startDate}"`
+      }
+      if (endDate) {
+        if (filter) filter += ' && '
+        filter += `date <= "${endDate}"`
+      }
+      if (teacherName) {
+        if (filter) filter += ' && '
+        filter += `teacher_name ~ "${teacherName}"`
+      }
+      if (status) {
+        if (filter) filter += ' && '
+        filter += `status = "${status}"`
+      }
+      
+      console.log('🔍 教师考勤过滤条件:', filter || '无过滤')
+      
+      // 查询教师考勤记录 - 先获取所有记录进行调试
+      const allRecords = await pb.collection('teacher_attendance').getList(1, 100, {
         sort: '-created'
       })
       
-      console.log('🔍 获取到所有教师考勤记录:', records.items.length, '条')
-      
-      // 过滤今日记录
-      const todayRecords = records.items.filter(record => {
-        const recordDate = new Date(record.check_in || record.date).toISOString().split('T')[0]
-        return recordDate === date
-      })
-      
-      console.log('🔍 今日考勤记录:', todayRecords.length, '条')
-      console.log('🔍 记录详情:', todayRecords.map(r => ({
+      console.log('🔍 所有教师考勤记录:', allRecords.items.length, '条')
+      console.log('🔍 记录示例:', allRecords.items.slice(0, 3).map(r => ({
         id: r.id,
+        teacher_id: r.teacher_id,
         teacher_name: r.teacher_name,
         date: r.date,
         check_in: r.check_in,
-        check_out: r.check_out
+        check_out: r.check_out,
+        branch_code: r.branch_code,
+        branch_name: r.branch_name,
+        center: r.center
       })))
+      
+      // 直接返回所有记录，不进行过滤
+      const todayRecords = allRecords.items
+      console.log('🔍 返回教师考勤记录:', todayRecords.length, '条')
 
       return NextResponse.json({
         success: true,

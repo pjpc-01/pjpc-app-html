@@ -1,25 +1,26 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/contexts/pocketbase-auth-context'
 
 export interface Schedule {
   id: string
-  employee_id: string
-  employee_name: string
-  employee_type: 'fulltime' | 'parttime' | 'teaching_only'
+  teacher_id: string
+  teacher_name?: string
+  class_id?: string
+  class_name?: string
   date: string
   start_time: string
   end_time: string
-  class_id?: string
-  class_name?: string
-  subject?: string
-  grade?: string
   center: string
   room?: string
   status: 'scheduled' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'no_show'
   is_overtime: boolean
   hourly_rate?: number
   total_hours: number
+  schedule_type: 'fulltime' | 'parttime' | 'teaching_only'
+  template_id?: string
   notes?: string
+  created_by?: string
+  approved_by?: string
   created?: string
   updated?: string
 }
@@ -28,14 +29,12 @@ export interface ScheduleTemplate {
   id: string
   name: string
   type: 'fulltime' | 'parttime' | 'teaching_only'
-  work_days: number[]
+  work_days: number[] // JSON array of days (0-6)
   start_time: string
   end_time: string
-  break_duration: number
   max_hours_per_week: number
   color: string
-  description: string
-  requirements: string[]
+  is_active: boolean
   created?: string
   updated?: string
 }
@@ -57,6 +56,7 @@ export const useSchedule = () => {
   const [templates, setTemplates] = useState<ScheduleTemplate[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // 获取排班数据
   const fetchSchedules = useCallback(async (params?: {
@@ -65,6 +65,15 @@ export const useSchedule = () => {
     center?: string
     type?: string
   }) => {
+    // 取消之前的请求
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    // 创建新的 AbortController
+    const newAbortController = new AbortController()
+    abortControllerRef.current = newAbortController
+
     try {
       setLoading(true)
       setError(null)
@@ -75,7 +84,15 @@ export const useSchedule = () => {
       if (params?.center) searchParams.append('center', params.center)
       if (params?.type) searchParams.append('type', params.type)
 
-      const response = await fetch(`/api/schedule?${searchParams.toString()}`)
+      const response = await fetch(`/api/schedule?${searchParams.toString()}`, {
+        signal: newAbortController.signal
+      })
+      
+      // 检查请求是否被取消
+      if (newAbortController.signal.aborted) {
+        return
+      }
+      
       const data = await response.json()
 
       if (data.success) {
@@ -89,10 +106,16 @@ export const useSchedule = () => {
         throw new Error(data.error || '获取排班数据失败')
       }
     } catch (err) {
+      // 如果是取消错误，不设置错误状态
+      if (err instanceof Error && err.name === 'AbortError') {
+        console.log('排班数据请求被取消')
+        return
+      }
       console.error('获取排班数据失败:', err)
       setError(err instanceof Error ? err.message : '获取排班数据失败')
     } finally {
       setLoading(false)
+      abortControllerRef.current = null
     }
   }, [])
 
@@ -367,6 +390,15 @@ export const useSchedule = () => {
       throw err
     } finally {
       setLoading(false)
+    }
+  }, [])
+
+  // 清理函数
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
     }
   }, [])
 

@@ -75,7 +75,6 @@ export default function SettingsTab({ stats, statsLoading, setActiveTab }: Setti
               {settingsSubTab === "unified-attendance" && "考勤管理系统"}
               {settingsSubTab === "security-monitoring" && "安全监控"}
               {settingsSubTab === "communication-system" && "通信系统"}
-              {settingsSubTab === "data-import" && "数据导入"}
               {settingsSubTab === "system-logs" && "系统日志"}
               {settingsSubTab === "backup-restore" && "备份恢复"}
             </h2>
@@ -220,63 +219,6 @@ export default function SettingsTab({ stats, statsLoading, setActiveTab }: Setti
           )}
           {settingsSubTab === "security-monitoring" && <SecurityMonitoring />}
           {settingsSubTab === "communication-system" && <CommunicationSystem />}
-          {settingsSubTab === "data-import" && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">数据导入</h3>
-                  <p className="text-sm text-gray-500">直接导入 CSV 数据到 PocketBase</p>
-                </div>
-                <Button
-                  onClick={() => window.open('/data-import', '_blank')}
-                  className="flex items-center gap-2"
-                >
-                  <Database className="h-4 w-4" />
-                  打开数据导入页面
-                </Button>
-              </div>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* 左侧：指南和模板 */}
-                <div className="lg:col-span-1 space-y-6">
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium mb-2">导入指南</h4>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      <li>• 支持 CSV 文件格式</li>
-                      <li>• 可直接粘贴数据</li>
-                      <li>• 自动字段映射</li>
-                      <li>• 实时预览功能</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="p-4 border rounded-lg">
-                    <h4 className="font-medium mb-2">模板下载</h4>
-                    <p className="text-sm text-gray-600 mb-3">下载标准模板文件</p>
-                    <Button variant="outline" size="sm" className="w-full">
-                      下载模板
-                    </Button>
-                  </div>
-                </div>
-                
-                {/* 右侧：导入功能预览 */}
-                <div className="lg:col-span-2">
-                  <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg text-center">
-                    <Database className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <h4 className="font-medium mb-2">数据导入功能</h4>
-                    <p className="text-sm text-gray-500 mb-4">
-                      点击上方按钮打开完整的数据导入页面
-                    </p>
-                    <Button
-                      onClick={() => window.open('/data-import', '_blank')}
-                      variant="outline"
-                    >
-                      在新窗口打开
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
           {settingsSubTab === "system-logs" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -580,34 +522,6 @@ export default function SettingsTab({ stats, statsLoading, setActiveTab }: Setti
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-indigo-50 overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-100 rounded-full -translate-y-16 translate-x-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>
-            <CardContent className="p-6 text-center relative" onClick={() => handleCardClick("data-import")}>
-              <div className="p-3 bg-purple-100 rounded-lg w-16 h-16 mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
-                <Database className="h-10 w-10 text-purple-600 group-hover:scale-110 transition-transform" />
-              </div>
-              <h3 className="text-xl font-bold mb-2 text-purple-700">数据导入</h3>
-              <p className="text-sm text-purple-600 mb-3">批量数据导入工具</p>
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center justify-center text-xs text-purple-700">
-                  <Database className="h-3 w-3 mr-1" />
-                  CSV导入
-                </div>
-                <div className="flex items-center justify-center text-xs text-purple-700">
-                  <Upload className="h-3 w-3 mr-1" />
-                  批量处理
-                </div>
-                <div className="flex items-center justify-center text-xs text-purple-700">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  数据验证
-                </div>
-              </div>
-              <Badge className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white group-hover:scale-105 transition-transform">
-                <Database className="h-3 w-3 mr-1" />
-                可用
-              </Badge>
-            </CardContent>
-          </Card>
 
           <Card className="cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-indigo-300 bg-gradient-to-br from-indigo-50 to-blue-50 overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-100 rounded-full -translate-y-16 translate-x-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>

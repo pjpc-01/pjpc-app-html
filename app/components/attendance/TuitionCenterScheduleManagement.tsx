@@ -44,6 +44,7 @@ import {
   Shield,
   Star
 } from 'lucide-react'
+import AddScheduleModal from './AddScheduleModal'
 import { 
   format, 
   addDays, 
@@ -63,6 +64,12 @@ import {
 } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { useSchedule } from '@/hooks/useSchedule'
+import { DndContext, DragEndEvent, DragOverEvent, DragStartEvent, closestCenter } from '@dnd-kit/core'
+import { arrayMove } from '@dnd-kit/sortable'
+import DraggableScheduleItem from './DraggableScheduleItem'
+import DroppableScheduleCell from './DroppableScheduleCell'
+import MultiDayDragHandler from './MultiDayDragHandler'
+import SmartSchedulePanel from './SmartSchedulePanel'
 
 // 安亲补习中心员工类型定义
 interface Employee {
@@ -86,19 +93,19 @@ interface Employee {
   certifications: string[] // 认证资格
 }
 
-// 排班模板
+// 排班模板 - 与数据库结构匹配
 interface ScheduleTemplate {
   id: string
   name: string
   type: 'fulltime' | 'parttime' | 'teaching_only' | 'admin' | 'support' | 'service'
-  workDays: number[] // 0-6, 0=Sunday
-  startTime: string
-  endTime: string
-  breakDuration: number // 分钟
-  maxHoursPerWeek: number
+  work_days: number[] // 0-6, 0=Sunday (JSON array)
+  start_time: string
+  end_time: string
+  max_hours_per_week: number
   color: string
-  description: string
-  requirements: string[] // 任职要求
+  is_active: boolean
+  created?: string
+  updated?: string
 }
 
 // 课程安排
@@ -120,28 +127,29 @@ interface ClassSchedule {
   notes?: string
 }
 
-// 排班记录
+// 排班记录 - 与数据库结构匹配
 interface Schedule {
   id: string
-  employeeId: string
-  employeeName: string
-  employeeType: 'fulltime' | 'parttime' | 'teaching_only' | 'admin' | 'support' | 'service'
+  teacher_id: string
+  teacher_name?: string
+  class_id?: string
+  class_name?: string
   date: string
-  startTime: string
-  endTime: string
-  classId?: string
-  className?: string
-  subject?: string
-  grade?: string
+  start_time: string
+  end_time: string
   center: string
   room?: string
   status: 'scheduled' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'no_show'
-  isOvertime: boolean
-  hourlyRate?: number
-  totalHours: number
+  is_overtime: boolean
+  hourly_rate?: number
+  total_hours: number
+  schedule_type: 'fulltime' | 'parttime' | 'teaching_only' | 'admin' | 'support' | 'service'
+  template_id?: string
   notes?: string
-  createdAt: string
-  updatedAt: string
+  created_by?: string
+  approved_by?: string
+  created?: string
+  updated?: string
 }
 
 // 时间槽位
@@ -189,17 +197,18 @@ export default function TuitionCenterScheduleManagement() {
   const [isAddingSchedule, setIsAddingSchedule] = useState(false)
   const [isAddingClass, setIsAddingClass] = useState(false)
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null)
-  const [selectedEmployee, setSelectedEmployee] = useState<string>('')
-  const [selectedClass, setSelectedClass] = useState<string>('')
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('')
-  const [startTime, setStartTime] = useState<string>('09:00')
-  const [endTime, setEndTime] = useState<string>('17:00')
-  const [selectedRoom, setSelectedRoom] = useState<string>('')
-  const [scheduleNotes, setScheduleNotes] = useState<string>('')
   const [showFilters, setShowFilters] = useState(false)
-  const [conflictWarning, setConflictWarning] = useState<string>('')
-  const [suggestedTimes, setSuggestedTimes] = useState<string[]>([])
-  const [availableRooms, setAvailableRooms] = useState<string[]>([])
+  
+  // 拖拽状态
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [draggedSchedule, setDraggedSchedule] = useState<Schedule | null>(null)
+  
+  // 批量操作状态
+  const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set())
+  const [isBulkMode, setIsBulkMode] = useState(false)
+  const [bulkTemplate, setBulkTemplate] = useState<string>('')
+  const [bulkStartTime, setBulkStartTime] = useState<string>('09:00')
+  const [bulkEndTime, setBulkEndTime] = useState<string>('17:00')
 
   // 默认员工数据
   const defaultEmployees: Employee[] = [
@@ -388,59 +397,51 @@ export default function TuitionCenterScheduleManagement() {
     }
   ]
 
-  // 默认排班模板
+  // 默认排班模板 - 与数据库结构匹配
   const defaultTemplates: ScheduleTemplate[] = [
     {
       id: 'fulltime-manager',
       name: '管理层标准班',
       type: 'fulltime',
-      workDays: [1, 2, 3, 4, 5],
-      startTime: '08:00',
-      endTime: '18:00',
-      breakDuration: 60,
-      maxHoursPerWeek: 40,
+      work_days: [1, 2, 3, 4, 5],
+      start_time: '08:00',
+      end_time: '18:00',
+      max_hours_per_week: 40,
       color: '#3b82f6',
-      description: '管理层全职工作时间',
-      requirements: ['管理经验', '教育背景']
+      is_active: true
     },
     {
       id: 'fulltime-teacher',
       name: '全职教师班',
       type: 'fulltime',
-      workDays: [1, 2, 3, 4, 5],
-      startTime: '09:00',
-      endTime: '17:00',
-      breakDuration: 60,
-      maxHoursPerWeek: 40,
+      work_days: [1, 2, 3, 4, 5],
+      start_time: '09:00',
+      end_time: '17:00',
+      max_hours_per_week: 40,
       color: '#10b981',
-      description: '全职教师标准工作时间',
-      requirements: ['教学经验', '相关学历']
+      is_active: true
     },
     {
       id: 'parttime-afternoon',
       name: '兼职下午班',
       type: 'parttime',
-      workDays: [1, 2, 3, 4, 5],
-      startTime: '14:00',
-      endTime: '18:00',
-      breakDuration: 0,
-      maxHoursPerWeek: 20,
+      work_days: [1, 2, 3, 4, 5],
+      start_time: '14:00',
+      end_time: '18:00',
+      max_hours_per_week: 20,
       color: '#f59e0b',
-      description: '兼职教师下午时段',
-      requirements: ['教学能力', '时间灵活']
+      is_active: true
     },
     {
       id: 'teaching-only',
       name: '仅教书时段',
       type: 'teaching_only',
-      workDays: [1, 2, 3, 4, 5, 6, 0],
-      startTime: '16:00',
-      endTime: '19:00',
-      breakDuration: 0,
-      maxHoursPerWeek: 15,
+      work_days: [1, 2, 3, 4, 5, 6, 0],
+      start_time: '16:00',
+      end_time: '19:00',
+      max_hours_per_week: 15,
       color: '#8b5cf6',
-      description: '外聘老师教学时段',
-      requirements: ['专业能力', '科目专长']
+      is_active: true
     },
     // 行政岗位模板
     {
@@ -716,172 +717,10 @@ export default function TuitionCenterScheduleManagement() {
     }
   }
 
-  // 智能建议功能
-  const getSuggestedTimes = (employeeId: string, date: string) => {
-    const employee = employees.find(emp => emp.id === employeeId)
-    if (!employee) return []
-
-    // 基于员工偏好时间生成建议
-    const suggestions: string[] = []
-    if (employee.preferredTimes) {
-      employee.preferredTimes.forEach(timeRange => {
-        const [start, end] = timeRange.split('-')
-        suggestions.push(`${start}-${end}`)
-      })
-    }
-
-    // 根据岗位类型提供不同的标准时间建议
-    let standardTimes: string[] = []
-    switch (employee.type) {
-      case 'admin':
-        standardTimes = ['08:00-12:00', '14:00-18:00', '07:30-18:30']
-        break
-      case 'support':
-        if (employee.position?.includes('清洁')) {
-          standardTimes = ['06:00-10:00', '16:00-20:00']
-        } else if (employee.position?.includes('保安')) {
-          standardTimes = ['20:00-08:00', '08:00-20:00']
-        } else {
-          standardTimes = ['08:00-12:00', '14:00-18:00']
-        }
-        break
-      case 'service':
-        if (employee.position?.includes('接送')) {
-          standardTimes = ['07:00-09:00', '15:00-17:00']
-        } else if (employee.position?.includes('食堂')) {
-          standardTimes = ['10:00-14:00', '16:00-19:00']
-        } else {
-          standardTimes = ['08:00-12:00', '14:00-18:00']
-        }
-        break
-      default: // 教学岗位
-        standardTimes = ['09:00-12:00', '14:00-17:00', '18:00-21:00']
-    }
-
-    standardTimes.forEach(time => {
-      if (!suggestions.includes(time)) {
-        suggestions.push(time)
-      }
-    })
-
-    return suggestions
-  }
-
-  // 检查时间冲突
-  const checkTimeConflict = (employeeId: string, date: string, startTime: string, endTime: string) => {
-    const daySchedules = getSchedulesForDate(new Date(date))
-      .filter(s => (s as any).teacher_id === employeeId)
-
-    for (const schedule of daySchedules) {
-      const existingStart = (schedule as any).start_time
-      const existingEnd = (schedule as any).end_time
-      
-      if ((startTime < existingEnd && endTime > existingStart)) {
-        return `与现有排班冲突: ${existingStart}-${existingEnd}`
-      }
-    }
-    return ''
-  }
-
-  // 获取可用教室
-  const getAvailableRooms = (date: string, startTime: string, endTime: string) => {
-    const rooms = ['A101', 'A102', 'A103', 'B101', 'B102', 'C101', 'C102']
-    const occupiedRooms = new Set()
-
-    // 检查该时间段被占用的教室
-    const daySchedules = getSchedulesForDate(new Date(date))
-    daySchedules.forEach(schedule => {
-      const existingStart = (schedule as any).start_time
-      const existingEnd = (schedule as any).end_time
-      const room = (schedule as any).room
-      
-      if (startTime < existingEnd && endTime > existingStart && room) {
-        occupiedRooms.add(room)
-      }
-    })
-
-    return rooms.filter(room => !occupiedRooms.has(room))
-  }
-
-  // 当选择教师时更新建议
-  const handleEmployeeChange = (employeeId: string) => {
-    setSelectedEmployee(employeeId)
-    const suggestions = getSuggestedTimes(employeeId, format(selectedDate, 'yyyy-MM-dd'))
-    setSuggestedTimes(suggestions)
-    
-    // 设置默认时间
-    if (suggestions.length > 0) {
-      const [start, end] = suggestions[0].split('-')
-      setStartTime(start)
-      setEndTime(end)
-    }
-  }
-
-  // 计算工作时长
-  const calculateHours = (startTime: string, endTime: string) => {
-    const start = new Date(`2000-01-01T${startTime}:00`)
-    const end = new Date(`2000-01-01T${endTime}:00`)
-    const diffMs = end.getTime() - start.getTime()
-    return Math.round(diffMs / (1000 * 60 * 60) * 10) / 10 // 保留一位小数
-  }
-
-  // 当时间改变时检查冲突和更新教室
-  const handleTimeChange = (newStartTime: string, newEndTime: string) => {
-    setStartTime(newStartTime)
-    setEndTime(newEndTime)
-    
-    if (selectedEmployee) {
-      const conflict = checkTimeConflict(selectedEmployee, format(selectedDate, 'yyyy-MM-dd'), newStartTime, newEndTime)
-      setConflictWarning(conflict)
-      
-      const rooms = getAvailableRooms(format(selectedDate, 'yyyy-MM-dd'), newStartTime, newEndTime)
-      setAvailableRooms(rooms)
-      
-      if (rooms.length > 0 && !selectedRoom) {
-        setSelectedRoom(rooms[0])
-      }
-    }
-  }
-
-  // 添加排班
-  const handleAddSchedule = async () => {
+  // 处理添加排班
+  const handleAddSchedule = async (scheduleData: any) => {
     try {
-      if (!selectedEmployee) {
-        alert('请选择教师')
-        return
-      }
-
-      const selectedEmp = employees.find(emp => emp.id === selectedEmployee)
-      if (!selectedEmp) {
-        alert('选择的教师不存在')
-        return
-      }
-
-      // 检查冲突
-      if (conflictWarning) {
-        alert(`时间冲突: ${conflictWarning}`)
-        return
-      }
-
-      const scheduleData = {
-        employeeId: selectedEmployee,
-        employeeName: selectedEmp.name,
-        employeeType: selectedEmp.type,
-        date: format(selectedDate, 'yyyy-MM-dd'),
-        startTime: startTime,
-        endTime: endTime,
-        center: selectedEmp.center || '总校',
-        room: selectedRoom || 'A101',
-        status: 'scheduled' as const,
-        isOvertime: false,
-        hourlyRate: selectedEmp.hourlyRate,
-        totalHours: calculateHours(startTime, endTime),
-        notes: scheduleNotes || '智能排班添加'
-      }
-
       await createSchedule(scheduleData)
-      setIsAddingSchedule(false)
-      setSelectedEmployee('')
       
       // 重新获取排班数据
       await fetchSchedules({
@@ -892,7 +731,208 @@ export default function TuitionCenterScheduleManagement() {
       alert('排班添加成功！')
     } catch (error) {
       console.error('添加排班失败:', error)
-      alert('添加排班失败，请重试')
+      throw error // 让浮窗组件处理错误显示
+    }
+  }
+
+  // 拖拽开始处理
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event
+    setActiveId(active.id as string)
+    
+    if (active.data.current?.type === 'schedule') {
+      setDraggedSchedule(active.data.current.schedule)
+    }
+  }
+
+  // 拖拽结束处理
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveId(null)
+    setDraggedSchedule(null)
+
+    if (!over || !active.data.current?.schedule) return
+
+    const schedule = active.data.current.schedule
+    const overData = over.data.current
+
+    // 如果拖拽到排班单元格
+    if (overData?.type === 'schedule-cell') {
+      const newDate = overData.date
+      const newEmployeeId = overData.employeeId
+      
+      // 检查是否移动到不同的日期或员工
+      if (schedule.date !== format(newDate, 'yyyy-MM-dd') || 
+          schedule.teacher_id !== newEmployeeId) {
+        
+        try {
+          // 更新排班
+          await updateSchedule(schedule.id, {
+            date: format(newDate, 'yyyy-MM-dd'),
+            teacher_id: newEmployeeId
+          })
+
+          // 重新获取排班数据
+          await fetchSchedules({
+            center: selectedCenter !== 'all' ? selectedCenter : undefined,
+            type: selectedEmployeeType !== 'all' ? selectedEmployeeType : undefined
+          })
+
+          console.log('排班移动成功')
+        } catch (error) {
+          console.error('移动排班失败:', error)
+          alert('移动排班失败，请重试')
+        }
+      }
+    }
+  }
+
+  // 拖拽悬停处理
+  const handleDragOver = (event: DragOverEvent) => {
+    // 可以在这里添加悬停时的视觉反馈
+  }
+
+  // 处理排班编辑
+  const handleEditSchedule = (schedule: Schedule) => {
+    setEditingSchedule(schedule)
+    // 这里可以打开编辑对话框
+  }
+
+
+  // 处理添加排班（从单元格点击）
+  const handleAddScheduleFromCell = (date: Date, employeeId: string) => {
+    // 简单模式：直接打开添加排班浮窗
+    setSelectedDate(date)
+    setIsAddingSchedule(true)
+  }
+
+  // 切换批量模式
+  const toggleBulkMode = () => {
+    setIsBulkMode(!isBulkMode)
+    if (!isBulkMode) {
+      setSelectedCells(new Set())
+    }
+  }
+
+  // 批量创建排班
+  const handleBulkCreateSchedules = async () => {
+    if (selectedCells.size === 0) {
+      alert('请先选择要创建排班的单元格')
+      return
+    }
+
+    try {
+      const promises: Promise<any>[] = []
+      
+      for (const cellId of selectedCells) {
+        const [employeeId, dateStr] = cellId.split('-')
+        const employee = employees.find(emp => emp.id === employeeId)
+        
+        if (employee) {
+          const scheduleData = {
+            teacher_id: employeeId,
+            teacher_name: employee.name,
+            schedule_type: employee.type,
+            date: dateStr,
+            start_time: bulkStartTime,
+            end_time: bulkEndTime,
+            center: employee.center || '总校',
+            room: 'A101',
+            status: 'scheduled' as const,
+            is_overtime: false,
+            hourly_rate: employee.hourlyRate,
+            total_hours: calculateHours(bulkStartTime, bulkEndTime),
+            notes: '批量创建'
+          }
+          
+          promises.push(createSchedule(scheduleData))
+        }
+      }
+
+      await Promise.all(promises)
+
+      // 重新获取排班数据
+      await fetchSchedules({
+        center: selectedCenter !== 'all' ? selectedCenter : undefined,
+        type: selectedEmployeeType !== 'all' ? selectedEmployeeType : undefined
+      })
+
+      alert(`成功创建 ${selectedCells.size} 个排班！`)
+      setSelectedCells(new Set())
+      setIsBulkMode(false)
+    } catch (error) {
+      console.error('批量创建排班失败:', error)
+      alert('批量创建排班失败，请重试')
+    }
+  }
+
+  // 计算工作时长
+  const calculateHours = (startTime: string, endTime: string) => {
+    const start = new Date(`2000-01-01T${startTime}:00`)
+    const end = new Date(`2000-01-01T${endTime}:00`)
+    const diffMs = end.getTime() - start.getTime()
+    return Math.round(diffMs / (1000 * 60 * 60) * 10) / 10
+  }
+
+  // 智能排班处理
+  const handleSmartSchedule = async (scheduleData: any) => {
+    try {
+      await createSchedule(scheduleData)
+      
+      // 重新获取排班数据
+      await fetchSchedules({
+        center: selectedCenter !== 'all' ? selectedCenter : undefined,
+        type: selectedEmployeeType !== 'all' ? selectedEmployeeType : undefined
+      })
+    } catch (error) {
+      console.error('智能排班失败:', error)
+      throw error
+    }
+  }
+
+  // 处理复制到多天
+  const handleCopyToMultipleDays = async (schedule: Schedule, targetDates: Date[]) => {
+    try {
+      for (const date of targetDates) {
+        const newScheduleData = {
+          ...schedule,
+          id: undefined, // 让后端生成新ID
+          date: format(date, 'yyyy-MM-dd'),
+          status: 'scheduled' as const
+        }
+        await createSchedule(newScheduleData)
+      }
+
+      // 重新获取排班数据
+      await fetchSchedules({
+        center: selectedCenter !== 'all' ? selectedCenter : undefined,
+        type: selectedEmployeeType !== 'all' ? selectedEmployeeType : undefined
+      })
+
+      alert(`成功复制到 ${targetDates.length} 天！`)
+    } catch (error) {
+      console.error('复制排班失败:', error)
+      alert('复制排班失败，请重试')
+    }
+  }
+
+  // 处理删除多个排班
+  const handleDeleteMultiple = async (scheduleIds: string[]) => {
+    try {
+      for (const scheduleId of scheduleIds) {
+        await deleteSchedule(scheduleId)
+      }
+      
+      // 重新获取排班数据
+      await fetchSchedules({
+        center: selectedCenter !== 'all' ? selectedCenter : undefined,
+        type: selectedEmployeeType !== 'all' ? selectedEmployeeType : undefined
+      })
+
+      alert(`成功删除 ${scheduleIds.length} 个排班！`)
+    } catch (error) {
+      console.error('删除多个排班失败:', error)
+      alert('删除排班失败，请重试')
     }
   }
 
@@ -903,16 +943,6 @@ export default function TuitionCenterScheduleManagement() {
     
     // 获取排班模板
     fetchTemplates()
-    
-    // 获取排班数据
-    const dates = getViewDates()
-    const startDate = format(dates[0], 'yyyy-MM-dd')
-    const endDate = format(dates[dates.length - 1], 'yyyy-MM-dd')
-    
-    fetchSchedules({
-      center: selectedCenter !== 'all' ? selectedCenter : undefined,
-      type: selectedEmployeeType !== 'all' ? selectedEmployeeType : undefined
-    })
     
     // 初始化一些示例课程
     const today = new Date()
@@ -948,7 +978,34 @@ export default function TuitionCenterScheduleManagement() {
         color: '#10b981'
       }
     ])
-  }, [fetchTemplates, fetchSchedules, selectedCenter, selectedEmployeeType])
+  }, [fetchTemplates])
+
+  // 单独处理排班数据获取
+  useEffect(() => {
+    let isMounted = true
+    
+    const loadSchedules = async () => {
+      if (!isMounted) return
+      
+      try {
+        await fetchSchedules({
+          center: selectedCenter !== 'all' ? selectedCenter : undefined,
+          type: selectedEmployeeType !== 'all' ? selectedEmployeeType : undefined
+        })
+      } catch (error) {
+        // 错误已经在 fetchSchedules 中处理
+        if (isMounted) {
+          console.error('加载排班数据失败:', error)
+        }
+      }
+    }
+    
+    loadSchedules()
+    
+    return () => {
+      isMounted = false
+    }
+  }, [selectedCenter, selectedEmployeeType])
 
   const viewDates = getViewDates()
 
@@ -1116,20 +1173,81 @@ export default function TuitionCenterScheduleManagement() {
         </CardContent>
       </Card>
 
+      {/* 智能排班面板 */}
+      <SmartSchedulePanel
+        employees={employees}
+        templates={templates}
+        onQuickSchedule={handleSmartSchedule}
+        selectedDate={selectedDate}
+        onDateChange={setSelectedDate}
+      />
+
       {/* 排班表格 */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            {viewMode === 'day' ? '日排班' : viewMode === 'week' ? '周排班' : '月排班'}
-          </CardTitle>
-          <CardDescription>
-            {viewMode === 'day' && format(currentDate, 'yyyy年MM月dd日 EEEE', { locale: zhCN })}
-            {viewMode === 'week' && `${format(viewDates[0], 'MM月dd日')} - ${format(viewDates[viewDates.length - 1], 'MM月dd日')}`}
-            {viewMode === 'month' && format(currentDate, 'yyyy年MM月', { locale: zhCN })}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                {viewMode === 'day' ? '日排班' : viewMode === 'week' ? '周排班' : '月排班'}
+              </CardTitle>
+              <CardDescription>
+                {viewMode === 'day' && format(currentDate, 'yyyy年MM月dd日 EEEE', { locale: zhCN })}
+                {viewMode === 'week' && `${format(viewDates[0], 'MM月dd日')} - ${format(viewDates[viewDates.length - 1], 'MM月dd日')}`}
+                {viewMode === 'month' && format(currentDate, 'yyyy年MM月', { locale: zhCN })}
+              </CardDescription>
+            </div>
+            
+            {/* 简单操作工具栏 */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAddingSchedule(true)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                添加排班
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSelectedDate(addDays(selectedDate, -7))
+                }}
+              >
+                ← 上周
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSelectedDate(new Date())
+                }}
+              >
+                今天
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSelectedDate(addDays(selectedDate, 7))
+                }}
+              >
+                下周 →
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
+          <DndContext
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+          >
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
@@ -1181,81 +1299,23 @@ export default function TuitionCenterScheduleManagement() {
                       </td>
                       {viewDates.map(date => {
                         const daySchedules = getSchedulesForDate(date)
-                          .filter(s => (s as any).teacher_id === employee.id)
-                        const dayClasses = getClassesForDate(date)
-                          .filter(c => c.teacherId === employee.id)
+                            .filter(s => s.teacher_id === employee.id)
                         
                         return (
-                          <td key={date.toISOString()} className="p-2 text-center">
-                            <div className="space-y-1">
-                              {daySchedules.map(schedule => (
-                                <div
-                                  key={schedule.id}
-                                  className="p-2 rounded text-xs border-l-2"
-                                  style={{ 
-                                    borderLeftColor: templates.find(t => t.type === (schedule as any).schedule_type)?.color || '#6b7280',
-                                    backgroundColor: `${templates.find(t => t.type === (schedule as any).schedule_type)?.color || '#6b7280'}10`
-                                  }}
-                                >
-                                  <div className="font-medium">{(schedule as any).start_time} - {(schedule as any).end_time}</div>
-                                  {(schedule as any).class_name && (
-                                    <div className="text-gray-600">{(schedule as any).class_name}</div>
-                                  )}
-                                  <div className="flex justify-between items-center mt-1">
-                                    <Badge 
-                                      variant={schedule.status === 'scheduled' ? 'default' : 
-                                              schedule.status === 'confirmed' ? 'secondary' : 'outline'}
-                                      className="text-xs"
-                                    >
-                                      {schedule.status === 'scheduled' ? '已安排' :
-                                       schedule.status === 'confirmed' ? '已确认' :
-                                       schedule.status === 'in_progress' ? '进行中' :
-                                       schedule.status === 'completed' ? '已完成' : '已取消'}
-                                    </Badge>
-                                    <div className="flex gap-1">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 w-6 p-0"
-                                        onClick={() => setEditingSchedule({
-                                          ...schedule,
-                                          employeeId: (schedule as any).teacher_id || schedule.id,
-                                          employeeName: (schedule as any).teacher_name || 'Unknown',
-                                          employeeType: (schedule as any).schedule_type || 'fulltime',
-                                          startTime: (schedule as any).start_time || '09:00',
-                                          endTime: (schedule as any).end_time || '17:00',
-                                          isOvertime: (schedule as any).is_overtime || false,
-                                          totalHours: (schedule as any).total_hours || 8,
-                                          createdAt: (schedule as any).created || new Date().toISOString(),
-                                          updatedAt: (schedule as any).updated || new Date().toISOString()
-                                        })}
-                                      >
-                                        <Edit className="h-3 w-3" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-6 w-6 p-0 text-red-500"
-                                        onClick={() => handleDeleteSchedule(schedule.id)}
-                                      >
-                                        <Trash2 className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                              {daySchedules.length === 0 && !isWeekend(date) && (
-                                <div className="text-gray-400 text-xs py-2">
-                                  无安排
-                                </div>
-                              )}
-                              {isWeekend(date) && (
-                                <div className="text-gray-400 text-xs py-2">
-                                  周末
-                                </div>
-                              )}
-                            </div>
-                          </td>
+                            <td key={date.toISOString()} className="p-0">
+                              <DroppableScheduleCell
+                                date={date}
+                                employeeId={employee.id}
+                                schedules={daySchedules}
+                                onAddSchedule={handleAddScheduleFromCell}
+                                onEditSchedule={handleEditSchedule}
+                                onDeleteSchedule={handleDeleteSchedule}
+                                templates={templates}
+                                isToday={isToday(date)}
+                                isWeekend={isWeekend(date)}
+                                className="h-24"
+                              />
+                            </td>
                         )
                       })}
                     </tr>
@@ -1263,244 +1323,40 @@ export default function TuitionCenterScheduleManagement() {
               </tbody>
             </table>
           </div>
+          </DndContext>
         </CardContent>
       </Card>
 
-      {/* 添加排班对话框 */}
-      {isAddingSchedule && (
+      {/* 多天拖拽处理 */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>添加排班</span>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setIsAddingSchedule(false)}
-              >
-                <XCircle className="h-4 w-4" />
-              </Button>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            批量操作
             </CardTitle>
+          <CardDescription>
+            选择多个排班进行批量复制、移动或删除操作
+          </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              {/* 智能建议区域 */}
-              {suggestedTimes.length > 0 && (
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-2">💡 智能建议</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {suggestedTimes.map((time, index) => {
-                      const [start, end] = time.split('-')
-                      return (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleTimeChange(start, end)}
-                          className="text-xs"
-                        >
-                          {time}
-                        </Button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* 冲突警告 */}
-              {conflictWarning && (
-                <div className="bg-red-50 border border-red-200 p-3 rounded-lg">
-                  <div className="flex items-center gap-2 text-red-800">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span className="text-sm font-medium">{conflictWarning}</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>选择教师 *</Label>
-                  <Select value={selectedEmployee} onValueChange={handleEmployeeChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择教师" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {employees.map(employee => (
-                          <SelectItem key={employee.id} value={employee.id}>
-                            <div className="flex flex-col">
-                              <span>{employee.name}</span>
-                              <span className="text-xs text-gray-500">
-                                {employee.type === 'fulltime' ? '全职' : 
-                                 employee.type === 'parttime' ? '兼职' : 
-                                 employee.type === 'teaching_only' ? '仅教书' :
-                                 employee.type === 'admin' ? '行政' :
-                                 employee.type === 'support' ? '后勤' : '服务'} · 
-                                {employee.position || employee.subjects?.join(', ')}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label>选择课程</Label>
-                  <Select value={selectedClass} onValueChange={setSelectedClass}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择课程（可选）" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {classes.map(classItem => (
-                        <SelectItem key={classItem.id} value={classItem.id}>
-                          {classItem.name} - {classItem.subject}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label>日期 *</Label>
-                  <Input 
-                    type="date" 
-                    value={format(selectedDate, 'yyyy-MM-dd')}
-                    onChange={(e) => {
-                      setSelectedDate(new Date(e.target.value))
-                      // 重新计算建议
-                      if (selectedEmployee) {
-                        const suggestions = getSuggestedTimes(selectedEmployee, e.target.value)
-                        setSuggestedTimes(suggestions)
-                      }
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <Label>排班模板</Label>
-                  <Select value={selectedTemplate} onValueChange={(value) => {
-                    setSelectedTemplate(value)
-                    const template = templates.find(t => t.id === value)
-                    if (template) {
-                      setStartTime(template.start_time)
-                      setEndTime(template.end_time)
-                      handleTimeChange(template.start_time, template.end_time)
-                    }
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择模板（可选）" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {templates.map(template => (
-                        <SelectItem key={template.id} value={template.id}>
-                          {template.name} ({template.start_time}-{template.end_time})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label>开始时间 *</Label>
-                  <Input 
-                    type="time" 
-                    value={startTime}
-                    onChange={(e) => handleTimeChange(e.target.value, endTime)}
-                  />
-                </div>
-                
-                <div>
-                  <Label>结束时间 *</Label>
-                  <Input 
-                    type="time" 
-                    value={endTime}
-                    onChange={(e) => handleTimeChange(startTime, e.target.value)}
-                  />
-                </div>
-                
-                <div>
-                  <Label>教室 *</Label>
-                  <Select value={selectedRoom} onValueChange={setSelectedRoom}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择教室" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableRooms.length > 0 ? (
-                        availableRooms.map(room => (
-                          <SelectItem key={room} value={room}>
-                            <div className="flex items-center gap-2">
-                              <CheckCircle className="h-3 w-3 text-green-500" />
-                              {room} (可用)
-                            </div>
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <div className="p-2 text-sm text-gray-500">该时间段无可用教室</div>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>工作时长</Label>
-                  <Input 
-                    value={`${calculateHours(startTime, endTime)} 小时`}
-                    disabled
-                    className="bg-gray-50"
-                  />
-                </div>
-                
-                <div className="md:col-span-2">
-                  <Label>备注</Label>
-                  <Input 
-                    placeholder="排班备注信息"
-                    value={scheduleNotes}
-                    onChange={(e) => setScheduleNotes(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-between items-center mt-6">
-              <div className="text-sm text-gray-600">
-                {selectedEmployee && (
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>已选择教师，智能建议已激活</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setIsAddingSchedule(false)
-                    // 重置表单
-                    setSelectedEmployee('')
-                    setSelectedClass('')
-                    setSelectedTemplate('')
-                    setStartTime('09:00')
-                    setEndTime('17:00')
-                    setSelectedRoom('')
-                    setScheduleNotes('')
-                    setConflictWarning('')
-                    setSuggestedTimes([])
-                    setAvailableRooms([])
-                  }}
-                >
-                  取消
-                </Button>
-                <Button 
-                  onClick={handleAddSchedule}
-                  disabled={!selectedEmployee || !!conflictWarning || availableRooms.length === 0}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  保存排班
-                </Button>
-              </div>
-            </div>
+          <MultiDayDragHandler
+            schedules={schedules}
+            onCopyToMultipleDays={handleCopyToMultipleDays}
+            onDeleteMultiple={handleDeleteMultiple}
+          />
           </CardContent>
         </Card>
-      )}
+
+      {/* 添加排班浮窗 */}
+      <AddScheduleModal
+        isOpen={isAddingSchedule}
+        onClose={() => setIsAddingSchedule(false)}
+        onSave={handleAddSchedule}
+        employees={employees}
+        templates={templates}
+        classes={classes}
+        selectedDate={selectedDate}
+      />
 
       {/* 员工统计 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -401,7 +401,7 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
                 <span className="text-sm">统一考勤</span>
               </Button>
             </Link>
-            <Link href="/attendance-management">
+            <Link href="/schedule-management">
               <Button variant="outline" className="w-full h-20 flex flex-col items-center gap-2">
                 <BarChart3 className="h-6 w-6" />
                 <span className="text-sm">AI考勤系统</span>

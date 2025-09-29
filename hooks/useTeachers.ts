@@ -85,10 +85,25 @@ export const useTeachers = () => {
   const updateTeacher = useCallback(async (teacherId: string, teacherData: Partial<Teacher>) => {
     try {
       console.log('useTeachers: 更新教师', teacherId, teacherData)
-      const updatedTeacher = await updateTeacherInPb({ id: teacherId, ...teacherData } as any)
-      console.log('教师更新成功:', updatedTeacher)
+      
+      // 使用新的API路由
+      const response = await fetch('/api/teachers/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: teacherId, ...teacherData })
+      })
+      
+      const result = await response.json()
+      
+      if (!result.success) {
+        throw new Error(result.message || '更新教师失败')
+      }
+      
+      console.log('教师更新成功:', result.data)
       await fetchTeachers() // 刷新数据
-      return updatedTeacher
+      return result.data
     } catch (err: any) {
       console.error('更新教师失败:', err)
       throw new Error(err.message || '更新教师失败')

@@ -17,6 +17,7 @@ export interface Student {
   home_address?: string
   gender?: string
   serviceType?: 'afterschool' | 'tuition'
+  services?: 'Daycare' | 'Tuition'
   register_form_url?: string
   standard?: string
   level?: 'primary' | 'secondary'
@@ -81,6 +82,7 @@ export interface StudentCreateData {
   home_address?: string
   gender?: string
   serviceType?: 'afterschool' | 'tuition'
+  services?: 'Daycare' | 'Tuition'
   register_form_url?: string
   standard?: string
   level?: 'primary' | 'secondary'
@@ -132,7 +134,7 @@ export interface StudentCreateData {
 }
 
 export interface StudentUpdateData extends Partial<StudentCreateData> {
-  id: string
+  // 不包含id字段，id通过参数传递
 }
 
 // 获取所有学生 - 通过API路由获取，避免客户端认证问题
@@ -355,9 +357,35 @@ export const addStudent = async (studentData: StudentCreateData): Promise<Studen
   }
 }
 
-// 更新学生 - 暂时禁用，需要创建相应的API端点
+// 更新学生
 export const updateStudent = async (id: string, studentData: StudentUpdateData): Promise<Student> => {
-  throw new Error('更新学生功能暂时不可用，需要创建相应的API端点')
+  try {
+    console.log('🔍 开始更新学生:', id, studentData)
+    
+    const response = await fetch('/api/students', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id,
+        ...studentData
+      })
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || '更新学生失败')
+    }
+    
+    const result = await response.json()
+    console.log('✅ 学生更新成功:', result.student)
+    
+    return result.student
+  } catch (error) {
+    console.error('❌ 更新学生失败:', error)
+    throw new Error(`更新学生失败: ${error instanceof Error ? error.message : '未知错误'}`)
+  }
 }
 
 // 删除学生 - 暂时禁用，需要创建相应的API端点

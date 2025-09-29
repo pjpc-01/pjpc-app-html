@@ -23,10 +23,10 @@ export default function AnnouncementsDisplay({
               </svg>
             </div>
             <div>
-              <h2 className={`text-4xl font-black ${isBright ? 'text-slate-900' : 'text-white'} tracking-tight`}>
+              <h2 className={`text-5xl font-black ${isBright ? 'text-slate-900' : 'text-white'} tracking-tight`}>
                 📢 重要公告
               </h2>
-              <p className={`text-xl ${colors.textMuted} font-medium`}>
+              <p className={`text-2xl ${colors.textMuted} font-medium`}>
                 最新消息与通知
               </p>
             </div>
