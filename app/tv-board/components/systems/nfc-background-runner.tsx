@@ -163,7 +163,7 @@ async function processAttendance(
     
     if (teacher) {
       tvLog('找到匹配教师', { 
-        teacherId: teacher.teacher_id || teacher.id, 
+        teacherId: teacher.teacher_id, 
         teacherName: teacher.teacher_name || teacher.name, 
         cardNumber,
         center 
@@ -175,7 +175,7 @@ async function processAttendance(
         return {
           success: true,
           user: {
-            id: teacher.teacher_id || teacher.id,
+            id: teacher.teacher_id,
             name: teacher.teacher_name || teacher.name,
             type: 'teacher'
           }
@@ -264,7 +264,7 @@ async function recordTeacherAttendance(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const attendanceData = {
-      teacher_id: teacher.teacher_id || teacher.id,
+      teacher_id: teacher.teacher_id,
       teacher_name: teacher.teacher_name || teacher.name,
       center: center,
       attendance_time: new Date().toISOString(),
