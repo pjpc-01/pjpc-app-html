@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       total: teachers.items.length,
       center,
       sampleTeachers: teachers.items.slice(0, 2).map(t => ({
-        teacher_id: t.id,
+        teacher_id: t.user_id,
         teacher_name: t.name,
         cardNumber: t.cardNumber,
         center: center
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     // 处理结果
     const processedTeachers = teachers.items.map(teacher => ({
       id: teacher.id,
-      teacher_id: teacher.id, // 使用id作为teacher_id
+      teacher_id: teacher.user_id, // 使用user_id作为teacher_id
       teacher_name: teacher.name, // 使用name字段
       cardNumber: teacher.cardNumber,
       center: center, // 使用请求的center
