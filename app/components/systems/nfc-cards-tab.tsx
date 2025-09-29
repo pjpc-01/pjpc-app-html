@@ -175,8 +175,8 @@ export default function NFCCardsTab({
                       <span className="text-gray-400 text-sm">未设置</span>
                     )}
                   </TableCell>
-                  <TableCell>{card.issuedDate}</TableCell>
-                  <TableCell>{card.expiryDate}</TableCell>
+                  <TableCell>{card.issuedDate instanceof Date ? card.issuedDate.toLocaleDateString('zh-CN') : card.issuedDate}</TableCell>
+                  <TableCell>{card.expiryDate instanceof Date ? card.expiryDate.toLocaleDateString('zh-CN') : card.expiryDate || '无限制'}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Button

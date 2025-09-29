@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { GraduationCap, Bell, Settings, LogOut, UserCheck, Wifi, WifiOff, AlertTriangle, CreditCard, Menu, X } from "lucide-react"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import SecureLoginForm from "@/app/components/systems/auth/secure-login-form"
-import AdminDashboard from "./components/dashboards/admin-dashboard"
-import ParentDashboard from "./components/dashboards/parent-dashboard"
+import ModernAdminDashboard from "./components/dashboards/modern-admin-dashboard"
+import ModernParentDashboard from "./components/dashboards/modern-parent-dashboard"
 import AccountantDashboard from "./components/dashboards/accountant-dashboard"
 import ErrorBoundary from "@/components/shared/error-boundary"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -100,15 +100,12 @@ export default function Dashboard() {
   }
 
   // 如果用户未登录，显示登录界面
-  // 只有在loading为false且没有用户时才显示登录界面
   if (!user && !loading) {
     return <SecureLoginForm />
   }
   
   // 如果用户存在但没有用户资料，等待一下再检查
   if (!userProfile) {
-    
-    // 暂时显示加载状态而不是登录界面
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -126,37 +123,6 @@ export default function Dashboard() {
       </div>
     )
   }
-
-  // 邮箱验证暂时禁用 - 跳过邮箱验证检查
-  // if (!user.emailVerified) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center p-4">
-  //       <Card className="w-full max-w-md">
-  //         <CardHeader>
-  //           <CardTitle className="flex items-center gap-2">
-  //             <Mail className="h-5 w-5" />
-  //             邮箱验证
-  //           </CardTitle>
-  //           <CardDescription>请验证您的邮箱地址以继续使用系统</CardDescription>
-  //         </CardHeader>
-  //         <CardContent className="space-y-4">
-  //           <Alert>
-  //             <AlertTriangleIcon className="h-4 w-4" />
-  //             <AlertDescription>我们已向 {user.email} 发送了验证邮件。请检查您的邮箱并点击验证链接。</AlertDescription>
-  //           </Alert>
-  //           <div className="flex gap-2">
-  //             <Button onClick={resendVerification} variant="outline" className="flex-1 bg-transparent">
-  //               重新发送验证邮件
-  //             </Button>
-  //             <Button onClick={logout} variant="destructive" className="flex-1">
-  //               退出登录
-  //             </Button>
-  //           </div>
-  //         </CardContent>
-  //       </Card>
-  //     </div>
-  //   )
-  // }
 
   // 账户待审核
   if (userProfile?.status === "pending") {
@@ -216,15 +182,20 @@ export default function Dashboard() {
   const renderDashboard = () => {
     switch (userProfile.role) {
       case "admin":
-        return <AdminDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
+        return <ModernAdminDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
       case "teacher":
         return <TeacherWorkspace />
       case "parent":
-        return <ParentDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
+        return <ModernParentDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
       case "accountant":
         return <AccountantDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
       default:
-        return <AdminDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
+        return (
+          <div className="text-center py-12">
+            <GraduationCap className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+            <p className="text-gray-600">未知角色</p>
+          </div>
+        )
     }
   }
 
@@ -240,21 +211,6 @@ export default function Dashboard() {
         return "会计工作台"
       default:
         return "安亲班管理系统"
-    }
-  }
-
-  const getRoleBadgeColor = () => {
-    switch (userProfile.role) {
-      case "admin":
-        return "destructive"
-      case "teacher":
-        return "default"
-      case "parent":
-        return "secondary"
-      case "accountant":
-        return "outline"
-      default:
-        return "outline"
     }
   }
 
@@ -282,128 +238,90 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Connection Status */}
-      <div className="bg-blue-50 border-b border-blue-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-          <ConnectionStatus />
-        </div>
-      </div>
-      
-      {/* Header - 只有非教师角色才显示标题，教师角色由TeacherWorkspace组件处理 */}
-      {userProfile.role !== 'teacher' && (
-        <header className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center">
-                <div className="flex items-center">
-                  <img 
-                    src="/logo.png" 
-                    alt="温馨小屋" 
-                    className="h-8 w-auto mr-2"
-                    onError={(e) => {
-                      // 如果logo文件不存在，显示备用图标
-                      e.currentTarget.style.display = 'none'
-                      const nextElement = e.currentTarget.nextElementSibling as HTMLElement
-                      if (nextElement) {
-                        nextElement.style.display = 'block'
-                      }
-                    }}
-                  />
-                  <GraduationCap className="h-8 w-8 text-blue-600 hidden" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-white/20 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-30"></div>
+                <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
+                  <GraduationCap className="h-6 w-6 text-white" />
                 </div>
-                <h1 className="ml-2 text-lg sm:text-xl font-bold text-gray-900 truncate">{getRoleTitle()}</h1>
               </div>
-              
-              {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center space-x-4">
-                {/* User Info */}
-                <div className="flex items-center gap-2">
-                  <UserCheck className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-700">{userProfile.name}</span>
-                  <span className="text-xs text-gray-500 hidden lg:inline">({user.email})</span>
-                </div>
-                <Badge variant={getRoleBadgeColor() as any}>{getRoleLabel()}</Badge>
-                <Button variant="ghost" size="sm">
-                  <Bell className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <Settings className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Mobile Navigation */}
-              <div className="md:hidden flex items-center space-x-2">
-                <Badge variant={getRoleBadgeColor() as any} className="text-xs">
-                  {getRoleLabel()}
-                </Badge>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                >
-                  {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                </Button>
+              <div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                  {getRoleTitle()}
+                </h1>
+                <p className="text-xs text-gray-500">智能教育管理系统</p>
               </div>
             </div>
-
-            {/* Mobile Menu */}
-            {mobileMenuOpen && (
-              <div className="md:hidden border-t bg-white">
-                <div className="px-2 pt-2 pb-3 space-y-1">
-                  {/* User Info */}
-                  <div className="px-3 py-2 border-t">
-                    <div className="flex items-center gap-2 mb-2">
-                      <UserCheck className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-700">{userProfile.name}</span>
-                    </div>
-                    <div className="text-xs text-gray-500 mb-3">{user.email}</div>
-                    
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm" className="flex-1">
-                        <Bell className="h-4 w-4 mr-2" />
-                        通知
-                      </Button>
-                      <Button variant="ghost" size="sm" className="flex-1">
-                        <Settings className="h-4 w-4 mr-2" />
-                        设置
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={handleLogout} className="flex-1">
-                        <LogOut className="h-4 w-4 mr-2" />
-                        退出
-                      </Button>
-                    </div>
+            
+            <div className="flex items-center space-x-3">
+              <div className="hidden sm:block">
+                <ConnectionStatus />
+              </div>
+              
+              <div className="flex items-center space-x-3 bg-white/50 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {userProfile.name?.charAt(0) || 'U'}
+                    </span>
+                  </div>
+                  <div className="hidden md:block">
+                    <p className="text-sm font-medium text-gray-900">{userProfile.name}</p>
+                    <p className="text-xs text-gray-500">{getRoleLabel()}</p>
                   </div>
                 </div>
+                
+                <div className="flex items-center space-x-1">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-white/50">
+                    <Bell className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-white/50">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleLogout}
+                    className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            )}
+            </div>
           </div>
-        </header>
-      )}
-
-      {/* Error Display */}
-      {error && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-          <Alert variant="destructive" className="mb-4">
-            <AlertTriangleIcon className="h-4 w-4" />
-            <AlertDescription className="flex items-center justify-between">
-              <span>{error}</span>
-              <Button variant="ghost" size="sm" onClick={clearError}>
-                关闭
-              </Button>
-            </AlertDescription>
-          </Alert>
         </div>
-      )}
+      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <ErrorBoundary>
-          {renderDashboard()}
-        </ErrorBoundary>
-      </div>
+      <main className="relative">
+        <div className="absolute inset-0 bg-gray-100 opacity-40"></div>
+        
+        <div className="relative z-10">
+          {error && (
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+              <Alert variant="destructive" className="mb-6 border-red-200 bg-red-50/80 backdrop-blur-sm">
+                <AlertTriangleIcon className="h-4 w-4" />
+                <AlertDescription className="flex items-center justify-between">
+                  <span>{error}</span>
+                  <Button variant="ghost" size="sm" onClick={clearError} className="text-red-600 hover:text-red-700">
+                    关闭
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <ErrorBoundary>
+              {renderDashboard()}
+            </ErrorBoundary>
+          </div>
+        </div>
+      </main>
     </div>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -108,8 +108,8 @@ export default function AdvancedFilters({
     selectedGrade: "all",
     selectedCenter: "all",
     selectedStatus: "all",
-    selectedGender: "",
-    selectedLevel: "",
+    selectedGender: "all",
+    selectedLevel: "all",
     ageRange: [0, 25],
     enrollmentYear: "",
     enrollmentDateRange: { from: undefined, to: undefined },
@@ -166,20 +166,21 @@ export default function AdvancedFilters({
     setFilters(prev => ({ ...prev, [key]: value }))
   }
 
-  // 应用筛选
+  // 应用筛选 - 只在本地状态变化时通知父组件
   useEffect(() => {
     onFiltersChange(filters)
   }, [filters, onFiltersChange])
 
   // 清除所有筛选
   const clearAllFilters = () => {
+    console.log('🔍 AdvancedFilters: 清除筛选条件...')
     setFilters({
       searchTerm: "",
       selectedGrade: "all",
-      selectedCenter: "all",
+      selectedCenter: "",
       selectedStatus: "all",
-      selectedGender: "",
-      selectedLevel: "",
+      selectedGender: "all",
+      selectedLevel: "all",
       ageRange: [filterOptions.minAge, filterOptions.maxAge],
       enrollmentYear: "",
       enrollmentDateRange: { from: undefined, to: undefined },
@@ -193,7 +194,6 @@ export default function AdvancedFilters({
       sortOrder: 'asc',
       quickFilters: []
     })
-    onClearFilters()
   }
 
   // 保存预设
@@ -452,7 +452,7 @@ export default function AdvancedFilters({
                       <SelectValue placeholder="选择性别" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">全部性别</SelectItem>
+                      <SelectItem value="all">全部性别</SelectItem>
                       {filterOptions.genders.map((gender) => (
                         <SelectItem key={gender} value={gender}>
                           {gender}
@@ -469,7 +469,7 @@ export default function AdvancedFilters({
                       <SelectValue placeholder="选择级别" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">全部级别</SelectItem>
+                      <SelectItem value="all">全部级别</SelectItem>
                       {filterOptions.levels.map((level) => (
                         <SelectItem key={level} value={level}>
                           {level}

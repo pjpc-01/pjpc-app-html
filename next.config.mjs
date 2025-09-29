@@ -11,12 +11,12 @@ const nextConfig = {
     distDir: 'out',
   }),
   
-  // 启用HTTPS开发环境（仅在非静态导出时）
-  ...(!isStaticExport && {
-    experimental: {
-      https: true,
-    },
-  }),
+  // 禁用HTTPS开发环境，使用HTTP以避免SSL协议错误
+  // ...(!isStaticExport && {
+  //   experimental: {
+  //     https: true,
+  //   },
+  // }),
   
   // 解决 OpenSSL 兼容性问题
   experimental: {

@@ -32,27 +32,31 @@ export default function TVBoardPage() {
         }
         
         // 如果API失败或返回空数据，从学生数据中推导centers
-        const studentsResponse = await fetch('/api/students?limit=1000')
-        if (studentsResponse.ok) {
-          const studentsData = await studentsResponse.json()
-          const students = studentsData.data || studentsData.students || []
+        try {
+          const studentsResponse = await fetch('/api/students?limit=1000')
+          if (studentsResponse.ok) {
+            const studentsData = await studentsResponse.json()
+            const students = studentsData.data || studentsData.students || []
           
-          // 从学生数据中提取unique centers
-          const centerMap = new Map<string, number>()
-          students.forEach((s: any) => {
-            const center = s?.center ?? s?.Center ?? s?.centre ?? s?.branch
-            if (center) {
-              centerMap.set(center, (centerMap.get(center) || 0) + 1)
-            }
-          })
-          
-          const derivedCenters = Array.from(centerMap.entries()).map(([name, count]) => ({
-            id: name,
-            name: name,
-            count: count
-          }))
-          
-          setCenters(derivedCenters)
+            // 从学生数据中提取unique centers
+            const centerMap = new Map<string, number>()
+            students.forEach((s: any) => {
+              const center = s?.center ?? s?.Center ?? s?.centre ?? s?.branch
+              if (center) {
+                centerMap.set(center, (centerMap.get(center) || 0) + 1)
+              }
+            })
+            
+            const derivedCenters = Array.from(centerMap.entries()).map(([name, count]) => ({
+              id: name,
+              name: name,
+              count: count
+            }))
+            
+            setCenters(derivedCenters)
+          }
+        } catch (studentsError) {
+          console.error('获取学生数据失败:', studentsError)
         }
       } catch (error) {
         console.error('Failed to load centers:', error)

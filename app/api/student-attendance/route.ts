@@ -12,12 +12,14 @@ export async function GET(request: NextRequest) {
     const studentId = searchParams.get('studentId')
     const studentName = searchParams.get('studentName')
     const date = searchParams.get('date')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
     const status = searchParams.get('status')
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
     const limit = pageSize
     
-    console.log('📊 获取学生考勤记录请求:', { center, studentId, studentName, date, status, page, pageSize })
+    console.log('📊 获取学生考勤记录请求:', { center, studentId, studentName, date, startDate, endDate, status, page, pageSize })
     
     const pb = await getPocketBase()
     
@@ -54,36 +56,66 @@ export async function GET(request: NextRequest) {
       if (filter) filter += ' && '
       filter += `date = "${date}"`
     }
+    if (startDate) {
+      if (filter) filter += ' && '
+      filter += `date >= "${startDate}"`
+    }
+    if (endDate) {
+      if (filter) filter += ' && '
+      filter += `date <= "${endDate}"`
+    }
     if (status) {
       if (filter) filter += ' && '
       filter += `status = "${status}"`
     }
     
-    console.log('🔍 过滤条件:', filter || '无过滤')
+    console.log('🔍 初始过滤条件:', filter || '无过滤')
     
-    // 查询考勤记录
+    // 查询考勤记录 - 过滤掉教师数据
     let records
-    if (filter) {
-      records = await pb.collection('student_attendance').getList(page, limit, {
-        filter: filter,
-        sort: '-created'
-      })
+    let finalFilter = filter
+    
+    // 添加过滤条件：排除教师数据（ADM, T, TEACHER开头的ID）
+    const excludeTeachers = `student_id != "ADM01" && student_id != "ADM02" && student_id != "T1" && student_id != "T2" && student_id != "T3"`
+    if (finalFilter) {
+      finalFilter += ` && ${excludeTeachers}`
     } else {
-      records = await pb.collection('student_attendance').getList(page, limit, {
-        sort: '-created'
-      })
+      finalFilter = excludeTeachers
     }
     
+    console.log('🔍 最终过滤条件:', finalFilter)
+    
+    records = await pb.collection('student_attendance').getList(page, limit, {
+      filter: finalFilter,
+      sort: '-created'
+    })
+    
     console.log('✅ 查询成功，记录数:', records.items.length)
+    console.log('🔍 原始学生ID列表:', records.items.map(r => r.student_id))
+    
+    // 后端过滤：排除教师数据
+    const filteredRecords = records.items.filter(record => {
+      const studentId = record.student_id
+      const isTeacher = studentId && (
+        studentId.startsWith('ADM') || 
+        studentId.startsWith('T') ||
+        studentId.startsWith('TEACHER')
+      )
+      console.log(`🔍 检查记录: ${record.student_name} (${studentId}) - 是否教师: ${isTeacher}`)
+      return !isTeacher
+    })
+    
+    console.log('🔍 过滤后记录数:', filteredRecords.length)
+    console.log('🔍 过滤后学生ID列表:', filteredRecords.map(r => r.student_id))
     
     return NextResponse.json({
       success: true,
-      records: records.items,
-      total: records.totalItems,
-      count: records.items.length,
+      records: filteredRecords,
+      total: filteredRecords.length,
+      count: filteredRecords.length,
       page: page,
       pageSize: pageSize,
-      totalPages: Math.ceil(records.totalItems / pageSize),
+      totalPages: Math.ceil(filteredRecords.length / pageSize),
       query: { center, studentId, studentName, date, status, page, pageSize }
     })
     

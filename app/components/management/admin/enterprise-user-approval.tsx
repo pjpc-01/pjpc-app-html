@@ -167,10 +167,7 @@ export default function EnterpriseUserApproval() {
         setError('请先登录')
         
         try {
-          await pb.collection('users').authWithPassword(
-            'pjpcemerlang@gmail.com',
-            '0122270775Sw!'
-          )
+          await pb.collection('users').authWithPassword(process.env.POCKETBASE_ADMIN_EMAIL, process.env.POCKETBASE_ADMIN_PASSWORD)
           console.log('✅ 自动登录成功')
         } catch (loginError) {
           console.error('❌ 自动登录失败:', loginError)

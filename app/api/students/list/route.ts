@@ -15,8 +15,9 @@ export async function GET(request: NextRequest) {
     // 获取PocketBase实例
     const pb = await getPocketBase()
     
-    // 使用优化的管理员认证
+    // 使用统一的认证函数
     try {
+      const { authenticateAdmin } = await import('@/lib/pocketbase')
       await authenticateAdmin()
       console.log('✅ 管理员认证成功')
     } catch (authError) {
@@ -25,9 +26,9 @@ export async function GET(request: NextRequest) {
         { 
           success: false,
           error: 'PocketBase认证失败', 
-          details: '无法以管理员身份登录'
+          details: authError instanceof Error ? authError.message : '未知认证错误'
         },
-        { status: 500 }
+        { status: 401 }
       )
     }
     
@@ -47,8 +48,9 @@ export async function GET(request: NextRequest) {
       filter = filters.join(' && ')
     }
 
-    console.log(`🔍 查询参数: center=${center}, status=${status}, limit=${limit}, page=${page}`)
+    console.log(`🔍 查询参数: center="${center}", status="${status}", limit=${limit}, page=${page}`)
     console.log(`🔍 过滤条件: ${filter || '无过滤'}`)
+    console.log(`🔍 原始URL: ${request.url}`)
 
     try {
       // 从PocketBase获取学生数据 - 应用过滤条件

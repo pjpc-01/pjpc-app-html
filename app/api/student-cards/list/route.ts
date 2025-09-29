@@ -16,8 +16,8 @@ export async function GET() {
     if (!pb.authStore.isValid) {
       console.log('PocketBase 未认证，尝试使用默认管理员账户...')
       try {
-        const adminEmail = 'pjpcemerlang@gmail.com'
-        const adminPassword = '0122270775Sw!'
+        const adminEmail = process.env.POCKETBASE_ADMIN_EMAIL
+        const adminPassword = process.env.POCKETBASE_ADMIN_PASSWORD
         
         await pb.admins.authWithPassword(adminEmail, adminPassword)
         console.log('✅ PocketBase 认证成功')

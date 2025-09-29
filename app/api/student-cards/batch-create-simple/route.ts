@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const pb = await getPocketBase()
     
     // 认证
-    await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+    await authenticateAdmin(pb)
     console.log('✅ PocketBase 认证成功')
     
     const createdCards: StudentCard[] = []

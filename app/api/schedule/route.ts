@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase } from '@/lib/pocketbase'
+import { authenticateAdmin } from '@/lib/auth-utils'
 import { logScheduleAction, logScheduleError } from '@/lib/schedule-logger'
 
 // 获取排班数据
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
       
       // 确保使用管理员认证
       if (!pb.authStore.isValid) {
-        await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        await authenticateAdmin(pb)
       }
       
       const schedules = await pb.collection('schedules').getList(1, 100, {
@@ -87,18 +88,19 @@ export async function POST(request: NextRequest) {
     // 暂时跳过权限和冲突检查，直接创建排班
     
     const scheduleData = {
-      teacher_id: data.employeeId, // 使用 teacher_id 而不是 employee_id
-      class_id: data.classId || null,
+      teacher_id: data.teacher_id,
+      class_id: data.class_id || null,
       date: data.date,
-      start_time: data.startTime,
-      end_time: data.endTime,
+      start_time: data.start_time,
+      end_time: data.end_time,
       center: data.center,
       room: data.room || null,
       status: data.status || 'scheduled',
-      is_overtime: data.isOvertime || false,
-      hourly_rate: data.hourlyRate || null,
-      total_hours: data.totalHours || 0,
-      schedule_type: data.employeeType, // 使用 schedule_type 而不是 employee_type
+      is_overtime: data.is_overtime || false,
+      hourly_rate: data.hourly_rate || null,
+      total_hours: data.total_hours || 0,
+      schedule_type: data.schedule_type,
+      template_id: data.template_id || null,
       notes: data.notes || null,
       created_by: userId,
       approved_by: null
@@ -109,7 +111,7 @@ export async function POST(request: NextRequest) {
       
       // 确保使用管理员认证
       if (!pb.authStore.isValid) {
-        await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+        await authenticateAdmin(pb)
       }
       
       const schedule = await pb.collection('schedules').create(scheduleData)

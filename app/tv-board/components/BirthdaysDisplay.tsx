@@ -24,10 +24,10 @@ export default function BirthdaysDisplay({
             </div>
             <div className="flex-1">
               <div className="text-center">
-                <span className={`text-3xl font-black ${isBright ? 'text-gradient bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent' : 'text-pink-300'}`}>
+                <span className={`text-5xl font-black ${isBright ? 'text-gradient bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent' : 'text-pink-300'}`}>
                   🎉 Happy Birthday! 🎂
                 </span>
-                <div className={`text-xl font-semibold mt-2 ${isBright ? 'text-slate-600' : 'text-slate-300'}`}>
+                <div className={`text-2xl font-semibold mt-3 ${isBright ? 'text-slate-600' : 'text-slate-300'}`}>
                   {new Date().getMonth() + 1}月生日 · {data.length}位寿星 · 生日快乐！
                 </div>
               </div>
@@ -241,8 +241,8 @@ export default function BirthdaysDisplay({
                       </div>
                       
                       {/* 学号徽章 - 更突出的设计 */}
-                      <div className={`inline-flex items-center px-4 py-2 rounded-xl text-lg font-black mb-4 shadow-lg ${
-                        isBright ? 'bg-gradient-to-r from-pink-100 to-purple-100 text-pink-700' : 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-pink-200'
+                      <div className={`student-id inline-flex items-center px-4 py-2 rounded-xl text-xl font-black mb-4 shadow-lg border-2 ${
+                        isBright ? 'bg-gradient-to-r from-pink-100 to-purple-100 text-pink-700 border-pink-300' : 'bg-gradient-to-r from-pink-500/30 to-purple-500/30 text-pink-100 border-pink-400/50'
                       }`}>
                         {s.student_id || '--'}
                       </div>

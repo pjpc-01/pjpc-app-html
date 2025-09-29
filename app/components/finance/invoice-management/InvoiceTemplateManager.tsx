@@ -441,12 +441,14 @@ export default function InvoiceTemplateManager() {
 
               <div>
                 <h3 className="font-semibold mb-2">预览效果</h3>
-                <div 
-                  className="border rounded-lg p-4 bg-white"
-                  dangerouslySetInnerHTML={{ 
-                    __html: renderTemplatePreview(selectedTemplate) 
-                  }}
-                />
+                <div className="border rounded-lg p-4 bg-white">
+                  <iframe
+                    srcDoc={renderTemplatePreview(selectedTemplate)}
+                    className="w-full h-96 border-0"
+                    sandbox="allow-same-origin"
+                    title="模板预览"
+                  />
+                </div>
               </div>
 
               <div>

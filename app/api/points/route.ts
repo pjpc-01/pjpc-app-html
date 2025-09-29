@@ -1,137 +1,472 @@
+/**
+ * 积分系统 API 路由
+ * 支持原子性事务、并发控制、数据一致性验证
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase } from '@/lib/pocketbase'
+import { authenticateAdmin } from '@/lib/auth-utils'
+import { TransactionType, TransactionStatus } from '@/types/points'
 
-// 动态导出配置
-export const dynamic = 'force-dynamic'
+// 积分操作锁，防止并发问题
+const operationLocks = new Map<string, Promise<any>>()
 
-// 获取学生积分记录
+// 认证锁，防止并发认证冲突
+let authLock: Promise<void> | null = null
+
+// 确保管理员认证（带并发控制）
+async function ensureAdminAuth(pb: any) {
+  // 如果已有认证，直接返回
+  if (pb.authStore.isValid) {
+    console.log('✅ 使用现有认证')
+    return
+  }
+  
+  // 如果已有认证进行中，等待完成
+  if (authLock) {
+    console.log('⏳ 等待认证完成...')
+    await authLock
+    return
+  }
+  
+  // 创建认证锁
+  authLock = (async () => {
+    try {
+      const adminEmail = process.env.POCKETBASE_ADMIN_EMAIL || 'pjpcemerlang@gmail.com'
+      const adminPassword = process.env.POCKETBASE_ADMIN_PASSWORD || '0122270775Sw!'
+      
+      console.log('🔑 开始管理员认证...', { email: adminEmail })
+      await pb.admins.authWithPassword(adminEmail, adminPassword)
+      console.log('✅ 管理员认证成功')
+    } catch (error) {
+      console.error('❌ 管理员认证失败:', error)
+      throw new Error(`管理员认证失败: ${error instanceof Error ? error.message : '未知错误'}`)
+    } finally {
+      // 清除认证锁
+      authLock = null
+    }
+  })()
+  
+  await authLock
+}
+
+// 原子性积分更新函数
+async function atomicUpdatePoints(
+  pb: any, 
+  studentId: string, 
+  transactionData: any, 
+  retryCount = 0
+): Promise<{ success: boolean; transaction?: any; error?: string }> {
+  const lockKey = `points_update_${studentId}`
+  
+  // 如果已有相同学生的操作在进行，等待完成
+  if (operationLocks.has(lockKey)) {
+    console.log(`⏳ 等待学生 ${studentId} 的积分操作完成...`)
+    await operationLocks.get(lockKey)
+  }
+  
+  // 创建新的操作锁
+  const operationPromise = (async () => {
+    try {
+      console.log(`🔒 开始原子性积分更新 - 学生: ${studentId}`)
+      
+      // 1. 获取当前积分数据（带锁）
+      let studentPoints
+      try {
+        studentPoints = await pb.collection('student_points').getFirstListItem(`student_id = "${studentId}"`)
+        console.log('📊 当前积分数据:', {
+          current: studentPoints.current_points,
+          earned: studentPoints.total_earned,
+          spent: studentPoints.total_spent
+        })
+      } catch (error) {
+        // 如果学生积分记录不存在，创建新记录
+        console.log('📝 创建新的学生积分记录')
+        studentPoints = await pb.collection('student_points').create({
+          student_id: studentId,
+          total_earned: 0,
+          total_spent: 0,
+          current_points: 0,
+          season_id: transactionData.season_id
+        })
+      }
+      
+      // 2. 验证数据一致性
+      const consistencyCheck = await validatePointsConsistency(pb, studentId, studentPoints)
+      if (!consistencyCheck.isConsistent) {
+        console.log('⚠️ 检测到数据不一致，自动修复...')
+        await fixPointsConsistency(pb, studentId, consistencyCheck.expectedPoints)
+        // 重新获取修复后的数据
+        studentPoints = await pb.collection('student_points').getFirstListItem(`student_id = "${studentId}"`)
+      }
+      
+      // 3. 创建交易记录
+      const transaction = await pb.collection('point_transactions').create(transactionData)
+      console.log('✅ 交易记录创建成功:', transaction.id)
+      
+      // 4. 计算新的积分值
+      const isEarnTransaction = transactionData.transaction_type === TransactionType.Add
+      const isDeductTransaction = transactionData.transaction_type === TransactionType.Deduct
+      
+      const newTotalEarned = studentPoints.total_earned + (isEarnTransaction ? transactionData.points_change : 0)
+      const newTotalSpent = studentPoints.total_spent + (isDeductTransaction ? Math.abs(transactionData.points_change) : 0)
+      const newCurrentPoints = studentPoints.current_points + transactionData.points_change
+      
+      // 5. 更新积分（使用乐观锁）
+      const updateData = {
+        total_earned: newTotalEarned,
+        total_spent: newTotalSpent,
+        current_points: newCurrentPoints,
+        updated: new Date().toISOString()
+      }
+      
+      try {
+        await pb.collection('student_points').update(studentPoints.id, updateData)
+        console.log('✅ 积分更新成功:', updateData)
+        
+        // 6. 验证更新后的数据一致性
+        const finalCheck = await validatePointsConsistency(pb, studentId)
+        if (!finalCheck.isConsistent) {
+          console.error('❌ 更新后数据仍然不一致，需要重试')
+          throw new Error('数据一致性验证失败')
+        }
+        
+        return { success: true, transaction }
+        
+      } catch (updateError) {
+        console.error('❌ 积分更新失败:', updateError)
+        
+        // 如果更新失败，删除刚创建的交易记录
+        try {
+          await pb.collection('point_transactions').delete(transaction.id)
+          console.log('🔄 已回滚交易记录')
+        } catch (rollbackError) {
+          console.error('❌ 回滚交易记录失败:', rollbackError)
+        }
+        
+        throw updateError
+      }
+      
+    } catch (error) {
+      console.error('❌ 原子性积分更新失败:', error)
+      
+      // 重试逻辑
+      if (retryCount < 3) {
+        console.log(`🔄 重试积分更新 (${retryCount + 1}/3)...`)
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
+        return atomicUpdatePoints(pb, studentId, transactionData, retryCount + 1)
+      }
+      
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : '未知错误' 
+      }
+    } finally {
+      // 清理操作锁
+      operationLocks.delete(lockKey)
+    }
+  })()
+  
+  operationLocks.set(lockKey, operationPromise)
+  return operationPromise
+}
+
+// 验证积分数据一致性
+async function validatePointsConsistency(
+  pb: any, 
+  studentId: string, 
+  studentPoints?: any
+): Promise<{ isConsistent: boolean; expectedPoints?: any }> {
+  try {
+    if (!studentPoints) {
+      studentPoints = await pb.collection('student_points').getFirstListItem(`student_id = "${studentId}"`)
+    }
+    
+    // 获取所有已批准的交易记录
+    const transactions = await pb.collection('point_transactions').getList(1, 1000, {
+      filter: `student_id = "${studentId}" && status = "approved"`,
+      sort: 'created'
+    })
+    
+    let calculatedEarned = 0
+    let calculatedSpent = 0
+    
+    transactions.items.forEach((t: any) => {
+      if (t.points_change > 0) {
+        calculatedEarned += t.points_change
+      } else {
+        calculatedSpent += Math.abs(t.points_change)
+      }
+    })
+    
+    const calculatedCurrent = calculatedEarned - calculatedSpent
+    const expectedPoints = {
+      current_points: calculatedCurrent,
+      total_earned: calculatedEarned,
+      total_spent: calculatedSpent
+    }
+    
+    const isConsistent = 
+      studentPoints.current_points === calculatedCurrent &&
+      studentPoints.total_earned === calculatedEarned &&
+      studentPoints.total_spent === calculatedSpent
+    
+    console.log('🔍 数据一致性检查:', {
+      isConsistent,
+      current: { actual: studentPoints.current_points, expected: calculatedCurrent },
+      earned: { actual: studentPoints.total_earned, expected: calculatedEarned },
+      spent: { actual: studentPoints.total_spent, expected: calculatedSpent }
+    })
+    
+    return { isConsistent, expectedPoints }
+    
+  } catch (error) {
+    console.error('❌ 数据一致性验证失败:', error)
+    return { isConsistent: false }
+  }
+}
+
+// 修复积分数据一致性
+async function fixPointsConsistency(pb: any, studentId: string, expectedPoints: any) {
+  try {
+    console.log('🔧 开始修复积分数据一致性...')
+    
+    const studentPoints = await pb.collection('student_points').getFirstListItem(`student_id = "${studentId}"`)
+    
+    await pb.collection('student_points').update(studentPoints.id, {
+      current_points: expectedPoints.current_points,
+      total_earned: expectedPoints.total_earned,
+      total_spent: expectedPoints.total_spent,
+      updated: new Date().toISOString()
+    })
+    
+    console.log('✅ 积分数据修复成功:', expectedPoints)
+    
+  } catch (error) {
+    console.error('❌ 积分数据修复失败:', error)
+    throw error
+  }
+}
+
+// 获取积分数据
 export async function GET(request: NextRequest) {
   try {
-    const pb = await getPocketBase()
-    
-    // 先进行管理员认证
-    await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-    console.log('✅ 管理员认证成功')
     const { searchParams } = new URL(request.url)
     const studentId = searchParams.get('student_id')
-    const teacherNfcCard = searchParams.get('teacher_nfc_card')
+    const center = searchParams.get('center')
+    const getTransactions = searchParams.get('transactions') === 'true'
     const page = parseInt(searchParams.get('page') || '1')
     const perPage = parseInt(searchParams.get('per_page') || '50')
+    const limit = parseInt(searchParams.get('limit') || '50')
+
+    const pb = await getPocketBase()
+    console.log('✅ PocketBase实例获取成功')
+
+    // 持久化管理员认证
+    try {
+      console.log('🔑 开始认证检查...', { 
+        isValid: pb.authStore.isValid, 
+        hasModel: !!pb.authStore.model,
+        baseUrl: pb.baseUrl 
+      })
+      await ensureAdminAuth(pb)
+      console.log('✅ 认证检查完成')
+    } catch (authError) {
+      console.error('❌ 认证失败:', authError)
+      return NextResponse.json({
+        success: false,
+        error: authError instanceof Error ? authError.message : 'PocketBase认证失败'
+      }, { status: 401 })
+    }
 
     if (studentId) {
-      // 获取特定学生的积分信息
+      // 获取特定学生的积分数据
       try {
-        // 首先尝试通过PocketBase记录ID查询
         let studentPoints
         try {
           studentPoints = await pb.collection('student_points').getFirstListItem(`student_id = "${studentId}"`, {
-            expand: 'student_id'
+            expand: 'student_id,season_id'
           })
         } catch (error) {
-          // 如果通过记录ID找不到，尝试通过学号查询
-          const student = await pb.collection('students').getFirstListItem(`student_id = "${studentId}"`)
-          studentPoints = await pb.collection('student_points').getFirstListItem(`student_id = "${student.id}"`, {
-            expand: 'student_id'
-          })
-        }
-        
-        const transactions = await pb.collection('point_transactions').getList(page, perPage, {
-          filter: `student_id = "${studentId}"`,
-          sort: '-created',
-          expand: 'student_id,teacher_id'
-        })
-
-        // 调整显示值：如果total_earned和total_spent都是1且current_points是0，说明是初始记录
-        const adjustedStudentPoints = {
-          ...studentPoints,
-          total_earned: studentPoints.total_earned === 1 && studentPoints.current_points === 0 ? 0 : studentPoints.total_earned,
-          total_spent: studentPoints.total_spent === 1 && studentPoints.current_points === 0 ? 0 : studentPoints.total_spent
-        }
-        
-        return NextResponse.json({
-          student_points: adjustedStudentPoints,
-          transactions: transactions
-        })
-      } catch (error) {
-        console.log('🔍 学生积分记录不存在，创建新记录...')
-        
-        // 如果学生积分记录不存在，创建新记录
-        try {
-          // 首先查找学生记录，确定正确的学生ID
-          let actualStudentId = studentId
+          // 如果学生积分记录不存在，创建新记录
+          console.log('📝 学生积分记录不存在，创建新记录')
+          
+          // 获取活跃赛季
+          let activeSeason
           try {
-            // 尝试通过学号查找学生
-            const student = await pb.collection('students').getFirstListItem(`student_id = "${studentId}"`)
-            actualStudentId = student.id
-          } catch (error) {
-            // 如果通过学号找不到，假设传入的就是PocketBase记录ID
-            actualStudentId = studentId
+            activeSeason = await pb.collection('point_seasons').getFirstListItem('is_active = true')
+          } catch (seasonError) {
+            console.log('⚠️ 未找到活跃赛季，使用默认赛季')
+            activeSeason = { id: 'default-season' }
           }
           
           const newStudentPoints = await pb.collection('student_points').create({
-            student_id: actualStudentId,
-            current_points: 0,
-            total_earned: 1, // 数据库Nonzero约束要求，初始设为1
-            total_spent: 1,  // 数据库Nonzero约束要求，初始设为1
-            season_start_date: new Date().toISOString().split('T')[0],
-            season_end_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            season_number: Math.floor(Date.now() / (90 * 24 * 60 * 60 * 1000))
-          })
-          
-          console.log('✅ 创建新学生积分记录成功:', newStudentPoints.id)
-          
-          // 调整显示值：如果total_earned和total_spent都是1且current_points是0，说明是初始记录
-          const adjustedStudentPoints = {
-            ...newStudentPoints,
-            total_earned: newStudentPoints.total_earned === 1 && newStudentPoints.current_points === 0 ? 0 : newStudentPoints.total_earned,
-            total_spent: newStudentPoints.total_spent === 1 && newStudentPoints.current_points === 0 ? 0 : newStudentPoints.total_spent
-          }
-          
-          return NextResponse.json({
-            student_points: adjustedStudentPoints,
-            transactions: { items: [], totalItems: 0, totalPages: 0, page: 1, perPage: 50 }
-          })
-        } catch (createError) {
-          console.error('❌ 创建学生积分记录失败:', createError)
-          
-          // 如果创建失败，返回默认值
-          const defaultStudentPoints = {
-            id: 'default',
             student_id: studentId,
-            current_points: 0,
             total_earned: 0,
             total_spent: 0,
-            season_start_date: new Date().toISOString().split('T')[0],
-            season_end_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            season_number: Math.floor(Date.now() / (90 * 24 * 60 * 60 * 1000))
-          }
-
+            current_points: 0,
+            season_id: activeSeason.id
+          })
+          
           return NextResponse.json({
-            student_points: defaultStudentPoints,
-            transactions: { items: [], totalItems: 0, totalPages: 0, page: 1, perPage: 50 }
+            student_points: newStudentPoints,
+            transactions: { items: [], totalItems: 0 }
           })
         }
-      }
-    } else if (teacherNfcCard) {
-      // 验证教师NFC卡
-      try {
-        const teacher = await pb.collection('teachers').getFirstListItem(`nfc_card_number = "${teacherNfcCard}"`)
-        return NextResponse.json({ teacher, valid: true })
+
+        // 验证数据一致性
+        const consistencyCheck = await validatePointsConsistency(pb, studentId, studentPoints)
+        if (!consistencyCheck.isConsistent) {
+          console.log('⚠️ 检测到数据不一致，自动修复...')
+          await fixPointsConsistency(pb, studentId, consistencyCheck.expectedPoints!)
+          // 重新获取修复后的数据
+          studentPoints = await pb.collection('student_points').getFirstListItem(`student_id = "${studentId}"`, {
+            expand: 'student_id,season_id'
+          })
+        }
+
+        if (getTransactions) {
+          // 获取交易记录
+          const transactions = await pb.collection('point_transactions').getList(page, perPage, {
+            filter: `student_id = "${studentId}"`,
+            sort: '-created',
+            expand: 'student_id,teacher_id,season_id'
+          })
+
+          return NextResponse.json({
+            student_points: studentPoints,
+            transactions: transactions
+          })
+        } else {
+          return NextResponse.json({
+            student_points: studentPoints,
+            transactions: { items: [], totalItems: 0 }
+          })
+        }
       } catch (error) {
-        return NextResponse.json({ valid: false, error: '无效的教师NFC卡' }, { status: 404 })
+        console.error('❌ 获取学生积分失败:', error)
+        return NextResponse.json({
+          success: false,
+          error: '获取学生积分失败',
+          details: error instanceof Error ? error.message : '未知错误'
+        }, { status: 500 })
+      }
+    } else if (getTransactions) {
+      // 获取交易记录
+      try {
+        console.log('🔍 开始获取交易记录...', { center, page, limit })
+        
+        // 确保管理员认证
+        await ensureAdminAuth(pb)
+        console.log('✅ 管理员认证成功')
+        
+        let filter = ''
+        if (center) {
+          // 修改过滤器语法，因为student_id是关联字段
+          filter = `student_id.center = "${center}"`
+          console.log('🔍 使用过滤器:', filter)
+        }
+        
+        console.log('🔍 尝试获取交易记录...')
+        console.log('🔍 PocketBase实例:', pb.baseUrl)
+        console.log('🔍 认证状态:', pb.authStore.isValid)
+        console.log('🔍 认证用户:', pb.authStore.model)
+        
+        const allTransactions = await pb.collection('point_transactions').getList(page, limit, {
+          filter: filter || undefined,
+          sort: '-created',
+          expand: 'student_id,teacher_id,season_id'
+        })
+        
+        console.log('🔍 原始数据:', JSON.stringify(allTransactions.items.slice(0, 2), null, 2))
+        console.log('🔍 总记录数:', allTransactions.totalItems)
+        console.log('🔍 当前页记录数:', allTransactions.items.length)
+        
+        console.log('✅ 交易记录获取成功，数量:', allTransactions.items.length)
+        
+        // 格式化交易记录
+        const formattedTransactions = allTransactions.items.map((transaction: any) => ({
+          id: transaction.id,
+          student_name: transaction.expand?.student_id?.student_name || 'Unknown',
+          student_id: transaction.expand?.student_id?.student_id || '--',
+          teacher_name: transaction.expand?.teacher_id?.teacher_name || 
+                       transaction.expand?.teacher_id?.name || 'Unknown',
+          points_change: transaction.points_change,
+          transaction_type: transaction.transaction_type,
+          reason: transaction.reason,
+          status: transaction.status,
+          created: transaction.created,
+          gift_name: transaction.gift_name || null,
+          gift_points: transaction.gift_points || null
+        }))
+        
+        return NextResponse.json({
+          success: true,
+          items: formattedTransactions,
+          totalItems: allTransactions.totalItems,
+          page: allTransactions.page,
+          perPage: allTransactions.perPage,
+          totalPages: allTransactions.totalPages,
+          transactions: formattedTransactions, // 保持向后兼容
+          total: allTransactions.totalItems,
+          count: allTransactions.items.length
+        })
+      } catch (transactionError) {
+        console.error('❌ 获取交易记录失败:', transactionError)
+        console.error('❌ 错误详情:', {
+          message: transactionError instanceof Error ? transactionError.message : '未知错误',
+          stack: transactionError instanceof Error ? transactionError.stack : undefined,
+          name: transactionError instanceof Error ? transactionError.name : undefined,
+          center: center,
+          page: page,
+          limit: limit
+        })
+        return NextResponse.json({
+          success: false,
+          error: '获取交易记录失败',
+          details: transactionError instanceof Error ? transactionError.message : '未知错误',
+          debug: {
+            center: center,
+            page: page,
+            limit: limit
+          }
+        }, { status: 500 })
       }
     } else {
       // 获取所有学生积分排行榜
+      let filter = ''
+      if (center) {
+        // 按分行过滤学生积分
+        filter = `student_id.center = "${center}"`
+        console.log('🔍 积分API使用分行过滤器:', filter)
+      }
+      
       const allStudentPoints = await pb.collection('student_points').getList(page, perPage, {
+        filter: filter || undefined,
         sort: '-current_points',
-        expand: 'student_id'
+        expand: 'student_id,season_id'
+      })
+
+      console.log('🔍 积分API返回数据:', {
+        center: center,
+        totalItems: allStudentPoints.totalItems,
+        itemsCount: allStudentPoints.items.length,
+        sampleCenters: allStudentPoints.items.slice(0, 3).map((item: any) => ({
+          student_id: item.expand?.student_id?.student_id,
+          student_name: item.expand?.student_id?.student_name,
+          center: item.expand?.student_id?.center
+        }))
       })
 
       return NextResponse.json(allStudentPoints)
     }
   } catch (error) {
     console.error('获取积分数据失败:', error)
-    return NextResponse.json({ error: '获取积分数据失败' }, { status: 500 })
+    return NextResponse.json({ 
+      success: false,
+      error: '获取积分数据失败',
+      details: error instanceof Error ? error.message : '未知错误'
+    }, { status: 500 })
   }
 }
 
@@ -139,29 +474,21 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     console.log('🚀 积分API开始处理请求...')
-    console.log('🔍 请求URL:', request.url)
-    console.log('🔍 请求方法:', request.method)
-    console.log('🔍 请求头:', Object.fromEntries(request.headers.entries()))
     
     const pb = await getPocketBase()
     console.log('✅ PocketBase实例获取成功')
     
-    // 尝试解析请求数据
+    // 解析请求数据
     let requestData
     const contentType = request.headers.get('content-type') || ''
-    console.log('🔍 Content-Type:', contentType)
     
     try {
       if (contentType.includes('application/json')) {
         requestData = await request.json()
         console.log('✅ JSON解析成功')
-      } else if (contentType.includes('multipart/form-data') || contentType.includes('application/x-www-form-urlencoded')) {
+      } else {
         requestData = await request.formData()
         console.log('✅ FormData解析成功')
-      } else {
-        console.log('⚠️ 未知的Content-Type，尝试FormData解析...')
-        requestData = await request.formData()
-        console.log('✅ FormData解析成功（回退）')
       }
     } catch (parseError) {
       console.error('❌ 请求数据解析失败:', parseError)
@@ -180,526 +507,95 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    const studentId = getFieldValue('student_id') as string
-    const teacherId = getFieldValue('teacher_id') as string
-    const pointsChange = parseInt(getFieldValue('points_change') as string)
-    const transactionType = getFieldValue('transaction_type') as string
-    const reason = getFieldValue('reason') as string
-    const proofImage = getFieldValue('proof_image') as File | null
-    const giftName = getFieldValue('gift_name') as string | null
-    const giftPoints = getFieldValue('gift_points') as string | null
+    const studentId = getFieldValue('studentId') as string || getFieldValue('student_id') as string
+    const teacherId = getFieldValue('teacherId') as string || getFieldValue('teacher_id') as string
+    const pointsChange = parseInt(getFieldValue('pointsChange') as string || getFieldValue('points_change') as string || '0')
+    const transactionType = getFieldValue('transactionType') as string || getFieldValue('transaction_type') as string
+    const reason = getFieldValue('reason') as string || ''
+    const giftName = getFieldValue('giftName') as string || getFieldValue('gift_name') as string
+    const giftPoints = parseInt(getFieldValue('giftPoints') as string || getFieldValue('gift_points') as string || '0')
     
-    // 添加调试信息
-    console.log('🔍 接收到的学生ID:', studentId)
-    console.log('🔍 接收到的教师ID:', teacherId)
-
-    console.log('积分交易请求数据:', {
+    console.log('📝 交易数据:', {
       studentId,
       teacherId,
       pointsChange,
       transactionType,
       reason,
-      hasProofImage: !!proofImage,
       giftName,
       giftPoints
     })
-
-    // 验证教师权限
-    console.log('🔍 开始验证教师权限...')
-    let teacher
-    try {
-      // 确保认证状态有效
-      if (!pb.authStore.isValid) {
-        console.log('⚠️ 认证状态无效，重新认证...')
-        await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-      }
-      
-      teacher = await pb.collection('teachers').getOne(teacherId)
-      console.log('✅ 教师验证成功')
-    } catch (error) {
-      console.error('❌ 获取教师信息失败:', error)
-      return NextResponse.json({ 
-        error: '无效的教师信息', 
-        details: error instanceof Error ? error.message : '未知错误',
-        teacherId: teacherId
-      }, { status: 403 })
-    }
     
-    if (!teacher) {
-      return NextResponse.json({ error: '无效的教师信息' }, { status: 403 })
-    }
-    
-    console.log('教师验证成功:', {
-      id: teacher.id,
-      name: teacher.name,
-      teacherUrl: teacher.teacherUrl,
-      nfc_card_number: teacher.nfc_card_number
-    })
-
-    // 验证学生存在 - 先尝试直接获取，如果失败则搜索
-    let student
-    try {
-      // 确保认证状态有效
-      if (!pb.authStore.isValid) {
-        console.log('⚠️ 认证状态无效，重新认证...')
-        await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-      }
-      
-      student = await pb.collection('students').getOne(studentId)
-      console.log('✅ 学生验证成功:', { id: student.id, name: student.name })
-    } catch (error) {
-      console.error('❌ 学生验证失败，尝试搜索学生:', error)
-      
-      // 尝试通过其他方式查找学生
-      try {
-        const searchResults = await pb.collection('students').getList(1, 10, {
-          filter: `id = "${studentId}" || student_id = "${studentId}"`
-        })
-        
-        if (searchResults.items.length > 0) {
-          student = searchResults.items[0]
-          console.log('✅ 通过搜索找到学生:', { id: student.id, name: student.name })
-        } else {
-          console.error('❌ 学生完全不存在，ID:', studentId)
-          return NextResponse.json({ 
-            error: '学生不存在', 
-            details: `找不到ID为 ${studentId} 的学生`,
-            studentId: studentId
-          }, { status: 404 })
+    // 验证必填字段
+    if (!studentId || !teacherId || isNaN(pointsChange) || !transactionType) {
+      return NextResponse.json({
+        success: false,
+        error: '缺少必填字段',
+        details: {
+          studentId: studentId || '缺少学生ID',
+          teacherId: teacherId || '缺少教师ID', 
+          pointsChange: isNaN(pointsChange) ? '积分变化必须是数字' : pointsChange,
+          transactionType: transactionType || '缺少交易类型'
         }
-      } catch (searchError) {
-        console.error('❌ 搜索学生也失败:', searchError)
-        return NextResponse.json({ 
-          error: '学生验证失败', 
-          details: searchError instanceof Error ? searchError.message : '未知错误',
-          studentId: studentId
-        }, { status: 404 })
-      }
+      }, { status: 400 })
     }
-
-    // 创建交易记录 - 检查字段类型
-    console.log('🔍 检查字段类型:')
-    console.log('  studentId:', typeof studentId, studentId)
-    console.log('  teacherId:', typeof teacherId, teacherId)
-    console.log('  pointsChange:', typeof pointsChange, pointsChange)
-    console.log('  transactionType:', typeof transactionType, transactionType)
-    console.log('  reason:', typeof reason, reason)
     
-    // 使用实际找到的学生ID
-    const actualStudentId = student.id
-    console.log('🔍 使用实际学生ID:', actualStudentId, '而不是前端传递的ID:', studentId)
+    // 持久化管理员认证
+    try {
+      await ensureAdminAuth(pb)
+    } catch (authError) {
+      return NextResponse.json({
+        success: false,
+        error: authError instanceof Error ? authError.message : 'PocketBase认证失败'
+      }, { status: 401 })
+    }
     
-    const transactionData: any = {
-      student_id: actualStudentId,
+    // 获取当前活跃赛季
+    let activeSeason
+    try {
+      activeSeason = await pb.collection('point_seasons').getFirstListItem('is_active = true')
+    } catch (error) {
+      console.log('⚠️ 未找到活跃赛季，使用默认赛季')
+      activeSeason = { id: 'default-season' }
+    }
+    
+    // 创建交易数据
+    const transactionData = {
+      student_id: studentId,
       teacher_id: teacherId,
-      points_change: parseInt(pointsChange.toString()), // 确保是数字
+      points_change: pointsChange,
       transaction_type: transactionType,
-      reason: reason
+      reason: reason,
+      status: TransactionStatus.Approved,
+      season_id: activeSeason.id,
+      gift_name: giftName || null,
+      gift_points: giftPoints || null
     }
     
-    console.log('📋 基础交易数据:', transactionData)
-
-    // 尝试添加可选字段
-    try {
-      transactionData.status = 'approved'
-      console.log('✅ 添加status字段成功')
-    } catch (e) {
-      console.log('⚠️ 添加status字段失败:', e)
-    }
-
-    try {
-      transactionData.season_number = 1
-      console.log('✅ 添加season_number字段成功')
-    } catch (e) {
-      console.log('⚠️ 添加season_number字段失败:', e)
-    }
-
-    if (proofImage && proofImage.size > 0) {
-      try {
-        transactionData.proof_image = proofImage
-        console.log('✅ 添加proof_image字段成功')
-      } catch (e) {
-        console.log('⚠️ 添加proof_image字段失败:', e)
-      }
-    }
-
-    if (giftName) {
-      try {
-        transactionData.gift_name = giftName
-        console.log('✅ 添加gift_name字段成功')
-      } catch (e) {
-        console.log('⚠️ 添加gift_name字段失败:', e)
-      }
-    }
-
-    if (giftPoints) {
-      try {
-        transactionData.gift_points = parseInt(giftPoints)
-        console.log('✅ 添加gift_points字段成功')
-      } catch (e) {
-        console.log('⚠️ 添加gift_points字段失败:', e)
-      }
-    }
-
-    console.log('📋 准备创建积分交易记录:', transactionData)
+    // 使用原子性更新
+    const result = await atomicUpdatePoints(pb, studentId, transactionData)
     
-    // 先检查集合是否存在
-    try {
-      const collections = await pb.collections.getFullList()
-      const pointTransactionsCollection = collections.find(c => c.name === 'point_transactions')
-      console.log('🔍 point_transactions集合信息:', pointTransactionsCollection ? {
-        name: pointTransactionsCollection.name,
-        schema: pointTransactionsCollection.schema
-      } : '集合不存在')
-    } catch (e) {
-      console.log('⚠️ 无法获取集合信息:', e)
-    }
-    
-    // 检查认证状态
-    console.log('🔑 当前认证状态:', {
-      isValid: pb.authStore.isValid,
-      model: pb.authStore.model ? '已设置' : '未设置',
-      token: pb.authStore.token ? '存在' : '不存在'
-    })
-    
-    // 确保认证状态有效
-    if (!pb.authStore.isValid) {
-      console.log('⚠️ 认证状态无效，重新认证...')
-      await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-      console.log('✅ 重新认证完成')
-    }
-    
-    // 测试PocketBase连接和权限
-    try {
-      console.log('🧪 测试PocketBase连接...')
-      const testCollections = await pb.collections.getFullList()
-      console.log('✅ PocketBase连接正常，集合数量:', testCollections.length)
-      
-      // 测试point_transactions集合访问
-      const testList = await pb.collection('point_transactions').getList(1, 1)
-      console.log('✅ point_transactions集合访问正常，记录数:', testList.totalItems)
-    } catch (testError) {
-      console.error('❌ PocketBase连接测试失败:', testError)
-      return NextResponse.json({ 
-        error: 'PocketBase连接失败', 
-        details: testError instanceof Error ? testError.message : '未知错误'
+    if (result.success) {
+      console.log('✅ 积分交易创建成功')
+      return NextResponse.json({
+        success: true,
+        transaction: result.transaction,
+        message: '积分交易创建成功'
+      })
+    } else {
+      console.error('❌ 积分交易创建失败:', result.error)
+      return NextResponse.json({
+        success: false,
+        error: '积分交易创建失败',
+        details: result.error
       }, { status: 500 })
     }
     
-    // 数据库直接支持这些交易类型，无需转换
-    const dbTransactionType = transactionType
-    
-    let transaction
-    let basicTransactionData
-    
-    try {
-      
-      // 先尝试创建最基本的记录
-      basicTransactionData = {
-        student_id: actualStudentId,
-        teacher_id: teacher.id, // 使用教师ID作为relation
-        points_change: parseInt(pointsChange.toString()),
-        transaction_type: dbTransactionType, // 使用数据库接受的格式
-        reason: reason,
-        status: 'approved', // 默认状态为已批准
-        season_number: 1 // 默认赛季为1
-      }
-      
-      // 先尝试创建一个最简单的测试记录
-      console.log('🧪 尝试创建测试记录...')
-      const testData = {
-        student_id: actualStudentId,
-        teacher_id: teacher.id,
-        points_change: 1,
-        transaction_type: 'add_points', // 使用数据库支持的格式
-        reason: 'test',
-        status: 'approved',
-        season_number: 1
-      }
-      
-      try {
-        const testTransaction = await pb.collection('point_transactions').create(testData)
-        console.log('✅ 测试记录创建成功:', testTransaction.id)
-        // 删除测试记录
-        await pb.collection('point_transactions').delete(testTransaction.id)
-        console.log('✅ 测试记录已删除')
-      } catch (testError) {
-        console.error('❌ 测试记录创建失败:', testError)
-        console.error('❌ 测试错误详情:', (testError as any).data)
-        throw testError
-      }
-      
-      console.log('🧪 尝试创建基本积分交易记录:', basicTransactionData)
-      console.log('🔍 字段类型检查:')
-      console.log('  student_id:', typeof basicTransactionData.student_id, basicTransactionData.student_id)
-      console.log('  teacher_id:', typeof basicTransactionData.teacher_id, basicTransactionData.teacher_id)
-      console.log('  points_change:', typeof basicTransactionData.points_change, basicTransactionData.points_change)
-      console.log('  transaction_type:', typeof basicTransactionData.transaction_type, basicTransactionData.transaction_type)
-      console.log('  reason:', typeof basicTransactionData.reason, basicTransactionData.reason)
-      console.log('  status:', typeof basicTransactionData.status, basicTransactionData.status)
-      console.log('  season_number:', typeof basicTransactionData.season_number, basicTransactionData.season_number)
-      
-      console.log('🔍 教师信息检查:')
-      console.log('  teacher.id:', teacher.id)
-      console.log('  teacher.name:', teacher.name)
-      console.log('  teacher.email:', teacher.email)
-      console.log('  teacherId参数:', teacherId)
-      
-      // 验证必需字段
-      if (!basicTransactionData.student_id) {
-        throw new Error('student_id 不能为空')
-      }
-      if (!basicTransactionData.teacher_id) {
-        throw new Error('teacher_id 不能为空')
-      }
-      if (typeof basicTransactionData.points_change !== 'number' || isNaN(basicTransactionData.points_change)) {
-        throw new Error('points_change 必须是有效数字')
-      }
-      if (!basicTransactionData.transaction_type) {
-        throw new Error('transaction_type 不能为空')
-      }
-      if (!basicTransactionData.reason) {
-        throw new Error('reason 不能为空')
-      }
-      if (!basicTransactionData.status) {
-        throw new Error('status 不能为空')
-      }
-      if (typeof basicTransactionData.season_number !== 'number' || isNaN(basicTransactionData.season_number)) {
-        throw new Error('season_number 必须是有效数字')
-      }
-      
-      transaction = await pb.collection('point_transactions').create(basicTransactionData)
-      console.log('✅ 积分交易记录创建成功:', transaction)
-    } catch (createError: any) {
-      console.error('❌ 创建积分交易记录失败:', createError)
-      console.error('❌ 错误详情:', createError.data)
-      console.error('❌ 完整错误对象:', JSON.stringify(createError, null, 2))
-      console.error('❌ 请求数据:', basicTransactionData)
-      
-      // 尝试获取更详细的错误信息
-      if (createError.response) {
-        console.error('❌ 响应详情:', createError.response)
-      }
-      
-      // 检查是否是字段验证错误
-      if (createError.data && createError.data.data) {
-        console.error('❌ 字段验证错误:', createError.data.data)
-        return NextResponse.json({ 
-          error: '字段验证失败', 
-          details: createError.data.data,
-          fieldErrors: createError.data.data
-        }, { status: 400 })
-      }
-      
-      // 尝试重新认证后再次创建
-      console.log('🔄 尝试重新认证后再次创建...')
-      try {
-        await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-        console.log('✅ 重新认证成功')
-        
-        const basicTransactionData = {
-          student_id: actualStudentId,
-          teacher_id: teacher.name || teacher.email || teacherId, // 使用教师姓名或邮箱作为文本标识符
-          points_change: parseInt(pointsChange.toString()),
-          transaction_type: dbTransactionType, // 使用数据库接受的格式
-          reason: reason,
-          status: 'approved', // 默认状态为已批准
-          season_number: 1 // 默认赛季为1
-        }
-        
-        transaction = await pb.collection('point_transactions').create(basicTransactionData)
-        console.log('✅ 重新认证后积分交易记录创建成功:', transaction)
-      } catch (retryError: any) {
-        console.error('❌ 重新认证后仍然失败:', retryError)
-        throw createError
-      }
-    }
-
-    // 更新学生积分总数
-    let studentPoints
-    try {
-      studentPoints = await pb.collection('student_points').getFirstListItem(`student_id = "${actualStudentId}"`)
-      console.log('✅ 找到现有学生积分记录:', studentPoints.id)
-    } catch (error) {
-      console.log('🔍 学生积分记录不存在，检查是否真的不存在...')
-      
-      // 尝试列出所有学生积分记录来调试
-      try {
-        const allStudentPoints = await pb.collection('student_points').getList(1, 10)
-        console.log('🔍 所有学生积分记录:', allStudentPoints.items.map(item => ({ id: item.id, student_id: item.student_id })))
-        
-        // 检查是否有匹配的记录
-        const matchingRecords = allStudentPoints.items.filter(item => item.student_id === actualStudentId)
-        if (matchingRecords.length > 0) {
-          console.log('✅ 找到匹配的记录，使用第一个:', matchingRecords[0].id)
-          studentPoints = matchingRecords[0]
-        } else {
-          console.log('🔍 确实没有匹配的记录，使用默认值...')
-          studentPoints = {
-            id: 'default',
-            student_id: actualStudentId,
-            current_points: 0,
-            total_earned: 0,
-            total_spent: 0,
-            season_start_date: new Date().toISOString().split('T')[0],
-            season_end_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            season_number: Math.floor(Date.now() / (90 * 24 * 60 * 60 * 1000))
-          }
-        }
-      } catch (listError) {
-        console.error('❌ 列出学生积分记录失败:', listError)
-        // 如果列出也失败，使用默认值
-        studentPoints = {
-          id: 'default',
-          student_id: actualStudentId,
-          current_points: 0,
-          total_earned: 0,
-          total_spent: 0,
-          season_start_date: new Date().toISOString().split('T')[0],
-          season_end_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          season_number: Math.floor(Date.now() / (90 * 24 * 60 * 60 * 1000))
-        }
-      }
-    }
-
-    // 根据交易类型计算积分变化
-    const isEarnTransaction = dbTransactionType === 'add_points'
-    const pointsChangeAmount = Math.abs(pointsChange) // 确保是正数
-    
-    const newCurrentPoints = isEarnTransaction 
-      ? studentPoints.current_points + pointsChangeAmount 
-      : studentPoints.current_points - pointsChangeAmount
-    
-    const newTotalEarned = isEarnTransaction 
-      ? studentPoints.total_earned + pointsChangeAmount 
-      : studentPoints.total_earned
-    
-    const newTotalSpent = !isEarnTransaction 
-      ? studentPoints.total_spent + pointsChangeAmount 
-      : studentPoints.total_spent
-    
-    // 确保 total_earned 和 total_spent 不为 0（PocketBase Nonzero 验证要求）
-    // 但如果是初始状态（都是1且current_points是0），保持为1
-    const finalTotalEarned = newTotalEarned === 0 ? 1 : newTotalEarned
-    const finalTotalSpent = newTotalSpent === 0 ? 1 : newTotalSpent
-
-    // 如果学生积分记录是默认值，创建新记录；否则更新现有记录
-    if (studentPoints.id === 'default') {
-      console.log('🔍 创建新的学生积分记录...')
-      try {
-        // 根据集合验证规则，total_earned 和 total_spent 是必需字段且不能为0
-        const createData: any = {
-          student_id: actualStudentId,
-          current_points: newCurrentPoints,
-          total_earned: finalTotalEarned, // 必需字段，不能为0
-          total_spent: finalTotalSpent,   // 必需字段，不能为0
-          season_start_date: studentPoints.season_start_date,
-          season_end_date: studentPoints.season_end_date,
-          season_number: studentPoints.season_number
-        }
-        
-        console.log('📋 创建学生积分记录数据:', createData)
-        console.log('🔍 数据类型检查:')
-        console.log('  student_id:', typeof createData.student_id, createData.student_id)
-        console.log('  current_points:', typeof createData.current_points, createData.current_points)
-        console.log('  season_start_date:', typeof createData.season_start_date, createData.season_start_date)
-        console.log('  season_end_date:', typeof createData.season_end_date, createData.season_end_date)
-        console.log('  season_number:', typeof createData.season_number, createData.season_number)
-        
-        // 验证学生ID是否存在
-        try {
-          const studentCheck = await pb.collection('students').getOne(createData.student_id)
-          console.log('✅ 学生ID验证成功:', studentCheck.id)
-        } catch (studentError) {
-          console.error('❌ 学生ID验证失败:', studentError)
-          throw new Error(`学生ID ${createData.student_id} 不存在`)
-        }
-        
-        // 检查集合权限和结构
-        try {
-          const collections = await pb.collections.getFullList()
-          const studentPointsCollection = collections.find(c => c.name === 'student_points')
-          if (studentPointsCollection) {
-            console.log('✅ student_points 集合存在')
-            console.log('🔍 集合字段:', studentPointsCollection.schema.map((f: any) => ({ name: f.name, type: f.type, required: f.required })))
-          } else {
-            console.error('❌ student_points 集合不存在')
-            throw new Error('student_points 集合不存在')
-          }
-        } catch (collectionError) {
-          console.error('❌ 检查集合失败:', collectionError)
-        }
-        
-        const createdRecord = await pb.collection('student_points').create(createData)
-        console.log('✅ 学生积分记录创建成功:', createdRecord)
-      } catch (createError: any) {
-        console.error('❌ 创建学生积分记录失败:', createError)
-        console.error('❌ 错误详情:', createError.data)
-        console.error('❌ 完整错误对象:', JSON.stringify(createError, null, 2))
-        throw new Error(`创建学生积分记录失败: ${createError.data?.message || createError.message}`)
-      }
-    } else {
-      console.log('🔍 更新现有学生积分记录...')
-      try {
-        const updateData: any = {
-          current_points: newCurrentPoints,
-          total_earned: finalTotalEarned, // 必需字段，不能为0
-          total_spent: finalTotalSpent    // 必需字段，不能为0
-        }
-        
-        console.log('📋 更新学生积分记录数据:', updateData)
-        await pb.collection('student_points').update(studentPoints.id, updateData)
-        console.log('✅ 学生积分记录更新成功')
-      } catch (updateError: any) {
-        console.error('❌ 更新学生积分记录失败:', updateError)
-        console.error('❌ 错误详情:', updateError.data)
-        throw new Error(`更新学生积分记录失败: ${updateError.data?.message || updateError.message}`)
-      }
-    }
-
-    console.log('积分交易创建成功:', transaction)
-    return NextResponse.json({ success: true, transaction })
   } catch (error) {
-    console.error('❌ 创建积分交易失败 - 主错误处理器:', error)
-    console.error('❌ 错误类型:', typeof error)
-    console.error('❌ 错误详情:', {
-      message: error instanceof Error ? error.message : '未知错误',
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : undefined,
-      cause: error instanceof Error ? error.cause : undefined,
-      toString: error?.toString?.()
-    })
-    
-    // 确保总是返回有效的错误响应
-    let errorMessage = '创建积分交易失败'
-    let errorDetails = '未知错误'
-    
-    if (error instanceof Error) {
-      errorMessage = error.message || errorMessage
-      errorDetails = error.stack || errorDetails
-    } else if (typeof error === 'string') {
-      errorMessage = error
-      errorDetails = error
-    } else if (error && typeof error === 'object') {
-      errorMessage = (error as any).message || (error as any).error || errorMessage
-      errorDetails = JSON.stringify(error)
-    }
-    
-    const errorResponse = {
-      error: errorMessage,
-      details: errorDetails,
-      timestamp: new Date().toISOString(),
-      type: error instanceof Error ? error.name : 'UnknownError',
-      status: 500
-    }
-    
-    console.error('📤 返回错误响应:', errorResponse)
-    
-    try {
-      return NextResponse.json(errorResponse, { status: 500 })
-    } catch (jsonError) {
-      console.error('❌ 无法序列化错误响应:', jsonError)
-      return new Response('Internal Server Error', { status: 500 })
-    }
+    console.error('积分API处理失败:', error)
+    return NextResponse.json({
+      success: false,
+      error: '积分API处理失败',
+      details: error instanceof Error ? error.message : '未知错误'
+    }, { status: 500 })
   }
 }

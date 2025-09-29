@@ -1,5 +1,5 @@
 import { useSearchParams } from "next/navigation"
-import { ThemeColors } from "./types"
+import { ThemeColors } from "../types"
 
 export function useTheme() {
   const searchParams = useSearchParams()

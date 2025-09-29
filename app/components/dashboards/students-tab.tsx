@@ -14,6 +14,9 @@ import {
   Trash2,
   FileSpreadsheet,
   UserPlus,
+  Users,
+  CheckCircle,
+  GraduationCap,
 } from "lucide-react"
 import { useStudents } from "@/hooks/useStudents"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
@@ -148,16 +151,89 @@ export default function StudentsTab({
     }
   }
 
+  // 计算统计数据
+  const stats = useMemo(() => {
+    const activeStudents = students.filter(s => s.status === 'active').length
+    const primaryStudents = students.filter(s => {
+      const grade = s.standard || ''
+      return grade.includes('一年级') || grade.includes('二年级') || grade.includes('三年级') || 
+             grade.includes('四年级') || grade.includes('五年级') || grade.includes('六年级') ||
+             grade === '1' || grade === '2' || grade === '3' || grade === '4' || grade === '5' || grade === '6'
+    }).length
+    const secondaryStudents = students.filter(s => {
+      const grade = s.standard || ''
+      return grade.includes('初一') || grade.includes('初二') || grade.includes('初三') || 
+             grade.includes('高一') || grade.includes('高二') || grade.includes('高三') ||
+             grade === '7' || grade === '8' || grade === '9' || grade === '10' || grade === '11' || grade === '12'
+    }).length
+    
+    return {
+      total: students.length,
+      active: activeStudents,
+      primary: primaryStudents,
+      secondary: secondaryStudents
+    }
+  }, [students])
+
   return (
     <div className="space-y-6">
-      {/* 标题和概览 */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">学生管理</h2>
-            <p className="text-gray-600">统一管理学生基本资料和打卡数据</p>
-          </div>
-        </div>
+      {/* 统计卡片 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">总学生数</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+              </div>
+              <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">在读学生</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
+              </div>
+              <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">小学生</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.primary}</p>
+              </div>
+              <div className="h-12 w-12 bg-orange-100 rounded-full flex items-center justify-center">
+                <GraduationCap className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">中学生</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.secondary}</p>
+              </div>
+              <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <GraduationCap className="h-6 w-6 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* 学生列表 */}
@@ -244,24 +320,45 @@ export default function StudentsTab({
               </TableHeader>
               <TableBody>
                 {paginatedStudents.map((student: any) => (
-                  <TableRow key={student.id}>
+                  <TableRow key={student.id} className="hover:bg-gray-50">
                     <TableCell>
-                      <div>
-                        <div className="font-medium">{student.student_name}</div>
-                        <div className="text-sm text-gray-500">学号: {student.student_id}</div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                          {student.student_name?.charAt(0) || 'S'}
+                        </div>
+                        <div>
+                          <div className="font-medium">{student.student_name}</div>
+                          <div className="text-sm text-gray-500">学号: {student.student_id}</div>
+                        </div>
+                        {student.status && (
+                          <Badge 
+                            variant={student.status === 'active' ? 'default' : 'secondary'}
+                            className={`text-xs ${
+                              student.status === 'active' 
+                                ? 'bg-green-100 text-green-800 border-green-200' 
+                                : 'bg-gray-100 text-gray-800 border-gray-200'
+                            }`}
+                          >
+                            {student.status === 'active' ? '在读' : '离校'}
+                          </Badge>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{convertGradeToChinese(student.standard || '')}</Badge>
+                      <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200">
+                        {convertGradeToChinese(student.standard || '')}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">{student.school || '-'}</div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{student.center || '未知'}</Badge>
+                      <Badge variant="secondary" className="bg-purple-50 text-purple-800 border-purple-200">
+                        {student.center || '未知'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">
+                      <Badge variant="outline" className="bg-orange-50 text-orange-800 border-orange-200">
                         {student.serviceType === 'afterschool' ? '安亲' : student.serviceType === 'tuition' ? '补习' : `未知(${student.serviceType})`}
                       </Badge>
                     </TableCell>

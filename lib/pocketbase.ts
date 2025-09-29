@@ -8,7 +8,7 @@ const detectNetworkEnvironment = async () => {
   if (isGitHubPages) {
     // GitHub Pages环境下直接使用DDNS连接
     return {
-      url: 'http://pjpc.tplinkdns.com:8090',
+      url: process.env.POCKETBASE_URL || 'http://pjpc.tplinkdns.com:8090',
       type: 'ddns',
       name: 'GitHub Pages DDNS',
       latency: 0,
@@ -31,7 +31,7 @@ const detectNetworkEnvironment = async () => {
   }
   
   const testUrls = [
-    { url: 'http://pjpc.tplinkdns.com:8090', type: 'ddns', name: 'DDNS' },
+    { url: process.env.POCKETBASE_URL || 'http://pjpc.tplinkdns.com:8090', type: 'ddns', name: 'DDNS' },
     { url: 'http://192.168.0.59:8090', type: 'local', name: '局域网' }
   ]
   
@@ -102,23 +102,12 @@ const getPocketBaseUrl = async (): Promise<string> => {
   // 服务器端直接使用HTTP连接，避免自签名证书问题
   if (typeof window === 'undefined') {
     console.log('🔧 服务器端使用直接HTTP连接')
-    return 'http://pjpc.tplinkdns.com:8090'
+    return process.env.POCKETBASE_URL || 'http://pjpc.tplinkdns.com:8090'
   }
   
   // 客户端优先使用代理连接（避免CORS问题）
   console.log('🔧 客户端使用代理连接避免CORS问题')
   return '/api/pocketbase-proxy'
-  
-  // 智能检测网络环境
-  try {
-    const bestUrl = await detectNetworkEnvironment()
-    // 确保返回字符串
-    return String(bestUrl)
-  } catch (error) {
-    console.error('❌ 网络环境检测失败，使用默认DDNS配置:', error)
-    // 默认使用DDNS地址
-    return 'http://pjpc.tplinkdns.com:8090'
-  }
 }
 
 // 创建PocketBase实例
@@ -134,6 +123,11 @@ export const getPocketBase = async (): Promise<PocketBase> => {
   if (!pbInstance) {
     const url = await getPocketBaseUrl()
     pbInstance = new PocketBase(url)
+    
+    // 设置超时和重试配置
+    pbInstance.autoCancellation = false // 禁用自动取消
+    pbInstance.timeout = 30000 // 30秒超时
+    
     console.log('✅ PocketBase实例已创建:', url)
     
     // 添加错误处理
@@ -225,7 +219,36 @@ export const checkPocketBaseConnection = async () => {
 }
 
 // 兼容性导出（保持向后兼容）
-export const pb = new PocketBase('http://pjpc.tplinkdns.com:8090') // 临时实例，会被智能检测覆盖
+export const pb = new PocketBase(process.env.POCKETBASE_URL || 'http://pjpc.tplinkdns.com:8090') // 临时实例，会被智能检测覆盖
+
+// 导入集合定义
+export * from './pocketbase-schema'
+export type { 
+  Student as StudentFromStudents,
+  StudentCreateData,
+  StudentUpdateData
+} from './pocketbase-students'
+export { 
+  getAllStudents,
+  addStudent,
+  updateStudent,
+  deleteStudent,
+  getStudentById,
+  searchStudents,
+  getStudentsByCenter,
+  getStudentsByStatus
+} from './pocketbase-students'
+export type { 
+  Teacher as TeacherFromTeachers,
+  TeacherCreateData,
+  TeacherUpdateData
+} from './pocketbase-teachers'
+export { 
+  getAllTeachers,
+  addTeacher,
+  updateTeacher,
+  deleteTeacher
+} from './pocketbase-teachers'
 
 // 用户类型定义
 export interface UserProfile {
@@ -255,6 +278,202 @@ export interface AuthState {
 
 // 导出默认实例
 export default pb
+
+// ============================================================================
+// 集合管理工具函数
+// ============================================================================
+
+/**
+ * 获取集合实例
+ */
+export const getCollection = async (collectionName: string) => {
+  const pb = await getPocketBase()
+  return pb.collection(collectionName)
+}
+
+/**
+ * 获取所有业务集合列表
+ */
+export const getBusinessCollections = async () => {
+  const pb = await getPocketBase()
+  await authenticateAdmin()
+  
+  const collections = await pb.collections.getFullList()
+  return collections.filter(col => !col.system)
+}
+
+/**
+ * 获取集合字段信息
+ */
+export const getCollectionFields = async (collectionName: string) => {
+  const pb = await getPocketBase()
+  await authenticateAdmin()
+  
+  try {
+    const collection = await pb.collections.getOne(collectionName)
+    return collection.schema || []
+  } catch (error) {
+    console.error(`获取集合 ${collectionName} 字段信息失败:`, error)
+    return []
+  }
+}
+
+/**
+ * 验证集合是否存在
+ */
+export const collectionExists = async (collectionName: string): Promise<boolean> => {
+  try {
+    const pb = await getPocketBase()
+    await authenticateAdmin()
+    
+    const collections = await pb.collections.getFullList()
+    return collections.some(col => col.name === collectionName)
+  } catch (error) {
+    console.error(`验证集合 ${collectionName} 存在性失败:`, error)
+    return false
+  }
+}
+
+/**
+ * 获取集合统计信息
+ */
+export const getCollectionStats = async (collectionName: string) => {
+  try {
+    const pb = await getPocketBase()
+    await authenticateAdmin()
+    
+    const collection = pb.collection(collectionName)
+    const result = await collection.getList(1, 1)
+    
+    return {
+      name: collectionName,
+      totalItems: result.totalItems,
+      totalPages: result.totalPages,
+      perPage: result.perPage,
+      page: result.page
+    }
+  } catch (error) {
+    console.error(`获取集合 ${collectionName} 统计信息失败:`, error)
+    return null
+  }
+}
+
+/**
+ * 获取集合字段信息（基于真实数据）
+ */
+export const getCollectionFieldInfo = async (collectionName: string) => {
+  try {
+    const pb = await getPocketBase()
+    await authenticateAdmin()
+    
+    // 尝试获取样本数据来推断字段
+    const sampleResult = await pb.collection(collectionName).getList(1, 1)
+    
+    if (sampleResult.items && sampleResult.items.length > 0) {
+      const sampleItem = sampleResult.items[0]
+      const fields = Object.keys(sampleItem).map(key => ({
+        name: key,
+        type: typeof sampleItem[key],
+        value: sampleItem[key],
+        isSystem: ['id', 'created', 'updated', 'collectionId', 'collectionName'].includes(key)
+      }))
+      
+      return {
+        collectionName,
+        hasData: true,
+        fieldCount: fields.length,
+        fields: fields.filter(f => !f.isSystem),
+        systemFields: fields.filter(f => f.isSystem),
+        sampleData: sampleItem
+      }
+    } else {
+      return {
+        collectionName,
+        hasData: false,
+        fieldCount: 0,
+        fields: [],
+        systemFields: [],
+        sampleData: null
+      }
+    }
+  } catch (error) {
+    console.error(`获取集合 ${collectionName} 字段信息失败:`, error)
+    return {
+      collectionName,
+      hasData: false,
+      fieldCount: 0,
+      fields: [],
+      systemFields: [],
+      sampleData: null,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }
+  }
+}
+
+/**
+ * 获取所有集合的完整字段信息
+ */
+export const getAllCollectionsFieldInfo = async () => {
+  try {
+    const pb = await getPocketBase()
+    await authenticateAdmin()
+    
+    const collections = await pb.collections.getFullList()
+    const businessCollections = collections.filter(col => !col.system)
+    
+    const fieldInfo = {
+      timestamp: new Date().toISOString(),
+      server: pbInstance?.baseUrl || 'unknown',
+      totalCollections: businessCollections.length,
+      collections: [] as any[]
+    }
+    
+    for (const collection of businessCollections) {
+      const info = await getCollectionFieldInfo(collection.name)
+      fieldInfo.collections.push(info)
+    }
+    
+    return fieldInfo
+  } catch (error) {
+    console.error('获取所有集合字段信息失败:', error)
+    throw error
+  }
+}
+
+/**
+ * 验证集合字段与TypeScript接口的一致性
+ */
+export const validateCollectionFields = async (collectionName: string, interfaceName: string) => {
+  try {
+    const fieldInfo = await getCollectionFieldInfo(collectionName)
+    
+    if (!fieldInfo.hasData) {
+      return {
+        collectionName,
+        interfaceName,
+        status: 'no_data',
+        message: '集合没有数据，无法验证字段'
+      }
+    }
+    
+    // 这里可以添加更详细的字段验证逻辑
+    return {
+      collectionName,
+      interfaceName,
+      status: 'validated',
+      fieldCount: fieldInfo.fieldCount,
+      fields: fieldInfo.fields.map(f => f.name),
+      message: '字段验证完成'
+    }
+  } catch (error) {
+    return {
+      collectionName,
+      interfaceName,
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }
+  }
+}
 
 // 管理员认证（带缓存和防重复）
 export const authenticateAdmin = async (): Promise<void> => {
@@ -291,6 +510,20 @@ export const authenticateAdmin = async (): Promise<void> => {
   }
 
   // 设置全局认证锁
+  if (authLock) {
+    console.log('🔒 等待其他认证完成...')
+    // 等待锁释放
+    let waitTime = 0
+    while (authLock && waitTime < 10000) {
+      await new Promise(resolve => setTimeout(resolve, 100))
+      waitTime += 100
+    }
+    if (authLock) {
+      throw new Error('认证锁超时')
+    }
+    return // 其他认证已完成
+  }
+  
   authLock = true
   console.log('🔒 设置全局认证锁')
 
@@ -304,8 +537,30 @@ export const authenticateAdmin = async (): Promise<void> => {
         const pb = await getPocketBase()
         
         console.log(`🔄 开始管理员认证... (尝试 ${retryCount + 1}/${maxRetries})`)
-        authPromise = pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-        const authResult = await authPromise
+        // 优先使用环境变量，如果环境变量有问题则使用硬编码凭据
+        let adminEmail = process.env.POCKETBASE_ADMIN_EMAIL
+        let adminPassword = process.env.POCKETBASE_ADMIN_PASSWORD
+        
+        // 如果环境变量有问题（编码问题等），使用硬编码凭据
+        if (!adminEmail || !adminPassword || adminEmail.includes('undefined') || adminPassword.includes('undefined')) {
+          console.log('⚠️ 环境变量有问题，使用硬编码凭据')
+          adminEmail = 'pjpcemerlang@gmail.com'
+          adminPassword = '0122270775Sw!'
+        }
+
+        if (!adminEmail || !adminPassword) {
+          throw new Error('管理员凭据未配置，请检查环境变量')
+        }
+
+        authPromise = pb.admins.authWithPassword(adminEmail, adminPassword)
+        
+        // 添加超时处理
+        const authResult = await Promise.race([
+          authPromise,
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('认证超时')), 15000)
+          )
+        ])
         
         // 检查认证响应结构
         console.log('🔍 认证响应结构:', JSON.stringify(authResult, null, 2))

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPocketBase, authenticateAdmin } from '@/lib/pocketbase'
+import { getPocketBase } from '@/lib/pocketbase'
+import { authenticateAdmin } from '@/lib/auth-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,25 +14,39 @@ export async function GET(request: NextRequest) {
     const center = searchParams.get('center')
     const status = searchParams.get('status')
 
-    await authenticateAdmin()
+    await authenticateAdmin(pb)
 
     let filter = ''
     const conditions = []
     if (teacherId) conditions.push(`teacher_id = "${teacherId}"`)
-    if (center) conditions.push(`center = "${center}"`)
+    if (center) conditions.push(`center.name = "${center}"`)
     if (status) conditions.push(`status = "${status}"`)
 
     if (conditions.length > 0) {
       filter = conditions.join(' && ')
     }
 
-    const classes = await pb.collection('classes').getList(page, perPage, {
-      filter,
-      sort: '-created',
-      expand: 'course_id,teacher_id'
-    })
+    try {
+      const classes = await pb.collection('classes').getList(page, perPage, {
+        filter,
+        sort: '-created',
+        expand: 'course_id,teacher_id'
+      })
 
-    return NextResponse.json({ success: true, data: classes })
+      return NextResponse.json({ success: true, data: classes })
+    } catch (collectionError: any) {
+      console.log('⚠️ classes 集合可能不存在，返回空结果')
+      return NextResponse.json({ 
+        success: true, 
+        data: { 
+          items: [], 
+          totalItems: 0, 
+          totalPages: 0, 
+          page: 1, 
+          perPage: 50 
+        } 
+      })
+    }
   } catch (error) {
     console.error('❌ 获取班级列表失败:', error)
     return NextResponse.json(
@@ -57,7 +72,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    await authenticateAdmin()
+    await authenticateAdmin(pb)
 
     const classData = {
       name,
@@ -95,7 +110,7 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    await authenticateAdmin()
+    await authenticateAdmin(pb)
 
     const classRecord = await pb.collection('classes').update(id, updateData)
     return NextResponse.json({ success: true, data: classRecord })
@@ -121,7 +136,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await authenticateAdmin()
+    await authenticateAdmin(pb)
 
     await pb.collection('classes').delete(id)
     return NextResponse.json({ success: true })

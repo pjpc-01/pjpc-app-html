@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useStudents } from "@/hooks/useStudents"
+import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -35,6 +36,7 @@ interface StudentProfileViewProps {
 
 export default function StudentProfileView({ teacherId }: StudentProfileViewProps) {
   const { students, loading, error } = useStudents()
+  const { teacher } = useCurrentTeacher()
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCenter, setSelectedCenter] = useState("all")
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null)
@@ -43,6 +45,11 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
   // 过滤学生数据
   useEffect(() => {
     let filtered = students
+
+    // 如果教师有分配的分行，只显示该分行的学生
+    if (teacher?.center_assignment) {
+      filtered = filtered.filter((student: any) => student.center === teacher.center_assignment)
+    }
 
     // 按搜索词过滤
     if (searchTerm) {
@@ -53,13 +60,13 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
       )
     }
 
-    // 按中心过滤
-    if (selectedCenter !== "all") {
+    // 按中心过滤（如果教师没有分配分行，则允许选择中心）
+    if (selectedCenter !== "all" && !teacher?.center_assignment) {
       filtered = filtered.filter((student: any) => student.center === selectedCenter)
     }
 
     setFilteredStudents(filtered)
-  }, [students, searchTerm, selectedCenter])
+  }, [students, searchTerm, selectedCenter, teacher?.center_assignment])
 
   // 获取中心列表
   const centers = Array.from(new Set(students.map((s: any) => s.center).filter(Boolean)))
@@ -120,7 +127,14 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
       {/* 页面标题 */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">学生档案查看</h2>
-        <p className="text-gray-600">查看学生详细信息、紧急联络、健康状况等档案资料</p>
+        <p className="text-gray-600">
+          查看学生详细信息、紧急联络、健康状况等档案资料
+          {teacher?.center_assignment && (
+            <span className="ml-2 text-blue-600 font-medium">
+              (负责分行: {teacher.center_assignment})
+            </span>
+          )}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -146,19 +160,32 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
                   />
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-gray-400" />
-                  <select
-                    value={selectedCenter}
-                    onChange={(e) => setSelectedCenter(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  >
-                    <option value="all">所有中心</option>
-                    {centers.map((center: any) => (
-                      <option key={center} value={center}>{center}</option>
-                    ))}
-                  </select>
-                </div>
+                {/* 如果教师没有分配分行，显示中心选择器 */}
+                {!teacher?.center_assignment && (
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-gray-400" />
+                    <select
+                      value={selectedCenter}
+                      onChange={(e) => setSelectedCenter(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="all">所有中心</option>
+                      {centers.map((center: any) => (
+                        <option key={center} value={center}>{center}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                
+                {/* 如果教师有分配分行，显示分行信息 */}
+                {teacher?.center_assignment && (
+                  <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-md">
+                    <Filter className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm text-blue-800 font-medium">
+                      负责分行: {teacher.center_assignment}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* 学生列表 */}

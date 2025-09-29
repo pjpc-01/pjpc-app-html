@@ -5,21 +5,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import PageLayout from "@/components/layouts/PageLayout"
+import TabbedPage from "@/components/layouts/TabbedPage"
+import StatsGrid from "@/components/ui/StatsGrid"
 import {
-  CreditCard,
   Smartphone,
   Activity,
   BarChart3,
   Zap,
   Scan,
   Plus,
-  Settings
+  Settings,
+  AlertTriangle,
+  CreditCard
 } from "lucide-react"
-import CardManagement from "@/app/components/systems/CardManagement"
 import DeviceManagement from "@/app/components/systems/DeviceManagement"
 import AttendanceRecords from "@/app/components/systems/AttendanceRecords"
 import ReadWriteDialog from "@/app/components/systems/ReadWriteDialog"
+import CardReplacementManager from "@/app/components/systems/CardReplacementManager"
+import IntegratedCardManager from "@/app/components/systems/IntegratedCardManager"
 
 // 类型定义
 interface AttendanceRecord {
@@ -211,225 +215,161 @@ export default function UnifiedAttendanceSystem() {
     document.body.removeChild(link)
   }
 
+  const dashboardStats = [
+    {
+      title: "在线设备",
+      value: devices.filter(d => d.status === 'online').length,
+      icon: Smartphone,
+      color: "bg-blue-100",
+      description: "当前在线设备数"
+    },
+    {
+      title: "今日打卡",
+      value: attendanceRecords.filter(r => new Date(r.timestamp).toDateString() === new Date().toDateString()).length,
+      icon: Activity,
+      color: "bg-green-100",
+      description: "今日打卡记录数"
+    },
+    {
+      title: "总记录数",
+      value: attendanceRecords.length,
+      icon: BarChart3,
+      color: "bg-purple-100",
+      description: "历史记录总数"
+    },
+    {
+      title: "活跃用户",
+      value: new Set(attendanceRecords.map(r => r.studentId)).size,
+      icon: Zap,
+      color: "bg-orange-100",
+      description: "活跃用户数量"
+    }
+  ]
+
+  const tabs = [
+    {
+      id: 'dashboard',
+      label: '仪表板',
+      icon: BarChart3,
+      content: (
+        <div className="space-y-6">
+          {/* 统计卡片 */}
+          <StatsGrid stats={dashboardStats} columns={4} />
+          
+          {/* 其他仪表板内容 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  今日打卡记录
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {attendanceRecords.filter(r => new Date(r.timestamp).toDateString() === new Date().toDateString()).slice(0, 5).map((record) => (
+                    <div key={record.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-sm">{record.studentName}</span>
+                      <span className="text-xs text-gray-500">{record.timestamp}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Smartphone className="h-5 w-5" />
+                  设备状态
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {devices.map((device) => (
+                    <div key={device.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-sm">{device.name}</span>
+                      <Badge variant={device.status === 'online' ? 'default' : 'secondary'}>
+                        {device.status === 'online' ? '在线' : '离线'}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'devices',
+      label: '设备管理',
+      icon: Smartphone,
+      content: (
+        <DeviceManagement
+          devices={devices}
+          onUpdateDevices={setDevices}
+          onExportDevices={() => exportToCSV(devices, 'devices')}
+          onAddDevice={() => setDeviceDialog(true)}
+          onEditDevice={(device) => {
+            console.log('编辑设备:', device)
+          }}
+        />
+      )
+    },
+    {
+      id: 'replacement',
+      label: '申请补办',
+      icon: AlertTriangle,
+      content: (
+        <CardReplacementManager
+          center="WX 01"
+          onReplacementCreated={(replacement) => {
+            console.log('补办申请已创建:', replacement)
+          }}
+          onError={(error) => {
+            console.error('补办申请错误:', error)
+            setError(error)
+          }}
+        />
+      )
+    },
+    {
+      id: 'records',
+      label: '打卡记录',
+      icon: Activity,
+      content: (
+        <AttendanceRecords
+          records={attendanceRecords}
+          onUpdateRecords={setAttendanceRecords}
+          onExportRecords={() => exportToCSV(attendanceRecords, 'attendance_records')}
+        />
+      )
+    }
+  ]
+
   return (
-    <div className="space-y-6">
+    <PageLayout
+      title="统一考勤系统"
+      description="NFC/RFID卡片考勤管理、设备监控、打卡记录"
+      userRole="admin"
+      status="系统正常"
+      background="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100"
+    >
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="dashboard" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            仪表板
-          </TabsTrigger>
-          <TabsTrigger value="cards" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            卡片管理
-          </TabsTrigger>
-          <TabsTrigger value="devices" className="flex items-center gap-2">
-            <Smartphone className="h-4 w-4" />
-            设备管理
-          </TabsTrigger>
-          <TabsTrigger value="records" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            打卡记录
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={activeTab} className="mt-6">
-          {activeTab === "dashboard" && (
-            <div className="space-y-6">
-              {/* 统计卡片 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">总卡片数</p>
-                        <p className="text-2xl font-bold text-blue-600">{stats.totalCards}</p>
-                      </div>
-                      <CreditCard className="h-8 w-8 text-blue-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">在线设备</p>
-                        <p className="text-2xl font-bold text-green-600">{stats.onlineDevices}</p>
-                      </div>
-                      <Smartphone className="h-8 w-8 text-green-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">今日签到</p>
-                        <p className="text-2xl font-bold text-purple-600">{stats.todayCheckins}</p>
-                      </div>
-                      <Activity className="h-8 w-8 text-purple-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">系统健康度</p>
-                        <p className="text-2xl font-bold text-orange-600">{stats.systemHealth}%</p>
-                      </div>
-                      <BarChart3 className="h-8 w-8 text-orange-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* 快速操作 */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Zap className="h-5 w-5" />
-                    快速操作
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Button 
-                      onClick={() => setReadWriteDialog(true)} 
-                      className="flex items-center gap-2 h-16"
-                      variant="outline"
-                    >
-                      <Scan className="h-6 w-6" />
-                      <div className="text-left">
-                        <div className="font-medium">读写卡片</div>
-                        <div className="text-sm text-gray-500">读取或写入NFC/RFID卡片</div>
-                      </div>
-                    </Button>
-
-                    <Button 
-                      onClick={() => setCardDialog(true)} 
-                      className="flex items-center gap-2 h-16"
-                      variant="outline"
-                    >
-                      <Plus className="h-6 w-6" />
-                      <div className="text-left">
-                        <div className="font-medium">添加卡片</div>
-                        <div className="text-sm text-gray-500">注册新的NFC/RFID卡片</div>
-                      </div>
-                    </Button>
-
-                    <Button 
-                      onClick={() => setDeviceDialog(true)} 
-                      className="flex items-center gap-2 h-16"
-                      variant="outline"
-                    >
-                      <Settings className="h-6 w-6" />
-                      <div className="text-left">
-                        <div className="font-medium">添加设备</div>
-                        <div className="text-sm text-gray-500">配置新的读卡器设备</div>
-                      </div>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {activeTab === "cards" && (
-            <CardManagement
-              cards={cards}
-              onUpdateCards={setCards}
-              onExportCards={() => exportToCSV(cards, 'cards')}
-              onAddCard={() => setCardDialog(true)}
-              onEditCard={(card) => {
-                // 处理编辑卡片逻辑
-                console.log('编辑卡片:', card)
-              }}
-              onScanCard={() => setReadWriteDialog(true)}
-            />
-          )}
-
-          {activeTab === "devices" && (
-            <DeviceManagement
-              devices={devices}
-              onUpdateDevices={setDevices}
-              onExportDevices={() => exportToCSV(devices, 'devices')}
-              onAddDevice={() => setDeviceDialog(true)}
-              onEditDevice={(device) => {
-                // 处理编辑设备逻辑
-                console.log('编辑设备:', device)
-              }}
-            />
-          )}
-
-          {activeTab === "records" && (
-            <AttendanceRecords
-              records={attendanceRecords}
-              onUpdateRecords={setAttendanceRecords}
-              onExportRecords={() => exportToCSV(attendanceRecords, 'attendance_records')}
-            />
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* 读写卡片对话框 */}
-      <ReadWriteDialog
-        open={readWriteDialog}
-        onOpenChange={setReadWriteDialog}
+      <TabbedPage
+        tabs={tabs}
+        defaultTab={activeTab}
+        onTabChange={setActiveTab}
       />
 
-      {/* 添加卡片对话框 */}
-      {cardDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>添加新卡片</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">卡片添加功能开发中...</p>
-              <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" onClick={() => setCardDialog(false)}>
-                  取消
-                </Button>
-                <Button onClick={() => setCardDialog(false)}>
-                  确定
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
-      {/* 添加设备对话框 */}
-      {deviceDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>添加新设备</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">设备添加功能开发中...</p>
-              <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" onClick={() => setDeviceDialog(false)}>
-                  取消
-                </Button>
-                <Button onClick={() => setDeviceDialog(false)}>
-                  确定
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </div>
+
+    </PageLayout>
   )
 }

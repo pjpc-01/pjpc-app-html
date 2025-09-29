@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import { StudentPoints, PointTransaction, PointTransactionCreateData, TeacherWithNFC } from '@/types/points'
+import { 
+  StudentPoints, 
+  PointTransaction, 
+  PointTransactionCreateData, 
+  TeacherWithNFC,
+  TransactionType,
+  TransactionStatus
+} from '@/types/points'
 
 export const usePoints = () => {
   const [loading, setLoading] = useState(false)

@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
     // 始终重新认证以确保认证状态
     console.log('重新认证 PocketBase...')
     try {
-      const adminEmail = 'pjpcemerlang@gmail.com'
-      const adminPassword = '0122270775Sw!'
+      const adminEmail = process.env.POCKETBASE_ADMIN_EMAIL
+      const adminPassword = process.env.POCKETBASE_ADMIN_PASSWORD
       
       await pb.admins.authWithPassword(adminEmail, adminPassword)
       console.log('✅ PocketBase 认证成功')

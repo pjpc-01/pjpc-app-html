@@ -1,248 +1,386 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
-import { useParams } from "next/navigation"
-import NFCBackgroundRunner from "@/app/components/systems/nfc-background-runner"
+import { useCallback, useEffect, useMemo, useRef, useReducer, useState } from "react"
+import "../styles/safe-area.css"
+import { useParams, useRouter } from "next/navigation"
+import { motion, AnimatePresence } from "framer-motion"
+import NFCBackgroundRunner from "../components/systems/nfc-background-runner"
 import { useTheme } from "../hooks/useTheme"
-import { useTVBoardData } from "../hooks/useTVBoardData"
+import { useOptimizedData } from "../hooks/useOptimizedData"
+import { useResponsiveScale } from "../hooks/useResponsiveScale"
+import { useTransactions } from "../hooks/useTransactions"
+import { useTransactionLayout } from "../hooks/useTransactionLayout"
+import { useMemoryOptimization } from "../hooks/useMemoryOptimization"
+import { useSmartLoading, useSmartError, useSmartAnimation } from "../hooks/useUIOptimization"
+import { usePointsHealthCheck } from "../hooks/usePointsHealthCheck"
+import { DISPLAY_MS, ANIMATION_CLASSES } from "../constants"
+import { SlideData } from "../types"
+
+// Components
 import TVBoardHeader from "../components/TVBoardHeader"
 import StudentPointsDisplay from "../components/StudentPointsDisplay"
 import BirthdaysDisplay from "../components/BirthdaysDisplay"
 import AnnouncementsDisplay from "../components/AnnouncementsDisplay"
-import { DISPLAY_MS, isSameCenter, compareStudentIds, getDobDate } from "../utils"
-import { SlideData } from "../types"
+import SlideIndicators from "../components/SlideIndicators"
+import NavigationControls from "../components/NavigationControls"
+import PageTransition from "../components/PageTransition"
+import MilestoneEffect from "../components/MilestoneEffect"
+import RecentTransactions from "../components/RecentTransactions"
+import LoadingScreen from "../components/LoadingScreen"
+import ErrorScreen from "../components/ErrorScreen"
+import SafeAreaLayout from "../components/SafeAreaLayout"
+import TVBoardContainer from "../components/TVBoardContainer"
+
+// 调试模式 - 在开发环境启用
+const DEBUG_MODE = process.env.NODE_ENV === 'development'
+
+// 导航状态类型
+interface NavigationState {
+  idx: number
+  direction: 'left' | 'right'
+}
+
+// 导航动作类型
+type NavigationAction = 
+  | { type: 'NEXT'; totalSlides: number }
+  | { type: 'PREV'; totalSlides: number }
+  | { type: 'GOTO'; idx: number; direction: 'left' | 'right' }
+  | { type: 'RESET_INTERVAL' }
+
+// 导航状态管理器
+function navigationReducer(state: NavigationState, action: NavigationAction): NavigationState {
+  switch (action.type) {
+    case 'NEXT':
+      return {
+        idx: state.idx < action.totalSlides - 1 ? state.idx + 1 : 0,
+        direction: 'right'
+      }
+    case 'PREV':
+      return {
+        idx: state.idx > 0 ? state.idx - 1 : action.totalSlides - 1,
+        direction: 'left'
+      }
+    case 'GOTO':
+      return {
+        idx: action.idx,
+        direction: action.direction
+      }
+    case 'RESET_INTERVAL':
+      return state
+    default:
+      return state
+  }
+}
+
+// 预生成的里程碑数组（缓存）
+const MILESTONE_CACHE = Array.from({ length: 100 }, (_, i) => (i + 1) * 50)
 
 export default function TVBoardByCenter() {
   const params = useParams<{ center: string }>()
+  const router = useRouter()
   const center = decodeURIComponent(params.center)
+  
+  // 响应式缩放
+  const { scale, dimensions, isMobile, isTablet, isDesktop, isTV } = useResponsiveScale()
+  
+  // 交易记录布局配置
+  const { dynamicHeight } = useTransactionLayout()
+  
+  // 内存优化
+  const { registerCleanup, createInterval, createTimeout } = useMemoryOptimization()
+  
+  // UI优化
+  const { loading: smartLoading, loadingProgress, loadingMessage, startLoading, finishLoading } = useSmartLoading()
+  const { errors, addError, removeError, clearErrors } = useSmartError()
+  const { animationsEnabled } = useSmartAnimation()
+  
+  // 使用 useReducer 管理导航状态
+  const [navigationState, dispatchNavigation] = useReducer(navigationReducer, {
+    idx: 0,
+    direction: 'right'
+  })
+  
+  // 里程碑状态
+  const [showMilestone, setShowMilestone] = useState(false)
+  const [milestoneData, setMilestoneData] = useState<{student: any, milestone: number} | null>(null)
+  
+  // 使用 useRef 存储不需要触发重渲染的数据
+  const previousPointsRef = useRef<Map<string, number>>(new Map())
+  const lastMilestoneTimeRef = useRef<number>(0)
+  const autoSlideIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const lastManualActionRef = useRef<number>(0)
+  
+  // 优化的数据管理
+  const { 
+    announcements, 
+    students, 
+    sortedStudents, 
+    monthBirthdays, 
+    slides, 
+    ready,
+    error,
+    refreshData,
+    studentsPerPage
+  } = useOptimizedData(center)
+  
+  // 交易记录
+  const { 
+    transactions, 
+    loading: transactionsLoading, 
+    error: transactionsError,
+    isRealtime: transactionsRealtime
+  } = useTransactions(center)
+  
+  // 主题
+  const { isBright, colors } = useTheme()
+  
+  // 积分数据健康检查
+  const { healthStatus } = usePointsHealthCheck(center)
 
-  const [idx, setIdx] = useState(0)
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
-
-  // 使用自定义hooks
-  const { isBright, wrapClass, colors } = useTheme()
-  const { announcements, students, points, ready } = useTVBoardData(center)
-
-  // slides build
-  const slides = useMemo(() => {
-    const list: SlideData[] = []
-
-    // points pages
-    const studentByRecordId: Record<string, any> = {}
-    const studentByStudentId: Record<string, any> = {}
-    for (const s of students as any[]) {
-      const normCenter = (s?.center ?? s?.Center ?? s?.centre ?? s?.branch) as string | undefined
-      const merged: any = { ...(s as any), center: normCenter }
-      if (merged.id) studentByRecordId[merged.id] = merged
-      if (merged.student_id) studentByStudentId[merged.student_id] = merged
-    }
-    const pts = (points || []).map((p: any) => {
-      const expanded = p?.expand?.student_id
-      const studentObj: any = Array.isArray(expanded) ? expanded[0] : expanded
-      const studentRaw: any = studentObj || studentByRecordId[p.student_id] || studentByStudentId[p.student_id] || null
-      const student: any = studentRaw ? { ...(studentRaw as any), center: (studentRaw?.center ?? studentRaw?.Center ?? studentRaw?.centre ?? studentRaw?.branch) as any } : null
-      return { ...p, student }
-    })
-    // 严格按分行过滤
-    const studentsFiltered = students.filter(s => isSameCenter(s.center, center))
-    let ptsFiltered = pts.filter(p => isSameCenter(p.student?.center, center))
-
-    // 若本分行没有积分记录，用本分行学生合成"0分"占位，避免空白
-    if (ptsFiltered.length === 0 && studentsFiltered.length > 0) {
-      ptsFiltered = studentsFiltered.map(s => ({
-        id: `synthetic-${s.id}`,
-        student_id: s.id,
-        current_points: 0,
-        student: s,
-      })) as any
-    }
-    // 排序：按学号 B* -> G* -> T*，同前缀按数字升序；若 student 缺失则按积分降序兜底
-    const sorted = ptsFiltered.sort((a, b) => {
-      const aid = a.student?.student_id
-      const bid = b.student?.student_id
-      if (aid && bid) {
-        const cmp = compareStudentIds(aid, bid)
-        if (cmp !== 0) return cmp
-      }
-      return (b.current_points || 0) - (a.current_points || 0)
-    })
-    const perPage = 15
-    for (let i = 0; i < sorted.length; i += perPage) {
-      list.push({ type: "student_points", data: sorted.slice(i, i + perPage) })
-    }
-
-    // birthdays
-    const now = new Date()
-    const month = now.getMonth()
-    const monthStr = String(month + 1).padStart(2, '0')
-    // 本分行当月生日
-    console.log('[TV] Debug - All students count:', students.length)
-    console.log('[TV] Debug - Current month:', month, 'monthStr:', monthStr)
-    console.log('[TV] Debug - Today is:', now.toLocaleDateString('zh-CN'), 'Looking for month:', month + 1)
-    console.log('[TV] Debug - Current date:', now.getDate(), 'Current month:', now.getMonth() + 1)
-    console.log('[TV] Debug - Today is 2025/9/12, looking for September birthdays')
+  // 优化的里程碑检测逻辑
+  const detectMilestones = useCallback(() => {
+    if (sortedStudents.length === 0) return
     
-    let monthBirthdays = students
-      .filter(s => {
-        const isCenterMatch = isSameCenter(s.center, center)
-        if ((s.student_id === 'T1' || s.student_id === 'B15') && center === 'WX 02') {
-          console.log('[TV]', s.student_id, 'center filter:', { 
-            student_center: s.center, 
-            target_center: center, 
-            isMatch: isCenterMatch,
-            dob: s.dob
-          })
+    const now = Date.now()
+    // 防重复触发：5秒内不重复显示里程碑
+    if (now - lastMilestoneTimeRef.current < 5000) return
+    
+    const newPreviousPoints = new Map(previousPointsRef.current)
+    let milestoneInfo: { student: any, milestone: number } | null = null
+    
+    // 使用 for...of 提前 break，找到第一个里程碑就停止
+    for (const student of sortedStudents) {
+      const studentId = student.student?.id
+      if (!studentId) continue
+      
+      const currentPoints = student.current_points || 0
+      const previousPointsValue = newPreviousPoints.get(studentId) || 0
+      
+      if (currentPoints > previousPointsValue) {
+        // 使用缓存的里程碑数组
+        const maxPoint = Math.max(currentPoints, previousPointsValue)
+        const relevantMilestones = MILESTONE_CACHE.filter(m => m <= maxPoint + 50)
+        
+        const reachedMilestone = relevantMilestones.find(milestone => 
+          previousPointsValue < milestone && currentPoints >= milestone
+        )
+        
+        if (reachedMilestone) {
+          milestoneInfo = { student: student.student, milestone: reachedMilestone }
+          lastMilestoneTimeRef.current = now
+          break // 找到第一个里程碑就停止
         }
-        return isCenterMatch
-      })
-      .map(s => ({ s, d: getDobDate(s.dob) }))
-      .filter(x => {
-        const hasDate = !!x.d
-        const hasStringMatch = x.s.dob && String(x.s.dob).includes(`-${monthStr}-`)
-        const isMatch = hasDate || hasStringMatch
-        if ((x.s.student_id === 'T1' || x.s.student_id === 'B15') && center === 'WX 02') {
-          console.log('[TV]', x.s.student_id, 'birthday filter:', { 
-            student_id: x.s.student_id, 
-            center: x.s.center, 
-            dob: x.s.dob, 
-            parsedDate: x.d?.toISOString().slice(0,10),
-            hasDate, 
-            hasStringMatch, 
-            isMatch,
-            monthStr
-          })
-        }
-        return isMatch
-      })
-      .filter(x => x.d ? x.d.getMonth() === month : true)
-      .sort((a, b) => {
-        const da = a.d ? a.d.getDate() : 99
-        const db = b.d ? b.d.getDate() : 99
-        return da - db
-      })
-      .map(x => x.s)
-    // 生日分页（每页15个），无数据也加入空态页
-    console.log('[TV] monthBirthdays count:', monthBirthdays.length, 'for center:', center)
-    if (monthBirthdays.length === 0) {
-      list.push({ type: "birthdays", data: [] })
-    } else {
-      const perPageB = 15
-      for (let i = 0; i < monthBirthdays.length; i += perPageB) {
-        list.push({ type: "birthdays", data: monthBirthdays.slice(i, i + perPageB) })
+        
+        newPreviousPoints.set(studentId, currentPoints)
       }
     }
-
-    // announcements
-    if ((announcements || []).length > 0) list.push({ type: "announcements", data: announcements })
-
-    return list.length > 0 ? list : [{ type: "announcements", data: [] }]
-  }, [students, points, announcements, center])
-
-  // auto-rotate
-  useEffect(() => {
-    if (!ready || slides.length === 0) return
-    if (timerRef.current) clearInterval(timerRef.current)
-    timerRef.current = setInterval(() => {
-      setIdx((v) => (v + 1) % slides.length)
-    }, DISPLAY_MS)
-    return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [ready, slides.length])
-
-  const current = slides[idx] || null
-
-  const goPrev = () => setIdx((v) => (v - 1 + slides.length) % slides.length)
-  const goNext = () => setIdx((v) => (v + 1) % slides.length)
-
-  // keyboard navigation
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') goPrev()
-      if (e.key === 'ArrowRight') goNext()
+    
+    // 更新引用
+    previousPointsRef.current = newPreviousPoints
+    
+    // 显示里程碑
+    if (milestoneInfo) {
+      setMilestoneData(milestoneInfo)
+      setShowMilestone(true)
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+  }, [sortedStudents])
+
+  // 里程碑检测效果
+  useEffect(() => {
+    detectMilestones()
+  }, [detectMilestones])
+
+  // 导航回调函数
+  const goPrev = useCallback(() => {
+    dispatchNavigation({ type: 'PREV', totalSlides: slides.length })
+    lastManualActionRef.current = Date.now()
   }, [slides.length])
 
+  const goNext = useCallback(() => {
+    dispatchNavigation({ type: 'NEXT', totalSlides: slides.length })
+    lastManualActionRef.current = Date.now()
+  }, [slides.length])
+
+  const goToSlide = useCallback((idx: number) => {
+    const direction = idx > navigationState.idx ? 'right' : 'left'
+    dispatchNavigation({ type: 'GOTO', idx, direction })
+    lastManualActionRef.current = Date.now()
+  }, [navigationState.idx])
+
+  // 重置自动轮播定时器
+  const resetAutoSlide = useCallback(() => {
+    if (autoSlideIntervalRef.current) {
+      clearInterval(autoSlideIntervalRef.current)
+    }
+    
+    if (slides.length <= 1) return
+    
+    autoSlideIntervalRef.current = createInterval(() => {
+      // 检查是否在手动操作后30秒内，如果是则不自动切换
+      const now = Date.now()
+      if (now - lastManualActionRef.current < 30000) return
+      
+      dispatchNavigation({ type: 'NEXT', totalSlides: slides.length })
+    }, DISPLAY_MS)
+  }, [slides.length, createInterval])
+
+  // 自动轮播效果
+  useEffect(() => {
+    resetAutoSlide()
+    return () => {
+      if (autoSlideIntervalRef.current) {
+        clearInterval(autoSlideIntervalRef.current)
+      }
+    }
+  }, [resetAutoSlide])
+
+  // 里程碑关闭
+  const handleMilestoneClose = useCallback(() => {
+    setShowMilestone(false)
+    setMilestoneData(null)
+  }, [])
+
+  // 统一错误处理
+  useEffect(() => {
+    if (error) {
+      addError(error)
+    }
+    if (transactionsError) {
+      addError(transactionsError)
+    }
+  }, [error, transactionsError, addError])
+
+  // 渲染幻灯片内容
+  const renderSlide = useCallback((current: SlideData) => {
+    const commonProps = {
+      isBright,
+      colors
+    }
+
+    switch (current.type) {
+      case "student_points":
+        return (
+          <PageTransition currentPage={navigationState.idx} direction={navigationState.direction}>
+            <StudentPointsDisplay
+              data={current.data}
+              currentPageIndex={navigationState.idx}
+              totalStudents={sortedStudents.length}
+              studentsPerPage={studentsPerPage}
+              {...commonProps}
+            />
+          </PageTransition>
+        )
+      
+      case "transactions":
+        return (
+          <PageTransition currentPage={navigationState.idx} direction={navigationState.direction}>
+            <RecentTransactions 
+              transactions={current.data}
+              loading={transactionsLoading}
+              error={transactionsError}
+              isRealtime={transactionsRealtime}
+            />
+          </PageTransition>
+        )
+      
+      case "birthdays":
+        return (
+          <PageTransition currentPage={navigationState.idx} direction={navigationState.direction}>
+            <BirthdaysDisplay 
+              data={current.data} 
+              {...commonProps}
+            />
+          </PageTransition>
+        )
+      
+      case "announcements":
+        return (
+          <PageTransition currentPage={navigationState.idx} direction={navigationState.direction}>
+            <AnnouncementsDisplay 
+              data={current.data} 
+              {...commonProps}
+            />
+          </PageTransition>
+        )
+      
+      default:
+        return null
+    }
+  }, [navigationState, sortedStudents.length, studentsPerPage, isBright, colors, transactions, transactionsLoading, transactionsError, transactionsRealtime])
+
+  // 分区加载：主数据加载中但交易数据可能已就绪
+  if (!ready) {
+    return <LoadingScreen center={center} />
+  }
+
+  // 统一错误处理
+  if (errors.size > 0) {
+    return <ErrorScreen error={Array.from(errors.values())[0]} onRetry={refreshData} />
+  }
+
+  // 没有数据
+  if (slides.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <h2 className="text-2xl font-bold mb-4">暂无数据</h2>
+          <p className="text-gray-400">该中心暂无学生数据</p>
+        </div>
+      </div>
+    )
+  }
+
+  const current = slides[navigationState.idx]
+
   return (
-    <div className={wrapClass}>
+    <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
+      {/* NFC 后台运行器 */}
       <NFCBackgroundRunner center={center} enabled={true} />
-      {!ready ? (
-        <div className={`h-full flex items-center justify-center ${colors.textMuted}`}>加载中...</div>
-      ) : !current ? (
-        <div className={`h-full flex items-center justify-center ${colors.textMuted}`}>暂无内容</div>
-      ) : (
-        <div className="h-full w-full flex flex-col">
-          {/* 顶部栏组件 */}
+      
+      {/* 安全区域布局 */}
+      <SafeAreaLayout>
+        <TVBoardContainer>
+          {/* 标题栏 */}
           <TVBoardHeader
             center={center}
-            isBright={isBright}
-            colors={colors}
-            currentSlideIndex={idx}
-            totalSlides={slides.length}
-            currentSlideType={current.type as "student_points" | "birthdays" | "announcements"}
+            studentCount={sortedStudents.length}
+            isRealtime={true}
+            onRefresh={refreshData}
+            pointsHealthStatus={healthStatus}
           />
 
-          {/* Content */}
-          <div className="flex-1 px-6 pb-4 pt-2 tv-fade">
-            {current && current.type === "student_points" && (
-              <StudentPointsDisplay
-                data={current.data}
-                isBright={isBright}
-                colors={colors}
-                currentPageIndex={idx}
-              />
-            )}
-
-            {current && current.type === "birthdays" && (
-              <BirthdaysDisplay
-                data={current.data}
-                isBright={isBright}
-                colors={colors}
-              />
-            )}
-
-            {current && current.type === "announcements" && (
-              <AnnouncementsDisplay
-                data={current.data}
-                isBright={isBright}
-                colors={colors}
-              />
-            )}
+          {/* 主要内容区域 */}
+          <div className="flex-1 flex flex-col px-4">
+            <AnimatePresence mode="wait">
+              {renderSlide(current)}
+            </AnimatePresence>
           </div>
 
-          {/* Slide indicators */}
-          <div className="pb-4 px-6 flex items-center justify-center gap-2">
-            {slides.map((s, i) => (
-              <div key={i} className={`h-1.5 rounded-full transition-all ${i === idx ? `w-8 ${colors.indicatorActive}` : `w-3 ${colors.indicator}`}`}></div>
-            ))}
+          {/* 底部导航 */}
+          <div className="p-4">
+            <SlideIndicators 
+              currentIndex={navigationState.idx} 
+              totalSlides={slides.length}
+              colors={colors}
+              onSlideClick={goToSlide}
+            />
+            <NavigationControls 
+              onPrev={goPrev}
+              onNext={goNext}
+            />
           </div>
+        </TVBoardContainer>
+      </SafeAreaLayout>
 
-          {/* Manual controls */}
-          <div className="pointer-events-none fixed inset-0 flex items-center justify-between px-2 md:px-6">
-            <button
-              aria-label="上一页"
-              onClick={goPrev}
-              className="pointer-events-auto h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/20 text-white/80 text-2xl flex items-center justify-center hover:bg-black/30 transition shadow-lg border border-white/10"
-            >
-              ‹
-            </button>
-            <button
-              aria-label="下一页"
-              onClick={goNext}
-              className="pointer-events-auto h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/20 text-white/80 text-2xl flex items-center justify-center hover:bg-black/30 transition shadow-lg border border-white/10"
-            >
-              ›
-            </button>
-          </div>
-        </div>
+      {/* 里程碑效果 */}
+      {showMilestone && milestoneData && (
+        <MilestoneEffect
+          student={milestoneData.student}
+          milestone={milestoneData.milestone}
+          isVisible={showMilestone}
+          onComplete={handleMilestoneClose}
+        />
       )}
-      {/* local animations */}
-      <style jsx global>{`
-        @keyframes tvFadeSlide { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
-        .tv-fade { animation: tvFadeSlide 420ms ease; }
-        @keyframes tvMarquee { 0% { transform: translateX(100%);} 100% { transform: translateX(-100%);} }
-        .tv-marquee { animation: tvMarquee 20s linear infinite; }
-      `}</style>
     </div>
   )
 }

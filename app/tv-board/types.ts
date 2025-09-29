@@ -16,11 +16,27 @@ export type Student = {
 export type StudentPoints = { 
   id: string; 
   student_id: string; 
-  current_points: number 
+  current_points: number;
+  total_earned: number;
+  total_spent: number;
+  season_id: string;
+  expand?: {
+    student_id?: {
+      id: string;
+      student_name: string;
+      student_id: string;
+      center?: string;
+    };
+    season_id?: {
+      id: string;
+      season_name: string;
+      is_active: boolean;
+    };
+  };
 }
 
 export type SlideData = {
-  type: "student_points" | "birthdays" | "announcements";
+  type: "student_points" | "transactions" | "birthdays" | "announcements";
   data: any;
 }
 

@@ -128,7 +128,7 @@ node scripts/init-schedule-data.js
 ## 🎯 下一步
 
 集合导入和测试完成后，您可以：
-1. 访问排班管理界面：`http://localhost:3000/attendance-management`
+1. 访问排班管理界面：`http://localhost:3000/schedule-management`
 2. 开始创建排班记录
 3. 配置排班模板
 4. 管理课程信息

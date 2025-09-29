@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import PocketBase from 'pocketbase'
+import { authenticateAdmin } from '@/lib/auth-utils'
+import { getPocketBase } from '@/lib/pocketbase-optimized'
 
-const pb = new PocketBase('http://pjpc.tplinkdns.com:8090')
+const pb = new PocketBase(process.env.POCKETBASE_URL || 'http://pjpc.tplinkdns.com:8090')
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,9 +16,9 @@ export async function GET(request: NextRequest) {
     
     // 先尝试管理员认证
     try {
-      await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+      await authenticateAdmin(pb)
       console.log('✅ 管理员认证成功')
-    } catch (authError) {
+    } catch (authError: any) {
       console.log('⚠️ 管理员认证失败，尝试无认证访问:', authError.message)
     }
     
@@ -89,18 +91,51 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const pb = await getPocketBase()
+    await authenticateAdmin(pb)
+    
     const body = await request.json()
-    const { teacher_id, teacher_name, cardNumber, center, status } = body
+    console.log('🔍 接收到的教师数据:', body)
+    
+    const { 
+      name, 
+      user_id, 
+      center_assignment, 
+      email, 
+      phone, 
+      position = '教师',
+      department = '教学部',
+      status = 'active',
+      permissions = 'normal_teacher'
+    } = body
 
-    const teacherData = {
-      teacher_id,
-      teacher_name,
-      cardNumber,
-      center: center || 'WX 01',
-      status: status || 'active'
+    // 验证必需字段
+    if (!name) {
+      return NextResponse.json({ 
+        success: false,
+        error: '缺少必需字段',
+        message: '姓名是必需的'
+      }, { status: 400 })
     }
 
+    const teacherData = {
+      name,
+      user_id: user_id || '',
+      center_assignment: center_assignment || '',
+      email: email || '',
+      phone: phone || '',
+      position,
+      department,
+      status,
+      permissions,
+      hireDate: new Date().toISOString().split('T')[0] // 只取日期部分
+    }
+
+    console.log('🔍 准备创建的教师数据:', teacherData)
+
     const teacher = await pb.collection('teachers').create(teacherData)
+    console.log('✅ 教师创建成功:', teacher.id)
+    
     return NextResponse.json({ success: true, teacher })
   } catch (error: any) {
     console.error('创建教师失败:', error)
@@ -108,7 +143,7 @@ export async function POST(request: NextRequest) {
       success: false,
       error: '创建教师失败',
       message: error.message || '未知错误',
-      details: error
+      details: error.response?.data || error
     }, { status: 500 })
   }
 }

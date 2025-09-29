@@ -13,12 +13,9 @@ import { User, Upload, Edit, UserPlus, CalendarIcon, AlertTriangle, FileText } f
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Student } from '@/types/student'
+import { validateEmail, validatePhone, validateStudentId, sanitizeText } from '@/lib/validation'
 
 // 工具函数
-const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
-}
 
 const convertGradeToChinese = (grade: string): string => {
   const gradeMap: Record<string, string> = {
@@ -177,10 +174,14 @@ export default function StudentForm({
 
     if (!formData.student_name?.trim()) {
       newErrors.student_name = '姓名是必填项'
+    } else if (formData.student_name.length > 50) {
+      newErrors.student_name = '姓名不能超过50个字符'
     }
 
     if (!formData.student_id?.trim()) {
       newErrors.student_id = '学号是必填项'
+    } else if (!validateStudentId(formData.student_id)) {
+      newErrors.student_id = '学号格式不正确（4-20位字母数字）'
     }
 
     if (!formData.center?.trim()) {
@@ -217,6 +218,8 @@ export default function StudentForm({
 
     if (!formData.parentPhone?.trim()) {
       newErrors.parentPhone = '父母电话是必填项'
+    } else if (!validatePhone(formData.parentPhone)) {
+      newErrors.parentPhone = '手机号格式不正确'
     }
 
     if (!formData.emergencyContact?.trim()) {
@@ -246,9 +249,9 @@ export default function StudentForm({
       // 清理和验证数据
       const cleanData = {
         ...formData,
-        // 确保字符串字段不为undefined
-        student_name: formData.student_name || '',
-        student_id: formData.student_id || '',
+        // 确保字符串字段不为undefined并清理输入
+        student_name: sanitizeText(formData.student_name || '', 50),
+        student_id: sanitizeText(formData.student_id || '', 20).toUpperCase(),
         standard: formData.standard || '',
         center: formData.center || 'WX 01',
         serviceType: formData.serviceType || 'afterschool',

@@ -26,11 +26,15 @@ export const useStudents = () => {
           return acc
         }, {} as Record<string, number>)
         console.log('📊 useStudents: 中心分布:', centerCounts)
+      } else {
+        console.warn('⚠️ useStudents: 没有获取到学生数据')
       }
       
+      console.log('🔍 useStudents: 设置学生数据到状态...')
       setStudents(allStudents)
+      console.log('✅ useStudents: 学生数据已设置到状态')
     } catch (err: any) {
-      console.error('获取学生数据失败:', err)
+      console.error('❌ useStudents: 获取学生数据失败:', err)
       setError(err.message || '获取学生数据失败')
     } finally {
       setLoading(false)

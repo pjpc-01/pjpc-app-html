@@ -1,100 +1,102 @@
-import { useEffect, useState } from "react"
-import { ThemeColors } from "../types"
+"use client"
+
+import { motion } from "framer-motion"
+import { RefreshCw, Users, Wifi, WifiOff, CheckCircle, AlertTriangle, XCircle } from "lucide-react"
+
+interface PointsHealthStatus {
+  isHealthy: boolean
+  lastCheck: Date | null
+  inconsistencies: number
+  lastError: string | null
+}
 
 interface TVBoardHeaderProps {
   center: string
-  isBright: boolean
-  colors: ThemeColors
-  currentSlideIndex: number
-  totalSlides: number
-  currentSlideType: "student_points" | "birthdays" | "announcements"
+  studentCount: number
+  isRealtime: boolean
+  onRefresh: () => void
+  pointsHealthStatus?: PointsHealthStatus
 }
 
 export default function TVBoardHeader({
   center,
-  isBright,
-  colors,
-  currentSlideIndex,
-  totalSlides,
-  currentSlideType
+  studentCount,
+  isRealtime,
+  onRefresh,
+  pointsHealthStatus
 }: TVBoardHeaderProps) {
-  const [now, setNow] = useState<string>(new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }))
-
-  // clock updater
-  useEffect(() => {
-    const t = setInterval(() => {
-      setNow(new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }))
-    }, 1000 * 30)
-    return () => clearInterval(t)
-  }, [])
-
-  const slideName = (type: "student_points" | "birthdays" | "announcements") =>
-    type === 'student_points' ? '学生积分'
-    : type === 'birthdays' ? '生日'
-    : '公告'
-
   return (
-    <div className="px-6 pt-4 pb-2">
-      <div className="flex flex-col items-center space-y-3">
-        {/* 分行名称 - 大标题 */}
-        <div className="text-center">
-          <h1 className={`text-3xl sm:text-4xl font-black ${isBright ? 'text-slate-900' : 'text-white'} tracking-wide`}>
-            {center}
-          </h1>
-          <div className={`h-0.5 w-20 mx-auto mt-1 rounded-full ${isBright ? 'bg-gradient-to-r from-emerald-500 to-blue-500' : 'bg-gradient-to-r from-emerald-400 to-blue-400'}`}></div>
-        </div>
-        
-        {/* 时间日期信息 - 卡片样式 */}
-        <div className={`${colors.cardBase} rounded-xl px-6 py-3 shadow-lg`}>
-          <div className="flex items-center space-x-6">
-            {/* 当前时间 */}
-            <div className="text-center">
-              <div className={`text-2xl sm:text-3xl font-black ${isBright ? 'text-emerald-600' : 'text-emerald-300'}`}>
-                {now}
-              </div>
-              <div className={`text-xs ${colors.textMuted} font-semibold uppercase tracking-wide`}>
-                时间
-              </div>
-            </div>
-            
-            {/* 分隔线 */}
-            <div className={`h-8 w-px ${isBright ? 'bg-slate-300' : 'bg-slate-600'}`}></div>
-            
-            {/* 当前日期 */}
-            <div className="text-center">
-              <div className={`text-2xl sm:text-3xl font-black ${isBright ? 'text-blue-600' : 'text-blue-300'}`}>
-                {new Date().toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })}
-              </div>
-              <div className={`text-xs ${colors.textMuted} font-semibold uppercase tracking-wide`}>
-                日期
-              </div>
-            </div>
-            
-            {/* 分隔线 */}
-            <div className={`h-8 w-px ${isBright ? 'bg-slate-300' : 'bg-slate-600'}`}></div>
-            
-            {/* 星期 */}
-            <div className="text-center">
-              <div className={`text-2xl sm:text-3xl font-black ${isBright ? 'text-purple-600' : 'text-purple-300'}`}>
-                {new Date().toLocaleDateString('zh-CN', { weekday: 'short' })}
-              </div>
-              <div className={`text-xs ${colors.textMuted} font-semibold uppercase tracking-wide`}>
-                星期
-              </div>
-            </div>
+    <motion.div
+      className="bg-gray-800 rounded-lg p-4 mb-4"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="p-2 bg-blue-600 rounded-lg">
+            <Users className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold text-white">
+              {center} 积分排行榜
+            </h1>
+            <p className="text-xl text-gray-400">
+              共 {studentCount} 名学生
+            </p>
           </div>
         </div>
         
-        {/* 页面信息 - 小标签 */}
-        <div className="flex items-center space-x-3">
-          <div className={`px-3 py-1 rounded-full ${isBright ? 'bg-slate-100 text-slate-700' : 'bg-slate-700/30 text-slate-300'} text-xs font-semibold`}>
-            第 {totalSlides ? (currentSlideIndex + 1) : 0} / {totalSlides} 页
+        <div className="flex items-center gap-4">
+          {/* 积分数据健康状态指示器 */}
+          {pointsHealthStatus && (
+            <div className="flex items-center gap-2 text-sm">
+              {pointsHealthStatus.isHealthy ? (
+                <>
+                  <CheckCircle className="w-4 h-4 text-green-400" />
+                  <span className="text-green-400 font-medium">数据正常</span>
+                </>
+              ) : pointsHealthStatus.lastError ? (
+                <>
+                  <XCircle className="w-4 h-4 text-red-400" />
+                  <span className="text-red-400 font-medium">检查失败</span>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                  <span className="text-yellow-400 font-medium">
+                    {pointsHealthStatus.inconsistencies} 个异常
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+          
+          <div className="text-right">
+            <div className="flex items-center gap-2 text-sm">
+              {isRealtime ? (
+                <>
+                  <Wifi className="w-4 h-4 text-green-400" />
+                  <span className="text-green-400 font-medium">实时更新</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-4 h-4 text-yellow-400" />
+                  <span className="text-yellow-400 font-medium">离线模式</span>
+                </>
+              )}
+            </div>
           </div>
-          <div className={`px-3 py-1 rounded-full ${isBright ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-500/20 text-emerald-300'} text-xs font-semibold`}>
-            {slideName(currentSlideType)}
-          </div>
+          
+          <button
+            onClick={onRefresh}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            刷新
+          </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }

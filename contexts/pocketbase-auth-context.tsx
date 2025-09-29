@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role || 'admin',
+        role: user.role || (user.email?.includes('admin') || user.email?.includes('pjpcemerlang') ? 'admin' : 'teacher'), // 智能检测管理员角色
         status: user.status || 'approved',
         emailVerified: true,
         createdAt: user.created,
@@ -170,8 +170,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUserProfile(null)
             setLoading(false)
           } else {
-            // 没有认证状态，设置loading为false
-            setLoading(false)
+            // 没有认证状态，尝试自动管理员登录（开发环境）
+            if (process.env.NODE_ENV === 'development') {
+              console.log('🔧 开发环境：尝试自动管理员登录')
+              try {
+                const adminEmail = 'pjpcemerlang@gmail.com'
+                const adminPassword = '0122270775Sw!'
+                
+                const authData = await pbInstance.admins.authWithPassword(adminEmail, adminPassword)
+                console.log('✅ 自动管理员登录成功:', authData.record.email)
+                
+                // 设置用户和用户资料
+                setUser(authData.record)
+                const profile = await fetchUserProfile(authData.record)
+                console.log('✅ 自动获取管理员资料成功:', profile)
+              } catch (autoLoginError) {
+                console.log('⚠️ 自动管理员登录失败:', autoLoginError)
+                setLoading(false)
+              }
+            } else {
+              setLoading(false)
+            }
           }
         }
 
@@ -314,7 +333,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: userRecord.id,
           email: userRecord.email,
           name: userRecord.name,
-          role: userRecord.role || 'admin',
+          role: userRecord.role || 'teacher', // 默认设置为 teacher 而不是 admin
           status: userRecord.status || 'approved',
           emailVerified: true,
           createdAt: userRecord.created,
