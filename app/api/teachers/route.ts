@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
     await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
     console.log('✅ API: PocketBase管理员认证成功')
     
-    // 查询所有教师数据（暂时不过滤center）
+    // 暂时不过滤center，返回所有教师数据
+    // TODO: 需要根据center ID进行关联查询
     const teachers = await pb.collection('teachers').getList(1, limit, {
       sort: 'name'
     })
@@ -32,13 +33,17 @@ export async function GET(request: NextRequest) {
       }))
     })
     
-    // 处理结果
+    // 处理结果 - 匹配前端期望的字段格式
     const processedTeachers = teachers.items.map(teacher => ({
       id: teacher.id,
-      teacher_id: teacher.user_id, // 使用user_id作为teacher_id
-      teacher_name: teacher.name, // 使用name字段
+      teacher_id: teacher.user_id, // 使用teacher_id字段名
+      teacher_name: teacher.name, // 使用teacher_name字段名
+      name: teacher.name, // 保持name字段作为备用
       cardNumber: teacher.cardNumber,
-      center: center, // 使用请求的center
+      center: teacher.center_assignment || center, // 使用center字段名
+      center_assignment: teacher.center_assignment || center, // 保持center_assignment字段
+      position: teacher.position,
+      department: teacher.department,
       created: teacher.created,
       updated: teacher.updated
     }))

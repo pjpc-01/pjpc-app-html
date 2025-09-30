@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase, authenticateAdmin } from '@/lib/pocketbase'
 
-// 静态导出配置
-export const dynamic = 'force-static'
+// 动态路由配置
+export const dynamic = 'force-dynamic'
 
 // GET - 获取教师考勤记录（只返回教师数据）
 export async function GET(request: NextRequest) {
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     
     // 添加过滤条件
     if (center) {
-      filter += `center = "${center}"`
+      filter += `branch_code = "${center}"`
     }
     if (teacherId) {
       filter += filter ? ` && teacher_id = "${teacherId}"` : `teacher_id = "${teacherId}"`
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
 
     // 直接查询teacher_attendance集合
     const records = await pb.collection('teacher_attendance').getList(page, limit, {
-      filter: filter,
+      filter: filter || undefined, // 如果filter为空字符串，传undefined
       sort: '-created'
     })
 
@@ -81,11 +81,17 @@ export async function GET(request: NextRequest) {
     
   } catch (error) {
     console.error('❌ 获取教师考勤记录失败:', error)
+    console.error('❌ 错误详情:', {
+      message: error instanceof Error ? error.message : '未知错误',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    })
     return NextResponse.json(
       { 
         success: false,
         error: '获取教师考勤记录失败',
-        details: error instanceof Error ? error.message : '未知错误'
+        details: error instanceof Error ? error.message : '未知错误',
+        timestamp: new Date().toISOString()
       },
       { status: 500 }
     )

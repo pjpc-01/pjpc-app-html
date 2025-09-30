@@ -198,7 +198,7 @@ class ApiService {
         studentsLength: (result as any).students?.length || 0
       })
       if (result.success) {
-        // 学生API返回的数据结构是 {success: true, students: [...], total: ...}
+        // 学生API返回的数据结构是 {success: true, data: [...], total: ...}
         const finalData = result.data || (result as any).students || []
         console.log('[API] getStudents 结果:', { 
           success: result.success,
@@ -225,8 +225,8 @@ class ApiService {
       retries: 1
     })
     if (result.success) {
-      // 学生API返回的数据结构是 {success: true, students: [...], total: ...}
-      const finalData = (result as any).students || result.data || []
+      // 学生API返回的数据结构是 {success: true, data: [...], total: ...}
+      const finalData = result.data || (result as any).students || []
       console.log('[API] getStudents 全量获取结果:', { 
         success: result.success,
         dataLength: Array.isArray(finalData) ? finalData.length : 0,
