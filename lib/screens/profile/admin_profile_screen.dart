@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketbase/pocketbase.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/attendance_provider.dart';
-import '../../providers/student_provider.dart';
-import '../../theme/app_theme.dart';
+import '../../../features/auth/providers/auth_provider.dart';
+import '../../../features/attendance/providers/attendance_provider.dart';
+import '../../../features/student/providers/student_provider.dart';
+import '../../../features/integration/screens/integrated_report_screen.dart';
+import '../../../core/theme/app_theme.dart';
 
 class AdminProfileScreen extends StatefulWidget {
   const AdminProfileScreen({super.key});
@@ -21,7 +22,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     // 延迟加载数据，避免在构建过程中调用 setState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
@@ -99,6 +100,23 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        title: const Text(
+          '个人资料',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: const Color(0xFF1E3A8A),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: Consumer<AuthProvider>(
         builder: (context, authProvider, child) {
           final user = authProvider.user;
@@ -323,6 +341,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
             Tab(text: '考勤记录', icon: Icon(Icons.access_time, size: 16)),
             Tab(text: '个人设置', icon: Icon(Icons.account_circle, size: 16)),
             Tab(text: '数据统计', icon: Icon(Icons.analytics, size: 16)),
+            Tab(text: '综合报表', icon: Icon(Icons.assessment, size: 16)),
           ],
         ),
       ),
@@ -338,6 +357,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
           _buildAttendanceTab(),
           _buildSettingsTab(),
           _buildAnalyticsTab(),
+          _buildIntegratedReportTab(),
         ],
       ),
     );
@@ -784,5 +804,9 @@ class _AdminProfileScreenState extends State<AdminProfileScreen>
         ],
       ),
     );
+  }
+
+  Widget _buildIntegratedReportTab() {
+    return const IntegratedReportScreen();
   }
 }

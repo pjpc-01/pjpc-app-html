@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketbase/pocketbase.dart';
-import '../../services/pocketbase_service.dart';
-import '../../providers/auth_provider.dart';
-import '../../theme/app_theme.dart';
+import '../../../shared/services/pocketbase_service.dart';
+import '../../../features/auth/providers/auth_provider.dart';
+import '../../../core/theme/app_theme.dart';
 import 'add_edit_center_screen.dart';
 
 class CenterManagementScreen extends StatefulWidget {

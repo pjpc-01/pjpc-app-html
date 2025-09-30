@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/class_provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../services/pocketbase_service.dart';
+import '../../../shared/providers/class_provider.dart';
+import '../../../features/auth/providers/auth_provider.dart';
+import '../../../shared/services/pocketbase_service.dart';
 
 class AddEditClassScreen extends StatefulWidget {
   final dynamic classData;

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/class_provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../theme/app_theme.dart';
+import '../../../shared/providers/class_provider.dart';
+import '../../../features/auth/providers/auth_provider.dart';
+import '../../../core/theme/app_theme.dart';
 
 class ClassStudentManagementScreen extends StatefulWidget {
   final dynamic classData;

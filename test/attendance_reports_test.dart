@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:pjpc_app_flutter/providers/attendance_provider.dart';
-import 'package:pjpc_app_flutter/services/pocketbase_service.dart';
-import 'package:pjpc_app_flutter/screens/reports/reports_screen.dart';
-import 'package:pjpc_app_flutter/services/attendance_export_service.dart';
+import 'package:pjpc_app_flutter/features/attendance/providers/attendance_provider.dart';
+import 'package:pjpc_app_flutter/shared/services/pocketbase_service.dart';
+import 'package:pjpc_app_flutter/features/reports/screens/reports_screen.dart';
+import 'package:pjpc_app_flutter/shared/services/attendance_export_service.dart';
 
 void main() {
   group('Attendance Reports Tests', () {

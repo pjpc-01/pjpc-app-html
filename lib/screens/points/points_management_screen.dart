@@ -4,11 +4,11 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import '../../providers/student_provider.dart';
-import '../../providers/points_provider.dart';
-import '../../theme/app_theme.dart';
-import '../../services/pocketbase_service.dart';
-import '../../widgets/points/points_nfc_scanner_widget.dart';
+import '../../features/student/providers/student_provider.dart';
+import '../../../shared/providers/points_provider.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../shared/services/pocketbase_service.dart';
+import '../../../shared/widgets/points_nfc_scanner_widget.dart';
 
 class PointsManagementScreen extends StatefulWidget {
   const PointsManagementScreen({super.key});
@@ -1059,8 +1059,8 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                     return _buildEmpty();
                   }
 
-        // 只显示前10个学生，进一步减少页面长度
-        final displayStudents = students.take(10).toList();
+        // 显示所有学生
+        final displayStudents = students;
 
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -1103,14 +1103,18 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
               ),
               
               // 学生列表
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: displayStudents.length,
-                separatorBuilder: (_, __) => Divider(
-                  height: 1,
-                  color: AppTheme.dividerColor.withOpacity(0.5),
+              Container(
+                constraints: BoxConstraints(
+                  maxHeight: 400, // 限制最大高度，避免界面过长
                 ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: displayStudents.length,
+                  separatorBuilder: (_, __) => Divider(
+                    height: 1,
+                    color: AppTheme.dividerColor.withOpacity(0.5),
+                  ),
                     itemBuilder: (context, index) {
                   final student = displayStudents[index];
                       final name = student.getStringValue('student_name');
@@ -1182,6 +1186,7 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                     ),
                   );
                 },
+                ),
               ),
             ],
           ),
@@ -1477,10 +1482,8 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                   if (teacher != null) {
                     actualTeacherId = teacher.id; // 使用教师记录的真实ID
                   } else {
-                    print('警告: 找不到教师记录，使用用户ID: $teacherId');
                   }
                 } catch (e) {
-                  print('获取教师信息失败: $e');
                 }
                 
                 bool ok;
@@ -2016,10 +2019,8 @@ class _PointsManagementScreenState extends State<PointsManagementScreen> with Ti
                   if (teacher != null) {
                     actualTeacherId = teacher.id; // 使用教师记录的真实ID
                   } else {
-                    print('警告: 找不到教师记录，使用用户ID: $teacherId');
                   }
                 } catch (e) {
-                  print('获取教师信息失败: $e');
                 }
 
                 bool success = false;

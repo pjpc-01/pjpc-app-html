@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'providers/auth_provider.dart';
-import 'providers/student_provider.dart';
-import 'providers/class_provider.dart';
-import 'providers/finance_provider.dart';
-import 'providers/attendance_provider.dart';
-import 'providers/payment_provider.dart';
-import 'providers/teacher_provider.dart';
-import 'providers/points_provider.dart';
-import 'providers/nfc_card_provider.dart';
-import 'providers/notification_provider.dart';
+import 'features/auth/providers/auth_provider.dart';
+import 'features/student/providers/student_provider.dart';
+import 'shared/providers/class_provider.dart';
+import 'features/finance/providers/finance_provider.dart';
+import 'features/attendance/providers/attendance_provider.dart';
+import 'features/finance/providers/payment_provider.dart';
+import 'features/teacher/providers/teacher_provider.dart';
+import 'features/finance/providers/teacher_salary_provider.dart';
+import 'features/leave/providers/teacher_leave_provider.dart';
+import 'features/schedule/providers/schedule_provider.dart';
+import 'features/schedule/providers/schedule_template_provider.dart';
+import 'shared/providers/points_provider.dart';
+import 'features/nfc/providers/nfc_card_provider.dart';
+import 'features/notification/providers/notification_provider.dart';
 import 'screens/splash_screen.dart';
-import 'screens/auth/login_screen.dart';
+import 'features/auth/screens/login_screen.dart';
 import 'screens/home/home_screen.dart';
-import 'services/pocketbase_service.dart';
-import 'services/network_service.dart';
-import 'services/realtime_service.dart';
-import 'theme/app_theme.dart';
+import 'shared/services/pocketbase_service.dart';
+import 'shared/services/network_service.dart';
+import 'shared/services/realtime_service.dart';
+import 'core/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +49,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => RealtimeService.instance),
         ChangeNotifierProvider(create: (context) => AuthProvider(prefs)),
         ChangeNotifierProvider(create: (context) => TeacherProvider()),
+        ChangeNotifierProvider(create: (context) => TeacherSalaryProvider()),
+        ChangeNotifierProvider(create: (context) => TeacherLeaveProvider()),
+        ChangeNotifierProvider(create: (context) => ScheduleProvider()),
+        ChangeNotifierProvider(create: (context) => ScheduleTemplateProvider()),
         ChangeNotifierProxyProvider2<PocketBaseService, AuthProvider, StudentProvider>(
           create: (context) {
             final provider = StudentProvider(

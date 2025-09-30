@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/class_provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../theme/app_theme.dart';
+import '../../../shared/providers/class_provider.dart';
+import '../../../features/auth/providers/auth_provider.dart';
+import '../../../core/theme/app_theme.dart';
 import 'add_edit_class_screen.dart';
 import 'class_student_management_screen.dart';
 

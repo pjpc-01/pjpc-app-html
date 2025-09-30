@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pocketbase/pocketbase.dart';
-import '../../services/pocketbase_service.dart';
-import '../../theme/app_theme.dart';
+import '../../../shared/services/pocketbase_service.dart';
+import '../../../core/theme/app_theme.dart';
 
 class HomeworkGradingScreen extends StatefulWidget {
   final RecordModel homework;

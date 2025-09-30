@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:pjpc_app_flutter/providers/auth_provider.dart';
-import 'package:pjpc_app_flutter/providers/student_provider.dart';
-import 'package:pjpc_app_flutter/providers/attendance_provider.dart';
-import 'package:pjpc_app_flutter/providers/finance_provider.dart';
-import 'package:pjpc_app_flutter/services/pocketbase_service.dart';
-import 'package:pjpc_app_flutter/utils/app_theme.dart';
+import 'package:pjpc_app_flutter/features/auth/providers/auth_provider.dart';
+import 'package:pjpc_app_flutter/features/student/providers/student_provider.dart';
+import 'package:pjpc_app_flutter/features/attendance/providers/attendance_provider.dart';
+import 'package:pjpc_app_flutter/features/finance/providers/finance_provider.dart';
+import 'package:pjpc_app_flutter/shared/services/pocketbase_service.dart';
+import 'package:pjpc_app_flutter/core/theme/app_theme.dart';
 
 void main() {
   group('AuthProvider Tests', () {

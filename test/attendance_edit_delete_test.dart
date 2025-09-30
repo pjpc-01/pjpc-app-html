@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:pjpc_app_flutter/providers/attendance_provider.dart';
-import 'package:pjpc_app_flutter/services/pocketbase_service.dart';
-import 'package:pjpc_app_flutter/screens/attendance/attendance_records_screen.dart';
+import 'package:pjpc_app_flutter/features/attendance/providers/attendance_provider.dart';
+import 'package:pjpc_app_flutter/shared/services/pocketbase_service.dart';
+import 'package:pjpc_app_flutter/features/attendance/screens/attendance_records_screen.dart';
 
 void main() {
   group('Attendance Edit/Delete Tests', () {

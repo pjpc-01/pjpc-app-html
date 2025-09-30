@@ -1,26 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/student_provider.dart';
-import '../../providers/attendance_provider.dart';
-import '../../providers/notification_provider.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/common/app_logo.dart';
-import '../attendance/attendance_dashboard_screen.dart';
-import '../attendance/nfc_attendance_screen.dart';
-import '../student/student_management_screen.dart';
+import '../../features/auth/providers/auth_provider.dart';
+import '../../features/student/providers/student_provider.dart';
+import '../../features/attendance/providers/attendance_provider.dart';
+import '../../features/notification/providers/notification_provider.dart';
+import '../../core/theme/app_theme.dart';
+import '../../shared/widgets/app_logo.dart';
+import '../../features/attendance/screens/attendance_dashboard_screen.dart';
+import '../../features/attendance/screens/attendance_management_screen.dart';
+import '../../features/attendance/screens/nfc_attendance_screen.dart';
+import '../../features/student/screens/student_management_screen.dart';
 import '../academic/homework_grades_screen.dart';
-import '../reports/reports_screen.dart';
+import '../../features/reports/screens/reports_screen.dart';
 import '../settings/settings_screen.dart';
-import '../notification/notification_screen.dart';
+import '../../features/notification/screens/notification_screen.dart';
 import '../profile/profile_screen.dart';
-import '../notification/admin_notification_screen.dart';
-import '../../widgets/common/recent_activity_item.dart';
+import '../profile/teacher_profile_screen.dart';
+import '../../features/notification/screens/admin_notification_screen.dart';
+import '../../shared/widgets/recent_activity_item.dart';
 import '../points/points_management_screen.dart';
-import '../nfc/nfc_management_screen.dart';
+import '../../features/nfc/screens/nfc_management_optimized_v2.dart';
 import '../class/class_management_screen.dart';
-import '../teacher/teacher_management_screen.dart';
-import '../../widgets/attendance/attendance_nfc_scanner_widget.dart';
+import '../../features/teacher/screens/teacher_management_screen.dart';
+import '../../features/teacher/screens/teacher_salary_management_screen.dart';
+import '../../features/teacher/screens/teacher_leave_management_screen.dart';
+import '../../features/schedule/screens/schedule_management_screen.dart';
+import '../../features/attendance/widgets/attendance_nfc_scanner_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -47,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
         const HomeDashboard(),
         const StudentManagementScreen(),
         const TeacherManagementScreen(),
-        const NfcManagementScreen(),
+        const NFCManagementOptimizedV2(),
         const ProfileScreen(),
       ];
     } else if (authProvider.isTeacher) {
@@ -388,6 +393,16 @@ class _HomeDashboardState extends State<HomeDashboard> {
         return Icons.assignment;
       case 'notifications':
         return Icons.notifications;
+      case 'teacher_salary_management':
+        return Icons.account_balance_wallet;
+      case 'teacher_leave_management':
+        return Icons.event_note;
+      case 'my_salary_records':
+        return Icons.payment;
+      case 'my_leave_records':
+        return Icons.event_available;
+      case 'my_attendance_records':
+        return Icons.schedule;
       default:
         return Icons.help;
     }
@@ -423,7 +438,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
       case 'nfc_management':
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const NfcManagementScreen()),
+          MaterialPageRoute(builder: (context) => const NFCManagementOptimizedV2()),
         );
         break;
       case 'points_management':
@@ -478,6 +493,42 @@ class _HomeDashboardState extends State<HomeDashboard> {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const NotificationScreen()),
+        );
+        break;
+      case 'teacher_salary_management':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const TeacherSalaryManagementScreen()),
+        );
+        break;
+      case 'teacher_leave_management':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const TeacherLeaveManagementScreen()),
+        );
+        break;
+      case 'my_salary_records':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const TeacherSalaryManagementScreen()),
+        );
+        break;
+      case 'my_leave_records':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const TeacherLeaveManagementScreen()),
+        );
+        break;
+      case 'schedule_management':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ScheduleManagementScreen()),
+        );
+        break;
+      case 'my_attendance_records':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const AttendanceDashboardScreen()),
         );
         break;
       default:
@@ -941,7 +992,17 @@ class _HomeDashboardState extends State<HomeDashboard> {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Expanded(child: _buildModernActionCard(title: '通知管理', icon: Icons.notifications_active_rounded, color: const Color(0xFF10B981), onTap: () => _navigateToAdminNotification(context))),
+                        Expanded(child: _buildModernActionCard(title: '教师薪资管理', icon: Icons.account_balance_wallet_rounded, color: const Color(0xFF10B981), onTap: () => _navigateToFeature('teacher_salary_management', context))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildModernActionCard(title: '教师请假管理', icon: Icons.event_note_rounded, color: const Color(0xFF8B5CF6), onTap: () => _navigateToFeature('teacher_leave_management', context))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildModernActionCard(title: '通知管理', icon: Icons.notifications_active_rounded, color: const Color(0xFFF59E0B), onTap: () => _navigateToAdminNotification(context))),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: _buildModernActionCard(title: '排班管理', icon: Icons.schedule_rounded, color: const Color(0xFF06B6D4), onTap: () => _navigateToFeature('schedule_management', context))),
                         const SizedBox(width: 12),
                         Expanded(child: _buildModernActionCard(title: '报告统计', icon: Icons.analytics_rounded, color: const Color(0xFFF59E0B), onTap: () => _navigateToReports(context))),
                         const SizedBox(width: 12),
@@ -961,6 +1022,16 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         Expanded(child: _buildModernActionCard(title: '我的班级', icon: Icons.class_rounded, color: const Color(0xFF06B6D4), onTap: () => _navigateToClassManagement(context))),
                         const SizedBox(width: 12),
                         Expanded(child: _buildModernActionCard(title: 'NFC考勤', icon: Icons.nfc_rounded, color: const Color(0xFF3B82F6), onTap: () => _navigateToNfcAttendance(context))),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(child: _buildModernActionCard(title: '我的考勤', icon: Icons.schedule_rounded, color: const Color(0xFF06B6D4), onTap: () => _navigateToFeature('my_attendance_records', context))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildModernActionCard(title: '个人资料', icon: Icons.person_rounded, color: const Color(0xFF8B5CF6), onTap: () => _navigateToProfile(context))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildModernActionCard(title: '设置', icon: Icons.settings_rounded, color: const Color(0xFF6B7280), onTap: () => _navigateToSettings(context))),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -1513,7 +1584,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const AttendanceDashboardScreen(),
+        builder: (context) => const AttendanceManagementScreen(),
       ),
     );
   }
@@ -1588,7 +1659,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const NfcManagementScreen(),
+        builder: (context) => const NFCManagementOptimizedV2(),
       ),
     );
   }
@@ -1620,6 +1691,14 @@ class _HomeDashboardState extends State<HomeDashboard> {
     );
   }
 
+  void _navigateToProfile(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const TeacherProfileScreen(),
+      ),
+    );
+  }
 
 }
 

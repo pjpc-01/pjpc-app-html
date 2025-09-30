@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketbase/pocketbase.dart';
-import '../../providers/student_provider.dart';
-import '../../providers/teacher_provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../services/pocketbase_service.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/common/statistics_card.dart';
-import '../../widgets/homework/smart_homework_form.dart';
+import '../../../features/student/providers/student_provider.dart';
+import '../../features/teacher/providers/teacher_provider.dart';
+import '../../../features/auth/providers/auth_provider.dart';
+import '../../../shared/services/pocketbase_service.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/statistics_card.dart';
+import '../../features/student/widgets/smart_homework_form.dart';
 import 'homework_grading_screen.dart';
 
 class HomeworkGradesScreen extends StatefulWidget {
