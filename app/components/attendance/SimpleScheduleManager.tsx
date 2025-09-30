@@ -40,6 +40,18 @@ interface Schedule {
   notes?: string
 }
 
+interface ScheduleTemplate {
+  id: string
+  name: string
+  type: 'fulltime' | 'parttime' | 'teaching_only' | 'admin' | 'support' | 'service'
+  work_days: number[]
+  start_time: string
+  end_time: string
+  max_hours_per_week: number
+  color: string
+  is_active: boolean
+}
+
 interface SimpleScheduleManagerProps {
   onSaveSchedule: (schedule: any) => Promise<void>
   onDeleteSchedule: (id: string) => Promise<void>
@@ -56,6 +68,7 @@ export default function SimpleScheduleManager({
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [isAdding, setIsAdding] = useState(false)
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null)
+  const [templates, setTemplates] = useState<ScheduleTemplate[]>([])
 
   // 员工数据
   const employees: Employee[] = [
@@ -64,6 +77,83 @@ export default function SimpleScheduleManager({
     { id: '3', name: '李老师', type: 'parttime', subjects: ['英文'] },
     { id: '4', name: '王老师', type: 'parttime', subjects: ['科学'] }
   ]
+
+  // 默认模板数据 - 与ScheduleTemplateManager保持一致
+  const defaultTemplates: ScheduleTemplate[] = [
+    {
+      id: '1',
+      name: '全职教师班',
+      type: 'fulltime',
+      work_days: [1, 2, 3, 4, 5],
+      start_time: '09:00',
+      end_time: '17:00',
+      max_hours_per_week: 40,
+      color: '#3b82f6',
+      is_active: true
+    },
+    {
+      id: '2',
+      name: '兼职下午班',
+      type: 'parttime',
+      work_days: [1, 2, 3, 4, 5],
+      start_time: '14:00',
+      end_time: '18:00',
+      max_hours_per_week: 20,
+      color: '#10b981',
+      is_active: true
+    },
+    {
+      id: '3',
+      name: '仅教书时段',
+      type: 'teaching_only',
+      work_days: [1, 2, 3, 4, 5, 6, 0],
+      start_time: '16:00',
+      end_time: '19:00',
+      max_hours_per_week: 15,
+      color: '#f59e0b',
+      is_active: true
+    },
+    {
+      id: '4',
+      name: '管理层标准班',
+      type: 'admin',
+      work_days: [1, 2, 3, 4, 5],
+      start_time: '08:00',
+      end_time: '18:00',
+      max_hours_per_week: 50,
+      color: '#8b5cf6',
+      is_active: true
+    }
+  ]
+
+  // 初始化模板数据
+  useEffect(() => {
+    setTemplates(defaultTemplates)
+  }, [])
+
+  // 根据教师类型获取匹配的模板
+  const getTemplatesForEmployeeType = (employeeType: string) => {
+    return templates.filter(template => 
+      template.is_active && 
+      (template.type === employeeType || 
+       (employeeType === 'teaching_only' && template.type === 'teaching_only') ||
+       (employeeType === 'parttime' && template.type === 'parttime') ||
+       (employeeType === 'fulltime' && template.type === 'fulltime'))
+    )
+  }
+
+  // 获取教师类型显示名称
+  const getTypeName = (type: string) => {
+    switch (type) {
+      case 'fulltime': return '全职'
+      case 'parttime': return '兼职'
+      case 'teaching_only': return '仅教书'
+      case 'admin': return '管理'
+      case 'support': return '后勤'
+      case 'service': return '服务'
+      default: return type
+    }
+  }
 
   // 获取一周的日期
   const weekDates = Array.from({ length: 7 }, (_, i) => {
@@ -139,16 +229,16 @@ export default function SimpleScheduleManager({
     }
   }
 
-  // 快速排班
-  const handleQuickSchedule = async (employeeId: string, timeSlot: string) => {
+  // 快速排班 - 使用模板
+  const handleQuickSchedule = async (employeeId: string, templateId: string) => {
     const employee = employees.find(emp => emp.id === employeeId)
-    if (!employee) return
-
-    const [startTime, endTime] = timeSlot.split('-')
+    const template = templates.find(t => t.id === templateId)
     
-    // 为整周创建排班
-    for (let i = 0; i < 5; i++) { // 周一到周五
-      const date = addDays(startOfWeek(currentWeek), i)
+    if (!employee || !template) return
+
+    // 为模板指定的工作日创建排班
+    for (const workDay of template.work_days) {
+      const date = addDays(startOfWeek(currentWeek), workDay === 0 ? 6 : workDay - 1)
       const dateStr = format(date, 'yyyy-MM-dd')
       
       // 检查是否已存在排班
@@ -158,14 +248,14 @@ export default function SimpleScheduleManager({
       
       if (!existingSchedule) {
         const newSchedule: Schedule = {
-          id: `${Date.now()}-${i}`,
+          id: `${Date.now()}-${workDay}`,
           teacher_id: employeeId,
           teacher_name: employee.name,
           date: dateStr,
-          start_time: startTime,
-          end_time: endTime,
+          start_time: template.start_time,
+          end_time: template.end_time,
           status: 'scheduled',
-          notes: '快速排班'
+          notes: `快速排班 - ${template.name}`
         }
 
         try {
@@ -226,38 +316,56 @@ export default function SimpleScheduleManager({
             <Zap className="h-5 w-5 text-yellow-600" />
             快速排班
           </CardTitle>
-          <CardDescription>一键为教师安排整周排班</CardDescription>
+          <CardDescription>基于时间模板一键为教师安排整周排班</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {employees.map(employee => (
-              <div key={employee.id} className="space-y-2">
-                <div className="font-medium">{employee.name}</div>
-                <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleQuickSchedule(employee.id, '09:00-17:00')}
-                  >
-                    全天
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleQuickSchedule(employee.id, '09:00-12:00')}
-                  >
-                    上午
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleQuickSchedule(employee.id, '14:00-17:00')}
-                  >
-                    下午
-                  </Button>
+          <div className="space-y-4">
+            {employees.map(employee => {
+              const availableTemplates = getTemplatesForEmployeeType(employee.type)
+              return (
+                <div key={employee.id} className="border rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Users className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium">{employee.name}</div>
+                      <div className="text-sm text-gray-500">
+                        {getTypeName(employee.type)} · {employee.subjects.join(', ')}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {availableTemplates.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {availableTemplates.map(template => (
+                        <Button
+                          key={template.id}
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleQuickSchedule(employee.id, template.id)}
+                          className="text-xs"
+                          style={{ borderColor: template.color }}
+                        >
+                          <div 
+                            className="w-2 h-2 rounded-full mr-2" 
+                            style={{ backgroundColor: template.color }}
+                          />
+                          {template.name}
+                          <span className="ml-1 text-gray-500">
+                            ({template.start_time}-{template.end_time})
+                          </span>
+                        </Button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500">
+                      暂无匹配的排班模板
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </CardContent>
       </Card>

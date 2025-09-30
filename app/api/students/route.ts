@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     if (center) {
       // 尝试多种center格式
       const normalizedCenter = center.trim().toUpperCase()
-      filter = `center = "${center}" || center = "${normalizedCenter}" || center = "WX 01" || center = "WX 02"`
+      filter = `center = "${center}" || center = "${normalizedCenter}" || center = "wX 01" || center = "WX 01"`
       console.log('🔍 API: 使用多格式过滤器:', filter)
     }
     

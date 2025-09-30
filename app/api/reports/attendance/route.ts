@@ -14,12 +14,13 @@ export async function POST(request: NextRequest) {
       center, 
       includeStudents = true, 
       includeTeachers = true,
-      format = 'pdf' // 'pdf', 'excel', 'csv'
+      format: reportFormat = 'pdf' // 'pdf', 'excel', 'csv'
     } = body
 
-    console.log('📊 生成企业级考勤报告:', { reportType, startDate, endDate, center, includeStudents, includeTeachers, format })
+    console.log('📊 生成企业级考勤报告:', { reportType, startDate, endDate, center, includeStudents, includeTeachers, format: reportFormat })
 
     const pb = await getPocketBase()
+    console.log('✅ PocketBase实例已就绪，认证状态:', pb.authStore.isValid ? '有效' : '无效')
     
     // 确定查询日期范围
     let queryStartDate = startDate
@@ -57,16 +58,21 @@ export async function POST(request: NextRequest) {
       if (queryEndDate) studentParams.append('endDate', queryEndDate)
       if (center) studentParams.append('center', center)
 
-      const studentResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/student-attendance?${studentParams.toString()}`)
-      const studentData = await studentResponse.json()
-      
-      if (studentData.success) {
-        studentRecords = studentData.records.map((record: any) => ({
-          ...record,
-          type: 'student',
-          name: record.student_name,
-          id_field: record.student_id
-        }))
+      try {
+        const studentResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/student-attendance?${studentParams.toString()}`)
+        const studentData = await studentResponse.json()
+        
+        if (studentData.success) {
+          studentRecords = studentData.records.map((record: any) => ({
+            ...record,
+            type: 'student',
+            name: record.student_name,
+            id_field: record.student_id
+          }))
+        }
+      } catch (error) {
+        console.error('获取学生考勤数据失败:', error)
+        // 继续执行，不中断整个流程
       }
     }
 
@@ -79,16 +85,21 @@ export async function POST(request: NextRequest) {
       if (center) teacherParams.append('center', center)
       teacherParams.append('type', 'teacher')
 
-      const teacherResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/teacher-attendance?${teacherParams.toString()}`)
-      const teacherData = await teacherResponse.json()
-      
-      if (teacherData.success) {
-        teacherRecords = teacherData.records.map((record: any) => ({
-          ...record,
-          type: 'teacher',
-          name: record.teacher_name || record.name,
-          id_field: record.teacher_id || record.user_id
-        }))
+      try {
+        const teacherResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/teacher-attendance?${teacherParams.toString()}`)
+        const teacherData = await teacherResponse.json()
+        
+        if (teacherData.success) {
+          teacherRecords = teacherData.records.map((record: any) => ({
+            ...record,
+            type: 'teacher',
+            name: record.teacher_name || record.name,
+            id_field: record.teacher_id || record.user_id
+          }))
+        }
+      } catch (error) {
+        console.error('获取教师考勤数据失败:', error)
+        // 继续执行，不中断整个流程
       }
     }
 
@@ -109,29 +120,32 @@ export async function POST(request: NextRequest) {
     let contentType
     let filename
 
-    switch (format) {
+    switch (reportFormat) {
       case 'pdf':
         reportContent = await generatePDFReport(reportData)
         contentType = 'application/pdf'
-        filename = `考勤报告_${reportData.period}_${format(new Date(), 'yyyyMMdd_HHmmss')}.pdf`
+        filename = `attendance_report_${reportData.reportInfo.period}_${format(new Date(), 'yyyyMMdd_HHmmss')}.pdf`
         break
       case 'excel':
         reportContent = await generateExcelReport(reportData)
         contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        filename = `考勤报告_${reportData.period}_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`
+        filename = `attendance_report_${reportData.reportInfo.period}_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`
         break
       case 'csv':
         reportContent = generateCSVReport(reportData)
         contentType = 'text/csv; charset=utf-8'
-        filename = `考勤报告_${reportData.period}_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`
+        filename = `attendance_report_${reportData.reportInfo.period}_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`
         break
       default:
         reportContent = generateCSVReport(reportData)
         contentType = 'text/csv; charset=utf-8'
-        filename = `考勤报告_${reportData.period}_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`
+        filename = `attendance_report_${reportData.reportInfo.period}_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`
     }
 
-    return new NextResponse(reportContent, {
+    // 确保内容是正确的Buffer
+    const buffer = Buffer.isBuffer(reportContent) ? reportContent : Buffer.from(reportContent, 'utf-8')
+    
+    return new NextResponse(buffer as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': contentType,
@@ -169,7 +183,7 @@ function generateEnterpriseReportData(records: any[], options: any) {
   const earlyLeaveRecords = records.filter(r => r.status === 'early_leave')
   
   // 按日期分组统计
-  const dailyStats = {}
+  const dailyStats: Record<string, any> = {}
   records.forEach(record => {
     const date = record.date
     if (!dailyStats[date]) {
@@ -190,9 +204,9 @@ function generateEnterpriseReportData(records: any[], options: any) {
   })
   
   // 按中心分组统计
-  const centerStats = {}
+  const centerStats: Record<string, any> = {}
   records.forEach(record => {
-    const centerName = record.center || '未知中心'
+    const centerName = record.center || 'Unknown Center'
     if (!centerStats[centerName]) {
       centerStats[centerName] = {
         center: centerName,
@@ -211,14 +225,14 @@ function generateEnterpriseReportData(records: any[], options: any) {
   })
   
   // 按人员分组统计
-  const personStats = {}
+  const personStats: Record<string, any> = {}
   records.forEach(record => {
     const personKey = `${record.type}_${record.id_field}`
     if (!personStats[personKey]) {
       personStats[personKey] = {
         name: record.name,
         id: record.id_field,
-        type: record.type === 'student' ? '学生' : '教师',
+        type: record.type === 'student' ? 'Student' : 'Teacher',
         center: record.center,
         totalDays: 0,
         presentDays: 0,
@@ -249,21 +263,21 @@ function generateEnterpriseReportData(records: any[], options: any) {
   const averageCheckInTime = checkInTimes.length > 0 
     ? format(new Date(0, 0, 0, Math.floor(checkInTimes.reduce((a, b) => a + b, 0) / checkInTimes.length / 60), 
       Math.floor((checkInTimes.reduce((a, b) => a + b, 0) / checkInTimes.length) % 60)), 'HH:mm')
-    : '无数据'
+    : 'No Data'
   
   const averageCheckOutTime = checkOutTimes.length > 0 
     ? format(new Date(0, 0, 0, Math.floor(checkOutTimes.reduce((a, b) => a + b, 0) / checkOutTimes.length / 60), 
       Math.floor((checkOutTimes.reduce((a, b) => a + b, 0) / checkOutTimes.length) % 60)), 'HH:mm')
-    : '无数据'
+    : 'No Data'
   
   return {
     // 报告基本信息
     reportInfo: {
-      title: '考勤管理报告',
-      period: `${startDate} 至 ${endDate}`,
-      center: center || '全部中心',
-      generatedAt: format(generatedAt, 'yyyy年MM月dd日 HH:mm:ss', { locale: zhCN }),
-      generatedBy: 'PJPC教育管理系统',
+      title: 'Attendance Report',
+      period: `${startDate} to ${endDate}`,
+      center: center || 'All Centers',
+      generatedAt: format(generatedAt, 'yyyy-MM-dd HH:mm:ss'),
+      generatedBy: 'PJPC Education System',
       version: '1.0.0'
     },
     
@@ -293,56 +307,171 @@ function generateEnterpriseReportData(records: any[], options: any) {
 
 // 生成PDF报告
 async function generatePDFReport(reportData: any): Promise<Buffer> {
-  // 这里使用HTML模板生成PDF
-  const html = generateHTMLReport(reportData)
-  
-  // 在实际项目中，您可以使用 puppeteer 或 jsPDF 来生成PDF
-  // 这里返回HTML的Buffer作为示例
-  return Buffer.from(html, 'utf-8')
+  try {
+    const puppeteer = require('puppeteer')
+    const html = generateHTMLReport(reportData)
+    
+    // 启动浏览器
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    })
+    
+    const page = await browser.newPage()
+    
+    // 设置页面内容
+    await page.setContent(html, { waitUntil: 'networkidle0' })
+    
+    // 生成PDF
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: '20mm',
+        right: '20mm',
+        bottom: '20mm',
+        left: '20mm'
+      },
+      displayHeaderFooter: true,
+      headerTemplate: '<div></div>',
+      footerTemplate: `
+        <div style="font-size: 10px; text-align: center; width: 100%; color: #666;">
+          <span>PJPC Education Management System - Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
+        </div>
+      `
+    })
+    
+    await browser.close()
+    
+    return pdfBuffer
+  } catch (error) {
+    console.error('PDF生成失败:', error)
+    // 如果Puppeteer失败，返回HTML作为备用
+    const html = generateHTMLReport(reportData)
+    return Buffer.from(html, 'utf-8')
+  }
 }
 
 // 生成Excel报告
 async function generateExcelReport(reportData: any): Promise<Buffer> {
-  // 这里使用ExcelJS库生成Excel文件
-  // 在实际项目中，您需要安装 exceljs 库
-  const csv = generateCSVReport(reportData)
-  return Buffer.from(csv, 'utf-8')
+  try {
+    const ExcelJS = require('exceljs')
+    const { reportInfo, summary, records } = reportData
+    
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('Attendance Report')
+    
+    // 设置列宽
+    worksheet.columns = [
+      { header: 'Type', key: 'type', width: 10 },
+      { header: 'Name', key: 'name', width: 20 },
+      { header: 'ID', key: 'id', width: 15 },
+      { header: 'Center', key: 'center', width: 15 },
+      { header: 'Date', key: 'date', width: 12 },
+      { header: 'Check-in', key: 'checkIn', width: 12 },
+      { header: 'Check-out', key: 'checkOut', width: 12 },
+      { header: 'Status', key: 'status', width: 12 },
+      { header: 'Notes', key: 'notes', width: 20 }
+    ]
+    
+    // 添加标题
+    worksheet.addRow(['PJPC Education Management System - Attendance Report'])
+    worksheet.addRow([`Report Period: ${reportInfo.period}`])
+    worksheet.addRow([`Center: ${reportInfo.center}`])
+    worksheet.addRow([`Generated: ${reportInfo.generatedAt}`])
+    worksheet.addRow([])
+    
+    // 添加统计信息
+    worksheet.addRow(['Summary Statistics'])
+    worksheet.addRow(['Total Records', summary.totalRecords])
+    worksheet.addRow(['Student Records', summary.studentRecords])
+    worksheet.addRow(['Teacher Records', summary.teacherRecords])
+    worksheet.addRow(['Present Records', summary.presentRecords])
+    worksheet.addRow(['Absent Records', summary.absentRecords])
+    worksheet.addRow(['Overall Attendance Rate', `${summary.overallAttendanceRate}%`])
+    worksheet.addRow([])
+    
+    // 添加表头
+    worksheet.addRow(['Type', 'Name', 'ID', 'Center', 'Date', 'Check-in', 'Check-out', 'Status', 'Notes'])
+    
+    // 添加数据行
+    records.forEach((record: any) => {
+      worksheet.addRow([
+        record.type === 'student' ? 'Student' : 'Teacher',
+        record.name || '',
+        record.id_field || '',
+        record.center || '',
+        record.date ? format(new Date(record.date), 'yyyy-MM-dd') : '',
+        record.check_in ? format(parseISO(record.check_in), 'HH:mm:ss') : '',
+        record.check_out ? format(parseISO(record.check_out), 'HH:mm:ss') : '',
+        record.status || '',
+        record.notes || ''
+      ])
+    })
+    
+    // 设置样式
+    const headerRow = worksheet.getRow(1)
+    headerRow.font = { bold: true, size: 16 }
+    headerRow.alignment = { horizontal: 'center' }
+    
+    const summaryRow = worksheet.getRow(7)
+    summaryRow.font = { bold: true, size: 12 }
+    
+    const tableHeaderRow = worksheet.getRow(15)
+    tableHeaderRow.font = { bold: true }
+    tableHeaderRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF3B82F6' }
+    }
+    tableHeaderRow.font = { color: { argb: 'FFFFFFFF' }, bold: true }
+    
+    // 生成Excel文件
+    const buffer = await workbook.xlsx.writeBuffer()
+    return Buffer.from(buffer)
+  } catch (error) {
+    console.error('Excel生成失败:', error)
+    // 如果ExcelJS失败，返回CSV作为备用
+    const csv = generateCSVReport(reportData)
+    return Buffer.from(csv, 'utf-8')
+  }
 }
 
 // 生成CSV报告
 function generateCSVReport(reportData: any): string {
   const { reportInfo, summary, records } = reportData
   
+  // 使用简单的CSV格式，避免复杂字符
   let csv = ''
   
   // 报告头部信息
-  csv += `考勤管理报告\n`
-  csv += `报告期间,${reportInfo.period}\n`
-  csv += `中心,${reportInfo.center}\n`
-  csv += `生成时间,${reportInfo.generatedAt}\n`
-  csv += `生成系统,${reportInfo.generatedBy}\n`
+  csv += `Attendance Report\n`
+  csv += `Period,${reportInfo.period}\n`
+  csv += `Center,${reportInfo.center}\n`
+  csv += `Generated,${reportInfo.generatedAt}\n`
+  csv += `System,${reportInfo.generatedBy}\n`
   csv += `\n`
   
   // 总体统计
-  csv += `总体统计\n`
-  csv += `总记录数,${summary.totalRecords}\n`
-  csv += `学生记录,${summary.studentRecords}\n`
-  csv += `教师记录,${summary.teacherRecords}\n`
-  csv += `出勤记录,${summary.presentRecords}\n`
-  csv += `缺席记录,${summary.absentRecords}\n`
-  csv += `迟到记录,${summary.lateRecords}\n`
-  csv += `早退记录,${summary.earlyLeaveRecords}\n`
-  csv += `整体出勤率,${summary.overallAttendanceRate}%\n`
-  csv += `平均签到时间,${summary.averageCheckInTime}\n`
-  csv += `平均签退时间,${summary.averageCheckOutTime}\n`
+  csv += `Summary\n`
+  csv += `Total Records,${summary.totalRecords}\n`
+  csv += `Student Records,${summary.studentRecords}\n`
+  csv += `Teacher Records,${summary.teacherRecords}\n`
+  csv += `Present Records,${summary.presentRecords}\n`
+  csv += `Absent Records,${summary.absentRecords}\n`
+  csv += `Late Records,${summary.lateRecords}\n`
+  csv += `Early Leave Records,${summary.earlyLeaveRecords}\n`
+  csv += `Overall Attendance Rate,${summary.overallAttendanceRate}%\n`
+  csv += `Average Check-in Time,${summary.averageCheckInTime}\n`
+  csv += `Average Check-out Time,${summary.averageCheckOutTime}\n`
   csv += `\n`
   
   // 详细记录
-  csv += `详细考勤记录\n`
-  csv += `类型,姓名,ID,中心,日期,签到时间,签退时间,状态,备注\n`
+  csv += `Detailed Records\n`
+  csv += `Type,Name,ID,Center,Date,Check-in,Check-out,Status,Notes\n`
   
-  records.forEach(record => {
-    csv += `${record.type === 'student' ? '学生' : '教师'},`
+  records.forEach((record: any) => {
+    csv += `${record.type === 'student' ? 'Student' : 'Teacher'},`
     csv += `${record.name || ''},`
     csv += `${record.id_field || ''},`
     csv += `${record.center || ''},`
@@ -356,262 +485,497 @@ function generateCSVReport(reportData: any): string {
   return csv
 }
 
-// 生成HTML报告
+// 生成企业级HTML报告
 function generateHTMLReport(reportData: any): string {
   const { reportInfo, summary, dailyStats, centerStats, personStats, records } = reportData
   
   return `
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${reportInfo.title}</title>
     <style>
-        body {
-            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        * {
             margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
+            padding: 0;
+            box-sizing: border-box;
         }
+        
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8fafc;
+        }
+        
         .report-container {
             max-width: 1200px;
             margin: 0 auto;
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
             overflow: hidden;
         }
+        
+        /* 企业级头部设计 */
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #8b5cf6 100%);
             color: white;
-            padding: 30px;
+            padding: 40px 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.3;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
             text-align: center;
         }
+        
         .header h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 300;
-        }
-        .header .subtitle {
-            margin: 10px 0 0 0;
-            font-size: 16px;
-            opacity: 0.9;
-        }
-        .report-info {
-            padding: 20px 30px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
-        }
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-        .info-label {
-            font-weight: 600;
-            color: #495057;
-        }
-        .info-value {
-            color: #6c757d;
-        }
-        .summary-section {
-            padding: 30px;
-        }
-        .section-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #343a40;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #007bff;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .stat-card {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            border-left: 4px solid #007bff;
-        }
-        .stat-number {
-            font-size: 32px;
+            font-size: 36px;
             font-weight: 700;
-            color: #007bff;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: -0.5px;
         }
-        .stat-label {
-            font-size: 14px;
-            color: #6c757d;
-            text-transform: uppercase;
+        
+        .header .subtitle {
+            font-size: 18px;
+            opacity: 0.95;
+            font-weight: 300;
+            margin-bottom: 20px;
+        }
+        
+        .header .version {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
             letter-spacing: 0.5px;
         }
-        .table-container {
-            margin-top: 20px;
-            overflow-x: auto;
+        /* 报告信息区域 */
+        .report-info {
+            padding: 30px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-bottom: 1px solid #e2e8f0;
         }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+        
+        .info-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-left: 4px solid #3b82f6;
+            transition: transform 0.2s ease;
+        }
+        
+        .info-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .info-label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .info-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+        
+        .info-description {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        /* 统计区域 */
+        .summary-section {
+            padding: 40px 30px;
+            background: white;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #3b82f6;
+            position: relative;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: #8b5cf6;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .stat-description {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        /* 表格样式 */
+        .table-container {
+            margin-top: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin: 0;
         }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #dee2e6;
-        }
+        
         th {
-            background-color: #f8f9fa;
-            font-weight: 600;
-            color: #495057;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 16px 20px;
+            text-align: left;
+            position: relative;
         }
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
+        
+        th::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
         }
-        .status-present {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .status-absent {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .status-late {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        .status-early-leave {
-            background-color: #d1ecf1;
-            color: #0c5460;
-        }
-        .footer {
-            padding: 20px 30px;
-            background: #f8f9fa;
-            text-align: center;
-            color: #6c757d;
+        
+        td {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f5f9;
             font-size: 14px;
+            color: #475569;
+            transition: background-color 0.2s ease;
         }
+        
+        tr:hover td {
+            background-color: #f8fafc;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+        }
+        
+        .status-present {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+        }
+        
+        .status-absent {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+        }
+        
+        .status-late {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+        }
+        
+        .status-early-leave {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+        }
+        
+        .status-completed {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+        }
+        /* 页脚样式 */
+        .footer {
+            padding: 30px;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+        }
+        
+        .footer p {
+            margin: 8px 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .footer .copyright {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 16px;
+        }
+        
+        /* 图表容器 */
         .chart-container {
-            margin: 20px 0;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
+            margin: 30px 0;
+            padding: 24px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
         }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header h1 { font-size: 28px; }
+            .header .subtitle { font-size: 16px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .info-grid { grid-template-columns: 1fr; }
+            .table-container { overflow-x: auto; }
+        }
+        
+        /* 打印样式 */
         @media print {
-            body { background: white; }
-            .report-container { box-shadow: none; }
+            body { 
+                background: white; 
+                font-size: 12px;
+            }
+            .report-container { 
+                box-shadow: none; 
+                border-radius: 0;
+            }
+            .header {
+                background: #1e293b !important;
+                -webkit-print-color-adjust: exact;
+            }
+            .stat-card {
+                break-inside: avoid;
+            }
+            .table-container {
+                break-inside: avoid;
+            }
         }
     </style>
 </head>
 <body>
     <div class="report-container">
-        <!-- 报告头部 -->
+        <!-- 企业级报告头部 -->
         <div class="header">
-            <h1>${reportInfo.title}</h1>
-            <div class="subtitle">PJPC教育管理系统 - 专业考勤管理解决方案</div>
+            <div class="header-content">
+                <h1>${reportInfo.title}</h1>
+                <div class="subtitle">PJPC Education Management System - Professional Attendance Solution</div>
+                <div class="version">v${reportInfo.version}</div>
+            </div>
         </div>
         
         <!-- 报告信息 -->
         <div class="report-info">
             <div class="info-grid">
                 <div class="info-item">
-                    <span class="info-label">报告期间</span>
+                    <span class="info-label">Report Period</span>
                     <span class="info-value">${reportInfo.period}</span>
+                    <span class="info-description">Data collection timeframe</span>
                 </div>
                 <div class="info-item">
-                    <span class="info-label">中心</span>
+                    <span class="info-label">Center</span>
                     <span class="info-value">${reportInfo.center}</span>
+                    <span class="info-description">Educational institution</span>
                 </div>
                 <div class="info-item">
-                    <span class="info-label">生成时间</span>
+                    <span class="info-label">Generated</span>
                     <span class="info-value">${reportInfo.generatedAt}</span>
+                    <span class="info-description">Report creation time</span>
                 </div>
                 <div class="info-item">
-                    <span class="info-label">系统版本</span>
-                    <span class="info-value">${reportInfo.version}</span>
+                    <span class="info-label">System</span>
+                    <span class="info-value">${reportInfo.generatedBy}</span>
+                    <span class="info-description">Management platform</span>
                 </div>
             </div>
         </div>
         
-        <!-- 总体统计 -->
+        <!-- 企业级统计概览 -->
         <div class="summary-section">
-            <h2 class="section-title">总体统计</h2>
+            <h2 class="section-title">Executive Summary</h2>
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-number">${summary.totalRecords}</div>
-                    <div class="stat-label">总记录数</div>
+                    <div class="stat-label">Total Records</div>
+                    <div class="stat-description">All attendance entries</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number">${summary.studentRecords}</div>
-                    <div class="stat-label">学生记录</div>
+                    <div class="stat-label">Student Records</div>
+                    <div class="stat-description">Student attendance data</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number">${summary.teacherRecords}</div>
-                    <div class="stat-label">教师记录</div>
+                    <div class="stat-label">Teacher Records</div>
+                    <div class="stat-description">Faculty attendance data</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number">${summary.overallAttendanceRate}%</div>
-                    <div class="stat-label">整体出勤率</div>
+                    <div class="stat-label">Attendance Rate</div>
+                    <div class="stat-description">Overall performance</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number">${summary.presentRecords}</div>
-                    <div class="stat-label">出勤记录</div>
+                    <div class="stat-label">Present</div>
+                    <div class="stat-description">Successful check-ins</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number">${summary.absentRecords}</div>
-                    <div class="stat-label">缺席记录</div>
+                    <div class="stat-label">Absent</div>
+                    <div class="stat-description">Missed sessions</div>
                 </div>
             </div>
         </div>
         
-        <!-- 详细记录表格 -->
+        <!-- 企业级详细记录表格 -->
         <div class="summary-section">
-            <h2 class="section-title">详细考勤记录</h2>
+            <h2 class="section-title">Detailed Attendance Records</h2>
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
-                            <th>类型</th>
-                            <th>姓名</th>
+                            <th>Type</th>
+                            <th>Name</th>
                             <th>ID</th>
-                            <th>中心</th>
-                            <th>日期</th>
-                            <th>签到时间</th>
-                            <th>签退时间</th>
-                            <th>状态</th>
+                            <th>Center</th>
+                            <th>Date</th>
+                            <th>Check-in</th>
+                            <th>Check-out</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${records.map(record => `
+                        ${records.map((record: any) => `
                             <tr>
-                                <td>${record.type === 'student' ? '学生' : '教师'}</td>
-                                <td>${record.name || ''}</td>
-                                <td>${record.id_field || ''}</td>
-                                <td>${record.center || ''}</td>
-                                <td>${record.date || ''}</td>
+                                <td><strong>${record.type === 'student' ? 'Student' : 'Teacher'}</strong></td>
+                                <td>${record.name || '-'}</td>
+                                <td><code>${record.id_field || '-'}</code></td>
+                                <td>${record.center || '-'}</td>
+                                <td>${record.date ? format(new Date(record.date), 'MMM dd, yyyy') : '-'}</td>
                                 <td>${record.check_in ? format(parseISO(record.check_in), 'HH:mm:ss') : '-'}</td>
                                 <td>${record.check_out ? format(parseISO(record.check_out), 'HH:mm:ss') : '-'}</td>
                                 <td>
                                     <span class="status-badge status-${record.status}">
-                                        ${record.status === 'present' ? '已签到' :
-                                         record.status === 'absent' ? '缺席' :
-                                         record.status === 'late' ? '迟到' :
-                                         record.status === 'early_leave' ? '早退' :
-                                         record.status === 'completed' ? '已完成' : record.status}
+                                        ${record.status === 'present' ? 'Present' :
+                                         record.status === 'absent' ? 'Absent' :
+                                         record.status === 'late' ? 'Late' :
+                                         record.status === 'early_leave' ? 'Early Leave' :
+                                         record.status === 'completed' ? 'Completed' : record.status}
                                     </span>
                                 </td>
                             </tr>
@@ -621,10 +985,11 @@ function generateHTMLReport(reportData: any): string {
             </div>
         </div>
         
-        <!-- 页脚 -->
+        <!-- 企业级页脚 -->
         <div class="footer">
-            <p>本报告由PJPC教育管理系统自动生成 | 生成时间: ${reportInfo.generatedAt}</p>
-            <p>© 2025 PJPC教育管理系统. 保留所有权利.</p>
+            <p>This report was automatically generated by PJPC Education Management System</p>
+            <p>Generated on: ${reportInfo.generatedAt}</p>
+            <p class="copyright">© 2025 PJPC Education Management System. All rights reserved.</p>
         </div>
     </div>
 </body>

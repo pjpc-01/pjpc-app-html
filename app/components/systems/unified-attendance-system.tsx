@@ -17,7 +17,8 @@ import {
   Plus,
   Settings,
   AlertTriangle,
-  CreditCard
+  CreditCard,
+  FileText
 } from "lucide-react"
 import DeviceManagement from "@/app/components/systems/DeviceManagement"
 import AttendanceRecords from "@/app/components/systems/AttendanceRecords"
@@ -344,6 +345,37 @@ export default function UnifiedAttendanceSystem() {
           onUpdateRecords={setAttendanceRecords}
           onExportRecords={() => exportToCSV(attendanceRecords, 'attendance_records')}
         />
+      )
+    },
+    {
+      id: 'reports',
+      label: '考勤报告',
+      icon: FileText,
+      content: (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                考勤报告管理
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">考勤报告系统</h3>
+                <p className="text-gray-600 mb-6">查看详细的考勤统计和生成企业级报告</p>
+                <Button 
+                  onClick={() => window.open('/attendance-reports', '_blank')}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  打开考勤报告
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )
     }
   ]

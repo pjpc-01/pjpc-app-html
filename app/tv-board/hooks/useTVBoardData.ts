@@ -189,6 +189,8 @@ export function useTVBoardData(center: string): TVBoardDataResult {
         debugLog('API调用结果:', {
           studentsSuccess: studentsResult.success,
           studentsDataLength: studentsResult.data?.length || 0,
+          studentsDataSample: studentsResult.data?.slice(0, 2) || [],
+          studentsError: studentsResult.error,
           pointsSuccess: pointsResult.success,
           pointsDataLength: pointsResult.data?.length || 0,
           announcementsSuccess: announcementsResult.success,

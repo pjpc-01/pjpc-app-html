@@ -81,6 +81,9 @@ export async function POST(request: NextRequest) {
         student_id: attendanceData.student_id,
         student_name: attendanceData.student_name,
         center: attendanceData.center,
+        branch_code: attendanceData.center, // 添加branch_code字段
+        branch_name: attendanceData.center, // 添加branch_name字段
+        date: new Date(attendanceData.attendance_time).toISOString().split('T')[0], // 添加date字段
         check_in: attendanceData.attendance_time,
         status: attendanceType === 'check_in' ? 'present' : 'completed',
         device_info: `${attendanceData.device_name} (${attendanceData.device_id})`,

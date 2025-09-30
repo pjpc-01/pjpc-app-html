@@ -123,6 +123,28 @@ export default function TVBoardByCenter() {
     studentsPerPage
   } = useOptimizedData(center)
   
+  // 教师数据状态
+  const [teachers, setTeachers] = useState<any[]>([])
+  
+  // 获取教师数据
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      try {
+        const response = await fetch(`/api/teachers?center=${encodeURIComponent(center)}&limit=100`)
+        const data = await response.json()
+        if (data.success) {
+          setTeachers(data.data || [])
+        }
+      } catch (error) {
+        console.error('获取教师数据失败:', error)
+      }
+    }
+    
+    if (center) {
+      fetchTeachers()
+    }
+  }, [center])
+  
   // 交易记录
   const { 
     transactions, 
@@ -339,7 +361,7 @@ export default function TVBoardByCenter() {
         center={center} 
         enabled={true}
         students={students}
-        teachers={[]} // TODO: 添加教师数据获取
+        teachers={teachers}
         onCardRead={(cardData) => {
           // 处理读卡成功后的逻辑
           console.log('NFC读卡成功:', cardData)

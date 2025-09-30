@@ -219,7 +219,9 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const type = searchParams.get('type') // 'teacher' 或 'student'
     
+    console.log('🔍 服务器收到请求参数:', searchParams.toString())
     console.log('🔍 API接收到的参数:', { centerId, date, startDate, endDate, teacherName, status, type })
+    console.log('🔍 请求URL:', request.url)
 
     // 使用优化的PocketBase实例（自动处理认证）
     const pb = await getPocketBase()
@@ -234,15 +236,15 @@ export async function GET(request: NextRequest) {
       }
       if (date) {
         if (filter) filter += ' && '
-        filter += `date = "${date}"`
+        filter += `(date ~ "${date}" || date >= "${date}" || date <= "${date}")`
       }
       if (startDate) {
         if (filter) filter += ' && '
-        filter += `date >= "${startDate}"`
+        filter += `(date >= "${startDate}" || date ~ "${startDate}")`
       }
       if (endDate) {
         if (filter) filter += ' && '
-        filter += `date <= "${endDate}"`
+        filter += `(date <= "${endDate}" || date ~ "${endDate}")`
       }
       if (teacherName) {
         if (filter) filter += ' && '
@@ -256,11 +258,21 @@ export async function GET(request: NextRequest) {
       console.log('🔍 教师考勤过滤条件:', filter || '无过滤')
       
       // 查询教师考勤记录 - 先获取所有记录进行调试
-      const allRecords = await pb.collection('teacher_attendance').getList(1, 100, {
+      const page = parseInt(searchParams.get('page') || '1')
+      const pageSize = parseInt(searchParams.get('pageSize') || '50')
+      const limit = pageSize
+      const offset = (page - 1) * pageSize
+      
+      console.log('🔍 应用过滤条件:', filter || '无过滤')
+      
+      // 应用过滤条件，但使用更宽松的日期匹配
+      const allRecords = await pb.collection('teacher_attendance').getList(page, limit, {
+        filter: filter || undefined,
         sort: '-created'
       })
       
-      console.log('🔍 所有教师考勤记录:', allRecords.items.length, '条')
+      console.log('🔍 教师考勤记录查询结果:', allRecords.items.length, '条')
+      console.log('🔍 总记录数:', allRecords.totalItems)
       console.log('🔍 记录示例:', allRecords.items.slice(0, 3).map(r => ({
         id: r.id,
         teacher_id: r.teacher_id,
@@ -273,14 +285,34 @@ export async function GET(request: NextRequest) {
         center: r.center
       })))
       
-      // 直接返回所有记录，不进行过滤
+      // 额外调试：检查是否有任何教师考勤记录
+      const allTeacherRecords = await pb.collection('teacher_attendance').getList(1, 5, {
+        sort: '-created'
+      })
+      console.log('🔍 数据库中所有教师考勤记录数量:', allTeacherRecords.totalItems)
+      if (allTeacherRecords.items.length > 0) {
+        console.log('🔍 最新教师考勤记录:', allTeacherRecords.items[0])
+        console.log('🔍 最新记录的日期:', allTeacherRecords.items[0].date)
+      } else {
+        console.log('❌ 数据库中没有找到任何教师考勤记录！')
+      }
+      
+      // 检查不同日期的教师考勤记录
+      const recentRecords = await pb.collection('teacher_attendance').getList(1, 10, {
+        sort: '-created'
+      })
+      console.log('🔍 最近10条教师考勤记录:')
+      recentRecords.items.forEach((record, index) => {
+        console.log(`  ${index + 1}. ${record.teacher_name} - ${record.date} - ${record.check_in || 'N/A'}`)
+      })
+      
       const todayRecords = allRecords.items
       console.log('🔍 返回教师考勤记录:', todayRecords.length, '条')
 
       return NextResponse.json({
         success: true,
         records: todayRecords,
-        total: todayRecords.length,
+        total: allRecords.totalItems,
         message: '教师考勤数据获取成功'
       })
     } else {

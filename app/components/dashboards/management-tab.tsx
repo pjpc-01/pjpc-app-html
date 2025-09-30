@@ -300,6 +300,32 @@ export default function ManagementTab({ stats, statsLoading, setActiveTab }: Man
             </div>
           </div>
 
+          {/* 考勤报告模块 */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-rose-600" />
+              考勤报告模块
+            </h3>
+            <div className="space-y-3">
+              <Link href="/attendance-reports">
+                <Card className="hover:shadow-lg transition-all duration-200 hover:bg-rose-50 hover:border-rose-300">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center">
+                        <BarChart3 className="h-5 w-5 text-rose-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900">考勤报告查询</h4>
+                        <p className="text-sm text-gray-500">查看和管理所有考勤记录，支持多种时间范围查询</p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-gray-400" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
+          </div>
+
           {/* 智能排班模块 */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">

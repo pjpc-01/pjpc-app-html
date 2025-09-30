@@ -33,6 +33,7 @@ import {
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
+import HIDCardReader from '@/components/hid-reader/HIDCardReader'
 
 // 教师接口
 interface Teacher {
@@ -130,7 +131,7 @@ export default function TeacherAttendanceSystem({
       const data = await response.json()
       
       if (data.success) {
-        setTeachers(data.teachers || [])
+        setTeachers(data.data || [])
       } else {
         throw new Error(data.message || '获取教师数据失败')
       }
@@ -678,13 +679,12 @@ export default function TeacherAttendanceSystem({
                   </Card>
                 )}
 
-                <div className="text-center py-8">
-                  <CreditCard className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-600 mb-4">等待扫描教师NFC卡片...</p>
-                  <p className="text-sm text-gray-500">
-                    请将教师NFC卡片靠近设备进行扫描，系统会自动识别教师并执行相应的考勤操作
-                  </p>
-                </div>
+                <HIDCardReader
+                  onCardRead={handleCardScan}
+                  onError={(error) => showMessage('error', error)}
+                  placeholder="将教师卡片放在HID读卡器上..."
+                  className="py-4"
+                />
               </CardContent>
             </Card>
 
@@ -983,13 +983,29 @@ export default function TeacherAttendanceSystem({
                           </TableCell>
                           <TableCell>{record.branch_code || record.branch_name}</TableCell>
                           <TableCell>
-                            {format(parseISO(record.date), 'yyyy-MM-dd', { locale: zhCN })}
+                            {record.date ? (() => {
+                              try {
+                                // Handle both ISO strings and simple date strings
+                                const dateStr = record.date.includes('T') ? record.date : `${record.date}T00:00:00.000Z`
+                                return format(parseISO(dateStr), 'yyyy-MM-dd', { locale: zhCN })
+                              } catch (error) {
+                                console.warn('Invalid date format:', record.date, error)
+                                return record.date || '-'
+                              }
+                            })() : '-'}
                           </TableCell>
                           <TableCell>
                             {record.check_in ? (
                               <div className="flex items-center gap-1">
                                 <Clock className="h-3 w-3 text-green-500" />
-                                {format(parseISO(record.check_in), 'HH:mm:ss')}
+                                {(() => {
+                                  try {
+                                    return format(parseISO(record.check_in), 'HH:mm:ss')
+                                  } catch (error) {
+                                    console.warn('Invalid check_in time format:', record.check_in, error)
+                                    return record.check_in || '-'
+                                  }
+                                })()}
                               </div>
                             ) : (
                               <span className="text-gray-400">-</span>
@@ -999,7 +1015,14 @@ export default function TeacherAttendanceSystem({
                             {record.check_out ? (
                               <div className="flex items-center gap-1">
                                 <Clock className="h-3 w-3 text-red-500" />
-                                {format(parseISO(record.check_out), 'HH:mm:ss')}
+                                {(() => {
+                                  try {
+                                    return format(parseISO(record.check_out), 'HH:mm:ss')
+                                  } catch (error) {
+                                    console.warn('Invalid check_out time format:', record.check_out, error)
+                                    return record.check_out || '-'
+                                  }
+                                })()}
                               </div>
                             ) : (
                               <span className="text-gray-400">-</span>

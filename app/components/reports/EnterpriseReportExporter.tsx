@@ -105,6 +105,7 @@ export default function EnterpriseReportExporter({ onExport, className }: Report
   const generatePreview = async () => {
     try {
       setLoading(true)
+      console.log('🔍 开始生成预览，配置:', reportConfig)
       
       const response = await fetch('/api/reports/attendance', {
         method: 'POST',
@@ -117,14 +118,22 @@ export default function EnterpriseReportExporter({ onExport, className }: Report
         })
       })
 
+      console.log('🔍 API响应状态:', response.status)
+      console.log('🔍 API响应头:', Object.fromEntries(response.headers.entries()))
+
       if (response.ok) {
         const csvData = await response.text()
+        console.log('🔍 预览数据长度:', csvData.length)
         setPreviewData(csvData)
       } else {
-        console.error('预览生成失败')
+        const errorText = await response.text()
+        console.error('预览生成失败，状态:', response.status)
+        console.error('错误详情:', errorText)
+        alert(`预览生成失败: ${response.status} - ${errorText}`)
       }
     } catch (error) {
       console.error('预览生成失败:', error)
+      alert(`预览生成失败: ${error instanceof Error ? error.message : '未知错误'}`)
     } finally {
       setLoading(false)
     }
@@ -134,6 +143,7 @@ export default function EnterpriseReportExporter({ onExport, className }: Report
   const exportReport = async () => {
     try {
       setLoading(true)
+      console.log('🔍 开始导出报告，配置:', reportConfig)
       
       const response = await fetch('/api/reports/attendance', {
         method: 'POST',
@@ -143,8 +153,13 @@ export default function EnterpriseReportExporter({ onExport, className }: Report
         body: JSON.stringify(reportConfig)
       })
 
+      console.log('🔍 导出API响应状态:', response.status)
+      console.log('🔍 导出API响应头:', Object.fromEntries(response.headers.entries()))
+
       if (response.ok) {
         const blob = await response.blob()
+        console.log('🔍 导出文件大小:', blob.size, 'bytes')
+        
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
@@ -154,6 +169,8 @@ export default function EnterpriseReportExporter({ onExport, className }: Report
         const filename = contentDisposition 
           ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
           : `考勤报告_${format(new Date(), 'yyyyMMdd_HHmmss')}.${reportConfig.format}`
+        
+        console.log('🔍 导出文件名:', filename)
         
         a.download = filename
         document.body.appendChild(a)
@@ -165,10 +182,14 @@ export default function EnterpriseReportExporter({ onExport, className }: Report
           onExport(reportConfig)
         }
       } else {
-        console.error('报告导出失败')
+        const errorText = await response.text()
+        console.error('报告导出失败，状态:', response.status)
+        console.error('错误详情:', errorText)
+        alert(`报告导出失败: ${response.status} - ${errorText}`)
       }
     } catch (error) {
       console.error('报告导出失败:', error)
+      alert(`报告导出失败: ${error instanceof Error ? error.message : '未知错误'}`)
     } finally {
       setLoading(false)
     }

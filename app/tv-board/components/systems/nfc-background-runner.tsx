@@ -18,7 +18,9 @@ async function processAttendance(
   students: any[],
   teachers: any[],
   center: string,
-  deviceInfo: { deviceId: string; deviceName: string }
+  deviceInfo: { deviceId: string; deviceName: string },
+  onSuccess?: (name: string, type: 'student' | 'teacher') => void,
+  onError?: (message: string) => void
 ): Promise<{
   success: boolean
   user?: { id: string; name: string; type: 'student' | 'teacher' }
@@ -37,7 +39,12 @@ async function processAttendance(
     })
 
         // 直接获取学生和教师数据
-        tvLog('开始获取学生和教师数据', { center })
+        tvLog('开始获取学生和教师数据', { 
+          center, 
+          centerType: typeof center,
+          centerLength: center?.length,
+          centerEncoded: encodeURIComponent(center)
+        })
         
         let allStudents = []
         let allTeachers = []
@@ -51,6 +58,7 @@ async function processAttendance(
             allStudents = studentData.data
             tvLog('获取到真实学生数据', { 
               count: allStudents.length,
+              center,
               sampleStudents: allStudents.slice(0, 2).map((s: any) => ({
                 student_id: s.student_id,
                 student_name: s.student_name,
@@ -117,6 +125,19 @@ async function processAttendance(
       const studentCenter = s.center || s.Center || s.centre || s.branch || ''
       const normalizedStudentCenter = studentCenter.trim().toUpperCase()
       
+      tvLog('学生center匹配检查', {
+        cardNumber,
+        studentId: s.student_id,
+        studentName: s.student_name,
+        studentCenter,
+        normalizedStudentCenter,
+        targetCenter: center,
+        normalizedTargetCenter: normalizedCenter,
+        match1: normalizedStudentCenter === normalizedCenter,
+        match2: normalizedStudentCenter === center.trim(),
+        match3: studentCenter === center
+      })
+      
       return normalizedStudentCenter === normalizedCenter || 
              normalizedStudentCenter === center.trim() ||
              studentCenter === center
@@ -133,6 +154,10 @@ async function processAttendance(
       // 记录学生考勤
       const attendanceResult = await recordStudentAttendance(student, center, deviceInfo)
       if (attendanceResult.success) {
+        // 显示成功提示
+        if (onSuccess) {
+          onSuccess(student.student_name, 'student')
+        }
         return {
           success: true,
           user: {
@@ -142,23 +167,31 @@ async function processAttendance(
           }
         }
       } else {
+        const errorMsg = `学生考勤记录失败: ${attendanceResult.error}`
+        if (onError) {
+          onError(errorMsg)
+        }
         return {
           success: false,
-          error: `学生考勤记录失败: ${attendanceResult.error}`
+          error: errorMsg
         }
       }
     }
 
-    // 查找教师 - 支持多种center字段格式
+    // 查找教师 - 暂时忽略center匹配，因为教师center字段是ID
     const teacher = allTeachers.find((t: any) => {
       if (t.cardNumber !== cardNumber) return false
       
-      const teacherCenter = t.center || t.Center || t.centre || t.branch || ''
-      const normalizedTeacherCenter = teacherCenter.trim().toUpperCase()
+      tvLog('教师匹配检查', {
+        cardNumber,
+        teacherId: t.teacher_id,
+        teacherName: t.teacher_name || t.name,
+        teacherCenter: t.center,
+        targetCenter: center
+      })
       
-      return normalizedTeacherCenter === normalizedCenter || 
-             normalizedTeacherCenter === center.trim() ||
-             teacherCenter === center
+      // 暂时只匹配卡号，忽略center字段
+      return true
     })
     
     if (teacher) {
@@ -172,6 +205,10 @@ async function processAttendance(
       // 记录教师考勤
       const attendanceResult = await recordTeacherAttendance(teacher, center, deviceInfo)
       if (attendanceResult.success) {
+        // 显示成功提示
+        if (onSuccess) {
+          onSuccess(teacher.teacher_name || teacher.name, 'teacher')
+        }
         return {
           success: true,
           user: {
@@ -181,23 +218,35 @@ async function processAttendance(
           }
         }
       } else {
+        const errorMsg = `教师考勤记录失败: ${attendanceResult.error}`
+        if (onError) {
+          onError(errorMsg)
+        }
         return {
           success: false,
-          error: `教师考勤记录失败: ${attendanceResult.error}`
+          error: errorMsg
         }
       }
     }
 
+    const errorMsg = '未找到匹配的学生或教师'
+    if (onError) {
+      onError(errorMsg)
+    }
     return {
       success: false,
-      error: '未找到匹配的学生或教师'
+      error: errorMsg
     }
 
   } catch (error) {
+    const errorMsg = `考勤处理失败: ${error instanceof Error ? error.message : String(error)}`
     tvLog('考勤处理错误', { error: error instanceof Error ? error.message : String(error), center })
+    if (onError) {
+      onError(errorMsg)
+    }
     return {
       success: false,
-      error: `考勤处理失败: ${error instanceof Error ? error.message : String(error)}`
+      error: errorMsg
     }
   }
 }
@@ -320,6 +369,8 @@ export default function NFCBackgroundRunner({
   const [isRunning, setIsRunning] = useState(false)
   const [lastCardData, setLastCardData] = useState<string | null>(null)
   const [connectedReaders, setConnectedReaders] = useState<string[]>([])
+  const [successMessage, setSuccessMessage] = useState<{name: string, type: 'student' | 'teacher'} | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isProcessingRef = useRef(false)
   
@@ -368,6 +419,22 @@ export default function NFCBackgroundRunner({
         {
           deviceId: `nfc-${readerType}`,
           deviceName: `${readerType.toUpperCase()} Reader`
+        },
+        (name, type) => {
+          // 显示成功提示
+          setSuccessMessage({ name, type })
+          // 3秒后自动隐藏
+          setTimeout(() => {
+            setSuccessMessage(null)
+          }, 3000)
+        },
+        (errorMsg) => {
+          // 显示错误提示
+          setErrorMessage(errorMsg)
+          // 5秒后自动隐藏
+          setTimeout(() => {
+            setErrorMessage(null)
+          }, 5000)
         }
       )
 
@@ -591,9 +658,26 @@ export default function NFCBackgroundRunner({
       }
     }
     
+    // 添加全局键盘监听器（即使窗口失去焦点也能工作）
     document.addEventListener('keydown', handleHIDKeyPress)
+    tvLog('HID键盘监听器已添加', { center, enabled })
     
-    tvLog('HID键盘监听已启动', { center, enabled })
+    // 添加窗口焦点监听器，确保在窗口重新获得焦点时重置状态
+    const handleWindowFocus = () => {
+      tvLog('窗口重新获得焦点，重置HID状态', { center })
+      inputBuffer = ""
+      isHIDProcessing = false
+      resetProcessingState()
+    }
+    
+    const handleWindowBlur = () => {
+      tvLog('窗口失去焦点，但HID监听继续运行', { center })
+    }
+    
+    window.addEventListener('focus', handleWindowFocus)
+    window.addEventListener('blur', handleWindowBlur)
+    
+    tvLog('HID键盘监听已启动（全局模式）', { center, enabled })
     
     // 重置处理状态
     resetProcessingState()
@@ -605,16 +689,55 @@ export default function NFCBackgroundRunner({
         enabled, 
         bufferLength: inputBuffer.length,
         isProcessing: isHIDProcessing,
+        windowFocused: document.hasFocus(),
         timestamp: new Date().toISOString()
       })
     }, 30000)
     
     return () => {
       document.removeEventListener('keydown', handleHIDKeyPress)
+      window.removeEventListener('focus', handleWindowFocus)
+      window.removeEventListener('blur', handleWindowBlur)
       clearInterval(heartbeatInterval)
       tvLog('HID键盘监听已停止', { center })
     }
-  }, [enabled, center])
+  }, [enabled, center, resetProcessingState])
+
+  // 成功提示组件
+  const SuccessNotification = () => {
+    if (!successMessage) return null
+    
+    return (
+      <div className="fixed bottom-4 right-4 z-50 bg-green-600 text-white p-4 rounded-lg shadow-lg animate-pulse">
+        <div className="flex items-center space-x-2">
+          <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+          <div>
+            <div className="font-bold text-lg">{successMessage.name}</div>
+            <div className="text-sm opacity-90">
+              {successMessage.type === 'student' ? '学生' : '教师'} 打卡成功
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 错误提示组件
+  const ErrorNotification = () => {
+    if (!errorMessage) return null
+    
+    return (
+      <div className="fixed bottom-4 left-4 z-50 bg-red-600 text-white p-4 rounded-lg shadow-lg animate-pulse">
+        <div className="flex items-center space-x-2">
+          <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+          <div>
+            <div className="font-bold text-lg">打卡失败</div>
+            <div className="text-sm opacity-90">{errorMessage}</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // 在开发环境下显示状态
   if (process.env.NODE_ENV === 'development') {
@@ -622,35 +745,47 @@ export default function NFCBackgroundRunner({
     const hasWebNFC = typeof window !== 'undefined' && 'NDEFReader' in window
     
     return (
-      <div className="fixed top-4 right-4 z-50 bg-black/80 text-white p-2 rounded text-xs max-w-xs">
-        <div>NFC: {isRunning ? '运行中' : '已停止'}</div>
-        <div>中心: {center}</div>
-        <div>协议: {typeof window !== 'undefined' ? window.location.protocol : 'unknown'}</div>
-        <div className={isHttps ? 'text-green-400' : 'text-red-400'}>
-          HTTPS: {isHttps ? '✅' : '❌'}
-        </div>
-        <div className={hasWebNFC ? 'text-green-400' : 'text-red-400'}>
-          Web NFC: {hasWebNFC ? '✅' : '❌'}
-        </div>
-        <div>读取器: {connectedReaders.length > 0 ? connectedReaders.join(', ') : '无'}</div>
-        <div className="text-green-400">HID键盘: ✅ 已启用</div>
-        {lastCardData && <div>最后读卡: {lastCardData.slice(-8)}</div>}
-        <div>学生数: {students.length}</div>
-        <div>教师数: {teachers.length}</div>
-        {!isHttps && (
-          <div className="text-yellow-400 text-xs mt-1">
-            ⚠️ 手机NFC需要HTTPS
+      <>
+        <div className="fixed top-4 right-4 z-50 bg-black/80 text-white p-2 rounded text-xs max-w-xs">
+          <div>NFC: {isRunning ? '运行中' : '已停止'}</div>
+          <div>中心: {center}</div>
+          <div>协议: {typeof window !== 'undefined' ? window.location.protocol : 'unknown'}</div>
+          <div className={isHttps ? 'text-green-400' : 'text-red-400'}>
+            HTTPS: {isHttps ? '✅' : '❌'}
           </div>
-        )}
-        {!hasWebNFC && (
-          <div className="text-yellow-400 text-xs mt-1">
-            ⚠️ 浏览器不支持Web NFC
+          <div className={hasWebNFC ? 'text-green-400' : 'text-red-400'}>
+            Web NFC: {hasWebNFC ? '✅' : '❌'}
           </div>
-        )}
-      </div>
+          <div>读取器: {connectedReaders.length > 0 ? connectedReaders.join(', ') : '无'}</div>
+          <div className="text-green-400">HID键盘: ✅ 已启用（全局模式）</div>
+          <div className={document.hasFocus() ? 'text-green-400' : 'text-yellow-400'}>
+            窗口焦点: {document.hasFocus() ? '✅ 有焦点' : '⚠️ 无焦点'}
+          </div>
+          {lastCardData && <div>最后读卡: {lastCardData.slice(-8)}</div>}
+          <div>学生数: {students.length}</div>
+          <div>教师数: {teachers.length}</div>
+          {!isHttps && (
+            <div className="text-yellow-400 text-xs mt-1">
+              ⚠️ 手机NFC需要HTTPS
+            </div>
+          )}
+          {!hasWebNFC && (
+            <div className="text-yellow-400 text-xs mt-1">
+              ⚠️ 浏览器不支持Web NFC
+            </div>
+          )}
+        </div>
+        <SuccessNotification />
+        <ErrorNotification />
+      </>
     )
   }
 
-  // 生产环境下不渲染任何内容
-  return null
+  // 生产环境下显示成功和错误提示
+  return (
+    <>
+      <SuccessNotification />
+      <ErrorNotification />
+    </>
+  )
 }
