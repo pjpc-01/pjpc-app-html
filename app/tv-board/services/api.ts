@@ -24,13 +24,41 @@ class ApiService {
     retryDelay: 3000 // 增加重试延迟到3秒
   }
   
-  // 简单的内存缓存
+  // 简单的持久化缓存
   private cache = new Map<string, { data: any; timestamp: number }>()
-  private cacheTimeout = 5000 // 减少到5秒缓存，确保数据及时更新
+  private cacheTimeout = 5000 
+  private STORAGE_KEY = 'tv_board_api_cache'
+
+  constructor() {
+    this.loadCacheFromStorage()
+  }
+
+  private loadCacheFromStorage() {
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        this.cache = new Map(Object.entries(parsed))
+        console.log('[API] 缓存已从存储加载')
+      }
+    } catch (e) {
+      console.error('[API] 加载缓存失败:', e)
+    }
+  }
+
+  private saveCacheToStorage() {
+    try {
+      const obj = Object.fromEntries(this.cache)
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(obj))
+    } catch (e) {
+      console.error('[API] 保存缓存失败:', e)
+    }
+  }
 
   // 清除缓存
   clearCache() {
     this.cache.clear()
+    localStorage.removeItem(this.STORAGE_KEY)
     console.log('[API] 缓存已清除')
   }
 
@@ -55,8 +83,7 @@ class ApiService {
     const cached = this.cache.get(cacheKey)
     if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
       console.log(`[API] 使用缓存数据: ${url}`)
-      // 临时禁用缓存来调试问题
-      // return { success: true, data: cached.data }
+      return { success: true, data: cached.data }
     }
   }
 
@@ -152,6 +179,7 @@ class ApiService {
         if (options.method === 'GET' || !options.method) {
           const cacheKey = `${url}_${JSON.stringify(options)}`
           this.cache.set(cacheKey, { data, timestamp: Date.now() })
+          this.saveCacheToStorage()
         }
         
         return { success: true, data }
@@ -176,9 +204,6 @@ class ApiService {
   // 获取学生数据
   async getStudents(center: string): Promise<ApiResponse<any[]>> {
     console.log('[API] getStudents 调用:', { center })
-    
-    // 强制清除缓存
-    this.clearCache()
     
     // 优先使用最稳定的端点
     const endpoints = [
@@ -247,9 +272,6 @@ class ApiService {
   // 获取积分数据
   async getPoints(): Promise<ApiResponse<any[]>> {
     console.log('[API] getPoints 调用')
-    
-    // 强制清除缓存
-    this.clearCache()
     
     const result = await this.fetchWithRetry<any>('/api/points?page=1&per_page=300', {}, {
       timeout: 45000, // 减少超时时间

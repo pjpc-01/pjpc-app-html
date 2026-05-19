@@ -33,12 +33,32 @@ export const usePayments = () => {
     {
       id: "2",
       invoiceId: "2",
-      amountPaid: 1400,
+      amountPaid: 1500,
       datePaid: "2024-01-25",
       method: "cash",
       referenceNo: "CASH001",
       status: "completed",
       notes: "1月学费支付"
+    },
+    {
+      id: "3",
+      invoiceId: "4",
+      amountPaid: 1800,
+      datePaid: "2024-01-12",
+      method: "online_payment",
+      referenceNo: "OPAY001",
+      status: "completed",
+      notes: "1月学费支付"
+    },
+    {
+      id: "4",
+      invoiceId: "5",
+      amountPaid: 700,
+      datePaid: "2024-01-19",
+      method: "bank_transfer",
+      referenceNo: "TXN002",
+      status: "pending",
+      notes: "部分缴费"
     }
   ])
 
@@ -133,4 +153,4 @@ export const usePayments = () => {
     getPaymentsByInvoice,
     getPaymentStatistics
   }
-} 
+}

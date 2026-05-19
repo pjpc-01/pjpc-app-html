@@ -33,7 +33,7 @@ export const useInvoices = () => {
         { name: "基础学费", amount: 800 },
         { name: "特色课程费", amount: 400 }
       ],
-      status: "issued", 
+      status: "paid", 
       issueDate: "2024-01-15", 
       dueDate: "2024-01-30",
       notes: "1月学费"
@@ -67,6 +67,38 @@ export const useInvoices = () => {
       status: "overdue", 
       issueDate: "2024-01-10", 
       dueDate: "2024-01-25",
+      notes: "1月学费"
+    },
+    { 
+      id: "4", 
+      invoiceNumber: "INV-2024-004", 
+      studentId: "4",
+      studentName: "赵敏",
+      studentGrade: "四年级",
+      totalAmount: 1800, 
+      items: [
+        { name: "基础学费", amount: 1200 },
+        { name: "教材费", amount: 600 }
+      ],
+      status: "paid", 
+      issueDate: "2024-01-12", 
+      dueDate: "2024-01-27",
+      notes: "1月学费及教材费"
+    },
+    { 
+      id: "5", 
+      invoiceNumber: "INV-2024-005", 
+      studentId: "5",
+      studentName: "孙悟空",
+      studentGrade: "五年级",
+      totalAmount: 1400, 
+      items: [
+        { name: "基础学费", amount: 1000 },
+        { name: "活动费", amount: 400 }
+      ],
+      status: "issued", 
+      issueDate: "2024-01-18", 
+      dueDate: "2024-02-02",
       notes: "1月学费"
     }
   ])
@@ -126,7 +158,6 @@ export const useInvoices = () => {
     const issueDate = currentDate.toISOString().split('T')[0]
     const dueDate = new Date(currentDate.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     
-    // This would typically fetch from student fee assignments
     const items = [
       { name: "基础学费", amount: 800 },
       { name: "特色课程费", amount: 400 }
@@ -210,4 +241,4 @@ export const useInvoices = () => {
     getInvoiceStatistics,
     generateInvoiceNumber
   }
-} 
+}
