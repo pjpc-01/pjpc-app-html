@@ -8,7 +8,7 @@ const detectNetworkEnvironment = async () => {
   if (isGitHubPages) {
     // GitHub Pages环境下直接使用DDNS连接
     return {
-      url: process.env.POCKETBASE_URL || 'http://pjpc.tplinkdns.com:8090',
+      url: process.env.POCKETBASE_URL || 'http://localhost:8090',
       type: 'ddns',
       name: 'GitHub Pages DDNS',
       latency: 0,
@@ -31,7 +31,7 @@ const detectNetworkEnvironment = async () => {
   }
   
   const testUrls = [
-    { url: process.env.POCKETBASE_URL || 'http://pjpc.tplinkdns.com:8090', type: 'ddns', name: 'DDNS' },
+    { url: process.env.POCKETBASE_URL || 'http://localhost:8090', type: 'ddns', name: 'DDNS' },
     { url: 'http://192.168.0.59:8090', type: 'local', name: '局域网' }
   ]
   
@@ -102,7 +102,7 @@ const getPocketBaseUrl = async (): Promise<string> => {
   // 服务器端直接使用HTTP连接，避免自签名证书问题
   if (typeof window === 'undefined') {
     console.log('🔧 服务器端使用直接HTTP连接')
-    return process.env.POCKETBASE_URL || 'http://pjpc.tplinkdns.com:8090'
+    return process.env.POCKETBASE_URL || 'http://localhost:8090'
   }
   
   // 客户端优先使用代理连接（避免CORS问题）

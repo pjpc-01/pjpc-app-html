@@ -1,12 +1,11 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { GraduationCap, Bell, Settings, LogOut, UserCheck, Wifi, WifiOff, AlertTriangle, CreditCard, Menu, X } from "lucide-react"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
-import SecureLoginForm from "@/app/components/systems/auth/secure-login-form"
 import ModernAdminDashboard from "./components/dashboards/modern-admin-dashboard"
 import ModernParentDashboard from "./components/dashboards/modern-parent-dashboard"
 import AccountantDashboard from "./components/dashboards/accountant-dashboard"
@@ -16,168 +15,42 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertTriangle as AlertTriangleIcon, Mail, Clock } from "lucide-react"
 import ConnectionStatus from "@/components/ConnectionStatus"
 import TeacherNavigation from "@/components/shared/TeacherNavigation"
-import StaticPage from "./static-page"
 import dynamic from "next/dynamic"
 
-// 动态导入TeacherWorkspace以避免水合问题
+// Dynamically import TeacherWorkspace to avoid hydration issues
 const TeacherWorkspace = dynamic(() => import('./teacher-workspace/page'), {
   ssr: false,
   loading: () => (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">
         <GraduationCap className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-pulse" />
-        <p className="text-gray-600">加载教师工作台...</p>
+        <p className="text-gray-600">Loading Teacher Workspace...</p>
       </div>
     </div>
   )
 })
 
 export default function Dashboard() {
-  const { user, userProfile, loading, logout, resendVerification, error, connectionStatus, clearError } = useAuth()
+  const { logout, resendVerification, clearError } = useAuth()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
-  const [isStaticBuild, setIsStaticBuild] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  // 检测是否为静态构建
-  useEffect(() => {
-    // 在静态构建时，window对象可能不存在或PocketBase连接会失败
-    if (connectionStatus === 'disconnected') {
-      setIsStaticBuild(true)
-    }
-  }, [connectionStatus])
-
-  // 如果是静态构建，直接显示静态页面
-  if (isStaticBuild) {
-    return <StaticPage />
+  // ===========================================================================
+  // DEV MODE: FULL AUTH BYPASS
+  // ===========================================================================
+  const user = { id: 'dev-admin', email: 'admin@pjpc.com' }
+  const userProfile = {
+    id: 'dev-admin',
+    name: 'Dev Admin',
+    role: 'admin',
+    status: 'active',
+    email: 'admin@pjpc.com'
   }
-
-  // 显示加载状态 - 只有在真正需要等待时才显示
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <GraduationCap className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600">
-            检查连接中...
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  // 如果连接失败，显示错误
-  if (connectionStatus === 'disconnected') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-600">
-              <WifiOff className="h-5 w-5" />
-              连接失败
-            </CardTitle>
-            <CardDescription>无法连接到PocketBase服务器，请检查网络连接</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert variant="destructive">
-              <AlertTriangleIcon className="h-4 w-4" />
-              <AlertDescription>
-                系统无法连接到PocketBase服务。请检查：
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>网络连接是否正常</li>
-                  <li>PocketBase服务器是否运行</li>
-                  <li>服务器地址是否正确 (pjpc.tplinkdns.com:8090)</li>
-                </ul>
-              </AlertDescription>
-            </Alert>
-            <Button onClick={() => router.push('/')} className="w-full">
-              返回首页
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  // 如果用户未登录，显示登录界面
-  if (!user && !loading) {
-    return <SecureLoginForm />
-  }
-  
-  // 如果用户存在但没有用户资料，等待一下再检查
-  if (!userProfile) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <GraduationCap className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600">
-            加载用户资料中...
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            用户ID: {user?.id || '未知'}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">
-            如果长时间停留在此页面，请刷新页面
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  // 账户待审核
-  if (userProfile?.status === "pending") {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              账户审核中
-            </CardTitle>
-            <CardDescription>您的账户正在等待管理员审核</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert>
-              <AlertTriangleIcon className="h-4 w-4" />
-              <AlertDescription>
-                您的 {userProfile.role === "teacher" ? "老师" : "家长"} 账户申请已提交，请耐心等待管理员审核。
-                审核通过后您将收到邮件通知。
-              </AlertDescription>
-            </Alert>
-            <Button onClick={logout} variant="outline" className="w-full bg-transparent">
-              退出登录
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  // 账户被暂停
-  if (userProfile?.status === "suspended") {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangleIcon className="h-5 w-5 text-red-500" />
-              账户已暂停
-            </CardTitle>
-            <CardDescription>您的账户已被管理员暂停使用</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert variant="destructive">
-              <AlertTriangleIcon className="h-4 w-4" />
-              <AlertDescription>您的账户已被暂停，如有疑问请联系管理员。</AlertDescription>
-            </Alert>
-            <Button onClick={logout} variant="outline" className="w-full bg-transparent">
-              退出登录
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
+  const loading = false
+  const connectionStatus = 'connected'
+  const error = null
+  // ===========================================================================
 
   const renderDashboard = () => {
     switch (userProfile.role) {
@@ -193,7 +66,7 @@ export default function Dashboard() {
         return (
           <div className="text-center py-12">
             <GraduationCap className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-            <p className="text-gray-600">未知角色</p>
+            <p className="text-gray-600">Unknown Role</p>
           </div>
         )
     }
@@ -201,39 +74,29 @@ export default function Dashboard() {
 
   const getRoleTitle = () => {
     switch (userProfile.role) {
-      case "admin":
-        return "管理员控制台"
-      case "teacher":
-        return "教师工作台"
-      case "parent":
-        return "家长服务台"
-      case "accountant":
-        return "会计工作台"
-      default:
-        return "安亲班管理系统"
+      case "admin": return "Admin Console"
+      case "teacher": return "Teacher Workspace"
+      case "parent": return "Parent Portal"
+      case "accountant": return "Accountant Workspace"
+      default: return "Management System"
     }
   }
 
   const getRoleLabel = () => {
     switch (userProfile.role) {
-      case "admin":
-        return "管理员"
-      case "teacher":
-        return "老师"
-      case "parent":
-        return "家长"
-      case "accountant":
-        return "会计"
-      default:
-        return userProfile.role
+      case "admin": return "Administrator"
+      case "teacher": return "Teacher"
+      case "parent": return "Parent"
+      case "accountant": return "Accountant"
+      default: return userProfile.role
     }
   }
 
   const handleLogout = async () => {
     try {
       await logout()
-    } catch (error) {
-      console.error("登出失败:", error)
+    } catch (err) {
+      console.error("Logout failed:", err)
     }
   }
 
@@ -253,7 +116,7 @@ export default function Dashboard() {
                 <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                   {getRoleTitle()}
                 </h1>
-                <p className="text-xs text-gray-500">智能教育管理系统</p>
+                <p className="text-xs text-gray-500">Smart Education Management System</p>
               </div>
             </div>
             
@@ -308,7 +171,7 @@ export default function Dashboard() {
                 <AlertDescription className="flex items-center justify-between">
                   <span>{error}</span>
                   <Button variant="ghost" size="sm" onClick={clearError} className="text-red-600 hover:text-red-700">
-                    关闭
+                    Close
                   </Button>
                 </AlertDescription>
               </Alert>

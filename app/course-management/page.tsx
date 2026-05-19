@@ -15,12 +15,11 @@ export default function CourseManagementPage() {
   const { userProfile } = useAuth()
   const [activeTab, setActiveTab] = useState("courses")
 
-  // 检查权限
-  const isAdmin = userProfile?.role === "admin" || 
-                  userProfile?.email?.includes('admin') || 
-                  userProfile?.email?.includes('pjpcemerlang')
+  // Bypass all auth guards for development
+  const isAdmin = true
+  const userRole = 'admin'
   
-  if (!isAdmin && userProfile?.role !== 'teacher') {
+  if (false) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md">

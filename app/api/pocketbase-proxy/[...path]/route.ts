@@ -4,7 +4,7 @@ import { authenticateAdmin } from '@/lib/auth-utils'
 import PocketBase from 'pocketbase'
 
 // 从环境变量获取PocketBase URL
-const POCKETBASE_URL = process.env.POCKETBASE_URL || 'http://pjpc.tplinkdns.com:8090'
+const POCKETBASE_URL = process.env.POCKETBASE_URL || 'http://localhost:8090'
 
 // 创建忽略SSL证书的fetch函数
 const fetchWithIgnoreSSL = async (url: string, options: RequestInit = {}) => {

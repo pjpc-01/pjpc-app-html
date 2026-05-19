@@ -77,7 +77,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
       color: 'from-blue-500 to-blue-600', 
       href: '/student-management',
       onClick: () => {
-        window.location.href = '/student-management'
+        router.push('/student-management')
       }
     },
     { 
@@ -86,7 +86,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
       color: 'from-indigo-500 to-indigo-600', 
       href: '/teacher-management',
       onClick: () => {
-        window.location.href = '/teacher-management'
+        router.push('/teacher-management')
       }
     },
     { 
@@ -95,7 +95,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
       color: 'from-green-500 to-emerald-600', 
       href: '/finance-management',
       onClick: () => {
-        window.location.href = '/finance-management'
+        router.push('/finance-management')
       }
     },
     { 
@@ -104,7 +104,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
       color: 'from-orange-500 to-red-500', 
       href: '/course-management',
       onClick: () => {
-        window.location.href = '/course-management'
+        router.push('/course-management')
       }
     },
     { 
@@ -113,7 +113,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
       color: 'from-gray-500 to-slate-500', 
       href: '/user-management',
       onClick: () => {
-        window.location.href = '/user-management'
+        router.push('/user-management')
       }
     },
     { 
@@ -122,7 +122,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
       color: 'from-purple-500 to-purple-600', 
       href: '/unified-attendance',
       onClick: () => {
-        window.location.href = '/unified-attendance'
+        router.push('/unified-attendance')
       }
     },
     { 
@@ -131,7 +131,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
       color: 'from-yellow-500 to-orange-600', 
       href: '/points-management',
       onClick: () => {
-        window.location.href = '/points-management'
+        router.push('/points-management')
       }
     },
     { 
@@ -140,7 +140,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
       color: 'from-teal-500 to-cyan-600', 
       href: '/card-management',
       onClick: () => {
-        window.location.href = '/card-management'
+        router.push('/card-management')
       }
     }
   ]
