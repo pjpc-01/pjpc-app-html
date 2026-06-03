@@ -1,17 +1,6 @@
-import { useState, useCallback } from 'react'
-
-// Receipt interface matching exact PocketBase field names
-export interface Receipt {
-  id: string
-  paymentId: string
-  receiptNumber: string
-  dateIssued: string
-  recipientName: string
-  items: { name: string; amount: number }[]
-  totalPaid: number
-  status: 'draft' | 'issued' | 'sent' | 'acknowledged'
-  notes: string
-}
+import { useState, useEffect, useCallback } from 'react'
+import { fetchSecureData, createRecord, updateRecord, deleteRecord } from '@/lib/secure-api-client'
+import { Receipt } from '@/lib/pocketbase-schema'
 
 export interface ReceiptFilters {
   status: string
@@ -19,74 +8,88 @@ export interface ReceiptFilters {
 }
 
 export const useReceipts = () => {
-  const [receipts, setReceipts] = useState<Receipt[]>([
-    {
-      id: "1",
-      paymentId: "1",
-      receiptNumber: "RCP-2024-001",
-      dateIssued: "2024-01-20",
-      recipientName: "王小明家长",
-      items: [
-        { name: "基础学费", amount: 800 },
-        { name: "特色课程费", amount: 400 }
-      ],
-      totalPaid: 1200,
-      status: "issued",
-      notes: "1月学费收据"
-    },
-    {
-      id: "2",
-      paymentId: "2",
-      receiptNumber: "RCP-2024-002",
-      dateIssued: "2024-01-25",
-      recipientName: "李小红家长",
-      items: [
-        { name: "基础学费", amount: 1000 },
-        { name: "特色课程费", amount: 400 }
-      ],
-      totalPaid: 1400,
-      status: "issued",
-      notes: "1月学费收据"
-    }
-  ])
-
+  const [receipts, setReceipts] = useState<Receipt[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isMockMode, setIsMockMode] = useState(false)
   const [filters, setFilters] = useState<ReceiptFilters>({
-    status: "",
-    dateRange: { start: "", end: "" }
+    status: '',
+    dateRange: { start: '', end: '' }
   })
 
-  const generateReceiptNumber = useCallback(() => {
-    const year = new Date().getFullYear()
-    const existingReceipts = receipts.filter(r => r.receiptNumber.startsWith(`RCP-${year}`))
-    const nextNumber = existingReceipts.length + 1
-    return `RCP-${year}-${nextNumber.toString().padStart(3, '0')}`
-  }, [receipts])
-
-  const createReceipt = useCallback((receiptData: Omit<Receipt, 'id' | 'receiptNumber'>) => {
-    const receiptNumber = generateReceiptNumber()
-    
-    const newReceipt: Receipt = {
-      ...receiptData,
-      id: Math.max(...receipts.map(r => parseInt(r.id)), 0) + 1 + "",
-      receiptNumber
+  const fetchReceipts = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await fetchSecureData<Receipt[]>('receipts', {
+        fullList: true,
+        sort: '-receipt_date'
+      })
+      setReceipts(data || [])
+      setIsMockMode(false)
+    } catch (err) {
+      console.warn('PocketBase unreachable, falling back to mock receipts:', err)
+      setIsMockMode(true)
+      setError('Demo Mode: Server unreachable')
+    } finally {
+      setLoading(false)
     }
-    setReceipts(prev => [...prev, newReceipt])
-    return newReceipt
-  }, [receipts, generateReceiptNumber])
-
-  const updateReceipt = useCallback((receiptId: string, updates: Partial<Receipt>) => {
-    setReceipts(prev => prev.map(receipt => 
-      receipt.id === receiptId ? { ...receipt, ...updates } : receipt
-    ))
   }, [])
 
-  const deleteReceipt = useCallback((receiptId: string) => {
-    setReceipts(prev => prev.filter(receipt => receipt.id !== receiptId))
+  useEffect(() => {
+    fetchReceipts()
+  }, [fetchReceipts])
+
+  const generateReceiptNumber = useCallback(async () => {
+    const year = new Date().getFullYear()
+    const prefix = `RCP-${year}-`
+    
+    try {
+      const allReceipts = await fetchSecureData<Receipt[]>('receipts', {
+        fullList: true,
+        filter: `receiptNumber begins with '${prefix}'`
+      })
+      const nextNumber = allReceipts.length + 1
+      return `${prefix}${nextNumber.toString().padStart(3, '0')}`
+    } catch (err) {
+      return `${prefix}MOCK-001`
+    }
   }, [])
 
-  const updateReceiptStatus = useCallback((receiptId: string, status: Receipt['status']) => {
-    updateReceipt(receiptId, { status })
-  }, [updateReceipt])
+  const createReceipt = useCallback(async (receiptData: Omit<Receipt, 'id' | 'receiptNumber'>) => {
+    try {
+      const receiptNumber = await generateReceiptNumber()
+      const result = await createRecord('receipts', {
+        ...receiptData,
+        receiptNumber
+      })
+      setReceipts(prev => [result, ...prev])
+      return result
+    } catch (err) {
+      throw err
+    }
+  }, [generateReceiptNumber])
+
+  const updateReceipt = useCallback(async (receiptId: string, updates: Partial<Receipt>) => {
+    try {
+      const result = await updateRecord('receipts', receiptId, updates)
+      setReceipts(prev => prev.map(receipt => 
+        receipt.id === receiptId ? { ...receipt, ...updates } : receipt
+      ))
+      return result
+    } catch (err) {
+      throw err
+    }
+  }, [])
+
+  const deleteReceipt = useCallback(async (receiptId: string) => {
+    try {
+      await deleteRecord('receipts', receiptId)
+      setReceipts(prev => prev.filter(receipt => receipt.id !== receiptId))
+    } catch (err) {
+      throw err
+    }
+  }, [])
 
   const getFilteredReceipts = useCallback(() => {
     return receipts.filter(receipt => {
@@ -94,7 +97,7 @@ export const useReceipts = () => {
       
       let matchesDateRange = true
       if (filters.dateRange.start && filters.dateRange.end) {
-        const receiptDate = new Date(receipt.dateIssued)
+        const receiptDate = new Date(receipt.receipt_date)
         const startDate = new Date(filters.dateRange.start)
         const endDate = new Date(filters.dateRange.end)
         matchesDateRange = receiptDate >= startDate && receiptDate <= endDate
@@ -108,15 +111,14 @@ export const useReceipts = () => {
     return receipts.find(receipt => receipt.paymentId === paymentId)
   }, [receipts])
 
-  const generateReceiptFromPayment = useCallback((paymentId: string, paymentData: any, invoiceData: any): Receipt => {
+  const generateReceiptFromPayment = useCallback(async (paymentId: string, paymentData: any, invoiceData: any): Promise<Receipt> => {
     const currentDate = new Date().toISOString().split('T')[0]
     
     return createReceipt({
       paymentId,
-      dateIssued: currentDate,
-      recipientName: invoiceData.studentName + "家长",
-      items: invoiceData.items || [],
-      totalPaid: paymentData.amountPaid,
+      receipt_date: currentDate,
+      studentId: invoiceData.studentId,
+      totalAmount: paymentData.amount,
       status: 'issued',
       notes: `收据 - ${invoiceData.invoiceNumber}`
     })
@@ -124,31 +126,26 @@ export const useReceipts = () => {
 
   const getReceiptStatistics = useCallback(() => {
     const total = receipts.length
-    const draft = receipts.filter(r => r.status === 'draft').length
     const issued = receipts.filter(r => r.status === 'issued').length
-    const sent = receipts.filter(r => r.status === 'sent').length
-    const acknowledged = receipts.filter(r => r.status === 'acknowledged').length
-    
-    const totalAmount = receipts.reduce((sum, r) => sum + r.totalPaid, 0)
+    const totalAmount = receipts.reduce((sum, r) => sum + r.totalAmount, 0)
     
     return {
       total,
-      draft,
       issued,
-      sent,
-      acknowledged,
       totalAmount
     }
   }, [receipts])
 
   return {
     receipts,
+    loading,
+    error,
+    isMockMode,
     filters,
     setFilters,
     createReceipt,
     updateReceipt,
     deleteReceipt,
-    updateReceiptStatus,
     getFilteredReceipts,
     getReceiptByPayment,
     generateReceiptFromPayment,

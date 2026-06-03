@@ -1,16 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchSecureData, createRecord, updateRecord, deleteRecord } from '@/lib/secure-api-client'
+import { Invoice } from '@/lib/pocketbase-schema'
 
-// Payment interface matching exact PocketBase field names
 export interface Payment {
   id: string
   invoiceId: string
-  amountPaid: number
-  datePaid: string
-  method: 'cash' | 'bank_transfer' | 'credit_card' | 'debit_card' | 'check' | 'online_payment' | 'other'
-  referenceNo: string
-  status: 'pending' | 'completed' | 'failed' | 'refunded'
-  notes: string
+  amount: number
+  date: string
+  method: string
+  status: 'pending' | 'completed' | 'failed' | 'refunded' | string
+  notes?: string
+  created?: string
+  updated?: string
 }
 
 export interface PaymentFilters {
@@ -23,6 +24,7 @@ export const usePayments = () => {
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isMockMode, setIsMockMode] = useState(false)
   const [filters, setFilters] = useState<PaymentFilters>({
     status: '',
     method: '',
@@ -35,12 +37,14 @@ export const usePayments = () => {
       setError(null)
       const data = await fetchSecureData<Payment[]>('payments', {
         fullList: true,
-        sort: '-datePaid'
+        sort: '-date'
       })
       setPayments(data || [])
+      setIsMockMode(false)
     } catch (err) {
-      console.error('Error fetching payments:', err)
-      setError(err instanceof Error ? err.message : '获取缴费记录失败')
+      console.warn('PocketBase unreachable, falling back to mock payments:', err)
+      setIsMockMode(true)
+      setError('Demo Mode: Server unreachable')
     } finally {
       setLoading(false)
     }
@@ -50,16 +54,33 @@ export const usePayments = () => {
     fetchPayments()
   }, [fetchPayments])
 
-  const createPayment = useCallback(async (paymentData: Omit<Payment, 'id'>) => {
+  const createPayment = useCallback(async (paymentData: Omit<Payment, 'id'>, invoice?: Invoice) => {
     try {
-      const result = await createRecord('payments', paymentData)
+      // 1. Create the payment record
+      const result = await createRecord('payments', paymentData) as Payment
       setPayments(prev => [result, ...prev])
+
+      // 2. Auto-Sync Invoice Status
+      if (invoice) {
+        const totalPaid = (payments.filter(p => p.invoiceId === invoice.id).reduce((sum, p) => sum + p.amount, 0)) + paymentData.amount
+        
+        let newStatus = invoice.status
+        if (totalPaid >= invoice.amount) {
+          newStatus = 'paid'
+        } else if (totalPaid > 0) {
+          newStatus = 'partially_paid'
+        }
+
+        if (newStatus !== invoice.status) {
+          await updateRecord('invoices', invoice.id, { status: newStatus })
+        }
+      }
+
       return result
     } catch (err) {
-      console.error('Error creating payment:', err)
       throw err
     }
-  }, [])
+  }, [payments])
 
   const updatePayment = useCallback(async (paymentId: string, updates: Partial<Payment>) => {
     try {
@@ -69,7 +90,6 @@ export const usePayments = () => {
       ))
       return result
     } catch (err) {
-      console.error('Error updating payment:', err)
       throw err
     }
   }, [])
@@ -79,14 +99,9 @@ export const usePayments = () => {
       await deleteRecord('payments', paymentId)
       setPayments(prev => prev.filter(payment => payment.id !== paymentId))
     } catch (err) {
-      console.error('Error deleting payment:', err)
       throw err
     }
   }, [])
-
-  const updatePaymentStatus = useCallback(async (paymentId: string, status: Payment['status']) => {
-    await updatePayment(paymentId, { status })
-  }, [updatePayment])
 
   const getFilteredPayments = useCallback(() => {
     return payments.filter(payment => {
@@ -95,7 +110,7 @@ export const usePayments = () => {
       
       let matchesDateRange = true
       if (filters.dateRange.start && filters.dateRange.end) {
-        const paymentDate = new Date(payment.datePaid)
+        const paymentDate = new Date(payment.date)
         const startDate = new Date(filters.dateRange.start)
         const endDate = new Date(filters.dateRange.end)
         matchesDateRange = paymentDate >= startDate && paymentDate <= endDate
@@ -116,10 +131,10 @@ export const usePayments = () => {
     const failed = payments.filter(p => p.status === 'failed').length
     const refunded = payments.filter(p => p.status === 'refunded').length
     
-    const totalAmount = payments.reduce((sum, p) => sum + p.amountPaid, 0)
+    const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0)
     const completedAmount = payments
       .filter(p => p.status === 'completed')
-      .reduce((sum, p) => sum + p.amountPaid, 0)
+      .reduce((sum, p) => sum + p.amount, 0)
     
     const byMethod = payments.reduce((acc, payment) => {
       acc[payment.method] = (acc[payment.method] || 0) + 1
@@ -142,12 +157,12 @@ export const usePayments = () => {
     payments,
     loading,
     error,
+    isMockMode,
     filters,
     setFilters,
     createPayment,
     updatePayment,
     deletePayment,
-    updatePaymentStatus,
     getFilteredPayments,
     getPaymentsByInvoice,
     getPaymentStatistics,

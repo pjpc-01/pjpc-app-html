@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchSecureData, createRecord, updateRecord, deleteRecord } from '@/lib/secure-api-client'
 
-// Invoice interface matching exact PocketBase field names
 export interface Invoice {
   id: string
   studentId: string
@@ -21,10 +20,40 @@ export interface InvoiceFilters {
   studentName: string
 }
 
+const MOCK_INVOICES: Invoice[] = [
+  {
+    id: 'mock-1',
+    studentId: 's1',
+    studentName: '张小明',
+    studentGrade: 'Primary 4',
+    issueDate: '2026-06-01',
+    dueDate: '2026-06-15',
+    status: 'issued',
+    items: [{ name: 'Monthly Tuition', amount: 800 }, { name: 'Material Fee', amount: 200 }],
+    totalAmount: 1000,
+    notes: 'June Tuition',
+    invoiceNumber: 'INV-2026-001'
+  },
+  {
+    id: 'mock-2',
+    studentId: 's2',
+    studentName: '李华',
+    studentGrade: 'Secondary 1',
+    issueDate: '2026-06-01',
+    dueDate: '2026-06-15',
+    status: 'paid',
+    items: [{ name: 'Monthly Tuition', amount: 1200 }],
+    totalAmount: 1200,
+    notes: 'June Tuition',
+    invoiceNumber: 'INV-2026-002'
+  }
+]
+
 export const useInvoices = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isMockMode, setIsMockMode] = useState(false)
   const [filters, setFilters] = useState<InvoiceFilters>({
     status: '',
     studentName: ''
@@ -39,9 +68,12 @@ export const useInvoices = () => {
         sort: '-created'
       })
       setInvoices(data || [])
+      setIsMockMode(false)
     } catch (err) {
-      console.error('Error fetching invoices:', err)
-      setError(err instanceof Error ? err.message : '获取发票失败')
+      console.warn('PocketBase unreachable, falling back to mock invoices:', err)
+      setInvoices(MOCK_INVOICES)
+      setIsMockMode(true)
+      setError('Demo Mode: Server unreachable')
     } finally {
       setLoading(false)
     }
@@ -60,18 +92,19 @@ export const useInvoices = () => {
   const createInvoice = useCallback(async (invoiceData: Omit<Invoice, 'id' | 'invoiceNumber'>) => {
     try {
       const invoiceNumber = generateInvoiceNumber()
-      const data = {
-        ...invoiceData,
-        invoiceNumber
-      }
+      const data = { ...invoiceData, invoiceNumber }
       const result = await createRecord('invoices', data)
       setInvoices(prev => [...prev, result])
       return result
     } catch (err) {
-      console.error('Error creating invoice:', err)
+      if (isMockMode) {
+        const mockResult = { ...invoiceData, id: `mock-${Date.now()}`, invoiceNumber: generateInvoiceNumber() } as Invoice
+        setInvoices(prev => [...prev, mockResult])
+        return mockResult
+      }
       throw err
     }
-  }, [generateInvoiceNumber])
+  }, [generateInvoiceNumber, isMockMode])
 
   const updateInvoice = useCallback(async (invoiceId: string, updates: Partial<Invoice>) => {
     try {
@@ -81,25 +114,30 @@ export const useInvoices = () => {
       ))
       return result
     } catch (err) {
-      console.error('Error updating invoice:', err)
+      if (isMockMode) {
+        setInvoices(prev => prev.map(invoice => 
+          invoice.id === invoiceId ? { ...invoice, ...updates } : invoice
+        ))
+        return { id: invoiceId, ...updates }
+      }
       throw err
     }
-  }, [])
+  }, [isMockMode])
 
   const deleteInvoice = useCallback(async (invoiceId: string) => {
     try {
       await deleteRecord('invoices', invoiceId)
       setInvoices(prev => prev.filter(invoice => invoice.id !== invoiceId))
     } catch (err) {
-      console.error('Error deleting invoice:', err)
+      if (isMockMode) {
+        setInvoices(prev => prev.filter(invoice => invoice.id !== invoiceId))
+        return
+      }
       throw err
     }
-  }, [])
+  }, [isMockMode])
 
-  const updateInvoiceStatus = useCallback(async (
-    invoiceId: string, 
-    status: Invoice['status']
-  ) => {
+  const updateInvoiceStatus = useCallback(async (invoiceId: string, status: Invoice['status']) => {
     await updateInvoice(invoiceId, { status })
   }, [updateInvoice])
 
@@ -138,7 +176,7 @@ export const useInvoices = () => {
   }, [createInvoice])
 
   const generateInvoicesForAllStudents = useCallback(async (month?: string) => {
-    console.warn('Bulk generation should be handled via a server-side function or a dedicated API endpoint to avoid hitting rate limits.')
+    console.warn('Bulk generation should be handled via server-side function.')
   }, [])
 
   const generateMonthlyInvoices = useCallback(async (targetMonth?: string) => {
@@ -182,6 +220,7 @@ export const useInvoices = () => {
     invoices,
     loading,
     error,
+    isMockMode,
     filters,
     setFilters,
     createInvoice,

@@ -294,10 +294,10 @@ export interface FeeItem {
  */
 export interface Invoice {
   id: string
-  invoice_id: string
-  issue_date: string
-  due_date: string
-  total_amount: number
+  invoiceNumber: string // 映射自 invoice_id
+  issueDate: string // 映射自 issue_date
+  dueDate: string // 映射自 due_date
+  amount: number // 映射自 total_amount
   discounts: number
   tax: number
   status: string
@@ -308,14 +308,29 @@ export interface Invoice {
 }
 
 /**
+ * 付款记录集合
+ */
+export interface Payment {
+  id: string
+  invoiceId: string
+  amount: number
+  method: string
+  date: string
+  notes?: string
+  created: string
+  updated: string
+}
+
+/**
  * 收据集合
  */
 export interface Receipt {
   id: string
-  receipt_id: string
-  invoice_id: string
+  receiptNumber: string // 映射自 receipt_id
+  invoiceId: string // 映射自 invoice_id
   amount: number
-  receipt_date: string
+  receiptDate: string // 映射自 receipt_date
+  studentName?: string
   created: string
   updated: string
 }

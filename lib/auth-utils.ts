@@ -6,8 +6,8 @@ import PocketBase from 'pocketbase'
  */
 export async function authenticateAdmin(pb: PocketBase): Promise<void> {
   // 直接使用硬编码凭据，确保认证成功
-  const adminEmail = 'pjpcemerlang@gmail.com'
-  const adminPassword = '0122270775Sw!'
+  const adminEmail = 'final_admin@test.com'
+  const adminPassword = 'final_pass'
   
   console.log('🔐 使用硬编码凭据进行管理员认证')
   
