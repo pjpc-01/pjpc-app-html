@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { fetchSecureData } from '@/lib/secure-api-client'
+import { fetchSecureData, createRecord, updateRecord, deleteRecord } from '@/lib/secure-api-client'
 
 export interface Expense {
   id: string
@@ -22,6 +22,7 @@ export const useExpenses = () => {
       setError(null)
       const data = await fetchSecureData<Expense[]>('expenses', {
         sort: '-date',
+        fullList: true,
       })
       setExpenses(data)
     } catch (err) {
@@ -34,13 +35,7 @@ export const useExpenses = () => {
 
   const createExpense = async (expense: Omit<Expense, 'id'>) => {
     try {
-      // In a real scenario, this would call the API. 
-      // For now, we'll use the secure client's post if implemented, 
-      // or simulate the DB update for the mock period.
-      const newExpense = await fetchSecureData<Expense>('expenses/create', { 
-        method: 'POST', 
-        data: expense 
-      })
+      const newExpense = await createRecord('expenses', expense) as Expense
       setExpenses(prev => [newExpense, ...prev])
       return newExpense
     } catch (err) {
@@ -51,10 +46,7 @@ export const useExpenses = () => {
 
   const updateExpense = async (id: string, updates: Partial<Expense>) => {
     try {
-      const updated = await fetchSecureData<Expense>(`expenses/${id}`, { 
-        method: 'PATCH', 
-        data: updates 
-      })
+      const updated = await updateRecord('expenses', id, updates) as Expense
       setExpenses(prev => prev.map(e => e.id === id ? updated : e))
       return updated
     } catch (err) {
@@ -65,7 +57,7 @@ export const useExpenses = () => {
 
   const deleteExpense = async (id: string) => {
     try {
-      await fetchSecureData(`expenses/${id}`, { method: 'DELETE' })
+      await deleteRecord('expenses', id)
       setExpenses(prev => prev.filter(e => e.id !== id))
     } catch (err) {
       console.error('Error deleting expense:', err)

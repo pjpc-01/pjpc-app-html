@@ -1,73 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server'
-import PocketBase from 'pocketbase'
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const center = searchParams.get('center')
-  const limit = parseInt(searchParams.get('limit') || '500')
-  
-  console.log('🔍 API: 获取学生数据请求', { center, limit })
-  
   try {
-    // 使用IP地址连接PocketBase
-    const pb = new PocketBase('http://175.143.222.30:8090')
+    const url = new URL(request.url)
+    const searchParams = url.searchParams.toString()
     
-    // 管理员认证
-    await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
-    console.log('✅ API: PocketBase管理员认证成功')
+    // Forward the request to the authenticated proxy
+    // This avoids rewriting every single frontend hook and ensures Admin auth is used
+    const proxyUrl = `/api/pocketbase-proxy/api/collections/students/records${searchParams ? `?${searchParams}` : ''}`
     
-    // 构建查询过滤器
-    let filter = ''
-    if (center) {
-      // 尝试多种center格式
-      const normalizedCenter = center.trim().toUpperCase()
-      filter = `center = "${center}" || center = "${normalizedCenter}" || center = "wX 01" || center = "WX 01"`
-      console.log('🔍 API: 使用多格式过滤器:', filter)
+    const response = await fetch(`${new URL(request.url).origin}${proxyUrl}`)
+    
+    if (!response.ok) {
+      return NextResponse.json({ success: false, error: 'Proxy error' }, { status: response.status })
     }
     
-    // 查询学生数据
-    const students = await pb.collection('students').getList(1, limit, {
-      filter: filter || undefined,
-      sort: 'student_name'
-    })
+    const data = await response.json()
     
-    console.log('✅ API: 查询到学生数据', { 
-      total: students.items.length,
-      center,
-      sampleStudents: students.items.slice(0, 2).map(s => ({
-        student_id: s.student_id,
-        student_name: s.student_name,
-        cardNumber: s.cardNumber,
-        center: s.center
-      }))
-    })
-    
-    // 处理结果
-    const processedStudents = students.items.map(student => ({
-      id: student.id,
-      student_id: student.student_id,
-      student_name: student.student_name,
-      cardNumber: student.cardNumber,
-      center: student.center || student.Center || student.centre || student.branch,
-      created: student.created,
-      updated: student.updated
-    }))
-    
+    // PocketBase returns records in an 'items' array
     return NextResponse.json({
       success: true,
-      data: processedStudents,
-      total: students.totalItems,
-      page: students.page,
-      perPage: students.perPage,
-      totalPages: students.totalPages
+      students: data.items || []
+    })
+  } catch (error: any) {
+    console.error('Students API Error:', error)
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const response = await fetch(`${new URL(request.url).origin}/api/pocketbase-proxy/api/collections/students/records`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
     })
     
-  } catch (error) {
-    console.error('❌ API: 获取学生数据失败:', error)
+    if (!response.ok) {
+      return NextResponse.json({ success: false, error: 'Proxy create error' }, { status: response.status })
+    }
     
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    }, { status: 500 })
+    const data = await response.json()
+    return NextResponse.json({ success: true, student: data })
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }
