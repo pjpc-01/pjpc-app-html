@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { fetchSecureData, createRecord, updateRecord, deleteRecord } from '@/lib/secure-api-client'
 
 // Payment interface matching exact PocketBase field names
 export interface Payment {
@@ -19,76 +20,72 @@ export interface PaymentFilters {
 }
 
 export const usePayments = () => {
-  const [payments, setPayments] = useState<Payment[]>([
-    {
-      id: "1",
-      invoiceId: "1",
-      amountPaid: 1200,
-      datePaid: "2024-01-20",
-      method: "bank_transfer",
-      referenceNo: "TXN001",
-      status: "completed",
-      notes: "1月学费支付"
-    },
-    {
-      id: "2",
-      invoiceId: "2",
-      amountPaid: 1500,
-      datePaid: "2024-01-25",
-      method: "cash",
-      referenceNo: "CASH001",
-      status: "completed",
-      notes: "1月学费支付"
-    },
-    {
-      id: "3",
-      invoiceId: "4",
-      amountPaid: 1800,
-      datePaid: "2024-01-12",
-      method: "online_payment",
-      referenceNo: "OPAY001",
-      status: "completed",
-      notes: "1月学费支付"
-    },
-    {
-      id: "4",
-      invoiceId: "5",
-      amountPaid: 700,
-      datePaid: "2024-01-19",
-      method: "bank_transfer",
-      referenceNo: "TXN002",
-      status: "pending",
-      notes: "部分缴费"
-    }
-  ])
-
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [filters, setFilters] = useState<PaymentFilters>({
-    status: "",
-    method: "",
-    dateRange: { start: "", end: "" }
+    status: '',
+    method: '',
+    dateRange: { start: '', end: '' }
   })
 
-  const createPayment = useCallback((paymentData: Omit<Payment, 'id'>) => {
-    const newPayment: Payment = {
-      ...paymentData,
-      id: Math.max(...payments.map(p => parseInt(p.id)), 0) + 1 + ""
+  const fetchPayments = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await fetchSecureData<Payment[]>('payments', {
+        fullList: true,
+        sort: '-datePaid'
+      })
+      setPayments(data || [])
+    } catch (err) {
+      console.error('Error fetching payments:', err)
+      setError(err instanceof Error ? err.message : '获取缴费记录失败')
+    } finally {
+      setLoading(false)
     }
-    setPayments(prev => [...prev, newPayment])
-    return newPayment
-  }, [payments])
-
-  const updatePayment = useCallback((paymentId: string, updates: Partial<Payment>) => {
-    setPayments(prev => prev.map(payment => 
-      payment.id === paymentId ? { ...payment, ...updates } : payment
-    ))
   }, [])
 
-  const deletePayment = useCallback((paymentId: string) => {
-    setPayments(prev => prev.filter(payment => payment.id !== paymentId))
+  useEffect(() => {
+    fetchPayments()
+  }, [fetchPayments])
+
+  const createPayment = useCallback(async (paymentData: Omit<Payment, 'id'>) => {
+    try {
+      const result = await createRecord('payments', paymentData)
+      setPayments(prev => [result, ...prev])
+      return result
+    } catch (err) {
+      console.error('Error creating payment:', err)
+      throw err
+    }
   }, [])
 
-  const updatePaymentStatus = useCallback((paymentId: string, status: Payment['status']) => {
-    updatePayment(paymentId, { status })
+  const updatePayment = useCallback(async (paymentId: string, updates: Partial<Payment>) => {
+    try {
+      const result = await updateRecord('payments', paymentId, updates)
+      setPayments(prev => prev.map(payment => 
+        payment.id === paymentId ? { ...payment, ...updates } : payment
+      ))
+      return result
+    } catch (err) {
+      console.error('Error updating payment:', err)
+      throw err
+    }
+  }, [])
+
+  const deletePayment = useCallback(async (paymentId: string) => {
+    try {
+      await deleteRecord('payments', paymentId)
+      setPayments(prev => prev.filter(payment => payment.id !== paymentId))
+    } catch (err) {
+      console.error('Error deleting payment:', err)
+      throw err
+    }
+  }, [])
+
+  const updatePaymentStatus = useCallback(async (paymentId: string, status: Payment['status']) => {
+    await updatePayment(paymentId, { status })
   }, [updatePayment])
 
   const getFilteredPayments = useCallback(() => {
@@ -143,6 +140,8 @@ export const usePayments = () => {
 
   return {
     payments,
+    loading,
+    error,
     filters,
     setFilters,
     createPayment,
@@ -151,6 +150,7 @@ export const usePayments = () => {
     updatePaymentStatus,
     getFilteredPayments,
     getPaymentsByInvoice,
-    getPaymentStatistics
+    getPaymentStatistics,
+    refetch: fetchPayments
   }
 }

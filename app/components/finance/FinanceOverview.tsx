@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { DollarSign, CreditCard, FileText, TrendingUp, AlertCircle, CheckCircle, Loader2 } from "lucide-react"
+import { DollarSign, CreditCard, FileText, TrendingUp, AlertCircle, Loader2, Wallet } from "lucide-react"
 import { useFinancialStats } from "@/hooks/useFinancialStats"
 
 export default function FinanceOverview() {
@@ -20,8 +20,8 @@ export default function FinanceOverview() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => (document.querySelector('[data-value="student-fees"]') as HTMLElement)?.click()}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => (document.querySelector('[data-value="fees"]') as HTMLElement)?.click()}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">月收入</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -81,7 +81,7 @@ export default function FinanceOverview() {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => (document.querySelector('[data-value="reminders"]') as HTMLElement)?.click()}>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => (document.querySelector('[data-value="reports"]') as HTMLElement)?.click()}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">总收入</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -100,9 +100,30 @@ export default function FinanceOverview() {
             )}
           </CardContent>
         </Card>
+
+        <Card className="cursor-pointer hover:shadow-md transition-shadow border-blue-200 bg-blue-50/50" onClick={() => (document.querySelector('[data-value="reports"]') as HTMLElement)?.click()}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-blue-700">本月净利润</CardTitle>
+            <Wallet className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            {financialLoading ? (
+              <div className="flex items-center">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span className="text-sm text-gray-500">加载中...</span>
+              </div>
+            ) : (
+              <>
+                <div className={`text-2xl font-bold ${financialStats.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  RM {financialStats.netProfit.toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground">收入 - 支出</p>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -178,4 +199,4 @@ export default function FinanceOverview() {
       </div>
     </div>
   )
-} 
+}
