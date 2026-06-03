@@ -14,6 +14,28 @@ import { Edit, Trash2, DollarSign, Plus, ChevronDown, ChevronRight } from "lucid
 import { AddFeeDialog } from "./AddFeeDialog"
 import { EditFeeDialog } from "./EditFeeDialog"
 
+
+const CATEGORY_MAP: Record<string, string> = {
+  'Tuition': '学费',
+  'Administrative': '行政费',
+  'Materials': '教材费',
+  'Miscellaneous': '杂项',
+}
+
+const ITEM_NAME_MAP: Record<string, string> = {
+  'Monthly Tuition Fee': '月度学费',
+  'Registration Fee': '注册费',
+  'Late Payment Penalty': '逾期缴费罚款',
+  'Textbook Fee': '教材费',
+}
+
+const ITEM_DESC_MAP: Record<string, string> = {
+  'Standard monthly tuition': '标准月度学费',
+  'New student registration': '新学生注册费',
+  'Penalty for payments after 7th of month': '每月7日后缴费的罚款',
+  'Yearly textbooks': '年度教材费',
+}
+
 export default function FeeManagement() {
   const {
     fees,
@@ -23,8 +45,6 @@ export default function FeeManagement() {
     updateFee,
     deleteFee,
   } = useFees()
-
-
 
   const [isAddFeeDialogOpen, setIsAddFeeDialogOpen] = useState(false)
   const [isEditFeeDialogOpen, setIsEditFeeDialogOpen] = useState(false)
@@ -48,7 +68,7 @@ export default function FeeManagement() {
 
   const handleAddFeeItem = async () => {
     if (!newFeeItem.name.trim() || newFeeItem.amount <= 0) {
-      alert("Please fill in all required fee item information")
+      alert("请填写所有必需的费用项信息")
       return
     }
 
@@ -66,8 +86,8 @@ export default function FeeManagement() {
       })
       setIsAddFeeDialogOpen(false)
     } catch (error) {
-      console.error("Fee creation failed:", error)
-      alert("Failed to create fee item, please try again")
+      console.error("费用项创建失败:", error)
+      alert("创建费用项失败，请重试")
     }
   }
 
@@ -90,7 +110,7 @@ export default function FeeManagement() {
     if (!editingFeeItem) return
 
     if (!newFeeItem.name.trim() || newFeeItem.amount <= 0) {
-      alert("Please fill in all required fee item information")
+      alert("请填写所有必需的费用项信息")
       return
     }
 
@@ -99,18 +119,18 @@ export default function FeeManagement() {
       setEditingFeeItem(null)
       setIsEditFeeDialogOpen(false)
     } catch (error) {
-      console.error("Failed to update fee:", error)
-      alert("Failed to update fee item, please try again")
+      console.error("更新费用项失败:", error)
+      alert("更新费用项失败，请重试")
     }
   }
 
   const handleDeleteFeeItem = async (feeId: string) => {
-    if (confirm("Are you sure you want to delete this fee item?")) {
+    if (confirm("确定要删除此费用项吗？")) {
       try {
         await deleteFee(feeId)
       } catch (error) {
-        console.error("Failed to delete fee:", error)
-        alert("Failed to delete fee item, please try again")
+        console.error("删除费用项失败:", error)
+        alert("删除费用项失败，请重试")
       }
     }
   }
@@ -119,9 +139,8 @@ export default function FeeManagement() {
     setNewFeeItem((prev) => ({ ...prev, [field]: value }))
   }
 
-  // Group fees by category
   const groupedFees = fees.reduce((groups, fee) => {
-    const category = fee.category || "Uncategorized"
+    const category = fee.category || "未分类"
     if (!groups[category]) {
       groups[category] = []
     }
@@ -129,7 +148,6 @@ export default function FeeManagement() {
     return groups
   }, {} as Record<string, Fee[]>)
 
-  // Toggle category expansion
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => {
       const newSet = new Set(prev)
@@ -142,7 +160,6 @@ export default function FeeManagement() {
     })
   }
 
-  // Expand/collapse all categories
   const toggleAllCategories = () => {
     const allCategories = Object.keys(groupedFees)
     const allExpanded = allCategories.every(cat => expandedCategories.has(cat))
@@ -156,66 +173,57 @@ export default function FeeManagement() {
 
   return (
     <div className="space-y-6">
-
-      {/* Fee Table */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5" />
-                Fee Items Management
+                费用项管理
                 {!loading && !error && fees.length > 0 && (
                   <Badge variant="secondary" className="ml-2">
-                    {fees.length} Items
+                    {fees.length} 项
                   </Badge>
                 )}
               </CardTitle>
-              <CardDescription>Manage all fee items</CardDescription>
+              <CardDescription>管理所有费用项</CardDescription>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={toggleAllCategories}>
                 {Object.keys(groupedFees).every(cat => expandedCategories.has(cat)) ? (
                   <>
                     <ChevronDown className="h-4 w-4 mr-2" />
-                    Collapse All
+                    全部折叠
                   </>
                 ) : (
                   <>
                     <ChevronRight className="h-4 w-4 mr-2" />
-                    Expand All
+                    全部展开
                   </>
                 )}
               </Button>
               <Button variant="outline" onClick={() => setIsFeeEditMode(!isFeeEditMode)}>
                 <Edit className="h-4 w-4 mr-2" />
-                {isFeeEditMode ? "Finish Edit" : "Edit"}
+                {isFeeEditMode ? "完成编辑" : "编辑"}
               </Button>
               <Button onClick={() => setIsAddFeeDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Fee Item
+                新增费用项
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-gray-500">
-              Loading...
-            </div>
+            <div className="text-center py-8 text-gray-500">加载中...</div>
           ) : error ? (
-            <div className="text-center py-8 text-red-500">
-              Error: {error}
-            </div>
+            <div className="text-center py-8 text-red-500">错误: {error}</div>
           ) : fees.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No fee items
-            </div>
+            <div className="text-center py-8 text-gray-500">暂无费用项</div>
           ) : (
             <div className="space-y-4">
               {Object.entries(groupedFees).map(([category, categoryFees]) => {
                 const isExpanded = expandedCategories.has(category)
-                const totalAmount = categoryFees.reduce((sum, fee) => sum + fee.amount, 0)
                 const activeFees = categoryFees.filter(fee => fee.status === "active")
                 const activeCount = activeFees.length
                 const activeAmount = activeFees.reduce((sum, fee) => sum + fee.amount, 0)
@@ -237,9 +245,9 @@ export default function FeeManagement() {
                                 <ChevronRight className="h-5 w-5 text-gray-500" />
                               )}
                               <div>
-                                <CardTitle className="text-lg">{category}</CardTitle>
+                                <CardTitle className="text-lg">{CATEGORY_MAP[category] || category}</CardTitle>
                                 <CardDescription>
-                                  {categoryFees.length} Items • {activeCount} Active
+                                  {categoryFees.length} 项 • {activeCount} 已启用
                                 </CardDescription>
                               </div>
                             </div>
@@ -250,7 +258,7 @@ export default function FeeManagement() {
                                 </div>
                               </div>
                               <Badge variant="outline" className="text-sm">
-                                {categoryFees.length} Items
+                                {categoryFees.length} 项
                               </Badge>
                             </div>
                           </div>
@@ -262,20 +270,20 @@ export default function FeeManagement() {
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead>Item Name</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead>Fee Type</TableHead>
-                                <TableHead>Status</TableHead>
-                                {isFeeEditMode && <TableHead>Actions</TableHead>}
+                                <TableHead>项目名称</TableHead>
+                                <TableHead>金额</TableHead>
+                                <TableHead>费用类型</TableHead>
+                                <TableHead>状态</TableHead>
+                                {isFeeEditMode && <TableHead>操作</TableHead>}
                               </TableRow>
                             </TableHeader>
                             <TableBody>
                               {categoryFees.map((item) => (
                                 <TableRow key={item.id}>
                                   <TableCell>
-                                    <div className="font-medium">{item.name}</div>
+                                    <div className="font-medium">{ITEM_NAME_MAP[item.name] || item.name}</div>
                                     {item.description && (
-                                      <div className="text-sm text-gray-500">{item.description}</div>
+                                      <div className="text-sm text-gray-500">{ITEM_DESC_MAP[item.description] || item.description}</div>
                                     )}
                                   </TableCell>
                                   <TableCell>
@@ -284,10 +292,10 @@ export default function FeeManagement() {
                                   <TableCell>
                                     <Badge variant="outline">
                                       {item.type === "monthly"
-                                        ? "Monthly Fee"
+                                        ? "月费"
                                         : item.type === "one-time"
-                                        ? "One-time Fee"
-                                        : "Annual Fee"}
+                                        ? "一次性费用"
+                                        : "年费"}
                                     </Badge>
                                   </TableCell>
                                   <TableCell>
@@ -296,7 +304,7 @@ export default function FeeManagement() {
                                       size="sm"
                                       onClick={() => onToggleItemActive(item.id, item.status !== "active")}
                                     >
-                                      {item.status === "active" ? "Active" : "Inactive"}
+                                      {item.status === "active" ? "启用" : "禁用"}
                                     </Button>
                                   </TableCell>
                                   {isFeeEditMode && (

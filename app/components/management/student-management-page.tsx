@@ -71,6 +71,7 @@ import { usePagination } from "@/hooks/usePagination"
 import { convertGradeToChinese } from "../student/utils"
 import StudentForm from "../student/StudentForm"
 import StudentDetails from "../student/StudentDetails"
+import StudentList from "../student/StudentList"
 import AdvancedFilters from "../student/AdvancedFilters"
 import StudentAnalytics from "../student/StudentAnalytics"
 import BulkOperations from "../student/BulkOperations"
@@ -552,8 +553,8 @@ export default function StudentManagementPage() {
 
         {/* 统计卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-white/80 backdrop-blur-sm border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full -translate-y-16 translate-x-16 opacity-30"></div>
+          <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+            
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
@@ -573,8 +574,8 @@ export default function StudentManagementPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-100 to-green-200 rounded-full -translate-y-16 translate-x-16 opacity-30"></div>
+          <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+            
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
@@ -594,8 +595,8 @@ export default function StudentManagementPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full -translate-y-16 translate-x-16 opacity-30"></div>
+          <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+            
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
@@ -615,8 +616,8 @@ export default function StudentManagementPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full -translate-y-16 translate-x-16 opacity-30"></div>
+          <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+            
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
@@ -745,137 +746,16 @@ export default function StudentManagementPage() {
               ) : (
                 <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg rounded-2xl overflow-hidden">
           <CardContent className="p-0">
-            <div className="overflow-x-auto min-w-full">
-              <Table className="border-collapse w-full">
-                <TableHeader>
-                  <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
-                    <TableHead className="w-12 px-4 py-3">
-                      <Checkbox
-                        checked={selectedStudents.size === filteredStudents.length && filteredStudents.length > 0}
-                        onCheckedChange={handleSelectAll}
-                      />
-                    </TableHead>
-                    <TableHead className="font-semibold px-4 py-3">学生信息</TableHead>
-                    <TableHead className="font-semibold px-4 py-3">年级</TableHead>
-                    <TableHead className="font-semibold px-4 py-3">中心</TableHead>
-                    <TableHead className="font-semibold px-4 py-3">服务类型</TableHead>
-                    <TableHead className="font-semibold px-4 py-3">家长联系方式</TableHead>
-                    <TableHead className="font-semibold px-4 py-3">学费状态</TableHead>
-                    <TableHead className="font-semibold px-4 py-3">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedStudents.map((student, index) => (
-                    <TableRow key={student.id} className={`hover:bg-blue-50/50 transition-all duration-200 border-b border-gray-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
-                      <TableCell className="px-4 py-3">
-                        <Checkbox
-                          checked={selectedStudents.has(student.id)}
-                          onCheckedChange={(checked) => handleSelectStudent(student.id, checked as boolean)}
-                        />
-                      </TableCell>
-                      <TableCell className="px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                            {student.student_name?.charAt(0) || 'S'}
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-semibold text-base text-gray-900">{student.student_name}</div>
-                            <div className="text-sm text-gray-600 font-medium">学号: {student.student_id}</div>
-                          </div>
-                          {student.status && (
-                            <Badge 
-                              variant={student.status === 'active' ? 'default' : 'secondary'}
-                              className={`text-xs px-2 py-1 ${
-                                student.status === 'active' 
-                                  ? 'bg-green-100 text-green-800 border-green-200' 
-                                  : 'bg-gray-100 text-gray-800 border-gray-200'
-                              }`}
-                            >
-                              {student.status === 'active' ? '在读' : '离校'}
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <Badge variant="outline" className="font-medium bg-blue-50 text-blue-800 border-blue-200">
-                          {convertGradeToChinese(student.standard || '')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <Badge variant="secondary" className="font-medium bg-purple-50 text-purple-800 border-purple-200">
-                          {student.center || '未设置'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <Badge variant="outline" className="text-gray-600 bg-orange-50 text-orange-800 border-orange-200">
-                          {(() => {
-                            console.log('🔍 学生服务类型调试:', {
-                              student_name: student.student_name,
-                              student_id: student.student_id,
-                              services: student.services,
-                              hasServices: 'services' in student
-                            })
-                            return student.services === 'Daycare' ? '日托服务' : 
-                                   student.services === 'Tuition' ? '补习服务' : 
-                                   student.services || '未知'
-                          })()}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <div className="font-medium text-sm">
-                          {student.parentPhone || student.father_phone || student.mother_phone || '-'}
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <Badge 
-                          variant={student.tuitionStatus === 'paid' ? 'default' : 
-                                  student.tuitionStatus === 'overdue' ? 'destructive' : 
-                                  'outline'}
-                          className="text-xs"
-                        >
-                          {student.tuitionStatus === 'paid' ? '已缴费' : 
-                           student.tuitionStatus === 'pending' ? '待缴费' : 
-                           student.tuitionStatus === 'partial' ? '部分缴费' : 
-                           student.tuitionStatus === 'overdue' ? '逾期' : 
-                           '-'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-all duration-200"
-                            onClick={() => setViewingStudent(student)}
-                            title="查看详情"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600 rounded-lg transition-all duration-200"
-                            onClick={() => setEditingStudent(student)}
-                            title="编辑学生"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all duration-200"
-                            onClick={() => handleDeleteStudent(student.id)}
-                            title="删除学生"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <StudentList 
+              students={paginatedStudents}
+              loading={loading}
+              selectedStudents={Array.from(selectedStudents)}
+              onSelectStudent={handleSelectStudent}
+              onSelectAll={handleSelectAll}
+              onEditStudent={(s) => setEditingStudent(s)}
+              onViewStudent={(s) => setViewingStudent(s)}
+              onDeleteStudent={handleDeleteStudent}
+            />
           </CardContent>
         </Card>
               )}

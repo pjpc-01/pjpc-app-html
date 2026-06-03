@@ -39,104 +39,61 @@ export interface CashFlowRecord {
 export const useFinancialStats = () => {
   const { user, userProfile } = useAuth()
   const [stats, setStats] = useState<FinancialStats>({
-    monthlyRevenue: 45600,
-    totalRevenue: 285000,
-    pendingPayments: 8,
-    overduePayments: 3,
-    recentTransactions: [
-      {
-        id: '1',
-        amount: 5000,
-        status: 'completed',
-        type: 'payment',
-        date: new Date('2024-01-15'),
-        description: '张三 - 学费',
-        studentName: '张三',
-        paymentMethod: '银行转账'
-      },
-      {
-        id: '2',
-        amount: 4800,
-        status: 'completed',
-        type: 'payment',
-        date: new Date('2024-01-14'),
-        description: '李四 - 学费',
-        studentName: '李四',
-        paymentMethod: '现金'
-      },
-      {
-        id: '3',
-        amount: 5200,
-        status: 'pending',
-        type: 'payment',
-        date: new Date('2024-01-13'),
-        description: '王五 - 学费',
-        studentName: '王五',
-        paymentMethod: '支票'
-      }
-    ],
-    revenueByMonth: {
-      '2024-01': 45600,
-      '2023-12': 42800,
-      '2023-11': 41200,
-      '2023-10': 39800,
-      '2023-09': 38500,
-      '2023-08': 37200
-    },
-    cashBalance: 125000,
-    monthlyExpenses: 32000,
-    netProfit: 13600,
+    monthlyRevenue: 0,
+    totalRevenue: 0,
+    pendingPayments: 0,
+    overduePayments: 0,
+    recentTransactions: [],
+    revenueByMonth: {},
+    cashBalance: 0,
+    monthlyExpenses: 0,
+    netProfit: 0,
     cashFlowHistory: []
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // 获取真实财务数据
   const fetchAllFinancialStats = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
-
-      // 注意：认证现在在服务器端API路由中处理
       
-      // 获取发票数据（添加错误处理）
+      // 1. Fetch Invoices
       let invoices: any[] = []
       try {
         invoices = await fetchSecureData<any[]>('invoices', {
           fullList: true,
           sort: '-created'
         })
-      } catch (error) {
-        console.warn('⚠️ 获取发票数据失败，使用空数组:', error)
-        invoices = []
+      } catch (e) {
+        console.warn('⚠️ Invoices fetch failed:', e)
       }
       
-      // 获取支付数据（添加错误处理）
-      let payments: any[] = []
-      try {
-        payments = await fetchSecureData<any[]>('payments', {
-          fullList: true,
-          sort: '-created'
-        })
-      } catch (error) {
-        console.warn('⚠️ 获取支付数据失败，使用空数组:', error)
-        payments = []
-      }
-      
-      // 获取收据数据（添加错误处理）
+      // 2. Fetch Payments (Receipts)
       let receipts: any[] = []
       try {
         receipts = await fetchSecureData<any[]>('receipts', {
           fullList: true,
           sort: '-created'
         })
-      } catch (error) {
-        console.warn('⚠️ 获取收据数据失败，使用空数组:', error)
-        receipts = []
+      } catch (e) {
+        console.warn('⚠️ Receipts fetch failed:', e)
       }
 
-      // 计算月度收入
+      // 3. Fetch Expenses
+      let expenses: any[] = []
+      try {
+        expenses = await fetchSecureData<any[]>('expenses', {
+          fullList: true,
+          sort: '-date'
+        })
+      } catch (e) {
+        console.warn('⚠️ Expenses fetch failed:', e)
+      }
+      
       const currentMonth = new Date().toISOString().slice(0, 7)
+
+      // Calculate Monthly Revenue
       const monthlyInvoices = invoices.filter(invoice => 
         invoice.created && invoice.created.startsWith(currentMonth)
       )
@@ -144,12 +101,20 @@ export const useFinancialStats = () => {
         sum + (Number(invoice.total_amount) || 0), 0
       )
 
-      // 计算总收入
+      // Calculate Total Revenue
       const totalRevenue = invoices.reduce((sum, invoice) => 
         sum + (Number(invoice.total_amount) || 0), 0
       )
 
-      // 计算待支付和逾期支付
+      // Calculate Monthly Expenses
+      const monthlyExpenses = expenses
+        .filter(exp => exp.date && exp.date.startsWith(currentMonth))
+        .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0)
+
+      // Calculate Net Profit
+      const netProfit = monthlyRevenue - monthlyExpenses
+
+      // Pending and Overdue
       const pendingPayments = invoices.filter(invoice => 
         invoice.status === 'issued' || invoice.status === 'pending'
       ).length
@@ -161,7 +126,7 @@ export const useFinancialStats = () => {
         return dueDate < today && (invoice.status === 'issued' || invoice.status === 'pending')
       }).length
 
-      // 生成最近交易记录
+      // Recent Transactions
       const recentTransactions: Transaction[] = receipts.slice(0, 10).map(receipt => ({
         id: receipt.id,
         amount: Number(receipt.amount) || 0,
@@ -173,24 +138,19 @@ export const useFinancialStats = () => {
         paymentMethod: '银行转账'
       }))
 
-      // 计算月度收入趋势
+      // Revenue Trend
       const revenueByMonth: Record<string, number> = {}
       invoices.forEach(invoice => {
         if (invoice.created) {
-          const month = invoice.created.slice(0, 7) // YYYY-MM
+          const month = invoice.created.slice(0, 7)
           revenueByMonth[month] = (revenueByMonth[month] || 0) + (Number(invoice.total_amount) || 0)
         }
       })
 
-      // 计算现金余额（总收入 - 总支出，这里简化处理）
       const totalPaid = receipts.reduce((sum, receipt) => 
         sum + (Number(receipt.amount) || 0), 0
       )
       
-      // 模拟月度支出（实际应该从支出记录中获取）
-      const monthlyExpenses = Math.round(monthlyRevenue * 0.7) // 假设支出为收入的70%
-      const netProfit = monthlyRevenue - monthlyExpenses
-
       setStats({
         monthlyRevenue,
         totalRevenue,
@@ -221,4 +181,4 @@ export const useFinancialStats = () => {
     error,
     refetch: fetchAllFinancialStats
   }
-} 
+}

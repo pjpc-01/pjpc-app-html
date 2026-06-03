@@ -147,58 +147,57 @@ export default function StudentList({
         </TableHeader>
         <TableBody>
           {sortedStudents.map((student) => (
-            <TableRow key={student.id}>
-              <TableCell>
+            <TableRow 
+              key={student.id} 
+              className="hover:bg-slate-50 cursor-pointer transition-colors group"
+              onClick={() => onViewStudent(student)}
+            >
+              <TableCell className="w-12">
                 <Checkbox
                   checked={selectedStudents.includes(student.id)}
-                  onCheckedChange={(checked) => onSelectStudent(student.id, checked as boolean)}
+                  onCheckedChange={(checked) => {
+                    onSelectStudent(student.id, checked as boolean);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
                 />
               </TableCell>
-              <TableCell className="font-medium">{student.student_name}</TableCell>
-              <TableCell>{student.student_id}</TableCell>
+              <TableCell className="font-medium text-slate-900">{student.student_name}</TableCell>
+              <TableCell className="text-slate-500 font-mono text-xs">{student.student_id}</TableCell>
               <TableCell>
-                <Badge variant="outline">
+                <Badge variant="outline" className="bg-slate-50 text-slate-600 font-normal">
                   {convertGradeToChinese(student.standard || '')}
                 </Badge>
               </TableCell>
-              <TableCell>{student.parentName || '-'}</TableCell>
-              <TableCell>{student.email || '-'}</TableCell>
+              <TableCell className="text-slate-600">{student.parentName || '-'}</TableCell>
+              <TableCell className="text-slate-500">{student.email || '-'}</TableCell>
               <TableCell>
-                <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
+                <Badge variant={student.status === 'active' ? 'default' : 'secondary'} className="text-[10px] uppercase tracking-wider">
                   {student.status === 'active' ? '在读' : '离校'}
                 </Badge>
               </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-1">
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => {
-                      console.log('StudentList: 点击查看学生:', {
-                        id: student.id,
-                        name: student.student_name,
-                        avatar: student.avatar,
-                        hasAvatar: !!student.avatar,
-                        studentObject: student
-                      })
-                      onViewStudent(student)
+                    className="h-8 w-8 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditStudent(student);
                     }}
                   >
-                    <Eye className="h-4 w-4" />
+                    <Edit className="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onEditStudent(student)}
+                    className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteStudent(student.id);
+                    }}
                   >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDeleteStudent(student.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </TableCell>
