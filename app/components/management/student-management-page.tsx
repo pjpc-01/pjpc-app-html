@@ -393,15 +393,40 @@ export default function StudentManagementPage() {
     }
   }
 
-  const handleBulkExport = (format: 'csv' | 'excel' | 'pdf') => {
-    const selectedStudentData = students.filter(student => selectedStudents.has(student.id))
-    console.log(`Exporting ${selectedStudentData.length} students as ${format}`)
-    // 这里可以实现实际的导出逻辑
+  const handleExport = async () => {
+    try {
+      const response = await fetch('/api/students/export')
+      if (!response.ok) throw new Error('Export failed')
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'students_export.csv'
+      a.click()
+      window.URL.revokeObjectURL(url)
+    } catch (e) {
+      alert('导出失败: ' + (e as Error).message)
+    }
   }
 
-  const handleBulkImport = async (file: File) => {
-    console.log(`Importing students from ${file.name}`)
-    // 这里可以实现实际的导入逻辑
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await fetch('/api/students/import', {
+        method: 'POST',
+        body: formData,
+      })
+      if (!response.ok) throw new Error('Import failed')
+      alert('导入成功！')
+      refetch()
+    } catch (e) {
+      alert('导入失败: ' + (e as Error).message)
+    }
   }
 
   const handleBulkMessage = async (message: string, type: 'email' | 'sms') => {
@@ -526,20 +551,31 @@ export default function StudentManagementPage() {
               </Button>
               <Button 
                 variant="outline" 
-                size="sm"
+                size="sm" 
+                onClick={handleExport}
                 className="bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/80"
               >
                 <Download className="h-4 w-4 mr-2" />
                 导出
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/80"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                导入
-              </Button>
+              <div className="relative">
+                <input 
+                  type="file" 
+                  accept=".csv" 
+                  className="hidden" 
+                  id="student-import-input"
+                  onChange={handleImport}
+                />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => document.getElementById('student-import-input')?.click()}
+                  className="bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/80"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  导入
+                </Button>
+              </div>
               <Button 
                 onClick={() => setIsAddDialogOpen(true)}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
