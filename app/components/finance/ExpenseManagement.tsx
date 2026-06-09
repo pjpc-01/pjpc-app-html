@@ -105,7 +105,8 @@ export default function ExpenseManagement() {
     }
   }
 
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
+  const safeExpenses = Array.isArray(expenses) ? expenses : []
+  const totalExpenses = safeExpenses.reduce((sum, e) => sum + (e.amount || 0), 0)
 
   return (
     <div className="space-y-6">
@@ -259,7 +260,7 @@ export default function ExpenseManagement() {
           <CardHeader className="pb-2">
             <CardDescription className="text-slate-500 font-medium">最大单笔支出</CardDescription>
             <CardTitle className="text-3xl font-bold text-slate-900">
-              RM {expenses.length > 0 ? Math.max(...expenses.map(e => e.amount)).toLocaleString() : 0}
+              RM {safeExpenses.length > 0 ? Math.max(...safeExpenses.map(e => e.amount || 0)).toLocaleString() : 0}
             </CardTitle>
           </CardHeader>
         </Card>

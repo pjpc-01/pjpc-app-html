@@ -187,18 +187,18 @@ export const getAllStudents = async (): Promise<Student[]> => {
       
       // 基本信息
       student_id: student.student_id,
-      student_name: student.student_name,
+      student_name: student.name,
       dob: student.dob,
-      father_phone: student.father_phone,
-      mother_phone: student.mother_phone,
-      home_address: student.home_address,
+      father_phone: student.fatherPhone,
+      mother_phone: student.motherPhone,
+      home_address: student.address,
       gender: student.gender,
       serviceType: student.serviceType,
-      register_form_url: student.register_form_url,
-      standard: student.standard,
+      register_form_url: student.registrationLink,
+      standard: student.grade,
       level: student.level,
       center: student.center,
-      
+
       // 扩展信息
       nric: student.nric,
       school: student.school,
@@ -432,11 +432,11 @@ export const getStudentById = async (id: string): Promise<Student | null> => {
       
       // 基本信息
       student_id: student.student_id,
-      student_name: student.student_name,
+      student_name: student.name,
       dob: student.dob,
-      father_phone: student.father_phone,
-      mother_phone: student.mother_phone,
-      home_address: student.home_address,
+      father_phone: student.fatherPhone,
+      mother_phone: student.motherPhone,
+      home_address: student.address,
       gender: student.gender,
       serviceType: student.serviceType,
       register_form_url: student.register_form_url,

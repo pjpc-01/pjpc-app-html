@@ -5,7 +5,9 @@ import { fetchSecureData, createRecord, updateRecord, deleteRecord } from '@/lib
 import { Student } from '@/lib/pocketbase-schema'
 
 export interface StudentData extends Student {
-  // Add any UI-specific extensions here if needed
+  // UI-friendly aliases for DB fields
+  name?: string
+  id_alias?: string
 }
 
 export const useStudentData = () => {
@@ -18,13 +20,19 @@ export const useStudentData = () => {
       setLoading(true)
       setError(null)
       
-      // Use the secure data client to fetch from the 'students' collection
       const data = await fetchSecureData<Student[]>('students', {
         fullList: true,
         sort: 'student_name',
       })
       
-      setStudents(data || [])
+      // Map DB fields to UI fields to ensure compatibility with existing components
+      const mappedData = (data || []).map(student => ({
+        ...student,
+        name: student.student_name || 'Unknown Student',
+        id_alias: student.student_id || student.id
+      }))
+      
+      setStudents(mappedData)
     } catch (err: any) {
       console.error('获取学生数据失败:', err)
       setError(err.message || '获取学生数据失败')
@@ -80,7 +88,12 @@ export const useStudentData = () => {
         filter: `student_name contains '${query}' || student_id contains '${query}'`,
         fullList: true,
       })
-      return data || []
+      
+      return (data || []).map(student => ({
+        ...student,
+        name: student.student_name || 'Unknown Student',
+        id_alias: student.student_id || student.id
+      }))
     } catch (err: any) {
       console.error('搜索学生失败:', err)
       throw new Error(`搜索学生失败: ${err.message}`)
@@ -93,7 +106,12 @@ export const useStudentData = () => {
         filter: `center = '${center}'`,
         fullList: true,
       })
-      return data || []
+      
+      return (data || []).map(student => ({
+        ...student,
+        name: student.student_name || 'Unknown Student',
+        id_alias: student.student_id || student.id
+      }))
     } catch (err: any) {
       console.error('获取中心学生失败:', err)
       throw new Error(`获取中心学生失败: ${err.message}`)

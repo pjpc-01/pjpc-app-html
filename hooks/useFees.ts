@@ -1,96 +1,51 @@
+"use client"
+
 import { useState, useCallback, useEffect, useRef } from "react"
-import { pb } from "@/lib/pocketbase"
+import { fetchSecureData, createRecord, updateRecord, deleteRecord } from "@/lib/secure-api-client"
 import type { Fee } from "@/types/fees"
 
-// Mock Data for Testing (Frontend logic verification)
-const MOCK_FEES: Fee[] = [
-  {
-    id: "mock-1",
-    name: "Monthly Tuition Fee",
-    amount: 250,
-    type: "monthly",
-    status: "active",
-    description: "Standard monthly tuition",
-    category: "Tuition",
-    applicableCenters: ["Center A"],
-    applicableLevels: ["Primary 1", "Primary 2"],
-  },
-  {
-    id: "mock-2",
-    name: "Registration Fee",
-    amount: 100,
-    type: "one-time",
-    status: "active",
-    description: "New student registration",
-    category: "Administrative",
-    applicableCenters: ["Center A", "Center B"],
-    applicableLevels: [],
-  },
-  {
-    id: "mock-3",
-    name: "Textbook Fee",
-    amount: 50,
-    type: "one-time",
-    status: "active",
-    description: "Yearly textbooks",
-    category: "Materials",
-    applicableCenters: ["Center A"],
-    applicableLevels: ["Primary 1"],
-  },
-  {
-    id: "mock-4",
-    name: "Late Payment Penalty",
-    amount: 20,
-    type: "one-time",
-    status: "inactive",
-    description: "Penalty for payments after 7th of month",
-    category: "Administrative",
-    applicableCenters: [],
-    applicableLevels: [],
-  },
-];
+export interface FeeData extends Fee {
+  // UI-friendly aliases if needed in the future
+  frequency_alias?: string
+}
 
 export const useFees = () => {
-  const [fees, setFees] = useState<Fee[]>([])
-  const [loading, setLoading] = useState(true)
+  const [fees, setFees] = useState<FeeData[]>([])
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const isMounted = useRef(true)
 
-  const mapRecordToFee = (r: any): Fee => ({
+  const mapRecordToFee = (r: any): FeeData => ({
     id: r.id,
     name: r.name ?? "Unnamed",
     category: r.category,
     amount: Number(r.amount ?? 0),
-    type: (r.type as Fee["type"]) ?? "monthly",
+    type: (r.frequency as Fee["type"]) ?? "monthly", // Map DB 'frequency' to UI 'type'
     status: (r.status as Fee["status"]) ?? "active",
     description: r.description ?? "",
-    applicableCenters: r.applicableCenters ?? [],
-    applicableLevels: r.applicableLevels ?? [],
+    applicableCenters: [], // Not in current DB schema
+    applicableLevels: [], // Not in current DB schema
+    frequency_alias: r.frequency
   })
 
   const loadFees = useCallback(async () => {
-    if (!isMounted.current) return
-    
-    setLoading(true)
-    setError(null)
-    
     try {
-      // First attempt: try real API
-      const records = await pb.collection("fees_items").getFullList(200, {
-        sort: "category",
-        requestKey: null,
+      setLoading(true)
+      setError(null)
+      
+      const data = await fetchSecureData<any[]>('fee_items', {
+        fullList: true,
+        sort: 'category',
       })
       
       if (isMounted.current) {
-        const mappedFees = records.map(mapRecordToFee)
+        const mappedFees = (data || []).map(mapRecordToFee)
         setFees(mappedFees)
       }
     } catch (err: any) {
-      console.error("❌ Load fees failed, falling back to mock data:", err)
+      console.error("❌ Load fees failed:", err)
       if (isMounted.current) {
-        // Fallback to MOCK_FEES for testing purposes
-        setFees(MOCK_FEES)
-        setError(null) // Clear error to show mock data instead of error screen
+        setError(err.message || "Failed to load fee items")
       }
     } finally {
       if (isMounted.current) {
@@ -101,42 +56,52 @@ export const useFees = () => {
 
   const createFee = useCallback(async (feeData: Omit<Fee, "id">) => {
     try {
-      const created = await pb.collection("fees_items").create(feeData, {
-        requestKey: null,
-      })
-      const mapped = mapRecordToFee(created)
-      setFees(prev => [...prev, mapped])
-      return mapped
+      // Map UI fields back to DB schema
+      const dataToSave = {
+        ...feeData,
+        frequency: feeData.type, // Map 'type' back to 'frequency'
+      }
+      // Remove UI-only fields that would cause DB errors
+      delete (dataToSave as any).type
+      delete (dataToSave as any).applicableCenters
+      delete (dataToSave as any).applicableLevels
+
+      const result = await createRecord('fee_items', dataToSave)
+      await loadFees()
+      return mapRecordToFee(result)
     } catch (err: any) {
       console.error("❌ Create fee failed:", err)
-      throw err
+      throw new Error(`创建费用项失败: ${err.message}`)
     }
-  }, [])
+  }, [loadFees])
 
   const updateFee = useCallback(async (id: string, updates: Partial<Fee>) => {
     try {
-      const updated = await pb.collection("fees_items").update(id, updates, {
-        requestKey: null,
-      })
-      const mapped = mapRecordToFee(updated)
-      setFees(prev => prev.map(f => (f.id === id ? mapped : f)))
+      const dataToUpdate: any = { ...updates }
+      if (updates.type) {
+        dataToUpdate.frequency = updates.type
+        delete dataToUpdate.type
+      }
+      delete dataToUpdate.applicableCenters
+      delete dataToUpdate.applicableLevels
+
+      await updateRecord('fee_items', id, dataToUpdate)
+      await loadFees()
     } catch (err: any) {
       console.error("❌ Update fee failed:", err)
-      throw err
+      throw new Error(`更新费用项失败: ${err.message}`)
     }
-  }, [])
+  }, [loadFees])
 
   const deleteFee = useCallback(async (id: string) => {
     try {
-      await pb.collection("fees_items").delete(id, {
-        requestKey: null,
-      })
-      setFees(prev => prev.filter(f => f.id !== id))
+      await deleteRecord('fee_items', id)
+      await loadFees()
     } catch (err: any) {
       console.error("❌ Delete fee failed:", err)
-      throw err
+      throw new Error(`删除费用项失败: ${err.message}`)
     }
-  }, [])
+  }, [loadFees])
 
   const filterFees = useCallback(
     (criteria: Partial<Pick<Fee, "status" | "type" | "category">>) => {

@@ -8,7 +8,7 @@ import PageLayout from "@/components/layouts/PageLayout"
 import TabbedPage from "@/components/layouts/TabbedPage"
 import StatsGrid from "@/components/ui/StatsGrid"
 import { Badge } from "@/components/ui/badge"
-import FinanceManagement from "../finance/finance-management-page"
+import FinanceManagement from "@/app/finance-management/page"
 import {
   DollarSign,
   Calculator,

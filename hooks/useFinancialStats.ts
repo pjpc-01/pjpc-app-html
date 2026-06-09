@@ -69,15 +69,15 @@ export const useFinancialStats = () => {
         console.warn('⚠️ Invoices fetch failed:', e)
       }
       
-      // 2. Fetch Payments (Receipts)
-      let receipts: any[] = []
+      // 2. Fetch Payments
+      let payments: any[] = []
       try {
-        receipts = await fetchSecureData<any[]>('receipts', {
+        payments = await fetchSecureData<any[]>('payments', {
           fullList: true,
           sort: '-created'
         })
       } catch (e) {
-        console.warn('⚠️ Receipts fetch failed:', e)
+        console.warn('⚠️ Payments fetch failed:', e)
       }
 
       // 3. Fetch Expenses
@@ -127,15 +127,15 @@ export const useFinancialStats = () => {
       }).length
 
       // Recent Transactions
-      const recentTransactions: Transaction[] = receipts.slice(0, 10).map(receipt => ({
-        id: receipt.id,
-        amount: Number(receipt.amount) || 0,
+      const recentTransactions: Transaction[] = payments.slice(0, 10).map(payment => ({
+        id: payment.id,
+        amount: Number(payment.amount) || 0,
         status: 'completed' as const,
         type: 'payment' as const,
-        date: new Date(receipt.receipt_date || receipt.created),
-        description: `收据 #${receipt.receipt_id || receipt.id}`,
+        date: new Date(payment.date || payment.created),
+        description: `付款 #${payment.id}`,
         studentName: '学生',
-        paymentMethod: '银行转账'
+        paymentMethod: payment.method || '银行转账'
       }))
 
       // Revenue Trend
@@ -147,8 +147,8 @@ export const useFinancialStats = () => {
         }
       })
 
-      const totalPaid = receipts.reduce((sum, receipt) => 
-        sum + (Number(receipt.amount) || 0), 0
+      const totalPaid = payments.reduce((sum, payment) => 
+        sum + (Number(payment.amount) || 0), 0
       )
       
       setStats({

@@ -25,7 +25,8 @@ import {
   Heart, 
   Car,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  FileText
 } from "lucide-react"
 import { Student } from "@/hooks/useStudents"
 import { convertGradeToChinese } from "./utils"
@@ -95,6 +96,12 @@ export default function StudentDetails({
           </div>
 
           <div className="pt-14 px-6 pb-6 space-y-6">
+            {/* Accessibility Requirement: SheetTitle must be present */}
+            <SheetHeader className="sr-only">
+              <SheetTitle>{student.student_name} - 学生详细信息</SheetTitle>
+              <SheetDescription>查看学生的个人、学校及接送详细资料</SheetDescription>
+            </SheetHeader>
+
             {/* 姓名与状态 */}
             <div className="flex justify-between items-start">
               <div>
@@ -134,14 +141,13 @@ export default function StudentDetails({
                 <span className="text-xs">WhatsApp</span>
               </Button>
               <Button 
-                variant="outline" 
+                variant="destructive" 
                 size="sm" 
                 className="flex flex-col h-20 gap-1"
                 onClick={onDelete}
-                variant="destructive"
               >
-                <AlertTriangle className="h-4 w-4 text-red-600" />
-                <span className="text-xs">删除记录</span>
+                <AlertTriangle className="h-4 w-4 text-white" />
+                <span className="text-xs text-white">删除记录</span>
               </Button>
             </div>
 
@@ -204,7 +210,7 @@ export default function StudentDetails({
                   <div className="flex justify-between items-center py-2">
                     <span className="text-sm font-medium text-slate-500">学费状态</span>
                     <Badge variant={student.tuitionStatus === 'paid' ? 'default' : student.tuitionStatus === 'overdue' ? 'destructive' : 'secondary'} className="text-xs">
-                      {student.tuitionStatus === 'pending' ? '待付款' : student.tuitionStatus === 'paid' ? '已付款' : student.tuitionStatus === 'partial' ? '部分付款' : student.tuitionStatus === 'overdue' ? '逾期' : '-'}
+                      {student.tuitionStatus === 'pending' ? '待付款' : student.tuitionStatus === 'paid' ? '已付款' : student.tuitionHStatus === 'partial' ? '部分付款' : student.tuitionStatus === 'overdue' ? '逾期' : '-'}
                     </Badge>
                   </div>
                 </DetailSection>
@@ -232,7 +238,7 @@ export default function StudentDetails({
                       <PickupPerson name={student.authorizedPickup2Name} relation={student.authorizedPickup2Relation} phone={student.authorizedPickup2Phone} index={2} />
                     )}
                     {student.authorizedPickup3Name && (
-                      <PickupPerson name={student.authorizedPickup3Name} relation={student.authorizedPickup3Relation} phone={student.authorizedPickup3Name} index={3} />
+                      <PickupPerson name={student.authorizedPickup3Name} relation={student.authorizedPickup3Name} phone={student.authorizedPickup3Name} index={3} />
                     )}
                   </div>
                 </DetailSection>
