@@ -73,26 +73,29 @@ export default function FinancialReports() {
 
   // Reconciliation functions
   const getReconciliationStatus = () => {
-    const totalInvoiced = invoices.reduce((sum, inv) => sum + inv.totalAmount, 0)
-    const totalPaid = payments.reduce((sum, p) => sum + p.amountPaid, 0)
+    const safeInvoices = Array.isArray(invoices) ? invoices : []
+    const safePayments = Array.isArray(payments) ? payments : []
+    
+    const totalInvoiced = safeInvoices.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0)
+    const totalPaid = safePayments.reduce((sum, p) => sum + (p.amount || 0), 0)
     const difference = totalPaid - totalInvoiced
     
     return {
-      totalInvoices: invoices.length,
-      totalPayments: payments.length,
+      totalInvoices: safeInvoices.length,
+      totalPayments: safePayments.length,
       totalInvoiced,
       totalPaid,
       difference,
-      isBalanced: Math.abs(difference) < 0.01, // Allow for small rounding differences
-      paidInvoices: invoices.filter(inv => {
-        const invoicePayments = payments.filter(p => p.invoiceId === inv.id)
-        const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amountPaid, 0)
-        return totalPaid >= inv.totalAmount
+      isBalanced: Math.abs(difference) < 0.01,
+      paidInvoices: safeInvoices.filter(inv => {
+        const invoicePayments = safePayments.filter(p => p.invoiceId === inv.id)
+        const totalPaid = invoicePayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+        return totalPaid >= (inv.totalAmount || 0)
       }).length,
-      unpaidInvoices: invoices.filter(inv => {
-        const invoicePayments = payments.filter(p => p.invoiceId === inv.id)
-        const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amountPaid, 0)
-        return totalPaid < inv.totalAmount
+      unpaidInvoices: safeInvoices.filter(inv => {
+        const invoicePayments = safePayments.filter(p => p.invoiceId === inv.id)
+        const totalPaid = invoicePayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+        return totalPaid < (inv.totalAmount || 0)
       }).length
     }
   }
@@ -101,8 +104,9 @@ export default function FinancialReports() {
 
   // Calculate income and expenses
   const getFinancialSummary = () => {
-    const successfulPayments = payments.filter(p => p.status === 'completed')
-    const totalIncome = successfulPayments.reduce((sum, p) => sum + p.amountPaid, 0)
+    const safePayments = Array.isArray(payments) ? payments : []
+    const successfulPayments = safePayments.filter(p => p.status === "completed")
+    const totalIncome = successfulPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
     
     // Mock expenses data (in real app, this would come from expense management)
     const expenses = [
@@ -125,7 +129,7 @@ export default function FinancialReports() {
       profitMargin,
       expenses,
       successfulPayments: successfulPayments.length,
-      totalPayments: payments.length
+      totalPayments: safePayments.length
     }
   }
 

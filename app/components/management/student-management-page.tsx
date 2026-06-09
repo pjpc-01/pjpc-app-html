@@ -296,7 +296,7 @@ export default function StudentManagementPage() {
     canGoPrev
   } = usePagination({
     data: filteredStudents,
-    pageSize: 20,
+    pageSize: 50,
     initialPage: 1
   })
 

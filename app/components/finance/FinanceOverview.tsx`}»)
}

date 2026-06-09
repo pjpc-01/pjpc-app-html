@@ -1,0 +1,191 @@
+"use client"
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { TrendingUp, TrendingDown, DollarSign, AlertCircle, CreditCard, Wallet } from "lucide-react"
+import { useFinancialStats } from "@/hooks/useFinancialStats"
+import RevenueChart from "@/app/components/finance/charts/RevenueChart"
+import ExpenseChart from "@/app/components/finance/charts/ExpenseChart"
+import ProfitChart from "@/app/components/finance/charts/ProfitChart"
+
+export default function FinanceOverview() {
+  const { 
+    stats, 
+    isLoading, 
+    recentTransactions, 
+    error 
+  } = useFinancialStats()
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    )
+  }
+
+  // Transform data for charts
+  const revenueData = stats.monthlyRevenue.map(item => ({
+    month: item.month,
+    amount: item.amount
+  }))
+
+  const expenseData = stats.expenseCategories.map(item => ({
+    name: item.category,
+    value: item.amount
+  }))
+
+  const profitData = stats.monthlyProfit.map(item => ({
+    month: item.month,
+    profit: item.amount
+  }))
+
+  return (
+    <div className="space-y-8 p-2">
+      {/* Top Summary Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <Card className=\"bg-gradient-to-br from-blue-500 to-blue-700 text-white border-none shadow-xl hover:-translate-y-1 transition-all duration-300\">
+          <CardContent className=\"p-6\">
+            <div className=\"flex justify-between items-start\">
+              <div>
+                <p className=\"text-blue-100 text-sm font-medium\">月收入 (Monthly Income)</p>
+                <h3 className=\"text-3xl font-bold mt-1\">RM {stats.monthlyIncome.toLocaleString()}</h3>
+              </div>
+              <div className=\"p-2 bg-white/20 rounded-lg\">
+                <DollarSign className=\"h-6 w-6 text-white\" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className=\"bg-gradient-to-br from-indigo-500 to-indigo-700 text-white border-none shadow-xl hover:-translate-y-1 transition-all duration-300\">
+          <CardContent className=\"p-6\">
+            <div className=\"flex justify-between items-start\">
+              <div>
+                <p className=\"text-indigo-100 text-sm font-medium\">待付款 (Pending)</p>
+                <h3 className=\"text-3xl font-bold mt-1\">RM {stats.pendingPayments.toLocaleString()}</h3>
+              </div>
+              <div className=\"p-2 bg-white/20 rounded-lg\">
+                <CreditCard className=\"h-6 w-6 text-white\" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className=\"bg-gradient-to-br from-red-500 to-red-700 text-white border-none shadow-xl hover:-translate-y-1 transition-all duration-300\">
+          <CardContent className=\"p-6\">
+            <div className=\"flex justify-between items-start\">
+              <div>
+                <p className=\"text-red-100 text-sm font-medium\">逾期付款 (Overdue)</p>
+                <h3 className=\"text-3xl font-bold mt-1\">RM {stats.overduePayments.toLocaleString()}</h3>
+              </div>
+              <div className=\"p-2 bg-white/20 rounded-lg\">
+                <AlertCircle className=\"h-6 w-6 text-white\" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className=\"bg-gradient-to-br from-violet-500 to-violet-700 text-white border-none shadow-xl hover:-translate-y-1 transition-all duration-300\">
+          <CardContent className=\"p-6\">
+            <div className=\"flex justify-between items-start\">
+              <div>
+                <p className=\"text-violet-100 text-sm font-medium\">总收入 (Total Income)</p>
+                <h3 className=\"text-3xl font-bold mt-1\">RM {stats.totalIncome.toLocaleString()}</h3>
+              </div>
+              <div className=\"p-2 bg-white/20 rounded-lg\">
+                <TrendingUp className=\"h-6 w-6 text-white\" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className=\"bg-gradient-to-br from-emerald-500 to-emerald-700 text-white border-none shadow-xl hover:-translate-y-1 transition-all duration-300\">
+          <CardContent className=\"p-6\">
+            <div className=\"flex justify-between items-start\">
+              <div>
+                <p className=\"text-emerald-100 text-sm font-medium\">净利润 (Net Profit)</p>
+                <h3 className=\"text-3xl font-bold mt-1\">RM {stats.netProfit.toLocaleString()}</h3>
+              </div>
+              <div className=\"p-2 bg-white/20 rounded-lg\">
+                <Wallet className=\"h-6 w-6 text-white\" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Grid */}
+      <div className=\"grid grid-cols-1 lg:grid-cols-2 gap-8\">
+        <RevenueChart data={revenueData} />
+        <ExpenseChart data={expenseData} />
+      </div>
+
+      <div className=\"grid grid-cols-1 gap-8\">
+        <ProfitChart data={profitData} />
+      </div>
+
+      {/* Recent Transactions Table */}
+      <Card className=\"border-none shadow-lg bg-white/50 backdrop-blur-sm overflow-hidden\">
+        <CardHeader className=\"bg-white/50 border-b">
+          <CardTitle className=\"text-lg font-semibold text-slate-800\">近期交易 (Recent Transactions)</CardTitle>
+        </CardHeader>
+        <CardContent className=\"p-0\">
+          <div className=\"overflow-x-auto\">
+            <Table>
+              <TableHeader>
+                <TableRow className=\"bg-slate-50/50\">
+                  <TableHead className=\"font-medium\">交易类型</TableHead>
+                  <TableHead className=\"font-medium\">日期</TableHead>
+                  <TableHead className=\"font-medium\">金额</TableHead>
+                  <TableHead className=\"font-medium\">状态</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentTransactions.length > 0 ? (
+                  recentTransactions.map((tx: any, idx: number) => (
+                    <TableRow key={idx} className=\"hover:bg-slate-50/50 transition-colors\">
+                      <TableCell className=\"font-medium\">
+                        <div className=\"flex items-center gap-2\">
+                          {tx.type === 'income' ? (
+                            <span className=\"h-2 w-2 rounded-full bg-emerald-500\" />
+                          ) : (
+                            <span className=\"h-2 w-2 rounded-full bg-red-500\" />
+                          )}
+                          {tx.description}
+                        </div>
+                      </TableCell>
+                      <TableCell className=\"text-slate-500\">{tx.date}</TableCell>
+                      <TableCell className=\"font-semibold\">
+                        {tx.type === 'income' ? `+ RM${tx.amount.toLocaleString()}` : `- RM${tx.amount.toLocaleString()}`}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant=\"outline\" className=\"text-[10px]\">{tx.status}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className=\"text-center py-8 text-slate-500\">
+                      暂无近期交易记录
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

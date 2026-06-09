@@ -7,9 +7,10 @@ export async function GET(request: NextRequest) {
     
     // Forward the request to the authenticated proxy
     // This avoids rewriting every single frontend hook and ensures Admin auth is used
-    const proxyUrl = `/api/pocketbase-proxy/api/collections/students/records${searchParams ? `?${searchParams}` : ''}`
+    const origin = new URL(request.url).origin.replace('https://', 'http://')
+    const proxyUrl = `/api/pocketbase-proxy/api/collections/students/records?perPage=500${searchParams ? `&${searchParams}` : ''}`
     
-    const response = await fetch(`${new URL(request.url).origin}${proxyUrl}`)
+    const response = await fetch(`${origin}${proxyUrl}`)
     
     if (!response.ok) {
       return NextResponse.json({ success: false, error: 'Proxy error' }, { status: response.status })
