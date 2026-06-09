@@ -5,8 +5,6 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url)
     const searchParams = url.searchParams.toString()
     
-    // Forward the request to the authenticated proxy
-    // This avoids rewriting every single frontend hook and ensures Admin auth is used
     const origin = new URL(request.url).origin.replace('https://', 'http://')
     const proxyUrl = `/api/pocketbase-proxy/api/collections/students/records?perPage=500${searchParams ? `&${searchParams}` : ''}`
     
@@ -18,7 +16,6 @@ export async function GET(request: NextRequest) {
     
     const data = await response.json()
     
-    // PocketBase returns records in an 'items' array
     return NextResponse.json({
       success: true,
       students: data.items || []
@@ -40,6 +37,32 @@ export async function POST(request: NextRequest) {
     
     if (!response.ok) {
       return NextResponse.json({ success: false, error: 'Proxy create error' }, { status: response.status })
+    }
+    
+    const data = await response.json()
+    return NextResponse.json({ success: true, student: data })
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { id, ...studentData } = body
+    
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Student ID is required for update' }, { status: 400 })
+    }
+    
+    const response = await fetch(`${new URL(request.url).origin}/api/pocketbase-proxy/api/collections/students/records/${id}`, {
+      method: 'PATCH', // PocketBase uses PATCH for updates
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(studentData)
+    })
+    
+    if (!response.ok) {
+      return NextResponse.json({ success: false, error: 'Proxy update error' }, { status: response.status })
     }
     
     const data = await response.json()
