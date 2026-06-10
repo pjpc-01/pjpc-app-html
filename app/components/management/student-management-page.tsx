@@ -393,7 +393,7 @@ export default function StudentManagementPage() {
     }
   }
 
-  const handleExport = async () => {
+  const handleBulkExport = async () => {
     try {
       const response = await fetch('/api/students/export')
       if (!response.ok) throw new Error('Export failed')
@@ -409,7 +409,7 @@ export default function StudentManagementPage() {
     }
   }
 
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBulkImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -552,7 +552,7 @@ export default function StudentManagementPage() {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={handleExport}
+                onClick={handleBulkExport}
                 className="bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/80"
               >
                 <Download className="h-4 w-4 mr-2" />
@@ -564,7 +564,7 @@ export default function StudentManagementPage() {
                   accept=".csv" 
                   className="hidden" 
                   id="student-import-input"
-                  onChange={handleImport}
+                  onChange={handleBulkImport}
                 />
                 <Button 
                   variant="outline" 
