@@ -262,7 +262,7 @@ export default function InvoiceManagement() {
       
       // Get student phone number from the invoice or student data
       const student = students.find(s => s.id === invoice.studentId)
-      const phoneNumber = student?.parentEmail || ''
+      const phoneNumber = student?.motherPhone || student?.fatherPhone || student?.emergencyContact || ''
       
       if (!phoneNumber) {
         throw new Error('无法找到学生或家长的电话号码')

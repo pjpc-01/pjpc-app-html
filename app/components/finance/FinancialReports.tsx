@@ -1,6 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
+import {
+  BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart as RechartsPieChart, Pie, Cell, Legend
+} from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { FileText, Download, TrendingUp, BarChart3, PieChart, Calendar, DollarSign, Users, Loader2, CheckCircle, AlertCircle } from "lucide-react"
+import { FileText, Download, TrendingUp, BarChart3, Calendar, DollarSign, Users, Loader2, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react"
 import { useFinancialStats } from "@/hooks/useFinancialStats"
 import { useInvoices } from "@/hooks/useInvoices"
 import { usePayments } from "@/hooks/usePayments"
@@ -251,35 +255,53 @@ export default function FinancialReports() {
 
           {/* Monthly Income vs Expenses Chart */}
           <div className="mt-6">
-            <h3 className="font-semibold text-lg mb-4">月度收支对比</h3>
-            <div className="space-y-3">
-              {monthlyData.slice(0, 6).map((data, index) => {
-                const monthlyIncome = data.revenue
-                const monthlyExpenses = Math.round(data.revenue * 0.65) // Mock: 65% of income as expenses
-                const monthlyProfit = monthlyIncome - monthlyExpenses
-                
-                return (
-                  <div key={data.month} className="flex justify-between items-center p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <p className="font-medium">{data.month}</p>
-                      <div className="flex gap-4 text-sm text-gray-600">
-                        <span>收入: RM {monthlyIncome.toLocaleString()}</span>
-                        <span>支出: RM {monthlyExpenses.toLocaleString()}</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className={`font-semibold ${monthlyProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        RM {monthlyProfit.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {monthlyIncome > 0 ? ((monthlyProfit / monthlyIncome) * 100).toFixed(1) : 0}% 利润率
-                      </p>
-                    </div>
-                  </div>
-                )
-              })}
+            <h3 className="font-semibold text-lg mb-4">月度收支趋势</h3>
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsBarChart data={monthlyData.slice(0, 6).reverse()}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip formatter={(value: number) => [`RM ${value.toLocaleString()}`, undefined]} />
+                  <Bar dataKey="revenue" name="收入" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey={(d: any) => {
+                    const monthExpenses = safeExpenses
+                      .filter(e => e.date && e.date.startsWith(d.monthKey))
+                      .reduce((sum, e) => sum + (e.amount || 0), 0)
+                    return monthExpenses
+                  }} name="支出" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                </RechartsBarChart>
+              </ResponsiveContainer>
             </div>
           </div>
+
+          {/* Expense Breakdown Pie Chart */}
+          {financialSummary.expenses.length > 0 && (
+            <div className="mt-6">
+              <h3 className="font-semibold text-lg mb-4">支出构成</h3>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={financialSummary.expenses}
+                      dataKey="amount"
+                      nameKey="category"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={({ category, percentage }) => `${category} ${percentage}%`}
+                    >
+                      {financialSummary.expenses.map((_, index) => (
+                        <Cell key={index} fill={['#4f46e5', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4'][index % 7]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => [`RM ${value.toLocaleString()}`, undefined]} />
+                    <Legend />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

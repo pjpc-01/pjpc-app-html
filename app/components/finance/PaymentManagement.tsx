@@ -182,7 +182,7 @@ export default function PaymentManagement() {
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-600">发票总额:</span>
-                    <span className="font-mono font-medium">RM {selectedInvoice?.amount.toLocaleString() || "0.00"}</span>
+                    <span className="font-mono font-medium">RM {selectedInvoice?.totalAmount.toLocaleString() || "0.00"}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-600">已支付金额:</span>
@@ -191,7 +191,7 @@ export default function PaymentManagement() {
                   <div className="border-t pt-3 flex justify-between text-base font-bold">
                     <span className="text-slate-900">剩余待缴:</span>
                     <span className="font-mono text-blue-600">
-                      RM {(selectedInvoice ? selectedInvoice.amount - calculatePaidAmount(selectedInvoiceId) : 0).toLocaleString()}
+                      RM {(selectedInvoice ? selectedInvoice.totalAmount - calculatePaidAmount(selectedInvoiceId) : 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
