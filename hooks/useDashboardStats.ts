@@ -131,7 +131,7 @@ export const useDashboardStats = () => {
         recentAttendance = { items: [] }
       }
       
-      recentAttendance.items.forEach((record: any) => {
+      (recentAttendance?.items || []).forEach((record: any) => {
         recentActivities.push({
           id: record.id,
           type: 'attendance',

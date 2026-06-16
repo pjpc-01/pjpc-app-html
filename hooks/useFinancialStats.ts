@@ -61,10 +61,11 @@ export const useFinancialStats = () => {
       // 1. Fetch Invoices
       let invoices: any[] = []
       try {
-        invoices = await fetchSecureData<any[]>('invoices', {
+        const invResult = await fetchSecureData<any>('invoices', {
           fullList: true,
           sort: '-created'
         })
+        invoices = Array.isArray(invResult) ? invResult : (invResult?.items || [])
       } catch (e) {
         console.warn('⚠️ Invoices fetch failed:', e)
       }
@@ -72,10 +73,11 @@ export const useFinancialStats = () => {
       // 2. Fetch Payments
       let payments: any[] = []
       try {
-        payments = await fetchSecureData<any[]>('payments', {
+        const payResult = await fetchSecureData<any>('payments', {
           fullList: true,
           sort: '-created'
         })
+        payments = Array.isArray(payResult) ? payResult : (payResult?.items || [])
       } catch (e) {
         console.warn('⚠️ Payments fetch failed:', e)
       }
@@ -83,10 +85,11 @@ export const useFinancialStats = () => {
       // 3. Fetch Expenses
       let expenses: any[] = []
       try {
-        expenses = await fetchSecureData<any[]>('expenses', {
+        const expResult = await fetchSecureData<any>('expenses', {
           fullList: true,
           sort: '-date'
         })
+        expenses = Array.isArray(expResult) ? expResult : (expResult?.items || [])
       } catch (e) {
         console.warn('⚠️ Expenses fetch failed:', e)
       }
@@ -94,15 +97,17 @@ export const useFinancialStats = () => {
       const currentMonth = new Date().toISOString().slice(0, 7)
 
       // Calculate Monthly Revenue
-      const monthlyInvoices = invoices.filter(invoice => 
+      const monthlyInvoices = safeInvoicesList.filter(invoice => 
         invoice.created && invoice.created.startsWith(currentMonth)
       )
       const monthlyRevenue = monthlyInvoices.reduce((sum, invoice) => 
         sum + (Number(invoice.total_amount) || 0), 0
       )
 
+      const safeInvoicesList = Array.isArray(invoices) ? invoices : []
+      
       // Calculate Total Revenue
-      const totalRevenue = invoices.reduce((sum, invoice) => 
+      const totalRevenue = safeInvoicesList.reduce((sum, invoice) => 
         sum + (Number(invoice.total_amount) || 0), 0
       )
 
@@ -115,11 +120,11 @@ export const useFinancialStats = () => {
       const netProfit = monthlyRevenue - monthlyExpenses
 
       // Pending and Overdue
-      const pendingPayments = invoices.filter(invoice => 
+      const pendingPayments = safeInvoicesList.filter(invoice => 
         invoice.status === 'issued' || invoice.status === 'pending'
       ).length
       
-      const overduePayments = invoices.filter(invoice => {
+      const overduePayments = safeInvoicesList.filter(invoice => {
         if (!invoice.due_date) return false
         const dueDate = new Date(invoice.due_date)
         const today = new Date()
@@ -127,7 +132,8 @@ export const useFinancialStats = () => {
       }).length
 
       // Recent Transactions
-      const recentTransactions: Transaction[] = payments.slice(0, 10).map(payment => ({
+      const safePaymentsList = Array.isArray(payments) ? payments : []
+      const recentTransactions: Transaction[] = safePaymentsList.slice(0, 10).map(payment => ({
         id: payment.id,
         amount: Number(payment.amount) || 0,
         status: 'completed' as const,
@@ -140,14 +146,14 @@ export const useFinancialStats = () => {
 
       // Revenue Trend
       const revenueByMonth: Record<string, number> = {}
-      invoices.forEach(invoice => {
+      safeInvoicesList.forEach(invoice => {
         if (invoice.created) {
           const month = invoice.created.slice(0, 7)
           revenueByMonth[month] = (revenueByMonth[month] || 0) + (Number(invoice.total_amount) || 0)
         }
       })
 
-      const totalPaid = payments.reduce((sum, payment) => 
+      const totalPaid = safePaymentsList.reduce((sum, payment) => 
         sum + (Number(payment.amount) || 0), 0
       )
       
