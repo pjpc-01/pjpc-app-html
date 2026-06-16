@@ -8,6 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Edit, Eye, Trash2, MoreHorizontal } from "lucide-react"
 import { Student } from "@/hooks/useStudents"
 import { convertGradeToChinese } from "./utils"
+import PermissionGate from "@/components/shared/PermissionGate"
+import type { UserRole } from "@/lib/permissions"
 
 interface StudentListProps {
   students: Student[]
@@ -18,6 +20,7 @@ interface StudentListProps {
   onEditStudent: (student: Student) => void
   onViewStudent: (student: Student) => void
   onDeleteStudent: (studentId: string) => void
+  userRole?: UserRole
 }
 
 export default function StudentList({
@@ -28,7 +31,8 @@ export default function StudentList({
   onSelectAll,
   onEditStudent,
   onViewStudent,
-  onDeleteStudent
+  onDeleteStudent,
+  userRole = 'admin'
 }: StudentListProps) {
   const [sortBy, setSortBy] = useState<string>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
@@ -177,28 +181,32 @@ export default function StudentList({
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEditStudent(student);
-                    }}
-                  >
-                    <Edit className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteStudent(student.id);
-                    }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  <PermissionGate permission="students.edit" role={userRole} showDisabled>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditStudent(student);
+                      }}
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                    </Button>
+                  </PermissionGate>
+                  <PermissionGate permission="students.delete" role={userRole} showDisabled>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteStudent(student.id);
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </PermissionGate>
                 </div>
               </TableCell>
             </TableRow>

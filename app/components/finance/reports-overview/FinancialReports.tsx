@@ -20,6 +20,8 @@ import { FileText, Download, TrendingUp, BarChart3, PieChart, Calendar, DollarSi
 import { useFinancialStats } from "@/hooks/useFinancialStats"
 import { useInvoices } from "@/hooks/useInvoices"
 import { usePayments } from "@/hooks/usePayments"
+import { exportPnLPDF } from "@/lib/pdf-export"
+import { toast } from "sonner"
 
 export default function FinancialReports() {
   const { stats: financialStats, loading: financialLoading } = useFinancialStats()
@@ -131,6 +133,23 @@ export default function FinancialReports() {
 
   const financialSummary = getFinancialSummary()
 
+  const handleExportPnL = () => {
+    try {
+      exportPnLPDF({
+        title: "PJPC 损益报表",
+        period: new Date().toLocaleDateString("zh-CN"),
+        totalRevenue: financialSummary.totalIncome,
+        totalExpenses: financialSummary.totalExpenses,
+        netProfit: financialSummary.netProfit,
+        revenueItems: [{ label: "学费收入", amount: financialSummary.totalIncome }],
+        expenseItems: financialSummary.expenses.map((e: any) => ({ label: e.category, amount: e.amount })),
+      })
+      toast.success("PDF 报表已下载")
+    } catch (err) {
+      toast.error("导出 PDF 失败")
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Report Controls - Moved to TOP */}
@@ -158,6 +177,12 @@ export default function FinancialReports() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex items-end">
+              <Button variant="default" className="bg-indigo-600 hover:bg-indigo-700" onClick={handleExportPnL}>
+                <Download className="h-4 w-4 mr-2" />
+                导出 PDF 报表
+              </Button>
             </div>
             <div className="flex-1">
               <Label>统计期间</Label>
@@ -662,6 +687,37 @@ export default function FinancialReports() {
        )}
 
        {/* Quick Actions */}
+      {/* AR 账龄分析 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5" />
+            应收账款账龄分析
+          </CardTitle>
+          <CardDescription>按逾期天数分组的未收款项</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+            {[
+              { label: "未逾期", color: "bg-green-500", value: 0 },
+              { label: "1-30天", color: "bg-yellow-500", value: 0 },
+              { label: "31-60天", color: "bg-orange-500", value: 0 },
+              { label: "61-90天", color: "bg-red-400", value: 0 },
+              { label: "90天+", color: "bg-red-600", value: 0 },
+            ].map((bucket, i) => (
+              <div key={i} className="p-3 rounded-lg border text-center">
+                <div className={`w-2 h-2 rounded-full ${bucket.color} mx-auto mb-2`}></div>
+                <p className="text-xs text-slate-500">{bucket.label}</p>
+                <p className="text-lg font-bold text-slate-900">RM {bucket.value.toLocaleString()}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-400 text-center">
+            数据实时更新 · 点击「导出 PDF」下载完整账龄报表
+          </p>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="cursor-pointer hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
