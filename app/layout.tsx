@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/contexts/pocketbase-auth-context"
 import QueryProvider from "@/components/providers/query-provider"
+import DashboardLayout from "@/components/layouts/DashboardLayout"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -25,7 +26,9 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body className={inter.className}>
         <QueryProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <DashboardLayout>{children}</DashboardLayout>
+          </AuthProvider>
         </QueryProvider>
       </body>
     </html>

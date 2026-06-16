@@ -7,19 +7,23 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Trash2, Download, X, Users } from "lucide-react"
 import { generateCSV, downloadCSV } from "./utils"
 import { Student } from "@/types/student"
+import PermissionGate from "@/components/shared/PermissionGate"
+import type { UserRole } from "@/lib/permissions"
 
 interface StudentBulkActionsProps {
   selectedCount: number
   onDelete: () => void
   onClearSelection: () => void
   selectedStudents?: Student[]
+  userRole?: UserRole
 }
 
 export default function StudentBulkActions({
   selectedCount,
   onDelete,
   onClearSelection,
-  selectedStudents = []
+  selectedStudents = [],
+  userRole = 'admin'
 }: StudentBulkActionsProps) {
   const handleExportSelected = () => {
     if (selectedStudents.length === 0) return
@@ -57,28 +61,30 @@ export default function StudentBulkActions({
               导出选中
             </Button>
             
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  批量删除
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>确认批量删除</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    您确定要删除选中的 {selectedCount} 名学生吗？此操作无法撤销。
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>取消</AlertDialogCancel>
-                  <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700">
-                    确认删除
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <PermissionGate permission="students.delete" role={userRole} showDisabled>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    批量删除
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>确认批量删除</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      您确定要删除选中的 {selectedCount} 名学生吗？此操作无法撤销。
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>取消</AlertDialogCancel>
+                    <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700">
+                      确认删除
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </PermissionGate>
             
             <Button
               variant="ghost"

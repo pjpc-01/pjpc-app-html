@@ -15,6 +15,7 @@ interface StudentManagementProps {
   description?: string
   buttonText?: string
   buttonColor?: 'blue' | 'green' | 'default'
+  userRole?: 'admin' | 'teacher' | 'accountant' | 'parent'
 }
 
 export default function StudentManagement({
@@ -23,7 +24,8 @@ export default function StudentManagement({
   title,
   description,
   buttonText,
-  buttonColor = 'default'
+  buttonColor = 'default',
+  userRole = 'admin'
 }: StudentManagementProps) {
   const { students, loading, error, refetch, addStudent, updateStudent, deleteStudent } = useStudents()
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
@@ -370,6 +372,7 @@ export default function StudentManagement({
             selectedCount={selectedStudents.length}
             onDelete={handleBulkDelete}
             onClearSelection={() => setSelectedStudents([])}
+            userRole={userRole}
           />
         </div>
       )}
@@ -385,6 +388,7 @@ export default function StudentManagement({
           onEditStudent={setEditingStudent}
           onViewStudent={setViewingStudent}
           onDeleteStudent={handleDeleteStudent}
+          userRole={userRole}
         />
       </div>
 

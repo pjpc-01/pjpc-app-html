@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/pocketbase-auth-context'
-import { useStudents } from '@/hooks/useStudents'
 import { fetchMultipleCollections, fetchSecureData } from '@/lib/secure-api-client'
 
 export interface Activity {
@@ -25,7 +24,6 @@ export interface DashboardStats {
 
 export const useDashboardStats = () => {
   const { user, userProfile } = useAuth()
-  const { students, loading: studentsLoading, error: studentsError } = useStudents()
   
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
@@ -43,33 +41,41 @@ export const useDashboardStats = () => {
 
   // 获取真实数据
   const fetchDashboardStats = useCallback(async () => {
+    console.log('📊 useDashboardStats: fetchDashboardStats called')
     try {
       setLoading(true)
       setError(null)
       
-      // 注意：认证现在在服务器端API路由中处理
-      
+      console.log('📊 useDashboardStats: fetching students...')
+      // 直接获取学生数据（不再依赖 useStudents 的重渲染）
+      let studentsCount = 0
+      try {
+        const studentsRes = await fetch('/api/students')
+        const studentsData = await studentsRes.json()
+        if (studentsData.success && Array.isArray(studentsData.students)) {
+          studentsCount = studentsData.students.length
+        }
+      } catch (e) {
+        console.warn('⚠️ 获取学生数据失败:', e)
+      }
+      console.log('📊 useDashboardStats: studentsCount =', studentsCount)
+
       // 并行获取所有数据
-      const [
-        usersResult,
-        teachersResult,
-        attendanceResult,
-        invoicesResult,
-        paymentsResult
-      ] = await fetchMultipleCollections([
-        { collection: 'users', options: { page: 1, perPage: 1 } },
-        { collection: 'teachers', options: { page: 1, perPage: 1 } },
-        { 
-          collection: 'student_attendance', 
-          options: { 
-            page: 1, 
-            perPage: 1,
-            filter: `date >= "${new Date().toISOString().split('T')[0]}"`
-          } 
-        },
-        { collection: 'invoices', options: { page: 1, perPage: 1 } },
-        { collection: 'payments', options: { page: 1, perPage: 1 } }
-      ]) as [{items: any[]}, {items: any[]}, {items: any[]}, {items: any[]}, {items: any[]}]
+      const [usersResult, teachersResult, attendanceResult, invoicesResult, paymentsResult] = 
+        await fetchMultipleCollections([
+          { collection: 'users', options: { page: 1, perPage: 1 } },
+          { collection: 'teachers', options: { page: 1, perPage: 1 } },
+          { 
+            collection: 'student_attendance', 
+            options: { 
+              page: 1, 
+              perPage: 1,
+              filter: `date >= "${new Date().toISOString().split('T')[0]}"`
+            } 
+          },
+          { collection: 'invoices', options: { page: 1, perPage: 1 } },
+          { collection: 'payments', options: { page: 1, perPage: 1 } }
+        ]) as [{items: any[]}, {items: any[]}, {items: any[]}, {items: any[]}, {items: any[]}]
 
       // 计算月度收入
       const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
@@ -158,17 +164,19 @@ export const useDashboardStats = () => {
         })
       })
 
+      console.log('📊 useDashboardStats: setting stats with studentsCount =', studentsCount, ', teachers =', (teachersResult as any).totalItems)
       setStats({
         totalUsers: (usersResult as any).totalItems || usersResult.items.length,
-        totalStudents: students.length,
+        totalStudents: studentsCount,
         monthlyRevenue: monthlyRevenue,
-        pendingApprovals: 0, // 需要根据实际业务逻辑计算
+        pendingApprovals: 0,
         todayAttendance: (todayAttendanceResult as any).totalItems || todayAttendanceResult.items.length,
         activeTeachers: (teachersResult as any).totalItems || teachersResult.items.length,
-        totalParents: students.length, // 假设每个学生有一个家长
-        systemHealth: 100, // 可以基于系统状态计算
+        totalParents: studentsCount,
+        systemHealth: 100,
         recentActivities: recentActivities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 5)
       })
+      console.log('📊 useDashboardStats: stats set successfully')
       
     } catch (err) {
       console.error('获取仪表板数据失败:', err)
@@ -176,7 +184,7 @@ export const useDashboardStats = () => {
     } finally {
       setLoading(false)
     }
-  }, [students.length])
+  }, [])
 
   useEffect(() => {
     fetchDashboardStats()
@@ -184,8 +192,8 @@ export const useDashboardStats = () => {
 
   return {
     stats,
-    loading: loading || studentsLoading,
-    error: error || studentsError,
+    loading,
+    error,
     refetch: fetchDashboardStats
   }
 }
