@@ -71,10 +71,10 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         icon: DollarSign,
         children: [
           { label: "财务概览", href: "/finance-management", icon: PiggyBank },
-          { label: "收费管理", href: "/finance/fees", icon: Receipt },
-          { label: "交易记录", href: "/finance/transactions", icon: ArrowLeftRight },
-          { label: "薪资管理", href: "/finance/payroll", icon: Wallet },
-          { label: "财务报表", href: "/finance/reports", icon: BarChart3 },
+          { label: "收费管理", href: "/finance-management", icon: Receipt },
+          { label: "交易记录", href: "/finance-management", icon: ArrowLeftRight },
+          { label: "薪资管理", href: "/finance-management", icon: Wallet },
+          { label: "财务报表", href: "/finance-management", icon: BarChart3 },
         ],
       },
       {
@@ -173,22 +173,22 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
       },
       {
         label: "收费管理",
-        href: "/finance/fees",
+        href: "/finance-management",
         icon: Receipt,
       },
       {
         label: "交易记录",
-        href: "/finance/transactions",
+        href: "/finance-management",
         icon: ArrowLeftRight,
       },
       {
         label: "薪资管理",
-        href: "/finance/payroll",
+        href: "/finance-management",
         icon: Wallet,
       },
       {
         label: "财务报表",
-        href: "/finance/reports",
+        href: "/finance-management",
         icon: BarChart3,
       },
     ],
