@@ -95,6 +95,7 @@ export const useFinancialStats = () => {
       }
       
       const currentMonth = new Date().toISOString().slice(0, 7)
+      const safeInvoicesList = Array.isArray(invoices) ? invoices : []
 
       // Calculate Monthly Revenue
       const monthlyInvoices = safeInvoicesList.filter(invoice => 
@@ -103,8 +104,6 @@ export const useFinancialStats = () => {
       const monthlyRevenue = monthlyInvoices.reduce((sum, invoice) => 
         sum + (Number(invoice.total_amount) || 0), 0
       )
-
-      const safeInvoicesList = Array.isArray(invoices) ? invoices : []
       
       // Calculate Total Revenue
       const totalRevenue = safeInvoicesList.reduce((sum, invoice) => 
