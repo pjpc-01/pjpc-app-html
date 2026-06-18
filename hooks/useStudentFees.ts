@@ -440,7 +440,7 @@ export function useStudentFees() {
     
     // Get all fees to calculate amounts
     try {
-      const allFees = await pb.collection("fees_items").getFullList();
+      const allFees = await pb.collection("fee_items").getFullList();
       debugLog(`🔄 Loaded ${allFees.length} fee items for calculation`);
       
       // Process each student's assignments

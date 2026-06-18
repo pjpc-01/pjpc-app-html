@@ -54,17 +54,19 @@ export default function StudentForm({
     student_name: '',
     student_id: '',
     standard: '',
-    parentName: '',
+    fatherName: '',
+    motherName: '',
+    fatherPhone: '',
+    motherPhone: '',
     email: '',
     status: 'active',
-    center: 'WX 01',
+    center: 'PU1',
     gender: 'male',
     serviceType: 'afterschool',
     dob: '',
     // 新增字段
     nric: '',
     school: '',
-    parentPhone: '',
     emergencyContact: '',
     emergencyPhone: '',
     healthInfo: '',
@@ -85,6 +87,12 @@ export default function StudentForm({
         avatar: null
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [centers, setCenters] = useState<{id:string,name:string,code:string}[]>([])
+
+  // Fetch centers for dropdown
+  useEffect(() => {
+    fetch('/api/centers').then(r=>r.json()).then(d => { if(d.success) setCenters(d.data || []) }).catch(()=>{})
+  }, [])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [isRegistrationCalendarOpen, setIsRegistrationCalendarOpen] = useState(false)
@@ -106,17 +114,19 @@ export default function StudentForm({
         student_name: student.student_name || '',
         student_id: student.student_id || '',
         standard: student.standard || '',
-        parentName: student.parentName || '',
+        fatherName: student.fatherName || student.father_name || '',
+        motherName: student.motherName || student.mother_name || '',
+        fatherPhone: student.fatherPhone || student.father_phone || '',
+        motherPhone: student.motherPhone || student.mother_phone || '',
         email: student.email || '',
         status: student.status || 'active',
-        center: student.center || 'WX 01',
+        center: student.center || 'PU1',
         gender: student.gender || 'male',
         serviceType: student.serviceType || 'afterschool',
         dob: student.dob || '',
         // 新增字段
         nric: student.nric || '',
         school: student.school || '',
-        parentPhone: student.parentPhone || '',
         emergencyContact: student.emergencyContact || '',
         emergencyPhone: student.emergencyPhone || '',
         healthInfo: student.healthInfo || '',
@@ -141,17 +151,19 @@ export default function StudentForm({
         student_name: '',
         student_id: '',
         standard: '',
-        parentName: '',
+        fatherName: '',
+        motherName: '',
+        fatherPhone: '',
+        motherPhone: '',
         email: '',
         status: 'active',
-        center: 'WX 01',
+        center: 'PU1',
         gender: 'male',
         serviceType: 'afterschool',
         dob: '',
         // 新增字段
         nric: '',
         school: '',
-        parentPhone: '',
         emergencyContact: '',
         emergencyPhone: '',
         healthInfo: '',
@@ -212,16 +224,6 @@ export default function StudentForm({
       newErrors.school = '学校是必填项'
     }
 
-    if (!formData.parentName?.trim()) {
-      newErrors.parentName = '父母姓名是必填项'
-    }
-
-    if (!formData.parentPhone?.trim()) {
-      newErrors.parentPhone = '父母电话是必填项'
-    } else if (!validatePhone(formData.parentPhone)) {
-      newErrors.parentPhone = '手机号格式不正确'
-    }
-
     if (!formData.emergencyContact?.trim()) {
       newErrors.emergencyContact = '紧急联络人是必填项'
     }
@@ -253,17 +255,19 @@ export default function StudentForm({
         student_name: sanitizeText(formData.student_name || '', 50),
         student_id: sanitizeText(formData.student_id || '', 20).toUpperCase(),
         standard: formData.standard || '',
-        center: formData.center || 'WX 01',
+        center: formData.center || 'PU1',
         serviceType: formData.serviceType || 'afterschool',
         gender: formData.gender || 'male',
         dob: formData.dob || '',
-        parentName: formData.parentName || '',
+        fatherName: formData.fatherName || '',
+        motherName: formData.motherName || '',
+        fatherPhone: formData.fatherPhone || '',
+        motherPhone: formData.motherPhone || '',
         email: formData.email || '',
         status: formData.status || 'active',
         // 新增字段
         nric: formData.nric || '',
         school: formData.school || '',
-        parentPhone: formData.parentPhone || '',
         emergencyContact: formData.emergencyContact || '',
         emergencyPhone: formData.emergencyPhone || '',
         healthInfo: formData.healthInfo || '',
@@ -675,10 +679,12 @@ export default function StudentForm({
                     <SelectValue placeholder="选择中心" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="WX 01">WX 01</SelectItem>
-                    <SelectItem value="WX 02">WX 02</SelectItem>
-                    <SelectItem value="WX 03">WX 03</SelectItem>
-                    <SelectItem value="WX 04">WX 04</SelectItem>
+                    {centers.map((c) => (
+                      <SelectItem key={c.id} value={c.code}>{c.name}</SelectItem>
+                    ))}
+                    {centers.length === 0 && (
+                      <SelectItem value="PU1">PU1 分院</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 {errors.center && <p className="text-red-500 text-sm mt-1">{errors.center}</p>}
@@ -705,27 +711,43 @@ export default function StudentForm({
             <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">父母信息</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="parentName">父母姓名 *</Label>
+                <Label htmlFor="fatherName">父亲姓名</Label>
                 <Input
-                  id="parentName"
-                  value={formData.parentName || ''}
-                  onChange={(e) => handleInputChange('parentName', e.target.value)}
-                  placeholder="父母姓名"
-                  className={errors.parentName ? 'border-red-500' : ''}
+                  id="fatherName"
+                  value={formData.fatherName || ''}
+                  onChange={(e) => handleInputChange('fatherName', e.target.value)}
+                  placeholder="父亲姓名"
                 />
-                {errors.parentName && <p className="text-red-500 text-sm mt-1">{errors.parentName}</p>}
               </div>
 
               <div>
-                <Label htmlFor="parentPhone">父母电话 *</Label>
+                <Label htmlFor="motherName">母亲姓名</Label>
                 <Input
-                  id="parentPhone"
-                  value={formData.parentPhone || ''}
-                  onChange={(e) => handleInputChange('parentPhone', e.target.value)}
-                  placeholder="父母联系电话"
-                  className={errors.parentPhone ? 'border-red-500' : ''}
+                  id="motherName"
+                  value={formData.motherName || ''}
+                  onChange={(e) => handleInputChange('motherName', e.target.value)}
+                  placeholder="母亲姓名"
                 />
-                {errors.parentPhone && <p className="text-red-500 text-sm mt-1">{errors.parentPhone}</p>}
+              </div>
+
+              <div>
+                <Label htmlFor="fatherPhone">父亲电话</Label>
+                <Input
+                  id="fatherPhone"
+                  value={formData.fatherPhone || ''}
+                  onChange={(e) => handleInputChange('fatherPhone', e.target.value)}
+                  placeholder="父亲联系电话"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="motherPhone">母亲电话</Label>
+                <Input
+                  id="motherPhone"
+                  value={formData.motherPhone || ''}
+                  onChange={(e) => handleInputChange('motherPhone', e.target.value)}
+                  placeholder="母亲联系电话"
+                />
               </div>
 
               <div>

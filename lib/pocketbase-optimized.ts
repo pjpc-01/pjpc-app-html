@@ -10,13 +10,34 @@ console.log("Admin Password Exists:", !!process.env.POCKETBASE_ADMIN_PASSWORD)
 let pb: PocketBase | null = null
 
 /**
+ * 使用fetch直接认证PB管理员（绕过SDK _superusers 兼容问题）
+ */
+async function authenticateAdminViaFetch(pbInstance: PocketBase, email: string, password: string): Promise<void> {
+  const baseUrl = pbInstance.baseUrl || 'http://127.0.0.1:8090'
+  const response = await fetch(`${baseUrl}/api/admins/auth-with-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identity: email, password })
+  })
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}))
+    throw new Error(errData.message || `认证失败: HTTP ${response.status}`)
+  }
+
+  const data = await response.json()
+  // 手动设置PB实例的auth store
+  pbInstance.authStore.save(data.token, data.admin)
+}
+
+/**
  * 获取PocketBase实例（带缓存 + 自动认证）
  * 避免每次请求都401错误
  */
 export async function getPocketBase(): Promise<PocketBase> {
   // 创建实例（如果不存在）
   if (!pb) {
-    const url = process.env.POCKETBASE_URL || 'http://pjpc.tplinkdns.com:8090'
+    const url = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
     pb = new PocketBase(url)
     console.log('✅ PocketBase实例已创建:', url)
   }
@@ -30,9 +51,9 @@ export async function getPocketBase(): Promise<PocketBase> {
     
     // 如果环境变量有问题，使用硬编码凭据作为fallback
     if (!adminEmail || !adminPassword || adminEmail.includes('') || adminPassword.includes('')) {
-      console.log('⚠️ 环境变量有问题，使用硬编码凭据')
-      adminEmail = 'pjpcemerlang@gmail.com'
-      adminPassword = '0122270775Sw!'
+      console.log('⚠️ 环境变量有问题，使用备用凭据')
+      adminEmail = 'final_admin@test.com'
+      adminPassword = 'final_pass'
     }
     
     if (!adminEmail || !adminPassword) {
@@ -40,7 +61,8 @@ export async function getPocketBase(): Promise<PocketBase> {
     }
     
     try {
-      await pb.admins.authWithPassword(adminEmail, adminPassword)
+      // 使用fetch直接调用admin auth API（绕过SDK版本兼容问题）
+      await authenticateAdminViaFetch(pb, adminEmail, adminPassword)
       console.log("✅ PocketBase 管理员已认证")
     } catch (authError) {
       console.error('❌ 管理员认证失败:', authError)
@@ -64,33 +86,12 @@ export async function reinitializePocketBase(): Promise<PocketBase> {
 }
 
 /**
- * 检查PocketBase连接状态
+ * 获取PocketBase管理员状态
  */
-export async function checkPocketBaseConnection() {
-  try {
-    const pb = await getPocketBase()
-    
-    // 测试连接
-    const response = await fetch(`${pb.baseUrl}/`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    })
-    
-    return {
-      connected: response.ok || response.status === 404, // 404也算连接成功
-      url: pb.baseUrl,
-      status: response.status,
-      error: response.ok ? null : `HTTP ${response.status}: ${response.statusText}`
-    }
-  } catch (error) {
-    return {
-      connected: false,
-      url: 'unknown',
-      status: 0,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }
+export function getPocketBaseStatus(): { initialized: boolean; authenticated: boolean; url: string } {
+  return {
+    initialized: pb !== null,
+    authenticated: pb?.authStore?.isValid || false,
+    url: pb?.baseUrl || '未初始化'
   }
 }
-
-export default getPocketBase
-

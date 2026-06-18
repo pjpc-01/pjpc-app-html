@@ -1,92 +1,133 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPocketBase } from '@/lib/pocketbase'
-import { authenticateAdmin } from '@/lib/auth-utils'
 
-export async function GET(request: NextRequest) {
+const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
+
+async function getAdminToken(): Promise<string> {
+  const res = await fetch(`${PB_URL}/api/admins/auth-with-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identity: 'final_admin@test.com', password: 'final_pass' }),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Auth failed: ${res.status} ${text.slice(0, 100)}`)
+  }
+  const data = await res.json()
+  return data.token
+}
+
+export async function GET() {
   try {
-    const pb = await getPocketBase()
+    const token = await getAdminToken()
     
-    // 管理员认证
-    try {
-      await authenticateAdmin(pb)
-      console.log('✅ 管理员认证成功')
-    } catch (authError) {
-      console.error('❌ 管理员认证失败:', authError)
-      return NextResponse.json(
-        { 
-          success: false,
-          error: 'PocketBase认证失败', 
-          details: authError instanceof Error ? authError.message : '未知认证错误'
-        },
-        { status: 401 }
-      )
+    // Get centers via fetch
+    const centersRes = await fetch(`${PB_URL}/api/collections/centers/records?sort=name&perPage=100`, {
+      headers: { Authorization: token },
+    })
+    if (!centersRes.ok) {
+      const text = await centersRes.text()
+      return NextResponse.json({ success: false, error: text.slice(0, 200) }, { status: 500 })
     }
+    const centersData = await centersRes.json()
+    const records = centersData.items || []
+    
+    // Get student counts
+    const studentsRes = await fetch(`${PB_URL}/api/collections/students/records?perPage=500&fields=id,centerId,center,status`, {
+      headers: { Authorization: token },
+    })
+    const studentsData = await studentsRes.json()
+    const students = studentsData.items || []
 
-    // 从学生数据中提取centers
-    try {
-      const students = await pb.collection('students').getFullList({
-        fields: 'id,student_id,student_name,center,status'
-      })
-
-      // 统计每个center的学生数量
-      const centerMap = new Map<string, number>()
-      
-      students.forEach((student: any) => {
-        const center = student?.center ?? student?.Center ?? student?.centre ?? student?.branch
-        if (center && student?.status === 'active') {
-          centerMap.set(center, (centerMap.get(center) || 0) + 1)
-        }
-      })
-
-      // 转换为数组格式
-      const centers = Array.from(centerMap.entries()).map(([name, count]) => ({
-        id: name,
-        name: name,
-        count: count
-      }))
-
-      // 如果没有找到centers，返回默认值
-      if (centers.length === 0) {
-        return NextResponse.json({
-          success: true,
-          data: [
-            { id: 'WX 01', name: 'WX 01', count: 0 },
-            { id: 'WX 02', name: 'WX 02', count: 0 },
-            { id: 'WX 03', name: 'WX 03', count: 0 }
-          ]
-        })
+    const countMap: Record<string, number> = {}
+    students.forEach((s: any) => {
+      const id = s.centerId || s.center
+      if (id && s.status === 'active') {
+        countMap[id] = (countMap[id] || 0) + 1
       }
+    })
 
-      console.log(`✅ 获取到 ${centers.length} 个centers`)
-      
-      return NextResponse.json({
-        success: true,
-        data: centers
-      })
+    const data = records.map((r: any) => ({
+      ...r,
+      studentCount: countMap[r.id] || 0,
+    }))
 
-    } catch (studentsError) {
-      console.error('❌ 获取学生数据失败:', studentsError)
-      
-      // 返回默认centers
-      return NextResponse.json({
-        success: true,
-        data: [
-          { id: 'WX 01', name: 'WX 01', count: 0 },
-          { id: 'WX 02', name: 'WX 02', count: 0 },
-          { id: 'WX 03', name: 'WX 03', count: 0 }
-        ]
-      })
-    }
-
-  } catch (error) {
-    console.error('❌ 获取centers失败:', error)
+    return NextResponse.json({ success: true, data })
+  } catch (error: any) {
+    console.error('[centers] GET error:', error?.message, error?.stack?.slice(0, 200))
     return NextResponse.json(
-      { 
-        success: false,
-        error: '获取centers失败',
-        details: error instanceof Error ? error.message : '未知错误'
-      },
+      { success: false, error: error?.message || '未知错误' },
       { status: 500 }
     )
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const token = await getAdminToken()
+    const body = await request.json()
+    
+    const res = await fetch(`${PB_URL}/api/collections/centers/records`, {
+      method: 'POST',
+      headers: { Authorization: token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text.slice(0, 200))
+    }
+    
+    const record = await res.json()
+    return NextResponse.json({ success: true, data: record })
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error?.message }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const token = await getAdminToken()
+    const body = await request.json()
+    const { id, ...fields } = body
+    if (!id) return NextResponse.json({ success: false, error: '缺少ID' }, { status: 400 })
+    
+    const res = await fetch(`${PB_URL}/api/collections/centers/records/${id}`, {
+      method: 'PATCH',
+      headers: { Authorization: token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(fields),
+    })
+    
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text.slice(0, 200))
+    }
+    
+    const record = await res.json()
+    return NextResponse.json({ success: true, data: record })
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error?.message }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const token = await getAdminToken()
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    if (!id) return NextResponse.json({ success: false, error: '缺少ID' }, { status: 400 })
+    
+    const res = await fetch(`${PB_URL}/api/collections/centers/records/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: token },
+    })
+    
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text.slice(0, 200))
+    }
+    
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error?.message }, { status: 500 })
   }
 }
