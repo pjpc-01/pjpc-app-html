@@ -126,7 +126,7 @@ export const checkPocketBaseConnection = async () => {
   }
 }
 
-export const pb = new PocketBase(process.env.POCKETBASE_URL || 'http://pjpc.tplinkdns.com:8090') 
+export const pb = new PocketBase(process.env.POCKETBASE_URL || 'http://127.0.0.1:8090') 
 export * from './pocketbase-schema'
 export type { Student as StudentFromStudents, StudentCreateData, StudentUpdateData } from './pocketbase-students'
 export { getAllStudents, addStudent, updateStudent, deleteStudent, getStudentById, searchStudents, getStudentsByCenter, getStudentsByStatus } from './pocketbase-students'

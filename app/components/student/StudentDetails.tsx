@@ -74,7 +74,7 @@ export default function StudentDetails({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-lg overflow-y-auto p-0">
         <div className="flex flex-col h-full">
-          {/* 顶部封面区域 - 现代 SaaS 风格 */}
+          {/* 顶部封面区域 */}
           <div className="relative h-32 bg-gradient-to-r from-blue-600 to-indigo-700 p-6">
              <div className="absolute -bottom-10 left-6">
                 <div className="relative">
@@ -96,7 +96,6 @@ export default function StudentDetails({
           </div>
 
           <div className="pt-14 px-6 pb-6 space-y-6">
-            {/* Accessibility Requirement: SheetTitle must be present */}
             <SheetHeader className="sr-only">
               <SheetTitle>{student.student_name} - 学生详细信息</SheetTitle>
               <SheetDescription>查看学生的个人、学校及接送详细资料</SheetDescription>
@@ -126,16 +125,16 @@ export default function StudentDetails({
                 variant="outline" 
                 size="sm" 
                 className="flex flex-col h-20 gap-1"
-                onClick={() => window.open(`tel:${student.parentPhone}`)}
+                onClick={() => window.open(`tel:${student.fatherPhone || student.motherPhone || student.parentPhone}`)}
               >
                 <Phone className="h-4 w-4 text-blue-600" />
-                <span className="text-xs">家长电话</span>
+                <span className="text-xs">父亲电话</span>
               </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
                 className="flex flex-col h-20 gap-1"
-                onClick={() => window.open(`https://wa.me/${student.parentPhone?.replace(/\\+/g, '')}`)}
+                onClick={() => window.open(`https://wa.me/${(student.fatherPhone || student.motherPhone || student.parentPhone || '').replace(/\+/g, '')}`)}
               >
                 <MessageSquare className="h-4 w-4 text-green-600" />
                 <span className="text-xs">WhatsApp</span>
@@ -167,10 +166,10 @@ export default function StudentDetails({
                 </DetailSection>
 
                 <DetailSection title="联系方式">
-                  <DetailRow label="家长姓名" value={student.parentName} icon={<User className="h-3 w-3" />} />
-                  <DetailRow label="家长电话" value={student.parentPhone} icon={<Phone className="h-3 w-3" />} />
-                  <DetailRow label="母亲电话" value={student.mother_phone} icon={<Phone className="h-3 w-3" />} />
-                  <DetailRow label="父亲电话" value={student.father_phone} icon={<Phone className="h-3 w-3" />} />
+                  <DetailRow label="父亲姓名" value={student.fatherName || '-'} icon={<User className="h-3 w-3" />} />
+                  <DetailRow label="母亲姓名" value={student.motherName || '-'} icon={<User className="h-3 w-3" />} />
+                  <DetailRow label="父亲电话" value={student.fatherPhone || student.father_phone || '-'} icon={<Phone className="h-3 w-3" />} />
+                  <DetailRow label="母亲电话" value={student.motherPhone || student.mother_phone || '-'} icon={<Phone className="h-3 w-3" />} />
                 </DetailSection>
 
                 <DetailSection title="居住地址">
@@ -195,14 +194,12 @@ export default function StudentDetails({
 
               <TabsContent value="school" className="space-y-4">
                 <DetailSection title="学习状态">
-                  <DetailRow label="就读学校" value={student.school} icon={<School className="h-3 w-3" />} />
-                  <DetailRow label="年级" value={convertGradeToChinese(student.standard || '')} icon={<GraduationCap className="h-3 w-3" />} />
-                  <DetailRow label="教育阶段" value={student.level === 'primary' ? '小学' : student.level === 'secondary' ? '中学' : '-'} icon={<GraduationCap className="h-3 w-3" />} />
+                  <DetailRow label="就读学校" value={student.school || '-'} icon={<School className="h-3 w-3" />} />
+                  <DetailRow label="年级" value={convertGradeToChinese(student.standard || student.grade || '') || '-'} icon={<GraduationCap className="h-3 w-3" />} />
                 </DetailSection>
 
                 <DetailSection title="中心服务">
-                  <DetailRow label="服务类型" value={student.serviceType === 'afterschool' ? '安亲班' : student.serviceType === 'tuition' ? '补习班' : '-'} icon={<Home className="h-3 w-3" />} />
-                  <DetailRow label="所属中心" value={student.center} icon={<MapPin className="h-3 w-3" />} />
+                  <DetailRow label="所属中心" value={student.center || '-'} icon={<MapPin className="h-3 w-3" />} />
                   <DetailRow label="注册日期" value={student.registrationDate ? new Date(student.registrationDate).toLocaleDateString('zh-CN') : '-'} icon={<Calendar className="h-3 w-3" />} />
                 </DetailSection>
 
@@ -210,7 +207,7 @@ export default function StudentDetails({
                   <div className="flex justify-between items-center py-2">
                     <span className="text-sm font-medium text-slate-500">学费状态</span>
                     <Badge variant={student.tuitionStatus === 'paid' ? 'default' : student.tuitionStatus === 'overdue' ? 'destructive' : 'secondary'} className="text-xs">
-                      {student.tuitionStatus === 'pending' ? '待付款' : student.tuitionStatus === 'paid' ? '已付款' : student.tuitionHStatus === 'partial' ? '部分付款' : student.tuitionStatus === 'overdue' ? '逾期' : '-'}
+                      {student.tuitionStatus === 'pending' ? '待付款' : student.tuitionStatus === 'paid' ? '已付款' : student.tuitionStatus === 'partial' ? '部分付款' : student.tuitionStatus === 'overdue' ? '逾期' : '-'}
                     </Badge>
                   </div>
                 </DetailSection>

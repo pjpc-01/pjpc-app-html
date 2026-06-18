@@ -1,7 +1,7 @@
 import PocketBase from 'pocketbase'
 
 // 创建PocketBase实例
-const pb = new PocketBase('http://pjpc.tplinkdns.com:8090')
+const pb = new PocketBase(process.env.POCKETBASE_URL || 'http://127.0.0.1:8090')
 
 // 导出PocketBase实例
 export { pb }
