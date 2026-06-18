@@ -136,7 +136,7 @@
 
 ```
 核心运营 ━ 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩  已完成
-财务管理 ━ 🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜  90%
+财务管理 ━ 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩  100%
 系统基建 ━ 🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜  80%
 家长端   ━ ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜  0%
 进销存   ━ ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜  0%
@@ -277,11 +277,11 @@
 | 项目 | 状态 | 说明 |
 |------|------|------|
 | PDF 报表导出（P&L、收据） | ✅ | jspdf + 自动表格，FinancialReports 页面一键导出 |
-| 银行对账功能 | ⏳ | |
+| 银行对账功能 | ✅ | 子模块：银行账户管理 + 银行流水导入 + 智能对账匹配引擎 |
 | 定期账单自动生成 | ✅ | `/api/billing/auto-generate` + 每月 1 号定时任务 |
-| 预算管理（预算 vs 实际） | ⏳ | |
+| 预算管理（预算 vs 实际） | ✅ | 新增组件：月度分类预算设置 + 超支预警柱状图 |
 | AR 账龄分析表 | ✅ | `/api/finance/ar-aging` + 财务报表可视化卡片 |
-| 部分付款/退款流程 | ⏳ | |
+| 部分付款/退款流程 | ✅ | PaymentManagement 新增：退款对话框 + 部分付款支持 + 退款统计 |
 | 凭证附件上传 | ⏳ | |
 | 逾期自动提醒（WhatsApp/Email） | ✅ | 每周一 AR 账龄周报 cron |
 | 数据表格统一（筛选/排序/搜索/分页） | ⏳ | |
@@ -310,7 +310,7 @@
 |---|------|-----------|------|
 | 1 | 按钮级权限控制 | 现在老师能看到"删除学生"按钮，只是路由挡了。UI 层面也要遮 | ✅ 已完成 |
 | 2 | 作业 Homework 模块 | Synorex 有，家长会拿来对比。安亲班核心服务 | ⏳ |
-| 3 | 成绩单 Report Card PDF | 家长期末要的东西，直接影响口碑 | ⏳ |
+| 3 | 成绩单 Report Card PDF | 家长期末要的东西，直接影响口碑 | ✅ 已完成 |
 
 ### 🟡 P1 — 重要但不急
 
@@ -388,6 +388,59 @@ shadcn/ui + Tailwind CSS + sonner (toast) + lucide-react (图标)
 |----------|---------|
 | Standard 1-6 | BATU14 |
 | Form 1-5 / Peralihan | PU1 |
+
+### 8.3 PocketBase 集合字段映射
+
+实际数据库字段一览（2026-06-18 实测）：
+
+**students**
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `name` | text | 学生姓名（前端用 `student_name \|\| name`） |
+| `grade` | text | 年级（前端用 `standard \|\| grade`） |
+| `center` | text | 所属中心 |
+| `school` | text | 学校 |
+| `status` | text | active / graduated |
+| `parentPhone` / `fatherPhone` / `motherPhone` | text | 家长电话 |
+
+**fee_items**
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `name` | text (required) | 费用名称 |
+| `amount` | number (required) | 金额 |
+| `category` | text | 分类（Tuition/Administrative/Materials） |
+| `frequency` | text | monthly / one-time / annual |
+| `status` | text | active / inactive |
+
+**invoices**
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `studentId` / `studentName` / `studentGrade` | text | 学生信息 |
+| `invoiceNumber` | text (required) | 发票号 |
+| `totalAmount` | number (required) | 总金额 |
+| `status` | text | issued / paid / partially_paid / overdue |
+| `items` | json | 费用项目数组 |
+
+**expenses** `[已修复: 2026-06-18 新建]`
+| 字段 | 类型 |
+|------|------|
+| `date` (required) | date |
+| `category` (required) | text |
+| `description` (required) | text |
+| `amount` (required) | number |
+| `method` | text |
+
+**payments** `[已修复: 2026-06-18 新建]`
+| 字段 | 类型 |
+|------|------|
+| `invoiceId` (required) | text |
+| `amount` (required) | number |
+| `date` (required) | date |
+| `method` | text |
+| `status` | text |
+
+⚠️ 注意：前端 `FinancialReports.tsx` 曾用 `amountPaid`（不存在），现已统一修复为 `amount`。
+⚠️ `useFinancialStats.ts` 曾因 `safeInvoicesList` 变量提升导致 ReferenceError，已修复。
 
 ---
 

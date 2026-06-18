@@ -44,14 +44,18 @@ import { Badge } from "@/components/ui/badge"
 import { useExpenses } from "@/hooks/useExpenses"
 
 const EXPENSE_CATEGORIES = [
-  { id: "salary", label: "教师薪资 (Tutor Salary)" },
-  { id: "rent", label: "办公室租金 (Rent)" },
-  { id: "utilities", label: "水电费 (Electricity & Water)" },
-  { id: "marketing", label: "市场推广 (Marketing)" },
-  { id: "stationery", label: "办公文具 (Stationery)" },
-  { id: "maintenance", label: "设备维护 (Maintenance)" },
-  { id: "misc", label: "其他杂项 (Miscellaneous)" },
+  { id: "salary", label: "教师薪资", color: "bg-blue-100 text-blue-800 border-blue-200" },
+  { id: "rent", label: "办公室租金", color: "bg-purple-100 text-purple-800 border-purple-200" },
+  { id: "utilities", label: "水电费", color: "bg-cyan-100 text-cyan-800 border-cyan-200" },
+  { id: "marketing", label: "市场推广", color: "bg-amber-100 text-amber-800 border-amber-200" },
+  { id: "stationery", label: "办公文具", color: "bg-green-100 text-green-800 border-green-200" },
+  { id: "maintenance", label: "设备维护", color: "bg-orange-100 text-orange-800 border-orange-200" },
+  { id: "misc", label: "其他杂项", color: "bg-gray-100 text-gray-800 border-gray-200" },
 ]
+
+const CATEGORY_COLORS: Record<string, string> = Object.fromEntries(
+  EXPENSE_CATEGORIES.map(c => [c.id, c.color])
+)
 
 export default function ExpenseManagement() {
   const { 
@@ -107,6 +111,24 @@ export default function ExpenseManagement() {
 
   const safeExpenses = Array.isArray(expenses) ? expenses : []
   const totalExpenses = safeExpenses.reduce((sum, e) => sum + (e.amount || 0), 0)
+
+  // Category breakdown
+  const categoryTotals = safeExpenses.reduce((acc, e) => {
+    const cat = e.category || "misc"
+    acc[cat] = (acc[cat] || 0) + (e.amount || 0)
+    return acc
+  }, {} as Record<string, number>)
+
+  // Month filter
+  const [monthFilter, setMonthFilter] = useState("all")
+  const currentMonth = new Date().toISOString().slice(0, 7)
+  const months = [...new Set(safeExpenses.map(e => (e.date || "").slice(0, 7)).filter(Boolean))].sort().reverse()
+
+  const filteredExpenses = monthFilter === "all"
+    ? safeExpenses
+    : safeExpenses.filter(e => (e.date || "").startsWith(monthFilter))
+
+  const filteredTotal = filteredExpenses.reduce((sum, e) => sum + (e.amount || 0), 0)
 
   return (
     <div className="space-y-6">
@@ -246,14 +268,14 @@ export default function ExpenseManagement() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-red-50 border-red-100">
           <CardHeader className="pb-2">
-            <CardDescription className="text-red-600 font-medium">本月总支出</CardDescription>
+            <CardDescription className="text-red-600 font-medium">总支出</CardDescription>
             <CardTitle className="text-3xl font-bold text-red-900">RM {totalExpenses.toLocaleString()}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription className="text-slate-500 font-medium">记录笔数</CardDescription>
-            <CardTitle className="text-3xl font-bold text-slate-900">{expenses.length} 笔</CardTitle>
+            <CardTitle className="text-3xl font-bold text-slate-900">{safeExpenses.length} 笔</CardTitle>
           </CardHeader>
         </Card>
         <Card>
@@ -266,17 +288,62 @@ export default function ExpenseManagement() {
         </Card>
       </div>
 
+      {/* Category Breakdown */}
+      {Object.keys(categoryTotals).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">分类支出汇总</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {Object.entries(categoryTotals).sort(([,a], [,b]) => b - a).map(([cat, total]) => {
+                const catInfo = EXPENSE_CATEGORIES.find(c => c.id === cat)
+                return (
+                  <div key={cat} className={`p-3 rounded-lg border ${catInfo?.color || "bg-gray-50"}`}>
+                    <p className="text-xs font-medium opacity-70">{catInfo?.label || cat}</p>
+                    <p className="text-lg font-bold">RM {total.toLocaleString()}</p>
+                    <p className="text-xs opacity-60">{totalExpenses > 0 ? ((total / totalExpenses) * 100).toFixed(1) : 0}%</p>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
-          <CardTitle>支出流水明细</CardTitle>
-          <CardDescription>所有已记录的经营支出明细</CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>支出流水明细</CardTitle>
+              <CardDescription>所有已记录的经营支出明细</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {months.length > 0 && (
+                <Select value={monthFilter} onValueChange={setMonthFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="全部月份" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部月份</SelectItem>
+                    {months.map(m => (
+                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {monthFilter !== "all" && (
+                <Badge variant="secondary">RM {filteredTotal.toLocaleString()}</Badge>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="text-center py-8 text-gray-500">加载中...</div>
           ) : error ? (
             <div className="text-center py-8 text-red-500">错误: {error}</div>
-          ) : expenses.length === 0 ? (
+          ) : filteredExpenses.length === 0 ? (
             <div className="text-center py-8 text-gray-500">暂无支出记录</div>
           ) : (
             <Table>
@@ -291,7 +358,7 @@ export default function ExpenseManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {expenses.map((expense) => (
+                {filteredExpenses.map((expense) => (
                   <TableRow key={expense.id} className="group">
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
@@ -300,7 +367,9 @@ export default function ExpenseManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="font-normal">{expense.category}</Badge>
+                      <Badge className={`font-normal border ${CATEGORY_COLORS[expense.category] || "bg-gray-50 text-gray-700"}`} variant="outline">
+                        {EXPENSE_CATEGORIES.find(c => c.id === expense.category)?.label || expense.category}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-slate-600">{expense.description}</TableCell>
                     <TableCell className="text-slate-500 text-xs">{expense.method}</TableCell>

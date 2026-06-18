@@ -31,6 +31,8 @@ import {
   CreditCard,
   HelpCircle,
   ChevronUp,
+  Building2,
+  PieChart,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import ConnectionStatus from "@/components/ConnectionStatus"
@@ -58,8 +60,11 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
       },
       {
         label: "学生管理",
-        href: "/student-management",
         icon: Users,
+        children: [
+          { label: "学生列表", href: "/student-management", icon: Users },
+          { label: "成绩单", href: "/report-cards", icon: GraduationCap },
+        ],
       },
       {
         label: "教师管理",
@@ -70,11 +75,13 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         label: "财务管理",
         icon: DollarSign,
         children: [
-          { label: "财务概览", href: "/finance-management", icon: PiggyBank },
-          { label: "收费管理", href: "/finance-management", icon: Receipt },
-          { label: "交易记录", href: "/finance-management", icon: ArrowLeftRight },
-          { label: "薪资管理", href: "/finance-management", icon: Wallet },
-          { label: "财务报表", href: "/finance-management", icon: BarChart3 },
+          { label: "财务概览", href: "/finance/overview", icon: PiggyBank },
+          { label: "收费管理", href: "/finance/fees", icon: Receipt },
+          { label: "发票付款", href: "/finance/payments", icon: ArrowLeftRight },
+          { label: "支出/薪资", href: "/finance/expenses", icon: Wallet },
+          { label: "银行对账", href: "/finance/bank", icon: Building2 },
+          { label: "预算管理", href: "/finance/budget", icon: PieChart },
+          { label: "财务报表", href: "/finance/reports", icon: BarChart3 },
         ],
       },
       {
