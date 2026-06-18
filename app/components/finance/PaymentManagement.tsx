@@ -38,17 +38,24 @@ import {
   CheckCircle2,
   AlertCircle,
   Wallet,
-  DollarSign
+  DollarSign,
+  Undo2,
+  TrendingUp
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { usePayments } from "@/hooks/usePayments"
 import { useInvoices } from "@/hooks/useInvoices"
 import { useReceipts } from "@/hooks/useReceipts"
+import { useRefunds } from "@/hooks/useRefunds"
+import type { Refund } from "@/hooks/useRefunds"
+import type { Payment } from "@/hooks/usePayments"
+import { toast } from "sonner"
 
 export default function PaymentManagement() {
   const { invoices, loading: invoicesLoading } = useInvoices()
   const { payments, loading: paymentsLoading, createPayment } = usePayments()
   const { createReceipt } = useReceipts()
+  const { refunds, createRefund, getTotalRefundedAmount } = useRefunds()
   
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -56,6 +63,15 @@ export default function PaymentManagement() {
   const [paymentAmount, setPaymentAmount] = useState("")
   const [paymentMethod, setPaymentMethod] = useState("Bank Transfer")
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Refund dialog state
+  const [isRefundDialogOpen, setIsRefundDialogOpen] = useState(false)
+  const [refundPayment, setRefundPayment] = useState<Payment | null>(null)
+  const [refundAmount, setRefundAmount] = useState("")
+  const [refundReason, setRefundReason] = useState("")
+  const [refundMethod, setRefundMethod] = useState("bank_transfer")
+  const [refundNotes, setRefundNotes] = useState("")
+  const [isRefunding, setIsRefunding] = useState(false)
 
   const filteredInvoices = invoices.filter(inv => 
     inv.studentName.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -70,6 +86,12 @@ export default function PaymentManagement() {
       .reduce((sum, p) => sum + p.amount, 0)
   }
 
+  // Stats
+  const totalRefundedAmount = getTotalRefundedAmount()
+  const totalCollected = payments
+    .filter(p => p.status === 'completed')
+    .reduce((sum, p) => sum + p.amount, 0)
+
   const handleConfirmPayment = async () => {
     if (!selectedInvoice || !paymentAmount || parseFloat(paymentAmount) <= 0) return
 
@@ -83,8 +105,9 @@ export default function PaymentManagement() {
         amount: amount,
         method: paymentMethod,
         date: new Date().toISOString(),
+        status: 'completed',
         notes: `Payment for invoice ${selectedInvoice.invoiceNumber}`
-      })
+      }, selectedInvoice)
 
       // 2. Automatically generate the Receipt
       await createReceipt({
@@ -98,12 +121,90 @@ export default function PaymentManagement() {
       setIsPaymentDialogOpen(false)
       setSelectedInvoiceId("")
       setPaymentAmount("")
+      toast.success("付款处理成功，收据已生成")
     } catch (error) {
       console.error("Payment failed:", error)
-      alert("付款处理失败，请重试")
+      toast.error("付款处理失败，请重试")
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleRefund = async () => {
+    if (!refundPayment || !refundAmount || parseFloat(refundAmount) <= 0 || !refundReason.trim()) {
+      toast.error("请填写退款金额和原因")
+      return
+    }
+
+    setIsRefunding(true)
+    try {
+      await createRefund({
+        paymentId: refundPayment.id,
+        invoiceId: refundPayment.invoiceId,
+        amount: parseFloat(refundAmount),
+        reason: refundReason,
+        method: refundMethod,
+        status: 'completed',
+        notes: refundNotes || undefined,
+      })
+
+      toast.success("退款处理成功")
+      setIsRefundDialogOpen(false)
+      setRefundPayment(null)
+      setRefundAmount("")
+      setRefundReason("")
+      setRefundMethod("bank_transfer")
+      setRefundNotes("")
+    } catch (error) {
+      console.error("Refund failed:", error)
+      toast.error("退款处理失败，请重试")
+    } finally {
+      setIsRefunding(false)
+    }
+  }
+
+  const openRefundDialog = (payment: Payment) => {
+    setRefundPayment(payment)
+    setRefundAmount(String(payment.amount))
+    setRefundReason("")
+    setRefundMethod("bank_transfer")
+    setRefundNotes("")
+    setIsRefundDialogOpen(true)
+  }
+
+  // Auto-fill payment amount with remaining balance when invoice is selected
+  useEffect(() => {
+    if (selectedInvoice) {
+      const remaining = selectedInvoice.totalAmount - calculatePaidAmount(selectedInvoiceId)
+      if (remaining > 0) {
+        setPaymentAmount(String(remaining))
+      }
+    }
+  }, [selectedInvoiceId])
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <Badge className="bg-green-500 hover:bg-green-600">已完成</Badge>
+      case 'pending':
+        return <Badge className="bg-yellow-500 hover:bg-yellow-600">待处理</Badge>
+      case 'failed':
+        return <Badge className="bg-red-500 hover:bg-red-600">失败</Badge>
+      case 'refunded':
+        return <Badge className="bg-purple-500 hover:bg-purple-600">已退款</Badge>
+      default:
+        return <Badge variant="outline">{status}</Badge>
+    }
+  }
+
+  // Check if a payment was partial (after this payment, invoice is still not fully paid)
+  const isPaymentPartial = (payment: Payment) => {
+    const inv = invoices.find(i => i.id === payment.invoiceId)
+    if (!inv) return false
+    const totalCompletedForInvoice = payments
+      .filter(p => p.invoiceId === inv.id && p.status === 'completed')
+      .reduce((sum, p) => sum + p.amount, 0)
+    return totalCompletedForInvoice < inv.totalAmount
   }
 
   return (
@@ -232,6 +333,40 @@ export default function PaymentManagement() {
         </Dialog>
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-500">收款总额</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              RM {totalCollected.toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-500">总退款金额</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-500">
+              RM {totalRefundedAmount.toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-500">净收入</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              RM {(totalCollected - totalRefundedAmount).toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -271,11 +406,13 @@ export default function PaymentManagement() {
                   <TableHead>支付方式</TableHead>
                   <TableHead className="text-right">实付金额</TableHead>
                   <TableHead className="text-center">状态</TableHead>
+                  <TableHead className="text-center">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {payments.map((payment) => {
                   const inv = invoices.find(i => i.id === payment.invoiceId)
+                  const partial = isPaymentPartial(payment)
                   return (
                     <TableRow key={payment.id} className="group">
                       <TableCell className="text-slate-600">{payment.date.split('T')[0]}</TableCell>
@@ -286,9 +423,25 @@ export default function PaymentManagement() {
                       </TableCell>
                       <TableCell className="text-right font-bold text-blue-600">
                         RM {payment.amount.toLocaleString()}
+                        {partial && payment.status === 'completed' && (
+                          <span className="text-xs text-amber-500 ml-1 font-normal">(部分)</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge className="bg-green-500 hover:bg-green-600">已到账</Badge>
+                        {getStatusBadge(payment.status)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {payment.status === 'completed' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => openRefundDialog(payment)}
+                          >
+                            <Undo2 className="h-3.5 w-3.5 mr-1" />
+                            退款
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   )
@@ -298,6 +451,104 @@ export default function PaymentManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Refund Dialog */}
+      <Dialog open={isRefundDialogOpen} onOpenChange={setIsRefundDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <Undo2 className="h-5 w-5 text-red-600" />
+              </div>
+              <DialogTitle className="text-xl">处理退款</DialogTitle>
+            </div>
+            <DialogDescription>
+              请填写退款信息。系统将记录退款并更新相关状态。
+            </DialogDescription>
+          </DialogHeader>
+
+          {refundPayment && (
+            <div className="space-y-4 py-4">
+              <div className="p-3 bg-slate-50 rounded-lg border text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">原始付款金额:</span>
+                  <span className="font-medium">RM {refundPayment.amount.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">支付方式:</span>
+                  <span className="font-medium">{refundPayment.method}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">付款日期:</span>
+                  <span className="font-medium">{refundPayment.date.split('T')[0]}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">
+                  退款金额 (RM)
+                </Label>
+                <Input
+                  type="number"
+                  className="text-lg font-mono"
+                  value={refundAmount}
+                  onChange={(e) => setRefundAmount(e.target.value)}
+                  max={refundPayment.amount}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">
+                  退款原因 <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  placeholder="请输入退款原因"
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">退款方式</Label>
+                <Select value={refundMethod} onValueChange={setRefundMethod}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择退款方式" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bank_transfer">银行转账</SelectItem>
+                    <SelectItem value="cash">现金</SelectItem>
+                    <SelectItem value="credit_note">信用凭证</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">备注</Label>
+                <Input
+                  placeholder="可选备注信息"
+                  value={refundNotes}
+                  onChange={(e) => setRefundNotes(e.target.value)}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={() => setIsRefundDialogOpen(false)}>取消</Button>
+                <Button
+                  onClick={handleRefund}
+                  disabled={isRefunding || !refundAmount || parseFloat(refundAmount) <= 0 || !refundReason.trim()}
+                  className="bg-red-600 hover:bg-red-700 text-white px-8 min-w-32"
+                >
+                  {isRefunding ? (
+                    <><Loader2 className="h-4 w-4 animate-spin mr-2" /> 处理中...</>
+                  ) : (
+                    "确认退款"
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

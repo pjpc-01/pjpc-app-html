@@ -226,3 +226,170 @@ export function exportAgingPDF(data: AgingData) {
 
   doc.save(`AR_Aging_${new Date().toISOString().split("T")[0]}.pdf`)
 }
+
+// ============================================================
+// 成绩单 Report Card PDF
+// ============================================================
+export interface ReportCardData {
+  studentName: string
+  grade: string
+  center: string
+  school?: string
+  period: string
+  subjects: { name: string; score: number; grade: string; remark?: string }[]
+  attendance?: { present: number; absent: number; total: number }
+  teacherComment?: string
+  overallGrade?: string
+}
+
+const getGradeLabel = (score: number): string => {
+  if (score >= 90) return "A"
+  if (score >= 80) return "B"
+  if (score >= 70) return "C"
+  if (score >= 60) return "D"
+  if (score >= 50) return "E"
+  return "F"
+}
+
+const getGradeColor = (score: number): number[] => {
+  if (score >= 80) return [34, 197, 94]
+  if (score >= 60) return [234, 179, 8]
+  if (score >= 40) return [249, 115, 22]
+  return [220, 38, 38]
+}
+
+export function exportReportCardPDF(data: ReportCardData) {
+  const doc = new jsPDF()
+  const pageWidth = doc.internal.pageSize.getWidth()
+
+  // === HEADER ===
+  doc.setFontSize(22)
+  doc.setTextColor(79, 70, 229)
+  doc.text("PJPC", pageWidth / 2, 20, { align: "center" })
+  doc.setFontSize(8)
+  doc.setTextColor(100)
+  doc.text("Pusat Jagaan Prospek Cemerlang", pageWidth / 2, 27, { align: "center" })
+
+  doc.setDrawColor(200)
+  doc.line(14, 32, pageWidth - 14, 32)
+
+  // Title
+  doc.setFontSize(16)
+  doc.setTextColor(0)
+  doc.text("REPORT CARD / 成绩单", pageWidth / 2, 42, { align: "center" })
+  doc.setFontSize(10)
+  doc.setTextColor(100)
+  doc.text(`学期: ${data.period}`, pageWidth / 2, 49, { align: "center" })
+
+  // === STUDENT INFO ===
+  const infoY = 58
+  doc.setDrawColor(200)
+  doc.line(14, infoY - 3, pageWidth - 14, infoY - 3)
+  doc.setFontSize(10)
+  doc.setTextColor(80)
+  doc.text(`学生姓名: ${data.studentName}`, 14, infoY)
+  doc.text(`年级: ${data.grade}`, 14, infoY + 7)
+  doc.text(`中心: ${data.center}`, pageWidth / 2, infoY)
+  if (data.school) doc.text(`学校: ${data.school}`, pageWidth / 2, infoY + 7)
+
+  // === SUBJECT SCORES TABLE ===
+  const tableY = infoY + 16
+  const subjectsWithGrade = data.subjects.map(s => ({
+    ...s,
+    grade: s.grade || getGradeLabel(s.score),
+  }))
+
+  // Calculate summary
+  const totalScore = subjectsWithGrade.reduce((sum, s) => sum + s.score, 0)
+  const averageScore = subjectsWithGrade.length > 0 ? totalScore / subjectsWithGrade.length : 0
+  const overallGrade = data.overallGrade || getGradeLabel(averageScore)
+
+  // Color for each row
+  const bodyWithStyles = subjectsWithGrade.map(s => {
+    const color = getGradeColor(s.score)
+    return [
+      { content: s.name, styles: { fontStyle: "bold" as const } },
+      { content: String(s.score), styles: { halign: "center" as const } },
+      {
+        content: s.grade,
+        styles: {
+          halign: "center" as const,
+          textColor: color as [number, number, number],
+          fontStyle: "bold" as const,
+        },
+      },
+      { content: s.remark || "", styles: { fontStyle: "italic" as const, textColor: [150, 150, 150] as [number, number, number] } },
+    ]
+  })
+
+  ;(doc as any).autoTable({
+    startY: tableY,
+    head: [["科目 Subject", "分数 Score", "等级 Grade", "备注 Remark"]],
+    body: bodyWithStyles,
+    foot: [[
+      { content: `总分: ${totalScore}  |  平均: ${averageScore.toFixed(1)}`, colSpan: 2, styles: { fontStyle: "bold" } },
+      { content: overallGrade, styles: { halign: "center", fontStyle: "bold", fontSize: 12, textColor: getGradeColor(averageScore) as [number, number, number] } },
+      { content: "", styles: { fontStyle: "bold" } },
+    ]],
+    theme: "striped",
+    headStyles: { fillColor: [79, 70, 229] },
+    footStyles: { fillColor: [245, 245, 250], textColor: [0, 0, 0] },
+    columnStyles: {
+      0: { cellWidth: 60 },
+      1: { halign: "center", cellWidth: 25 },
+      2: { halign: "center", cellWidth: 25 },
+      3: { cellWidth: "auto" },
+    },
+  })
+
+  let currentY = (doc as any).lastAutoTable.finalY + 10
+
+  // === ATTENDANCE ===
+  if (data.attendance) {
+    doc.setFontSize(11)
+    doc.setTextColor(0)
+    doc.text("出勤记录 Attendance", 14, currentY)
+    currentY += 6
+    doc.setFontSize(9)
+    doc.setTextColor(80)
+    doc.text(`出席: ${data.attendance.present} 天`, 14, currentY)
+    doc.text(`缺席: ${data.attendance.absent} 天`, pageWidth / 2, currentY)
+    doc.text(`总天数: ${data.attendance.total} 天`, pageWidth - 50, currentY)
+    currentY += 10
+  }
+
+  // === TEACHER COMMENT ===
+  if (data.teacherComment) {
+    doc.setDrawColor(200)
+    doc.line(14, currentY - 3, pageWidth - 14, currentY - 3)
+    doc.setFontSize(11)
+    doc.setTextColor(0)
+    doc.text("教师评语 Teacher's Comment", 14, currentY + 3)
+    currentY += 10
+    doc.setFontSize(9)
+    doc.setTextColor(80)
+    const lines = doc.splitTextToSize(data.teacherComment, pageWidth - 28)
+    doc.text(lines, 14, currentY)
+    currentY += lines.length * 5 + 10
+  }
+
+  // === SIGNATURE ===
+  doc.setDrawColor(200)
+  doc.line(14, currentY, pageWidth - 14, currentY)
+  currentY += 8
+  doc.setFontSize(9)
+  doc.setTextColor(100)
+  doc.text(`教师签名: ______________`, 14, currentY)
+  doc.text(`日期: ${new Date().toLocaleDateString("zh-CN")}`, pageWidth - 50, currentY)
+  currentY += 8
+  doc.text(`家长签名: ______________`, 14, currentY)
+
+  // === FOOTER ===
+  const footerY = doc.internal.pageSize.getHeight() - 10
+  doc.setFontSize(7)
+  doc.setTextColor(150)
+  doc.text("PJPC 安亲班管理系统 · 成绩单", 14, footerY)
+  doc.text(`生成时间: ${new Date().toLocaleString("zh-CN")}`, pageWidth - 14, footerY, { align: "right" })
+
+  doc.save(`Report_Card_${data.studentName.replace(/\s/g, "_")}_${data.period}.pdf`)
+}

@@ -171,24 +171,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setLoading(false)
           } else {
             // 没有认证状态，尝试自动管理员登录（开发环境）
-            if (process.env.NODE_ENV === 'development') {
-              console.log('🔧 开发环境：尝试自动管理员登录')
-              try {
-                const adminEmail = 'pjpcemerlang@gmail.com'
-                const adminPassword = '0122270775Sw!'
-                
-                const authData = await pbInstance.admins.authWithPassword(adminEmail, adminPassword)
-                console.log('✅ 自动管理员登录成功:', authData.record.email)
-                
-                // 设置用户和用户资料
-                setUser(authData.record)
-                const profile = await fetchUserProfile(authData.record)
-                console.log('✅ 自动获取管理员资料成功:', profile)
-              } catch (autoLoginError) {
-                console.log('⚠️ 自动管理员登录失败:', autoLoginError)
-                setLoading(false)
-              }
-            } else {
+            // 自动登录开发者账号（开发/生产模式都生效）
+            console.log('🔧 尝试自动登录开发者账号')
+            try {
+              const devEmail = 'dev@pjpc.com'
+              const devPassword = 'DevAdmin123!'
+              
+              const authData = await pbInstance.collection('users').authWithPassword(devEmail, devPassword)
+              console.log('✅ 自动登录开发者账号成功:', authData.record.email)
+              
+              // 设置用户和用户资料
+              setUser(authData.record)
+              const profile = await fetchUserProfile(authData.record)
+              console.log('✅ 自动获取资料成功:', profile)
+            } catch (autoLoginError) {
+              console.log('⚠️ 自动开发者账号登录失败:', autoLoginError)
               setLoading(false)
             }
           }

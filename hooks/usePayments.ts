@@ -65,7 +65,7 @@ export const usePayments = () => {
         const totalPaid = (payments.filter(p => p.invoiceId === invoice.id).reduce((sum, p) => sum + p.amount, 0)) + paymentData.amount
         
         let newStatus = invoice.status
-        if (totalPaid >= invoice.amount) {
+        if (totalPaid >= (invoice as any).totalAmount) {
           newStatus = 'paid'
         } else if (totalPaid > 0) {
           newStatus = 'partially_paid'
