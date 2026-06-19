@@ -56,7 +56,8 @@ export async function GET(request: NextRequest) {
       // 从PocketBase获取学生数据 - 应用过滤条件
       const students = await pb.collection('students').getList(page, limit, {
         filter: filter || undefined,
-        sort: 'student_name'
+        sort: 'student_name',
+        expand: 'centerId'
       })
 
       console.log(`✅ 成功获取 ${students.items.length} 个学生记录`);
@@ -81,7 +82,7 @@ export async function GET(request: NextRequest) {
           id: student.id,
           student_id: student.student_id || '无学号',
           student_name: student.student_name || '未知姓名',
-          center: student.center || '未指定',
+          center: student.expand?.centerId?.code || student.center || '未指定',
           status: student.status || 'active',
           standard: student.standard || '未指定',
           // 生日字段（兼容多名称）

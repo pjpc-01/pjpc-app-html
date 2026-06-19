@@ -155,6 +155,12 @@ export default function TeacherForm({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [showQuickYears, setShowQuickYears] = useState(false)
+  const [centers, setCenters] = useState<{id:string,name:string,code:string}[]>([])
+
+  // 获取中心列表
+  useEffect(() => {
+    fetch('/api/centers').then(r=>r.json()).then(d => { if(d.success) setCenters(d.data || []) }).catch(()=>{})
+  }, [])
 
   useEffect(() => {
     if (teacher) {
@@ -179,7 +185,8 @@ export default function TeacherForm({
         accountNo: teacher.accountNo || '',
         bankName: teacher.bankName || '',
         bankAccountName: teacher.bankAccountName || '',
-        bankAccountNo: teacher.bankAccountNo || ''
+        bankAccountNo: teacher.bankAccountNo || '',
+        centerId: teacher.centerId || ''
       })
     } else {
       setFormData({
@@ -203,7 +210,8 @@ export default function TeacherForm({
         accountNo: '',
         bankName: '',
         bankAccountName: '',
-        bankAccountNo: ''
+        bankAccountNo: '',
+        centerId: ''
       })
     }
     setErrors({})
@@ -416,6 +424,26 @@ export default function TeacherForm({
                  {formData.joinDate ? format(new Date(formData.joinDate), "PPP") : <span>选择入职日期</span>}
                </Button>
              </div>
+          </div>
+
+          {/* 中心分配 */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">中心分配</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="center">所属中心</Label>
+                <Select value={formData.centerId} onValueChange={(value) => handleInputChange('centerId', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择中心" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {centers.map((c: {id:string,name:string,code:string}) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
 
           {/* 财务信息 */}

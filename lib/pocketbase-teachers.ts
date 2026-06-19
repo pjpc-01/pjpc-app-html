@@ -20,6 +20,8 @@ export interface Teacher {
   email?: string
   phone?: string
   department?: string
+  centerId?: string
+  center?: string
   status?: 'active' | 'inactive'
   epfNo?: number
   socsoNo?: number
@@ -97,6 +99,7 @@ export const getAllTeachers = async (): Promise<Teacher[]> => {
     // 获取教师数据
     const response = await pb.collection('teachers').getList(1, 1000, {
       sort: 'name',
+      expand: 'centerId',
       $autoCancel: false
     })
     
@@ -158,6 +161,9 @@ export const getAllTeachers = async (): Promise<Teacher[]> => {
         // NFC/URL相关字段
         teacherUrl: item.teacherUrl || '',
         cardNumber: item.cardNumber || '',
+        // 中心关联
+        centerId: item.centerId || '',
+        center: item.expand?.centerId?.code || '',
         created: item.created,
         updated: item.updated
       }
@@ -233,6 +239,9 @@ export const addTeacher = async (teacherData: TeacherCreateData): Promise<Teache
     // EPF 和 SOCSO 号码
     if (teacherData.epfNo) cleanData.epfNo = parseInt(teacherData.epfNo) || 0
     if (teacherData.socsoNo) cleanData.socsoNo = parseInt(teacherData.socsoNo) || 0
+    
+    // 中心关联
+    if (teacherData.centerId) cleanData.centerId = teacherData.centerId
     
     // 将其他信息存储到 notes 字段
     const additionalInfo = []
@@ -357,6 +366,9 @@ export const updateTeacher = async (teacherData: TeacherUpdateData): Promise<Tea
     // EPF 和 SOCSO 号码
     if (updateData.epfNo) mappedUpdateData.epfNo = parseInt(updateData.epfNo) || 0
     if (updateData.socsoNo) mappedUpdateData.socsoNo = parseInt(updateData.socsoNo) || 0
+    
+    // 中心关联
+    if (updateData.centerId) mappedUpdateData.centerId = updateData.centerId
     
     // 将其他信息存储到 notes 字段
     const additionalInfo = []

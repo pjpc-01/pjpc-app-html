@@ -23,7 +23,10 @@ export interface Student {
   register_form_url?: string
   standard?: string
   level?: 'primary' | 'secondary'
-  center?: 'WX 01' | 'WX 02' | 'WX 03' | 'WX 04'
+  
+  // 🔄 中心关联 — 新系统使用 centerId (relation)，旧版兼容用 center (text)
+  centerId?: string
+  center?: string
   
   // 扩展信息
   nric?: string
@@ -201,7 +204,8 @@ export const getAllStudents = async (): Promise<Student[]> => {
       register_form_url: student.registrationLink,
       standard: student.grade,
       level: student.level,
-      center: student.center,
+      center: student.expand?.centerId?.code || student.center || '',
+      centerId: student.centerId || '',
 
       // 扩展信息
       nric: student.nric,
@@ -275,7 +279,8 @@ export const addStudent = async (studentData: StudentCreateData): Promise<Studen
       motherName: studentData.mother_name || '',
       fatherPhone: studentData.father_phone || '',
       motherPhone: studentData.mother_phone || '',
-      center: studentData.center,
+      center: studentData.center || '',
+      centerId: studentData.centerId || '',
       status: studentData.status || 'active',
       address: studentData.home_address || studentData.address,
       gender: studentData.gender,
@@ -314,7 +319,8 @@ export const addStudent = async (studentData: StudentCreateData): Promise<Studen
       id: data.student.id,
       student_id: data.student.student_id,
       student_name: data.student.name,
-      center: data.student.center,
+      center: data.student.expand?.centerId?.code || data.student.center || '',
+      centerId: data.student.centerId || '',
       status: data.student.status,
       standard: data.student.grade,
       father_name: data.student.fatherName,
@@ -393,6 +399,7 @@ export const updateStudent = async (id: string, studentData: StudentUpdateData):
     if (studentData.nric !== undefined) pbData.nric = studentData.nric
     if (studentData.school !== undefined) pbData.school = studentData.school
     if (studentData.center !== undefined) pbData.center = studentData.center
+    if (studentData.centerId !== undefined) pbData.centerId = studentData.centerId
     if (studentData.home_address !== undefined) pbData.address = studentData.home_address
     if (studentData.dob !== undefined) pbData.dob = studentData.dob
     if (studentData.gender !== undefined) pbData.gender = studentData.gender
@@ -481,8 +488,9 @@ export const getStudentById = async (id: string): Promise<Student | null> => {
       register_form_url: student.register_form_url,
       standard: student.standard,
       level: student.level,
-      center: student.center,
-      
+      center: student.expand?.centerId?.code || student.center || '',
+      centerId: student.centerId || '',
+
       // 扩展信息
       nric: student.nric,
       school: student.school,

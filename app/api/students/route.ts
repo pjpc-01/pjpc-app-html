@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     const searchParams = url.searchParams.toString()
     
     const origin = new URL(request.url).origin.replace('https://', 'http://')
-    const proxyUrl = `/api/pocketbase-proxy/api/collections/students/records?perPage=500${searchParams ? `&${searchParams}` : ''}`
+    const proxyUrl = `/api/pocketbase-proxy/api/collections/students/records?perPage=500&expand=centerId${searchParams ? `&${searchParams}` : ''}`
     
     const response = await fetch(`${origin}${proxyUrl}`)
     
