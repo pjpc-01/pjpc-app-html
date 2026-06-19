@@ -315,6 +315,8 @@ export default function StudentsTab({
                   <TableHead>学校</TableHead>
                   <TableHead>中心</TableHead>
                   <TableHead>服务类型</TableHead>
+                  <TableHead>父亲</TableHead>
+                  <TableHead>母亲</TableHead>
                   <TableHead>父母电话</TableHead>
                   <TableHead>学费状态</TableHead>
                   <TableHead>操作</TableHead>
@@ -363,6 +365,12 @@ export default function StudentsTab({
                       <Badge variant="outline" className="bg-orange-50 text-orange-800 border-orange-200">
                         {student.serviceType === 'afterschool' ? '安亲' : student.serviceType === 'tuition' ? '补习' : `未知(${student.serviceType})`}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-xs">{student.father_name || '-'}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-xs">{student.mother_name || '-'}</div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
