@@ -148,7 +148,8 @@ export default function TeacherForm({
     accountNo: '',
     bankName: '',
     bankAccountName: '',
-    bankAccountNo: ''
+    bankAccountNo: '',
+    centerId: ''
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -159,7 +160,14 @@ export default function TeacherForm({
 
   // 获取中心列表
   useEffect(() => {
-    fetch('/api/centers').then(r=>r.json()).then(d => { if(d.success) setCenters(d.data || []) }).catch(()=>{})
+    fetch('/api/pocketbase-proxy/api/collections/centers/records?sort=code&perPage=10')
+      .then(r => r.json())
+      .then(d => {
+        if (d?.items) {
+          setCenters(d.items.map((c: any) => ({ id: c.id, name: c.name, code: c.code })))
+        }
+      })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
