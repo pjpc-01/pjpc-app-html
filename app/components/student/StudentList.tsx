@@ -60,8 +60,8 @@ export default function StudentList({
           bValue = b.status || ''
           break
         case 'parentName':
-          aValue = a.parentName || ''
-          bValue = b.parentName || ''
+          aValue = a.father_name || a.mother_name || a.parentName || ''
+          bValue = b.father_name || b.mother_name || b.parentName || ''
           break
         default:
           aValue = a.student_name || ''
@@ -138,8 +138,9 @@ export default function StudentList({
             >
               年级
             </TableHead>
-            <TableHead>家长姓名</TableHead>
-            <TableHead>邮箱</TableHead>
+            <TableHead>父亲</TableHead>
+            <TableHead>母亲</TableHead>
+            <TableHead>联系电话</TableHead>
             <TableHead 
               className="cursor-pointer hover:bg-gray-50"
               onClick={() => handleSort('status')}
@@ -172,8 +173,17 @@ export default function StudentList({
                   {convertGradeToChinese(student.standard || '')}
                 </Badge>
               </TableCell>
-              <TableCell className="text-slate-600">{student.parentName || '-'}</TableCell>
-              <TableCell className="text-slate-500">{student.email || '-'}</TableCell>
+              <TableCell className="text-slate-600">{student.father_name || '-'}</TableCell>
+              <TableCell className="text-slate-600">{student.mother_name || '-'}</TableCell>
+              <TableCell className="text-slate-500">
+                {student.father_phone || student.mother_phone ? (
+                  <span className="text-xs">
+                    {student.father_phone && <span>父: {student.father_phone}</span>}
+                    {student.father_phone && student.mother_phone && <span className="mx-1">|</span>}
+                    {student.mother_phone && <span>母: {student.mother_phone}</span>}
+                  </span>
+                ) : '-'}
+              </TableCell>
               <TableCell>
                 <Badge variant={student.status === 'active' ? 'default' : 'secondary'} className="text-[10px] uppercase tracking-wider">
                   {student.status === 'active' ? '在读' : '离校'}

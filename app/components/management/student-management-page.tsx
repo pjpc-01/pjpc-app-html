@@ -118,7 +118,8 @@ const applySearchFilter = (student: Student, searchTerm: string) => {
     student.student_name?.toLowerCase().includes(query) ||
     student.student_id?.toLowerCase().includes(query) ||
     student.standard?.toLowerCase().includes(query) ||
-    student.parentName?.toLowerCase().includes(query) ||
+    student.father_name?.toLowerCase().includes(query) ||
+    student.mother_name?.toLowerCase().includes(query) ||
     student.email?.toLowerCase().includes(query) ||
     student.status?.toLowerCase().includes(query)
   )
@@ -159,7 +160,8 @@ const applyQuickFilter = (student: Student, quickFilters: string[]) => {
         case 'inactive':
         return student.status !== 'active'
         case 'has-phone':
-        return student.parentPhone && student.parentPhone.trim() !== ''
+        return (student.father_phone || student.mother_phone) && 
+               ((student.father_phone || '').trim() !== '' || (student.mother_phone || '').trim() !== '')
         case 'has-email':
         return student.email && student.email.trim() !== ''
       default:
@@ -192,8 +194,8 @@ const applySorting = (a: Student, b: Student, sortBy: string, sortOrder: 'asc' |
           bValue = b.status || ''
           break
         case 'parentName':
-          aValue = a.parentName || ''
-          bValue = b.parentName || ''
+          aValue = a.father_name || a.mother_name || ''
+          bValue = b.father_name || b.mother_name || ''
           break
     case 'center':
       aValue = a.center || ''
@@ -827,7 +829,11 @@ export default function StudentManagementPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Users className="h-4 w-4 text-gray-400" />
-                    <span>{student.parentName}</span>
+                    <span>{student.father_name || student.mother_name || '-'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="h-4 w-4 text-gray-400" />
+                    <span>{student.father_phone || student.mother_phone || '-'}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Mail className="h-4 w-4 text-gray-400" />
