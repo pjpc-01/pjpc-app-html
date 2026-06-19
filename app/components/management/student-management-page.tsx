@@ -154,7 +154,9 @@ const applyQuickFilter = (student: Student, quickFilters: string[]) => {
         const secondaryGrade = student.standard || ''
         return secondaryGrade.includes('初一') || secondaryGrade.includes('初二') || secondaryGrade.includes('初三') || 
                secondaryGrade.includes('高一') || secondaryGrade.includes('高二') || secondaryGrade.includes('高三') ||
-               secondaryGrade === '7' || secondaryGrade === '8' || secondaryGrade === '9' || secondaryGrade === '10' || secondaryGrade === '11' || secondaryGrade === '12'
+               secondaryGrade === '7' || secondaryGrade === '8' || secondaryGrade === '9' || secondaryGrade === '10' || secondaryGrade === '11' || secondaryGrade === '12' ||
+               secondaryGrade.toLowerCase().startsWith('form') || secondaryGrade.includes('中一') || secondaryGrade.includes('中二') || secondaryGrade.includes('中三') || secondaryGrade.includes('中四') || secondaryGrade.includes('中五') ||
+               secondaryGrade.includes('预备班')
         case 'active':
         return student.status === 'active'
         case 'inactive':
@@ -320,14 +322,17 @@ export default function StudentManagementPage() {
       const grade = student.standard || ''
       return grade.includes('一年级') || grade.includes('二年级') || grade.includes('三年级') || 
              grade.includes('四年级') || grade.includes('五年级') || grade.includes('六年级') ||
-             grade === '1' || grade === '2' || grade === '3' || grade === '4' || grade === '5' || grade === '6'
+             grade === '1' || grade === '2' || grade === '3' || grade === '4' || grade === '5' || grade === '6' ||
+             grade.toLowerCase().startsWith('standard')
     }).length
 
     const secondaryCount = students.filter(student => {
       const grade = student.standard || ''
       return grade.includes('初一') || grade.includes('初二') || grade.includes('初三') || 
              grade.includes('高一') || grade.includes('高二') || grade.includes('高三') ||
-             grade === '7' || grade === '8' || grade === '9' || grade === '10' || grade === '11' || grade === '12'
+             grade === '7' || grade === '8' || grade === '9' || grade === '10' || grade === '11' || grade === '12' ||
+             grade.toLowerCase().startsWith('form') || grade.includes('中一') || grade.includes('中二') || grade.includes('中三') || grade.includes('中四') || grade.includes('中五') ||
+             grade.includes('预备班')
     }).length
 
     return {

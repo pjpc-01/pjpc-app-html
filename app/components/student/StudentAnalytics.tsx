@@ -53,7 +53,9 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
       const grade = student.standard || ''
       return grade.includes('初一') || grade.includes('初二') || grade.includes('初三') || 
              grade.includes('高一') || grade.includes('高二') || grade.includes('高三') ||
-             grade === '7' || grade === '8' || grade === '9' || grade === '10' || grade === '11' || grade === '12'
+             grade === '7' || grade === '8' || grade === '9' || grade === '10' || grade === '11' || grade === '12' ||
+             grade.toLowerCase().startsWith('form') || grade.includes('中一') || grade.includes('中二') || grade.includes('中三') || grade.includes('中四') || grade.includes('中五') ||
+             grade.includes('预备班')
     }).length
 
     // 联系信息统计
