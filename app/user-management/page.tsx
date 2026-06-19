@@ -169,12 +169,6 @@ export default function UserManagementPage() {
       }
     >
       <div className="space-y-6">
-        {/* 页面标题 */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">用户管理系统</h1>
-          <p className="text-gray-600">统一管理用户账户、权限设置、审核流程和系统访问控制</p>
-        </div>
-
         {/* 用户管理标签页 */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">

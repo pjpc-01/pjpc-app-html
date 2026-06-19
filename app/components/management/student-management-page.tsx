@@ -532,16 +532,10 @@ export default function StudentManagementPage() {
         {/* 页面标题和操作栏 */}
         <div className="bg-white rounded-2xl shadow-lg border border-white/20 p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-br from-blue-50/80 to-purple-50/80 rounded-xl p-6 border border-blue-100/50">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
                   <Users className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                    学生管理系统
-                  </h1>
-                  <p className="text-gray-600 mt-1">智能管理学生档案、学习进度和出勤记录</p>
                 </div>
               </div>
             </div>

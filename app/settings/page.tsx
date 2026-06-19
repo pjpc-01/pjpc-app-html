@@ -260,7 +260,6 @@ export default function SettingsPage() {
   return (
     <PageLayout
       title="系统设置"
-      description="管理系统参数、银行账户、费率配置和安全设置"
       userRole="admin"
       status="系统正常"
       background="bg-gray-50"
@@ -278,13 +277,7 @@ export default function SettingsPage() {
       }
     >
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">系统设置</h1>
-            <p className="text-gray-500">配置系统参数、银行信息、贡献费率及安全管理</p>
-          </div>
-          {saveSuccess && (
+        {saveSuccess && (
             <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm">
               <CheckCircle2 className="h-4 w-4" />
               保存成功
@@ -296,7 +289,6 @@ export default function SettingsPage() {
               {saveError}
             </div>
           )}
-        </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -383,10 +375,6 @@ export default function SettingsPage() {
             <TabsTrigger value="audit" className="flex items-center gap-2">
               <History className="h-4 w-4" />
               审核日志
-            </TabsTrigger>
-            <TabsTrigger value="centers" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              分院管理
             </TabsTrigger>
           </TabsList>
 
@@ -965,212 +953,6 @@ export default function SettingsPage() {
                     </table>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* 6. Centers Management */}
-          <TabsContent value="centers" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Building2 className="h-5 w-5" />
-                      分院管理
-                    </CardTitle>
-                    <CardDescription>管理系统运营中心，PU1 和 BATU14</CardDescription>
-                  </div>
-                  <Button onClick={() => { setShowAddCenter(true); setEditingCenter(null); setCenterForm({ name: "", code: "", address: "", phone: "", manager: "", status: "active" }) }}>
-                    <Building2 className="h-4 w-4 mr-2" />
-                    添加分院
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {centersLoading ? (
-                  <div className="text-center py-8 text-gray-400">
-                    <RefreshCw className="h-8 w-8 mx-auto mb-2 animate-spin" />
-                    <p>加载中...</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {centersList.map((center) => (
-                      <div key={center.id} className="border rounded-xl p-5 hover:border-indigo-200 transition-colors">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-4">
-                            <div className={`p-3 rounded-xl ${
-                              center.code === "PU1" ? "bg-blue-100" :
-                              center.code === "BATU14" ? "bg-green-100" : "bg-gray-100"
-                            }`}>
-                              <Building2 className={`h-6 w-6 ${
-                                center.code === "PU1" ? "text-blue-600" :
-                                center.code === "BATU14" ? "text-green-600" : "text-gray-600"
-                              }`} />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-3">
-                                <h3 className="font-semibold text-lg">{center.name}</h3>
-                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                                  center.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
-                                }`}>
-                                  {center.status === "active" ? "运营中" : "已停用"}
-                                </span>
-                                <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-mono">
-                                  {center.code}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-500 mt-1">{center.address || "未设置地址"}</p>
-                              <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                                <span className="flex items-center gap-1">
-                                  <Users className="h-3.5 w-3.5" />
-                                  {center.studentCount ?? 0} 名学生
-                                </span>
-                                {center.manager && (
-                                  <span className="flex items-center gap-1">
-                                    <Shield className="h-3.5 w-3.5" />
-                                    {center.manager}
-                                  </span>
-                                )}
-                                {center.phone && (
-                                  <span className="flex items-center gap-1">
-                                    {center.phone}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" onClick={() => {
-                              setEditingCenter(center)
-                              setCenterForm({
-                                name: center.name || "",
-                                code: center.code || "",
-                                address: center.address || "",
-                                phone: center.phone || "",
-                                manager: center.manager || "",
-                                status: center.status || "active",
-                              })
-                              setShowAddCenter(true)
-                            }}>
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {centersList.length === 0 && (
-                      <div className="text-center py-12 text-gray-400">
-                        <Building2 className="h-12 w-12 mx-auto mb-4" />
-                        <p>暂无分院</p>
-                        <p className="text-xs mt-1">点击"添加分院"创建第一个中心</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Add/Edit Center Dialog */}
-            {(showAddCenter || editingCenter) && (
-              <Card className="border-indigo-200">
-                <CardHeader>
-                  <CardTitle>{editingCenter ? "编辑分院" : "添加分院"}</CardTitle>
-                  <CardDescription>
-                    {editingCenter ? "修改分院信息" : "创建新的运营中心"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>分院名称 *</Label>
-                      <Input value={centerForm.name} onChange={(e) => setCenterForm({ ...centerForm, name: e.target.value })}
-                        placeholder="例如：PU1 分院" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>分院代码 *</Label>
-                      <Input value={centerForm.code} onChange={(e) => setCenterForm({ ...centerForm, code: e.target.value })}
-                        placeholder="例如：PU1" disabled={!!editingCenter} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>负责人</Label>
-                      <Input value={centerForm.manager} onChange={(e) => setCenterForm({ ...centerForm, manager: e.target.value })}
-                        placeholder="院长/负责人姓名" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>联系电话</Label>
-                      <Input value={centerForm.phone} onChange={(e) => setCenterForm({ ...centerForm, phone: e.target.value })}
-                        placeholder="例如：012-3456789" />
-                    </div>
-                    <div className="space-y-2 md:col-span-2">
-                      <Label>地址</Label>
-                      <Input value={centerForm.address} onChange={(e) => setCenterForm({ ...centerForm, address: e.target.value })}
-                        placeholder="分院地址" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>状态</Label>
-                      <select
-                        value={centerForm.status}
-                        onChange={(e) => setCenterForm({ ...centerForm, status: e.target.value })}
-                        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500"
-                      >
-                        <option value="active">运营中</option>
-                        <option value="inactive">已停用</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-3 pt-4">
-                    <Button variant="outline" onClick={() => { setShowAddCenter(false); setEditingCenter(null) }}>
-                      取消
-                    </Button>
-                    <Button onClick={async () => {
-                      if (!centerForm.name || !centerForm.code) return
-                      setCenterSaving(true)
-                      try {
-                        if (editingCenter) {
-                          await fetch("/api/centers", {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ id: editingCenter.id, ...centerForm }),
-                          })
-                        } else {
-                          await fetch("/api/centers", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(centerForm),
-                          })
-                        }
-                        setShowAddCenter(false)
-                        setEditingCenter(null)
-                        fetchCenters()
-                      } catch {} finally { setCenterSaving(false) }
-                    }} disabled={centerSaving || !centerForm.name || !centerForm.code}>
-                      {centerSaving ? "保存中..." : editingCenter ? "更新分院" : "创建分院"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Grade-Center Mapping Reference */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <Shield className="h-4 w-4" />
-                  年级归属规则参考
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <p className="font-medium text-blue-700">PU1</p>
-                    <p className="text-blue-600 text-xs">Form 1-5 / Peralihan</p>
-                  </div>
-                  <div className="p-3 bg-green-50 rounded-lg">
-                    <p className="font-medium text-green-700">BATU14</p>
-                    <p className="text-green-600 text-xs">Standard 1-6</p>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
