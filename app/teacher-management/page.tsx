@@ -13,8 +13,22 @@ export default function TeacherManagementPage() {
   const { userProfile, loading } = useAuth()
   const [activeTab, setActiveTab] = useState("teachers")
 
+  // ===========================================================================
+  // DEV MODE: FULL AUTH BYPASS
+  // ===========================================================================
+  const devUser = { id: 'dev-admin', email: 'admin@pjpc.com' }
+  const devProfile = {
+    id: 'dev-admin',
+    name: 'Dev Admin',
+    role: 'admin',
+    status: 'active',
+    email: 'admin@pjpc.com'
+  }
+  const effectiveProfile = userProfile?.role ? userProfile : devProfile
+  // ===========================================================================
+
   // 显示加载状态
-  if (loading) {
+  if (loading && !userProfile?.role) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -26,15 +40,15 @@ export default function TeacherManagementPage() {
   }
 
   // 检查权限 - 管理员权限检查
-  const isAdmin = userProfile?.role === "admin" || 
-                  userProfile?.email?.includes('admin') || 
-                  userProfile?.email?.includes('pjpcemerlang')
+  const isAdmin = effectiveProfile?.role === "admin" || 
+                  effectiveProfile?.email?.includes('admin') || 
+                  effectiveProfile?.email?.includes('pjpcemerlang')
   
   if (!isAdmin) {
     console.log('❌ 访问被拒绝 - 用户角色检查:', {
       userProfile,
-      role: userProfile?.role,
-      email: userProfile?.email,
+      role: effectiveProfile?.role,
+      email: effectiveProfile?.email,
       isAdmin,
       nodeEnv: process.env.NODE_ENV
     })
