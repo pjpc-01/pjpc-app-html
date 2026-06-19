@@ -298,6 +298,8 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                     <TableHead>学生信息</TableHead>
                     <TableHead>年级</TableHead>
                     <TableHead>中心</TableHead>
+                    <TableHead>父亲</TableHead>
+                    <TableHead>母亲</TableHead>
                     <TableHead>父母电话</TableHead>
                     <TableHead>状态</TableHead>
                   </TableRow>
@@ -305,13 +307,13 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                 <TableBody>
                   {studentsLoading ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-slate-400">
+                      <TableCell colSpan={7} className="text-center py-8 text-slate-400">
                         加载中...
                       </TableCell>
                     </TableRow>
                   ) : filteredStudents.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-slate-400">
+                      <TableCell colSpan={7} className="text-center py-8 text-slate-400">
                         此分行暂无学生数据
                       </TableCell>
                     </TableRow>
@@ -338,6 +340,12 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                           <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
                             {student.expand?.centerId?.code || student.center || '-'}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-xs truncate max-w-[100px]" title={student.fatherName || '-'}>{student.fatherName || '-'}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-xs truncate max-w-[100px]" title={student.motherName || '-'}>{student.motherName || '-'}</div>
                         </TableCell>
                         <TableCell>
                           <div className="text-xs space-y-0.5">
