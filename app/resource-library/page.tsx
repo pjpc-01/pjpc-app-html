@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 
 export default function ResourceLibraryPage() {
+  const [showHeader] = useState(false)
   const router = useRouter()
   const { userProfile } = useAuth()
 
@@ -31,12 +32,6 @@ export default function ResourceLibraryPage() {
       }
     >
       <div className="space-y-6">
-        {/* 页面标题 */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">教学资源库</h1>
-          <p className="text-gray-600">共享和管理教学资源，支持多媒体内容上传下载</p>
-        </div>
-
         {/* 资源库组件 */}
         <ResourceLibrary />
       </div>
