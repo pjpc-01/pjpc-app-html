@@ -12,6 +12,8 @@ export interface Student {
   student_id?: string
   student_name?: string
   dob?: string
+  father_name?: string
+  mother_name?: string
   father_phone?: string
   mother_phone?: string
   home_address?: string
@@ -189,6 +191,8 @@ export const getAllStudents = async (): Promise<Student[]> => {
       student_id: student.student_id,
       student_name: student.name,
       dob: student.dob,
+      father_name: student.fatherName,
+      mother_name: student.motherName,
       father_phone: student.fatherPhone,
       mother_phone: student.motherPhone,
       home_address: student.address,
@@ -262,12 +266,24 @@ export const addStudent = async (studentData: StudentCreateData): Promise<Studen
   try {
     console.log('开始添加学生...')
     
-    // 准备要保存的数据
-    const dataToSave = {
-      ...studentData,
-      // 确保必填字段存在
-      student_name: studentData.student_name || '未命名学生',
+    // 准备要保存的数据（映射到 PB 的字段名）
+    const dataToSave: Record<string, any> = {
+      name: studentData.student_name || '未命名学生',
+      student_id: studentData.student_id || '',
+      grade: studentData.standard || '',
+      fatherName: studentData.father_name || '',
+      motherName: studentData.mother_name || '',
+      fatherPhone: studentData.father_phone || '',
+      motherPhone: studentData.mother_phone || '',
+      center: studentData.center,
       status: studentData.status || 'active',
+      address: studentData.home_address || studentData.address,
+      gender: studentData.gender,
+      nric: studentData.nric,
+      school: studentData.school,
+      dob: studentData.dob,
+      email: studentData.email,
+      phone: studentData.phone,
     }
     
     console.log('保存学生数据:', dataToSave)
@@ -297,17 +313,19 @@ export const addStudent = async (studentData: StudentCreateData): Promise<Studen
     const newStudent: Student = {
       id: data.student.id,
       student_id: data.student.student_id,
-      student_name: data.student.student_name,
+      student_name: data.student.name,
       center: data.student.center,
       status: data.student.status,
-      standard: data.student.standard,
+      standard: data.student.grade,
+      father_name: data.student.fatherName,
+      mother_name: data.student.motherName,
       studentUrl: data.student.studentUrl,
       created: data.student.created,
       updated: data.student.updated,
       // 添加其他默认字段
       dob: studentData.dob,
-      father_phone: studentData.father_phone,
-      mother_phone: studentData.mother_phone,
+      father_phone: data.student.fatherPhone || studentData.father_phone,
+      mother_phone: data.student.motherPhone || studentData.mother_phone,
       home_address: studentData.home_address,
       gender: studentData.gender,
       serviceType: studentData.serviceType,
@@ -362,6 +380,25 @@ export const updateStudent = async (id: string, studentData: StudentUpdateData):
   try {
     console.log('🔍 开始更新学生:', id, studentData)
     
+    // 映射到 PB 字段名
+    const pbData: Record<string, any> = {}
+    if (studentData.student_name !== undefined) pbData.name = studentData.student_name
+    if (studentData.student_id !== undefined) pbData.student_id = studentData.student_id
+    if (studentData.standard !== undefined) pbData.grade = studentData.standard
+    if (studentData.father_name !== undefined) pbData.fatherName = studentData.father_name
+    if (studentData.mother_name !== undefined) pbData.motherName = studentData.mother_name
+    if (studentData.father_phone !== undefined) pbData.fatherPhone = studentData.father_phone
+    if (studentData.mother_phone !== undefined) pbData.motherPhone = studentData.mother_phone
+    if (studentData.status !== undefined) pbData.status = studentData.status
+    if (studentData.nric !== undefined) pbData.nric = studentData.nric
+    if (studentData.school !== undefined) pbData.school = studentData.school
+    if (studentData.center !== undefined) pbData.center = studentData.center
+    if (studentData.home_address !== undefined) pbData.address = studentData.home_address
+    if (studentData.dob !== undefined) pbData.dob = studentData.dob
+    if (studentData.gender !== undefined) pbData.gender = studentData.gender
+    if (studentData.email !== undefined) pbData.email = studentData.email
+    if (studentData.phone !== undefined) pbData.phone = studentData.phone
+    
     const response = await fetch('/api/students', {
       method: 'PUT',
       headers: {
@@ -369,7 +406,7 @@ export const updateStudent = async (id: string, studentData: StudentUpdateData):
       },
       body: JSON.stringify({
         id,
-        ...studentData
+        ...pbData
       })
     })
     
@@ -434,6 +471,8 @@ export const getStudentById = async (id: string): Promise<Student | null> => {
       student_id: student.student_id,
       student_name: student.name,
       dob: student.dob,
+      father_name: student.fatherName,
+      mother_name: student.motherName,
       father_phone: student.fatherPhone,
       mother_phone: student.motherPhone,
       home_address: student.address,

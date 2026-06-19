@@ -125,7 +125,7 @@ export default function StudentDetails({
                 variant="outline" 
                 size="sm" 
                 className="flex flex-col h-20 gap-1"
-                onClick={() => window.open(`tel:${student.fatherPhone || student.motherPhone || student.parentPhone}`)}
+                onClick={() => window.open(`tel:${student.father_phone || student.mother_phone || student.parentPhone}`)}
               >
                 <Phone className="h-4 w-4 text-blue-600" />
                 <span className="text-xs">父亲电话</span>
@@ -134,7 +134,7 @@ export default function StudentDetails({
                 variant="outline" 
                 size="sm" 
                 className="flex flex-col h-20 gap-1"
-                onClick={() => window.open(`https://wa.me/${(student.fatherPhone || student.motherPhone || student.parentPhone || '').replace(/\+/g, '')}`)}
+                onClick={() => window.open(`https://wa.me/${(student.father_phone || student.mother_phone || student.parentPhone || '').replace(/\+/g, '')}`)}
               >
                 <MessageSquare className="h-4 w-4 text-green-600" />
                 <span className="text-xs">WhatsApp</span>
@@ -166,10 +166,10 @@ export default function StudentDetails({
                 </DetailSection>
 
                 <DetailSection title="联系方式">
-                  <DetailRow label="父亲姓名" value={student.fatherName || '-'} icon={<User className="h-3 w-3" />} />
-                  <DetailRow label="母亲姓名" value={student.motherName || '-'} icon={<User className="h-3 w-3" />} />
-                  <DetailRow label="父亲电话" value={student.fatherPhone || student.father_phone || '-'} icon={<Phone className="h-3 w-3" />} />
-                  <DetailRow label="母亲电话" value={student.motherPhone || student.mother_phone || '-'} icon={<Phone className="h-3 w-3" />} />
+                  <DetailRow label="父亲姓名" value={student.father_name || student.fatherName || '-'} icon={<User className="h-3 w-3" />} />
+                  <DetailRow label="母亲姓名" value={student.mother_name || student.motherName || '-'} icon={<User className="h-3 w-3" />} />
+                  <DetailRow label="父亲电话" value={student.father_phone || student.fatherPhone || '-'} icon={<Phone className="h-3 w-3" />} />
+                  <DetailRow label="母亲电话" value={student.mother_phone || student.motherPhone || '-'} icon={<Phone className="h-3 w-3" />} />
                 </DetailSection>
 
                 <DetailSection title="居住地址">

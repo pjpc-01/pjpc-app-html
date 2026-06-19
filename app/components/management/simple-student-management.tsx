@@ -9,7 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -21,12 +20,10 @@ import {
   Edit, 
   Eye, 
   Trash2,
-  UserPlus,
-  Mail,
-  Phone,
   GraduationCap,
   Users,
-  Filter
+  Phone,
+  User,
 } from "lucide-react"
 import { useStudents } from "@/hooks/useStudents"
 import { Student } from "@/hooks/useStudents"
@@ -40,24 +37,26 @@ export default function SimpleStudentManagement({
   title = "学生管理", 
   description = "管理学生信息和学习进度" 
 }: SimpleStudentManagementProps) {
-  const { students, loading, error, refetch } = useStudents()
+  const { students, loading, error, addStudent, updateStudent, deleteStudent } = useStudents()
   
-  // 简化的状态管理
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedGrade, setSelectedGrade] = useState('all')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null)
-  
-  // 新学生表单数据
-  const [newStudent, setNewStudent] = useState({
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const emptyForm = {
     student_name: '',
     student_id: '',
     standard: '',
+    father_name: '',
+    mother_name: '',
     father_phone: '',
     mother_phone: '',
-    status: 'active'
-  })
+    status: 'active' as const,
+  }
+  const [newStudent, setNewStudent] = useState(emptyForm)
 
   // 筛选学生
   const filteredStudents = useMemo(() => {
@@ -67,7 +66,9 @@ export default function SimpleStudentManagement({
       filtered = filtered.filter(student => 
         student.student_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.student_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.standard?.toLowerCase().includes(searchTerm.toLowerCase())
+        student.standard?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.father_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.mother_name?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
 
@@ -86,43 +87,40 @@ export default function SimpleStudentManagement({
 
   // 处理添加学生
   const handleAddStudent = async () => {
+    if (!newStudent.student_name?.trim()) return
     try {
+      setIsSubmitting(true)
       await addStudent(newStudent)
       setIsAddDialogOpen(false)
-      setNewStudent({
-        name: '',
-        studentId: '',
-        grade: '',
-        parentName: '',
-        parentPhone: '',
-        parentEmail: '',
-        status: 'active'
-      })
+      setNewStudent(emptyForm)
     } catch (error) {
       console.error('添加学生失败:', error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   // 处理编辑学生
   const handleEditStudent = async () => {
     if (!editingStudent) return
-    
     try {
+      setIsSubmitting(true)
       await updateStudent(editingStudent.id, editingStudent)
       setEditingStudent(null)
     } catch (error) {
       console.error('更新学生失败:', error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   // 处理删除学生
   const handleDeleteStudent = async (studentId: string) => {
-    if (confirm('确定要删除这个学生吗？')) {
-      try {
-        await deleteStudent(studentId)
-      } catch (error) {
-        console.error('删除学生失败:', error)
-      }
+    if (!confirm('确定要删除这个学生吗？')) return
+    try {
+      await deleteStudent(studentId)
+    } catch (error) {
+      console.error('删除学生失败:', error)
     }
   }
 
@@ -170,7 +168,7 @@ export default function SimpleStudentManagement({
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="搜索学生姓名、学号或年级..."
+                  placeholder="搜索学生姓名、学号、年级或家长..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -194,73 +192,82 @@ export default function SimpleStudentManagement({
                   添加学生
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-lg">
                 <DialogHeader>
                   <DialogTitle>添加新学生</DialogTitle>
-                  <DialogDescription>填写学生基本信息</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">姓名</Label>
+                    <Label className="text-right">姓名</Label>
                     <Input
-                      id="name"
-                      value={newStudent.name}
-                      onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
+                      value={newStudent.student_name}
+                      onChange={(e) => setNewStudent({...newStudent, student_name: e.target.value})}
                       className="col-span-3"
+                      placeholder="学生姓名"
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="studentId" className="text-right">学号</Label>
+                    <Label className="text-right">学号</Label>
                     <Input
-                      id="studentId"
-                      value={newStudent.studentId}
-                      onChange={(e) => setNewStudent({...newStudent, studentId: e.target.value})}
+                      value={newStudent.student_id}
+                      onChange={(e) => setNewStudent({...newStudent, student_id: e.target.value})}
                       className="col-span-3"
+                      placeholder="例: B10"
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="grade" className="text-right">年级</Label>
+                    <Label className="text-right">年级</Label>
                     <Input
-                      id="grade"
-                      value={newStudent.grade}
-                      onChange={(e) => setNewStudent({...newStudent, grade: e.target.value})}
+                      value={newStudent.standard}
+                      onChange={(e) => setNewStudent({...newStudent, standard: e.target.value})}
                       className="col-span-3"
+                      placeholder="例: 一年级"
                     />
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="parentName" className="text-right">家长姓名</Label>
-                    <Input
-                      id="parentName"
-                      value={newStudent.parentName}
-                      onChange={(e) => setNewStudent({...newStudent, parentName: e.target.value})}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="parentPhone" className="text-right">家长电话</Label>
-                    <Input
-                      id="parentPhone"
-                      value={newStudent.parentPhone}
-                      onChange={(e) => setNewStudent({...newStudent, parentPhone: e.target.value})}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="parentEmail" className="text-right">家长邮箱</Label>
-                    <Input
-                      id="parentEmail"
-                      value={newStudent.parentEmail}
-                      onChange={(e) => setNewStudent({...newStudent, parentEmail: e.target.value})}
-                      className="col-span-3"
-                    />
+                  <div className="border-t pt-4">
+                    <p className="text-sm font-medium text-gray-500 mb-3">家长信息</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>父亲姓名</Label>
+                        <Input
+                          value={newStudent.father_name}
+                          onChange={(e) => setNewStudent({...newStudent, father_name: e.target.value})}
+                          placeholder="父亲姓名"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>母亲姓名</Label>
+                        <Input
+                          value={newStudent.mother_name}
+                          onChange={(e) => setNewStudent({...newStudent, mother_name: e.target.value})}
+                          placeholder="母亲姓名"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>父亲电话</Label>
+                        <Input
+                          value={newStudent.father_phone}
+                          onChange={(e) => setNewStudent({...newStudent, father_phone: e.target.value})}
+                          placeholder="父亲电话"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>母亲电话</Label>
+                        <Input
+                          value={newStudent.mother_phone}
+                          onChange={(e) => setNewStudent({...newStudent, mother_phone: e.target.value})}
+                          placeholder="母亲电话"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                     取消
                   </Button>
-                  <Button onClick={handleAddStudent}>
-                    添加学生
+                  <Button onClick={handleAddStudent} disabled={isSubmitting}>
+                    {isSubmitting ? '添加中...' : '添加学生'}
                   </Button>
                 </div>
               </DialogContent>
@@ -268,43 +275,52 @@ export default function SimpleStudentManagement({
           </div>
 
           {/* 学生列表 */}
-          <div className="border rounded-lg">
+          <div className="border rounded-lg overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>姓名</TableHead>
-                  <TableHead>学号</TableHead>
-                  <TableHead>年级</TableHead>
-                  <TableHead>家长姓名</TableHead>
-                  <TableHead>联系方式</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>操作</TableHead>
+                  <TableHead className="whitespace-nowrap">姓名</TableHead>
+                  <TableHead className="whitespace-nowrap">学号</TableHead>
+                  <TableHead className="whitespace-nowrap">年级</TableHead>
+                  <TableHead className="whitespace-nowrap">父亲</TableHead>
+                  <TableHead className="whitespace-nowrap">母亲</TableHead>
+                  <TableHead className="whitespace-nowrap">联系电话</TableHead>
+                  <TableHead className="whitespace-nowrap">状态</TableHead>
+                  <TableHead className="whitespace-nowrap">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredStudents.map((student) => (
                   <TableRow key={student.id}>
-                    <TableCell className="font-medium">{student.name}</TableCell>
-                    <TableCell>{student.studentId}</TableCell>
-                    <TableCell>{student.grade}</TableCell>
-                    <TableCell>{student.parentName}</TableCell>
+                    <TableCell className="font-medium">{student.student_name || '-'}</TableCell>
+                    <TableCell className="font-mono text-xs">{student.student_id || '-'}</TableCell>
+                    <TableCell>{student.standard || '-'}</TableCell>
+                    <TableCell>{student.father_name || '-'}</TableCell>
+                    <TableCell>{student.mother_name || '-'}</TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {student.parentPhone && (
-                          <Phone className="h-4 w-4 text-gray-400" />
+                      <div className="flex flex-col gap-1 text-xs">
+                        {student.father_phone && (
+                          <span className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" /> 父: {student.father_phone}
+                          </span>
                         )}
-                        {student.parentEmail && (
-                          <Mail className="h-4 w-4 text-gray-400" />
+                        {student.mother_phone && (
+                          <span className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" /> 母: {student.mother_phone}
+                          </span>
+                        )}
+                        {!student.father_phone && !student.mother_phone && (
+                          <span className="text-gray-400">-</span>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
-                        {student.status === 'active' ? '在读' : '休学'}
+                        {student.status === 'active' ? '在读' : student.status === 'graduated' ? '毕业' : '休学'}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1">
                         <Button 
                           size="sm" 
                           variant="ghost"
@@ -344,7 +360,7 @@ export default function SimpleStudentManagement({
 
       {/* 查看学生详情对话框 */}
       <Dialog open={!!viewingStudent} onOpenChange={() => setViewingStudent(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>学生详情</DialogTitle>
           </DialogHeader>
@@ -353,29 +369,54 @@ export default function SimpleStudentManagement({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-500">姓名</Label>
-                  <p className="text-sm">{viewingStudent.name}</p>
+                  <p>{viewingStudent.student_name || '-'}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-500">学号</Label>
-                  <p className="text-sm">{viewingStudent.studentId}</p>
+                  <p className="font-mono">{viewingStudent.student_id || '-'}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-500">年级</Label>
-                  <p className="text-sm">{viewingStudent.grade}</p>
+                  <p>{viewingStudent.standard || '-'}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-500">状态</Label>
                   <Badge variant={viewingStudent.status === 'active' ? 'default' : 'secondary'}>
-                    {viewingStudent.status === 'active' ? '在读' : '休学'}
+                    {viewingStudent.status === 'active' ? '在读' : viewingStudent.status === 'graduated' ? '毕业' : '休学'}
                   </Badge>
                 </div>
               </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-500">家长信息</Label>
-                <div className="mt-2 space-y-2">
-                  <p className="text-sm">姓名: {viewingStudent.parentName}</p>
-                  <p className="text-sm">电话: {viewingStudent.parentPhone}</p>
-                  <p className="text-sm">邮箱: {viewingStudent.parentEmail}</p>
+              <div className="border-t pt-4">
+                <p className="text-sm font-medium text-gray-500 mb-3">家长信息</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs text-gray-400">父亲姓名</Label>
+                    <p className="flex items-center gap-1">
+                      <User className="h-3 w-3" /> {viewingStudent.father_name || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-400">母亲姓名</Label>
+                    <p className="flex items-center gap-1">
+                      <User className="h-3 w-3" /> {viewingStudent.mother_name || '-'}
+                    </p>
+                  </div>
+                  {viewingStudent.father_phone && (
+                    <div>
+                      <Label className="text-xs text-gray-400">父亲电话</Label>
+                      <p className="flex items-center gap-1">
+                        <Phone className="h-3 w-3" /> {viewingStudent.father_phone}
+                      </p>
+                    </div>
+                  )}
+                  {viewingStudent.mother_phone && (
+                    <div>
+                      <Label className="text-xs text-gray-400">母亲电话</Label>
+                      <p className="flex items-center gap-1">
+                        <Phone className="h-3 w-3" /> {viewingStudent.mother_phone}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -385,65 +426,68 @@ export default function SimpleStudentManagement({
 
       {/* 编辑学生对话框 */}
       <Dialog open={!!editingStudent} onOpenChange={() => setEditingStudent(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>编辑学生信息</DialogTitle>
           </DialogHeader>
           {editingStudent && (
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-name" className="text-right">姓名</Label>
+                <Label className="text-right">姓名</Label>
                 <Input
-                  id="edit-name"
-                  value={editingStudent.name || ''}
-                  onChange={(e) => setEditingStudent({...editingStudent, name: e.target.value})}
+                  value={editingStudent.student_name || ''}
+                  onChange={(e) => setEditingStudent({...editingStudent, student_name: e.target.value})}
                   className="col-span-3"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-studentId" className="text-right">学号</Label>
+                <Label className="text-right">学号</Label>
                 <Input
-                  id="edit-studentId"
-                  value={editingStudent.studentId || ''}
-                  onChange={(e) => setEditingStudent({...editingStudent, studentId: e.target.value})}
+                  value={editingStudent.student_id || ''}
+                  onChange={(e) => setEditingStudent({...editingStudent, student_id: e.target.value})}
                   className="col-span-3"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-grade" className="text-right">年级</Label>
+                <Label className="text-right">年级</Label>
                 <Input
-                  id="edit-grade"
-                  value={editingStudent.grade || ''}
-                  onChange={(e) => setEditingStudent({...editingStudent, grade: e.target.value})}
+                  value={editingStudent.standard || ''}
+                  onChange={(e) => setEditingStudent({...editingStudent, standard: e.target.value})}
                   className="col-span-3"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-parentName" className="text-right">家长姓名</Label>
-                <Input
-                  id="edit-parentName"
-                  value={editingStudent.parentName || ''}
-                  onChange={(e) => setEditingStudent({...editingStudent, parentName: e.target.value})}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-parentPhone" className="text-right">家长电话</Label>
-                <Input
-                  id="edit-parentPhone"
-                  value={editingStudent.parentPhone || ''}
-                  onChange={(e) => setEditingStudent({...editingStudent, parentPhone: e.target.value})}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-parentEmail" className="text-right">家长邮箱</Label>
-                <Input
-                  id="edit-parentEmail"
-                  value={editingStudent.parentEmail || ''}
-                  onChange={(e) => setEditingStudent({...editingStudent, parentEmail: e.target.value})}
-                  className="col-span-3"
-                />
+              <div className="border-t pt-4">
+                <p className="text-sm font-medium text-gray-500 mb-3">家长信息</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>父亲姓名</Label>
+                    <Input
+                      value={editingStudent.father_name || ''}
+                      onChange={(e) => setEditingStudent({...editingStudent, father_name: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>母亲姓名</Label>
+                    <Input
+                      value={editingStudent.mother_name || ''}
+                      onChange={(e) => setEditingStudent({...editingStudent, mother_name: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>父亲电话</Label>
+                    <Input
+                      value={editingStudent.father_phone || ''}
+                      onChange={(e) => setEditingStudent({...editingStudent, father_phone: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>母亲电话</Label>
+                    <Input
+                      value={editingStudent.mother_phone || ''}
+                      onChange={(e) => setEditingStudent({...editingStudent, mother_phone: e.target.value})}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -451,8 +495,8 @@ export default function SimpleStudentManagement({
             <Button variant="outline" onClick={() => setEditingStudent(null)}>
               取消
             </Button>
-            <Button onClick={handleEditStudent}>
-              保存修改
+            <Button onClick={handleEditStudent} disabled={isSubmitting}>
+              {isSubmitting ? '保存中...' : '保存修改'}
             </Button>
           </div>
         </DialogContent>
