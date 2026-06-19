@@ -215,6 +215,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
                 <TableRow>
                   <TableHead>教师信息</TableHead>
                   <TableHead>部门职位</TableHead>
+                  <TableHead>所属中心</TableHead>
                   <TableHead>联系方式</TableHead>
                   <TableHead>教龄</TableHead>
                   <TableHead>状态</TableHead>
@@ -249,6 +250,11 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
                           <div className="font-medium">{teacher.department || '未设置'}</div>
                           <div className="text-sm text-gray-600">{teacher.position || '未设置'}</div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          {teacher.center || teacher.centerId ? (teacher.center || '已分配') : '未分配'}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">

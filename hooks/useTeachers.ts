@@ -11,6 +11,8 @@ export interface Teacher {
   phone?: string
   department?: string
   position?: string
+  centerId?: string
+  center?: string
   epfNo?: string
   socsoNo?: string
   subjects?: string[]

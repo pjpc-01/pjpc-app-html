@@ -61,6 +61,7 @@ export default function StudentForm({
     email: '',
     status: 'active',
     center: 'PU1',
+    centerId: '',
     gender: 'male',
     serviceType: 'afterschool',
     dob: '',
@@ -121,6 +122,7 @@ export default function StudentForm({
         email: student.email || '',
         status: student.status || 'active',
         center: student.center || 'PU1',
+        centerId: student.centerId || '',
         gender: student.gender || 'male',
         serviceType: student.serviceType || 'afterschool',
         dob: student.dob || '',
@@ -256,6 +258,7 @@ export default function StudentForm({
         student_id: sanitizeText(formData.student_id || '', 20).toUpperCase(),
         standard: formData.standard || '',
         center: formData.center || 'PU1',
+        centerId: formData.centerId || '',
         serviceType: formData.serviceType || 'afterschool',
         gender: formData.gender || 'male',
         dob: formData.dob || '',
@@ -674,7 +677,12 @@ export default function StudentForm({
 
               <div>
                 <Label htmlFor="center">中心 *</Label>
-                <Select value={formData.center} onValueChange={(value) => handleInputChange('center', value)}>
+                <Select value={formData.center} onValueChange={(value) => {
+                    handleInputChange('center', value)
+                    // Also set centerId when center selection changes
+                    const matched = centers.find(c => c.code === value)
+                    if (matched) handleInputChange('centerId', matched.id)
+                  }}>
                   <SelectTrigger className={errors.center ? 'border-red-500' : ''}>
                     <SelectValue placeholder="选择中心" />
                   </SelectTrigger>
