@@ -165,16 +165,17 @@ export const useDashboardStats = () => {
       })
 
       console.log('📊 useDashboardStats: setting stats with studentsCount =', studentsCount, ', teachers =', (teachersResult as any).totalItems)
+      const safeActivities = Array.isArray(recentActivities) ? recentActivities : []
       setStats({
-        totalUsers: (usersResult as any).totalItems || usersResult.items.length,
+        totalUsers: (usersResult as any).totalItems || usersResult?.items?.length || 0,
         totalStudents: studentsCount,
         monthlyRevenue: monthlyRevenue,
         pendingApprovals: 0,
-        todayAttendance: (todayAttendanceResult as any).totalItems || todayAttendanceResult.items.length,
-        activeTeachers: (teachersResult as any).totalItems || teachersResult.items.length,
+        todayAttendance: (todayAttendanceResult as any).totalItems || todayAttendanceResult?.items?.length || 0,
+        activeTeachers: (teachersResult as any).totalItems || teachersResult?.items?.length || 0,
         totalParents: studentsCount,
         systemHealth: 100,
-        recentActivities: recentActivities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 5)
+        recentActivities: safeActivities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 5)
       })
       console.log('📊 useDashboardStats: stats set successfully')
       
