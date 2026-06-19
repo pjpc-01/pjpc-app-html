@@ -315,7 +315,7 @@ export default function StudentsTab({
                   <TableHead>学校</TableHead>
                   <TableHead>中心</TableHead>
                   <TableHead>服务类型</TableHead>
-                  <TableHead>家长联系方式</TableHead>
+                  <TableHead>父母电话</TableHead>
                   <TableHead>学费状态</TableHead>
                   <TableHead>操作</TableHead>
                 </TableRow>
@@ -366,15 +366,20 @@ export default function StudentsTab({
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        {student.parentPhone && (
+                        {student.father_phone && (
                           <div className="flex items-center gap-1">
-                            <span className="text-xs">{student.parentPhone}</span>
+                            <span className="text-xs text-blue-600 font-medium">父</span>
+                            <span className="text-xs">{student.father_phone}</span>
                           </div>
                         )}
-                        {student.emergencyPhone && (
+                        {student.mother_phone && (
                           <div className="flex items-center gap-1">
-                            <span className="text-xs">紧急: {student.emergencyPhone}</span>
+                            <span className="text-xs text-pink-600 font-medium">母</span>
+                            <span className="text-xs">{student.mother_phone}</span>
                           </div>
+                        )}
+                        {!student.father_phone && !student.mother_phone && (
+                          <span className="text-xs text-gray-400">-</span>
                         )}
                       </div>
                     </TableCell>

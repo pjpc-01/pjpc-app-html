@@ -1,10 +1,10 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   BarChart3,
   DollarSign,
@@ -18,12 +18,22 @@ import {
   AlertTriangle,
   CheckCircle,
   Plus,
-  ArrowUpRight
+  ArrowUpRight,
+  School,
+  Building2,
+  GraduationCap,
+  UserCheck,
+  Search,
+  Edit,
+  Eye,
+  MoreHorizontal,
 } from "lucide-react"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useDashboardStats } from "@/hooks/useDashboardStats"
 import { useFinancialStats } from "@/hooks/useFinancialStats"
+import { useCenters, Center } from "@/hooks/useCenters"
 import { useRouter } from "next/navigation"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 interface ModernAdminDashboardProps {
   activeTab: string
@@ -35,103 +45,165 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
   const router = useRouter()
   const { stats, loading: statsLoading } = useDashboardStats()
   const { stats: financialStats, loading: financialLoading } = useFinancialStats()
-  
-  // 直接数据获取（临时修复 hooks 不执行的问题）
-  const [directStats, setDirectStats] = useState({ students: 0, teachers: 0, revenue: 0, attendance: 0 })
+  const { centers, loading: centersLoading } = useCenters()
+
+  // Selected center filter: 'all' | center.id
+  const [selectedCenter, setSelectedCenter] = useState<string>('all')
+  const [students, setStudents] = useState<any[]>([])
+  const [studentsLoading, setStudentsLoading] = useState(true)
+  const [teachers, setTeachers] = useState<any[]>([])
+  const [totalTeachers, setTotalTeachers] = useState(0)
+
+  // Fetch students & teachers for current center filter
   useEffect(() => {
-    async function loadDirect() {
+    async function loadData() {
+      setStudentsLoading(true)
       try {
-        const s = await fetch('/api/students').then(r => r.json())
-        const t = await fetch('/api/pocketbase-proxy/api/collections/teachers/records?perPage=1').then(r => r.json())
-        const inv = await fetch('/api/pocketbase-proxy/api/collections/invoices/records?perPage=200&sort=-created').then(r => r.json())
-        // Calculate monthly revenue from current month's invoices
-        const now = new Date()
-        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-        const monthlyRevenue = (inv.items || []).filter(inv => inv.created?.startsWith(currentMonth)).reduce((sum, inv) => sum + (Number(inv.total_amount) || 0), 0)
-        setDirectStats({
-          students: s.students?.length || 0,
-          teachers: t.totalItems || 0,
-          revenue: monthlyRevenue,
-          attendance: 0
-        })
-      } catch(e) { console.error('direct load error:', e) }
+        let studentFilter = ''
+        if (selectedCenter !== 'all') {
+          studentFilter = `&filter=centerId%3D%22${selectedCenter}%22`
+        }
+        const [sRes, tRes] = await Promise.all([
+          fetch(`/api/pocketbase-proxy/api/collections/students/records?perPage=200&sort=-created&expand=centerId${studentFilter}`),
+          fetch(`/api/pocketbase-proxy/api/collections/teachers/records?perPage=200&sort=-created&expand=centerId`),
+        ])
+        const sData = await sRes.json()
+        const tData = await tRes.json()
+        setStudents(sData?.items || [])
+        setTotalTeachers(tData?.totalItems || 0)
+        setTeachers(tData?.items || [])
+      } catch (e) {
+        console.error('loadData error:', e)
+      } finally {
+        setStudentsLoading(false)
+      }
     }
-    loadDirect()
-  }, [])
+    loadData()
+  }, [selectedCenter])
+
+  // Filter teachers by center
+  const filteredTeachers = useMemo(() => {
+    if (selectedCenter === 'all') return teachers
+    return teachers.filter(t => t.centerId === selectedCenter || t.expand?.centerId?.id === selectedCenter)
+  }, [teachers, selectedCenter])
+
+  // Filter students
+  const filteredStudents = useMemo(() => {
+    if (selectedCenter === 'all') return students
+    return students.filter(s => s.centerId === selectedCenter || s.expand?.centerId?.id === selectedCenter)
+  }, [students, selectedCenter])
+
+  // Stats by center
+  const centerStats = useMemo(() => {
+    const activeStudents = filteredStudents.filter(s => s.status === 'active')
+    const primaryStudents = filteredStudents.filter(s => {
+      const g = s.grade || s.standard || ''
+      return ['1','2','3','4','5','6','Standard 1','Standard 2','Standard 3','Standard 4','Standard 5','Standard 6']
+        .some(x => g === x || g.includes(x))
+    })
+    const secondaryStudents = filteredStudents.filter(s => {
+      const g = s.grade || s.standard || ''
+      return !['1','2','3','4','5','6','Standard 1','Standard 2','Standard 3','Standard 4','Standard 5','Standard 6']
+        .some(x => g === x || g.includes(x))
+    })
+    return {
+      total: filteredStudents.length,
+      active: activeStudents.length,
+      primaryCount: primaryStudents.length,
+      secondaryCount: secondaryStudents.length,
+      teachers: filteredTeachers.length,
+    }
+  }, [filteredStudents, filteredTeachers])
+
+  const selectedCenterName = useMemo(() => {
+    if (selectedCenter === 'all') return '所有分行'
+    const c = centers.find(cc => cc.id === selectedCenter)
+    return c ? `${c.code} ${c.name}` : '未知分行'
+  }, [selectedCenter, centers])
 
   const quickActions = [
-    { 
-      title: '学生管理', 
-      icon: Users, 
-      iconColor: 'text-indigo-600', 
-      bgColor: 'bg-indigo-100', 
-      path: '/student-management'
-    },
-    { 
-      title: '财务管理', 
-      icon: DollarSign, 
-      iconColor: 'text-emerald-600', 
-      bgColor: 'bg-emerald-100', 
-      path: '/finance-management'
-    },
-    { 
-      title: '课程管理', 
-      icon: BookOpen, 
-      iconColor: 'text-blue-600', 
-      bgColor: 'bg-blue-100', 
-      path: '/course-management'
-    },
-    { 
-      title: '考勤系统', 
-      icon: Clock, 
-      iconColor: 'text-amber-600', 
-      bgColor: 'bg-amber-100', 
-      path: '/unified-attendance'
-    },
-    { 
-      title: '系统设置', 
-      icon: Settings, 
-      iconColor: 'text-slate-600', 
-      bgColor: 'bg-slate-100', 
-      path: '/user-management'
-    },
+    { title: '学生管理', icon: Users, iconColor: 'text-indigo-600', bgColor: 'bg-indigo-100', path: '/student-management' },
+    { title: '财务管理', icon: DollarSign, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-100', path: '/finance-management' },
+    { title: '课程管理', icon: BookOpen, iconColor: 'text-blue-600', bgColor: 'bg-blue-100', path: '/course-management' },
+    { title: '考勤系统', icon: Clock, iconColor: 'text-amber-600', bgColor: 'bg-amber-100', path: '/unified-attendance' },
+    { title: '教师管理', icon: Shield, iconColor: 'text-rose-600', bgColor: 'bg-rose-100', path: '/teacher-management' },
+    { title: '系统设置', icon: Settings, iconColor: 'text-slate-600', bgColor: 'bg-slate-100', path: '/settings' },
   ]
 
   return (
-    <div className="space-y-8">
-      {/* Vibrant Gradient Header Banner */}
-      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl">
+    <div className="space-y-6">
+      {/* Welcome Banner */}
+      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-xl">
         <div className="relative z-10 flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold mb-2">欢迎回来，{userProfile?.name || '管理员'}</h2>
-            <p className="text-indigo-100 text-lg">系统运行状态正常，您可以开始管理中心事务。</p>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-1">欢迎回来，{userProfile?.name || '管理员'}</h2>
+            <p className="text-indigo-100 text-sm sm:text-base">当前查看：<span className="font-semibold text-white">{selectedCenterName}</span></p>
           </div>
           <div className="hidden md:block text-right">
-            <p className="text-indigo-100 text-sm">当前系统时间</p>
-            <p className="text-2xl font-mono font-bold">{new Date().toLocaleTimeString('zh-CN')}</p>
-            <p className="text-indigo-100 text-sm">{new Date().toLocaleDateString('zh-CN')}</p>
+            <p className="text-indigo-100 text-xs">系统时间</p>
+            <p className="text-xl font-mono font-bold">{new Date().toLocaleTimeString('zh-CN')}</p>
+            <p className="text-indigo-100 text-xs">{new Date().toLocaleDateString('zh-CN')}</p>
           </div>
         </div>
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-indigo-400/20 rounded-full -ml-10 -mb-10 blur-2xl"></div>
       </div>
 
-      {/* Colorful Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Center Tabs — Big Pill Style */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1.5 bg-slate-100 rounded-2xl p-1.5 w-full sm:w-auto overflow-x-auto">
+          <button
+            onClick={() => setSelectedCenter('all')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
+              selectedCenter === 'all'
+                ? 'bg-white text-indigo-700 shadow-md border border-indigo-200'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-white/60'
+            }`}
+          >
+            <Building2 className="h-4 w-4" />
+            全部
+            <Badge variant="secondary" className="ml-1 bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0">
+              {centers.reduce((sum, c) => sum + c.studentCount, 0) || students.length}
+            </Badge>
+          </button>
+          {centers.map((center) => (
+            <button
+              key={center.id}
+              onClick={() => setSelectedCenter(center.id)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
+                selectedCenter === center.id
+                  ? 'bg-white text-indigo-700 shadow-md border border-indigo-200'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-white/60'
+              }`}
+            >
+              <School className="h-4 w-4" />
+              <span>{center.code}</span>
+              <span className="text-slate-400 font-normal text-xs hidden sm:inline">{center.name}</span>
+              <Badge variant="secondary" className="ml-1 bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0">
+                {center.studentCount || 0}
+              </Badge>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Metric Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <Card className="border-indigo-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
           <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-500 text-sm font-medium">总学生数</p>
-                <p className="text-3xl font-bold text-slate-900">{directStats.students || stats?.totalStudents || 0}</p>
-                <div className="flex items-center mt-2">
-                  <TrendingUp className="h-4 w-4 text-emerald-500 mr-1" />
-                  <span className="text-emerald-500 text-sm font-medium">+12% 较上月</span>
+              <div className="min-w-0">
+                <p className="text-slate-500 text-xs sm:text-sm font-medium truncate">总学生数</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900">{centerStats.total}</p>
+                <div className="flex items-center mt-1 gap-2">
+                  <span className="text-emerald-500 text-xs font-medium">小学 {centerStats.primaryCount}</span>
+                  <span className="text-slate-300">·</span>
+                  <span className="text-purple-500 text-xs font-medium">中学 {centerStats.secondaryCount}</span>
                 </div>
               </div>
-              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform">
-                <Users className="h-6 w-6 text-indigo-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform flex-shrink-0">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" />
               </div>
             </div>
           </CardContent>
@@ -139,18 +211,18 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
 
         <Card className="border-emerald-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
           <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-500 text-sm font-medium">本月收入</p>
-                <p className="text-3xl font-bold text-slate-900">RM {financialStats?.monthlyRevenue?.toLocaleString() || directStats.revenue?.toLocaleString() || '0'}</p>
-                <div className="flex items-center mt-2">
-                  <TrendingUp className="h-4 w-4 text-emerald-500 mr-1" />
-                  <span className="text-emerald-500 text-sm font-medium">+15% 较上月</span>
+              <div className="min-w-0">
+                <p className="text-slate-500 text-xs sm:text-sm font-medium truncate">本月收入</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900">RM {financialStats?.monthlyRevenue?.toLocaleString() || '0'}</p>
+                <div className="flex items-center mt-1">
+                  <TrendingUp className="h-3 w-3 text-emerald-500 mr-1" />
+                  <span className="text-emerald-500 text-xs font-medium">+15% 较上月</span>
                 </div>
               </div>
-              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform">
-                <DollarSign className="h-6 w-6 text-emerald-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform flex-shrink-0">
+                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600" />
               </div>
             </div>
           </CardContent>
@@ -158,18 +230,20 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
 
         <Card className="border-amber-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
           <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-500 text-sm font-medium">今日出勤</p>
-                <p className="text-3xl font-bold text-slate-900">{stats?.todayAttendance || 0}</p>
-                <div className="flex items-center mt-2">
-                  <CheckCircle className="h-4 w-4 text-emerald-500 mr-1" />
-                  <span className="text-emerald-500 text-sm font-medium">94.2% 出勤率</span>
+              <div className="min-w-0">
+                <p className="text-slate-500 text-xs sm:text-sm font-medium truncate">今日出勤</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900">{stats?.todayAttendance || 0}</p>
+                <div className="flex items-center mt-1">
+                  <CheckCircle className="h-3 w-3 text-emerald-500 mr-1" />
+                  <span className="text-emerald-500 text-xs font-medium">
+                    {centerStats.total > 0 ? Math.round((stats?.todayAttendance || 0) / centerStats.total * 100) : 0}% 出勤率
+                  </span>
                 </div>
               </div>
-              <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform">
-                <Activity className="h-6 w-6 text-amber-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-50 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform flex-shrink-0">
+                <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
               </div>
             </div>
           </CardContent>
@@ -177,44 +251,119 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
 
         <Card className="border-rose-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
           <div className="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-500 text-sm font-medium">活跃教师</p>
-                <p className="text-3xl font-bold text-slate-900">{directStats.teachers || stats?.activeTeachers || 0}</p>
-                <div className="flex items-center mt-2">
-                  <span className="text-slate-500 text-sm">8 位在职教师</span>
+              <div className="min-w-0">
+                <p className="text-slate-500 text-xs sm:text-sm font-medium truncate">活跃教师</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900">{centerStats.teachers}</p>
+                <div className="flex items-center mt-1">
+                  <UserCheck className="h-3 w-3 text-slate-400 mr-1" />
+                  <span className="text-slate-500 text-xs">{selectedCenter === 'all' ? totalTeachers : centerStats.teachers} 位在职教师</span>
                 </div>
               </div>
-              <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform">
-                <Shield className="h-6 w-6 text-rose-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-rose-50 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform flex-shrink-0">
+                <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Main content grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Student List — takes 2 cols */}
         <Card className="lg:col-span-2 border-slate-200 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Activity className="h-5 w-5 text-indigo-600" />
-                最近活动
+                <Users className="h-5 w-5 text-indigo-600" />
+                {selectedCenter === 'all' ? '全部学生' : `${selectedCenterName} — 学生列表`}
               </CardTitle>
-              <CardDescription>系统最新动态和用户操作记录</CardDescription>
+              <CardDescription>共 {centerStats.total} 名学生 | 在读 {centerStats.active} 人</CardDescription>
             </div>
-            <Button variant="ghost" size="sm" className="text-indigo-600 hover:text-indigo-700">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-indigo-600 hover:text-indigo-700"
+              onClick={() => router.push('/student-management')}
+            >
               查看全部 <ArrowUpRight className="ml-1 h-3 w-3" />
             </Button>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-1">
-              <div className="flex items-center justify-center p-8 text-slate-400">暂无最近活动</div>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>学生信息</TableHead>
+                    <TableHead>年级</TableHead>
+                    <TableHead>中心</TableHead>
+                    <TableHead>父母电话</TableHead>
+                    <TableHead>状态</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {studentsLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-slate-400">
+                        加载中...
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredStudents.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-slate-400">
+                        此分行暂无学生数据
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredStudents.slice(0, 8).map((student) => (
+                      <TableRow key={student.id} className="hover:bg-slate-50">
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                              {student.name?.charAt(0) || 'S'}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-medium text-sm truncate">{student.name}</div>
+                              <div className="text-xs text-slate-500">学号: {student.student_id}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                            {student.grade || '-'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
+                            {student.expand?.centerId?.code || student.center || '-'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-xs space-y-0.5">
+                            {student.fatherPhone && <div><span className="text-blue-600">父</span> {student.fatherPhone}</div>}
+                            {student.motherPhone && <div><span className="text-pink-600">母</span> {student.motherPhone}</div>}
+                            {!student.fatherPhone && !student.motherPhone && <span className="text-slate-400">-</span>}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={student.status === 'active' ? 'default' : 'secondary'}
+                            className={`text-[10px] ${student.status === 'active' ? '' : ''}`}
+                          >
+                            {student.status === 'active' ? '在读' : '离校'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
 
+        {/* Quick Actions */}
         <Card className="border-slate-200 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -224,19 +373,19 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
             <CardDescription>常用功能快速访问</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-2">
               {quickActions.map((action, index) => (
                 <Button
                   key={index}
                   variant="ghost"
-                  className="w-full justify-start p-4 h-auto hover:bg-slate-50 transition-all group"
+                  className="w-full justify-start p-3 h-auto hover:bg-slate-50 transition-all group"
                   onClick={() => router.push(action.path)}
                 >
-                  <div className={`w-10 h-10 rounded-lg ${action.bgColor} flex items-center justify-center mr-3 group-hover:scale-110 transition-transform`}>
-                    <action.icon className={`h-5 w-5 ${action.iconColor}`} />
+                  <div className={`w-9 h-9 rounded-lg ${action.bgColor} flex items-center justify-center mr-3 group-hover:scale-110 transition-transform flex-shrink-0`}>
+                    <action.icon className={`h-4 w-4 ${action.iconColor}`} />
                   </div>
                   <div className="text-left">
-                    <p className="font-medium text-slate-700 group-hover:text-indigo-600">{action.title}</p>
+                    <p className="font-medium text-slate-700 text-sm group-hover:text-indigo-600">{action.title}</p>
                   </div>
                 </Button>
               ))}
@@ -244,6 +393,70 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
           </CardContent>
         </Card>
       </div>
+
+      {/* Teacher Section */}
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Shield className="h-5 w-5 text-rose-600" />
+              {selectedCenter === 'all' ? '全部教师' : `${selectedCenterName} — 教师列表`}
+            </CardTitle>
+            <CardDescription>共 {centerStats.teachers} 位教师</CardDescription>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-rose-600 hover:text-rose-700"
+            onClick={() => router.push('/teacher-management')}
+          >
+            查看全部 <ArrowUpRight className="ml-1 h-3 w-3" />
+          </Button>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>姓名</TableHead>
+                  <TableHead>所属中心</TableHead>
+                  <TableHead>科目</TableHead>
+                  <TableHead>状态</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTeachers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-8 text-slate-400">
+                      此分行暂无教师数据
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredTeachers.slice(0, 5).map((teacher) => (
+                    <TableRow key={teacher.id} className="hover:bg-slate-50">
+                      <TableCell className="font-medium">{teacher.name || teacher.teacher_name || '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
+                          {teacher.expand?.centerId?.code || teacher.center || '未分配'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-slate-600 text-sm">{teacher.subject || '-'}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={teacher.status === 'active' ? 'default' : 'secondary'}
+                          className="text-[10px]"
+                        >
+                          {teacher.status === 'active' ? '在职' : '离职'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
