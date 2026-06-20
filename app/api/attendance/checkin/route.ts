@@ -7,7 +7,10 @@ const pb = new PocketBase('http://pjpc.tplinkdns.com:8090')
 // 管理员认证
 async function authenticateAdmin() {
   try {
-    await authenticateAdmin(pb)
+    await pb.admins.authWithPassword(
+      process.env.POCKETBASE_ADMIN_EMAIL || 'admin@pjpc.com',
+      process.env.POCKETBASE_ADMIN_PASSWORD || 'admin123'
+    )
     console.log('✅ 管理员认证成功')
     return true
   } catch (error) {

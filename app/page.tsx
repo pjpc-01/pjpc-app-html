@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -31,26 +31,17 @@ const TeacherWorkspace = dynamic(() => import('./teacher-workspace/page'), {
 })
 
 export default function Dashboard() {
-  const { logout, resendVerification, clearError } = useAuth()
+  const { user, userProfile, loading, connectionStatus, error, logout, resendVerification, clearError } = useAuth()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  // ===========================================================================
-  // DEV MODE: FULL AUTH BYPASS
-  // ===========================================================================
-  const user = { id: 'dev-admin', email: 'admin@pjpc.com' }
-  const userProfile = {
-    id: 'dev-admin',
-    name: 'Dev Admin',
-    role: 'admin',
-    status: 'active',
-    email: 'admin@pjpc.com'
-  }
-  const loading = false
-  const connectionStatus = 'connected'
-  const error = null
-  // ===========================================================================
+  // 家长角色重定向到家长门户
+  useEffect(() => {
+    if (!loading && userProfile?.role === "parent") {
+      router.replace("/parent/dashboard")
+    }
+  }, [loading, userProfile?.role, router])
 
   const renderDashboard = () => {
     switch (userProfile.role) {
