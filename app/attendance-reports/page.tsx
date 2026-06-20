@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
 import PageLayout from "@/components/layouts/PageLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -116,6 +117,16 @@ export default function AttendanceReportsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(50)
   const [totalPages, setTotalPages] = useState(1)
+  const searchParams = useSearchParams()
+
+  // 从 URL 参数 ?center= 初始化中心筛选值
+  useEffect(() => {
+    const centerParam = searchParams.get('center')
+    if (centerParam) {
+      setFilters(prev => ({ ...prev, center: centerParam }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // 获取日期范围
   const getDateRange = useCallback((range: DateRange) => {

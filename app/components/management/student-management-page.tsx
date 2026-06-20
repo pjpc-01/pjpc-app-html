@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
 import PageLayout from "@/components/layouts/PageLayout"
 import TabbedPage from "@/components/layouts/TabbedPage"
 import StatsGrid from "@/components/ui/StatsGrid"
@@ -238,6 +239,9 @@ const applyFilters = (students: Student[], filters: FilterState) => {
 export default function StudentManagementPage() {
   const { students, loading, error, refetch, updateStudent, deleteStudent, addStudent } = useStudents()
   
+  const searchParams = useSearchParams()
+  const urlCenterId = searchParams.get('center')
+  
   // 状态管理
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set())
   const [filters, setFilters] = useState<FilterState>({
@@ -268,20 +272,26 @@ export default function StudentManagementPage() {
   const [viewMode, setViewMode] = useState<'table' | 'grid' | 'analytics'>('table')
   const [savedFilters, setSavedFilters] = useState<{ name: string; filters: FilterState }[]>([])
 
-  // 获取筛选选项
+  // 全局中心筛选 (通过 URL 参数 ?center=UUID)
+  const centerFilteredStudents = useMemo(() => {
+    if (!urlCenterId) return students
+    return students.filter(student => student.centerId === urlCenterId)
+  }, [students, urlCenterId])
+
+  // 获取筛选选项 (基于全局筛选后的学生)
   const filterOptions = useMemo(() => {
-    const grades = Array.from(new Set(students.map(s => s.standard).filter(Boolean))).sort()
-    const statuses = Array.from(new Set(students.map(s => s.status).filter(Boolean))).sort()
-    const centers = Array.from(new Set(students.map(s => s.center).filter(Boolean))).sort()
+    const grades = Array.from(new Set(centerFilteredStudents.map(s => s.standard).filter(Boolean))).sort()
+    const statuses = Array.from(new Set(centerFilteredStudents.map(s => s.status).filter(Boolean))).sort()
+    const centers = Array.from(new Set(centerFilteredStudents.map(s => s.center).filter(Boolean))).sort()
     
     return { grades, statuses, centers }
-  }, [students])
+  }, [centerFilteredStudents])
 
   // 筛选和排序学生数据
   const filteredStudents = useMemo(() => {
-    if (students.length === 0) return []
-    return applyFilters(students, filters)
-  }, [students, filters])
+    if (centerFilteredStudents.length === 0) return []
+    return applyFilters(centerFilteredStudents, filters)
+  }, [centerFilteredStudents, filters])
 
   // 分页
   const {

@@ -19,6 +19,7 @@ google-service-account.json
 !package-lock.json
 !tsconfig.json
 !components.json
+!pb-schema.json
 !next.config.mjs
 
 # Environment variables

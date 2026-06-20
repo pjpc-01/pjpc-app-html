@@ -42,6 +42,8 @@ import {
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useExpenses } from "@/hooks/useExpenses"
+import { useSearchParams } from "next/navigation"
+import { useCenters } from "@/hooks/useCenters"
 
 const EXPENSE_CATEGORIES = [
   { id: "salary", label: "教师薪资", color: "bg-blue-100 text-blue-800 border-blue-200" },
@@ -58,6 +60,10 @@ const CATEGORY_COLORS: Record<string, string> = Object.fromEntries(
 )
 
 export default function ExpenseManagement() {
+  const searchParams = useSearchParams()
+  const centerParam = searchParams.get("center")
+  const { centers } = useCenters()
+  
   const { 
     expenses, 
     loading, 
@@ -72,7 +78,8 @@ export default function ExpenseManagement() {
     category: "",
     description: "",
     amount: "",
-    method: "Bank Transfer"
+    method: "Bank Transfer",
+    centerId: ""
   })
 
   const isFormValid = newExpense.category !== "" && newExpense.amount !== "" && newExpense.description.trim() !== ""
@@ -84,7 +91,8 @@ export default function ExpenseManagement() {
         category: newExpense.category,
         description: newExpense.description,
         amount: parseFloat(newExpense.amount),
-        method: newExpense.method
+        method: newExpense.method,
+        centerId: newExpense.centerId || undefined
       })
       setIsAddDialogOpen(false)
       setNewExpense({
@@ -92,7 +100,8 @@ export default function ExpenseManagement() {
         category: "",
         description: "",
         amount: "",
-        method: "Bank Transfer"
+        method: "Bank Transfer",
+        centerId: ""
       })
     } catch (err) {
       alert("添加支出记录失败，请重试")
@@ -124,9 +133,13 @@ export default function ExpenseManagement() {
   const currentMonth = new Date().toISOString().slice(0, 7)
   const months = [...new Set(safeExpenses.map(e => (e.date || "").slice(0, 7)).filter(Boolean))].sort().reverse()
 
-  const filteredExpenses = monthFilter === "all"
-    ? safeExpenses
-    : safeExpenses.filter(e => (e.date || "").startsWith(monthFilter))
+  const filteredExpenses = safeExpenses.filter(e => {
+    // Month filter
+    if (monthFilter !== "all" && !(e.date || "").startsWith(monthFilter)) return false
+    // Center filter
+    if (centerParam && e.centerId !== centerParam) return false
+    return true
+  })
 
   const filteredTotal = filteredExpenses.reduce((sum, e) => sum + (e.amount || 0), 0)
 
@@ -134,11 +147,9 @@ export default function ExpenseManagement() {
     <div className="space-y-6">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <ArrowDownCircle className="h-6 w-6 text-red-500" />
-            支出管理
-          </h2>
-          <p className="text-slate-500">记录中心所有经营支出，用于计算净利润</p>
+          </div>
         </div>
         <div className="flex gap-3">
           <Button variant="outline" className="flex items-center gap-2">
@@ -231,6 +242,25 @@ export default function ExpenseManagement() {
                         <SelectItem value="Cash">现金</SelectItem>
                         <SelectItem value="Credit Card">信用卡</SelectItem>
                         <SelectItem value="Online Banking">网银</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold flex items-center gap-2">
+                      <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+                      所属分行
+                    </Label>
+                    <Select 
+                      value={newExpense.centerId} 
+                      onValueChange={(v) => setNewExpense({...newExpense, centerId: v})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择分行（可选）" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {centers.map(c => (
+                          <SelectItem key={c.id} value={c.id}>{c.code} - {c.name}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -352,6 +382,7 @@ export default function ExpenseManagement() {
                   <TableHead className="w-[120px]">日期</TableHead>
                   <TableHead className="w-[150px]">类别</TableHead>
                   <TableHead>描述</TableHead>
+                  <TableHead className="w-[100px]">分行</TableHead>
                   <TableHead className="w-[120px]">方式</TableHead>
                   <TableHead className="text-right w-[120px]">金额</TableHead>
                   <TableHead className="text-center w-[80px]">操作</TableHead>
@@ -372,6 +403,12 @@ export default function ExpenseManagement() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-slate-600">{expense.description}</TableCell>
+                    <TableCell className="text-slate-500 text-xs">
+                      {(() => {
+                        const center = centers.find(c => c.id === expense.centerId)
+                        return center ? `${center.code}-${center.name}` : "-"
+                      })()}
+                    </TableCell>
                     <TableCell className="text-slate-500 text-xs">{expense.method}</TableCell>
                     <TableCell className="text-right font-bold text-red-600">
                       - RM {expense.amount.toLocaleString()}

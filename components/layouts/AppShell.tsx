@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useSearchParams, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Users,
@@ -36,6 +36,7 @@ import {
   PieChart,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import ConnectionStatus from "@/components/ConnectionStatus"
 
 type NavItem = {
@@ -65,13 +66,15 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         children: [
           { label: "学生列表", href: "/student-management", icon: Users },
           { label: "成绩单", href: "/report-cards", icon: GraduationCap },
-          { label: "分行管理", href: "/center-management", icon: Building },
         ],
       },
       {
         label: "教师管理",
-        href: "/teacher-management",
         icon: UserCog,
+        children: [
+          { label: "教师列表", href: "/teacher-management", icon: UserCog },
+          { label: "教师排班", href: "/schedule-management", icon: Calendar },
+        ],
       },
       {
         label: "财务管理",
@@ -80,16 +83,22 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
           { label: "财务概览", href: "/finance/overview", icon: PiggyBank },
           { label: "收费管理", href: "/finance/fees", icon: Receipt },
           { label: "发票付款", href: "/finance/payments", icon: ArrowLeftRight },
-          { label: "支出/薪资", href: "/finance/expenses", icon: Wallet },
           { label: "银行对账", href: "/finance/bank", icon: Building2 },
+          { label: "支出管理", href: "/finance/expenses", icon: Wallet },
+          { label: "薪资管理", href: "/finance/payroll", icon: DollarSign },
           { label: "预算管理", href: "/finance/budget", icon: PieChart },
           { label: "财务报表", href: "/finance/reports", icon: BarChart3 },
         ],
       },
       {
         label: "课程管理",
-        href: "/course-management",
         icon: BookOpen,
+        children: [
+          { label: "课程表", href: "/course-management?tab=schedule", icon: Calendar },
+          { label: "课程管理", href: "/course-management?tab=courses", icon: BookOpen },
+          { label: "班级管理", href: "/course-management?tab=classes", icon: Users },
+          { label: "课程分析", href: "/course-management?tab=analytics", icon: BarChart3 },
+        ],
       },
       {
         label: "考勤系统",
@@ -101,14 +110,12 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         ],
       },
       {
-        label: "课表管理",
-        href: "/schedule-management",
-        icon: Calendar,
-      },
-      {
         label: "系统设置",
-        href: "/settings",
         icon: Settings,
+        children: [
+          { label: "系统设置", href: "/settings", icon: Settings },
+          { label: "分院管理", href: "/center-management", icon: Building },
+        ],
       },
     ],
   },
@@ -218,16 +225,48 @@ export default function AppShell({
   userAvatar,
 }: AppShellProps) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set())
+  const [centers, setCenters] = useState<{id:string;code:string;name:string}[]>([])
+
+  // Fetch centers for sidebar filter
+  useEffect(() => {
+    fetch("/api/pocketbase-proxy/api/collections/centers/records")
+      .then(r => r.json())
+      .then(d => setCenters(d?.items?.map((c:any) => ({ id: c.id, code: c.code, name: c.name })) || []))
+      .catch(() => {})
+  }, [])
 
   const config = ROLE_CONFIGS[userRole] || ROLE_CONFIGS.admin
+
+  // 【全局分行筛选】所有导航链接自动携带当前?center=参数，切换页面不丢失筛选
+  const addCenterParam = (href: string | undefined): string | undefined => {
+    if (!href) return href
+    const center = searchParams?.get("center")
+    if (!center || center === "all") return href
+    const [base, query] = href.split("?")
+    const params = new URLSearchParams(query || "")
+    params.set("center", center)
+    const qs = params.toString()
+    return qs ? `${base}?${qs}` : base
+  }
+
   const isActive = (href?: string) => {
     if (!href) return false
     if (href === "/") return pathname === "/"
-    return pathname.startsWith(href)
+    // Get the path+query from href
+    const [hrefPath, hrefQuery] = href.split("?")
+    if (pathname !== hrefPath) return false
+    if (!hrefQuery) return true // no query = just match path
+    // Match query params: check each key=value in the link
+    const params = new URLSearchParams(hrefQuery)
+    for (const [key, val] of params) {
+      if (searchParams?.get(key) !== val) return false
+    }
+    return true
   }
 
   const toggleMenu = (label: string) => {
@@ -299,7 +338,7 @@ export default function AppShell({
           </>
         ) : (
           <Link
-            href={item.href || "#"}
+            href={addCenterParam(item.href) || "#"}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
               active
                 ? "bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-white shadow-sm border border-indigo-500/30"
@@ -337,7 +376,7 @@ export default function AppShell({
     "/finance/transactions": { label: "交易记录", parent: "财务管理" },
     "/finance/payroll": { label: "薪资管理", parent: "财务管理" },
     "/finance/reports": { label: "财务报表", parent: "财务管理" },
-    "/course-management": { label: "课程管理" },
+    "/course-management": { label: "课程管理", parent: "课程管理" },
     "/unified-attendance": { label: "考勤系统" },
     "/student-checkin": { label: "学生签到", parent: "考勤系统" },
     "/teacher-checkin": { label: "教师签到", parent: "考勤系统" },
@@ -356,6 +395,19 @@ export default function AppShell({
 
   const getBreadcrumbs = () => {
     const crumbs: { label: string; href?: string }[] = []
+    // For course-management with tabs, show the sub-page as breadcrumb
+    if (pathname === "/course-management") {
+      const tab = searchParams?.get("tab") || "schedule"
+      const tabLabels: Record<string, string> = {
+        schedule: "课程表",
+        courses: "课程管理",
+        classes: "班级管理",
+        analytics: "课程分析",
+      }
+      crumbs.push({ label: "课程管理" })
+      crumbs.push({ label: tabLabels[tab] || "课程表" })
+      return crumbs
+    }
     const info = BREADCRUMB_LABELS[pathname]
     if (info?.parent) {
       crumbs.push({ label: info.parent })
@@ -430,24 +482,33 @@ export default function AppShell({
           {config.navItems.map((item) => renderNavItem(item))}
         </nav>
 
-        {/* Bottom section */}
-        <div className="flex-shrink-0 p-4 border-t border-white/5 space-y-3">
-          {/* User info */}
-          <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-white/5">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-              {userAvatar || userName?.charAt(0)?.toUpperCase() || "A"}
+        {/* Bottom section — 分行Tab */}
+        <div className="flex-shrink-0 p-3 border-t border-white/5">
+          <div className="flex flex-col gap-1.5">
+            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold px-2">分行筛选</p>
+            <div className="flex flex-wrap gap-1">
+              {centers.length === 0 ? (
+                <div className="text-[10px] text-slate-500 px-2">加载中...</div>
+              ) : (
+                [{ id: "all", code: "全部", icon: Building2 } as const, ...centers.map(c => ({ id: c.id, code: c.code, icon: School } as const))].map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => {
+                    const url = new URL(window.location.href)
+                    url.searchParams.set("center", c.id)
+                    router.replace(url.pathname + url.search)
+                  }}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    (searchParams?.get("center") || "all") === c.id
+                      ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                      : "text-slate-400 hover:text-slate-300 hover:bg-white/5"
+                  }`}
+                >
+                  <c.icon className="h-3 w-3" />
+                  {c.code}
+                </button>
+              )))}
             </div>
-            <div className={`flex-1 min-w-0 ${!sidebarOpen ? "lg:hidden" : ""}`}>
-              <p className="text-sm font-medium text-white truncate">{userName}</p>
-              <p className="text-xs text-slate-400 truncate">{getRoleLabel(userRole)}</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0 text-slate-400 hover:text-red-400 hover:bg-red-500/10 flex-shrink-0"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-            </Button>
           </div>
         </div>
       </aside>
@@ -488,6 +549,25 @@ export default function AppShell({
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-500 hover:text-slate-700 hover:bg-slate-100">
                 <HelpCircle className="h-4 w-4" />
               </Button>
+              {/* User info */}
+              <div className="flex items-center gap-2 pl-2 ml-2 border-l border-slate-200">
+                <div className="hidden sm:flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0">
+                    {userAvatar || userName?.charAt(0)?.toUpperCase() || "A"}
+                  </div>
+                  <div className="hidden md:block">
+                    <p className="text-xs font-medium text-slate-700 leading-tight">{userName}</p>
+                    <p className="text-[10px] text-slate-400 leading-tight">{getRoleLabel(userRole)}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 text-slate-400 hover:text-red-500 hover:bg-red-50"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
           </div>
         </header>

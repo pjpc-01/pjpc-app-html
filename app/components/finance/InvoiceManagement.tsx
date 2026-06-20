@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,16 +22,26 @@ export default function InvoiceManagement() {
   const { students } = useStudents()
   const { fees } = useFees()
 
+  const searchParams = useSearchParams()
+  const centerFilter = searchParams.get("center")
+
   const [isOpen, setIsOpen] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState("")
   const [selectedFeeItems, setSelectedFeeItems] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
-  const filteredInvoices = invoices.filter(inv =>
-    inv.studentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    inv.invoiceNumber?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredInvoices = invoices.filter(inv => {
+    // Center filter: cross-reference student's centerId
+    if (centerFilter && centerFilter !== "all") {
+      const student = students.find(s => s.id === inv.studentId)
+      if (!student || student.centerId !== centerFilter) return false
+    }
+    return (
+      inv.studentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      inv.invoiceNumber?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  })
 
   const activeStudents = students.filter(s => s.status !== "graduated")
   const activeFees = fees.filter(f => f.status === "active")
