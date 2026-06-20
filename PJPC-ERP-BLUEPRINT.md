@@ -147,7 +147,7 @@
 | 企业级   ━ ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜  0%
 ```
 
-| 页面路由 (33 条)
+| 页面路由 (35 条)
 
 | 页面 | 状态 | 说明 |
 |------|------|------|
@@ -157,14 +157,15 @@
 | `/teacher-management` | ✅ | 28 教师，CRUD + 详情 + 薪资关联 |
 | `/course-management` | ✅ | 课程 CRUD |
 | `/unified-attendance` | ✅ | NFC 考勤 + 仪表板 + 打卡记录 + 卡片管理 |
-| `/schedule-management` | ✅ | 排课 + 冲突检测 |
+| `/schedule-management` | ✅ | 排课 + 冲突检测 + 日历视图 |
 | `/attendance-reports` | ✅ | 考勤报表 |
 | `/teacher-attendance-reports` | ✅ | 教师考勤报表 |
 | `/center-management` | ✅ | 分院/中心管理（位于系统设置→分院管理） |
-| `/homework` | ✅ **新** | 作业总览：按中心/年级/科目筛选，卡片视图 |
-| `/homework/new` | ✅ **新** | 布置新作业表单 |
-| `/homework/[id]` | ✅ **新** | 作业详情 + 学生提交列表 + 逐一批改 |
-| `/homework/[id]/grade` | ✅ **新** | 批量批改视图 |
+| `/homework` | ✅ | 作业总览：按中心/年级/科目筛选，卡片视图 |
+| `/homework/new` | ✅ | 布置新作业表单 |
+| `/homework/[id]` | ✅ | 作业详情 + 学生提交列表 + 逐一批改 |
+| `/homework/[id]/grade` | ✅ | 批量批改视图 |
+| `/parent-management` | ✅ **新** | 家长列表 + 增删改 + 搜索筛选 |
 | `/finance/overview` | ✅ | 财务概览 |
 | `/finance/fees` | ✅ | 收费管理 |
 | `/finance/payments` | ✅ | 发票付款 |
@@ -217,8 +218,10 @@
 | `fee_items` / `fee_packages` / `fee_package_items` / `fee_categories` | ✅ | 费用体系 |
 | `student_fees` | ✅ | 学生分配 |
 | `invoices` / `payments` / `receipts` / `expenses` | ✅ | 财务交易 |
-| `homework` | ✅ **新** | 作业布置（title/subject/grade/dueDate/teacherId/centerId） |
-| `homework_submissions` | ✅ **新** | 学生提交 + 批改（score/feedback/status） |
+| `homework` | ✅ | 作业布置（title/subject/grade/dueDate/teacherId/centerId） |
+| `homework_submissions` | ✅ | 学生提交 + 批改（score/feedback/status） |
+| `parents` | ✅ **新** | 家长独立信息（name/phone/nric/address/relationship） |
+| `student_parents` | ✅ **新** | 学生-家长关联（多对多） |
 
 ### 💡 核心智能设计
 
@@ -502,19 +505,19 @@
 | `/homework/[id]/grade` | 批量批改视图 |
 
 **侧边栏位置：** 放在「学生管理」下面，作为子项
-
-**教师工作台联动：** 老师登录后在 teacher-workspace 看到待批改作业数
-
-**家长端联动：**（P2 家长门户时做）|
+| 1 | 按钮级权限控制 | 现在老师能看到"删除学生"按钮，只是路由挡了。UI 层面也要遮 | ✅ 已完成 |
+| 2 | **分院/中心管理** | PU1 / BATU14 两个中心独立运营，学生必须归属正确分院。含Dashboard分行Tab过滤 | ✅ **已完成 2026-06-19** |
+| 3 | 作业 Homework 模块 | Synorex 有，家长会拿来对比。安亲班核心服务 | ✅ **已完成 2026-06-20** |
+| 4 | 成绩单 Report Card PDF | 家长期末要的东西，直接影响口碑 | ✅ 已完成 |
 
 ### 🟡 P1 — 重要但不急
 
 | # | 功能 | 说明 |
 |---|------|------|
-| 4 | 家长独立管理 | 目前家长信息嵌在学生字段里，应该独立出来 |
-| 5 | 教师资料完善 | 薪资/考勤/排课都需要完整的教师资料 |
-| 6 | 日历排课视图 | 现在只有表格，缺可视化日历 |
-| 7 | E-Invoice | LHDN 合规要求 |
+| — | 家长独立管理 | ✅ **已完成 2026-06-20** — `parents` + `student_parents` collections + 管理页面 |
+| — | 教师资料完善 | ✅ **已完成 2026-06-20** — 详情页补全银行/KWSP/税务/个人信息区块 |
+| — | 日历排课视图 | ✅ **已完成 2026-06-20** — schedule-management 新增月历视图 tab |
+| 4 | E-Invoice | LHDN 合规要求 |
 | 8 | WhatsApp 催款 | 逾期自动通知家长 |
 
 ### 🔵 P2 — 锦上添花

@@ -18,6 +18,7 @@ import StatsGrid from '@/components/ui/StatsGrid'
 import SimpleScheduleManager from '../components/attendance/SimpleScheduleManager'
 import ScheduleTemplateManager from '../components/attendance/ScheduleTemplateManager'
 import { useAttendanceStats } from '@/hooks/useAttendanceStats'
+import CalendarScheduleView from '../components/attendance/CalendarScheduleView'
 
 export default function ScheduleManagementPage() {
   const [activeTab, setActiveTab] = useState('schedule')
@@ -72,6 +73,12 @@ export default function ScheduleManagementPage() {
           }}
         />
       )
+    },
+    {
+      id: 'calendar',
+      label: '日历视图',
+      icon: Calendar,
+      content: <CalendarScheduleView />
     },
     {
       id: 'templates',
