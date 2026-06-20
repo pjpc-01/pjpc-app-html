@@ -2,7 +2,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { Teacher } from '@/lib/pocketbase-teachers'
+import { Teacher } from '@/hooks/useTeachers'
 
 interface TeacherDetailsProps {
   open: boolean
@@ -39,21 +39,21 @@ export default function TeacherDetails({ open, onOpenChange, teacher }: TeacherD
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>教师详情</DialogTitle>
+          <DialogTitle>教师详情 — {teacher.teacher_name || teacher.name}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
-          {/* 基本信息 */}
+          {/* ===== 基本信息 ===== */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold border-b pb-2">基本信息</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-500">教师姓名</label>
-                <p className="text-base">{teacher.teacher_name || '未设置'}</p>
+                <p className="text-base">{teacher.teacher_name || teacher.name || '未设置'}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">教师工号</label>
-                <p className="text-base">{teacher.teacher_id || '未设置'}</p>
+                <p className="text-base">{teacher.teacher_id || teacher.idNumber?.toString() || '未设置'}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">NRIC 身份证号码</label>
@@ -68,7 +68,7 @@ export default function TeacherDetails({ open, onOpenChange, teacher }: TeacherD
                 <p className="text-base">{teacher.phone || '未设置'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">部门</label>
+                <label className="text-sm font-medium text-gray-500">Department</label>
                 <p className="text-base">{teacher.department || '未设置'}</p>
               </div>
               <div>
@@ -81,20 +81,45 @@ export default function TeacherDetails({ open, onOpenChange, teacher }: TeacherD
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">状态</label>
-                <div className="mt-1">
-                  {getStatusBadge(teacher.status || 'unknown')}
-                </div>
+                <div className="mt-1">{getStatusBadge(teacher.status || 'unknown')}</div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">所属中心</label>
+                <p className="text-base">{teacher.center || teacher.centerId || '未设置'}</p>
               </div>
             </div>
           </div>
 
-          {/* 工作信息 */}
+          {/* ===== 个人信息 ===== */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold border-b pb-2">个人信息</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-500">公民身份</label>
+                <p className="text-base">{teacher.isCitizen === true ? '马来西亚公民' : teacher.isCitizen === false ? '非公民' : '未设置'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">婚姻状况</label>
+                <p className="text-base">{teacher.marriedStatus === true ? '已婚' : teacher.marriedStatus === false ? '未婚' : '未设置'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">孩子数量</label>
+                <p className="text-base">{teacher.totalChild ?? '未设置'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">NFC 卡号</label>
+                <p className="text-base">{teacher.cardNumber || '未设置'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* ===== 工作信息 ===== */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold border-b pb-2">工作信息</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-500">入职日期</label>
-                <p className="text-base">{formatDate(teacher.joinDate || '')}</p>
+                <p className="text-base">{formatDate(teacher.joinDate || teacher.hireDate || '')}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">最后活跃</label>
@@ -111,7 +136,45 @@ export default function TeacherDetails({ open, onOpenChange, teacher }: TeacherD
             </div>
           </div>
 
-          {/* 联系信息 */}
+          {/* ===== 银行信息 ===== */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold border-b pb-2">银行信息</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="text-sm font-medium text-gray-500">银行名称</label>
+                <p className="text-base">{teacher.bankName || '未设置'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">账户名称</label>
+                <p className="text-base">{teacher.bankAccountName || '未设置'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">账户号码</label>
+                <p className="text-base">{teacher.bankAccountNo || teacher.accountNo || '未设置'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* ===== KWSP / Socso / 税务 ===== */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold border-b pb-2">公积金 / Socso / 税务</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-500">EPF / KWSP 号码</label>
+                <p className="text-base">{teacher.epfNo || '未设置'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Socso / PERKESO 号码</label>
+                <p className="text-base">{teacher.socsoNo || '未设置'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">税务号码 (Tax No)</label>
+                <p className="text-base">{teacher.taxNo || '未设置'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* ===== 联系信息 ===== */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold border-b pb-2">联系信息</h3>
             <div className="space-y-3">
@@ -126,7 +189,7 @@ export default function TeacherDetails({ open, onOpenChange, teacher }: TeacherD
             </div>
           </div>
 
-          {/* 备注 */}
+          {/* ===== 备注 ===== */}
           {teacher.notes && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold border-b pb-2">备注</h3>
@@ -134,17 +197,17 @@ export default function TeacherDetails({ open, onOpenChange, teacher }: TeacherD
             </div>
           )}
 
-          {/* 系统信息 */}
+          {/* ===== 系统信息 ===== */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold border-b pb-2">系统信息</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500">
               <div>
                 <label className="font-medium">创建时间</label>
-                <p>{formatDate(teacher.created)}</p>
+                <p>{formatDate(teacher.created || '')}</p>
               </div>
               <div>
                 <label className="font-medium">更新时间</label>
-                <p>{formatDate(teacher.updated)}</p>
+                <p>{formatDate(teacher.updated || '')}</p>
               </div>
             </div>
           </div>
