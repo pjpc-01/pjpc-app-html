@@ -154,7 +154,7 @@ export const useDashboardStats = () => {
         recentPoints = { items: [] }
       }
       
-      recentPoints.items.forEach((record: any) => {
+      (recentPoints?.items || []).forEach((record: any) => {
         recentActivities.push({
           id: record.id,
           type: 'payment',

@@ -6,13 +6,14 @@ export const dynamic = 'force-dynamic'
 // 获取单个课程
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const pb = await getPocketBase()
     await authenticateAdmin()
 
-    const course = await pb.collection('courses').getOne(params.id, {
+    const course = await pb.collection('courses').getOne(id, {
       expand: 'teacher_id'
     })
 
@@ -36,14 +37,15 @@ export async function GET(
 // 更新课程
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const pb = await getPocketBase()
     await authenticateAdmin()
 
     const body = await request.json()
-    const course = await pb.collection('courses').update(params.id, body)
+    const course = await pb.collection('courses').update(id, body)
 
     return NextResponse.json({
       success: true,
@@ -65,13 +67,14 @@ export async function PUT(
 // 删除课程
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const pb = await getPocketBase()
     await authenticateAdmin()
 
-    await pb.collection('courses').delete(params.id)
+    await pb.collection('courses').delete(id)
 
     return NextResponse.json({
       success: true,

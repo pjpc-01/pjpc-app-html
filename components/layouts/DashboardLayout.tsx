@@ -3,32 +3,26 @@
 import React from "react"
 import { Toaster } from "sonner"
 import AppShell from "./AppShell"
-
-// Dev mode hardcoded user
-const DEV_USER = {
-  id: "dev-admin",
-  name: "Dev Admin",
-  role: "admin",
-}
+import { useAuth } from "@/contexts/pocketbase-auth-context"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  // TODO: Replace with actual auth context when auth is implemented
-  // const { user, userProfile } = useAuth()
-  const user = DEV_USER
-  const userProfile = {
-    name: DEV_USER.name,
-    role: DEV_USER.role as string,
-  }
+  // 使用真实 auth context 替代硬编码 dev admin
+  // parent 角色登录时自动切换到家长门户侧边栏
+  const { userProfile, user, loading } = useAuth()
+
+  // 开发环境 fallback — auth 未就绪或未登录时显示 admin 侧边栏
+  const role = userProfile?.role || ""
+  const name = userProfile?.name || user?.name || ""
 
   return (
     <>
       <AppShell
-        userRole={userProfile.role}
-        userName={userProfile.name}
+        userRole={role}
+        userName={name}
       >
         {children}
       </AppShell>

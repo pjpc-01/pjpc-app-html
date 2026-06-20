@@ -6,13 +6,14 @@ export const dynamic = 'force-dynamic'
 // 获取单个公告
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const pb = await getPocketBase()
     await authenticateAdmin()
 
-    const announcement = await pb.collection('announcements').getOne(params.id, {
+    const announcement = await pb.collection('announcements').getOne(id, {
       expand: 'author_id'
     })
 
@@ -29,9 +30,10 @@ export async function GET(
 // 更新公告
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const pb = await getPocketBase()
     const body = await request.json()
     const {
@@ -40,11 +42,11 @@ export async function PUT(
 
     // 先获取公告信息，检查权限
     await authenticateAdmin()
-    const existingAnnouncement = await pb.collection('announcements').getOne(params.id)
+    const existingAnnouncement = await pb.collection('announcements').getOne(id)
     
     // 检查是否是公告作者（这里简化处理，实际应该检查当前用户）
     // 由于使用管理员权限，暂时允许所有操作
-    console.log('更新公告:', params.id, '作者:', existingAnnouncement.author_id)
+    console.log('更新公告:', id, '作者:', existingAnnouncement.author_id)
 
     const updateData: any = {}
     if (title !== undefined) updateData.title = title
@@ -57,7 +59,7 @@ export async function PUT(
     if (expiry_date !== undefined) updateData.expiry_date = expiry_date
     if (attachments !== undefined) updateData.attachments = attachments
 
-    const announcement = await pb.collection('announcements').update(params.id, updateData)
+    const announcement = await pb.collection('announcements').update(id, updateData)
     return NextResponse.json({ success: true, data: announcement })
   } catch (error) {
     console.error('❌ 更新公告失败:', error)
@@ -71,20 +73,21 @@ export async function PUT(
 // 删除公告
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const pb = await getPocketBase()
     
     // 先获取公告信息，检查权限
     await authenticateAdmin()
-    const existingAnnouncement = await pb.collection('announcements').getOne(params.id)
+    const existingAnnouncement = await pb.collection('announcements').getOne(id)
     
     // 检查是否是公告作者（这里简化处理，实际应该检查当前用户）
     // 由于使用管理员权限，暂时允许所有操作
-    console.log('删除公告:', params.id, '作者:', existingAnnouncement.author_id)
+    console.log('删除公告:', id, '作者:', existingAnnouncement.author_id)
 
-    await pb.collection('announcements').delete(params.id)
+    await pb.collection('announcements').delete(id)
     return NextResponse.json({ success: true, message: '公告删除成功' })
   } catch (error) {
     console.error('❌ 删除公告失败:', error)
