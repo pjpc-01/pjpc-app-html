@@ -1,6 +1,6 @@
 # PJPC 安亲班管理系统 — 战略蓝图
 
-> 最后更新：2026-06-16
+> 最后更新：2026-06-19
 > 一句话：**一所安亲班的完整操作系统** — 从学生入学到毕业、从收费到出粮、从打卡到家长通知，全流程覆盖
 
 ---
@@ -137,17 +137,17 @@
 ```
 核心运营 ━ 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩  已完成
 财务管理 ━ 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩  100%
-系统基建 ━ 🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜  80%
+系统基建 ━ 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩  95%  (分院管理+侧边栏调整完成)
 家长端   ━ ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜  0%
 进销存   ━ ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜  0%
 企业级   ━ ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜  0%
 ```
 
-### 页面路由 (24 条)
+### 页面路由 (29 条)
 
 | 页面 | 状态 | 说明 |
 |------|------|------|
-| `/` 首页 Dashboard | ✅ | 管理员控制台 + 快捷入口 |
+| `/` 首页 Dashboard | ✅ | 管理员控制台 + 分行Tab过滤 + 快捷入口 |
 | `/login` | ✅ | 登录页 |
 | `/student-management` | ✅ | 158 学生，CRUD + 导入导出 + 网格/表格/分析视图 |
 | `/teacher-management` | ✅ | 28 教师，CRUD + 详情 + 薪资关联 |
@@ -156,7 +156,15 @@
 | `/schedule-management` | ✅ | 排课 + 冲突检测 |
 | `/attendance-reports` | ✅ | 考勤报表 |
 | `/teacher-attendance-reports` | ✅ | 教师考勤报表 |
-| `/finance-management` | ✅ | 费项/套餐/分配/发票/付款/支出/薪资/报表 |
+| `/center-management` | ✅ | 分院/中心管理（位于系统设置→分院管理） |
+| `/finance/overview` | ✅ | 财务概览 |
+| `/finance/fees` | ✅ | 收费管理 |
+| `/finance/payments` | ✅ | 发票付款 |
+| `/finance/expenses` | ✅ | 支出/薪资 |
+| `/finance/bank` | ✅ | 银行对账 |
+| `/finance/budget` | ✅ | 预算管理 |
+| `/finance/reports` | ✅ | 财务报表 |
+| `/finance-management` | ✅ | 旧财务入口（保留兼容） |
 | `/payroll-management` | ✅ | 薪资结构 + 自动化 + EPF/Socso/EIS |
 | `/points-management` | ✅ | 积分系统 + 交易记录 |
 | `/card-management` | ✅ | NFC 发卡/挂失/补卡 |
@@ -271,6 +279,7 @@
 | 移动端侧边栏折叠 | ✅ | 汉堡菜单 + 遮罩层 |
 | 顶部面包屑导航 | ✅ | 路径自动映射中文 |
 | 统一操作反馈（Toast 提示系统） | ✅ | sonner Toaster，全局可用 |
+| **导航调整：分院管理移到系统设置** | ✅ | 2026-06-19：从「学生管理→分院管理」移到「系统设置→分院管理」|
 
 ### ✅ Phase 3：企业级功能增强
 
@@ -286,6 +295,7 @@
 || 分院/中心管理系统 | ✅ | 独立 centers 表 + 设置页面 + 学生关联 |
 | 逾期自动提醒（WhatsApp/Email） | ✅ | 每周一 AR 账龄周报 cron |
 | 数据表格统一（筛选/排序/搜索/分页） | ⏳ | |
+| **恢复薪资管理页面** | ✅ 2026-06-19 | 从git历史捞回`TeacherSalaryManagement.tsx`，创建`/finance/payroll`路由，侧边栏拆分为独立入口 |
 
 ### 📌 Phase 4：智能化
 
@@ -301,7 +311,7 @@
 | 暗色模式 | ⏳ |
 | 键盘快捷键 | ⏳ |
 
-### ✅ Phase 4a：分院/中心管理系统（当前进行中）
+### ✅ Phase 4a：分院/中心管理系统（已完成 ✅ 2026-06-19）
 
 #### 目标
 将 `center` 从学生资料的**文本字段**升级为**独立数据实体**，PU1 / BATU14 正式成为可管理的中心记录。
@@ -312,11 +322,13 @@
 |---|------|------|------|
 | 1 | 创建 `centers` 表（PocketBase） | PB Admin | 字段：`name` `code` `address` `phone` `manager` `status` |
 | 2 | Centers API 路由 | `app/api/centers/route.ts` | GET（列表+学生数）/ POST / PATCH / DELETE |
-| 3 | 系统设置 → 分院管理 tab | `app/settings/page.tsx` | 新增第 7 个 tab：分院列表 + 增删改 |
+| 3 | 系统设置 → 分院管理页面 | `/center-management` | 分院列表 + 增删改（位于系统设置→分院管理） |
 | 4 | 学生字段更新：`center` → `centerId` | 学生表单 + API | 下拉选择分院（取代文本输入）|
 | 5 | 学生列表/过滤适配 | `student-management-page.tsx` | 按分院筛选、表头显示分院名 |
-| 6 | 数据迁移 | 脚本 | 现有 WX 01-04 → 手动映射到 PU1 / BATU14 |
-| 7 | 影响波及检查 | 全局搜索 `student.center` | 财务/考勤/报表等所有引用处更新 |
+| 6 | **Dashboard 分行Tab** | `modern-admin-dashboard.tsx` | 全部 | BATU14 | PU1 三大Tab过滤，KPI/学生/教师联动 |
+| 7 | 侧边栏导航调整 | `AppShell.tsx` | 分院管理从学生管理移到系统设置 |
+| 8 | 数据迁移 | 脚本 | 现有 WX 01-04 → 手动映射到 PU1 / BATU14 |
+| 9 | 影响波及检查 | 全局搜索 `student.center` | 财务/考勤/报表等所有引用处更新 |
 
 #### 数据模型
 
@@ -347,11 +359,35 @@
 ### 🔴 P0 — 必须尽快做
 
 | # | 功能 | 为什么重要 | 状态 |
-||---|------|-----------|------|
+|---|------|-----------|------|
 | 1 | 按钮级权限控制 | 现在老师能看到"删除学生"按钮，只是路由挡了。UI 层面也要遮 | ✅ 已完成 |
-| 2 | **分院/中心管理** | PU1 / BATU14 两个中心独立运营，学生必须归属正确分院。现为文本字段易出错 | 🔴 进行中 |
-| 3 | 作业 Homework 模块 | Synorex 有，家长会拿来对比。安亲班核心服务 | ⏳ |
+| 2 | **分院/中心管理** | PU1 / BATU14 两个中心独立运营，学生必须归属正确分院。含Dashboard分行Tab过滤 | ✅ **已完成 2026-06-19** |
+| 3 | 作业 Homework 模块 | Synorex 有，家长会拿来对比。安亲班核心服务 | 🔴 **进行中** |
 | 4 | 成绩单 Report Card PDF | 家长期末要的东西，直接影响口碑 | ✅ 已完成 |
+
+#### Homework 模块规划
+
+**两个核心 Collection：**
+
+| Collection | 字段 | 说明 |
+|-----------|------|------|
+| `homework` | title, description, subject, grade, centerId(rel), teacherId(rel), assignedDate, dueDate, attachments(file), status | 作业布置 |
+| `homework_submissions` | homeworkId(rel), studentId(rel), content, attachments(file), status(pending/submitted/graded), score(number), feedback, gradedBy(rel), submittedDate, gradedDate | 学生提交 + 批改 |
+
+**页面路由：**
+
+| 页面 | 说明 |
+|------|------|
+| `/homework` | 作业总览：按中心/年级/科目筛选，列表视图 |
+| `/homework/new` | 布置新作业 |
+| `/homework/[id]` | 作业详情 + 提交列表 + 批改 |
+| `/homework/[id]/grade` | 批量批改视图 |
+
+**侧边栏位置：** 放在「学生管理」下面，作为子项
+
+**教师工作台联动：** 老师登录后在 teacher-workspace 看到待批改作业数
+
+**家长端联动：**（P2 家长门户时做）|
 
 ### 🟡 P1 — 重要但不急
 
@@ -501,13 +537,33 @@ shadcn/ui + Tailwind CSS + sonner (toast) + lucide-react (图标)
 
 | 分支 | 用途 | 推送条件 |
 |------|------|---------|
-| `main` | 稳定生产版本 | 用户明确说「push」|
-| `hermes` | 开发分支 | 用户明确说「push」|
-| `hermes-agent` | 功能分支 | 用户明确说「只推 hermes-agent」|
+| `main` | 稳定生产版本 | **不得擅自推送** — 必须等用户明确说「push」/「推」|
+| `hermes` | 开发分支 | **不得擅自推送** — 必须等用户明确说「push」/「推」|
+| `hermes-agent` | 功能分支 | 修改后等待用户指示同步|
 
 ---
 
-## 十一、一句话总结
+## 十一、黄金工作流（Golden Workflow）
+
+> 这个蓝图的本质：**每有一个想法/优化/调整 → 先更新蓝图 → 再执行 → 执行完更新蓝图进度**
+
+这是防止偏离方向的唯一方法。蓝图是 Single Source of Truth，必须走在代码前面。
+
+```
+💡 新想法
+   ↓
+📝 1. 写进蓝图（PJPC-ERP-BLUEPRINT.md）
+         ↓
+   🔧 2. 照着蓝图做
+         ↓
+   ✅ 3. 更新蓝图进度
+         ↓
+   🔄 重复
+```
+
+---
+
+## 十二、一句话总结
 
 ```
 
@@ -518,7 +574,7 @@ shadcn/ui + Tailwind CSS + sonner (toast) + lucide-react (图标)
 ├── 跨中心运营（PU1 / BATU14 自动分流）
 ├── 集成物理设备（NFC 打卡器、TV 看板）
 ├── 面向多角色（Admin / 老师 / 财务 / 家长）
-├── 统一侧边栏导航（Phase 2 进行中）
+├── 统一侧边栏导航（Phase 2 完成，分院管理已整合至系统设置）
 └── 目标是超越 Synorex 的企业级解决方案
 
 ```

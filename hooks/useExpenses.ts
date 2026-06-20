@@ -8,6 +8,7 @@ export interface Expense {
   description: string
   amount: number
   method: string
+  centerId?: string
   created?: string
 }
 

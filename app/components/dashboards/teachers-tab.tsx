@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from "react"
+import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -38,6 +39,9 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
   const [editingTeacher, setEditingTeacher] = useState<any>(null)
   const [viewingTeacher, setViewingTeacher] = useState<any>(null)
 
+  const searchParams = useSearchParams()
+  const centerFilter = searchParams.get('center')
+
   // 筛选教师
   const filteredTeachers = useMemo(() => {
     let filtered = teachers
@@ -62,8 +66,12 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
       filtered = filtered.filter(teacher => teacher.status === selectedStatus)
     }
 
+    if (centerFilter) {
+      filtered = filtered.filter(teacher => teacher.centerId === centerFilter)
+    }
+
     return filtered
-  }, [teachers, searchTerm, selectedDepartment, selectedStatus])
+  }, [teachers, searchTerm, selectedDepartment, selectedStatus, centerFilter])
 
   // 获取部门选项
   const departmentOptions = useMemo(() => {

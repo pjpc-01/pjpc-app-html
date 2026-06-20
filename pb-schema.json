@@ -1,0 +1,3919 @@
+{
+  "page": 1,
+  "perPage": 100,
+  "totalItems": 26,
+  "totalPages": 1,
+  "items": [
+    {
+      "id": "_pb_users_auth_",
+      "created": "2026-06-08 00:48:54.362Z",
+      "updated": "2026-06-18 05:00:39.924Z",
+      "name": "users",
+      "type": "auth",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "dzkouhy2",
+          "name": "name",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ipkgav0e",
+          "name": "avatar",
+          "type": "file",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "mimeTypes": null,
+            "thumbs": null,
+            "maxSelect": 1,
+            "maxSize": 5242880,
+            "protected": false
+          }
+        },
+        {
+          "system": false,
+          "id": "0ljkbthb",
+          "name": "role",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": "id = @request.auth.id",
+      "viewRule": "id = @request.auth.id",
+      "createRule": "",
+      "updateRule": "id = @request.auth.id",
+      "deleteRule": "id = @request.auth.id",
+      "options": {
+        "allowEmailAuth": true,
+        "allowOAuth2Auth": true,
+        "allowUsernameAuth": true,
+        "exceptEmailDomains": null,
+        "manageRule": null,
+        "minPasswordLength": 8,
+        "onlyEmailDomains": null,
+        "onlyVerified": false,
+        "requireEmail": false
+      }
+    },
+    {
+      "id": "yot737rl8uqqnh8",
+      "created": "2026-06-09 02:57:49.251Z",
+      "updated": "2026-06-18 11:40:07.151Z",
+      "name": "students",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "jw1qyr2m",
+          "name": "name",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ta6evkhl",
+          "name": "student_id",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "3wbmmtug",
+          "name": "grade",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "sszhmaf5",
+          "name": "dob",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "m04jy0wa",
+          "name": "parentPhone",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "urus3mnz",
+          "name": "address",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "hc3gdmf7",
+          "name": "gender",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "wpwjldoy",
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "1fqkm7ee",
+          "name": "fatherName",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "dkgtvdan",
+          "name": "motherName",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "dizy4aep",
+          "name": "fatherPhone",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "7snampkf",
+          "name": "motherPhone",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "eykfzf74",
+          "name": "nric",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "c2umhepx",
+          "name": "school",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "d9vlzper",
+          "name": "center",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "oe9tbrqk",
+          "name": "centerId",
+          "type": "relation",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "collectionId": "kc397vhuo8w0hoi",
+            "cascadeDelete": false,
+            "minSelect": null,
+            "maxSelect": 1,
+            "displayFields": null
+          }
+        },
+        {
+          "system": false,
+          "id": "rdcl9xj8",
+          "name": "email",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "xqqqxlvn",
+          "name": "cardNumber",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": "",
+      "viewRule": "",
+      "createRule": "",
+      "updateRule": "",
+      "deleteRule": "",
+      "options": {}
+    },
+    {
+      "id": "h2n4glagecz5xps",
+      "created": "2026-06-11 03:20:45.595Z",
+      "updated": "2026-06-12 08:40:38.307Z",
+      "name": "fee_items",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "wtmtt9hp",
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "0xdqn6qb",
+          "name": "amount",
+          "type": "number",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "oukw05er",
+          "name": "category",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "adiodchz",
+          "name": "frequency",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "vyahokzs",
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "pysbijdw",
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "shqeyen3",
+          "name": "grade_pricing",
+          "type": "json",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "maxSize": 2000000
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
+      "options": {}
+    },
+    {
+      "id": "4r9rf2vugqehbg6",
+      "created": "2026-06-12 06:33:20.106Z",
+      "updated": "2026-06-18 12:05:34.587Z",
+      "name": "student_fees",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "wbn9m4ss",
+          "name": "student_id",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "wcwkxnl6",
+          "name": "fee_id",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "sueaj2dv",
+          "name": "amount",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "l8h06ouv",
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "zn0hn8yy",
+          "name": "assigned_at",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "new01",
+          "name": "students",
+          "type": "relation",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "collectionId": "yot737rl8uqqnh8",
+            "cascadeDelete": false,
+            "minSelect": null,
+            "maxSelect": 1,
+            "displayFields": null
+          }
+        },
+        {
+          "system": false,
+          "id": "new02",
+          "name": "fee_items",
+          "type": "json",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "maxSize": 2000000
+          }
+        },
+        {
+          "system": false,
+          "id": "new03",
+          "name": "totalAmount",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
+      "options": {}
+    },
+    {
+      "id": "ez1iq2paxliaj2b",
+      "created": "2026-06-12 07:35:08.988Z",
+      "updated": "2026-06-12 07:35:08.988Z",
+      "name": "invoices",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "kkfaybhd",
+          "name": "studentId",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "bxq22am1",
+          "name": "studentName",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "dxtdpshy",
+          "name": "studentGrade",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "xwyxtiog",
+          "name": "invoiceNumber",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "tiu0srdq",
+          "name": "issueDate",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "yjao1ecr",
+          "name": "dueDate",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ots2zov1",
+          "name": "totalAmount",
+          "type": "number",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "tpzicvno",
+          "name": "status",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "onoeoyww",
+          "name": "items",
+          "type": "json",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "maxSize": 2000000
+          }
+        },
+        {
+          "system": false,
+          "id": "34a7hfd1",
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
+      "options": {}
+    },
+    {
+      "id": "36gtl3ihzprax7d",
+      "created": "2026-06-12 08:37:58.786Z",
+      "updated": "2026-06-12 08:37:58.786Z",
+      "name": "fee_packages",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "mwljvutt",
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "p5lo7isf",
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": "",
+      "viewRule": "",
+      "createRule": "",
+      "updateRule": "",
+      "deleteRule": "",
+      "options": {}
+    },
+    {
+      "id": "dmkwchlhqxrk998",
+      "created": "2026-06-12 08:37:59.779Z",
+      "updated": "2026-06-12 08:37:59.779Z",
+      "name": "fee_package_items",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "wh5q2qqq",
+          "name": "package_id",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "mzvwsxu2",
+          "name": "fee_id",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "sqmfvxyr",
+          "name": "amount",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": "",
+      "viewRule": "",
+      "createRule": "",
+      "updateRule": "",
+      "deleteRule": "",
+      "options": {}
+    },
+    {
+      "id": "k6nl1mg493b09rc",
+      "created": "2026-06-12 08:38:00.898Z",
+      "updated": "2026-06-12 08:38:00.898Z",
+      "name": "fee_categories",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "jolrxi4u",
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "6xhehfhu",
+          "name": "key",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "nxvfiqxh",
+          "name": "sort_order",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "zqcgb3jf",
+          "name": "color",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": "",
+      "viewRule": "",
+      "createRule": "",
+      "updateRule": "",
+      "deleteRule": "",
+      "options": {}
+    },
+    {
+      "id": "djvae07iufj859g",
+      "created": "2026-06-15 04:15:04.220Z",
+      "updated": "2026-06-19 06:27:14.307Z",
+      "name": "teachers",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "b12pjmaq",
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "8rowkh57",
+          "name": "email",
+          "type": "email",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "exceptDomains": null,
+            "onlyDomains": null
+          }
+        },
+        {
+          "system": false,
+          "id": "nh5d9hiq",
+          "name": "phone",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "hs8c4fmz",
+          "name": "department",
+          "type": "select",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "maxSelect": 1,
+            "values": [
+              "华文科",
+              "国文科",
+              "英文科",
+              "数学科",
+              "科学科",
+              "体育科",
+              "美术科",
+              "音乐科",
+              "行政",
+              "其他"
+            ]
+          }
+        },
+        {
+          "system": false,
+          "id": "dlilatkb",
+          "name": "position",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "f8pdw9ne",
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "maxSelect": 1,
+            "values": [
+              "active",
+              "inactive",
+              "on_leave"
+            ]
+          }
+        },
+        {
+          "system": false,
+          "id": "hxerxx9t",
+          "name": "idNumber",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "9iw6ueda",
+          "name": "nric",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ifnpw0kh",
+          "name": "epfNo",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "xldy0yjh",
+          "name": "socsoNo",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "fa2qoz7g",
+          "name": "bankName",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "opuvttze",
+          "name": "bankAccountNo",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "bv1r5xyz",
+          "name": "bankAccountName",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ni41kobf",
+          "name": "hireDate",
+          "type": "date",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "tkxpz9pc",
+          "name": "address",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "czi0gbce",
+          "name": "emergencyContact",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ysjivcja",
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ikgdgywz",
+          "name": "taxNo",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "x44b29np",
+          "name": "accountNo",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "9m7ivbu8",
+          "name": "isCitizen",
+          "type": "bool",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {}
+        },
+        {
+          "system": false,
+          "id": "imdxt7tk",
+          "name": "marriedStatus",
+          "type": "bool",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {}
+        },
+        {
+          "system": false,
+          "id": "n0lhd1z4",
+          "name": "totalChild",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 99,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "g0qqiigt",
+          "name": "teacherUrl",
+          "type": "url",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "exceptDomains": null,
+            "onlyDomains": null
+          }
+        },
+        {
+          "system": false,
+          "id": "hzkvlvc0",
+          "name": "cardNumber",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "yahm5sae",
+          "name": "centerId",
+          "type": "relation",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "collectionId": "kc397vhuo8w0hoi",
+            "cascadeDelete": false,
+            "minSelect": null,
+            "maxSelect": 1,
+            "displayFields": [
+              "name",
+              "code"
+            ]
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": "",
+      "viewRule": "",
+      "createRule": "",
+      "updateRule": "",
+      "deleteRule": "",
+      "options": {}
+    },
+    {
+      "id": "3wij8h2819awk8n",
+      "created": "2026-06-15 04:48:39.169Z",
+      "updated": "2026-06-15 04:48:47.741Z",
+      "name": "teacher_salary_structures",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "atnn01ah",
+          "name": "teacher_id",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "cpgtlhhf",
+          "name": "base_salary",
+          "type": "number",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 999999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "qdwucmyg",
+          "name": "hourly_rate",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 9999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "swwgrbk9",
+          "name": "overtime_rate",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 9999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "ogkedywt",
+          "name": "allowance_fixed",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 99999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "dbajwrmp",
+          "name": "allowance_transport",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 99999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "bthrexry",
+          "name": "allowance_meal",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 99999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "0dy7pkmq",
+          "name": "allowance_other",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 99999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "j0ci7pni",
+          "name": "epf_rate",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 1,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "vtfl42jc",
+          "name": "socso_rate",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 1,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "nrg7zuzx",
+          "name": "eis_rate",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 1,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "gcasezh6",
+          "name": "tax_rate",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 1,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "38bu8zfu",
+          "name": "salary_type",
+          "type": "select",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "maxSelect": 1,
+            "values": [
+              "monthly",
+              "hourly",
+              "commission"
+            ]
+          }
+        },
+        {
+          "system": false,
+          "id": "slmcmonx",
+          "name": "effective_date",
+          "type": "date",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "jem3kvjc",
+          "name": "end_date",
+          "type": "date",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "hk6cobbv",
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "maxSelect": 1,
+            "values": [
+              "active",
+              "inactive"
+            ]
+          }
+        },
+        {
+          "system": false,
+          "id": "brdmlepu",
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": "",
+      "viewRule": "",
+      "createRule": "",
+      "updateRule": "",
+      "deleteRule": "",
+      "options": {}
+    },
+    {
+      "id": "w6eu671yeje6ul4",
+      "created": "2026-06-15 04:48:39.218Z",
+      "updated": "2026-06-15 04:48:47.782Z",
+      "name": "teacher_salary_records",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "vxaripzq",
+          "name": "teacher_id",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "abgoeaur",
+          "name": "salary_period",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "stpgcllv",
+          "name": "year",
+          "type": "number",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 2000,
+            "max": 2100,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "ma1atpul",
+          "name": "month",
+          "type": "number",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 1,
+            "max": 12,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "6grswsk6",
+          "name": "base_salary",
+          "type": "number",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 999999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "iyismymu",
+          "name": "hours_worked",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "rkvf5sfa",
+          "name": "overtime_hours",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "pd1y54bo",
+          "name": "overtime_pay",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 99999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "bih4sjxk",
+          "name": "allowances",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 99999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "gkch2d0l",
+          "name": "gross_salary",
+          "type": "number",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 999999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "mbnhcr4q",
+          "name": "epf_deduction",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 99999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "bhz0nj5t",
+          "name": "socso_deduction",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 99999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "g55jltro",
+          "name": "eis_deduction",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 99999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "lxkjexpm",
+          "name": "tax_deduction",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 99999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "xyiw913l",
+          "name": "other_deductions",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 99999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "9kdve2dt",
+          "name": "net_salary",
+          "type": "number",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 999999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "smqweajf",
+          "name": "bonus",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 99999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "dzvghate",
+          "name": "commission",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 99999,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "4czlvsyq",
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "maxSelect": 1,
+            "values": [
+              "draft",
+              "approved",
+              "paid"
+            ]
+          }
+        },
+        {
+          "system": false,
+          "id": "lyuctuy5",
+          "name": "payment_date",
+          "type": "date",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "lvx38fhj",
+          "name": "payment_method",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ok6qp9gw",
+          "name": "bank_reference",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "8qe4za9q",
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": "",
+      "viewRule": "",
+      "createRule": "",
+      "updateRule": "",
+      "deleteRule": "",
+      "options": {}
+    },
+    {
+      "id": "0chx95llhzy99xb",
+      "created": "2026-06-15 06:22:42.681Z",
+      "updated": "2026-06-19 06:27:14.405Z",
+      "name": "courses",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "vnh94wly",
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "n1kn3idf",
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "s3oqkdvw",
+          "name": "subject",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "qj203ppb",
+          "name": "grade_level",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "vxdhkzjz",
+          "name": "teacher_id",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "nt6um7ha",
+          "name": "duration",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "4x0sqgkj",
+          "name": "max_students",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "uo5gfwmg",
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ly8ygwqi",
+          "name": "start_date",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "vevuofjw",
+          "name": "end_date",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "yka62h1r",
+          "name": "centerId",
+          "type": "relation",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "collectionId": "kc397vhuo8w0hoi",
+            "cascadeDelete": false,
+            "minSelect": null,
+            "maxSelect": 1,
+            "displayFields": [
+              "name",
+              "code"
+            ]
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": "",
+      "viewRule": "",
+      "createRule": "",
+      "updateRule": "",
+      "deleteRule": "",
+      "options": {}
+    },
+    {
+      "id": "lcrhjo4xaluxd0q",
+      "created": "2026-06-18 03:28:41.284Z",
+      "updated": "2026-06-18 03:28:41.284Z",
+      "name": "expenses",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "innktflw",
+          "name": "date",
+          "type": "date",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "zxksemid",
+          "name": "category",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "v9lpfjc2",
+          "name": "description",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "1m9y4cqa",
+          "name": "amount",
+          "type": "number",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "g6othi18",
+          "name": "method",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
+      "options": {}
+    },
+    {
+      "id": "9a0riqrdo718qfw",
+      "created": "2026-06-18 03:29:04.014Z",
+      "updated": "2026-06-18 03:29:04.014Z",
+      "name": "payments",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "998vrwys",
+          "name": "invoiceId",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ciajx5q3",
+          "name": "amount",
+          "type": "number",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "wzohc2lw",
+          "name": "date",
+          "type": "date",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "yekia9x8",
+          "name": "method",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "sxvvjuuc",
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "dh5ey2gf",
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
+      "options": {}
+    },
+    {
+      "id": "z7v9r11s8ttoc2b",
+      "created": "2026-06-18 03:29:04.332Z",
+      "updated": "2026-06-18 03:29:04.332Z",
+      "name": "receipts",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "wqctsfmi",
+          "name": "paymentId",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "gjsz2sin",
+          "name": "receiptNumber",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "o7yjg7ms",
+          "name": "receipt_date",
+          "type": "date",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "8woeql5r",
+          "name": "studentId",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "cb3akydc",
+          "name": "totalAmount",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "1kmndurf",
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "yvkfqmml",
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
+      "options": {}
+    },
+    {
+      "id": "x0t7sj7y5ta3ny1",
+      "created": "2026-06-18 03:46:59.222Z",
+      "updated": "2026-06-18 03:46:59.222Z",
+      "name": "bank_accounts",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "mthebkqt",
+          "name": "bankName",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "iisraiph",
+          "name": "accountNumber",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "znzzd5xs",
+          "name": "accountName",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "4bnv1bs8",
+          "name": "openingBalance",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "euen8dkh",
+          "name": "currentBalance",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "qwoxlrti",
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
+      "options": {}
+    },
+    {
+      "id": "8nom87tji9i8822",
+      "created": "2026-06-18 03:46:59.236Z",
+      "updated": "2026-06-18 03:46:59.236Z",
+      "name": "bank_transactions",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "tpcmvhdi",
+          "name": "bankAccountId",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "xlmewqhq",
+          "name": "date",
+          "type": "date",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "99rlwfbl",
+          "name": "description",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "xn8iswzc",
+          "name": "amount",
+          "type": "number",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "3drezvyp",
+          "name": "type",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "mq6zarp1",
+          "name": "reference",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "aybn2amh",
+          "name": "matchedTo",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "rmge2a9y",
+          "name": "matchType",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "pfyxy1r9",
+          "name": "reconciled",
+          "type": "bool",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {}
+        },
+        {
+          "system": false,
+          "id": "1ucaxum7",
+          "name": "reconciliationRun",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
+      "options": {}
+    },
+    {
+      "id": "64ucqw3t7dr2ka9",
+      "created": "2026-06-18 03:46:59.244Z",
+      "updated": "2026-06-18 03:46:59.244Z",
+      "name": "reconciliation_runs",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "oosae0oj",
+          "name": "bankAccountId",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "tb8kfssq",
+          "name": "runDate",
+          "type": "date",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ck2zviy0",
+          "name": "startDate",
+          "type": "date",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "gx03ghfz",
+          "name": "endDate",
+          "type": "date",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "lqab4mrg",
+          "name": "startingBalance",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "upyihpcc",
+          "name": "endingBalance",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "iaytkthf",
+          "name": "totalTransactions",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "amglzkt2",
+          "name": "matchedTransactions",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "utqv0ocs",
+          "name": "unmatchedTransactions",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "vqnm8zsu",
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
+      "options": {}
+    },
+    {
+      "id": "1dltuu0qw071gi3",
+      "created": "2026-06-18 03:46:59.251Z",
+      "updated": "2026-06-18 03:46:59.251Z",
+      "name": "budgets",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "og3ipmpp",
+          "name": "category",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "xhurgsin",
+          "name": "month",
+          "type": "number",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "vbfplyf7",
+          "name": "year",
+          "type": "number",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "p4320u9l",
+          "name": "budgetAmount",
+          "type": "number",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "u5dsakwx",
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "u3xwbxy5",
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
+      "options": {}
+    },
+    {
+      "id": "uf6t0w61vas0fnf",
+      "created": "2026-06-18 03:46:59.258Z",
+      "updated": "2026-06-18 03:46:59.258Z",
+      "name": "refunds",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "s0rlawhu",
+          "name": "paymentId",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "omzul2jw",
+          "name": "invoiceId",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "htdswine",
+          "name": "studentId",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "qw9jcdtt",
+          "name": "amount",
+          "type": "number",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "epih6rie",
+          "name": "reason",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "8vmyzwh5",
+          "name": "method",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "c4ddglxt",
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "jojyx0ve",
+          "name": "processedBy",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "0r9juwgu",
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
+      "options": {}
+    },
+    {
+      "id": "kc397vhuo8w0hoi",
+      "created": "2026-06-18 09:05:00.202Z",
+      "updated": "2026-06-18 09:05:00.202Z",
+      "name": "centers",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "1jchrkfp",
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 2,
+            "max": 200,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "3cdrvlgt",
+          "name": "code",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": true,
+          "options": {
+            "min": 2,
+            "max": 20,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ibbnbic8",
+          "name": "address",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": 500,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "qf11opow",
+          "name": "phone",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "viopvkgz",
+          "name": "manager",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "06nxpx1j",
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "maxSelect": 1,
+            "values": [
+              "active",
+              "inactive"
+            ]
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": "",
+      "viewRule": "",
+      "createRule": "",
+      "updateRule": "",
+      "deleteRule": "",
+      "options": {}
+    },
+    {
+      "id": "28nx1zgejhuh9xs",
+      "created": "2026-06-18 10:15:19.851Z",
+      "updated": "2026-06-18 10:15:19.851Z",
+      "name": "schedules",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "ogfuim3a",
+          "name": "teacher_id",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ddsk0ep9",
+          "name": "teacher_name",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "lkfbrxeh",
+          "name": "date",
+          "type": "date",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "jjhcz21m",
+          "name": "start_time",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "9brafzuz",
+          "name": "end_time",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "g9uueqpr",
+          "name": "center",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "u27oa74p",
+          "name": "room",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "7rijjhdr",
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "maxSelect": 1,
+            "values": [
+              "scheduled",
+              "completed",
+              "cancelled",
+              "absent",
+              "leave"
+            ]
+          }
+        },
+        {
+          "system": false,
+          "id": "rw2ln0ue",
+          "name": "is_overtime",
+          "type": "bool",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {}
+        },
+        {
+          "system": false,
+          "id": "dcxhgihe",
+          "name": "hourly_rate",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "1ay3sysq",
+          "name": "total_hours",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "iwwro54y",
+          "name": "schedule_type",
+          "type": "select",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "maxSelect": 1,
+            "values": [
+              "regular",
+              "extra",
+              "substitute",
+              "training",
+              "meeting"
+            ]
+          }
+        },
+        {
+          "system": false,
+          "id": "vyuksouq",
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "g2gkvg0v",
+          "name": "class_id",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "pwyavcyx",
+          "name": "created_by",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "abw5ixgp",
+          "name": "approved_by",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "yxue9ncy",
+          "name": "schedule_id",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
+      "options": {}
+    },
+    {
+      "id": "xdcfz4bq7sh1o6w",
+      "created": "2026-06-18 10:15:46.545Z",
+      "updated": "2026-06-18 10:15:46.545Z",
+      "name": "teacher_attendance",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "fp0jgpxo",
+          "name": "teacher_id",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "l349syf1",
+          "name": "teacher_name",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "slljbnoj",
+          "name": "date",
+          "type": "date",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ucvt4vug",
+          "name": "check_in",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "dlyme6nf",
+          "name": "check_out",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "mxjj3sqc",
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "maxSelect": 1,
+            "values": [
+              "present",
+              "absent",
+              "late",
+              "half-day",
+              "leave"
+            ]
+          }
+        },
+        {
+          "system": false,
+          "id": "d2eercuf",
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
+      "options": {}
+    },
+    {
+      "id": "szbczv62xsrq07g",
+      "created": "2026-06-18 10:15:46.552Z",
+      "updated": "2026-06-18 10:15:46.552Z",
+      "name": "student_attendance",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "yhcwyvmj",
+          "name": "student_id",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "2dbfjqai",
+          "name": "student_name",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ch8xfkk8",
+          "name": "date",
+          "type": "date",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "8kdfnmj9",
+          "name": "check_in",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "bhcs8n3k",
+          "name": "check_out",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "wxwi5u6u",
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "maxSelect": 1,
+            "values": [
+              "present",
+              "absent",
+              "late",
+              "half-day",
+              "leave"
+            ]
+          }
+        },
+        {
+          "system": false,
+          "id": "cn7hoxqj",
+          "name": "notes",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
+      "options": {}
+    },
+    {
+      "id": "gi36fntb028dbwm",
+      "created": "2026-06-18 10:16:24.749Z",
+      "updated": "2026-06-18 10:16:24.749Z",
+      "name": "schedule_logs",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "ttqs317u",
+          "name": "schedule_id",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "uhcm0to7",
+          "name": "action",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "dcncwms0",
+          "name": "user_id",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "hyo6d8ei",
+          "name": "user_name",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ual84eo1",
+          "name": "user_role",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "aa5gke9j",
+          "name": "details",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "vrecfcxc",
+          "name": "old_values",
+          "type": "editor",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "convertUrls": false
+          }
+        },
+        {
+          "system": false,
+          "id": "ycnmeepy",
+          "name": "new_values",
+          "type": "editor",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "convertUrls": false
+          }
+        },
+        {
+          "system": false,
+          "id": "8apgjp8y",
+          "name": "ip_address",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "gufektmx",
+          "name": "user_agent",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "vapmghw8",
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ys71fsau",
+          "name": "error_message",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
+      "options": {}
+    },
+    {
+      "id": "wcx54swfji0kias",
+      "created": "2026-06-18 10:16:24.759Z",
+      "updated": "2026-06-18 10:16:24.759Z",
+      "name": "audit_logs",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "yxctm511",
+          "name": "user_id",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "zshqwqnf",
+          "name": "user_name",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "pevbit5u",
+          "name": "action",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "vblpanzz",
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "ueceajr5",
+          "name": "ip_address",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "bvzjfyxg",
+          "name": "user_agent",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "1u8xiuku",
+          "name": "metadata",
+          "type": "editor",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "convertUrls": false
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
+      "options": {}
+    }
+  ]
+}

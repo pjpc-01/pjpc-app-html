@@ -43,10 +43,12 @@ import {
   TrendingUp
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { useSearchParams } from "next/navigation"
 import { usePayments } from "@/hooks/usePayments"
 import { useInvoices } from "@/hooks/useInvoices"
 import { useReceipts } from "@/hooks/useReceipts"
 import { useRefunds } from "@/hooks/useRefunds"
+import { useStudents } from "@/hooks/useStudents"
 import type { Refund } from "@/hooks/useRefunds"
 import type { Payment } from "@/hooks/usePayments"
 import { toast } from "sonner"
@@ -56,6 +58,10 @@ export default function PaymentManagement() {
   const { payments, loading: paymentsLoading, createPayment } = usePayments()
   const { createReceipt } = useReceipts()
   const { refunds, createRefund, getTotalRefundedAmount } = useRefunds()
+  
+  const searchParams = useSearchParams()
+  const centerFilter = searchParams.get("center")
+  const { students } = useStudents()
   
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -73,11 +79,28 @@ export default function PaymentManagement() {
   const [refundNotes, setRefundNotes] = useState("")
   const [isRefunding, setIsRefunding] = useState(false)
 
-  const filteredInvoices = invoices.filter(inv => 
-    inv.studentName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    inv.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
+  // Apply center filter to invoices (for the new payment dialog dropdown)
+  const filteredInvoices = invoices.filter(inv => {
+    if (centerFilter && centerFilter !== "all") {
+      const student = students.find(s => s.id === inv.studentId)
+      if (!student || student.centerId !== centerFilter) return false
+    }
+    return (
+      inv.studentName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      inv.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  })
+  
+  // Center filter for payments: payment.invoiceId → invoice.studentId → student.centerId
+  const filteredPayments = centerFilter && centerFilter !== "all"
+    ? payments.filter(payment => {
+        const invoice = invoices.find(inv => inv.id === payment.invoiceId)
+        if (!invoice) return false
+        const student = students.find(s => s.id === invoice.studentId)
+        return student?.centerId === centerFilter
+      })
+    : payments
+  
   const selectedInvoice = invoices.find(inv => inv.id === selectedInvoiceId)
   
   const calculatePaidAmount = (invoiceId: string) => {
@@ -88,7 +111,7 @@ export default function PaymentManagement() {
 
   // Stats
   const totalRefundedAmount = getTotalRefundedAmount()
-  const totalCollected = payments
+  const totalCollected = filteredPayments
     .filter(p => p.status === 'completed')
     .reduce((sum, p) => sum + p.amount, 0)
 
@@ -391,7 +414,7 @@ export default function PaymentManagement() {
               <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-4" />
               <p className="text-slate-500">加载付款记录中...</p>
             </div>
-          ) : payments.length === 0 ? (
+          ) : filteredPayments.length === 0 ? (
             <div className="text-center py-12">
               <Receipt className="h-12 w-12 text-slate-300 mx-auto mb-4" />
               <p className="text-slate-500">暂无付款记录</p>
@@ -410,7 +433,7 @@ export default function PaymentManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {payments.map((payment) => {
+                {filteredPayments.map((payment) => {
                   const inv = invoices.find(i => i.id === payment.invoiceId)
                   const partial = isPaymentPartial(payment)
                   return (

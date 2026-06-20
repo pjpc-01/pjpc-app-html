@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect, useMemo } from "react"
+import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,6 +40,7 @@ import {
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/pocketbase-auth-context"
+import { useCenters } from "@/hooks/useCenters"
 import { formatDate, formatCurrency } from "@/lib/utils"
 
 // Types
@@ -108,6 +110,7 @@ interface Teacher {
   email: string
   department?: string
   position?: string
+  center_assignment?: string
 }
 
 export default function TeacherSalaryManagement() {
@@ -177,6 +180,41 @@ export default function TeacherSalaryManagement() {
     month: '',
     status: ''
   })
+
+  // Center filtering from URL
+  const searchParams = useSearchParams()
+  const centerUuid = searchParams.get('center')
+  const { centers } = useCenters()
+
+  // Map UUID to center code (e.g. "PU1", "BATU14")
+  const centerCode = useMemo(() => {
+    if (!centerUuid || centerUuid === 'all') return null
+    const center = centers.find(c => c.id === centerUuid)
+    return center?.code || null
+  }, [centerUuid, centers])
+
+  // Filter teachers by center_assignment
+  const filteredTeachers = useMemo(() => {
+    if (!centerCode) return teachers
+    return teachers.filter(t => t.center_assignment === centerCode)
+  }, [teachers, centerCode])
+
+  // Create set of filtered teacher IDs
+  const filteredTeacherIds = useMemo(() => {
+    return new Set(filteredTeachers.map(t => t.id))
+  }, [filteredTeachers])
+
+  // Filter salary structures
+  const filteredStructures = useMemo(() => {
+    if (!centerCode) return salaryStructures
+    return salaryStructures.filter(s => filteredTeacherIds.has(s.teacher_id))
+  }, [salaryStructures, filteredTeacherIds, centerCode])
+
+  // Filter salary records
+  const filteredRecords = useMemo(() => {
+    if (!centerCode) return salaryRecords
+    return salaryRecords.filter(r => filteredTeacherIds.has(r.teacher_id))
+  }, [salaryRecords, filteredTeacherIds, centerCode])
 
   // 数据获取
   const fetchTeachers = useCallback(async () => {
@@ -424,19 +462,19 @@ export default function TeacherSalaryManagement() {
 
   // 统计数据
   const stats = useMemo(() => {
-    const totalGrossSalary = salaryRecords.reduce((sum, record) => sum + record.gross_salary, 0)
-    const totalNetSalary = salaryRecords.reduce((sum, record) => sum + record.net_salary, 0)
+    const totalGrossSalary = filteredRecords.reduce((sum, record) => sum + record.gross_salary, 0)
+    const totalNetSalary = filteredRecords.reduce((sum, record) => sum + record.net_salary, 0)
     const totalDeductions = totalGrossSalary - totalNetSalary
-    const averageSalary = salaryRecords.length > 0 ? totalNetSalary / salaryRecords.length : 0
-    
+    const averageSalary = filteredRecords.length > 0 ? totalNetSalary / filteredRecords.length : 0
+
     return {
       totalGrossSalary,
       totalNetSalary,
       totalDeductions,
       averageSalary,
-      recordCount: salaryRecords.length
+      recordCount: filteredRecords.length
     }
-  }, [salaryRecords])
+  }, [filteredRecords])
 
   if (loading) {
     return (
@@ -589,7 +627,7 @@ export default function TeacherSalaryManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {salaryStructures.map((structure) => (
+                  {filteredStructures.map((structure) => (
                     <TableRow key={structure.id}>
                       <TableCell>
                         <div>
@@ -651,7 +689,7 @@ export default function TeacherSalaryManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {salaryRecords.map((record) => (
+                  {filteredRecords.map((record) => (
                     <TableRow key={record.id}>
                       <TableCell>
                         <div>
@@ -825,7 +863,7 @@ export default function TeacherSalaryManagement() {
                     <SelectValue placeholder="选择教师" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.isArray(teachers) && teachers.map((teacher) => (
+                    {Array.isArray(filteredTeachers) && filteredTeachers.map((teacher) => (
                       <SelectItem key={teacher.id} value={teacher.id}>
                         {teacher.name} - {teacher.email}
                       </SelectItem>
@@ -833,7 +871,7 @@ export default function TeacherSalaryManagement() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label htmlFor="salary_type">薪资类型</Label>
                 <Select value={structureForm.salary_type} onValueChange={(value: any) => 
@@ -989,7 +1027,7 @@ export default function TeacherSalaryManagement() {
                     <SelectValue placeholder="选择教师" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.isArray(teachers) && teachers.map((teacher) => (
+                    {Array.isArray(filteredTeachers) && filteredTeachers.map((teacher) => (
                       <SelectItem key={teacher.id} value={teacher.id}>
                         {teacher.name} - {teacher.email}
                       </SelectItem>
@@ -997,7 +1035,7 @@ export default function TeacherSalaryManagement() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label htmlFor="salary_period">薪资期间</Label>
                 <Input

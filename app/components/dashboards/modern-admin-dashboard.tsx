@@ -1,10 +1,11 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useSearchParams } from "next/navigation"
 import {
   BarChart3,
   DollarSign,
@@ -46,9 +47,12 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
   const { stats, loading: statsLoading } = useDashboardStats()
   const { stats: financialStats, loading: financialLoading } = useFinancialStats()
   const { centers, loading: centersLoading } = useCenters()
+  const searchParams = useSearchParams()
 
-  // Selected center filter: 'all' | center.id
-  const [selectedCenter, setSelectedCenter] = useState<string>('all')
+  // Selected center filter: read from URL '?center=' param (default: 'all')
+  const selectedCenter = searchParams?.get("center") || "all"
+
+  // No custom event needed — router.replace() will update searchParams automatically
   const [students, setStudents] = useState<any[]>([])
   const [studentsLoading, setStudentsLoading] = useState(true)
   const [teachers, setTeachers] = useState<any[]>([])
@@ -149,44 +153,6 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-indigo-400/20 rounded-full -ml-10 -mb-10 blur-2xl"></div>
       </div>
 
-      {/* Center Tabs — Big Pill Style */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1.5 bg-slate-100 rounded-2xl p-1.5 w-full sm:w-auto overflow-x-auto">
-          <button
-            onClick={() => setSelectedCenter('all')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
-              selectedCenter === 'all'
-                ? 'bg-white text-indigo-700 shadow-md border border-indigo-200'
-                : 'text-slate-500 hover:text-slate-700 hover:bg-white/60'
-            }`}
-          >
-            <Building2 className="h-4 w-4" />
-            全部
-            <Badge variant="secondary" className="ml-1 bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0">
-              {centers.reduce((sum, c) => sum + c.studentCount, 0) || students.length}
-            </Badge>
-          </button>
-          {centers.map((center) => (
-            <button
-              key={center.id}
-              onClick={() => setSelectedCenter(center.id)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
-                selectedCenter === center.id
-                  ? 'bg-white text-indigo-700 shadow-md border border-indigo-200'
-                  : 'text-slate-500 hover:text-slate-700 hover:bg-white/60'
-              }`}
-            >
-              <School className="h-4 w-4" />
-              <span>{center.code}</span>
-              <span className="text-slate-400 font-normal text-xs hidden sm:inline">{center.name}</span>
-              <Badge variant="secondary" className="ml-1 bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0">
-                {center.studentCount || 0}
-              </Badge>
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <Card className="border-indigo-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
@@ -269,11 +235,9 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
         </Card>
       </div>
 
-      {/* Main content grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Student List — takes 2 cols */}
-        <Card className="lg:col-span-2 border-slate-200 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
+      {/* Student Section — full width */}
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Users className="h-5 w-5 text-indigo-600" />
@@ -370,37 +334,6 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
             </div>
           </CardContent>
         </Card>
-
-        {/* Quick Actions */}
-        <Card className="border-slate-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Plus className="h-5 w-5 text-indigo-600" />
-              快速操作
-            </CardTitle>
-            <CardDescription>常用功能快速访问</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-2">
-              {quickActions.map((action, index) => (
-                <Button
-                  key={index}
-                  variant="ghost"
-                  className="w-full justify-start p-3 h-auto hover:bg-slate-50 transition-all group"
-                  onClick={() => router.push(action.path)}
-                >
-                  <div className={`w-9 h-9 rounded-lg ${action.bgColor} flex items-center justify-center mr-3 group-hover:scale-110 transition-transform flex-shrink-0`}>
-                    <action.icon className={`h-4 w-4 ${action.iconColor}`} />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-medium text-slate-700 text-sm group-hover:text-indigo-600">{action.title}</p>
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Teacher Section */}
       <Card className="border-slate-200 shadow-sm">

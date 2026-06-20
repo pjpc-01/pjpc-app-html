@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,12 +37,19 @@ export default function ReportCardsPage() {
   const [present, setPresent] = useState("")
   const [absent, setAbsent] = useState("")
 
+  const searchParams = useSearchParams()
+  const centerFilter = searchParams.get("center")
+
   useEffect(() => {
     getAllStudents().then(all => {
-      setStudents(all.filter(s => s.status !== "graduated"))
+      let filtered = all.filter(s => s.status !== "graduated")
+      if (centerFilter && centerFilter !== "all") {
+        filtered = filtered.filter(s => s.centerId === centerFilter)
+      }
+      setStudents(filtered)
       setLoading(false)
     }).catch(() => setLoading(false))
-  }, [])
+  }, [centerFilter])
 
   const selectedStudent = students.find(s => s.id === selectedStudentId)
 

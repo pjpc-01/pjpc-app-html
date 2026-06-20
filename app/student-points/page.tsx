@@ -37,6 +37,12 @@ export default function StudentPointsPage() {
   const { students, loading: studentsLoading } = useStudents()
   const { getStudentPoints } = usePoints()
 
+  // URL center filter support — ?center=centerId 过滤学生列表
+  const centerFilter = searchParams.get('center')
+  const filteredStudents = centerFilter && centerFilter !== 'all'
+    ? students.filter(s => s.centerId === centerFilter)
+    : students
+
   // 获取学生积分数据
   const fetchStudentPoints = async (studentId: string) => {
     setPointsLoading(true)
@@ -57,8 +63,8 @@ export default function StudentPointsPage() {
     const urlCardNumber = searchParams.get('card') || searchParams.get('cardNumber')
     if (urlCardNumber) {
       setCardNumber(urlCardNumber)
-      // 自动查找学生
-      const student = students.find(s => 
+      // 自动查找学生（受 center 过滤影响）
+      const student = filteredStudents.find(s => 
         s.cardNumber === urlCardNumber || 
         s.student_id === urlCardNumber ||
         (s.student_name && s.student_name.toLowerCase().includes(urlCardNumber.toLowerCase()))
@@ -82,8 +88,8 @@ export default function StudentPointsPage() {
       return
     }
     
-    // 检查卡号、学号或姓名是否存在
-    const student = students.find(s => 
+    // 检查卡号、学号或姓名是否存在（受 center 过滤影响）
+    const student = filteredStudents.find(s => 
       s.cardNumber === cardNumber.trim() || 
       s.student_id === cardNumber.trim() ||
       (s.student_name && s.student_name.toLowerCase().includes(cardNumber.trim().toLowerCase()))
@@ -389,14 +395,14 @@ export default function StudentPointsPage() {
         </Card>
 
         {/* 学生列表（用于测试） */}
-        {students.length > 0 && (
+        {filteredStudents.length > 0 && (
           <Card className="mt-6">
             <CardHeader>
               <CardTitle className="text-sm">学生列表（点击选择）</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 max-h-40 overflow-y-auto">
-                {students.slice(0, 10).map((student) => (
+                {filteredStudents.slice(0, 10).map((student) => (
                   <div 
                     key={student.id} 
                     className="flex justify-between items-center p-2 bg-gray-50 rounded cursor-pointer hover:bg-gray-100"

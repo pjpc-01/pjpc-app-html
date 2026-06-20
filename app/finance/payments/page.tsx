@@ -9,7 +9,7 @@ import { ArrowLeft, FileText, CreditCard } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function FinancePaymentsPage() {
-  const [activeTab, setActiveTab] = useState("payments")
+  const [activeTab, setActiveTab] = useState("invoices")
 
   return (
     <PageLayout
@@ -22,11 +22,11 @@ export default function FinancePaymentsPage() {
     >
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="payments" className="flex items-center gap-1"><CreditCard className="h-4 w-4" />付款管理</TabsTrigger>
           <TabsTrigger value="invoices" className="flex items-center gap-1"><FileText className="h-4 w-4" />发票管理</TabsTrigger>
+          <TabsTrigger value="payments" className="flex items-center gap-1"><CreditCard className="h-4 w-4" />付款管理</TabsTrigger>
         </TabsList>
-        <TabsContent value="payments"><PaymentManagement /></TabsContent>
         <TabsContent value="invoices"><InvoiceManagement /></TabsContent>
+        <TabsContent value="payments"><PaymentManagement /></TabsContent>
       </Tabs>
     </PageLayout>
   )
