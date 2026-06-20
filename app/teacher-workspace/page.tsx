@@ -33,8 +33,11 @@ import {
   TrendingUp,
   CreditCard,
   Trophy,
-  User
+  User,
+  FileEdit,
+  ExternalLink,
 } from "lucide-react"
+import { usePendingGradingCount } from "@/hooks/useHomework"
 
 export default function TeacherWorkspace() {
   const router = useRouter()
@@ -61,7 +64,28 @@ export default function TeacherWorkspace() {
 
   const loadNotifications = async () => {
     try {
-      // 模拟通知数据
+      // Fetch real pending grading count
+      try {
+        const subRes = await fetch(
+          "/api/pocketbase-proxy/api/collections/homework_submissions/records?filter=status%3D%27submitted%27&perPage=1"
+        )
+        const subData = await subRes.json()
+        const pendingCount = subData?.totalItems || 0
+
+        if (pendingCount > 0) {
+          setNotifications([{
+            id: "pending-grading",
+            title: "待批改作业",
+            message: `有 ${pendingCount} 份作业等待批改`,
+            time: "现在",
+            type: "assignment",
+            read: false
+          }])
+          return
+        }
+      } catch {}
+
+      // Fallback mock notifications
       const mockNotifications = [
         {
           id: "1",
@@ -218,15 +242,35 @@ export default function TeacherWorkspace() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5" />
+                    <FileEdit className="h-5 w-5" />
                     作业管理
                   </CardTitle>
-                  <CardDescription>管理学生作业和评分</CardDescription>
+                  <CardDescription>布置、查看和批改学生作业</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-8 text-gray-500">
-                    <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p>作业管理功能开发中...</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card className="bg-blue-50 border-blue-200 cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => window.open('/homework', '_blank')}>
+                      <CardContent className="pt-6 text-center">
+                        <FileEdit className="h-10 w-10 mx-auto mb-3 text-blue-600" />
+                        <h3 className="font-medium">作业总览</h3>
+                        <p className="text-sm text-muted-foreground mt-1">查看所有作业和提交状态</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-green-50 border-green-200 cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => window.open('/homework/new', '_blank')}>
+                      <CardContent className="pt-6 text-center">
+                        <BookOpen className="h-10 w-10 mx-auto mb-3 text-green-600" />
+                        <h3 className="font-medium">布置新作业</h3>
+                        <p className="text-sm text-muted-foreground mt-1">为学生布置新的作业和练习</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  <div className="mt-4 text-center">
+                    <Button variant="outline" onClick={() => window.open('/homework', '_blank')}>
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      打开完整作业管理
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

@@ -1,6 +1,6 @@
 # PJPC 安亲班管理系统 — 战略蓝图
 
-> 最后更新：2026-06-19
+> 最后更新：2026-06-20
 > 一句话：**一所安亲班的完整操作系统** — 从学生入学到毕业、从收费到出粮、从打卡到家长通知，全流程覆盖
 
 ---
@@ -88,7 +88,10 @@
 │                    │  │                        │
 │ Admin 菜单：        │  │                        │
 │ 📊 仪表板          │  │                        │
-│ 👨‍🎓 学生管理       │  │                        │
+│ 👨‍🎓 学生管理 ───┐  │  │                        │
+│    ├ 学生列表   │  │  │                        │
+│    ├ 成绩单     │  │  │                        │
+│    └ 作业管理   │  │  │                        │
 │ 👨‍🏫 教师管理       │  │                        │
 │ 💰 财务管理 ───┐   │  │                        │
 │    ├ 概览      │   │  │                        │
@@ -130,20 +133,21 @@
 
 ---
 
-## 三、现在做到哪了？（2026-06-16 快照）
+## 三、现在做到哪了？（2026-06-20 快照）
 
 ### 📊 整体进度
 
 ```
-核心运营 ━ 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩  已完成
-财务管理 ━ 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩  100%
-系统基建 ━ 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩  95%  (分院管理+侧边栏调整完成)
-家长端   ━ ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜  0%
-进销存   ━ ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜  0%
-企业级   ━ ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜  0%
+| 核心运营 ━ 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩  100%
+| 财务管理 ━ 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩  100%
+| 系统基建 ━ 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩  100%  (全局分行筛选+PB schema版本化)
+| 作业模块 ━ 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩  100%  (Homework CRUD + 批量批改 + 教师工作台联动)
+| 家长端   ━ ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜  0%
+| 进销存   ━ ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜  0%
+| 企业级   ━ ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜  0%
 ```
 
-### 页面路由 (29 条)
+| 页面路由 (33 条)
 
 | 页面 | 状态 | 说明 |
 |------|------|------|
@@ -157,6 +161,10 @@
 | `/attendance-reports` | ✅ | 考勤报表 |
 | `/teacher-attendance-reports` | ✅ | 教师考勤报表 |
 | `/center-management` | ✅ | 分院/中心管理（位于系统设置→分院管理） |
+| `/homework` | ✅ **新** | 作业总览：按中心/年级/科目筛选，卡片视图 |
+| `/homework/new` | ✅ **新** | 布置新作业表单 |
+| `/homework/[id]` | ✅ **新** | 作业详情 + 学生提交列表 + 逐一批改 |
+| `/homework/[id]/grade` | ✅ **新** | 批量批改视图 |
 | `/finance/overview` | ✅ | 财务概览 |
 | `/finance/fees` | ✅ | 收费管理 |
 | `/finance/payments` | ✅ | 发票付款 |
@@ -209,6 +217,8 @@
 | `fee_items` / `fee_packages` / `fee_package_items` / `fee_categories` | ✅ | 费用体系 |
 | `student_fees` | ✅ | 学生分配 |
 | `invoices` / `payments` / `receipts` / `expenses` | ✅ | 财务交易 |
+| `homework` | ✅ **新** | 作业布置（title/subject/grade/dueDate/teacherId/centerId） |
+| `homework_submissions` | ✅ **新** | 学生提交 + 批改（score/feedback/status） |
 
 ### 💡 核心智能设计
 
@@ -354,6 +364,114 @@
 
 ---
 
+### ✅ Phase 4b：全局分行筛选 + PB Schema 版本化（已完成 ✅ 2026-06-20）
+
+#### 目标
+让「选分行」成为**全局状态**，跨页面导航自动携带筛选参数；同时将 PB 数据库结构纳入 Git 版本控制，实现真正的 Infrastructure as Code。
+
+#### 核心设计
+
+**1. 全局分行筛选架构**
+
+| 机制 | 说明 |
+|------|------|
+| **状态载体** | URL 参数 `?center=UUID` — 刷新不丢失，分享可还原 |
+| **传递方式** | `AppShell.tsx` 所有导航链接自动携带 `?center` 参数 |
+| **Sidebar 分行Tab** | 点击底部中心Tab → `router.replace()` 更新 URL，触发全页重新筛选 |
+| **页面读取** | 各页面通过 `useSearchParams()` 读取 URL 参数过滤数据 |
+| **跨页面持久化** | 点任何侧边栏链接 → 自动保留当前 `?center=` 参数 |
+
+**2. 支持页面（11 页）**
+
+| 页面 | 筛选方式 |
+|------|---------|
+| Dashboard 仪表板 | `?center=` 过滤 KPI/学生/教师 |
+| 学生管理 | `?center=` 过滤学生列表 |
+| 成绩单 Report Cards | `?center=` 过滤 |
+| 教师管理 | `?center=` 过滤教师 |
+| 考勤报表 | `?center=` 过滤考勤记录 |
+| 学生积分 | `?center=` 过滤积分记录 |
+| 发票管理 | 通过 `invoice → student → centerId` 追溯过滤 |
+| 付款管理 | 通过 `payment → invoice → student → centerId` 追溯过滤 |
+| 薪资管理 | 通过 `salary → teacher → center_assignment → centerId` 追溯过滤 |
+| 支出管理 | 表单直接加 `centerId` 字段，下拉选择分行 |
+| 课程管理 | `?center=` 过滤课程 |
+
+**3. PB Schema 版本化**
+
+| 文件/脚本 | 说明 |
+|-----------|------|
+| `pb-schema.json` | PB 全部 26 个 collection 的 schema 快照（字段/类型/索引/配置） |
+| `scripts/export-pb-schema.py` | 通过 PB API 导出 schema 为 JSON（需要 admin token） |
+| `scripts/pre-commit.sh` | Git pre-commit hooks 模板，commit 前自动导出最新 schema |
+| `scripts/setup-new-machine.sh` | 新电脑一键设置：npm install + git hooks + 环境检查 |
+
+**4. 迁移到新电脑流程**
+
+```
+旧电脑:
+  git push (包含 pb-schema.json 和全部代码)
+  cp -r pb_data/ (全部数据)
+
+新电脑:
+  git clone && cd pjpc-app-html
+  bash scripts/setup-new-machine.sh
+  # 复制 pb_data/ 到项目根目录
+  npm run pb:start → PB 自动加载全部数据+Schema
+```
+
+---
+
+### ✅ Phase 4c：作业 Homework 模块（已完成 ✅ 2026-06-20）
+
+#### 目标
+实现完整的作业管理系统：布置→提交→批改全流程，含教师工作台联动。
+
+#### 实施步骤
+
+| # | 步骤 | 文件 | 说明 |
+|---|------|------|------|
+| 1 | 创建 PB collections | `homework` + `homework_submissions` | 10字段 + 10字段，含 relations 到 teachers/students/centers |
+| 2 | Data hooks | `hooks/useHomework.ts` | `useHomework()` 单条+提交 / `useHomeworkList()` 列表 / `usePendingGradingCount()` |
+| 3 | 作业列表页 | `app/homework/page.tsx` | 卡片视图，按科目/年级/中心筛选，搜索 |
+| 4 | 布置作业页 | `app/homework/new/page.tsx` | 完整表单：标题/科目/年级/中心/教师/日期/描述 |
+| 5 | 作业详情页 | `app/homework/[id]/page.tsx` | 信息卡片 + 学生提交列表 + 逐一批改 |
+| 6 | 批量批改页 | `app/homework/[id]/grade/page.tsx` | 所有提交一览，分数+评语批量保存 |
+| 7 | 侧边栏导航 | `AppShell.tsx` | 在「学生管理」下新增「作业管理」子项 |
+| 8 | 教师工作台联动 | `teacher-workspace/page.tsx` | 待批改通知 badge + 作业管理 tab（替换占位符） |
+
+#### 数据模型
+
+**homework**
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `title` | text (required) | 作业标题 |
+| `description` | text | 作业描述 |
+| `subject` | select | 12个科目选项 |
+| `grade` | text | 年级（一年级~Form 5） |
+| `centerId` | relation→centers | 所属中心 |
+| `teacherId` | relation→teachers | 布置教师 |
+| `assignedDate` | date | 布置日期 |
+| `dueDate` | date | 截止日期 |
+| `attachments` | file | 附件（最多3文件） |
+| `status` | select | active/archived/cancelled |
+
+**homework_submissions**
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `homeworkId` | relation→homework (cascadeDelete) | 所属作业 |
+| `studentId` | relation→students | 提交学生 |
+| `content` | text | 提交内容 |
+| `attachments` | file | 附件 |
+| `status` | select | pending/submitted/graded |
+| `score` | number (0-100) | 分数 |
+| `feedback` | text | 批改评语 |
+| `gradedBy` | relation→teachers | 批改教师 |
+| `submittedDate` | date | 提交时间 |
+| `gradedDate` | date | 批改时间 |
+
+---
+
 ## 六、还有什么没做？（按真实优先级）
 
 ### 🔴 P0 — 必须尽快做
@@ -362,7 +480,7 @@
 |---|------|-----------|------|
 | 1 | 按钮级权限控制 | 现在老师能看到"删除学生"按钮，只是路由挡了。UI 层面也要遮 | ✅ 已完成 |
 | 2 | **分院/中心管理** | PU1 / BATU14 两个中心独立运营，学生必须归属正确分院。含Dashboard分行Tab过滤 | ✅ **已完成 2026-06-19** |
-| 3 | 作业 Homework 模块 | Synorex 有，家长会拿来对比。安亲班核心服务 | 🔴 **进行中** |
+| 3 | 作业 Homework 模块 | Synorex 有，家长会拿来对比。安亲班核心服务 | ✅ **已完成 2026-06-20** |
 | 4 | 成绩单 Report Card PDF | 家长期末要的东西，直接影响口碑 | ✅ 已完成 |
 
 #### Homework 模块规划
@@ -525,11 +643,12 @@ shadcn/ui + Tailwind CSS + sonner (toast) + lucide-react (图标)
 
 | 项目 | 优先级 | 说明 |
 |------|--------|------|
-| 按钮级权限注入（5-8 页面） | 🔴 | PageGuard 已就绪，缺按钮级 |
-| TypeScript 编译错误 | 🟡 | ~10 个错误在 `FIX_LIST.md` 中 |
-| 财务 mock 残留 | 🟡 | `useFeesConfig.ts` 中 `USE_MOCK_FEES` 仍为 `true` |
+| 按钮级权限注入（5-8 页面） | ✅ | PageGuard + PermissionGate 已就绪（P0 #1 已完成 2026-06-19） |
+| TypeScript 编译错误 | 🟡 | `FIX_LIST.md` 中记载，待清理 |
+| 财务 mock 残留 | ✅ | `useFeesConfig.ts` 中 `USE_MOCK_FEES` 已为 `false` |
 | 组件目录迁移 | ⚪ | `app/components/` → `components/` |
-| README.md 过时 | ⚪ | 内容停留在 97 学生时代 |
+| README.md 过时 | ⚪ | 内容停留在旧版，需重写 |
+| PB schema 手动导出 | ✅ | pre-commit 钩子已自动处理 |
 
 ---
 
@@ -556,7 +675,9 @@ shadcn/ui + Tailwind CSS + sonner (toast) + lucide-react (图标)
          ↓
    🔧 2. 照着蓝图做
          ↓
-   ✅ 3. 更新蓝图进度
+   📦 3. 如果改了 PB Schema → 运行导出脚本更新 pb-schema.json
+         ↓
+   ✅ 4. 更新蓝图进度 + git commit（pre-commit 自动同步 schema）
          ↓
    🔄 重复
 ```
@@ -575,6 +696,8 @@ shadcn/ui + Tailwind CSS + sonner (toast) + lucide-react (图标)
 ├── 集成物理设备（NFC 打卡器、TV 看板）
 ├── 面向多角色（Admin / 老师 / 财务 / 家长）
 ├── 统一侧边栏导航（Phase 2 完成，分院管理已整合至系统设置）
+├── 全局分行筛选（Phase 4b：?center=UUID 跨页面持久化，11 页支持）
+├── PB Schema 版本化（pre-commit 自动导出，新电脑一键 setup）
 └── 目标是超越 Synorex 的企业级解决方案
 
 ```

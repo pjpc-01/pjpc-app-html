@@ -34,6 +34,7 @@ import {
   Building,
   Building2,
   PieChart,
+  FileEdit,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -66,6 +67,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         children: [
           { label: "学生列表", href: "/student-management", icon: Users },
           { label: "成绩单", href: "/report-cards", icon: GraduationCap },
+          { label: "作业管理", href: "/homework", icon: FileEdit },
         ],
       },
       {
@@ -496,6 +498,8 @@ export default function AppShell({
                   onClick={() => {
                     const url = new URL(window.location.href)
                     url.searchParams.set("center", c.id)
+                    // Set cookie so PB Proxy can inject center filter
+                    document.cookie = `selectedCenter=${c.id};path=/;max-age=86400`
                     router.replace(url.pathname + url.search)
                   }}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
