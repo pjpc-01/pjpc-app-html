@@ -30,6 +30,8 @@ export async function GET(request: NextRequest) {
         student_name: student.student_name,
         student_id: student.student_id,
         center: student.center || student.Center || student.centre || student.branch,
+        // 新增 centerId 字段
+        centerId: student.centerId || student.CenterId || '',
         allFields: Object.keys(student)
       })),
       total: students.items.length

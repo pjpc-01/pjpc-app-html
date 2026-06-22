@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,7 +38,10 @@ import {
   Tag,
   CreditCard,
   FileText,
-  DollarSign
+  DollarSign,
+  Paperclip,
+  Eye,
+  X
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useExpenses } from "@/hooks/useExpenses"
@@ -69,10 +72,14 @@ export default function ExpenseManagement() {
     loading, 
     error, 
     createExpense, 
+    createExpenseWithReceipt,
     deleteExpense 
   } = useExpenses()
   
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [newExpense, setNewExpense] = useState({
     date: new Date().toISOString().split('T')[0],
     category: "",
@@ -86,15 +93,27 @@ export default function ExpenseManagement() {
 
   const handleAddExpense = async () => {
     try {
-      await createExpense({
-        date: newExpense.date,
-        category: newExpense.category,
-        description: newExpense.description,
-        amount: parseFloat(newExpense.amount),
-        method: newExpense.method,
-        centerId: newExpense.centerId || undefined
-      })
+      if (receiptFile) {
+        await createExpenseWithReceipt({
+          date: newExpense.date,
+          category: newExpense.category,
+          description: newExpense.description,
+          amount: parseFloat(newExpense.amount),
+          method: newExpense.method,
+          centerId: newExpense.centerId || undefined
+        }, receiptFile)
+      } else {
+        await createExpense({
+          date: newExpense.date,
+          category: newExpense.category,
+          description: newExpense.description,
+          amount: parseFloat(newExpense.amount),
+          method: newExpense.method,
+          centerId: newExpense.centerId || undefined
+        })
+      }
       setIsAddDialogOpen(false)
+      receiptFileCleanup()
       setNewExpense({
         date: new Date().toISOString().split('T')[0],
         category: "",
@@ -106,6 +125,31 @@ export default function ExpenseManagement() {
     } catch (err) {
       alert("添加支出记录失败，请重试")
     }
+  }
+
+  const receiptFileCleanup = () => {
+    setReceiptFile(null)
+    if (receiptPreview) {
+      URL.revokeObjectURL(receiptPreview)
+      setReceiptPreview(null)
+    }
+  }
+
+  const handleReceiptFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setReceiptFile(file)
+    // Create preview URL for images
+    if (file.type.startsWith('image/')) {
+      setReceiptPreview(URL.createObjectURL(file))
+    } else {
+      setReceiptPreview(null)
+    }
+  }
+
+  const POCKETBASE_URL = 'http://127.0.0.1:8090'
+  const getReceiptUrl = (filename: string, recordId: string) => {
+    return `${POCKETBASE_URL}/api/files/expenses/${recordId}/${filename}`
   }
 
   const handleDeleteExpense = async (id: string) => {
@@ -274,8 +318,68 @@ export default function ExpenseManagement() {
                       value={newExpense.description} 
                       onChange={(e) => setNewExpense({...newExpense, description: e.target.value})}
                       className="resize-none"
-                      rows={4}
+                      rows={3}
                     />
+                  </div>
+                  {/* Receipt Upload */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold flex items-center gap-2">
+                      <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+                      收据凭证（可选）
+                    </Label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      onChange={handleReceiptFileChange}
+                      className="hidden"
+                    />
+                    {receiptPreview ? (
+                      <div className="relative border rounded-lg overflow-hidden">
+                        <img 
+                          src={receiptPreview} 
+                          alt="收据预览" 
+                          className="w-full h-32 object-cover"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-1 right-1 bg-black/50 hover:bg-black/70 text-white h-6 w-6 rounded-full"
+                          onClick={() => {
+                            receiptFileCleanup()
+                            if (fileInputRef.current) fileInputRef.current.value = ''
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : receiptFile ? (
+                      <div className="flex items-center gap-2 p-2 border rounded-lg bg-slate-50">
+                        <Paperclip className="h-4 w-4 text-slate-400" />
+                        <span className="text-sm text-slate-600 truncate flex-1">{receiptFile.name}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => {
+                            setReceiptFile(null)
+                            if (fileInputRef.current) fileInputRef.current.value = ''
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-24 border-dashed flex flex-col gap-2"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Paperclip className="h-6 w-6 text-slate-400" />
+                        <span className="text-sm text-slate-500">点击上传收据照片或PDF</span>
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -383,7 +487,8 @@ export default function ExpenseManagement() {
                   <TableHead className="w-[150px]">类别</TableHead>
                   <TableHead>描述</TableHead>
                   <TableHead className="w-[100px]">分行</TableHead>
-                  <TableHead className="w-[120px]">方式</TableHead>
+                  <TableHead className="w-[100px]">方式</TableHead>
+                  <TableHead className="w-[60px] text-center">凭证</TableHead>
                   <TableHead className="text-right w-[120px]">金额</TableHead>
                   <TableHead className="text-center w-[80px]">操作</TableHead>
                 </TableRow>
@@ -410,6 +515,21 @@ export default function ExpenseManagement() {
                       })()}
                     </TableCell>
                     <TableCell className="text-slate-500 text-xs">{expense.method}</TableCell>
+                    <TableCell className="text-center">
+                      {expense.receipt ? (
+                        <a 
+                          href={getReceiptUrl(expense.receipt, expense.id)} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors"
+                          title="查看收据"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </a>
+                      ) : (
+                        <span className="text-slate-300">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right font-bold text-red-600">
                       - RM {expense.amount.toLocaleString()}
                     </TableCell>

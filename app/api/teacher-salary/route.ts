@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
         filter += ` && teacher_id = "${teacherId}"`
       }
 
-      const records = await pb.collection('teacher_salary_structure').getList(1, 100, {
+      const records = await pb.collection('teacher_salary_structures').getList(1, 100, {
         filter,
         expand: 'teacher_id',
         sort: '-effective_date'
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       const page = parseInt(searchParams.get('page') || '1')
       const limit = parseInt(searchParams.get('limit') || '20')
 
-      const records = await pb.collection('teacher_salary_record').getList(page, limit, {
+      const records = await pb.collection('teacher_salary_records').getList(page, limit, {
         filter,
         expand: 'teacher_id,created_by,approved_by',
         sort: '-year,-month'
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
         notes: data.notes
       }
 
-      const record = await pb.collection('teacher_salary_structure').create(salaryStructure)
+      const record = await pb.collection('teacher_salary_structures').create(salaryStructure)
 
       return NextResponse.json({
         success: true,
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
         created_by: data.created_by
       }
 
-      const record = await pb.collection('teacher_salary_record').create(salaryRecord)
+      const record = await pb.collection('teacher_salary_records').create(salaryRecord)
 
       return NextResponse.json({
         success: true,
@@ -170,7 +170,7 @@ export async function PUT(request: NextRequest) {
 
     if (type === 'structure') {
       // 更新薪资结构
-      const record = await pb.collection('teacher_salary_structure').update(id, data)
+      const record = await pb.collection('teacher_salary_structures').update(id, data)
       return NextResponse.json({
         success: true,
         data: record,
@@ -178,7 +178,7 @@ export async function PUT(request: NextRequest) {
       })
     } else if (type === 'record') {
       // 更新薪资记录
-      const record = await pb.collection('teacher_salary_record').update(id, data)
+      const record = await pb.collection('teacher_salary_records').update(id, data)
       return NextResponse.json({
         success: true,
         data: record,
@@ -217,9 +217,9 @@ export async function DELETE(request: NextRequest) {
     }
 
     if (type === 'structure') {
-      await pb.collection('teacher_salary_structure').delete(id)
+      await pb.collection('teacher_salary_structures').delete(id)
     } else if (type === 'record') {
-      await pb.collection('teacher_salary_record').delete(id)
+      await pb.collection('teacher_salary_records').delete(id)
     }
 
     return NextResponse.json({

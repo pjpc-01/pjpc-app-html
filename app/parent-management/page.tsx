@@ -30,6 +30,8 @@ import {
   User,
   Phone,
   Mail,
+  GraduationCap,
+  Eye,
 } from "lucide-react"
 
 export default function ParentManagementPage() {
@@ -38,6 +40,7 @@ export default function ParentManagementPage() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Parent | null>(null)
   const [saving, setSaving] = useState(false)
+  const [showStudents, setShowStudents] = useState<Parent | null>(null)
 
   // Form state
   const [form, setForm] = useState({
@@ -176,7 +179,13 @@ export default function ParentManagementPage() {
                       <TableCell className="text-sm">{p.email || "-"}</TableCell>
                       <TableCell className="text-sm">{p.occupation || "-"}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{p.studentCount || 0}</Badge>
+                        <button
+                          onClick={() => setShowStudents(p)}
+                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          <GraduationCap className="h-3.5 w-3.5" />
+                          {p.studentCount || 0}
+                        </button>
                       </TableCell>
                       <TableCell>
                         <Badge variant={p.status === "active" ? "default" : "secondary"}>
@@ -273,6 +282,35 @@ export default function ParentManagementPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 关联学生弹窗 */}
+      <Dialog open={!!showStudents} onOpenChange={(o) => !o && setShowStudents(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5" />
+              {showStudents?.name} 的关联学生
+            </DialogTitle>
+          </DialogHeader>
+          {showStudents?.expand?.students && showStudents.expand.students.length > 0 ? (
+            <div className="space-y-2">
+              {showStudents.expand.students.map((s) => (
+                <div key={s.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                    {s.name?.charAt(0) || "S"}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{s.name}</p>
+                    <p className="text-xs text-muted-foreground">{s.grade || "未设置年级"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-4">暂未关联学生</p>
+          )}
         </DialogContent>
       </Dialog>
     </PageLayout>

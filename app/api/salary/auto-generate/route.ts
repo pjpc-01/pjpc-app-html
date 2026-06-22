@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     for (const teacher of teachers) {
       try {
         // 检查是否已存在该月的薪资记录
-        const existingRecord = await pb.collection('teacher_salary_record').getList(1, 1, {
+        const existingRecord = await pb.collection('teacher_salary_records').getList(1, 1, {
           filter: `teacher_id = "${teacher.id}" && year = ${year} && month = ${month}`
         })
 
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 获取教师的薪资结构
-        const salaryStructure = await pb.collection('teacher_salary_structure').getList(1, 1, {
+        const salaryStructure = await pb.collection('teacher_salary_structures').getList(1, 1, {
           filter: `teacher_id = "${teacher.id}" && status = "active"`,
           sort: '-effective_date'
         })
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
           notes: `自动生成 - 基于${schedules.items.length}个排班记录`
         }
 
-        const record = await pb.collection('teacher_salary_record').create(salaryRecord)
+        const record = await pb.collection('teacher_salary_records').create(salaryRecord)
 
         results.push({
           teacher_id: teacher.id,

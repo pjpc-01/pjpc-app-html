@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { GraduationCap, Bell, Settings, LogOut, UserCheck, Wifi, WifiOff, AlertTriangle, CreditCard, Menu, X } from "lucide-react"
+import { GraduationCap, Bell, Settings, LogOut, UserCheck, Wifi, WifiOff, AlertTriangle, CreditCard, Menu, X, Loader2 } from "lucide-react"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import ModernAdminDashboard from "./components/dashboards/modern-admin-dashboard"
 import ModernParentDashboard from "./components/dashboards/modern-parent-dashboard"
@@ -44,6 +44,16 @@ export default function Dashboard() {
   }, [loading, userProfile?.role, router])
 
   const renderDashboard = () => {
+    if (!userProfile) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-500">
+            <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
+            <p>Preparing dashboard...</p>
+          </div>
+        </div>
+      )
+    }
     switch (userProfile.role) {
       case "admin":
         return <ModernAdminDashboard activeTab={activeTab} setActiveTab={setActiveTab} />

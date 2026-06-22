@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { getStudentCenterName } from "@/lib/studentUtils"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -94,7 +95,7 @@ export default function ReportCardsPage() {
       exportReportCardPDF({
         studentName: selectedStudent.student_name || selectedStudent.name || "未知学生",
         grade: selectedStudent.standard || selectedStudent.grade || "",
-        center: selectedStudent.center || "WX 01",
+        center: getStudentCenterName(selectedStudent) || "WX 01",
         school: selectedStudent.school || "",
         period,
         subjects: subjects.map(s => ({
@@ -160,7 +161,7 @@ export default function ReportCardsPage() {
                 <div className="p-3 bg-slate-50 rounded-lg space-y-1 text-sm">
                   <p><span className="text-slate-500">姓名:</span> <span className="font-medium">{selectedStudent.student_name || selectedStudent.name}</span></p>
                   <p><span className="text-slate-500">年级:</span> <span className="font-medium">{selectedStudent.standard || selectedStudent.grade}</span></p>
-                  <p><span className="text-slate-500">中心:</span> <span className="font-medium">{selectedStudent.center}</span></p>
+                  <p><span className="text-slate-500">中心:</span> <span className="font-medium">{getStudentCenterName(selectedStudent)}</span></p>
                   {selectedStudent.school && (
                     <p><span className="text-slate-500">学校:</span> <span className="font-medium">{selectedStudent.school}</span></p>
                   )}

@@ -119,23 +119,44 @@ export async function POST(request: NextRequest) {
 
     const url = new URL(request.url)
     const path = url.pathname.replace('/api/pocketbase-proxy', '')
-    const body = await request.text()
-    
     const targetUrl = `${POCKETBASE_URL}${path}`
-    const response = await fetch(targetUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: body
-    })
     
-    const data = await response.text()
-    return new NextResponse(data, {
-      status: response.status,
-      headers: { 'Content-Type': 'application/json' }
-    })
+    const contentType = request.headers.get('content-type') || ''
+    const isMultipart = contentType.includes('multipart/form-data')
+    
+    if (isMultipart) {
+      // Forward multipart/form-data as-is (for file uploads like expense receipts)
+      const formData = await request.formData()
+      const response = await fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          // Do NOT set Content-Type — fetch will set it with the correct boundary
+        },
+        body: formData
+      })
+      const data = await response.text()
+      return new NextResponse(data, {
+        status: response.status,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    } else {
+      // Existing JSON logic
+      const body = await request.text()
+      const response = await fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: body
+      })
+      const data = await response.text()
+      return new NextResponse(data, {
+        status: response.status,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
   } catch (error: any) {
     return NextResponse.json({ error: 'Proxy POST failed', details: error.message }, { status: 500 })
   }

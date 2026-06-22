@@ -19,7 +19,8 @@ import {
   Calendar,
   Clock
 } from 'lucide-react'
-import { useStudents } from '@/hooks/useStudents'
+import { getStudentCenterName } from "@/lib/studentUtils"
+import { useStudents } from "@/hooks/useStudents"
 import { usePoints } from '@/hooks/usePoints'
 import { StudentPoints, PointTransaction } from '@/types/points'
 import PageLayout from '@/components/layouts/PageLayout'
@@ -164,7 +165,7 @@ export default function StudentPointsPage() {
                   <div>
                     <h3 className="text-lg font-semibold">{selectedStudent.student_name}</h3>
                     <p className="text-gray-600">学号: {selectedStudent.student_id}</p>
-                    <p className="text-gray-600">中心: {selectedStudent.center}</p>
+                    <p className="text-gray-600">中心: {getStudentCenterName(selectedStudent)}</p>
                     <p className="text-gray-600">年级: {selectedStudent.standard || '未设置'}</p>
                   </div>
                   <div>

@@ -18,8 +18,8 @@ import {
 } from "lucide-react"
 import { useTeachers } from "@/hooks/useTeachers"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
-import TeacherForm from "../teacher/TeacherForm"
-import TeacherDetails from "../teacher/TeacherDetails"
+import TeacherForm from "@/components/teacher/TeacherForm"
+import TeacherDetails from "@/components/teacher/TeacherDetails"
 
 interface TeachersTabProps {
   setActiveTab: (tab: string) => void

@@ -35,6 +35,7 @@ import {
   Building2,
   PieChart,
   FileEdit,
+  Package,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -91,6 +92,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
           { label: "薪资管理", href: "/finance/payroll", icon: DollarSign },
           { label: "预算管理", href: "/finance/budget", icon: PieChart },
           { label: "财务报表", href: "/finance/reports", icon: BarChart3 },
+          { label: "库存管理", href: "/inventory", icon: Package },
         ],
       },
       {
@@ -379,6 +381,7 @@ export default function AppShell({
     "/finance/transactions": { label: "交易记录", parent: "财务管理" },
     "/finance/payroll": { label: "薪资管理", parent: "财务管理" },
     "/finance/reports": { label: "财务报表", parent: "财务管理" },
+    "/inventory": { label: "库存管理", parent: "财务管理" },
     "/course-management": { label: "课程管理", parent: "课程管理" },
     "/unified-attendance": { label: "考勤系统" },
     "/student-checkin": { label: "学生签到", parent: "考勤系统" },

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { getStudentCenterName } from "@/lib/studentUtils"
 import PageLayout from "@/components/layouts/PageLayout"
 import TabbedPage from "@/components/layouts/TabbedPage"
 import StatsGrid from "@/components/ui/StatsGrid"
@@ -205,7 +206,7 @@ export default function PointsManagement() {
       student.student_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.student_id?.toLowerCase().includes(searchTerm.toLowerCase())
     
-    const matchesCenter = filterCenter === "all" || student.center === filterCenter
+    const matchesCenter = filterCenter === "all" || getStudentCenterName(student) === filterCenter
     const matchesGrade = filterGrade === "all" || student.standard === filterGrade
     
     return matchesSearch && matchesCenter && matchesGrade
@@ -215,7 +216,7 @@ export default function PointsManagement() {
 
   // 获取中心列表
   const getCenters = () => {
-    return Array.from(new Set(students.map(s => s.center).filter(Boolean)))
+    return Array.from(new Set(students.map(s => getStudentCenterName(s)).filter(Boolean)))
   }
 
   // 获取年级列表
@@ -326,7 +327,7 @@ export default function PointsManagement() {
                   <SelectContent>
                     {filteredStudents.map((student: any) => (
                       <SelectItem key={student.id} value={student.id}>
-                        {student.student_name} ({student.student_id}) - {student.center || '未知中心'}
+                        {student.student_name} ({student.student_id}) - {getStudentCenterName(student) || '未知中心'}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -848,7 +849,7 @@ export default function PointsManagement() {
                         <TableCell className="font-medium">{student.student_name}</TableCell>
                         <TableCell>{student.student_id}</TableCell>
                         <TableCell>{student.standard}</TableCell>
-                        <TableCell>{student.center}</TableCell>
+                        <TableCell>{getStudentCenterName(student)}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{student.cardNumber || '未设置'}</Badge>
                         </TableCell>
@@ -909,7 +910,7 @@ export default function PointsManagement() {
                         </div>
                         <div className="space-y-2 text-sm text-gray-600">
                           <p><span className="font-medium">班级:</span> {student.standard}</p>
-                          <p><span className="font-medium">中心:</span> {student.center}</p>
+                          <p><span className="font-medium">中心:</span> {getStudentCenterName(student)}</p>
                           <p><span className="font-medium">NFC卡:</span> {student.cardNumber || '未设置'}</p>
                         </div>
                         <div className="flex gap-2 mt-4">
@@ -980,7 +981,7 @@ export default function PointsManagement() {
               <CardContent>
                 <div className="space-y-4">
                   {centers.map((center) => {
-                    const centerStudents = students.filter(s => s.center === center)
+                    const centerStudents = students.filter(s => getStudentCenterName(s) === center)
                     const centerPoints = leaderboard.filter(item => 
                       centerStudents.some(s => s.id === item.student_id)
                     )
