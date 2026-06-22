@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { fetchSecureData, createRecord, updateRecord, deleteRecord } from '@/lib/secure-api-client'
+import { fetchSecureData, createRecord, updateRecord, deleteRecord, createRecordWithFile } from '@/lib/secure-api-client'
 
 export interface Expense {
   id: string
@@ -9,6 +9,14 @@ export interface Expense {
   amount: number
   method: string
   centerId?: string
+  receipt?: string  // file field — PB returns filename string
+  expand?: {
+    centerId?: {
+      id: string
+      name: string
+      code: string
+    }
+  }
   created?: string
 }
 
@@ -45,6 +53,17 @@ export const useExpenses = () => {
     }
   }
 
+  const createExpenseWithReceipt = async (expense: Omit<Expense, 'id' | 'receipt'>, file: File) => {
+    try {
+      const newExpense = await createRecordWithFile('expenses', expense, 'receipt', file) as Expense
+      setExpenses(prev => [newExpense, ...prev])
+      return newExpense
+    } catch (err) {
+      console.error('Error creating expense with receipt:', err)
+      throw err
+    }
+  }
+
   const updateExpense = async (id: string, updates: Partial<Expense>) => {
     try {
       const updated = await updateRecord('expenses', id, updates) as Expense
@@ -76,6 +95,7 @@ export const useExpenses = () => {
     error,
     fetchExpenses,
     createExpense,
+    createExpenseWithReceipt,
     updateExpense,
     deleteExpense
   }

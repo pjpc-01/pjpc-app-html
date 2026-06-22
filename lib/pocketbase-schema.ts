@@ -446,6 +446,64 @@ export interface EncryptionKey {
   updated: string
 }
 
+/**
+ * 教师薪资结构集合
+ */
+export interface TeacherSalaryStructure {
+  id: string
+  teacher_id: string
+  base_salary: number
+  hourly_rate?: number
+  overtime_rate?: number
+  allowance_fixed: number
+  allowance_transport?: number
+  allowance_meal?: number
+  allowance_other?: number
+  epf_rate: number
+  socso_rate: number
+  eis_rate: number
+  tax_rate: number
+  salary_type: 'monthly' | 'hourly' | 'commission'
+  effective_date: string
+  end_date?: string
+  status: 'active' | 'inactive'
+  notes?: string
+  created: string
+  updated: string
+}
+
+/**
+ * 教师薪资记录集合
+ */
+export interface TeacherSalaryRecord {
+  id: string
+  teacher_id: string
+  salary_period: string
+  year: number
+  month: number
+  base_salary: number
+  hours_worked: number
+  overtime_hours: number
+  overtime_pay: number
+  allowances: number
+  gross_salary: number
+  epf_deduction: number
+  socso_deduction: number
+  eis_deduction: number
+  tax_deduction: number
+  other_deductions: number
+  net_salary: number
+  bonus?: number
+  commission?: number
+  status: 'draft' | 'approved' | 'paid'
+  payment_date?: string
+  payment_method?: string
+  bank_reference?: string
+  notes?: string
+  created: string
+  updated: string
+}
+
 // ============================================================================
 // 集合名称常量
 // ============================================================================
@@ -536,3 +594,5 @@ export type CollectionType =
   | WiFiNetwork
   | NFCCard
   | EncryptionKey
+  | TeacherSalaryStructure
+  | TeacherSalaryRecord

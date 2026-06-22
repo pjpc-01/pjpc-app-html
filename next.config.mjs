@@ -22,9 +22,6 @@ const nextConfig = {
   devIndicators: {
     position: 'bottom-right',
   },
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
-  },
   onDemandEntries: {
     maxInactiveAge: 25 * 1000,
     pagesBufferLength: 2,
@@ -58,9 +55,9 @@ const nextConfig = {
     return config
   },
 
+  serverExternalPackages: ['googleapis'],
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-    serverExternalPackages: ['googleapis'],
   },
 }
 

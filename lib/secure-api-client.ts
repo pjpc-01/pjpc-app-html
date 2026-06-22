@@ -164,6 +164,43 @@ export const updateRecord = async (collectionName: string, recordId: string, dat
 }
 
 /**
+ * 创建记录（含文件上传）
+ * 使用 multipart/form-data，适用于文件字段（如收据）
+ */
+export const createRecordWithFile = async (collectionName: string, data: Record<string, any>, fileField: string, file: File) => {
+  try {
+    const url = `/api/pocketbase-proxy/api/collections/${collectionName}/records`
+    const formData = new FormData()
+    
+    // Append all fields
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined && value !== null && value !== '') {
+        formData.append(key, String(value))
+      }
+    }
+    
+    // Append file
+    formData.append(fileField, file)
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      // No Content-Type header — browser will set multipart boundary automatically
+      body: formData,
+    })
+    
+    if (!response.ok) {
+      const errText = await response.text()
+      throw new Error(`创建失败: ${response.status} ${errText.slice(0, 200)}`)
+    }
+    
+    return await response.json()
+  } catch (error) {
+    console.error(`创建${collectionName}记录(含文件)失败:`, error)
+    throw error
+  }
+}
+
+/**
  * 删除记录
  */
 export const deleteRecord = async (collectionName: string, recordId: string) => {

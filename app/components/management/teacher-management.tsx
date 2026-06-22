@@ -21,9 +21,9 @@ import { UserPlus, Search, Edit, Users, Trash2, Mail, Phone, Calendar, BookOpen,
 
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { getStatusBadge, getStatusText, formatDate } from "@/lib/utils"
-import AdvancedTeacherFilters, { TeacherFilterState } from "../teacher/AdvancedTeacherFilters"
-import TeacherAnalytics from "../teacher/TeacherAnalytics"
-import TeacherBulkOperations from "../teacher/TeacherBulkOperations"
+import AdvancedTeacherFilters, { TeacherFilterState } from "@/components/teacher/AdvancedTeacherFilters"
+import TeacherAnalytics from "@/components/teacher/TeacherAnalytics"
+import TeacherBulkOperations from "@/components/teacher/TeacherBulkOperations"
 
 // Types
 interface Teacher {
