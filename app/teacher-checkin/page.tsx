@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation"
 import PageLayout from "@/components/layouts/PageLayout"
-import TeacherAttendanceSystem from "../components/attendance/TeacherAttendanceSystem"
+import TeacherMobileCheckin from "@/components/attendance/TeacherMobileCheckin"
 
 export default function TeacherCheckinPage() {
   const searchParams = useSearchParams()
@@ -11,17 +11,14 @@ export default function TeacherCheckinPage() {
 
   return (
     <PageLayout
-      title="教师考勤管理"
-      description="管理所有教师的考勤记录、统计分析"
+      title="教师签到"
+      description="手机一键签到/签退"
       backUrl="/"
       userRole="teacher"
       status="系统正常"
       background="from-blue-50 to-indigo-100"
     >
-      <TeacherAttendanceSystem 
-        centerId={centerId || undefined}
-        teacherId={teacherId || undefined}
-      />
+      <TeacherMobileCheckin />
     </PageLayout>
   )
 }

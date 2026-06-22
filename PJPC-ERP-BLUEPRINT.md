@@ -817,14 +817,24 @@ salary_structures:
 
 ---
 
-### 🟠 Phase 5c：考勤系统打磨（第三优先）
+### 🟠 Phase 5c：考勤系统打磨（第三优先）✅ 2026-06-22
 
-| 当前 | 需要打磨 |
-|------|---------|
-| NFC 打卡 ✅ | 教师移动端签到体验优化（大按钮） |
-| 考勤报表 ✅ | 加导出 CSV/PDF |
-| 学生签到 ✅ | 确保 centerId 过滤正确 |
-| TV 看板 ✅ | 保持 |
+> ✅ **2026-06-22 完成：** 教师签到页面改为手机优先的大按钮模式
+>   - 新建 `components/attendance/TeacherMobileCheckin.tsx`
+>   - 选择教师 → 大按钮签到/签退（绿色签到、橙色签退、各 7rem 高）
+>   - 手机端自动适配，圆角大卡片
+>   - 现有 TeacherAttendanceSystem (NFC扫卡) 保留在后台管理用
+> ✅ **CSV 导出：** 考勤报表页已有 `exportRecords()` CSV 导出，无需新增
+> ⏳ **学生签到 centerId 过滤：** 当前 StudentAttendanceSystem 仍用 `center`（旧 text 字段），
+>   因学生数据仍有 `center` 字段填充，暂能工作。后续统一迁移到 centerId 时一起修。
+> ⏳ **PDF 导出：** 需引入 jsPDF/html2canvas，优先级不高，暂缓
+
+| 当前 | 需要打磨 | 状态 |
+|------|---------|:----:|
+| NFC 打卡 ✅ | 教师移动端签到体验优化（大按钮） | ✅ 完成 |
+| 考勤报表 ✅ | 加导出 CSV/PDF | ✅ CSV已有，⏳ PDF暂缓 |
+| 学生签到 ✅ | 确保 centerId 过滤正确 | ⏳ 待数据迁移时统一修 |
+| TV 看板 ✅ | 保持 | ✅ |
 
 ---
 
