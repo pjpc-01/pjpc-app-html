@@ -1,106 +1,28 @@
+// 📚 课程管理 Hook — 使用真实 PB API 数据
+// 替代原来的全部 mock 数据
+
 import { useState, useEffect, useCallback } from 'react'
+import {
+  Course,
+  CourseCreateData,
+  CourseUpdateData,
+  getAllCourses,
+  createCourse as createCourseApi,
+  updateCourse as updateCourseApi,
+  deleteCourse as deleteCourseApi,
+  buildClassGroups,
+  fetchTeachers,
+  ClassGroup,
+} from '@/lib/pocketbase-courses'
 
-export interface Course {
-  id: string
-  title: string
-  description: string
-  subject: string
-  grade_level: string
-  teacher_id: string
-  duration: number
-  max_students: number
-  status: string
-  start_date?: string
-  end_date?: string
-  created: string
-  updated: string
-  expand?: {
-    teacher_id?: {
-      id: string
-      name: string
-      email: string
-    }
-  }
-}
+export type { Course, ClassGroup, CourseCreateData, CourseUpdateData }
 
-export interface CourseStats {
-  totalCourses: number
-  activeCourses: number
-  totalStudents: number
-  averageClassSize: number
-  subjectDistribution: Record<string, number>
-}
-
-const MOCK_COURSES: Course[] = [
-  {
-    id: '1',
-    title: '初级数学基础',
-    description: '涵盖基础算术、几何入门和逻辑思维训练',
-    subject: '数学',
-    grade_level: '一年级',
-    teacher_id: 'teacher-1',
-    duration: 60,
-    max_students: 20,
-    status: 'active',
-    created: '2024-01-01T00:00:00Z',
-    updated: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: '2',
-    title: '进阶英文语法',
-    description: '专注于复杂句型、写作技巧和高级词汇',
-    subject: '英语',
-    grade_level: '三年级',
-    teacher_id: 'teacher-1',
-    duration: 90,
-    max_students: 15,
-    status: 'active',
-    created: '2024-01-05T00:00:00Z',
-    updated: '2024-01-05T00:00:00Z'
-  },
-  {
-    id: '3',
-    title: '趣味科学实验',
-    description: '通过动手实验探索物理和化学基本原理',
-    subject: '科学',
-    grade_level: '二年级',
-    teacher_id: 'teacher-1',
-    duration: 120,
-    max_students: 12,
-    status: 'active',
-    created: '2024-01-10T00:00:00Z',
-    updated: '2024-01-10T00:00:00Z'
-  },
-  {
-    id: '4',
-    title: '高级中文写作',
-    description: '文学分析与创意写作深度指导',
-    subject: '中文',
-    grade_level: '五年级',
-    teacher_id: 'teacher-1',
-    duration: 60,
-    max_students: 10,
-    status: 'inactive',
-    created: '2023-12-01T00:00:00Z',
-    updated: '2023-12-01T00:00:00Z'
-  },
-  {
-    id: '5',
-    title: '数学奥数入门',
-    description: '针对高潜力学生的数学挑战与竞赛培训',
-    subject: '数学',
-    grade_level: '三年级',
-    teacher_id: 'teacher-1',
-    duration: 90,
-    max_students: 8,
-    status: 'active',
-    created: '2024-01-15T00:00:00Z',
-    updated: '2024-01-15T00:00:00Z'
-  }
-]
+// ============================================================
+// useCourses — 课程列表 CRUD
+// ============================================================
 
 export function useCourses(teacherId?: string) {
-  const [courses, setCourses] = useState<Course[]>(MOCK_COURSES)
+  const [courses, setCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -108,69 +30,72 @@ export function useCourses(teacherId?: string) {
     try {
       setLoading(true)
       setError(null)
-      
-      const params = new URLSearchParams()
-      if (teacherId) params.append('teacher_id', teacherId)
-      
-      const response = await fetch(`/api/courses?${params}`)
-      const result = await response.json()
-      
-      if (result.success) {
-        setCourses(result.data.items || [])
-      } else {
-        // Fallback to mock data if API fails
-        setCourses(MOCK_COURSES)
-        setError(result.error || '获取课程列表失败，已加载演示数据')
-      }
+
+      const result = await getAllCourses({ teacher_id: teacherId })
+      setCourses(result.items)
     } catch (err) {
-      setCourses(MOCK_COURSES)
-      setError(err instanceof Error ? err.message : '获取课程列表失败，已加载演示数据')
+      setError(err instanceof Error ? err.message : '获取课程列表失败')
+      setCourses([])
     } finally {
       setLoading(false)
     }
   }, [teacherId])
 
-  const createCourse = async (courseData: Partial<Course>) => {
-    // Mock create
-    const newCourse: Course = {
-      ...courseData,
-      id: (courses.length + 1).toString(),
-      created: new Date().toISOString(),
-      updated: new Date().toISOString(),
-    } as Course
-    setCourses(prev => [...prev, newCourse])
-    return newCourse
-  }
-
-  const updateCourse = async (courseId: string, courseData: Partial<Course>) => {
-    // Mock update
-    setCourses(prev => prev.map(c => c.id === courseId ? { ...c, ...courseData } : c))
-    return { success: true }
-  }
-
-  const deleteCourse = async (courseId: string) => {
-    // Mock delete
-    setCourses(prev => prev.filter(c => c.id !== courseId))
-    return true
-  }
-
   useEffect(() => {
     fetchCourses()
+  }, [fetchCourses])
+
+  const createCourse = useCallback(async (data: CourseCreateData) => {
+    try {
+      const newCourse = await createCourseApi(data)
+      await fetchCourses() // 刷新列表
+      return newCourse
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : '创建课程失败')
+    }
+  }, [fetchCourses])
+
+  const updateCourse = useCallback(async (id: string, data: CourseUpdateData) => {
+    try {
+      const updated = await updateCourseApi(id, data)
+      await fetchCourses()
+      return updated
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : '更新课程失败')
+    }
+  }, [fetchCourses])
+
+  const deleteCourse = useCallback(async (id: string) => {
+    try {
+      await deleteCourseApi(id)
+      await fetchCourses()
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : '删除课程失败')
+    }
   }, [fetchCourses])
 
   return {
     courses,
     loading,
     error,
-    fetchCourses,
+    refetch: fetchCourses,
     createCourse,
     updateCourse,
-    deleteCourse
+    deleteCourse,
   }
 }
 
-export function useCourseStats(teacherId?: string) {
-  const [stats, setStats] = useState<CourseStats | null>(null)
+// ============================================================
+// useCourseStats — 课程统计
+// ============================================================
+
+export function useCourseStats() {
+  const [stats, setStats] = useState({
+    totalCourses: 0,
+    activeCourses: 0,
+    totalStudents: 0,
+    subjectDistribution: {} as Record<string, number>,
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -178,25 +103,24 @@ export function useCourseStats(teacherId?: string) {
     try {
       setLoading(true)
       setError(null)
-      
-      // Mock stats based on MOCK_COURSES
-      const totalCourses = MOCK_COURSES.length
-      const activeCourses = MOCK_COURSES.filter(c => c.status === 'active').length
-      
-      const subjectDistribution: Record<string, number> = {}
-      MOCK_COURSES.forEach(c => {
-        subjectDistribution[c.subject] = (subjectDistribution[c.subject] || 0) + 1
-      })
+
+      const result = await getAllCourses()
+      const items = result.items
+
+      const subjectDist: Record<string, number> = {}
+      for (const c of items) {
+        const subj = c.subject || '未分类'
+        subjectDist[subj] = (subjectDist[subj] || 0) + 1
+      }
 
       setStats({
-        totalCourses,
-        activeCourses,
-        totalStudents: 85, // Mock total
-        averageClassSize: 12, // Mock average
-        subjectDistribution
+        totalCourses: items.length,
+        activeCourses: items.filter(c => c.status === 'active').length,
+        totalStudents: 0, // 暂无学生关联数据
+        subjectDistribution: subjectDist,
       })
     } catch (err) {
-      setError(err instanceof Error ? err.message : '获取课程统计失败')
+      setError(err instanceof Error ? err.message : '获取统计失败')
     } finally {
       setLoading(false)
     }
@@ -206,10 +130,38 @@ export function useCourseStats(teacherId?: string) {
     fetchStats()
   }, [fetchStats])
 
-  return {
-    stats,
-    loading,
-    error,
-    fetchStats
-  }
+  return { stats, loading, error, refetch: fetchStats }
+}
+
+// ============================================================
+// useClassGroups — 班级分组（course + grade_level）
+// ============================================================
+
+export function useClassGroups() {
+  const [groups, setGroups] = useState<ClassGroup[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchGroups = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const result = await getAllCourses()
+      const teacherMap = await fetchTeachers()
+      const classGroups = buildClassGroups(result.items, teacherMap)
+      setGroups(classGroups)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '获取班级分组失败')
+      setGroups([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchGroups()
+  }, [fetchGroups])
+
+  return { groups, loading, error, refetch: fetchGroups }
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -17,8 +17,13 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle,
-  Zap
+  Zap,
+  AlertTriangle,
+  ShieldAlert
 } from 'lucide-react'
+
+// 冲突检测
+import { detectAllConflicts, getConflictBadge, type Conflict } from '@/lib/schedule-conflicts'
 import { format, addDays, startOfWeek, endOfWeek, isToday, isWeekend } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 
@@ -77,6 +82,30 @@ export default function SimpleScheduleManager({
     { id: '3', name: '李老师', type: 'parttime', subjects: ['英文'] },
     { id: '4', name: '王老师', type: 'parttime', subjects: ['科学'] }
   ]
+
+  // 冲突检测状态
+  const [showConflicts, setShowConflicts] = useState(false)
+  const [conflicts, setConflicts] = useState<Conflict[]>([])
+
+  // 检测冲突
+  const handleDetectConflicts = () => {
+    const slots = schedules.map(s => ({
+      teacher_id: s.teacher_id,
+      teacher_name: s.teacher_name,
+      date: s.date,
+      start_time: s.start_time,
+      end_time: s.end_time,
+      id: s.id,
+    }))
+    const result = detectAllConflicts(slots)
+    setConflicts(result.conflicts)
+    setShowConflicts(true)
+
+    if (!result.hasConflict) {
+      alert('✅ 当前排班没有时间冲突')
+      setShowConflicts(false)
+    }
+  }
 
   // 默认模板数据 - 与ScheduleTemplateManager保持一致
   const defaultTemplates: ScheduleTemplate[] = [
@@ -306,8 +335,54 @@ export default function SimpleScheduleManager({
             下周
             <ArrowRight className="h-4 w-4" />
           </Button>
+
+          {/* 冲突检测按钮 */}
+          <Button
+            variant={showConflicts ? "default" : "outline"}
+            size="sm"
+            onClick={handleDetectConflicts}
+            className={showConflicts ? "bg-red-500 hover:bg-red-600 text-white" : ""}
+          >
+            <ShieldAlert className="h-4 w-4 mr-1" />
+            检测冲突
+          </Button>
         </div>
       </div>
+
+      {/* 冲突检测面板 */}
+      {showConflicts && conflicts.length > 0 && (
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2 text-red-700">
+              <AlertTriangle className="h-5 w-5" />
+              发现 {conflicts.length} 个排班冲突
+            </CardTitle>
+            <CardDescription className="text-red-600">
+              以下教师在同一时间有重叠排班，请调整
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {conflicts.map((conflict, idx) => (
+                <div key={idx} className="flex items-start gap-2 bg-white rounded-lg p-3 border border-red-200">
+                  <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm text-red-700">{conflict.description}</p>
+                    <p className="text-xs text-red-400 mt-1">
+                      {conflict.withSchedule.date} · {conflict.withSchedule.start_time}-{conflict.withSchedule.end_time}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button variant="outline" size="sm" onClick={() => setShowConflicts(false)}>
+              关闭
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
 
       {/* 快速排班 */}
       <Card>
