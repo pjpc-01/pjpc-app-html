@@ -146,7 +146,8 @@
 | 家长端 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% | 独立管理+家长门户 5 页 |
 | 库存模块 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% | Phase 4d：进销存管理 |
 | 课程打磨 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% | Phase 5d：真实PB数据+冲突检测+班级管理 |
-| 🔴 安亲班核心 | ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ 0% | 最大缺口！每日日志/成绩/接送/餐饮 |
+| 体验升级 | 🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜ 80% | Phase 5e：Cmd+K搜索+空状态骨架屏+header统一 |
+| 🔴 安亲班核心 | 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 25% | Phase 5f：每日日志 教师端✅ + grades PB已建 |
 | 企业级 | ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ 5% | 审计日志/备份/通知中心 |
 
 ### 页面路由 (50 条)
@@ -155,6 +156,7 @@
 |------|------|------|
 | `/` 首页 Dashboard | ✅ | 管理员控制台 + 分行Tab过滤 + 快捷入口 |
 | `/login` | ✅ | 登录页 |
+| `/daily-logs` | ✅ **新** | 每日日志 — 教师记录学生功课/午睡/用餐/心情 |
 | `/student-management` | ✅ | 158 学生，CRUD + 导入导出 + 网格/表格/分析视图 |
 | `/teacher-management` | ✅ | 28 教师，CRUD + 详情 + 薪资关联 |
 | `/course-management` | ✅ | 课程 CRUD |
@@ -877,14 +879,24 @@ salary_structures:
 
 ---
 
-### 🔵 Phase 5f：安亲班专属（我决定，第六优先）
+### 🔵 Phase 5f：安亲班专属（我决定，第六优先 🚧 进行中 2026-06-23）
 
-| # | 功能 | 价值 |
-|---|------|------|
-| 1 | 📓 **每日日志** `daily_logs` | 安亲班核心产品 |
-| 2 | 📊 **成绩管理** `grades` | 对接现有 homework 系统 |
-| 3 | 🚗 **接送管理** | 刚需 |
-| 4 | 📸 **随手拍推家长** | 家长粘性 |
+| # | 功能 | 价值 | 状态 |
+|---|------|------|:----:|
+| 1 | 📓 **每日日志** `daily_logs` | 安亲班核心产品 | 🚧 教师端完成 |
+| 2 | 📊 **成绩管理** `grades` | 对接现有 homework 系统 | ⏳ PB 已建 |
+| 3 | 🚗 **接送管理** | 刚需 | ⏳ |
+| 4 | 📸 **随手拍推家长** | 家长粘性 | ⏳ |
+
+**5f-1 每日日志 — 已构建：**
+- PB `daily_logs` collection（11字段：studentId/teacherId/date/homework_done/nap/meal/mood/behavior_note/photo/parent_viewed/centerId）
+- API `/api/daily-logs`（GET/POST/PATCH）
+- Hook `hooks/useDailyLogs.ts`（useDailyLogs + useStudentDailyLogs）
+- 教师端页面 `/daily-logs`（按日期筛选 + 功课/午睡/用餐/心情快速切换 + 待记录学生一键创建 + 备注编辑）
+- 侧边栏：Admin 学生管理 + Teacher 导航均已加入
+
+**5f-2 成绩管理 — PB 已建：**
+- PB `grades` collection（8字段：studentId/subject/term/year/score/grade_letter/teacher_comment/teacherId）
 
 ---
 

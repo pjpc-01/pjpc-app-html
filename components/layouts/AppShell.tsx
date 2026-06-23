@@ -68,6 +68,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         icon: Users,
         children: [
           { label: "学生列表", href: "/student-management", icon: Users },
+          { label: "每日日志", href: "/daily-logs", icon: FileEdit },
           { label: "家长管理", href: "/parent-management", icon: Users },
           { label: "成绩单", href: "/report-cards", icon: GraduationCap },
           { label: "作业管理", href: "/homework", icon: FileEdit },
@@ -142,6 +143,11 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         label: "学生签到",
         href: "/student-checkin",
         icon: UserCheck,
+      },
+      {
+        label: "每日日志",
+        href: "/daily-logs",
+        icon: FileEdit,
       },
       {
         label: "我的学生",
