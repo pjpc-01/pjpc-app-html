@@ -19,8 +19,8 @@ export default function AdminLayout({
     { name: 'Students', href: '/admin/students', icon: Users },
     { name: 'Teachers', href: '/admin/teachers', icon: UserCog },
     { name: 'Finance', href: '/admin/finance', icon: DollarSign },
-    { name: 'Classes', href: '/admin/classes', icon: GraduationCap },
-    { name: 'Settings', href: '/admin/settings', icon: Settings },
+    { name: 'Courses', href: '/course-management', icon: GraduationCap },
+    { name: 'Settings', href: '/settings', icon: Settings },
   ]
 
   return (
