@@ -145,6 +145,7 @@
 | 作业模块 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% | Homework CRUD + 批量批改 + 教师工作台联动 |
 | 家长端 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% | 独立管理+家长门户 5 页 |
 | 库存模块 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% | Phase 4d：进销存管理 |
+| 课程打磨 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% | Phase 5d：真实PB数据+冲突检测+班级管理 |
 | 🔴 安亲班核心 | ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ 0% | 最大缺口！每日日志/成绩/接送/餐饮 |
 | 企业级 | ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ 5% | 审计日志/备份/通知中心 |
 
@@ -838,13 +839,30 @@ salary_structures:
 
 ---
 
-### 🟠 Phase 5d：课程/班级管理（第四优先）
+### 🟠 Phase 5d：课程/班级管理打磨（第四优先 ✅ 2026-06-23）
 
-| 当前 | 需要打磨 |
-|------|---------|
-| 课程 CRUD ✅ | 加课程大纲/教材附件 |
-| 排课 ✅ | 冲突检测完善 |
-| 班级管理 ✅ | 班级=course+grade，确保关联正确 |
+| 当前 | 需要打磨 | 状态 |
+|------|---------|:----:|
+| 课程 CRUD ✅ | 加课程大纲/教材附件 + 改用真实 PB API | ✅ 完成 |
+| 排课 ✅ | 冲突检测完善 | ✅ 完成 |
+| 班级管理 ✅ | 班级=course+grade，确保关联正确 | ✅ 完成 |
+
+**构建内容：**
+
+| # | 文件 | 说明 |
+|---|------|------|
+| 1 | `lib/pocketbase-courses.ts` (N) | courses 数据层：TypeScript 类型 + CRUD API + 班级分组 |
+| 2 | `hooks/useCourses.ts` (R) | 完全重写：去掉全部 mock 数据，改用真实 PB API |
+| 3 | `components/courses/CourseManagement.tsx` (N) | 课程管理：统计卡片 + 搜索/筛选 + 表格/卡片双视图 + CRUD 对话框 + 课程大纲/描述编辑 + 教师列表加载 + 空状态/加载态/错误态 |
+| 4 | `components/courses/ClassManagement.tsx` (N) | 班级管理：按年级分组的班级卡片/表格视图 + 颜色编码 + 统计 |
+| 5 | `app/course-management/page.tsx` (R) | 重构 4 个 tab：课程管理(接真实组件) + 班级管理(接真实组件) + 排课管理(跳转到独立页面) + 课程分析(占位) |
+| 6 | `lib/schedule-conflicts.ts` (N) | 排课冲突检测引擎：时间重叠检测 + 工时超限检测 + 批量检测 |
+| 7 | `app/components/attendance/SimpleScheduleManager.tsx` (M) | 加冲突检测按钮 + 冲突面板 UI |
+
+| 旧文件 | 备注 |
+|--------|------|
+| `app/components/management/simple-course-management.tsx` | 保留（不再被引用），可后续清理 |
+| `hooks/useCourses.ts` (旧) | 已替换 |
 
 ---
 
