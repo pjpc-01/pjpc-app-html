@@ -20,40 +20,10 @@ export interface InvoiceFilters {
   studentName: string
 }
 
-const MOCK_INVOICES: Invoice[] = [
-  {
-    id: 'mock-1',
-    studentId: 's1',
-    studentName: '张小明',
-    studentGrade: 'Primary 4',
-    issueDate: '2026-06-01',
-    dueDate: '2026-06-15',
-    status: 'issued',
-    items: [{ name: 'Monthly Tuition', amount: 800 }, { name: 'Material Fee', amount: 200 }],
-    totalAmount: 1000,
-    notes: 'June Tuition',
-    invoiceNumber: 'INV-2026-001'
-  },
-  {
-    id: 'mock-2',
-    studentId: 's2',
-    studentName: '李华',
-    studentGrade: 'Secondary 1',
-    issueDate: '2026-06-01',
-    dueDate: '2026-06-15',
-    status: 'paid',
-    items: [{ name: 'Monthly Tuition', amount: 1200 }],
-    totalAmount: 1200,
-    notes: 'June Tuition',
-    invoiceNumber: 'INV-2026-002'
-  }
-]
-
 export const useInvoices = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isMockMode, setIsMockMode] = useState(false)
   const [filters, setFilters] = useState<InvoiceFilters>({
     status: '',
     studentName: ''
@@ -68,12 +38,10 @@ export const useInvoices = () => {
         sort: '-created'
       })
       setInvoices(data || [])
-      setIsMockMode(false)
     } catch (err) {
-      console.warn('PocketBase unreachable, falling back to mock invoices:', err)
-      setInvoices(MOCK_INVOICES)
-      setIsMockMode(true)
-      setError('Demo Mode: Server unreachable')
+      console.error('Failed to fetch invoices:', err)
+      setInvoices([])
+      setError('无法加载发票数据，请检查网络连接')
     } finally {
       setLoading(false)
     }
@@ -90,52 +58,25 @@ export const useInvoices = () => {
   }, [invoices])
 
   const createInvoice = useCallback(async (invoiceData: Omit<Invoice, 'id' | 'invoiceNumber'>) => {
-    try {
-      const invoiceNumber = generateInvoiceNumber()
-      const data = { ...invoiceData, invoiceNumber }
-      const result = await createRecord('invoices', data)
-      setInvoices(prev => [...prev, result])
-      return result
-    } catch (err) {
-      if (isMockMode) {
-        const mockResult = { ...invoiceData, id: `mock-${Date.now()}`, invoiceNumber: generateInvoiceNumber() } as Invoice
-        setInvoices(prev => [...prev, mockResult])
-        return mockResult
-      }
-      throw err
-    }
-  }, [generateInvoiceNumber, isMockMode])
+    const invoiceNumber = generateInvoiceNumber()
+    const data = { ...invoiceData, invoiceNumber }
+    const result = await createRecord('invoices', data)
+    setInvoices(prev => [...prev, result])
+    return result
+  }, [generateInvoiceNumber])
 
   const updateInvoice = useCallback(async (invoiceId: string, updates: Partial<Invoice>) => {
-    try {
-      const result = await updateRecord('invoices', invoiceId, updates)
-      setInvoices(prev => prev.map(invoice => 
-        invoice.id === invoiceId ? { ...invoice, ...updates } : invoice
-      ))
-      return result
-    } catch (err) {
-      if (isMockMode) {
-        setInvoices(prev => prev.map(invoice => 
-          invoice.id === invoiceId ? { ...invoice, ...updates } : invoice
-        ))
-        return { id: invoiceId, ...updates }
-      }
-      throw err
-    }
-  }, [isMockMode])
+    const result = await updateRecord('invoices', invoiceId, updates)
+    setInvoices(prev => prev.map(invoice => 
+      invoice.id === invoiceId ? { ...invoice, ...updates } : invoice
+    ))
+    return result
+  }, [])
 
   const deleteInvoice = useCallback(async (invoiceId: string) => {
-    try {
-      await deleteRecord('invoices', invoiceId)
-      setInvoices(prev => prev.filter(invoice => invoice.id !== invoiceId))
-    } catch (err) {
-      if (isMockMode) {
-        setInvoices(prev => prev.filter(invoice => invoice.id !== invoiceId))
-        return
-      }
-      throw err
-    }
-  }, [isMockMode])
+    await deleteRecord('invoices', invoiceId)
+    setInvoices(prev => prev.filter(invoice => invoice.id !== invoiceId))
+  }, [])
 
   const updateInvoiceStatus = useCallback(async (invoiceId: string, status: Invoice['status']) => {
     await updateInvoice(invoiceId, { status })
@@ -220,7 +161,6 @@ export const useInvoices = () => {
     invoices,
     loading,
     error,
-    isMockMode,
     filters,
     setFilters,
     createInvoice,

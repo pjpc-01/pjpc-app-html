@@ -19,9 +19,9 @@ export default function AdminDashboard() {
         <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <QuickActionBtn label="Add Student" href="/admin/students" />
-          <QuickActionBtn label="Create Invoice" href="/admin/finance" />
-          <QuickActionBtn label="Attendance" href="/admin/attendance" />
-          <QuickActionBtn label="Reports" href="/admin/reports" />
+          <QuickActionBtn label="Create Invoice" href="/finance/overview" />
+          <QuickActionBtn label="Attendance" href="/unified-attendance" />
+          <QuickActionBtn label="Reports" href="/finance/reports" />
         </div>
       </div>
     </div>
