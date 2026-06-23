@@ -70,8 +70,20 @@ function ChildCard({ child }: { child: any }) {
             color="text-purple-600"
             href={`/parent/children/${child.id}/homework`}
           />
+          <QuickStat
+            icon={<span className="text-lg">📓</span>}
+            label="日志"
+            value="查看"
+            color="text-teal-600"
+            href={`/parent/dailylogs?child=${child.id}`}
+          />
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/parent/dailylogs?child=${child.id}`}>
+              每日日志 <ChevronRight className="ml-1 h-3 w-3" />
+            </Link>
+          </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href={`/parent/grades?child=${child.id}`}>
               成绩 <ChevronRight className="ml-1 h-3 w-3" />
