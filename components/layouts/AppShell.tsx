@@ -29,17 +29,18 @@ import {
   FileText,
   UserCheck,
   CreditCard,
-  HelpCircle,
   ChevronUp,
   Building,
   Building2,
   PieChart,
   FileEdit,
   Package,
+  Star,
+  Truck,
+  Camera,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import ConnectionStatus from "@/components/ConnectionStatus"
 import GlobalSearch from "@/components/ui/global-search"
 
 type NavItem = {
@@ -339,8 +340,8 @@ export default function AppShell({
               onClick={() => toggleMenu(item.label)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                 expanded
-                  ? "bg-white/10 text-white"
-                  : "text-slate-300 hover:bg-white/5 hover:text-white"
+                  ? "bg-yellow-50 text-yellow-600"
+                  : "text-[#7a6a48] hover:bg-yellow-50/60 hover:text-yellow-600"
               }`}
             >
               <item.icon className="w-4 h-4 flex-shrink-0" />
@@ -352,7 +353,7 @@ export default function AppShell({
               />
             </button>
             {expanded && (
-              <div className="ml-4 mt-1 space-y-1 border-l border-white/10 pl-3">
+            <div className="ml-4 mt-1 space-y-1 border-l border-[#c8b898] pl-3">
                 {item.children.map((child) => renderNavItem(child, depth + 1))}
               </div>
             )}
@@ -361,15 +362,15 @@ export default function AppShell({
           <Link
             href={addCenterParam(item.href) || "#"}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-              active
-                ? "bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-white shadow-sm border border-indigo-500/30"
-                : "text-slate-300 hover:bg-white/5 hover:text-white"
+            active
+              ? "bg-yellow-50 text-yellow-600 font-semibold shadow-sm border border-yellow-200"
+              : "text-[#7a6a48] hover:bg-yellow-50/60 hover:text-yellow-600"
             }`}
           >
             <item.icon className="w-4 h-4 flex-shrink-0" />
             <span className="truncate">{item.label}</span>
             {active && (
-              <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+              <span className="ml-auto w-1.5 h-1.5 rounded-full bg-yellow-400"></span>
             )}
           </Link>
         )}
@@ -439,7 +440,7 @@ export default function AppShell({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#fefcf6]">
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
@@ -479,22 +480,22 @@ export default function AppShell({
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-40 h-full bg-gradient-to-b from-slate-900 via-slate-900 to-indigo-950 border-r border-white/5 transition-all duration-300 ease-in-out flex flex-col ${
+        className={`fixed top-0 left-0 z-40 h-full bg-gradient-to-b from-[#f5f0e5] via-[#f5f0e5] to-[#ede4d0] border-r border-[#d8ccb4] transition-all duration-300 ease-in-out flex flex-col ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } ${sidebarOpen ? "lg:translate-x-0 lg:w-64" : "lg:-translate-x-full lg:w-0"}`}
       >
         {/* Logo */}
-        <div className="flex-shrink-0 p-5 border-b border-white/5">
+        <div className="flex-shrink-0 p-5 border-b border-[#d8ccb4]">
           <Link href="/" className="flex items-center gap-3">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg blur opacity-40"></div>
-              <div className="relative bg-gradient-to-r from-indigo-500 to-purple-600 p-2 rounded-lg">
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-300 to-yellow-100 rounded-lg blur opacity-30"></div>
+              <div className="relative bg-gradient-to-r from-yellow-300 to-yellow-100 p-2 rounded-lg">
                 <GraduationCap className="h-5 w-5 text-white" />
               </div>
             </div>
             <div className={`${!sidebarOpen ? "lg:hidden" : ""}`}>
-              <h1 className="text-sm font-bold text-white tracking-tight">PJPC</h1>
-              <p className="text-[10px] text-slate-400">{config.title}</p>
+              <h1 className="text-sm font-bold text-[#5c4a30] tracking-tight">PJPC</h1>
+              <p className="text-[10px] text-[#9a8868]">{config.title}</p>
             </div>
           </Link>
         </div>
@@ -504,13 +505,14 @@ export default function AppShell({
           {config.navItems.map((item) => renderNavItem(item))}
         </nav>
 
-        {/* Bottom section — 分行Tab */}
-        <div className="flex-shrink-0 p-3 border-t border-white/5">
-          <div className="flex flex-col gap-1.5">
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold px-2">分行筛选</p>
+        {/* Bottom section — 用户 + 分行 + 工具 */}
+        <div className="flex-shrink-0 border-t border-[#d8ccb4]">
+          {/* Center filter */}
+          <div className="px-3 pt-3 pb-2">
+            <p className="text-[10px] text-[#9a8868] uppercase tracking-wider font-semibold px-2 mb-1.5">分行筛选</p>
             <div className="flex flex-wrap gap-1">
               {centers.length === 0 ? (
-                <div className="text-[10px] text-slate-500 px-2">加载中...</div>
+                <div className="text-[10px] text-[#9a8868] px-2">加载中...</div>
               ) : (
                 [{ id: "all", code: "全部", icon: Building2 } as const, ...centers.map(c => ({ id: c.id, code: c.code, icon: School } as const))].map((c) => (
                 <button
@@ -518,14 +520,13 @@ export default function AppShell({
                   onClick={() => {
                     const url = new URL(window.location.href)
                     url.searchParams.set("center", c.id)
-                    // Set cookie so PB Proxy can inject center filter
                     document.cookie = `selectedCenter=${c.id};path=/;max-age=86400`
                     router.replace(url.pathname + url.search)
                   }}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     (searchParams?.get("center") || "all") === c.id
-                      ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
-                      : "text-slate-400 hover:text-slate-300 hover:bg-white/5"
+                      ? "bg-yellow-100 text-yellow-600 border border-yellow-200"
+                      : "text-[#9a8868] hover:text-[#5c4a30] hover:bg-white/50"
                   }`}
                 >
                   <c.icon className="h-3 w-3" />
@@ -534,69 +535,39 @@ export default function AppShell({
               )))}
             </div>
           </div>
+          {/* User info + tools */}
+          <div className="flex items-center justify-between px-3 py-2 border-t border-[#d8ccb4]/50">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-r from-yellow-300 to-yellow-100 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 shadow-sm">
+                {userAvatar || userName?.charAt(0)?.toUpperCase() || "A"}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-[#5c4a30] leading-tight truncate">{userName || getRoleLabel(userRole)}</p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-[#9a8868]">{getRoleLabel(userRole)}</span>
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                  <span className="text-[9px] text-[#9a8868]">在线</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-0.5">
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-[#9a8868] hover:text-yellow-600 hover:bg-yellow-50">
+                <Bell className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-[#9a8868] hover:text-yellow-600 hover:bg-yellow-50">
+                <LogOut className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
         </div>
       </aside>
 
-      {/* Main content */}
+      {/* Main content — no separate header bar */}
       <div
         className={`transition-all duration-300 ${
           sidebarOpen ? "lg:ml-64" : "lg:ml-0"
         }`}
       >
-        {/* Top header bar */}
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between h-14 px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-3">
-              <div className="hidden lg:flex items-center gap-2">
-                <School className="h-4 w-4 text-slate-400" />
-                <nav className="flex items-center gap-1.5 text-sm">
-                  {getBreadcrumbs().map((crumb, i) => (
-                    <React.Fragment key={i}>
-                      {i > 0 && (
-                        <ChevronRight className="h-3 w-3 text-slate-300" />
-                      )}
-                      <span className={i === getBreadcrumbs().length - 1 ? "text-slate-900 font-medium" : "text-slate-500"}>
-                        {crumb.label}
-                      </span>
-                    </React.Fragment>
-                  ))}
-                </nav>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="hidden sm:block">
-                <ConnectionStatus />
-              </div>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-500 hover:text-slate-700 hover:bg-slate-100">
-                <Bell className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-500 hover:text-slate-700 hover:bg-slate-100">
-                <HelpCircle className="h-4 w-4" />
-              </Button>
-              {/* User info */}
-              <div className="flex items-center gap-2 pl-2 ml-2 border-l border-slate-200">
-                <div className="hidden sm:flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0">
-                    {userAvatar || userName?.charAt(0)?.toUpperCase() || "A"}
-                  </div>
-                  <div className="hidden md:block">
-                    <p className="text-xs font-medium text-slate-700 leading-tight">{userName}</p>
-                    <p className="text-[10px] text-slate-400 leading-tight">{getRoleLabel(userRole)}</p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0 text-slate-400 hover:text-red-500 hover:bg-red-50"
-                >
-                  <LogOut className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Page content */}
         <main className="p-4 sm:p-6 lg:p-8">
           <GlobalSearch />
           {children}
