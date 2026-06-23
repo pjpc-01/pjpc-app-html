@@ -893,7 +893,8 @@ salary_structures:
 - API `/api/daily-logs`（GET/POST/PATCH）
 - Hook `hooks/useDailyLogs.ts`（useDailyLogs + useStudentDailyLogs）
 - 教师端页面 `/daily-logs`（按日期筛选 + 功课/午睡/用餐/心情快速切换 + 待记录学生一键创建 + 备注编辑）
-- 侧边栏：Admin 学生管理 + Teacher 导航均已加入
+- 家长端页面 `/parent/dailylogs`（按日期分组查看 + 功课/午睡/用餐/心情彩色卡片 + 备注展开 + 统计条）
+- 侧边栏：Admin 学生管理 / Teacher 导航 / Parent 导航均已加入
 
 **5f-2 成绩管理 — PB 已建：**
 - PB `grades` collection（8字段：studentId/subject/term/year/score/grade_letter/teacher_comment/teacherId）

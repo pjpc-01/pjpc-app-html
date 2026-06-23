@@ -170,6 +170,11 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         icon: LayoutDashboard,
       },
       {
+        label: "每日日志",
+        href: "/parent/dailylogs",
+        icon: FileEdit,
+      },
+      {
         label: "成绩查询",
         href: "/parent/grades",
         icon: BarChart3,
