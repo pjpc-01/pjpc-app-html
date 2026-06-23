@@ -40,6 +40,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import ConnectionStatus from "@/components/ConnectionStatus"
+import GlobalSearch from "@/components/ui/global-search"
 
 type NavItem = {
   label: string
@@ -582,6 +583,7 @@ export default function AppShell({
 
         {/* Page content */}
         <main className="p-4 sm:p-6 lg:p-8">
+          <GlobalSearch />
           {children}
         </main>
       </div>
