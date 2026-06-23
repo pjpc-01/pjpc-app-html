@@ -72,6 +72,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
           { label: "成绩管理", href: "/grades", icon: GraduationCap },
           { label: "积分管理", href: "/points-management", icon: Star },
           { label: "接送管理", href: "/pickup", icon: Truck },
+          { label: "随手拍", href: "/photo-moments", icon: Camera },
           { label: "家长管理", href: "/parent-management", icon: Users },
           { label: "成绩单", href: "/report-cards", icon: GraduationCap },
           { label: "作业管理", href: "/homework", icon: FileEdit },
