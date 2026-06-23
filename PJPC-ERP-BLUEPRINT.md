@@ -150,7 +150,7 @@
 | 🔴 安亲班核心 | 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 25% | Phase 5f：每日日志 教师端✅ + grades PB已建 |
 | 企业级 | ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ 5% | 审计日志/备份/通知中心 |
 
-### 页面路由 (50 条)
+### 页面路由 (52 条)
 
 | 页面 | 状态 | 说明 |
 |------|------|------|
@@ -1270,4 +1270,372 @@ shadcn/ui + Tailwind CSS + sonner (toast) + lucide-react (图标)
 
 ---
 
-*本蓝图是活文档，随系统演进持续更新。*
+
+---
+
+## 十六、🔍 2026-06-23 全面审计报告
+
+> 由 deepseek-v4-pro 执行三线审计：代码质量 / 市场对标 / UI 对标
+> 本章节详细到任何 AI agent 都能直接接手修复
+
+---
+
+### 16.1 📊 代码库快照
+
+| 维度 | 数值 |
+|------|------|
+| 总源文件 | ~670 个 (不含 node_modules / .next / .git) |
+| .ts/.tsx 总行数 | ~140,000 行 |
+| 页面路由 | 52 条 |
+| API 路由 | 40+ 条 |
+| 数据 Hooks | 38 个 |
+| PB Collections | 35 个 |
+| 死代码总计 | **~13,500+ 行** |
+| 重复文件 | 15+ 组 |
+| 500+行巨型文件 | 35+ 个 |
+
+---
+
+### 16.2 🔴 死代码 & 重复文件 — 删除清单
+
+#### 16.2.1 🔴 CRITICAL：`app/components/teacher/` — 7,261 行完全重复
+
+**问题：** `app/components/teacher/` 下 13 个文件是 `components/teacher/` 的完全拷贝，diff=0。ZERO 文件 import `@/app/components/teacher/`，全部使用 `@/components/teacher/`。
+
+| 文件 | 行数 | 差异 |
+|------|------|------|
+| `TeacherForm.tsx` | 762 | 0 diff |
+| `TeacherLeaveManagement.tsx` | 744 | 0 diff |
+| `TeacherPerformanceManagement.tsx` | 739 | 0 diff |
+| `ClassSchedule.tsx` | 432 | 0 diff |
+| `TeacherProfile.tsx` | 540 | 0 diff |
+| `TeacherAnalytics.tsx` | ~400 | 0 diff |
+| `TeacherBulkOperations.tsx` | ~400 | 0 diff |
+| `TeacherDashboard.tsx` | ~300 | 0 diff |
+| `TeacherDetails.tsx` | ~300 | 0 diff |
+| `TeacherStats.tsx` | ~300 | 0 diff |
+| `AdvancedTeacherFilters.tsx` | ~400 | 0 diff |
+| `StudentProfileView.tsx` | ~200 | 0 diff |
+| `TeacherSalaryManagement.tsx` | 1,179 vs 1,143 | 129 diff lines (near-duplicate) |
+
+**修复：** `rm -rf app/components/teacher/` — 一次性删除 13 文件。
+
+#### 16.2.2 🔴 CRITICAL：未使用的考勤组件 — 4,150 行
+
+| 文件 | 行数 | 状态 |
+|------|------|------|
+| `app/components/attendance/TuitionCenterScheduleManagement.tsx` | 1,429 | ZERO imports |
+| `app/components/attendance/TuitionScheduleManagement.tsx` | 959 | ZERO imports |
+| `app/components/attendance/EnterpriseScheduleManagement.tsx` | 832 | ZERO imports |
+| `app/components/attendance/UserFriendlySchedule.tsx` | 483 | ZERO imports |
+| `app/components/attendance/BasicSchedule.tsx` | 447 | ZERO imports |
+
+**修复：** 直接删除。这些是多次实验迭代的遗留物，从未上线。
+
+#### 16.2.3 🟠 HIGH：未使用的 NFC/系统组件 — ~1,200 行
+
+| 文件 | 行数 | 状态 |
+|------|------|------|
+| `app/components/systems/nfc-reader-manager.tsx` | ~200 | ZERO imports |
+| `app/components/systems/keyboard-nfc-background-runner.tsx` | ~150 | ZERO imports |
+| `app/components/systems/mobile-nfc-interface.tsx` | ~200 | ZERO imports |
+| `app/components/systems/usb-reader-interface.tsx` | ~200 | ZERO imports |
+| `app/components/systems/CardManagementTable.tsx` | ~350 | ZERO imports |
+
+**修复：** 直接删除。
+
+#### 16.2.4 🟠 HIGH：旧 Dashboard 文件 — 513 行
+
+| 旧文件（不用） | 新文件（在用） |
+|---|---|
+| `admin-dashboard.tsx` | `modern-admin-dashboard.tsx` |
+| `parent-dashboard.tsx` | `modern-parent-dashboard.tsx` |
+
+**修复：** 删除旧文件，更新 barrel export。
+
+#### 16.2.5 🟡 MEDIUM：未使用的学生/数据组件 — ~400 行
+
+| 文件 |
+|------|
+| `app/components/student/PrintableEnrollmentForm.tsx` |
+| `app/components/student/StudentGradeOverride.tsx` |
+| `app/components/data-import/GoogleCSVImport.tsx` |
+
+#### 16.2.6 🟡 MEDIUM：孤立页面 & 死配置
+
+| 文件 | 行数 | 问题 |
+|------|------|------|
+| `app/static-page.tsx` | 176 | 登录页，零导航链接 |
+| `app/teacher-attendance-reports/page.tsx` | 730 | 零导航链接，与 `/attendance-reports` 749行高度重复 |
+| `hooks/useFeesConfig.ts` | 4 | 只有 `USE_MOCK_FEES = false` — 死配置 |
+
+#### 16.2.7 🟢 LOW：根目录散落脚本
+
+| 文件 | 建议 |
+|------|------|
+| `debug-report-data.js` | 移入 `scripts/` |
+| `test-enterprise-date-ranges.js` | 移入 `scripts/` |
+| `test-enterprise-ui-integration.js` | 移入 `scripts/` |
+| `test-user-export.js` | 移入 `scripts/` |
+| `final_import.py` | 移入 `scripts/` |
+| `cert.key` | 移入 `certs/` 或删除 |
+
+---
+
+### 16.3 🔴 BUG — 需要立即修复
+
+#### 16.3.1 🔴 破导出：`app/components/finance/reports-overview/index.ts`
+
+```
+第 3 行: export { default as FinanceManagementPage } from "./finance-management-page"
+```
+
+`finance-management-page.tsx` **不存在于 `reports-overview/` 目录**。如被 import 会 runtime 崩溃。目前恰好无人 import。
+
+**修复：** 删除这行导出。
+
+#### 16.3.2 🔴 断链 Admin 路由 — 4 条 404
+
+`app/admin/layout.tsx` 链接到以下路由，但无对应 page 文件：
+
+| 路由 | 状态 |
+|------|------|
+| `/admin/classes` | ❌ 404 |
+| `/admin/settings` | ❌ 404 |
+| `/admin/attendance` | ❌ 404 |
+| `/admin/reports` | ❌ 404 |
+
+`app/admin/page.tsx` 的 QuickAction 按钮也引用 `/admin/attendance` 和 `/admin/reports`。
+
+**修复：** 创建对应页面或删除断链。
+
+#### 16.3.3 🟡 Medium：生产环境 Mock 数据 Fallback
+
+`hooks/useInvoices.ts` 含硬编码 `MOCK_INVOICES` 数组（50+行），PB 不可达时自动激活。生产环境可能给用户看假数据。
+
+**修复：** 删除 mock fallback，或加 `NEXT_PUBLIC_MOCK_MODE` 环境变量门控。
+
+---
+
+### 16.4 🟠 BLOAT — 巨型文件清单（20 个最大文件）
+
+| 文件 | 行数 | 问题 |
+|------|------|------|
+| `app/components/management/nfc-points-operation.tsx` | 1,441 | 单体巨兽 |
+| `app/components/attendance/TuitionCenterScheduleManagement.tsx` | 1,429 | **且未使用！** |
+| `app/components/student/StudentForm.tsx` | 1,220 | 需拆表单项 |
+| `app/components/systems/IntegratedCardManager.tsx` | 1,184 | 单体 |
+| `app/components/teacher/TeacherSalaryManagement.tsx` | 1,179 / 1,143 | **且重复！** |
+| `app/points-management/page.tsx` | 1,080 | 页面太大 |
+| `app/components/attendance/UnifiedAttendanceSystem.tsx` | 1,077 | 需拆分 |
+| `app/components/attendance/TeacherAttendanceSystem.tsx` | 1,074 | 需拆分 |
+| `app/components/finance/invoice-management/InvoiceManagement.tsx` | 1,072 | 需拆分 |
+| `app/components/systems/UnifiedCardManager.tsx` | 1,016 | 单体 |
+| `lib/usb-nfc-reader.ts` | 1,004 | 库文件太大 |
+| `app/api/reports/attendance/route.ts` | 999 | API 太大 |
+| `app/components/management/admin/enterprise-user-approval.tsx` | 989 | |
+| `app/components/management/student-management-page.tsx` | 971 | **已知问题，Phase 5a 已拆分** |
+| `app/settings/page.tsx` | 963 | |
+| `app/components/attendance/TuitionScheduleManagement.tsx` | 959 | **且未使用！** |
+| `app/components/management/admin/unified-user-approval.tsx` | 930 | |
+| `app/components/attendance/StudentAttendanceSystem.tsx` | 857 | |
+| `lib/pocketbase-students.ts` | 853 | |
+| `app/components/attendance/EnterpriseScheduleManagement.tsx` | 832 | **且未使用！** |
+
+总计 35+ 文件超 500 行。优先清理「既大又未使用」的文件。
+
+---
+
+### 16.5 🟡 架构不一致
+
+#### 16.5.1 双组件目录模式
+
+代码库同时使用两个组件目录：
+
+```
+components/          ← 通过 @/components/ 引用
+app/components/      ← 通过 @/app/components/ 引用
+```
+
+teacher 组件两处都有、finance 组件有双层（顶层级 + 子目录级）、import 模式混乱。
+
+**建议：** 统一迁移至 `components/`，`app/components/` 仅保留真正的 page-level 组件。
+
+#### 16.5.2 多人命名的 Dashboard
+
+`admin-dashboard.tsx` vs `modern-admin-dashboard.tsx`，`parent-dashboard.tsx` vs `modern-parent-dashboard.tsx`。去掉 `modern-` 前缀，只保留一个版本。
+
+#### 16.5.3 六个排课实现并存
+
+`SimpleScheduleManager`、`BasicSchedule`、`EnterpriseScheduleManagement`、`TuitionScheduleManagement`、`TuitionCenterScheduleManagement`、`UserFriendlySchedule`、`SmartSchedulePanel` — 多个未使用。
+
+**建议：** 保留 `SimpleScheduleManager`（实际在用），删除其余。
+
+#### 16.5.4 两个 PDF 工具库
+
+`lib/pdf-generator.ts` 和 `lib/pdf-export.ts` 都处理 PDF，但导出不同函数。合并或明确职责划分。
+
+#### 16.5.5 三个 NFC 库
+
+`lib/nfc-rfid.ts`、`lib/nfc-scanner.ts`、`lib/usb-nfc-reader.ts`，合计 ~33K 行。
+
+**建议：** 统一为一个 `lib/nfc.ts`。
+
+---
+
+### 16.6 📈 市场对标：教育 ERP 差距分析
+
+> 对标系统：ClassDojo / PowerSchool / Classe365 / Teach 'n Go / TutorBird / Fedena / Gibbon
+
+#### 16.6.1 功能覆盖对比表
+
+| 功能领域 | 市场标准 | PJPC 现状 | 差距等级 |
+|---------|---------|-----------|:--------:|
+| **沟通中枢** | 双向消息、公告+已读回执、群发通知 | ⚠️ 有公告但无已读回执、无双向 | 🟠 |
+| **招生管道** | 咨询→试课→报名→分班全流程 | ❌ 无 | 🟡 |
+| **每日日志** | 老师记录→家长实时查看→回复互动 | 🚧 教师端+家长端刚完成 | 🟡 |
+| **成绩管理** | 科目/学期录入+成绩分析+趋势图+Report Card | ⏳ PB 已建，前端未做 | 🔴 |
+| **接送管理** | 指定接送人+时间+车牌+家长确认 | ❌ 无 | 🔴 |
+| **随手拍/时光轴** | 老师拍照+说明→推送家长→家长点赞评论 | ❌ 无 | 🟠 |
+| **行为追踪** | 积分/奖惩 → 家长可视化仪表板 | ⚠️ 积分系统有，但家长可视化缺失 | 🟡 |
+| **健康记录** | 过敏/用药/病史/紧急联系人 | ⚠️ 紧急联系人字段有，但无结构化健康记录 | 🟡 |
+| **自动通知** | WhatsApp/Email 自动推送（缴费提醒/出勤异常/每日总结） | ⚠️ WhatsApp 基础提醒有，但未系统化 | 🟠 |
+| **家长自助** | Portal 查成绩/缴费/出勤/日志 → 在线缴费 | 🟩 门户 5 页完成 | ✅ |
+| **财务全链路** | 费用→发票→支付→收据→报表→E-Invoice | 🟩 完成度 90% | ✅ |
+| **薪资自动化** | KB/KWSP/EPF/SOCSO/EIS 自动+银行文件导出 | 🟩 完成 | ✅ |
+| **库存管理** | 进销存+低库存预警 | 🟩 Phase 4d 完成 | ✅ |
+| **排课冲突检测** | 时间重叠+教师工时超限+教室冲突 | 🟩 Phase 5d 完成 | ✅ |
+| **多语言** | CN/MY/EN UI 切换 | ❌ 仅中文 | 🟢 |
+| **数字签名** | 家长线上签署报告/许可单 | ❌ 无 | 🟢 |
+| **日历同步** | Google Calendar / iCal 双向同步 | ❌ 无 | 🟢 |
+| **API / Webhook** | 第三方集成接口 | ⚠️ PB 自带 REST API | 🟢 |
+| **试课管理** | 潜在学生→试课→转化跟踪 | ❌ 无 | 🟡 |
+| **候补名单** | 满班自动候补 | ❌ 无 | 🟡 |
+
+#### 16.6.2 差距优先级排序
+
+| 优先级 | 功能 | 为什么 |
+|:------:|------|--------|
+| 🔴 | **成绩管理** (5f-2) | PB 已建，前端缺口，家长门户空等 |
+| 🔴 | **接送管理** (5f-3) | 每间安亲班刚需，家长最关心安全 |
+| 🟠 | **随手拍** (5f-4) | 高粘性功能，增强家长信任 |
+| 🟠 | **自动通知系统化** | 缴费提醒/出勤异常/每日总结 WhatsApp |
+| 🟠 | **沟通中枢** | 公告已读回执 + 家长回复 |
+| 🟡 | **健康记录** | 过敏信息对安亲班至关重要 |
+| 🟡 | **招生管道** | 业务增长需要，非紧急 |
+| 🟢 | **多语言/日历/API** | 锦上添花，非当前刚需 |
+
+---
+
+### 16.7 🎨 UI 对标：现代 SaaS 审美分析
+
+> 对标系统：Stripe Dashboard / Linear / Vercel / Notion / Shopify Admin
+
+#### 16.7.1 设计模式对比
+
+| 设计维度 | 市场最佳实践 | PJPC 现状 | 差距 |
+|---------|------------|-----------|:--:|
+| **配色方案** | 单一主色+灰度系统 (slate/neutral) | ✅ slate 为主，indigo 点缀 | 接近 |
+| **侧边栏** | 深色固定侧边栏+可折叠分组 | ✅ AppShell 统一侧边栏 | 接近 |
+| **信息密度** | 高密度但层次分明，减少纵滚 | ⚠️ 部分页面太松，卡片间距过大 | 🟡 |
+| **空状态** | 插图+引导文案+C TA按钮 | ✅ Phase 5e 已做 empty-state | ✅ |
+| **加载态** | Skeleton 骨架屏，逐行逐卡片 | ✅ Phase 5e 已做 skeleton | ✅ |
+| **数据表格** | 悬停显示操作按钮+整行可点+排序筛选 | ⚠️ 部分表格有悬停操作，但未统一 | 🟡 |
+| **Toast 通知** | 操作后即时反馈，位置统一 | ✅ sonner 全局 Toaster | ✅ |
+| **命令面板** | Cmd+K 全局搜索+快捷导航 | ✅ Phase 5e 已做 global-search | ✅ |
+| **响应式** | 表格→卡片、导航→底部Tab | ⚠️ 部分页面已做，未全覆盖 | 🟡 |
+| **图表颜色** | 统一的品牌色系，不花哨 | ⚠️ Recharts 默认色，未调色 | 🟡 |
+| **细节质感** | 微妙的边框、hover 过渡、圆角统一 | ⚠️ 边框/圆角不一致 | 🟡 |
+
+#### 16.7.2 具体改进建议
+
+| # | 改进项 | 怎么做 | 参考 |
+|---|--------|--------|------|
+| 1 | **统一圆角** | 全部卡片/按钮/输入框 `rounded-xl` (12px) | Stripe 风格 |
+| 2 | **统一阴影** | 卡片 `shadow-sm border border-slate-100`，hover `shadow-md` | Linear 风格 |
+| 3 | **操作按钮可见性** | 表格行 `group` + 操作按钮 `opacity-0 group-hover:opacity-100` | Linear |
+| 4 | **图表色板** | 统一 6色彩板：indigo/emerald/amber/rose/cyan/violet | Stripe |
+| 5 | **统计卡片图标** | icon 用饱和色 + bg 用浅色（如 `text-indigo-600 bg-indigo-50`）| Shopify |
+| 6 | **侧边栏激活态** | 当前页用 `bg-indigo-600/10 text-indigo-600` + 左侧小圆点 | Vercel |
+| 7 | **模块间距** | 章节间 `space-y-6`，卡片内 `p-5`，去掉过大留白 | Stripe |
+| 8 | **过渡动画** | 按钮/卡片/导航加 `transition-all duration-200` | 全站统一 |
+| 9 | **字体层级** | 页面标题 `text-2xl font-bold`，章节标题 `text-lg font-semibold`，正文 `text-sm` | Notion |
+| 10 | **移动端表格** | 全局统一用 `overflow-x-auto -mx-3 sm:mx-0` 横向滚动 | 现代 SaaS 常规做法 |
+
+#### 16.7.3 UI 改进优先级
+
+| 优先 | 改进项 | 影响范围 |
+|:----:|------|---------|
+| 🔴 | 统一圆角+阴影 | 全局组件 |
+| 🔴 | 图表色板统一 | 财务/统计页面 |
+| 🟠 | 表格操作按钮 hover 可见 | 全部表格页面 |
+| 🟠 | 统计卡片图标规范 | 全部 Dashboard |
+| 🟡 | 过渡动画统一 | 全局 |
+| 🟡 | 侧边栏激活态优化 | AppShell |
+
+---
+
+### 16.8 📋 优先修复路线图
+
+按影响程度和实现成本排序，每次一个批次的修复：
+
+#### 批次 1：删死代码（一次性清理，零风险）
+
+```
+1. rm -rf app/components/teacher/                          # 7,261 行
+2. rm app/components/attendance/TuitionCenterScheduleManagement.tsx  # 1,429 行
+3. rm app/components/attendance/TuitionScheduleManagement.tsx        # 959 行
+4. rm app/components/attendance/EnterpriseScheduleManagement.tsx     # 832 行
+5. rm app/components/attendance/UserFriendlySchedule.tsx             # 483 行
+6. rm app/components/attendance/BasicSchedule.tsx                    # 447 行
+7. rm app/components/systems/nfc-reader-manager.tsx                  # 200 行
+8. rm app/components/systems/keyboard-nfc-background-runner.tsx      # 150 行
+9. rm app/components/systems/mobile-nfc-interface.tsx                # 200 行
+10. rm app/components/systems/usb-reader-interface.tsx               # 200 行
+11. rm app/components/systems/CardManagementTable.tsx                # 350 行
+12. rmdashboards/admin-dashboard.tsx                                 # ~300 行
+13. rmdashboards/parent-dashboard.tsx                                # ~213 行
+14. rm app/static-page.tsx                                           # 176 行
+```
+
+**清理后：** 删除 ~13,000 行死代码，文件树干净 20+ 文件。
+
+#### 批次 2：修 Bug（4 个关键修复）
+
+```
+1. 修复 app/components/finance/reports-overview/index.ts 破导出
+2. 创建 /admin/classes, /admin/settings, /admin/attendance, /admin/reports 页面（或删除断链）
+3. 删除 useInvoices.ts 中的 mock fallback
+4. 删除 useFeesConfig.ts（死配置）
+```
+
+#### 批次 3：市场对标 Phase 5f 续建
+
+```
+1. 成绩管理 (5f-2) — PB已建，前端：录入/分析/家长查看
+2. 接送管理 (5f-3) — PB新建+教师端+家长端
+3. 随手拍 (5f-4) — PB新建+教师拍照+家长Feed
+```
+
+#### 批次 4：UI 美化
+
+```
+1. 全局统一 rounded-xl + shadow-sm + border-slate-100
+2. 图表 6 色色板
+3. 表格操作按钮 hover 可见
+4. 侧边栏激活态圆点指示器
+```
+
+#### 批次 5：架构重构（低优先级）
+
+```
+1. app/components/teacher/ → 已删（批次1）
+2. 财务双层级合并
+3. 排课多实现合并
+4. PDF 工具合并
+5. NFC 三库统一
+```
+
+---
+
+*审计完成时间：2026-06-23 | 审计者：deepseek-v4-pro | 下一步：执行批次 1 清理*
