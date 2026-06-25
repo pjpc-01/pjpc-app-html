@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     const pb = new PocketBase('http://127.0.0.1:8090')
 
     // Admin authentication
-    await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+    await pb.admins.authWithPassword('admin@pjpc.com', 'admin123')
     console.log('✅ API: PocketBase管理员认证成功')
 
     // Get date range

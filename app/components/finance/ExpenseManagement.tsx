@@ -47,6 +47,7 @@ import { Badge } from "@/components/ui/badge"
 import { useExpenses } from "@/hooks/useExpenses"
 import { useSearchParams } from "next/navigation"
 import { useCenters } from "@/hooks/useCenters"
+import { formatDate } from "@/lib/utils"
 
 const EXPENSE_CATEGORIES = [
   { id: "salary", label: "教师薪资", color: "bg-blue-100 text-blue-800 border-blue-200" },
@@ -499,7 +500,7 @@ export default function ExpenseManagement() {
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         <CalendarIcon className="h-3 w-3 text-slate-400" />
-                        {expense.date}
+                        {formatDate(expense.date)}
                       </div>
                     </TableCell>
                     <TableCell>

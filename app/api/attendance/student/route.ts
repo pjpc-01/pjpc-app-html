@@ -8,10 +8,10 @@ export async function POST(request: NextRequest) {
     console.log('📝 API: 学生考勤记录请求', attendanceData)
     
     // 使用IP地址连接PocketBase
-    const pb = new PocketBase('http://175.143.222.30:8090')
+    const pb = new PocketBase('http://127.0.0.1:8090')
     
     // 管理员认证
-    await pb.admins.authWithPassword('pjpcemerlang@gmail.com', '0122270775Sw!')
+    await pb.admins.authWithPassword('admin@pjpc.com', 'admin123')
     console.log('✅ API: PocketBase管理员认证成功')
     
     // 检查今日考勤记录（支持check-in和check-out）

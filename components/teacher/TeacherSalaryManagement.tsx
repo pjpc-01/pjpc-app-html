@@ -187,8 +187,9 @@ export default function TeacherSalaryManagement() {
     try {
       const response = await fetch('/api/teachers')
       const result = await response.json()
-      if (result.success && result.data && Array.isArray(result.data.items)) {
-        setTeachers(result.data.items)
+      // API returns: { success: true, data: [...teachers], total: N }
+      if (result.success && result.data && Array.isArray(result.data)) {
+        setTeachers(result.data)
       } else {
         console.error('获取教师列表失败:', result.error || '数据格式错误')
         setTeachers([])
@@ -347,10 +348,15 @@ export default function TeacherSalaryManagement() {
   const handleStructureSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      const isEdit = !!editingStructure
       const response = await fetch('/api/teacher-salary', {
-        method: 'POST',
+        method: isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'structure', data: structureForm })
+        body: JSON.stringify({
+          type: 'structure',
+          id: editingStructure?.id,
+          data: structureForm
+        })
       })
       
       const result = await response.json()
@@ -380,6 +386,48 @@ export default function TeacherSalaryManagement() {
       }
     } catch (error) {
       setError('创建薪资结构失败')
+    }
+  }
+
+  // 编辑薪资结构
+  const handleEditStructure = (structure: TeacherSalaryStructure) => {
+    setEditingStructure(structure)
+    setStructureForm({
+      teacher_id: structure.teacher_id,
+      base_salary: structure.base_salary,
+      hourly_rate: structure.hourly_rate || 0,
+      overtime_rate: structure.overtime_rate || 0,
+      allowance_fixed: structure.allowance_fixed,
+      allowance_transport: structure.allowance_transport || 0,
+      allowance_meal: structure.allowance_meal || 0,
+      allowance_other: structure.allowance_other || 0,
+      epf_rate: structure.epf_rate,
+      socso_rate: structure.socso_rate,
+      eis_rate: structure.eis_rate,
+      tax_rate: structure.tax_rate,
+      salary_type: structure.salary_type,
+      effective_date: structure.effective_date?.split(' ')[0] || '',
+      end_date: structure.end_date?.split(' ')[0] || '',
+      notes: structure.notes || ''
+    })
+    setStructureDialogOpen(true)
+  }
+
+  // 删除薪资结构
+  const handleDeleteStructure = async (id: string) => {
+    if (!confirm('确定要删除这个薪资结构吗？')) return
+    try {
+      const response = await fetch(`/api/teacher-salary?type=structure&id=${id}`, {
+        method: 'DELETE',
+      })
+      const result = await response.json()
+      if (result.success) {
+        fetchSalaryStructures()
+      } else {
+        setError(result.error)
+      }
+    } catch (error) {
+      setError('删除薪资结构失败')
     }
   }
 
@@ -612,10 +660,10 @@ export default function TeacherSalaryManagement() {
                       <TableCell>{formatDate(structure.effective_date)}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" onClick={() => handleEditStructure(structure)}>
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" onClick={() => handleDeleteStructure(structure.id)}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
@@ -681,10 +729,52 @@ export default function TeacherSalaryManagement() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" onClick={() => {
+                            setEditingRecord(record)
+                            setRecordForm({
+                              teacher_id: record.teacher_id,
+                              salary_period: record.salary_period || '',
+                              year: record.year,
+                              month: record.month,
+                              base_salary: record.base_salary,
+                              hours_worked: record.hours_worked,
+                              overtime_hours: record.overtime_hours,
+                              overtime_pay: record.overtime_pay,
+                              allowances: record.allowances,
+                              gross_salary: record.gross_salary,
+                              epf_deduction: record.epf_deduction,
+                              socso_deduction: record.socso_deduction,
+                              eis_deduction: record.eis_deduction,
+                              tax_deduction: record.tax_deduction,
+                              other_deductions: record.other_deductions,
+                              net_salary: record.net_salary,
+                              bonus: record.bonus || 0,
+                              commission: record.commission || 0,
+                              notes: record.notes || '',
+                            })
+                            setRecordDialogOpen(true)
+                          }}>
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" onClick={() => {
+                            const csv = [
+                              ['教师', '年份', '月份', '基本薪资', '津贴', '加班费', '总薪资', '扣款', '净薪资', '奖金', '状态'],
+                              [
+                                record.expand?.teacher_id?.name || '',
+                                record.year, record.month,
+                                record.base_salary, record.allowances,
+                                record.overtime_pay, record.gross_salary,
+                                record.epf_deduction + record.eis_deduction + record.socso_deduction + record.tax_deduction + record.other_deductions,
+                                record.net_salary, record.bonus || 0,
+                                record.status
+                              ]
+                            ].map(r => r.join(',')).join('\n')
+                            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement('a')
+                            a.href = url; a.download = `salary_${record.year}_${record.month}.csv`
+                            a.click(); URL.revokeObjectURL(url)
+                          }}>
                             <Download className="w-4 h-4" />
                           </Button>
                         </div>
@@ -730,7 +820,10 @@ export default function TeacherSalaryManagement() {
                       </>
                     )}
                   </Button>
-                  <Button variant="outline" disabled>
+                  <Button variant="outline" onClick={() => {
+                    const btn = document.getElementById('automation-config')
+                    if (btn) btn.scrollIntoView({ behavior: 'smooth' })
+                  }}>
                     <Settings className="mr-2 h-4 w-4" />
                     配置规则
                   </Button>
@@ -762,7 +855,13 @@ export default function TeacherSalaryManagement() {
                       </>
                     )}
                   </Button>
-                  <Button variant="outline" disabled>
+                  <Button variant="outline" onClick={() => {
+                    // Navigate to teacher performance management
+                    const goToPerformance = confirm('前往教师绩效管理页面？')
+                    if (goToPerformance) {
+                      window.location.href = '/teacher-management'
+                    }
+                  }}>
                     <BarChart3 className="mr-2 h-4 w-4" />
                     查看绩效
                   </Button>
@@ -810,11 +909,14 @@ export default function TeacherSalaryManagement() {
       </Tabs>
 
       {/* 薪资结构对话框 */}
-      <Dialog open={structureDialogOpen} onOpenChange={setStructureDialogOpen}>
+      <Dialog open={structureDialogOpen} onOpenChange={(open) => {
+        setStructureDialogOpen(open)
+        if (!open) setTimeout(() => setEditingStructure(null), 300)
+      }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>新建薪资结构</DialogTitle>
-            <DialogDescription>为教师设置薪资结构和福利待遇</DialogDescription>
+            <DialogTitle>{editingStructure ? '编辑薪资结构' : '新建薪资结构'}</DialogTitle>
+            <DialogDescription>{editingStructure ? '修改教师的薪资结构和福利设置' : '为教师设置薪资结构和福利待遇'}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleStructureSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -977,8 +1079,8 @@ export default function TeacherSalaryManagement() {
       <Dialog open={recordDialogOpen} onOpenChange={setRecordDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>新建薪资记录</DialogTitle>
-            <DialogDescription>记录教师的薪资发放情况</DialogDescription>
+            <DialogTitle>{editingRecord ? '编辑薪资记录' : '新建薪资记录'}</DialogTitle>
+            <DialogDescription>{editingRecord ? '修改教师的薪资发放记录' : '记录教师的薪资发放情况'}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleRecordSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">

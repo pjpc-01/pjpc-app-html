@@ -6,8 +6,11 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import PageLayout from "@/components/layouts/PageLayout"
 import TeachersTab from "@/app/components/dashboards/teachers-tab"
+import TeacherLeaveManagement from "@/components/teacher/TeacherLeaveManagement"
+import TeacherPerformanceManagement from "@/components/teacher/TeacherPerformanceManagement"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ArrowLeft, Users, CalendarCheck, BarChart3 } from "lucide-react"
 
 export default function TeacherManagementPage() {
   const router = useRouter()
@@ -94,11 +97,28 @@ export default function TeacherManagementPage() {
         </Button>
       }
     >
-      <div className="space-y-6">
-        {/* 教师管理内容 */}
-        <TeachersTab setActiveTab={setActiveTab} />
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="teachers" className="flex items-center gap-1">
+            <Users className="h-4 w-4" />教师列表
+          </TabsTrigger>
+          <TabsTrigger value="leave" className="flex items-center gap-1">
+            <CalendarCheck className="h-4 w-4" />请假管理
+          </TabsTrigger>
+          <TabsTrigger value="performance" className="flex items-center gap-1">
+            <BarChart3 className="h-4 w-4" />绩效管理
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="teachers">
+          <TeachersTab setActiveTab={setActiveTab} />
+        </TabsContent>
+        <TabsContent value="leave">
+          <TeacherLeaveManagement />
+        </TabsContent>
+        <TabsContent value="performance">
+          <TeacherPerformanceManagement />
+        </TabsContent>
+      </Tabs>
     </PageLayout>
   )
 }
-

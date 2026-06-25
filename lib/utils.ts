@@ -49,9 +49,17 @@ export const getStatusText = (status: string) => {
 export const formatDate = (date: any) => {
   if (!date) return '从未登录'
   try {
-    return new Date(date.toDate()).toLocaleDateString()
+    // Handle PocketBase format: "2026-06-22 00:00:00.000Z"
+    const dateStr = typeof date === 'string' ? date.replace(' ', 'T') : date
+    const d = date.toDate ? new Date(date.toDate()) : new Date(dateStr)
+    if (isNaN(d.getTime())) return typeof date === 'string' ? date : '-'
+    return d.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
   } catch {
-    return new Date(date).toLocaleDateString()
+    return typeof date === 'string' ? date : '-'
   }
 }
 

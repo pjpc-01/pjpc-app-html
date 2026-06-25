@@ -14,6 +14,9 @@ import { usePayments } from "@/hooks/usePayments"
 import { useExpenses } from "@/hooks/useExpenses"
 import { exportPnLPDF } from "@/lib/pdf-export"
 import { toast } from "sonner"
+import RevenueChart from "../charts/RevenueChart"
+import ProfitChart from "../charts/ProfitChart"
+import ExpenseChart from "../charts/ExpenseChart"
 
 const CATEGORY_LABELS: Record<string, string> = {
   salary: "教师薪资",
@@ -561,6 +564,11 @@ export default function FinancialReports() {
         </Card>
       )}
 
+      {/* 收入趋势图表 */}
+      {selectedReportType === "trend" && monthlyReportData.length > 0 && (
+        <RevenueChart data={monthlyReportData.map(d => ({ month: d.month, amount: d.revenue }))} />
+      )}
+
       {/* 收支利润分析 */}
       {selectedReportType === "profit" && (
         <Card>
@@ -634,6 +642,16 @@ export default function FinancialReports() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* 净利润图表 */}
+      {selectedReportType === "profit" && monthlyReportData.length > 0 && (
+        <ProfitChart data={monthlyReportData.map(d => ({ month: d.month, profit: d.revenue - (financialSummary.totalExpenses / Math.max(monthlyReportData.length, 1)) }))} />
+      )}
+
+      {/* 支出分类图表 */}
+      {selectedReportType === "profit" && expenseBreakdown.length > 0 && (
+        <ExpenseChart data={expenseBreakdown.map(e => ({ name: e.category, value: e.amount }))} />
       )}
 
       {/* AR 账龄分析 */}
