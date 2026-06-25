@@ -142,10 +142,6 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
       {/* 标题和概览 */}
       <div className="mb-6">
         <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">教师管理</h2>
-            <p className="text-gray-600">统一管理教师基本资料和教学安排</p>
-          </div>
         </div>
       </div>
 
@@ -260,7 +256,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
                           {teacher.center || teacher.centerId ? (teacher.center || '已分配') : '未分配'}
                         </Badge>
                       </TableCell>

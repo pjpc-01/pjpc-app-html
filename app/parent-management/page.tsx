@@ -181,7 +181,7 @@ export default function ParentManagementPage() {
                       <TableCell>
                         <button
                           onClick={() => setShowStudents(p)}
-                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline"
+                          className="inline-flex items-center gap-1 text-amber-700 hover:text-amber-800 hover:underline"
                         >
                           <GraduationCap className="h-3.5 w-3.5" />
                           {p.studentCount || 0}
@@ -297,8 +297,8 @@ export default function ParentManagementPage() {
           {showStudents?.expand?.students && showStudents.expand.students.length > 0 ? (
             <div className="space-y-2">
               {showStudents.expand.students.map((s) => (
-                <div key={s.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                <div key={s.id} className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 border">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-white text-xs font-bold">
                     {s.name?.charAt(0) || "S"}
                   </div>
                   <div>

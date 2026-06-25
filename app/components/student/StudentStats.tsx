@@ -88,7 +88,7 @@ export default function StudentStats({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-1">
-                <Users className="h-4 w-4 text-blue-500" />
+                <Users className="h-4 w-4 text-amber-600" />
                 <span className="text-lg font-semibold">{stats.total}</span>
               </div>
               <p className="text-xs text-gray-600">筛选结果</p>
@@ -109,7 +109,7 @@ export default function StudentStats({
             
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-1">
-                <GraduationCap className="h-4 w-4 text-purple-500" />
+                <GraduationCap className="h-4 w-4 text-orange-600" />
                 <span className="text-lg font-semibold">{stats.graduated}</span>
               </div>
               <p className="text-xs text-gray-600">已毕业</p>

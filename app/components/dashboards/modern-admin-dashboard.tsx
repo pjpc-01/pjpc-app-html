@@ -137,51 +137,51 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-xl">
+      <div className="bg-gradient-to-br from-yellow-100 via-yellow-50 to-amber-50 rounded-2xl p-6 sm:p-8 text-gray-800 relative overflow-hidden shadow-sm border border-yellow-200">
         <div className="relative z-10 flex items-center justify-between">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold mb-1">欢迎回来，{userProfile?.name || '管理员'}</h2>
-            <p className="text-indigo-100 text-sm sm:text-base">当前查看：<span className="font-semibold text-white">{selectedCenterName}</span></p>
+            <p className="text-amber-700 text-sm sm:text-base">当前查看：<span className="font-semibold text-amber-900">{selectedCenterName}</span></p>
           </div>
           <div className="hidden md:block text-right">
-            <p className="text-indigo-100 text-xs">系统时间</p>
-            <p className="text-xl font-mono font-bold">{new Date().toLocaleTimeString('zh-CN')}</p>
-            <p className="text-indigo-100 text-xs">{new Date().toLocaleDateString('zh-CN')}</p>
+            <p className="text-amber-600 text-xs">系统时间</p>
+            <p className="text-xl font-mono font-bold text-amber-800">{new Date().toLocaleTimeString('zh-CN')}</p>
+            <p className="text-amber-500 text-xs">{new Date().toLocaleDateString('zh-CN')}</p>
           </div>
         </div>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-40 h-40 bg-indigo-400/20 rounded-full -ml-10 -mb-10 blur-2xl"></div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-200/30 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-amber-200/30 rounded-full -ml-10 -mb-10 blur-2xl"></div>
       </div>
 
       {/* Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        <Card className="border-indigo-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-          <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+        <Card className="border-amber-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+          <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
-                <p className="text-slate-500 text-xs sm:text-sm font-medium truncate">总学生数</p>
-                <p className="text-2xl sm:text-3xl font-bold text-slate-900">{centerStats.total}</p>
+                <p className="text-[#7a6a48] text-xs sm:text-sm font-medium truncate">总学生数</p>
+                <p className="text-2xl sm:text-3xl font-bold text-[#4a3a18]">{centerStats.total}</p>
                 <div className="flex items-center mt-1 gap-2">
-                  <span className="text-emerald-500 text-xs font-medium">小学 {centerStats.primaryCount}</span>
-                  <span className="text-slate-300">·</span>
-                  <span className="text-purple-500 text-xs font-medium">中学 {centerStats.secondaryCount}</span>
+                  <span className="text-amber-600 text-xs font-medium">小学 {centerStats.primaryCount}</span>
+                  <span className="text-[#c8b898]">·</span>
+                  <span className="text-yellow-700 text-xs font-medium">中学 {centerStats.secondaryCount}</span>
                 </div>
               </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform flex-shrink-0">
-                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-50 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform flex-shrink-0">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-emerald-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-          <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+        <Card className="border-amber-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+          <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
-                <p className="text-slate-500 text-xs sm:text-sm font-medium truncate">本月收入</p>
-                <p className="text-2xl sm:text-3xl font-bold text-slate-900">RM {financialStats?.monthlyRevenue?.toLocaleString() || '0'}</p>
+                <p className="text-[#7a6a48] text-xs sm:text-sm font-medium truncate">本月收入</p>
+                <p className="text-2xl sm:text-3xl font-bold text-[#4a3a18]">RM {financialStats?.monthlyRevenue?.toLocaleString() || '0'}</p>
                 <div className="flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 text-emerald-500 mr-1" />
                   <span className="text-emerald-500 text-xs font-medium">+15% 较上月</span>
@@ -199,8 +199,8 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
-                <p className="text-slate-500 text-xs sm:text-sm font-medium truncate">今日出勤</p>
-                <p className="text-2xl sm:text-3xl font-bold text-slate-900">{stats?.todayAttendance || 0}</p>
+                <p className="text-[#7a6a48] text-xs sm:text-sm font-medium truncate">今日出勤</p>
+                <p className="text-2xl sm:text-3xl font-bold text-[#4a3a18]">{stats?.todayAttendance || 0}</p>
                 <div className="flex items-center mt-1">
                   <CheckCircle className="h-3 w-3 text-emerald-500 mr-1" />
                   <span className="text-emerald-500 text-xs font-medium">
@@ -215,13 +215,13 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
           </CardContent>
         </Card>
 
-        <Card className="border-rose-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-          <div className="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
+        <Card className="border-amber-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+          <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
-                <p className="text-slate-500 text-xs sm:text-sm font-medium truncate">活跃教师</p>
-                <p className="text-2xl sm:text-3xl font-bold text-slate-900">{centerStats.teachers}</p>
+                <p className="text-[#7a6a48] text-xs sm:text-sm font-medium truncate">活跃教师</p>
+                <p className="text-2xl sm:text-3xl font-bold text-[#4a3a18]">{centerStats.teachers}</p>
                 <div className="flex items-center mt-1">
                   <UserCheck className="h-3 w-3 text-slate-400 mr-1" />
                   <span className="text-slate-500 text-xs">{selectedCenter === 'all' ? totalTeachers : centerStats.teachers} 位在职教师</span>

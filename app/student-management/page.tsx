@@ -12,7 +12,6 @@ export default function StudentManagement() {
       backUrl="/"
       userRole="admin"
       status="系统正常"
-      background="from-blue-50 to-purple-50"
     >
       <StudentManagementPage />
     </PageLayout>
