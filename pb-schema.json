@@ -78,7 +78,7 @@
     {
       "id": "yot737rl8uqqnh8",
       "created": "2026-06-09 02:57:49.251Z",
-      "updated": "2026-06-18 11:40:07.151Z",
+      "updated": "2026-06-24 09:39:29.275Z",
       "name": "students",
       "type": "base",
       "system": false,
@@ -336,6 +336,26 @@
             "max": null,
             "pattern": ""
           }
+        },
+        {
+          "system": false,
+          "id": "se1vlwbc",
+          "name": "avatar",
+          "type": "file",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "mimeTypes": [
+              "image/jpeg",
+              "image/png",
+              "image/webp"
+            ],
+            "thumbs": null,
+            "maxSelect": 1,
+            "maxSize": 2097152,
+            "protected": false
+          }
         }
       ],
       "indexes": [],
@@ -349,7 +369,7 @@
     {
       "id": "h2n4glagecz5xps",
       "created": "2026-06-11 03:20:45.595Z",
-      "updated": "2026-06-12 08:40:38.307Z",
+      "updated": "2026-06-25 08:42:38.440Z",
       "name": "fee_items",
       "type": "base",
       "system": false,
@@ -452,8 +472,8 @@
         }
       ],
       "indexes": [],
-      "listRule": null,
-      "viewRule": null,
+      "listRule": "@request.auth.id != \"\"",
+      "viewRule": "@request.auth.id != \"\"",
       "createRule": null,
       "updateRule": null,
       "deleteRule": null,
