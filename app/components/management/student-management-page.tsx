@@ -537,14 +537,14 @@ export default function StudentManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-100 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* 页面标题和操作栏 */}
-        <div className="bg-white rounded-2xl shadow-lg border border-white/20 p-8">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-md border border-amber-200/40 p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-br from-blue-50/80 to-purple-50/80 rounded-xl p-6 border border-blue-100/50">
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-br from-yellow-50/80 to-amber-50/80 rounded-xl p-6 border border-amber-200/50">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-r from-amber-600 to-orange-600 rounded-xl flex items-center justify-center shadow-md">
                   <Users className="h-6 w-6 text-white" />
                 </div>
               </div>
@@ -555,7 +555,7 @@ export default function StudentManagementPage() {
                 size="sm" 
                 onClick={refetch} 
                 disabled={loading}
-                className="bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/80"
+                className="bg-white/60 backdrop-blur-sm border-amber-200/40 hover:bg-amber-50/80 text-amber-800"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 刷新
@@ -564,7 +564,7 @@ export default function StudentManagementPage() {
                 variant="outline" 
                 size="sm" 
                 onClick={handleBulkExport}
-                className="bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/80"
+                className="bg-white/60 backdrop-blur-sm border-amber-200/40 hover:bg-amber-50/80 text-amber-800"
               >
                 <Download className="h-4 w-4 mr-2" />
                 导出
@@ -581,7 +581,7 @@ export default function StudentManagementPage() {
                   variant="outline" 
                   size="sm" 
                   onClick={() => document.getElementById('student-import-input')?.click()}
-                  className="bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/80"
+                  className="bg-white/60 backdrop-blur-sm border-amber-200/40 hover:bg-amber-50/80 text-amber-800"
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   导入
@@ -589,7 +589,7 @@ export default function StudentManagementPage() {
               </div>
               <Button 
                 onClick={() => setIsAddDialogOpen(true)}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 <UserPlus className="h-4 w-4 mr-2" />
                 添加学生
@@ -600,55 +600,55 @@ export default function StudentManagementPage() {
 
         {/* 统计卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+          <Card className="bg-white/90 backdrop-blur-sm border border-amber-200/40 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
             
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-600">总学生数</p>
-                  <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                  <p className="text-sm font-medium text-amber-800">总学生数</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-amber-700 to-orange-700 bg-clip-text text-transparent">
                     {stats.total}
                   </p>
-                  <p className="text-xs text-blue-600 flex items-center">
+                  <p className="text-xs text-amber-600 flex items-center">
                     <TrendingUp className="h-3 w-3 mr-1" />
                     实时数据
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
                   <Users className="h-6 w-6 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+          <Card className="bg-white/90 backdrop-blur-sm border border-amber-200/40 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
             
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-600">在读学生</p>
-                  <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+                  <p className="text-sm font-medium text-amber-800">在读学生</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-yellow-700 to-amber-700 bg-clip-text text-transparent">
                     {stats.active}
                   </p>
-                  <p className="text-xs text-green-600 flex items-center">
+                  <p className="text-xs text-yellow-700 flex items-center">
                     <UserCheck className="h-3 w-3 mr-1" />
                     活跃状态
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-xl flex items-center justify-center shadow-lg">
                   <UserCheck className="h-6 w-6 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+          <Card className="bg-white/90 backdrop-blur-sm border border-amber-200/40 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
             
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-600">小学生</p>
-                  <p className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent">
+                  <p className="text-sm font-medium text-amber-800">小学生</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text text-transparent">
                     {stats.primaryCount}
                   </p>
                   <p className="text-xs text-orange-600 flex items-center">
@@ -656,28 +656,28 @@ export default function StudentManagementPage() {
                     一年级到六年级
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 bg-gradient-to-r from-orange-400 to-amber-500 rounded-xl flex items-center justify-center shadow-lg">
                   <GraduationCap className="h-6 w-6 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+          <Card className="bg-white/90 backdrop-blur-sm border border-amber-200/40 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
             
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-600">中学生</p>
-                  <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
+                  <p className="text-sm font-medium text-amber-800">中学生</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-700 bg-clip-text text-transparent">
                     {stats.secondaryCount}
                   </p>
-                  <p className="text-xs text-purple-600 flex items-center">
+                  <p className="text-xs text-amber-600 flex items-center">
                     <GraduationCap className="h-3 w-3 mr-1" />
                     初一到高三
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 bg-gradient-to-r from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
                   <GraduationCap className="h-6 w-6 text-white" />
                 </div>
               </div>
@@ -711,15 +711,15 @@ export default function StudentManagementPage() {
       />
 
         {/* 视图模式切换和统计信息 */}
-        <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-2xl shadow-lg p-6">
+        <div className="bg-white/80 backdrop-blur-sm border border-amber-200/30 rounded-2xl shadow-md p-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="flex items-center bg-gray-100 rounded-lg p-1">
+              <div className="flex items-center bg-amber-100/70 rounded-lg p-1">
                 <Button
                   variant={viewMode === 'table' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('table')}
-                  className={viewMode === 'table' ? 'bg-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}
+                  className={viewMode === 'table' ? 'bg-white shadow-sm text-amber-900' : 'text-amber-700 hover:text-amber-900 hover:bg-amber-50'}
                 >
                   <Table className="h-4 w-4 mr-2" />
                   表格视图
@@ -728,7 +728,7 @@ export default function StudentManagementPage() {
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('grid')}
-                  className={viewMode === 'grid' ? 'bg-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}
+                  className={viewMode === 'grid' ? 'bg-white shadow-sm text-amber-900' : 'text-amber-700 hover:text-amber-900 hover:bg-amber-50'}
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
                   网格视图
@@ -737,7 +737,7 @@ export default function StudentManagementPage() {
                   variant={viewMode === 'analytics' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('analytics')}
-                  className={viewMode === 'analytics' ? 'bg-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}
+                  className={viewMode === 'analytics' ? 'bg-white shadow-sm text-amber-900' : 'text-amber-700 hover:text-amber-900 hover:bg-amber-50'}
                 >
                   <PieChart className="h-4 w-4 mr-2" />
                   数据分析
@@ -747,9 +747,9 @@ export default function StudentManagementPage() {
 
             {/* 筛选结果统计 */}
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg">
-                <Users className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-800">
+              <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 rounded-lg">
+                <Users className="h-4 w-4 text-amber-600" />
+                <span className="text-sm font-medium text-amber-800">
                   显示 {filteredStudents.length} 个学生
                 </span>
               </div>
@@ -771,8 +771,8 @@ export default function StudentManagementPage() {
           {loading && (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-gray-600">加载学生数据中...</p>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600 mx-auto"></div>
+                <p className="mt-2 text-amber-700">加载学生数据中...</p>
               </div>
             </div>
           )}
@@ -781,17 +781,17 @@ export default function StudentManagementPage() {
               {paginatedStudents.length === 0 ? (
                 <div className="flex items-center justify-center h-64">
                   <div className="text-center">
-                    <div className="text-gray-400 mb-4">
+                    <div className="text-amber-400 mb-4">
                       <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                       </svg>
                     </div>
-                    <p className="text-gray-600">暂无学生数据</p>
-                    <p className="text-sm text-gray-400 mt-1">请添加学生或调整筛选条件</p>
+                    <p className="text-amber-700">暂无学生数据</p>
+                    <p className="text-sm text-amber-500 mt-1">请添加学生或调整筛选条件</p>
                   </div>
                 </div>
               ) : (
-                <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg rounded-2xl overflow-hidden">
+                <Card className="bg-white/80 backdrop-blur-sm border border-amber-200/30 shadow-md rounded-2xl overflow-hidden">
           <CardContent className="p-0">
             <StudentList 
               students={paginatedStudents}
@@ -885,7 +885,7 @@ export default function StudentManagementPage() {
       {/* 分页 */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-amber-700">
             显示第 {startIndex + 1} - {Math.min(endIndex, filteredStudents.length)} 条，
             共 {filteredStudents.length} 条记录
           </div>

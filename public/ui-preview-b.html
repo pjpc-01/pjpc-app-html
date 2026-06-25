@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>方案 B — Dark Elegance</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif}
+body{display:flex;min-height:100vh;background:#fafafa}
+aside{width:220px;background:#0a0a0b;padding:20px 0;display:flex;flex-direction:column}
+aside .logo{font-size:16px;font-weight:700;padding:0 18px;margin-bottom:28px;color:#fff;display:flex;align-items:center;gap:8px;letter-spacing:-.3px}
+aside .logo span{width:6px;height:6px;background:#6366f1;border-radius:50%}
+aside nav a{display:flex;align-items:center;gap:8px;padding:8px 18px;font-size:12px;color:#71717a;text-decoration:none;margin:2px 8px;border-radius:6px;transition:all .1s}
+aside nav a.active{background:rgba(99,102,241,.12);color:#a5b4fc}
+aside nav a:hover:not(.active){color:#a1a1aa;background:rgba(255,255,255,.03)}
+main{flex:1;padding:36px 40px}
+h1{font-size:22px;font-weight:700;color:#18181b;margin-bottom:2px;letter-spacing:-.3px}
+.sub{font-size:12px;color:#a1a1aa;margin-bottom:28px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:36px}
+.card{background:#fff;border:1px solid #e4e4e7;border-radius:8px;padding:18px 20px;transition:box-shadow .15s}
+.card:hover{box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card .label{font-size:11px;color:#a1a1aa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.card .val{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;color:#18181b}
+.card .sub{font-size:11px;color:#6366f1;margin-top:2px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;color:#a1a1aa;text-transform:uppercase;padding:10px 12px;border-bottom:1px solid #f4f4f5}
+td{font-size:13px;padding:14px 12px;border-bottom:1px solid #fafafa;color:#3f3f46}
+.btn{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:500;border:1px solid #e4e4e7;background:#fff;cursor:pointer;transition:all .1s}
+.btn.primary{background:#18181b;color:#fff;border-color:#18181b}
+.btn:hover{background:#f4f4f5}
+.btn.primary:hover{background:#27272a}
+tr:hover td{background:#fafafa}
+</style></head>
+<body>
+<aside>
+  <div class="logo"><span></span> PJPC</div>
+  <nav>
+    <a href="#" class="active">仪表板</a>
+    <a href="#">学生管理</a>
+    <a href="#">财务管理</a>
+    <a href="#">课程</a>
+    <a href="#">设置</a>
+  </nav>
+</aside>
+<main>
+  <h1>仪表板</h1>
+  <p class="sub">今日概览</p>
+  <div class="grid">
+    <div class="card"><div class="label">学生总数</div><div class="val">158</div><div class="sub">+3 this month</div></div>
+    <div class="card"><div class="label">教师</div><div class="val">28</div><div class="sub">全部在职</div></div>
+    <div class="card"><div class="label">本月收入</div><div class="val">RM42,000</div><div class="sub">+12.5%</div></div>
+    <div class="card"><div class="label">出勤率</div><div class="val">94.2%</div><div class="sub">实时</div></div>
+  </div>
+  <table>
+    <tr><th>学生</th><th>年级</th><th>分院</th><th>状态</th><th></th></tr>
+    <tr><td>张小明</td><td>Standard 4</td><td>BATU14</td><td style="color:#10b981">● Active</td><td><button class="btn">Detail</button></td></tr>
+    <tr><td>李华</td><td>Form 1</td><td>PU1</td><td style="color:#10b981">● Active</td><td><button class="btn">Detail</button></td></tr>
+    <tr><td>陈小美</td><td>Standard 2</td><td>BATU14</td><td style="color:#f59e0b">● Leave</td><td><button class="btn primary">Contact</button></td></tr>
+  </table>
+</main>
+</body></html>

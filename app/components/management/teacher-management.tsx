@@ -194,23 +194,23 @@ export default function TeacherManagement() {
   const renderAIFeatures = () => (
     <div className="space-y-6">
       {/* AI功能标题 */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
+      <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-200">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            <h3 className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent mb-2">
               AI智能教学助手
             </h3>
             <p className="text-gray-600 flex items-center gap-2">
-              <Brain className="h-4 w-4 text-purple-600" />
+              <Brain className="h-4 w-4 text-orange-600" />
               正在开发中的AI功能，将大幅减轻教师工作负担
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge className="bg-gradient-to-r from-green-500 to-blue-500 text-white">
+            <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
               <Sparkles className="h-3 w-3 mr-1" />
               企业级AI
             </Badge>
-            <Badge variant="outline" className="border-purple-200 text-purple-700">
+            <Badge variant="outline" className="border-orange-200 text-orange-700">
               <Zap className="h-3 w-3 mr-1" />
               智能增强
             </Badge>
@@ -265,30 +265,30 @@ export default function TeacherManagement() {
       </Card>
 
         {/* 绩效分析 */}
-        <Card className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-blue-300 bg-gradient-to-br from-blue-50 to-cyan-50 overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-full -translate-y-16 translate-x-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>
+        <Card className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-amber-300 bg-gradient-to-br from-amber-50 to-yellow-50 overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-100 rounded-full -translate-y-16 translate-x-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>
           <CardHeader className="relative">
-            <CardTitle className="flex items-center text-blue-700">
-              <div className="p-2 bg-blue-100 rounded-lg mr-3 group-hover:bg-blue-200 transition-colors">
+            <CardTitle className="flex items-center text-amber-800">
+              <div className="p-2 bg-amber-100 rounded-lg mr-3 group-hover:bg-amber-200 transition-colors">
                 <BarChart3 className="h-6 w-6" />
               </div>
               绩效分析
             </CardTitle>
-            <CardDescription className="text-blue-600">
+            <CardDescription className="text-amber-700">
               AI分析教师教学效果，提供改进建议
             </CardDescription>
           </CardHeader>
           <CardContent className="relative">
             <div className="space-y-3 mb-4">
-              <div className="flex items-center text-sm text-blue-700">
+              <div className="flex items-center text-sm text-amber-800">
                 <TrendingUp className="h-4 w-4 mr-2" />
                 教学效果评估
               </div>
-              <div className="flex items-center text-sm text-blue-700">
+              <div className="flex items-center text-sm text-amber-800">
                 <Target className="h-4 w-4 mr-2" />
                 改进建议
               </div>
-              <div className="flex items-center text-sm text-blue-700">
+              <div className="flex items-center text-sm text-amber-800">
                 <Award className="h-4 w-4 mr-2" />
                 成就追踪
               </div>
@@ -300,7 +300,7 @@ export default function TeacherManagement() {
               </Badge>
               <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-blue-500 transition-all duration-500"
+                  className="h-full bg-amber-500 transition-all duration-500"
                   style={{ width: `${aiFeatures.performanceAnalysis.progress}%` }}
                 ></div>
               </div>
@@ -309,30 +309,30 @@ export default function TeacherManagement() {
         </Card>
 
         {/* 自动批改 */}
-        <Card className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-100 rounded-full -translate-y-16 translate-x-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>
+        <Card className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-orange-300 bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100 rounded-full -translate-y-16 translate-x-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>
           <CardHeader className="relative">
-            <CardTitle className="flex items-center text-purple-700">
-              <div className="p-2 bg-purple-100 rounded-lg mr-3 group-hover:bg-purple-200 transition-colors">
+            <CardTitle className="flex items-center text-orange-700">
+              <div className="p-2 bg-orange-100 rounded-lg mr-3 group-hover:bg-orange-200 transition-colors">
                 <CheckCircle className="h-6 w-6" />
               </div>
               自动批改
             </CardTitle>
-            <CardDescription className="text-purple-600">
+            <CardDescription className="text-orange-600">
               AI自动批改作业，节省教师时间
             </CardDescription>
           </CardHeader>
           <CardContent className="relative">
             <div className="space-y-3 mb-4">
-              <div className="flex items-center text-sm text-purple-700">
+              <div className="flex items-center text-sm text-orange-700">
                 <Brain className="h-4 w-4 mr-2" />
                 智能识别答案
               </div>
-              <div className="flex items-center text-sm text-purple-700">
+              <div className="flex items-center text-sm text-orange-700">
                 <Target className="h-4 w-4 mr-2" />
                 自动评分
               </div>
-              <div className="flex items-center text-sm text-purple-700">
+              <div className="flex items-center text-sm text-orange-700">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 个性化反馈
               </div>
@@ -344,7 +344,7 @@ export default function TeacherManagement() {
               </Badge>
               <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-purple-500 transition-all duration-500"
+                  className="h-full bg-orange-500 transition-all duration-500"
                   style={{ width: `${aiFeatures.autoGrading.progress}%` }}
                 ></div>
         </div>
@@ -397,30 +397,30 @@ export default function TeacherManagement() {
         </Card>
 
         {/* 课程优化 */}
-        <Card className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-indigo-300 bg-gradient-to-br from-indigo-50 to-blue-50 overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-100 rounded-full -translate-y-16 translate-x-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>
+        <Card className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-amber-300 bg-gradient-to-br from-amber-50 to-yellow-50 overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-100 rounded-full -translate-y-16 translate-x-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>
           <CardHeader className="relative">
-            <CardTitle className="flex items-center text-indigo-700">
-              <div className="p-2 bg-indigo-100 rounded-lg mr-3 group-hover:bg-indigo-200 transition-colors">
+            <CardTitle className="flex items-center text-amber-800">
+              <div className="p-2 bg-amber-100 rounded-lg mr-3 group-hover:bg-amber-200 transition-colors">
                 <BookOpen className="h-6 w-6" />
               </div>
               课程优化
             </CardTitle>
-            <CardDescription className="text-indigo-600">
+            <CardDescription className="text-amber-700">
               AI优化课程内容，提升教学效果
             </CardDescription>
           </CardHeader>
           <CardContent className="relative">
             <div className="space-y-3 mb-4">
-              <div className="flex items-center text-sm text-indigo-700">
+              <div className="flex items-center text-sm text-amber-800">
                 <Brain className="h-4 w-4 mr-2" />
                 内容推荐
               </div>
-              <div className="flex items-center text-sm text-indigo-700">
+              <div className="flex items-center text-sm text-amber-800">
                 <Target className="h-4 w-4 mr-2" />
                 难度调整
               </div>
-              <div className="flex items-center text-sm text-indigo-700">
+              <div className="flex items-center text-sm text-amber-800">
                 <Award className="h-4 w-4 mr-2" />
                 效果预测
                 </div>
@@ -432,7 +432,7 @@ export default function TeacherManagement() {
               </Badge>
               <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-indigo-500 transition-all duration-500"
+                  className="h-full bg-amber-500 transition-all duration-500"
                   style={{ width: `${aiFeatures.curriculumOptimization.progress}%` }}
                 ></div>
                       </div>
@@ -486,31 +486,31 @@ export default function TeacherManagement() {
                     </div>
                     
       {/* AI功能说明 */}
-      <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200">
+      <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-orange-200">
         <CardHeader>
-          <CardTitle className="flex items-center text-purple-700">
+          <CardTitle className="flex items-center text-orange-700">
             <Brain className="h-6 w-6 mr-2" />
             AI功能说明
           </CardTitle>
-          <CardDescription className="text-purple-600">
+          <CardDescription className="text-orange-600">
             这些AI功能正在积极开发中，将逐步上线以提升教学效率
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-              <h4 className="font-medium text-purple-700 mb-3">开发计划</h4>
+              <h4 className="font-medium text-orange-700 mb-3">开发计划</h4>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li className="flex items-center">
                   <Circle className="h-2 w-2 text-green-500 mr-2" />
                   第一阶段：智能排课系统（预计2周内上线）
                 </li>
                 <li className="flex items-center">
-                  <Circle className="h-2 w-2 text-blue-500 mr-2" />
+                  <Circle className="h-2 w-2 text-amber-500 mr-2" />
                   第二阶段：自动批改功能（预计1个月内上线）
                 </li>
                 <li className="flex items-center">
-                  <Circle className="h-2 w-2 text-purple-500 mr-2" />
+                  <Circle className="h-2 w-2 text-orange-500 mr-2" />
                   第三阶段：绩效分析系统（预计2个月内上线）
                 </li>
                 <li className="flex items-center">
@@ -520,18 +520,18 @@ export default function TeacherManagement() {
               </ul>
                       </div>
                       <div>
-              <h4 className="font-medium text-purple-700 mb-3">预期效果</h4>
+              <h4 className="font-medium text-orange-700 mb-3">预期效果</h4>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li className="flex items-center">
                   <TrendingUp className="h-4 w-4 text-green-500 mr-2" />
                   减少教师工作时间30%
                 </li>
                 <li className="flex items-center">
-                  <Target className="h-4 w-4 text-blue-500 mr-2" />
+                  <Target className="h-4 w-4 text-amber-500 mr-2" />
                   提升教学效果25%
                 </li>
                 <li className="flex items-center">
-                  <Award className="h-4 w-4 text-purple-500 mr-2" />
+                  <Award className="h-4 w-4 text-orange-500 mr-2" />
                   提高学生满意度40%
                 </li>
                 <li className="flex items-center">

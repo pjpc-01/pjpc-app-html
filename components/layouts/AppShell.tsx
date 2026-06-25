@@ -23,7 +23,6 @@ import {
   ArrowLeftRight,
   Wallet,
   BarChart3,
-  ChevronLeft,
   School,
   Calendar,
   FileText,
@@ -465,22 +464,25 @@ export default function AppShell({
         </Button>
       </div>
 
-      {/* Desktop sidebar toggle */}
+      {/* Desktop sidebar toggle — hamburger when collapsed, X when open */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-3 left-[calc(16rem+0.75rem)] z-50 hidden lg:flex items-center justify-center h-7 w-7 rounded-full bg-white border shadow-sm hover:bg-slate-50 transition-all duration-200"
-        style={{ left: sidebarOpen ? "calc(16rem + 0.75rem)" : "calc(4rem + 0.75rem)" }}
+        className={`fixed z-50 hidden lg:flex items-center justify-center h-7 w-7 rounded-full bg-white border shadow-sm hover:bg-slate-50 transition-all duration-200 ${
+          sidebarOpen
+            ? "top-3 left-[calc(16rem+0.75rem)]"
+            : "top-3 left-3"
+        }`}
       >
-        <ChevronLeft
-          className={`h-3.5 w-3.5 text-slate-500 transition-transform duration-200 ${
-            !sidebarOpen ? "rotate-180" : ""
-          }`}
-        />
+        {sidebarOpen ? (
+          <X className="h-3.5 w-3.5 text-slate-500" />
+        ) : (
+          <Menu className="h-3.5 w-3.5 text-slate-500" />
+        )}
       </button>
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-40 h-full bg-gradient-to-b from-[#f5f0e5] via-[#f5f0e5] to-[#ede4d0] border-r border-[#d8ccb4] transition-all duration-300 ease-in-out flex flex-col ${
+        className={`fixed top-0 left-0 z-40 h-full bg-gradient-to-b from-[#f5f0e5] via-[#f5f0e5] to-[#ede4d0] border-r border-[#d8ccb4] transition-all duration-300 ease-in-out flex flex-col overflow-hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } ${sidebarOpen ? "lg:translate-x-0 lg:w-64" : "lg:-translate-x-full lg:w-0"}`}
       >

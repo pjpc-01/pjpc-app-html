@@ -96,8 +96,8 @@ export default function SettingsPage() {
   }
 
   const ROLES = [
-    { id: "admin", label: "管理员", color: "bg-purple-100 text-purple-700", desc: "系统超级管理员，拥有全部权限" },
-    { id: "teacher", label: "教师", color: "bg-blue-100 text-blue-700", desc: "教师角色，管理课程和学生" },
+    { id: "admin", label: "管理员", color: "bg-amber-100 text-amber-700", desc: "系统超级管理员，拥有全部权限" },
+    { id: "teacher", label: "教师", color: "bg-orange-100 text-orange-700", desc: "教师角色，管理课程和学生" },
     { id: "parent", label: "家长", color: "bg-green-100 text-green-700", desc: "家长角色，查看孩子信息" },
     { id: "accountant", label: "财务", color: "bg-amber-100 text-amber-700", desc: "财务角色，管理收费和报表" },
   ]
@@ -294,8 +294,8 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="h-5 w-5 text-blue-600" />
+              <div className="p-2 bg-amber-100 rounded-lg">
+                <Users className="h-5 w-5 text-amber-700" />
               </div>
               <div>
                 <p className="text-xs text-gray-500">总用户</p>
@@ -327,8 +327,8 @@ export default function SettingsPage() {
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Shield className="h-5 w-5 text-purple-600" />
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <Shield className="h-5 w-5 text-orange-700" />
               </div>
               <div>
                 <p className="text-xs text-gray-500">管理员</p>
@@ -338,8 +338,8 @@ export default function SettingsPage() {
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2 bg-indigo-100 rounded-lg">
-                <History className="h-5 w-5 text-indigo-600" />
+              <div className="p-2 bg-amber-100 rounded-lg">
+                <History className="h-5 w-5 text-amber-700" />
               </div>
               <div>
                 <p className="text-xs text-gray-500">审核日志</p>
@@ -513,7 +513,7 @@ export default function SettingsPage() {
                   {/* Socso */}
                   <div>
                     <div className="flex items-center gap-2 mb-4">
-                      <Shield className="h-5 w-5 text-blue-600" />
+                      <Shield className="h-5 w-5 text-amber-700" />
                       <h3 className="font-semibold text-lg">SOCSO (PERKESO) — 社会保险</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -589,9 +589,9 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-                  <Percent className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
-                  <div className="text-sm text-blue-800">
+                <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+                  <Percent className="h-5 w-5 text-amber-700 mt-0.5 shrink-0" />
+                  <div className="text-sm text-amber-800">
                     <p className="font-medium mb-1">马来西亚法定贡献费率参考</p>
                     <p>EPF 雇员 11% / 雇主 13% | SOCSO 雇员 0.5% / 雇主 1.75% | EIS 雇员 0.2% / 雇主 0.4%</p>
                     <p className="text-xs mt-1">请根据最新政府公告调整费率。这些费率将用于教师薪资计算。</p>
@@ -742,14 +742,14 @@ export default function SettingsPage() {
                       onClick={() => setSelectedRole(role.id)}
                       className={`p-4 rounded-xl border-2 text-left transition-all ${
                         selectedRole === role.id
-                          ? "border-indigo-500 bg-indigo-50 shadow-sm"
+                          ? "border-amber-500 bg-amber-50 shadow-sm"
                           : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                       }`}
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <Shield className={`h-4 w-4 ${
-                          role.id === "admin" ? "text-purple-600" :
-                          role.id === "teacher" ? "text-blue-600" :
+                          role.id === "admin" ? "text-orange-700" :
+                          role.id === "teacher" ? "text-amber-700" :
                           role.id === "parent" ? "text-green-600" : "text-amber-600"
                         }`} />
                         <span className="font-semibold text-sm">{role.label}</span>
@@ -794,7 +794,7 @@ export default function SettingsPage() {
                         <div className="flex items-center gap-3">
                           <div className={`p-1.5 rounded-lg ${
                             rolePermissions[selectedRole]?.[perm.id]
-                              ? "bg-indigo-100 text-indigo-600"
+                              ? "bg-amber-100 text-amber-700"
                               : "bg-gray-100 text-gray-400"
                           }`}>
                             {perm.id.includes("manage") ? (
@@ -857,7 +857,7 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Card>
                     <CardContent className="p-4 text-center">
-                      <p className="text-2xl font-bold text-blue-600">{userStats.total}</p>
+                      <p className="text-2xl font-bold text-amber-700">{userStats.total}</p>
                       <p className="text-xs text-gray-500">总注册用户</p>
                     </CardContent>
                   </Card>
@@ -875,7 +875,7 @@ export default function SettingsPage() {
                   </Card>
                   <Card>
                     <CardContent className="p-4 text-center">
-                      <p className="text-2xl font-bold text-purple-600">{userStats.admin}</p>
+                      <p className="text-2xl font-bold text-orange-700">{userStats.admin}</p>
                       <p className="text-xs text-gray-500">管理员</p>
                     </CardContent>
                   </Card>

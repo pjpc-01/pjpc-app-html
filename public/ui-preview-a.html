@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>方案 A — Modern Minimal</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+body{display:flex;min-height:100vh}
+aside{width:240px;background:#f8fafc;border-right:1px solid #e2e8f0;padding:24px 0;display:flex;flex-direction:column}
+aside .logo{font-size:20px;font-weight:800;padding:0 24px;margin-bottom:32px;display:flex;align-items:center;gap:10px}
+aside .logo span{color:#4f46e5}
+aside nav a{display:flex;align-items:center;gap:10px;padding:10px 24px;font-size:13px;color:#64748b;text-decoration:none;border-left:3px solid transparent;transition:all .15s}
+aside nav a.active{border-left-color:#4f46e5;color:#0f172a;background:#eef2ff;font-weight:600}
+main{flex:1;padding:40px;background:#fff}
+h1{font-size:28px;font-weight:800;color:#0f172a;margin-bottom:4px}
+.sub{font-size:13px;color:#94a3b8;margin-bottom:32px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-bottom:40px}
+.card{background:#fff;border-radius:16px;padding:24px}
+.card .label{font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.card .val{font-size:32px;font-weight:800;color:#0f172a}
+.card .sub{font-size:12px;color:#4f46e5;margin-top:4px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:#94a3b8;text-transform:uppercase;padding:12px 0;border-bottom:1px solid #f1f5f9}
+td{font-size:14px;padding:16px 0;border-bottom:1px solid #f8fafc;color:#334155}
+.btn{padding:8px 20px;border-radius:9999px;font-size:13px;font-weight:500;border:1px solid #e2e8f0;background:#fff;cursor:pointer;transition:all .15s}
+.btn.primary{background:#4f46e5;color:#fff;border-color:#4f46e5}
+.btn:hover{opacity:.85}
+</style></head>
+<body>
+<aside>
+  <div class="logo">🎓 <span>PJPC</span></div>
+  <nav>
+    <a href="#" class="active">📊 仪表板</a>
+    <a href="#">👨‍🎓 学生管理</a>
+    <a href="#">💰 财务管理</a>
+    <a href="#">📚 课程</a>
+    <a href="#">⚙️ 设置</a>
+  </nav>
+</aside>
+<main>
+  <h1>仪表板</h1>
+  <p class="sub">今日总览</p>
+  <div class="grid">
+    <div class="card"><div class="label">学生总数</div><div class="val">158</div><div class="sub">+3 本月</div></div>
+    <div class="card"><div class="label">教师</div><div class="val">28</div><div class="sub">全部在职</div></div>
+    <div class="card"><div class="label">本月收入</div><div class="val">RM 42K</div><div class="sub">+12%</div></div>
+    <div class="card"><div class="label">出勤率</div><div class="val">94%</div><div class="sub">今日</div></div>
+  </div>
+  <table>
+    <tr><th>学生</th><th>年级</th><th>分院</th><th>状态</th><th></th></tr>
+    <tr><td>张小明</td><td>Standard 4</td><td>BATU14</td><td><span style="color:#10b981">● 在学</span></td><td><button class="btn">详情</button></td></tr>
+    <tr><td>李华</td><td>Form 1</td><td>PU1</td><td><span style="color:#10b981">● 在学</span></td><td><button class="btn">详情</button></td></tr>
+    <tr><td>陈小美</td><td>Standard 2</td><td>BATU14</td><td><span style="color:#f59e0b">● 请假</span></td><td><button class="btn primary">联系</button></td></tr>
+  </table>
+</main>
+</body></html>

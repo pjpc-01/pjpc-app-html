@@ -92,8 +92,8 @@ export default function StudentList({
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-gray-600">加载中...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600 mx-auto"></div>
+          <p className="mt-2 text-amber-700">加载中...</p>
         </div>
       </div>
     )
@@ -103,17 +103,17 @@ export default function StudentList({
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <p className="text-gray-600">暂无学生数据</p>
+          <p className="text-amber-700">暂无学生数据</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border border-[#d8ccb4] bg-white/90">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="bg-[#f5f0e5]">
             <TableHead className="w-12">
               <Checkbox
                 checked={allSelected}
@@ -121,40 +121,42 @@ export default function StudentList({
               />
             </TableHead>
             <TableHead 
-              className="cursor-pointer hover:bg-gray-50"
+              className="cursor-pointer hover:bg-[#ede4d0] text-[#5c4a30] font-semibold"
               onClick={() => handleSort('name')}
             >
               姓名
             </TableHead>
             <TableHead 
-              className="cursor-pointer hover:bg-gray-50"
+              className="cursor-pointer hover:bg-[#ede4d0] text-[#5c4a30] font-semibold"
               onClick={() => handleSort('studentId')}
             >
               学号
             </TableHead>
             <TableHead 
-              className="cursor-pointer hover:bg-gray-50"
+              className="cursor-pointer hover:bg-[#ede4d0] text-[#5c4a30] font-semibold"
               onClick={() => handleSort('grade')}
             >
               年级
             </TableHead>
-            <TableHead>父亲</TableHead>
-            <TableHead>母亲</TableHead>
-            <TableHead>联系电话</TableHead>
+            <TableHead className="text-[#5c4a30] font-semibold">父亲</TableHead>
+            <TableHead className="text-[#5c4a30] font-semibold">母亲</TableHead>
+            <TableHead className="text-[#5c4a30] font-semibold">联系电话</TableHead>
             <TableHead 
-              className="cursor-pointer hover:bg-gray-50"
+              className="cursor-pointer hover:bg-[#ede4d0] text-[#5c4a30] font-semibold"
               onClick={() => handleSort('status')}
             >
               状态
             </TableHead>
-            <TableHead className="w-24">操作</TableHead>
+            <TableHead className="w-24 text-[#5c4a30] font-semibold">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedStudents.map((student) => (
+          {sortedStudents.map((student, index) => (
             <TableRow 
               key={student.id} 
-              className="hover:bg-slate-50 cursor-pointer transition-colors group"
+              className={`hover:bg-yellow-50/60 cursor-pointer transition-colors group ${
+                index % 2 === 0 ? "bg-white" : "bg-[#fefcf6]"
+              }`}
               onClick={() => onViewStudent(student)}
             >
               <TableCell className="w-12">
@@ -166,16 +168,16 @@ export default function StudentList({
                   onClick={(e) => e.stopPropagation()}
                 />
               </TableCell>
-              <TableCell className="font-medium text-slate-900">{student.student_name}</TableCell>
-              <TableCell className="text-slate-500 font-mono text-xs">{student.student_id}</TableCell>
+              <TableCell className="font-medium text-[#5c4a30]">{student.student_name}</TableCell>
+              <TableCell className="text-[#9a8868] font-mono text-xs">{student.student_id}</TableCell>
               <TableCell>
-                <Badge variant="outline" className="bg-slate-50 text-slate-600 font-normal">
+                <Badge variant="outline" className="bg-amber-50/60 text-amber-700 border-amber-200 font-normal">
                   {convertGradeToChinese(student.standard || '')}
                 </Badge>
               </TableCell>
-              <TableCell className="text-slate-600">{student.father_name || '-'}</TableCell>
-              <TableCell className="text-slate-600">{student.mother_name || '-'}</TableCell>
-              <TableCell className="text-slate-500">
+              <TableCell className="text-[#7a6a48]">{student.father_name || '-'}</TableCell>
+              <TableCell className="text-[#7a6a48]">{student.mother_name || '-'}</TableCell>
+              <TableCell className="text-[#9a8868]">
                 {student.father_phone || student.mother_phone ? (
                   <span className="text-xs">
                     {student.father_phone && <span>父: {student.father_phone}</span>}
@@ -185,7 +187,11 @@ export default function StudentList({
                 ) : '-'}
               </TableCell>
               <TableCell>
-                <Badge variant={student.status === 'active' ? 'default' : 'secondary'} className="text-[10px] uppercase tracking-wider">
+                <Badge variant={student.status === 'active' ? 'default' : 'secondary'} className={
+                  student.status === 'active' 
+                    ? "bg-green-100 text-green-700 border-green-200 text-[10px] uppercase tracking-wider" 
+                    : "bg-gray-100 text-gray-500 border-gray-200 text-[10px] uppercase tracking-wider"
+                }>
                   {student.status === 'active' ? '在读' : '离校'}
                 </Badge>
               </TableCell>
@@ -195,7 +201,7 @@ export default function StudentList({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0"
+                      className="h-8 w-8 p-0 text-[#9a8868] hover:text-yellow-600 hover:bg-yellow-50"
                       onClick={(e) => {
                         e.stopPropagation();
                         onEditStudent(student);
@@ -208,7 +214,7 @@ export default function StudentList({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                      className="h-8 w-8 p-0 text-red-400 hover:text-red-600 hover:bg-red-50"
                       onClick={(e) => {
                         e.stopPropagation();
                         onDeleteStudent(student.id);
