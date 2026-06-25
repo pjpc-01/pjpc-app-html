@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Edit, Eye, Trash2, MoreHorizontal } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Student } from "@/hooks/useStudents"
 import { convertGradeToChinese } from "./utils"
 import PermissionGate from "@/components/shared/PermissionGate"
@@ -168,7 +169,17 @@ export default function StudentList({
                   onClick={(e) => e.stopPropagation()}
                 />
               </TableCell>
-              <TableCell className="font-medium text-[#5c4a30]">{student.student_name}</TableCell>
+              <TableCell className="font-medium text-[#5c4a30]">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={student.avatar || undefined} />
+                    <AvatarFallback className="bg-gradient-to-br from-[#e6be1e] to-[#d4a817] text-white text-xs font-semibold">
+                      {student.student_name?.[0] || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span>{student.student_name}</span>
+                </div>
+              </TableCell>
               <TableCell className="text-[#9a8868] font-mono text-xs">{student.student_id}</TableCell>
               <TableCell>
                 <Badge variant="outline" className="bg-amber-50/60 text-amber-700 border-amber-200 font-normal">

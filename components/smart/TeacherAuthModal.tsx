@@ -73,7 +73,7 @@ export default function TeacherAuthModal({
         throw new Error(data.error || '获取教师数据失败')
       }
 
-      const teachers: Teacher[] = data.data.items || []
+      const teachers: Teacher[] = data.data || []
       
       console.log('🔍 开始处理教师身份验证数据:', teacherData)
       

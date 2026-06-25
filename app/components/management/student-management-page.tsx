@@ -68,6 +68,7 @@ import {
 } from "lucide-react"
 import { useStudents } from "@/hooks/useStudents"
 import { Student } from "@/hooks/useStudents"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { usePagination } from "@/hooks/usePagination"
 import { convertGradeToChinese } from "../student/utils"
 import StudentForm from "../student/StudentForm"
@@ -537,8 +538,7 @@ export default function StudentManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-100 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="max-w-full space-y-8">
         {/* 页面标题和操作栏 */}
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-md border border-amber-200/40 p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -818,9 +818,17 @@ export default function StudentManagementPage() {
             <Card key={student.id} className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{student.student_name}</h3>
-                    <p className="text-sm text-gray-500">{student.student_id}</p>
+                  <div className="flex items-center gap-3 flex-1">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={student.avatar || undefined} />
+                      <AvatarFallback className="bg-gradient-to-br from-[#e6be1e] to-[#d4a817] text-white text-sm font-semibold">
+                        {student.student_name?.[0] || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-semibold text-lg">{student.student_name}</h3>
+                      <p className="text-sm text-gray-500">{student.student_id}</p>
+                    </div>
                   </div>
                   <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
                     {student.status === 'active' ? '在读' : '离校'}
@@ -966,6 +974,5 @@ export default function StudentManagementPage() {
         />
       )}
       </div>
-    </div>
   )
 }

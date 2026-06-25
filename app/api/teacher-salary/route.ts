@@ -22,13 +22,28 @@ export async function GET(request: NextRequest) {
 
       const records = await pb.collection('teacher_salary_structures').getList(1, 100, {
         filter,
-        expand: 'teacher_id',
         sort: '-effective_date'
       })
 
+      // 手动 join 教师名字（因为 teacher_id 是 text 字段不是 relation）
+      const teacherIds = [...new Set(records.items.map(r => r.teacher_id).filter(Boolean))]
+      const teachers = teacherIds.length > 0
+        ? await pb.collection('teachers').getList(1, 100, {
+            filter: teacherIds.map(id => `id = "${id}"`).join(' || ')
+          })
+        : { items: [] }
+      const teacherMap = new Map(teachers.items.map(t => [t.id, { name: t.name, email: t.email }]))
+
+      const data = records.items.map(r => ({
+        ...r,
+        expand: {
+          teacher_id: teacherMap.get(r.teacher_id) || { name: '未知教师', email: '' }
+        }
+      }))
+
       return NextResponse.json({
         success: true,
-        data: records.items,
+        data,
         total: records.totalItems
       })
     } else {
@@ -52,13 +67,28 @@ export async function GET(request: NextRequest) {
 
       const records = await pb.collection('teacher_salary_records').getList(page, limit, {
         filter,
-        expand: 'teacher_id,created_by,approved_by',
         sort: '-year,-month'
       })
 
+      // 手动 join 教师名字（text 字段不支持 expand）
+      const recordTeacherIds = [...new Set(records.items.map(r => r.teacher_id).filter(Boolean))]
+      const allTeachers = recordTeacherIds.length > 0
+        ? await pb.collection('teachers').getList(1, 100, {
+            filter: recordTeacherIds.map(id => `id = "${id}"`).join(' || ')
+          })
+        : { items: [] }
+      const allTeacherMap = new Map(allTeachers.items.map(t => [t.id, { name: t.name, email: t.email }]))
+
+      const recordsData = records.items.map(r => ({
+        ...r,
+        expand: {
+          teacher_id: allTeacherMap.get(r.teacher_id) || { name: '未知教师', email: '' }
+        }
+      }))
+
       return NextResponse.json({
         success: true,
-        data: records.items,
+        data: recordsData,
         total: records.totalItems,
         page,
         totalPages: records.totalPages

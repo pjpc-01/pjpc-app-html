@@ -128,8 +128,9 @@ export default function TeacherPerformanceManagement() {
     try {
       const response = await fetch('/api/teachers')
       const result = await response.json()
-      if (result.success && result.data && Array.isArray(result.data.items)) {
-        setTeachers(result.data.items)
+      // API returns: { success: true, data: [...teachers], total: N }
+      if (result.success && result.data && Array.isArray(result.data)) {
+        setTeachers(result.data)
       } else {
         console.error('获取教师列表失败:', result.error || '数据格式错误')
         setTeachers([])

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useSearchParams } from "next/navigation"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   BarChart3,
   DollarSign,
@@ -286,9 +287,12 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                       <TableRow key={student.id} className="hover:bg-slate-50">
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                              {student.name?.charAt(0) || 'S'}
-                            </div>
+                            <Avatar className="h-9 w-9">
+                              <AvatarImage src={student.photo ? `/api/pocketbase-proxy/api/files/students/${student.id}/${student.photo}` : undefined} />
+                              <AvatarFallback className="bg-gradient-to-br from-amber-500 to-orange-600 text-white text-sm font-semibold">
+                                {student.name?.charAt(0) || 'S'}
+                              </AvatarFallback>
+                            </Avatar>
                             <div className="min-w-0">
                               <div className="font-medium text-sm truncate">{student.name}</div>
                               <div className="text-xs text-slate-500">学号: {student.student_id}</div>
@@ -375,7 +379,17 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                 ) : (
                   filteredTeachers.slice(0, 5).map((teacher) => (
                     <TableRow key={teacher.id} className="hover:bg-slate-50">
-                      <TableCell className="font-medium">{teacher.name || teacher.teacher_name || '-'}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={teacher.avatar ? `/api/pocketbase-proxy/api/files/teachers/${teacher.id}/${teacher.avatar}` : undefined} />
+                            <AvatarFallback className="bg-gradient-to-br from-rose-400 to-rose-600 text-white text-xs font-semibold">
+                              {(teacher.name || teacher.teacher_name || 'T').charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{teacher.name || teacher.teacher_name || '-'}</span>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
                           {teacher.expand?.centerId?.code || teacher.center || '未分配'}

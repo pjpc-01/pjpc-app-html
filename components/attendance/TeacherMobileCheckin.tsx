@@ -48,9 +48,8 @@ export default function TeacherMobileCheckin() {
       try {
         const res = await fetch("/api/teachers")
         const data = await res.json()
-        if (data.success && Array.isArray(data.data?.items)) {
-          setTeachers(data.data.items)
-        } else if (Array.isArray(data.data)) {
+        // API returns: { success: true, data: [...teachers], total: N }
+        if (data.success && Array.isArray(data.data)) {
           setTeachers(data.data)
         }
       } catch (err) {

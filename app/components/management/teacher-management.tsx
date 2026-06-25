@@ -17,34 +17,28 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { UserPlus, Search, Edit, Users, Trash2, Mail, Phone, Calendar, BookOpen, BarChart3, List, Brain, Zap, Target, Award, Lightbulb, Sparkles, Rocket, Star, CheckCircle, Crown, Clock, MessageSquare, BarChart3 as BarChart3Icon, PieChart, TrendingUp, Activity, Shield, Globe, Settings, Eye, Filter, Download, Upload, Plus, Minus, ArrowUpRight, ArrowDownRight, Circle, Square, Triangle, Hexagon, Octagon, Star as StarIcon, Trophy, Medal, Gem, Diamond, Zap as ZapIcon, Flash, Lightning, Sun, Moon, Cloud, CloudRain, CloudLightning, Wind, Thermometer, Droplets, Umbrella, Snowflake, CloudSnow, EyeOff, EyeOn, Maximize2, Minimize2, RotateCcw, RotateCw, ZoomIn, ZoomOut, Move, Grid, List as ListIcon, Columns, Rows, Layout, Sidebar, SidebarClose, SidebarOpen, PanelLeft, PanelRight, PanelTop, PanelBottom, PanelTopClose, PanelBottomClose, PanelLeftClose, PanelRightClose, PanelTopOpen, PanelBottomOpen, PanelLeftOpen, PanelRightOpen, Sliders, SlidersHorizontal, ToggleLeft, ToggleRight, Volume, Volume1, Volume2, VolumeX, Mute, Mic, MicOff, Headphones, Speaker, Monitor, MonitorOff, Smartphone, Tablet, Laptop, Desktop, Printer, Scanner, Keyboard, Mouse, HardDrive, Server, Database, Network, Wifi, WifiOff, Bluetooth, Signal, SignalHigh, SignalMedium, SignalLow, Battery, BatteryCharging, BatteryFull, BatteryMedium, BatteryLow, BatteryEmpty, Power, PowerOff, Plug, PlugZap, Zap as ZapIcon2, Flash as FlashIcon, Lightning as LightningIcon, Sun as SunIcon, Moon as MoonIcon, Cloud as CloudIcon, CloudRain as CloudRainIcon, CloudLightning as CloudLightningIcon, Wind as WindIcon, Thermometer as ThermometerIcon, Droplets as DropletsIcon, Umbrella as UmbrellaIcon, Snowflake as SnowflakeIcon, CloudSnow as CloudSnowIcon, EyeOff as EyeOffIcon, EyeOn as EyeOnIcon, Maximize2 as Maximize2Icon, Minimize2 as Minimize2Icon, RotateCcw as RotateCcwIcon, RotateCw as RotateCwIcon, ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon, Move as MoveIcon, Grid as GridIcon, List as ListIcon2, Columns as ColumnsIcon, Rows as RowsIcon, Layout as LayoutIcon, Sidebar as SidebarIcon, SidebarClose as SidebarCloseIcon, SidebarOpen as SidebarOpenIcon, PanelLeft as PanelLeftIcon, PanelRight as PanelRightIcon, PanelTop as PanelTopIcon, PanelBottom as PanelBottomIcon, PanelTopClose as PanelTopCloseIcon, PanelBottomClose as PanelBottomCloseIcon, PanelLeftClose as PanelLeftCloseIcon, PanelRightClose as PanelRightCloseIcon, PanelTopOpen as PanelTopOpenIcon, PanelBottomOpen as PanelBottomOpenIcon, PanelLeftOpen as PanelLeftOpenIcon, PanelRightOpen as PanelRightOpenIcon, Sliders as SlidersIcon, SlidersHorizontal as SlidersHorizontalIcon, ToggleLeft as ToggleLeftIcon, ToggleRight as ToggleRightIcon, Volume as VolumeIcon, Volume1 as Volume1Icon, Volume2 as Volume2Icon, VolumeX as VolumeXIcon, Mute as MuteIcon, Mic as MicIcon, MicOff as MicOffIcon, Headphones as HeadphonesIcon, Speaker as SpeakerIcon, Monitor as MonitorIcon, MonitorOff as MonitorOffIcon, Smartphone as SmartphoneIcon, Tablet as TabletIcon, Laptop as LaptopIcon, Desktop as DesktopIcon, Printer as PrinterIcon, Scanner as ScannerIcon, Keyboard as KeyboardIcon, Mouse as MouseIcon, HardDrive as HardDriveIcon, Server as ServerIcon, Database as DatabaseIcon, Network as NetworkIcon, Wifi as WifiIcon, WifiOff as WifiOffIcon, Bluetooth as BluetoothIcon, Signal as SignalIcon, SignalHigh as SignalHighIcon, SignalMedium as SignalMediumIcon, SignalLow as SignalLowIcon, Battery as BatteryIcon, BatteryCharging as BatteryChargingIcon, BatteryFull as BatteryFullIcon, BatteryMedium as BatteryMediumIcon, BatteryLow as BatteryLowIcon, BatteryEmpty as BatteryEmptyIcon, Power as PowerIcon, PowerOff as PowerOffIcon, Plug as PlugIcon, PlugZap as PlugZapIcon } from "lucide-react"
+import { DollarSign, UserPlus, Search, Edit, Users, Trash2, Mail, Phone, Calendar, BookOpen, BarChart3, List, Brain, Zap, Target, Award, Lightbulb, Sparkles, Rocket, Star, CheckCircle, Crown, Clock, MessageSquare, BarChart3 as BarChart3Icon, PieChart, TrendingUp, Activity, Shield, Globe, Settings, Eye, Filter, Download, Upload, Plus, Minus, ArrowUpRight, ArrowDownRight, Circle, Square, Triangle, Hexagon, Octagon, Star as StarIcon, Trophy, Medal, Gem, Diamond, Zap as ZapIcon, Flash, Lightning, Sun, Moon, Cloud, CloudRain, CloudLightning, Wind, Thermometer, Droplets, Umbrella, Snowflake, CloudSnow, EyeOff, EyeOn, Maximize2, Minimize2, RotateCcw, RotateCw, ZoomIn, ZoomOut, Move, Grid, List as ListIcon, Columns, Rows, Layout, Sidebar, SidebarClose, SidebarOpen, PanelLeft, PanelRight, PanelTop, PanelBottom, PanelTopClose, PanelBottomClose, PanelLeftClose, PanelRightClose, PanelTopOpen, PanelBottomOpen, PanelLeftOpen, PanelRightOpen, Sliders, SlidersHorizontal, ToggleLeft, ToggleRight, Volume, Volume1, Volume2, VolumeX, Mute, Mic, MicOff, Headphones, Speaker, Monitor, MonitorOff, Smartphone, Tablet, Laptop, Desktop, Printer, Scanner, Keyboard, Mouse, HardDrive, Server, Database, Network, Wifi, WifiOff, Bluetooth, Signal, SignalHigh, SignalMedium, SignalLow, Battery, BatteryCharging, BatteryFull, BatteryMedium, BatteryLow, BatteryEmpty, Power, PowerOff, Plug, PlugZap, Zap as ZapIcon2, Flash as FlashIcon, Lightning as LightningIcon, Sun as SunIcon, Moon as MoonIcon, Cloud as CloudIcon, CloudRain as CloudRainIcon, CloudLightning as CloudLightningIcon, Wind as WindIcon, Thermometer as ThermometerIcon, Droplets as DropletsIcon, Umbrella as UmbrellaIcon, Snowflake as SnowflakeIcon, CloudSnow as CloudSnowIcon, EyeOff as EyeOffIcon, EyeOn as EyeOnIcon, Maximize2 as Maximize2Icon, Minimize2 as Minimize2Icon, RotateCcw as RotateCcwIcon, RotateCw as RotateCwIcon, ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon, Move as MoveIcon, Grid as GridIcon, List as ListIcon2, Columns as ColumnsIcon, Rows as RowsIcon, Layout as LayoutIcon, Sidebar as SidebarIcon, SidebarClose as SidebarCloseIcon, SidebarOpen as SidebarOpenIcon, PanelLeft as PanelLeftIcon, PanelRight as PanelRightIcon, PanelTop as PanelTopIcon, PanelBottom as PanelBottomIcon, PanelTopClose as PanelTopCloseIcon, PanelBottomClose as PanelBottomCloseIcon, PanelLeftClose as PanelLeftCloseIcon, PanelRightClose as PanelRightCloseIcon, PanelTopOpen as PanelTopOpenIcon, PanelBottomOpen as PanelBottomOpenIcon, PanelLeftOpen as PanelLeftOpenIcon, PanelRightOpen as PanelRightOpenIcon, Sliders as SlidersIcon, SlidersHorizontal as SlidersHorizontalIcon, ToggleLeft as ToggleLeftIcon, ToggleRight as ToggleRightIcon, Volume as VolumeIcon, Volume1 as Volume1Icon, Volume2 as Volume2Icon, VolumeX as VolumeXIcon, Mute as MuteIcon, Mic as MicIcon, MicOff as MicOffIcon, Headphones as HeadphonesIcon, Speaker as SpeakerIcon, Monitor as MonitorIcon, MonitorOff as MonitorOffIcon, Smartphone as SmartphoneIcon, Tablet as TabletIcon, Laptop as LaptopIcon, Desktop as DesktopIcon, Printer as PrinterIcon, Scanner as ScannerIcon, Keyboard as KeyboardIcon, Mouse as MouseIcon, HardDrive as HardDriveIcon, Server as ServerIcon, Database as DatabaseIcon, Network as NetworkIcon, Wifi as WifiIcon, WifiOff as WifiOffIcon, Bluetooth as BluetoothIcon, Signal as SignalIcon, SignalHigh as SignalHighIcon, SignalMedium as SignalMediumIcon, SignalLow as SignalLowIcon, Battery as BatteryIcon, BatteryCharging as BatteryChargingIcon, BatteryFull as BatteryFullIcon, BatteryMedium as BatteryMediumIcon, BatteryLow as BatteryLowIcon, BatteryEmpty as BatteryEmptyIcon, Power as PowerIcon, PowerOff as PowerOffIcon, Plug as PlugIcon, PlugZap as PlugZapIcon } from "lucide-react"
 
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { getStatusBadge, getStatusText, formatDate } from "@/lib/utils"
+import { useTeachers } from "@/hooks/useTeachers"
 import AdvancedTeacherFilters, { TeacherFilterState } from "@/components/teacher/AdvancedTeacherFilters"
 import TeacherAnalytics from "@/components/teacher/TeacherAnalytics"
 import TeacherBulkOperations from "@/components/teacher/TeacherBulkOperations"
 
-// Types
+// Types - use PB teacher fields
 interface Teacher {
-  uid: string
-  email: string
+  id: string
   name: string
-  role: "teacher"
-  status: "pending" | "approved" | "suspended"
-  emailVerified: boolean
-  createdAt: any
-  lastLogin: any
-  phone?: string
-  subject?: string
+  email: string
+  phone: string
   department?: string
-  experience?: number
+  position?: string
+  status: string
+  cardNumber?: string
   avatar?: string
-  // NFC卡相关字段
-  nfc_card_number?: string
-  permissions?: 'normal_teacher' | 'senior_teacher' | 'admin'
-  nfc_card_issued_date?: string
-  nfc_card_expiry_date?: string
+  hireDate?: string
+  nric?: string
 }
 
 interface TeacherFormData {
@@ -54,7 +48,6 @@ interface TeacherFormData {
   subject: string
   department: string
   experience: string
-  // NFC卡相关字段
   nfc_card_number: string
   permissions: 'normal_teacher' | 'senior_teacher' | 'admin'
   nfc_card_issued_date: string
@@ -63,6 +56,7 @@ interface TeacherFormData {
 
 export default function TeacherManagement() {
   const { userProfile } = useAuth()
+  const { teachers: pbTeachers, loading: teachersLoading } = useTeachers()
   
   // State
   const [teachers, setTeachers] = useState<Teacher[]>([])
@@ -113,82 +107,28 @@ export default function TeacherManagement() {
     attendancePrediction: { status: 'developing', progress: 70 }
   })
 
-  // 数据获取
-  const fetchTeachers = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      // 模拟数据 - 实际应该从PocketBase获取
-      const mockTeachers: Teacher[] = [
-        {
-          uid: '1',
-          email: 'teacher1@school.com',
-          name: '张老师',
-          role: 'teacher',
-          status: 'approved',
-          emailVerified: true,
-          createdAt: new Date('2024-01-01'),
-          lastLogin: new Date('2024-01-15'),
-          phone: '0123456789',
-          subject: '数学',
-          department: '理科部',
-          experience: 5,
-          nfc_card_number: 'T001',
-          permissions: 'senior_teacher',
-          nfc_card_issued_date: '2024-01-01',
-          nfc_card_expiry_date: '2025-01-01'
-        },
-        {
-          uid: '2',
-          email: 'teacher2@school.com',
-          name: '李老师',
-          role: 'teacher',
-          status: 'approved',
-          emailVerified: true,
-          createdAt: new Date('2024-01-02'),
-          lastLogin: new Date('2024-01-14'),
-          phone: '0123456790',
-          subject: '语文',
-          department: '文科部',
-          experience: 8,
-          nfc_card_number: 'T002',
-          permissions: 'normal_teacher',
-          nfc_card_issued_date: '2024-01-02',
-          nfc_card_expiry_date: '2025-01-02'
-        },
-        {
-          uid: '3',
-          email: 'teacher3@school.com',
-          name: '王老师',
-          role: 'teacher',
-          status: 'pending',
-          emailVerified: false,
-          createdAt: new Date('2024-01-03'),
-          lastLogin: null,
-          phone: '0123456791',
-          subject: '英语',
-          department: '外语部',
-          experience: 3,
-          nfc_card_number: '',
-          permissions: 'normal_teacher',
-          nfc_card_issued_date: '',
-          nfc_card_expiry_date: ''
-        }
-      ]
-      
-      setTeachers(mockTeachers)
-    } catch (error) {
-      setError('获取教师数据失败')
-      console.error('获取教师数据失败:', error)
-    } finally {
+  // 从 PB 获取真实教师数据
+  useEffect(() => {
+    if (pbTeachers && pbTeachers.length > 0) {
+      const mapped: Teacher[] = pbTeachers.map((t: any) => ({
+        id: t.id || '',
+        name: t.name || 'Unknown',
+        email: t.email || '',
+        phone: t.phone || '',
+        department: t.department || '',
+        position: t.position || '',
+        status: t.status || 'active',
+        cardNumber: t.cardNumber || '',
+        avatar: t.avatar || '',
+        hireDate: t.hireDate || '',
+        nric: t.nric || '',
+      }))
+      setTeachers(mapped)
+      setLoading(false)
+    } else if (!teachersLoading) {
       setLoading(false)
     }
-  }, [])
-
-  useEffect(() => {
-    fetchTeachers()
-  }, [fetchTeachers])
+  }, [pbTeachers, teachersLoading])
 
   // 渲染AI功能展示
   const renderAIFeatures = () => (
@@ -558,13 +498,27 @@ export default function TeacherManagement() {
             value={filters.searchTerm}
             onChange={(e) => setFilters({ ...filters, searchTerm: e.target.value })}
           />
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => {
+            // 聚焦搜索框让用户输入筛选条件
+            document.querySelector<HTMLInputElement>('input[placeholder="搜索教师..."]')?.focus()
+          }}>
             <Filter className="h-4 w-4 mr-2" />
             筛选
                     </Button>
                   </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => {
+            // 导出教师列表为 CSV
+            const csv = ['教师,部门,职位,电话,NFC卡号,状态,入职日期']
+            teachers.forEach(t => {
+              csv.push(`${t.name || ''},${t.department || ''},${t.position || ''},${t.phone || ''},${t.cardNumber || ''},${t.status || ''},${t.hireDate || ''}`)
+            })
+            const blob = new Blob(['\uFEFF' + csv.join('\n')], { type: 'text/csv;charset=utf-8' })
+            const a = document.createElement('a')
+            a.href = URL.createObjectURL(blob)
+            a.download = '教师列表.csv'
+            a.click()
+          }}>
             <Download className="h-4 w-4 mr-2" />
             导出
           </Button>
@@ -586,24 +540,23 @@ export default function TeacherManagement() {
               <TableHeader>
                 <TableRow>
                 <TableHead>教师</TableHead>
-                <TableHead>科目</TableHead>
                 <TableHead>部门</TableHead>
-                <TableHead>经验</TableHead>
+                <TableHead>职位</TableHead>
+                <TableHead>电话</TableHead>
                 <TableHead>NFC卡号</TableHead>
-                <TableHead>权限</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>最后登录</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead>入职日期</TableHead>
                 <TableHead>操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
               {teachers.map((teacher) => (
-                  <TableRow key={teacher.uid}>
+                  <TableRow key={teacher.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                       <Avatar>
                           <AvatarImage src={teacher.avatar} />
-                        <AvatarFallback>{teacher.name[0]}</AvatarFallback>
+                        <AvatarFallback>{teacher.name?.[0] || '?'}</AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="font-medium">{teacher.name}</p>
@@ -611,37 +564,35 @@ export default function TeacherManagement() {
                         </div>
                       </div>
                     </TableCell>
-                  <TableCell>{teacher.subject}</TableCell>
-                  <TableCell>{teacher.department}</TableCell>
-                  <TableCell>{teacher.experience}年</TableCell>
+                  <TableCell>{teacher.department || '-'}</TableCell>
+                  <TableCell>{teacher.position || '-'}</TableCell>
+                  <TableCell>{teacher.phone || '-'}</TableCell>
                   <TableCell>
                     <Badge variant="outline">
-                      {teacher.nfc_card_number || '未设置'}
+                      {teacher.cardNumber || '未设置'}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={
-                      teacher.permissions === 'admin' ? 'default' :
-                      teacher.permissions === 'senior_teacher' ? 'secondary' : 'outline'
-                    }>
-                      {teacher.permissions === 'admin' ? '管理员' :
-                       teacher.permissions === 'senior_teacher' ? '高级教师' : '普通教师'}
+                    <Badge variant={teacher.status === 'active' ? 'default' : 'secondary'}>
+                      {teacher.status === 'active' ? '在职' : teacher.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{getStatusBadge(teacher.status)}</TableCell>
+                  <TableCell>{teacher.hireDate || '-'}</TableCell>
                     <TableCell>
-                    {teacher.lastLogin ? formatDate(teacher.lastLogin) : '从未登录'}
-                    </TableCell>
-                    <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm">
+                    <div className="flex items-center gap-1">
+                      <a href="/finance/payroll" title="薪资管理">
+                        <Button variant="outline" size="sm" className="text-amber-600 border-amber-300 hover:bg-amber-50">
+                          <DollarSign className="h-4 w-4 mr-1" />薪资
+                        </Button>
+                      </a>
+                      <Button variant="ghost" size="sm" onClick={() => alert(`教师详情\n姓名: ${teacher.name || '-'}\n部门: ${teacher.department || '-'}\n职位: ${teacher.position || '-'}\n电话: ${teacher.phone || '-'}\n邮箱: ${teacher.email || '-'}`)}>
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        setEditingTeacher(teacher)
+                        setDialogOpen(true)
+                      }}>
                           <Edit className="h-4 w-4" />
-                        </Button>
-                      <Button variant="ghost" size="sm">
-                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { 
   Search,
   Edit,
@@ -15,11 +16,13 @@ import {
   Trash2,
   FileSpreadsheet,
   UserPlus,
+  DollarSign,
 } from "lucide-react"
 import { useTeachers } from "@/hooks/useTeachers"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import TeacherForm from "@/components/teacher/TeacherForm"
 import TeacherDetails from "@/components/teacher/TeacherDetails"
+import TeacherSalaryManagement from "@/components/teacher/TeacherSalaryManagement"
 
 interface TeachersTabProps {
   setActiveTab: (tab: string) => void
@@ -38,6 +41,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingTeacher, setEditingTeacher] = useState<any>(null)
   const [viewingTeacher, setViewingTeacher] = useState<any>(null)
+  const [salaryTeacher, setSalaryTeacher] = useState<any>(null)
 
   const searchParams = useSearchParams()
   const centerFilter = searchParams.get('center')
@@ -296,6 +300,15 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
                           </Button>
                           <Button 
                             variant="outline" 
+                            size="sm"
+                            className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                            title="薪资管理"
+                            onClick={() => setSalaryTeacher(teacher)}
+                          >
+                            <DollarSign className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
                             size="sm" 
                             className="text-red-600 hover:text-red-700"
                             onClick={() => handleDeleteTeacher(teacher.id)}
@@ -390,6 +403,16 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
         onOpenChange={(open) => !open && setViewingTeacher(null)}
         teacher={viewingTeacher}
       />
+
+      {/* 薪资管理对话框 */}
+      <Dialog open={!!salaryTeacher} onOpenChange={(open) => !open && setSalaryTeacher(null)}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>薪资管理 — {salaryTeacher?.teacher_name || salaryTeacher?.name || '教师'}</DialogTitle>
+          </DialogHeader>
+          <TeacherSalaryManagement />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
