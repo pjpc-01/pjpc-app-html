@@ -10,7 +10,7 @@
 
 @layer base {
   /* =========================================
-     Brand Color Variables (amber by default)
+     CSS Design Tokens — 暖琥珀 (default)
      ========================================= */
   :root {
     --background: 0 0% 100%;
@@ -37,7 +37,7 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -72,6 +72,14 @@
     --brand-secondary-800: 15 79% 34%;
     --brand-secondary-900: 13 72% 28%;
     --brand-secondary-950: 10 70% 18%;
+
+    /* Style design tokens — warm card default */
+    --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    --card-border-opacity: 1;
+    --card-bg-alt: hsl(var(--brand-50) / 0.8);
+    --sidebar-blur: 0px;
+    --sidebar-glass-opacity: 1;
+    --table-stripe: hsl(var(--brand-50) / 0.4);
   }
 
   .dark {
@@ -110,154 +118,195 @@
   }
 }
 
-/* =========================================
-   Theme: Ocean — Professional Blue
-   ========================================= */
-.theme-ocean {
-  --brand-50: 214 100% 97%;
-  --brand-100: 214 95% 93%;
-  --brand-200: 213 94% 87%;
-  --brand-300: 212 92% 78%;
-  --brand-400: 211 89% 67%;
-  --brand-500: 210 88% 56%;
-  --brand-600: 209 86% 47%;
-  --brand-700: 208 82% 38%;
-  --brand-800: 207 78% 30%;
-  --brand-900: 206 72% 23%;
-  --brand-950: 205 65% 15%;
+/* =============================================
+   Style Theme: 📊 Planhat — Flat Data Professional
+   Sharp corners, minimal shadows, clean gray palette
+   Inspired by Planhat (getdesign.md/design-md/planhat)
+   ============================================= */
+.theme-planhat {
+  --brand-50: 210 20% 98%;
+  --brand-100: 210 18% 94%;
+  --brand-200: 210 16% 88%;
+  --brand-300: 210 14% 78%;
+  --brand-400: 210 12% 65%;
+  --brand-500: 210 10% 50%;
+  --brand-600: 210 12% 40%;
+  --brand-700: 210 14% 30%;
+  --brand-800: 210 16% 22%;
+  --brand-900: 210 18% 16%;
+  --brand-950: 210 20% 10%;
 
-  --brand-secondary-50: 204 100% 97%;
-  --brand-secondary-100: 204 96% 91%;
-  --brand-secondary-200: 203 93% 83%;
-  --brand-secondary-300: 202 93% 73%;
-  --brand-secondary-400: 200 91% 60%;
-  --brand-secondary-500: 199 87% 49%;
-  --brand-secondary-600: 198 83% 39%;
-  --brand-secondary-700: 199 78% 31%;
-  --brand-secondary-800: 200 73% 24%;
-  --brand-secondary-900: 201 68% 19%;
-  --brand-secondary-950: 202 60% 12%;
+  --brand-secondary-50: 200 15% 97%;
+  --brand-secondary-100: 200 14% 92%;
+  --brand-secondary-200: 200 13% 85%;
+  --brand-secondary-300: 200 12% 75%;
+  --brand-secondary-400: 200 11% 62%;
+  --brand-secondary-500: 200 10% 48%;
+  --brand-secondary-600: 200 12% 38%;
+  --brand-secondary-700: 200 14% 28%;
+  --brand-secondary-800: 200 16% 20%;
+  --brand-secondary-900: 200 18% 14%;
+  --brand-secondary-950: 200 20% 8%;
+
+  --radius: 0.25rem;
+  --card-shadow: none;
+  --card-border-opacity: 1;
+  --card-bg-alt: hsl(210 20% 98%);
+  --sidebar-blur: 0px;
+  --sidebar-glass-opacity: 1;
+  --table-stripe: hsl(210 18% 96% / 0.5);
 }
 
-/* =========================================
-   Theme: Forest — Natural Green
-   ========================================= */
-.theme-forest {
-  --brand-50: 152 81% 96%;
-  --brand-100: 149 80% 90%;
-  --brand-200: 152 76% 80%;
-  --brand-300: 156 72% 67%;
-  --brand-400: 158 64% 52%;
-  --brand-500: 160 84% 39%;
-  --brand-600: 161 74% 30%;
-  --brand-700: 163 72% 24%;
-  --brand-800: 163 70% 19%;
-  --brand-900: 164 65% 16%;
-  --brand-950: 165 60% 10%;
+/* =============================================
+   Style Theme: 🎨 Superlist — Playful Colorful
+   Big rounded corners, colorful accents, generous spacing
+   Inspired by Superlist (getdesign.md/design-md/superlist)
+   ============================================= */
+.theme-superlist {
+  --brand-50: 300 60% 98%;
+  --brand-100: 300 50% 94%;
+  --brand-200: 300 45% 86%;
+  --brand-300: 300 42% 75%;
+  --brand-400: 300 48% 62%;
+  --brand-500: 300 55% 50%;
+  --brand-600: 300 52% 42%;
+  --brand-700: 300 50% 34%;
+  --brand-800: 300 48% 26%;
+  --brand-900: 300 45% 20%;
+  --brand-950: 300 42% 12%;
 
-  --brand-secondary-50: 143 83% 96%;
-  --brand-secondary-100: 141 77% 88%;
-  --brand-secondary-200: 142 76% 76%;
-  --brand-secondary-300: 142 72% 62%;
-  --brand-secondary-400: 142 69% 45%;
-  --brand-secondary-500: 143 64% 36%;
-  --brand-secondary-600: 144 61% 27%;
-  --brand-secondary-700: 146 59% 22%;
-  --brand-secondary-800: 148 55% 17%;
-  --brand-secondary-900: 150 50% 13%;
-  --brand-secondary-950: 152 45% 8%;
+  --brand-secondary-50: 180 60% 97%;
+  --brand-secondary-100: 180 55% 90%;
+  --brand-secondary-200: 180 50% 80%;
+  --brand-secondary-300: 180 48% 68%;
+  --brand-secondary-400: 180 50% 55%;
+  --brand-secondary-500: 180 52% 42%;
+  --brand-secondary-600: 180 50% 34%;
+  --brand-secondary-700: 180 48% 26%;
+  --brand-secondary-800: 180 45% 20%;
+  --brand-secondary-900: 180 42% 14%;
+  --brand-secondary-950: 180 40% 8%;
+
+  --radius: 1rem;
+  --card-shadow: 0 4px 14px 0 rgb(0 0 0 / 0.08);
+  --card-border-opacity: 0.6;
+  --card-bg-alt: hsl(300 60% 97% / 0.7);
+  --sidebar-blur: 0px;
+  --sidebar-glass-opacity: 1;
+  --table-stripe: hsl(300 50% 96% / 0.4);
 }
 
-/* =========================================
-   Theme: Lavender — Elegant Purple
-   ========================================= */
-.theme-lavender {
-  --brand-50: 270 100% 98%;
-  --brand-100: 269 100% 95%;
-  --brand-200: 269 100% 88%;
-  --brand-300: 269 97% 77%;
-  --brand-400: 270 92% 66%;
-  --brand-500: 271 86% 56%;
-  --brand-600: 272 72% 47%;
-  --brand-700: 273 67% 39%;
-  --brand-800: 274 63% 31%;
-  --brand-900: 275 60% 25%;
-  --brand-950: 275 55% 18%;
+/* =============================================
+   Style Theme: ⚡ Basedash — Dark Sidebar Data Tool
+   Compact, data-focused, dark sidebar, subtle shadows
+   Inspired by Basedash (getdesign.md/design-md/basedash)
+   ============================================= */
+.theme-basedash {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 9%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 9%;
+  --primary: 220 14% 20%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 10% 96%;
+  --secondary-foreground: 220 14% 20%;
 
-  --brand-secondary-50: 290 100% 98%;
-  --brand-secondary-100: 290 96% 94%;
-  --brand-secondary-200: 288 96% 86%;
-  --brand-secondary-300: 288 93% 75%;
-  --brand-secondary-400: 289 88% 63%;
-  --brand-secondary-500: 291 77% 52%;
-  --brand-secondary-600: 293 67% 42%;
-  --brand-secondary-700: 295 63% 34%;
-  --brand-secondary-800: 297 60% 27%;
-  --brand-secondary-900: 299 55% 21%;
-  --brand-secondary-950: 300 50% 14%;
-}
-
-/* =========================================
-   Theme: Midnight — Dark Mode with Amber Brand
-   ========================================= */
-.theme-midnight {
-  --background: 0 0% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 0 0% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 0 0% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 0 0% 9%;
-  --secondary: 0 0% 14.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 0 0% 14.9%;
-  --muted-foreground: 0 0% 63.9%;
-  --accent: 0 0% 14.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 14.9%;
-  --input: 0 0% 14.9%;
-  --ring: 0 0% 83.1%;
-  --chart-1: 220 70% 50%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
-  --sidebar-background: 240 5.9% 10%;
-  --sidebar-foreground: 240 4.8% 95.9%;
-  --sidebar-primary: 224.3 76.3% 48%;
+  --sidebar-background: 220 18% 12%;
+  --sidebar-foreground: 220 10% 80%;
+  --sidebar-primary: 220 85% 60%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 3.7% 15.9%;
-  --sidebar-accent-foreground: 240 4.8% 95.9%;
-  --sidebar-border: 240 3.7% 15.9%;
-  --sidebar-ring: 217.2 91.2% 59.8%;
+  --sidebar-accent: 220 14% 20%;
+  --sidebar-accent-foreground: 220 10% 90%;
+  --sidebar-border: 220 14% 18%;
+  --sidebar-ring: 220 85% 60%;
 
-  /* Amber brand kept on dark background */
-  --brand-50: 48 100% 92%;
-  --brand-100: 48 96% 82%;
-  --brand-200: 48 96% 68%;
-  --brand-300: 45 90% 55%;
-  --brand-400: 40 85% 48%;
-  --brand-500: 38 80% 40%;
-  --brand-600: 35 75% 35%;
-  --brand-700: 32 70% 28%;
-  --brand-800: 30 65% 22%;
-  --brand-900: 28 60% 18%;
-  --brand-950: 25 55% 12%;
+  --brand-50: 220 40% 97%;
+  --brand-100: 220 50% 93%;
+  --brand-200: 220 60% 86%;
+  --brand-300: 220 65% 76%;
+  --brand-400: 220 70% 64%;
+  --brand-500: 220 80% 52%;
+  --brand-600: 220 75% 44%;
+  --brand-700: 220 70% 36%;
+  --brand-800: 220 65% 28%;
+  --brand-900: 220 60% 20%;
+  --brand-950: 220 55% 12%;
 
-  --brand-secondary-50: 33 100% 92%;
-  --brand-secondary-100: 34 100% 85%;
-  --brand-secondary-200: 32 98% 75%;
-  --brand-secondary-300: 31 97% 65%;
-  --brand-secondary-400: 27 96% 55%;
-  --brand-secondary-500: 25 95% 48%;
-  --brand-secondary-600: 21 90% 42%;
-  --brand-secondary-700: 17 88% 35%;
-  --brand-secondary-800: 15 79% 30%;
-  --brand-secondary-900: 13 72% 25%;
-  --brand-secondary-950: 10 70% 16%;
+  --brand-secondary-50: 190 50% 96%;
+  --brand-secondary-100: 190 55% 90%;
+  --brand-secondary-200: 190 55% 80%;
+  --brand-secondary-300: 190 50% 68%;
+  --brand-secondary-400: 190 50% 55%;
+  --brand-secondary-500: 190 52% 42%;
+  --brand-secondary-600: 190 50% 34%;
+  --brand-secondary-700: 190 48% 26%;
+  --brand-secondary-800: 190 45% 20%;
+  --brand-secondary-900: 190 42% 14%;
+  --brand-secondary-950: 190 40% 8%;
+
+  --radius: 0.375rem;
+  --card-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --card-border-opacity: 0.8;
+  --card-bg-alt: hsl(220 40% 97%);
+  --sidebar-blur: 0px;
+  --sidebar-glass-opacity: 1;
+  --table-stripe: hsl(220 40% 96% / 0.5);
+}
+
+/* =============================================
+   Style Theme: ✨ Phantom — Glassmorphism Modern
+   Frosted glass, elevated shadows, elegant
+   Inspired by Phantom (getdesign.md/design-md/phantom)
+   ============================================= */
+.theme-phantom {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 9%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 9%;
+  --primary: 0 0% 9%;
+  --primary-foreground: 0 0% 98%;
+  --border: 0 0% 90%;
+
+  --sidebar-background: 0 0% 100%;
+  --sidebar-foreground: 0 0% 40%;
+  --sidebar-primary: 0 0% 9%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 96%;
+  --sidebar-accent-foreground: 0 0% 9%;
+  --sidebar-border: 0 0% 90%;
+  --sidebar-ring: 0 0% 9%;
+
+  --brand-50: 0 0% 97%;
+  --brand-100: 0 0% 92%;
+  --brand-200: 0 0% 85%;
+  --brand-300: 0 0% 72%;
+  --brand-400: 0 0% 60%;
+  --brand-500: 0 0% 45%;
+  --brand-600: 0 0% 38%;
+  --brand-700: 0 0% 30%;
+  --brand-800: 0 0% 22%;
+  --brand-900: 0 0% 16%;
+  --brand-950: 0 0% 10%;
+
+  --brand-secondary-50: 220 20% 97%;
+  --brand-secondary-100: 220 18% 92%;
+  --brand-secondary-200: 220 16% 85%;
+  --brand-secondary-300: 220 14% 72%;
+  --brand-secondary-400: 220 12% 58%;
+  --brand-secondary-500: 220 10% 44%;
+  --brand-secondary-600: 220 12% 36%;
+  --brand-secondary-700: 220 14% 28%;
+  --brand-secondary-800: 220 16% 20%;
+  --brand-secondary-900: 220 18% 14%;
+  --brand-secondary-950: 220 20% 8%;
+
+  --radius: 0.75rem;
+  --card-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.08);
+  --card-border-opacity: 0.5;
+  --card-bg-alt: hsl(0 0% 96% / 0.7);
+  --sidebar-blur: 12px;
+  --sidebar-glass-opacity: 0.7;
+  --table-stripe: hsl(0 0% 96% / 0.4);
 }
 
 @layer base {

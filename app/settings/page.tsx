@@ -760,6 +760,10 @@ export default function SettingsPage() {
                             className="w-8 h-8 rounded-lg"
                             style={{ backgroundColor: theme.previewColor }}
                           />
+                          <div
+                            className="w-8 h-8 rounded-lg"
+                            style={{ backgroundColor: theme.previewAccent }}
+                          />
                         </div>
                         <h3 className="font-semibold text-sm">{theme.nameZh}</h3>
                         <p className="text-xs text-gray-500 mt-0.5">{theme.name}</p>
