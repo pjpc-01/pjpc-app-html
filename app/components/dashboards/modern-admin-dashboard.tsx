@@ -127,12 +127,12 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
   }, [selectedCenter, centers])
 
   const quickActions = [
-    { title: '学生管理', icon: Users, iconColor: 'text-indigo-600', bgColor: 'bg-indigo-100', path: '/student-management' },
+    { title: '学生管理', icon: Users, iconColor: 'text-amber-600', bgColor: 'bg-amber-100', path: '/student-management' },
     { title: '财务管理', icon: DollarSign, iconColor: 'text-emerald-600', bgColor: 'bg-emerald-100', path: '/finance-management' },
-    { title: '课程管理', icon: BookOpen, iconColor: 'text-blue-600', bgColor: 'bg-blue-100', path: '/course-management' },
+    { title: '课程管理', icon: BookOpen, iconColor: 'text-amber-700', bgColor: 'bg-amber-50', path: '/course-management' },
     { title: '考勤系统', icon: Clock, iconColor: 'text-amber-600', bgColor: 'bg-amber-100', path: '/unified-attendance' },
-    { title: '教师管理', icon: Shield, iconColor: 'text-rose-600', bgColor: 'bg-rose-100', path: '/teacher-management' },
-    { title: '系统设置', icon: Settings, iconColor: 'text-slate-600', bgColor: 'bg-slate-100', path: '/settings' },
+    { title: '教师管理', icon: Shield, iconColor: 'text-amber-700', bgColor: 'bg-amber-50', path: '/teacher-management' },
+    { title: '系统设置', icon: Settings, iconColor: 'text-amber-800', bgColor: 'bg-amber-100', path: '/settings' },
   ]
 
   return (
@@ -169,7 +169,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                   <span className="text-yellow-700 text-xs font-medium">中学 {centerStats.secondaryCount}</span>
                 </div>
               </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-50 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform flex-shrink-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-200 flex-shrink-0">
                 <Users className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
               </div>
             </div>
@@ -188,7 +188,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                   <span className="text-emerald-500 text-xs font-medium">+15% 较上月</span>
                 </div>
               </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform flex-shrink-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-200 flex-shrink-0">
                 <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600" />
               </div>
             </div>
@@ -209,7 +209,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                   </span>
                 </div>
               </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-50 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform flex-shrink-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-200 flex-shrink-0">
                 <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
               </div>
             </div>
@@ -224,12 +224,12 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                 <p className="text-[#7a6a48] text-xs sm:text-sm font-medium truncate">活跃教师</p>
                 <p className="text-2xl sm:text-3xl font-bold text-[#4a3a18]">{centerStats.teachers}</p>
                 <div className="flex items-center mt-1">
-                  <UserCheck className="h-3 w-3 text-slate-400 mr-1" />
-                  <span className="text-slate-500 text-xs">{selectedCenter === 'all' ? totalTeachers : centerStats.teachers} 位在职教师</span>
+                  <UserCheck className="h-3 w-3 text-amber-400 mr-1" />
+                  <span className="text-amber-600 text-xs">{selectedCenter === 'all' ? totalTeachers : centerStats.teachers} 位在职教师</span>
                 </div>
               </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-rose-50 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform flex-shrink-0">
-                <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-200 flex-shrink-0">
+                <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
               </div>
             </div>
           </CardContent>
@@ -237,11 +237,11 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
       </div>
 
       {/* Student Section — full width */}
-      <Card className="border-slate-200 shadow-sm">
+      <Card className="border-amber-200/60 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Users className="h-5 w-5 text-indigo-600" />
+                <Users className="h-5 w-5 text-amber-600" />
                 {selectedCenter === 'all' ? '全部学生' : `${selectedCenterName} — 学生列表`}
               </CardTitle>
               <CardDescription>共 {centerStats.total} 名学生 | 在读 {centerStats.active} 人</CardDescription>
@@ -249,7 +249,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
             <Button
               variant="ghost"
               size="sm"
-              className="text-indigo-600 hover:text-indigo-700"
+              className="text-amber-700 hover:text-amber-800"
               onClick={() => router.push('/student-management')}
             >
               查看全部 <ArrowUpRight className="ml-1 h-3 w-3" />
@@ -284,7 +284,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                     </TableRow>
                   ) : (
                     filteredStudents.slice(0, 8).map((student) => (
-                      <TableRow key={student.id} className="hover:bg-slate-50">
+                      <TableRow key={student.id} className="hover:bg-amber-50/50 transition-colors duration-150">
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
@@ -300,12 +300,12 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                          <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200 text-xs">
                             {student.grade || '-'}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
+                          <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-200 text-xs">
                             {student.expand?.centerId?.code || student.center || '-'}
                           </Badge>
                         </TableCell>
@@ -317,15 +317,15 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                         </TableCell>
                         <TableCell>
                           <div className="text-xs space-y-0.5">
-                            {student.fatherPhone && <div><span className="text-blue-600">父</span> {student.fatherPhone}</div>}
-                            {student.motherPhone && <div><span className="text-pink-600">母</span> {student.motherPhone}</div>}
+                            {student.fatherPhone && <div><span className="text-amber-600">父</span> {student.fatherPhone}</div>}
+                            {student.motherPhone && <div><span className="text-amber-500">母</span> {student.motherPhone}</div>}
                             {!student.fatherPhone && !student.motherPhone && <span className="text-slate-400">-</span>}
                           </div>
                         </TableCell>
                         <TableCell>
                           <Badge
                             variant={student.status === 'active' ? 'default' : 'secondary'}
-                            className={`text-[10px] ${student.status === 'active' ? '' : ''}`}
+                            className={`text-[10px] ${student.status === 'active' ? 'bg-green-100 text-green-800 border-green-200' : 'bg-amber-100 text-amber-800 border-amber-200'}`}
                           >
                             {student.status === 'active' ? '在读' : '离校'}
                           </Badge>
@@ -340,11 +340,11 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
         </Card>
 
       {/* Teacher Section */}
-      <Card className="border-slate-200 shadow-sm">
+      <Card className="border-amber-200/60 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Shield className="h-5 w-5 text-rose-600" />
+              <Shield className="h-5 w-5 text-amber-600" />
               {selectedCenter === 'all' ? '全部教师' : `${selectedCenterName} — 教师列表`}
             </CardTitle>
             <CardDescription>共 {centerStats.teachers} 位教师</CardDescription>
@@ -352,7 +352,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
           <Button
             variant="ghost"
             size="sm"
-            className="text-rose-600 hover:text-rose-700"
+            className="text-amber-700 hover:text-amber-800"
             onClick={() => router.push('/teacher-management')}
           >
             查看全部 <ArrowUpRight className="ml-1 h-3 w-3" />
@@ -378,12 +378,12 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                   </TableRow>
                 ) : (
                   filteredTeachers.slice(0, 5).map((teacher) => (
-                    <TableRow key={teacher.id} className="hover:bg-slate-50">
+                    <TableRow key={teacher.id} className="hover:bg-amber-50/50 transition-colors duration-150">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
                             <AvatarImage src={teacher.avatar ? `/api/pocketbase-proxy/api/files/teachers/${teacher.id}/${teacher.avatar}` : undefined} />
-                            <AvatarFallback className="bg-gradient-to-br from-rose-400 to-rose-600 text-white text-xs font-semibold">
+                            <AvatarFallback className="bg-gradient-to-br from-amber-500 to-amber-700 text-white text-xs font-semibold">
                               {(teacher.name || teacher.teacher_name || 'T').charAt(0)}
                             </AvatarFallback>
                           </Avatar>
@@ -391,7 +391,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
+                        <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-200 text-xs">
                           {teacher.expand?.centerId?.code || teacher.center || '未分配'}
                         </Badge>
                       </TableCell>
@@ -399,7 +399,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                       <TableCell>
                         <Badge
                           variant={teacher.status === 'active' ? 'default' : 'secondary'}
-                          className="text-[10px]"
+                          className={`text-[10px] ${teacher.status === 'active' ? 'bg-green-100 text-green-800 hover:bg-green-100' : 'bg-red-100 text-red-800 hover:bg-red-100'}`}
                         >
                           {teacher.status === 'active' ? '在职' : '离职'}
                         </Badge>
