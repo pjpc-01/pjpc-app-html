@@ -364,6 +364,7 @@ export default function StudentManagementPage() {
       refetch()
     } catch (error) {
       console.error("Error adding student:", error)
+      throw error // Re-throw so StudentForm can show error UI
     }
   }
 

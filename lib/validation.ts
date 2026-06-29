@@ -144,8 +144,8 @@ export function validateStudentId(studentId: string): boolean {
     return false
   }
   
-  // 学生ID格式：4-20位字母数字组合
-  const idRegex = /^[A-Z0-9]{4,20}$/
+  // 学生ID格式：2-20位字母数字组合（支持自动生成的 B1, T2 等短学号）
+  const idRegex = /^[A-Z0-9]{2,20}$/
   return idRegex.test(studentId.trim().toUpperCase())
 }
 

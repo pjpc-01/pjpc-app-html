@@ -55,14 +55,7 @@ const nextConfig = {
     return config
   },
 
-  async rewrites() {
-    return [
-      {
-        source: '/api/pocketbase-proxy/:path*',
-        destination: 'http://127.0.0.1:8090/:path*',
-      },
-    ]
-  },
+  // Proxy handled by app/api/pocketbase-proxy/[...path]/route.ts with admin auth
 
   serverExternalPackages: ['googleapis'],
   experimental: {
