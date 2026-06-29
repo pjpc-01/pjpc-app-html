@@ -22,6 +22,7 @@ export default function SecureLoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
+  const [activeTab, setActiveTab] = useState("login")
 
   // 登录表单状态
   const [loginData, setLoginData] = useState({
@@ -64,7 +65,8 @@ export default function SecureLoginForm() {
         }
       }
 
-      // 登录成功后不跳转，让主页自动检测到用户状态变化
+      // 登录成功后跳转到首页
+      router.push('/')
 
     } catch (error: any) {
       console.error('Login failed:', error)
@@ -178,7 +180,7 @@ export default function SecureLoginForm() {
               </Alert>
             )}
 
-            <Tabs defaultValue="login" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="login">登录</TabsTrigger>
                 <TabsTrigger value="register">注册</TabsTrigger>

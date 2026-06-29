@@ -396,6 +396,12 @@ export default function StudentForm({
         return
       }
       
+      // ⚠️ 等待学生数据加载完成才生成学号，避免重复
+      if (!existingStudents || existingStudents.length === 0) {
+        console.log('学生数据未加载完成，等待...')
+        return
+      }
+      
       // 清除之前的定时器
       if (generateTimeoutRef.current) {
         clearTimeout(generateTimeoutRef.current)
@@ -432,7 +438,7 @@ export default function StudentForm({
         clearTimeout(generateTimeoutRef.current)
       }
     }
-  }, [formData.gender, formData.serviceType, formData.center, isEditing, generateStudentId])
+  }, [formData.gender, formData.serviceType, formData.center, isEditing, generateStudentId, existingStudents])
 
   // 根据出生日期计算年级（马来西亚完整教育体系）
   const calculateGradeFromDob = (dob: string) => {
@@ -620,7 +626,10 @@ export default function StudentForm({
                     "w-full justify-start text-left font-normal",
                     !formData.dob && "text-muted-foreground"
                   )}
-                  onClick={() => setIsCalendarOpen(true)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsCalendarOpen(true)
+                  }}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {formData.dob ? format(new Date(formData.dob), "PPP") : <span>选择出生日期</span>}
