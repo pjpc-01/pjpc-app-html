@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       { headers }
     )
     const feeItems = feeItemsRes.ok ? (await feeItemsRes.json()).items : []
-    const feeMap = new Map(feeItems.map((fi: any) => [fi.id, fi]))
+    const feeMap = new Map<string, any>(feeItems.map((fi: any) => [fi.id, fi]))
 
     // 检查已存在哪些账单（避免重复）
     const existingInvoicesRes = await fetch(

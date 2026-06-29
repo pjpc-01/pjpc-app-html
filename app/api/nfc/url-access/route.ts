@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { nfcManager } from '@/lib/nfc-rfid'
 
+const nfc: any = nfcManager
+
 // 静态导出配置
 export const dynamic = 'force-static'
 
@@ -19,7 +21,7 @@ export async function POST(request: NextRequest) {
     switch (action) {
       case 'access':
         // 访问学生URL
-        const accessResult = await nfcManager.accessStudentUrl(studentId)
+        const accessResult = await nfc.accessStudentUrl(studentId)
         return NextResponse.json({
           success: accessResult.success,
           data: accessResult,
@@ -28,7 +30,7 @@ export async function POST(request: NextRequest) {
 
       case 'get':
         // 获取学生URL
-        const url = await nfcManager.getStudentUrl(studentId)
+        const url = await nfc.getStudentUrl(studentId)
         return NextResponse.json({
           success: true,
           data: { url },
@@ -44,7 +46,7 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           )
         }
-        const updateResult = await nfcManager.updateStudentUrl(studentId, newUrl)
+        const updateResult = await nfc.updateStudentUrl(studentId, newUrl)
         return NextResponse.json({
           success: updateResult,
           message: updateResult ? 'URL更新成功' : '学生不存在'
@@ -82,7 +84,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const url = await nfcManager.getStudentUrl(studentId)
+    const url = await nfc.getStudentUrl(studentId)
     
     return NextResponse.json({
       success: true,

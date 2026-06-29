@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     for (const row of data) {
       const record: Record<string, any> = {}
       for (const [csvCol, pbField] of Object.entries(mapping)) {
-        if (row[csvCol]) record[pbField] = row[csvCol]
+        if ((row as any)[csvCol]) record[pbField] = (row as any)[csvCol]
       }
       
       if (!record.name) continue

@@ -37,6 +37,7 @@ import {
 
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { formatDate } from "@/lib/utils"
+import { toast } from "sonner"
 
 // Types
 interface TeacherLeaveRecord {
@@ -242,6 +243,25 @@ export default function TeacherLeaveManagement() {
       }
     } catch (error) {
       setError('处理审批失败')
+    }
+  }
+
+  // 删除请假记录
+  const handleDeleteLeave = async (recordId: string) => {
+    if (!confirm("确定要删除这条请假记录吗？此操作不可恢复。")) return
+    try {
+      const response = await fetch(`/api/teacher-leave?id=${recordId}`, {
+        method: 'DELETE'
+      })
+      const result = await response.json()
+      if (result.success) {
+        toast.success("删除成功")
+        fetchLeaveRecords()
+      } else {
+        toast.error("删除失败", { description: result.error })
+      }
+    } catch (error) {
+      toast.error("删除失败", { description: "网络错误，请重试" })
     }
   }
 
@@ -522,10 +542,22 @@ export default function TeacherLeaveManagement() {
                           <CheckCircle className="w-4 h-4" />
                         </Button>
                       )}
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => {
+                        setEditingLeave(record)
+                        setLeaveForm({
+                          teacher_id: record.teacher_id,
+                          leave_type: record.leave_type,
+                          start_date: record.start_date,
+                          end_date: record.end_date,
+                          reason: record.reason,
+                          substitute_teacher: record.substitute_teacher || '',
+                          notes: record.notes || ''
+                        })
+                        setLeaveDialogOpen(true)
+                      }}>
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => handleDeleteLeave(record.id)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>

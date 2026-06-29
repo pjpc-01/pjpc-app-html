@@ -11,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Progress } from "@/components/ui/progress"
 import { Eye, EyeOff, GraduationCap, AlertTriangle, CheckCircle, Loader2, Shield } from "lucide-react"
 
 export default function SecureLoginForm() {
@@ -22,6 +21,7 @@ export default function SecureLoginForm() {
   const [success, setSuccess] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
 
   // 登录表单状态
   const [loginData, setLoginData] = useState({
@@ -36,31 +36,10 @@ export default function SecureLoginForm() {
     confirmPassword: "",
     name: "",
     role: "" as "teacher" | "parent" | "",
-    agreeToTerms: false,
   })
 
   // 密码重置状态
   const [resetEmail, setResetEmail] = useState("")
-
-  // 密码强度计算
-  const calculatePasswordStrength = (password: string) => {
-    let strength = 0
-    const checks = {
-      length: password.length >= 8,
-      uppercase: /[A-Z]/.test(password),
-      lowercase: /[a-z]/.test(password),
-      numbers: /\d/.test(password),
-      special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
-    }
-
-    Object.values(checks).forEach((check) => {
-      if (check) strength += 20
-    })
-
-    return { strength, checks }
-  }
-
-  const passwordStrength = calculatePasswordStrength(registerData.password)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -75,7 +54,16 @@ export default function SecureLoginForm() {
 
     try {
       await signIn(loginData.email, loginData.password)
-      
+
+      // 保存"记住我"偏好
+      if (typeof window !== 'undefined') {
+        if (rememberMe) {
+          localStorage.removeItem('pb_session_only')
+        } else {
+          localStorage.setItem('pb_session_only', '1')
+        }
+      }
+
       // 登录成功后不跳转，让主页自动检测到用户状态变化
 
     } catch (error: any) {
@@ -104,18 +92,6 @@ export default function SecureLoginForm() {
       return
     }
 
-    if (!registerData.agreeToTerms) {
-      setError("请同意服务条款")
-      setIsLoading(false)
-      return
-    }
-
-    if (passwordStrength.strength < 80) {
-      setError("密码强度不够，请使用更强的密码")
-      setIsLoading(false)
-      return
-    }
-
     try {
       await signUp(registerData.email, registerData.password, registerData.name, registerData.role)
       setSuccess("注册成功！请检查邮箱验证邮件，并等待管理员审核。")
@@ -125,7 +101,6 @@ export default function SecureLoginForm() {
         confirmPassword: "",
         name: "",
         role: "",
-        agreeToTerms: false,
       })
     } catch (error: any) {
       setError(error.message)
@@ -246,6 +221,18 @@ export default function SecureLoginForm() {
                       </Button>
                     </div>
                   </div>
+                  {/* 记住我 checkbox */}
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                      />
+                      <span className="text-sm text-gray-600">记住我（保持登录状态）</span>
+                    </label>
+                  </div>
                   <Button 
                     type="submit" 
                     className="w-full" 
@@ -335,42 +322,6 @@ export default function SecureLoginForm() {
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
                     </div>
-                    {registerData.password && (
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs">
-                          <span>密码强度</span>
-                          <span
-                            className={
-                              passwordStrength.strength >= 80
-                                ? "text-green-600"
-                                : passwordStrength.strength >= 60
-                                  ? "text-yellow-600"
-                                  : "text-red-600"
-                            }
-                          >
-                            {passwordStrength.strength >= 80 ? "强" : passwordStrength.strength >= 60 ? "中" : "弱"}
-                          </span>
-                        </div>
-                        <Progress value={passwordStrength.strength} className="h-2" />
-                        <div className="text-xs space-y-1">
-                          <div className={passwordStrength.checks.length ? "text-green-600" : "text-red-600"}>
-                            ✓ 至少8位字符
-                          </div>
-                          <div className={passwordStrength.checks.uppercase ? "text-green-600" : "text-red-600"}>
-                            ✓ 包含大写字母
-                          </div>
-                          <div className={passwordStrength.checks.lowercase ? "text-green-600" : "text-red-600"}>
-                            ✓ 包含小写字母
-                          </div>
-                          <div className={passwordStrength.checks.numbers ? "text-green-600" : "text-red-600"}>
-                            ✓ 包含数字
-                          </div>
-                          <div className={passwordStrength.checks.special ? "text-green-600" : "text-red-600"}>
-                            ✓ 包含特殊字符
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -396,27 +347,7 @@ export default function SecureLoginForm() {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="terms"
-                      checked={registerData.agreeToTerms}
-                      onChange={(e) => setRegisterData({ ...registerData, agreeToTerms: e.target.checked })}
-                      required
-                    />
-                    <label htmlFor="terms" className="text-sm text-gray-600">
-                      我同意{" "}
-                      <a href="#" className="text-blue-600 hover:underline">
-                        服务条款
-                      </a>{" "}
-                      和{" "}
-                      <a href="#" className="text-blue-600 hover:underline">
-                        隐私政策
-                      </a>
-                    </label>
-                  </div>
-
-                  <Button type="submit" className="w-full" disabled={isLoading || passwordStrength.strength < 80}>
+                  <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     // 如果有修复失败，记录错误
     if (monitorResult.summary.fixes_failed > 0) {
       console.error(`[PointsScheduler] ${monitorResult.summary.fixes_failed} 个积分修复失败`)
-      console.error('[PointsScheduler] 修复失败详情:', monitorResult.fixes.filter(f => !f.fixed))
+      console.error('[PointsScheduler] 修复失败详情:', monitorResult.fixes.filter((f: any) => !f.fixed))
     }
     
     return NextResponse.json({

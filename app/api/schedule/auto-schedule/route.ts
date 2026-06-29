@@ -109,8 +109,8 @@ export async function POST(request: NextRequest) {
           .sort((a, b) => b.score - a.score)
 
         if (suitableTeachers.length > 0) {
-          const selectedTeacher = suitableTeachers[0]
-          const template = templates.items.find(t => t.type === selectedTeacher.type)
+          const selectedTeacher: any = suitableTeachers[0]
+          const template = templates.items.find((t: any) => t.type === selectedTeacher.type)
           
           if (template) {
             const scheduleData = {

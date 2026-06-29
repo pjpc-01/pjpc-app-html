@@ -53,6 +53,8 @@ import {
   BarChart3
 } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 interface TeacherStats {
   totalStudents: number
@@ -90,6 +92,7 @@ interface TeacherDashboardProps {
 }
 
 export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
+  const router = useRouter()
   const [stats, setStats] = useState<TeacherStats>({
     totalStudents: 0,
     todayAttendance: 0,
@@ -407,15 +410,22 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
                 <span className="text-sm">AI考勤系统</span>
               </Button>
             </Link>
-            <Button variant="outline" className="h-20 flex flex-col items-center gap-2">
-              <UserCheck className="h-6 w-6" />
-              <span className="text-sm">点名</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex flex-col items-center gap-2">
-              <BookOpen className="h-6 w-6" />
-              <span className="text-sm">布置作业</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex flex-col items-center gap-2">
+            <Link href="/unified-attendance">
+              <Button variant="outline" className="w-full h-20 flex flex-col items-center gap-2">
+                <UserCheck className="h-6 w-6" />
+                <span className="text-sm">点名</span>
+              </Button>
+            </Link>
+            <Link href="/homework/new">
+              <Button variant="outline" className="w-full h-20 flex flex-col items-center gap-2">
+                <BookOpen className="h-6 w-6" />
+                <span className="text-sm">布置作业</span>
+              </Button>
+            </Link>
+            <Button variant="outline" className="w-full h-20 flex flex-col items-center gap-2"
+              onClick={() => {
+                toast.info("通知功能", { description: "通知发送功能即将上线" })
+              }}>
               <MessageSquare className="h-6 w-6" />
               <span className="text-sm">发送通知</span>
             </Button>

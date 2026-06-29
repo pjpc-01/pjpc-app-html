@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 根据卡号查找学生卡片
-    const studentCard = await getStudentCardByCardNumber(cardNumber)
+    const studentCard: any = await getStudentCardByCardNumber(cardNumber)
 
     if (!studentCard) {
       return NextResponse.json(
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
         { 
           error: '卡片状态异常',
           status: studentCard.status,
-          studentName: studentCard.studentName,
+          studentName: (studentCard as any).studentName || studentCard.student_name,
           studentId: studentCard.studentId
         },
         { status: 400 }
@@ -39,20 +39,20 @@ export async function POST(request: NextRequest) {
     }
 
     // 更新使用记录
-    const updatedCard = await updateCardUsage(studentCard.id, studentCard.usageCount || 0)
+    await updateCardUsage(studentCard.card_number || studentCard.id)
 
     // 返回成功响应
     return NextResponse.json({
       success: true,
-      message: '考勤成功',
+      message: '打卡成功',
       data: {
         studentId: studentCard.studentId,
         studentName: studentCard.studentName,
         level: studentCard.level,
         studentUrl: studentCard.studentUrl,
         cardNumber: studentCard.cardNumber,
-        usageCount: updatedCard.usageCount,
-        lastUsed: updatedCard.lastUsed,
+        usageCount: (studentCard.usageCount || 0) + 1,
+        lastUsed: new Date().toISOString(),
         deviceId,
         deviceName,
         location,
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 根据卡号查找学生卡片
-    const studentCard = await getStudentCardByCardNumber(cardNumber)
+    const studentCard: any = await getStudentCardByCardNumber(cardNumber)
 
     if (!studentCard) {
       return NextResponse.json(

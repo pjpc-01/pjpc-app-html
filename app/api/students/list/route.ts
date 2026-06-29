@@ -126,14 +126,14 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
           success: false,
           error: 'students集合访问失败',
-          details: `集合错误: ${collectionError.message}`,
+          details: `集合错误: ${collectionError instanceof Error ? collectionError.message : '未知错误'}`,
           availableCollections: collections.map(c => c.name)
         }, { status: 500 })
       } catch (listError) {
         return NextResponse.json({
           success: false,
           error: 'students集合访问失败',
-          details: `集合错误: ${collectionError.message}, 无法列出可用集合: ${listError.message}`
+          details: `集合错误: ${collectionError instanceof Error ? collectionError.message : '未知错误'}, 无法列出可用集合: ${listError instanceof Error ? listError.message : '未知错误'}`
         }, { status: 500 })
       }
     }

@@ -244,9 +244,9 @@ export async function POST(request: NextRequest) {
         studentName: student.student_name,
         cardType,
         status: 'active',
-        issuedDate: nfcCardData.issuedDate,
+        issuedDate: (nfcCardData as any).issuedDate || new Date().toISOString().split('T')[0],
         isAssociated: true,
-        associationDate: nfcCardData.lastUsed
+        associationDate: (nfcCardData as any).lastUsed || new Date().toISOString()
       }
     })
 
@@ -365,8 +365,6 @@ export async function PUT(request: NextRequest) {
       message: error.message,
       stack: error.stack,
       name: error.name,
-      cardId: cardId,
-      updateData: updateData
     })
     
     return NextResponse.json({
@@ -374,8 +372,6 @@ export async function PUT(request: NextRequest) {
       error: '更新卡片信息失败',
       message: error.message || '未知错误',
       details: error.stack || '无详细错误信息',
-      cardId: cardId,
-      updateData: updateData
     }, { status: 500 })
   }
 }
@@ -395,7 +391,7 @@ export async function DELETE(request: NextRequest) {
         { 
           error: 'PocketBase认证失败', 
           details: '无法以管理员身份登录',
-          authError: authError.message
+          authError: authError instanceof Error ? authError.message : '认证失败'
         },
         { status: 500 }
       )
@@ -420,7 +416,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: '删除NFC卡片记录失败',
-        message: nfcError.message || '未知错误'
+        message: nfcError instanceof Error ? nfcError.message : '未知错误'
       }, { status: 500 })
     }
 

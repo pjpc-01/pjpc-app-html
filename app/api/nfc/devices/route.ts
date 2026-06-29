@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 添加新设备
-    const newDevice = await nfcManager.addDevice({
+    const deviceData: any = {
       name,
       location,
       deviceType: deviceType || 'NFC',
@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
       cardCount: 0,
       errorCount: 0,
       notes,
-    })
+    }
+    const newDevice = await nfcManager.addDevice(deviceData)
 
     return NextResponse.json({
       success: true,

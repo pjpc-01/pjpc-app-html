@@ -19,7 +19,7 @@ export async function GET() {
         const adminEmail = process.env.POCKETBASE_ADMIN_EMAIL
         const adminPassword = process.env.POCKETBASE_ADMIN_PASSWORD
         
-        await pb.admins.authWithPassword(adminEmail, adminPassword)
+        await pb.admins.authWithPassword(adminEmail || '', adminPassword || '')
         console.log('✅ PocketBase 认证成功')
       } catch (authError) {
         console.error('❌ PocketBase 认证失败:', authError)
@@ -38,7 +38,7 @@ export async function GET() {
     
     return NextResponse.json({
       success: true,
-      cards: records as StudentCard[],
+      cards: records as unknown as StudentCard[],
       count: records.length
     })
     
