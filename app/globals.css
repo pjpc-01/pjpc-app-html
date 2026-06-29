@@ -10,44 +10,45 @@
 
 @layer base {
   /* =========================================
-     CSS Design Tokens — 暖琥珀 (default)
+     DEFAULT THEME: 🏡 Warm Amber
+     Warm, earthy tones with amber accents
      ========================================= */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --background: 48 100% 96%;
+    --foreground: 33 25% 20%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 33 25% 20%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --popover-foreground: 33 25% 20%;
+    --primary: 33 25% 20%;
+    --primary-foreground: 48 100% 96%;
+    --secondary: 40 40% 92%;
+    --secondary-foreground: 33 25% 20%;
+    --muted: 40 30% 94%;
+    --muted-foreground: 35 20% 48%;
+    --accent: 40 50% 88%;
+    --accent-foreground: 33 25% 20%;
+    --destructive: 6 65% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 38 30% 82%;
+    --input: 38 30% 82%;
+    --ring: 35 60% 45%;
+    --chart-1: 35 75% 50%;
+    --chart-2: 80 55% 38%;
+    --chart-3: 200 50% 45%;
+    --chart-4: 300 40% 55%;
+    --chart-5: 10 65% 50%;
     --radius: 0.75rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 40 40% 93%;
+    --sidebar-foreground: 33 18% 32%;
+    --sidebar-primary: 35 55% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 40 50% 86%;
+    --sidebar-accent-foreground: 35 50% 35%;
+    --sidebar-border: 38 28% 78%;
+    --sidebar-ring: 35 60% 45%;
 
-    /* Brand color palette — amber (default) */
+    /* Brand palette */
     --brand-50: 48 100% 96%;
     --brand-100: 48 96% 89%;
     --brand-200: 48 96% 76%;
@@ -59,8 +60,6 @@
     --brand-800: 30 65% 25%;
     --brand-900: 28 60% 20%;
     --brand-950: 25 55% 15%;
-
-    /* Secondary brand — warm orange */
     --brand-secondary-50: 33 100% 96%;
     --brand-secondary-100: 34 100% 92%;
     --brand-secondary-200: 32 98% 83%;
@@ -73,66 +72,189 @@
     --brand-secondary-900: 13 72% 28%;
     --brand-secondary-950: 10 70% 18%;
 
-    /* Style design tokens — warm card default */
+    /* Gray scale — warm amber undertone */
+    --gray-50: 48 100% 96%;
+    --gray-100: 40 50% 92%;
+    --gray-200: 40 40% 86%;
+    --gray-300: 38 35% 76%;
+    --gray-400: 36 30% 60%;
+    --gray-500: 35 25% 48%;
+    --gray-600: 33 22% 38%;
+    --gray-700: 32 20% 30%;
+    --gray-800: 30 18% 22%;
+    --gray-900: 28 16% 14%;
+    --gray-950: 25 14% 8%;
+
+    /* Slate — warm-toned slate */
+    --slate-50: 40 40% 95%;
+    --slate-100: 38 35% 90%;
+    --slate-200: 36 30% 82%;
+    --slate-300: 35 25% 70%;
+    --slate-400: 34 20% 55%;
+    --slate-500: 33 18% 42%;
+    --slate-600: 32 16% 35%;
+    --slate-700: 31 15% 28%;
+    --slate-800: 30 14% 20%;
+    --slate-900: 28 12% 13%;
+    --slate-950: 25 10% 7%;
+
+    /* Blue — warm amber accent replaces default blue */
+    --blue-50: 35 100% 95%;
+    --blue-100: 38 90% 88%;
+    --blue-200: 40 85% 78%;
+    --blue-300: 38 80% 66%;
+    --blue-400: 36 78% 54%;
+    --blue-500: 35 75% 44%;
+    --blue-600: 33 70% 38%;
+    --blue-700: 32 65% 30%;
+    --blue-800: 30 60% 24%;
+    --blue-900: 28 55% 18%;
+    --blue-950: 25 50% 10%;
+
+    /* Green — warm olive green */
+    --green-50: 80 50% 94%;
+    --green-100: 80 45% 86%;
+    --green-200: 78 42% 76%;
+    --green-300: 76 40% 64%;
+    --green-400: 74 48% 50%;
+    --green-500: 72 46% 40%;
+    --green-600: 70 44% 34%;
+    --green-700: 68 42% 28%;
+    --green-800: 65 40% 22%;
+    --green-900: 62 38% 16%;
+    --green-950: 60 35% 10%;
+
+    /* Red — warm brick red */
+    --red-50: 10 80% 95%;
+    --red-100: 10 75% 90%;
+    --red-200: 8 70% 80%;
+    --red-300: 6 68% 68%;
+    --red-400: 6 70% 56%;
+    --red-500: 6 65% 46%;
+    --red-600: 5 62% 38%;
+    --red-700: 4 60% 30%;
+    --red-800: 3 58% 22%;
+    --red-900: 2 55% 15%;
+    --red-950: 0 50% 8%;
+
+    /* Yellow — amber gold */
+    --yellow-50: 48 100% 92%;
+    --yellow-100: 48 95% 84%;
+    --yellow-200: 46 90% 72%;
+    --yellow-300: 44 88% 62%;
+    --yellow-400: 42 85% 52%;
+    --yellow-500: 40 82% 44%;
+    --yellow-600: 38 78% 36%;
+    --yellow-700: 36 75% 28%;
+    --yellow-800: 34 72% 22%;
+    --yellow-900: 32 68% 15%;
+    --yellow-950: 30 65% 8%;
+
+    /* Purple — warm purple */
+    --purple-50: 300 40% 95%;
+    --purple-100: 300 38% 88%;
+    --purple-200: 300 36% 78%;
+    --purple-300: 300 40% 66%;
+    --purple-400: 300 42% 54%;
+    --purple-500: 300 40% 44%;
+    --purple-600: 300 38% 36%;
+    --purple-700: 300 35% 28%;
+    --purple-800: 300 32% 20%;
+    --purple-900: 300 28% 13%;
+    --purple-950: 300 25% 7%;
+
+    /* Indigo — warm indigo */
+    --indigo-50: 220 50% 95%;
+    --indigo-100: 220 48% 88%;
+    --indigo-200: 220 46% 78%;
+    --indigo-300: 220 45% 66%;
+    --indigo-400: 220 48% 54%;
+    --indigo-500: 220 46% 44%;
+    --indigo-600: 220 44% 36%;
+    --indigo-700: 220 42% 28%;
+    --indigo-800: 220 40% 20%;
+    --indigo-900: 220 38% 13%;
+    --indigo-950: 220 35% 7%;
+
+    /* Style design tokens */
     --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
     --card-padding-x: 1.5rem;
     --card-padding-y: 1.5rem;
     --card-border-opacity: 1;
+    --card-bg: hsl(0 0% 100%);
     --card-bg-alt: hsl(var(--brand-50) / 0.8);
     --sidebar-blur: 0px;
     --sidebar-glass-opacity: 1;
+    --sidebar-glass-bg: hsl(var(--sidebar-background));
     --table-stripe: hsl(var(--brand-50) / 0.4);
     --section-spacing: 1.5rem;
     --section-padding: 1.5rem;
     --nav-item-height: 2.5rem;
+    --page-main-bg: hsl(var(--background));
   }
 
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --background: 33 25% 8%;
+    --foreground: 40 30% 90%;
+    --card: 33 25% 10%;
+    --card-foreground: 40 30% 90%;
+    --popover: 33 25% 10%;
+    --popover-foreground: 40 30% 90%;
+    --primary: 40 30% 90%;
+    --primary-foreground: 33 25% 10%;
+    --secondary: 33 20% 18%;
+    --secondary-foreground: 40 30% 90%;
+    --muted: 33 20% 18%;
+    --muted-foreground: 35 20% 60%;
+    --accent: 35 25% 20%;
+    --accent-foreground: 40 30% 90%;
+    --destructive: 6 65% 40%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 33 20% 22%;
+    --input: 33 20% 22%;
+    --ring: 35 60% 50%;
+    --sidebar-background: 33 25% 10%;
+    --sidebar-foreground: 35 20% 70%;
+    --sidebar-primary: 35 60% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 33 20% 18%;
+    --sidebar-accent-foreground: 35 20% 80%;
+    --sidebar-border: 33 20% 20%;
+    --sidebar-ring: 35 60% 50%;
   }
 }
 
 /* =============================================
-   STYLE OVERRIDES — 暖琥珀 (default, no class)
-   Uses standard Tailwind defaults
-   ============================================= */
-
-/* =============================================
    THEME: 📊 Planhat — Flat Data Professional
-   Sharp corners, no shadows, compact gray
+   Sharp corners, no shadows, compact gray,
+   neutral cool palette, data-dense
    ============================================= */
 .theme-planhat {
+  --background: 220 15% 96%;
+  --foreground: 220 12% 20%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 12% 20%;
+  --primary: 220 12% 20%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 12% 92%;
+  --secondary-foreground: 220 12% 20%;
+  --muted: 220 10% 94%;
+  --muted-foreground: 220 8% 50%;
+  --accent: 220 12% 90%;
+  --accent-foreground: 220 12% 25%;
+  --destructive: 0 60% 48%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 12% 86%;
+  --input: 220 12% 86%;
+  --ring: 220 10% 45%;
+  --sidebar-background: 220 15% 94%;
+  --sidebar-foreground: 220 10% 38%;
+  --sidebar-primary: 220 10% 30%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 220 12% 88%;
+  --sidebar-accent-foreground: 220 10% 30%;
+  --sidebar-border: 220 12% 84%;
+  --sidebar-ring: 220 10% 45%;
   --brand-50: 210 20% 98%;
   --brand-100: 210 18% 94%;
   --brand-200: 210 16% 88%;
@@ -144,83 +266,172 @@
   --brand-800: 210 16% 22%;
   --brand-900: 210 18% 16%;
   --brand-950: 210 20% 10%;
-  --brand-secondary-50: 200 15% 97%;
-  --brand-secondary-100: 200 14% 92%;
-  --brand-secondary-200: 200 13% 85%;
-  --brand-secondary-300: 200 12% 75%;
-  --brand-secondary-400: 200 11% 62%;
-  --brand-secondary-500: 200 10% 48%;
-  --brand-secondary-600: 200 12% 38%;
-  --brand-secondary-700: 200 14% 28%;
-  --brand-secondary-800: 200 16% 20%;
-  --brand-secondary-900: 200 18% 14%;
-  --brand-secondary-950: 200 20% 8%;
+
+  /* Planhat gray — neutral, cooler */
+  --gray-50: 220 15% 96%;
+  --gray-100: 220 12% 92%;
+  --gray-200: 220 12% 86%;
+  --gray-300: 220 10% 76%;
+  --gray-400: 220 8% 62%;
+  --gray-500: 220 8% 50%;
+  --gray-600: 220 8% 40%;
+  --gray-700: 220 8% 32%;
+  --gray-800: 220 8% 24%;
+  --gray-900: 220 8% 16%;
+  --gray-950: 220 8% 8%;
+
+  /* Slate — same as gray, very neutral */
+  --slate-50: 220 15% 96%;
+  --slate-100: 220 12% 92%;
+  --slate-200: 220 12% 86%;
+  --slate-300: 220 10% 76%;
+  --slate-400: 220 8% 62%;
+  --slate-500: 220 8% 50%;
+  --slate-600: 220 8% 40%;
+  --slate-700: 220 8% 32%;
+  --slate-800: 220 8% 24%;
+  --slate-900: 220 8% 16%;
+  --slate-950: 220 8% 8%;
+
+  /* Planhat blue — muted slate-blue */
+  --blue-50: 220 40% 97%;
+  --blue-100: 220 38% 92%;
+  --blue-200: 220 35% 85%;
+  --blue-300: 220 30% 74%;
+  --blue-400: 220 28% 62%;
+  --blue-500: 220 25% 50%;
+  --blue-600: 220 22% 42%;
+  --blue-700: 220 20% 34%;
+  --blue-800: 220 18% 26%;
+  --blue-900: 220 15% 18%;
+  --blue-950: 220 12% 10%;
+
+  /* Planhat green — muted */
+  --green-50: 160 25% 96%;
+  --green-100: 160 22% 90%;
+  --green-200: 160 20% 82%;
+  --green-300: 160 18% 70%;
+  --green-400: 160 20% 56%;
+  --green-500: 160 18% 46%;
+  --green-600: 160 16% 38%;
+  --green-700: 160 14% 30%;
+  --green-800: 160 12% 22%;
+  --green-900: 160 10% 14%;
+  --green-950: 160 8% 7%;
+
+  /* Planhat red — muted */
+  --red-50: 0 30% 96%;
+  --red-100: 0 28% 90%;
+  --red-200: 0 25% 82%;
+  --red-300: 0 22% 70%;
+  --red-400: 0 25% 56%;
+  --red-500: 0 24% 46%;
+  --red-600: 0 22% 38%;
+  --red-700: 0 20% 30%;
+  --red-800: 0 18% 22%;
+  --red-900: 0 15% 14%;
+  --red-950: 0 12% 7%;
+
+  /* Planhat yellow — muted */
+  --yellow-50: 45 30% 95%;
+  --yellow-100: 45 28% 88%;
+  --yellow-200: 45 25% 78%;
+  --yellow-300: 45 22% 66%;
+  --yellow-400: 45 25% 54%;
+  --yellow-500: 45 24% 44%;
+  --yellow-600: 45 22% 36%;
+  --yellow-700: 45 20% 28%;
+  --yellow-800: 45 18% 20%;
+  --yellow-900: 45 15% 12%;
+  --yellow-950: 45 12% 6%;
+
+  /* Planhat purple — muted */
+  --purple-50: 270 25% 96%;
+  --purple-100: 270 22% 90%;
+  --purple-200: 270 20% 82%;
+  --purple-300: 270 18% 70%;
+  --purple-400: 270 20% 56%;
+  --purple-500: 270 18% 46%;
+  --purple-600: 270 16% 38%;
+  --purple-700: 270 14% 30%;
+  --purple-800: 270 12% 22%;
+  --purple-900: 270 10% 14%;
+  --purple-950: 270 8% 7%;
+
+  /* Indigo — muted */
+  --indigo-50: 240 25% 96%;
+  --indigo-100: 240 22% 90%;
+  --indigo-200: 240 20% 82%;
+  --indigo-300: 240 18% 70%;
+  --indigo-400: 240 20% 56%;
+  --indigo-500: 240 18% 46%;
+  --indigo-600: 240 16% 38%;
+  --indigo-700: 240 14% 30%;
+  --indigo-800: 240 12% 22%;
+  --indigo-900: 240 10% 14%;
+  --indigo-950: 240 8% 7%;
+
   --radius: 0.25rem;
   --card-shadow: none;
   --card-padding-x: 1rem;
   --card-padding-y: 1rem;
   --card-border-opacity: 1;
-  --card-bg-alt: hsl(210 20% 97%);
+  --card-bg: hsl(0 0% 100%);
+  --card-bg-alt: hsl(220 15% 96%);
   --sidebar-blur: 0px;
   --sidebar-glass-opacity: 1;
-  --table-stripe: hsl(210 18% 96% / 0.5);
+  --sidebar-glass-bg: hsl(220 15% 94%);
+  --table-stripe: hsl(220 12% 95% / 0.6);
   --section-spacing: 1rem;
   --section-padding: 1rem;
   --nav-item-height: 2.25rem;
+  --page-main-bg: hsl(220 15% 96%);
 }
 
-/* Flat: no shadows, sharp corners, tight spacing */
+/* Planhat: flat, sharp, compact overrides */
 .theme-planhat .shadow-sm,
 .theme-planhat .shadow-md,
 .theme-planhat .shadow-lg,
 .theme-planhat .shadow-xl {
   box-shadow: none !important;
 }
-.theme-planhat .rounded-xl,
-.theme-planhat .rounded-2xl {
-  border-radius: var(--radius) !important;
-}
-.theme-planhat .rounded-lg {
-  border-radius: calc(var(--radius) - 1px) !important;
-}
-.theme-planhat .rounded-md {
-  border-radius: calc(var(--radius) - 1px) !important;
-}
 .theme-planhat :where(.p-6, .p-8) {
   padding: var(--card-padding-y) var(--card-padding-x) !important;
-}
-.theme-planhat :where(.px-6, .px-8) {
-  padding-left: var(--card-padding-x) !important;
-  padding-right: var(--card-padding-x) !important;
-}
-.theme-planhat :where(.py-6, .py-8) {
-  padding-top: var(--card-padding-y) !important;
-  padding-bottom: var(--card-padding-y) !important;
 }
 .theme-planhat :where(.gap-4, .gap-6) {
   gap: 0.75rem !important;
 }
-.theme-planhat :where(.space-y-4, .space-y-6) > :not([hidden]) ~ :not([hidden]) {
-  --tw-space-y-reverse: 0;
-  margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse))) !important;
-  margin-bottom: calc(0.75rem * var(--tw-space-y-reverse)) !important;
-}
-.theme-planhat :where(th, td) {
-  padding: 0.5rem 0.75rem !important;
-}
-.theme-planhat thead tr,
-.theme-planhat tbody tr {
-  border-bottom-width: 0 !important;
-}
-.theme-planhat thead th {
-  font-size: 0.6875rem !important;
-}
 
 /* =============================================
    THEME: 🎨 Superlist — Playful Colorful
-   Big radius, colorful, generous spacing
+   Purple accents, large radius, generous spacing
    ============================================= */
 .theme-superlist {
+  --background: 300 30% 97%;
+  --foreground: 300 20% 18%;
+  --card: 0 0% 100%;
+  --card-foreground: 300 20% 18%;
+  --primary: 300 20% 18%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 300 25% 92%;
+  --secondary-foreground: 300 20% 18%;
+  --muted: 300 20% 94%;
+  --muted-foreground: 300 15% 50%;
+  --accent: 300 35% 88%;
+  --accent-foreground: 300 20% 18%;
+  --destructive: 350 70% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 300 20% 82%;
+  --input: 300 20% 82%;
+  --ring: 300 55% 50%;
+  --sidebar-background: 300 45% 85%;
+  --sidebar-foreground: 300 30% 25%;
+  --sidebar-primary: 300 55% 40%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 300 40% 78%;
+  --sidebar-accent-foreground: 300 45% 30%;
+  --sidebar-border: 300 35% 75%;
+  --sidebar-ring: 300 55% 50%;
   --brand-50: 300 60% 98%;
   --brand-100: 300 50% 94%;
   --brand-200: 300 45% 86%;
@@ -232,32 +443,116 @@
   --brand-800: 300 48% 26%;
   --brand-900: 300 45% 20%;
   --brand-950: 300 42% 12%;
-  --brand-secondary-50: 180 60% 97%;
-  --brand-secondary-100: 180 55% 90%;
-  --brand-secondary-200: 180 50% 80%;
-  --brand-secondary-300: 180 48% 68%;
-  --brand-secondary-400: 180 50% 55%;
-  --brand-secondary-500: 180 52% 42%;
-  --brand-secondary-600: 180 50% 34%;
-  --brand-secondary-700: 180 48% 26%;
-  --brand-secondary-800: 180 45% 20%;
-  --brand-secondary-900: 180 42% 14%;
-  --brand-secondary-950: 180 40% 8%;
+
+  /* Gray — warm with purple undertone */
+  --gray-50: 300 30% 97%;
+  --gray-100: 300 25% 92%;
+  --gray-200: 300 22% 85%;
+  --gray-300: 300 20% 76%;
+  --gray-400: 300 18% 62%;
+  --gray-500: 300 18% 50%;
+  --gray-600: 300 16% 40%;
+  --gray-700: 300 14% 32%;
+  --gray-800: 300 12% 24%;
+  --gray-900: 300 10% 16%;
+  --gray-950: 300 8% 8%;
+
+  /* Superlist shifts MAIN ACCENT from blue → PURPLE */
+  --blue-50: 300 40% 95%;
+  --blue-100: 300 38% 88%;
+  --blue-200: 300 36% 78%;
+  --blue-300: 300 40% 66%;
+  --blue-400: 300 42% 54%;
+  --blue-500: 300 40% 44%;
+  --blue-600: 300 55% 42%;
+  --blue-700: 300 52% 34%;
+  --blue-800: 300 48% 26%;
+  --blue-900: 300 45% 18%;
+  --blue-950: 300 42% 10%;
+
+  /* Green — vibrant */
+  --green-50: 150 60% 95%;
+  --green-100: 150 55% 88%;
+  --green-200: 150 50% 78%;
+  --green-300: 150 48% 66%;
+  --green-400: 150 55% 52%;
+  --green-500: 150 52% 42%;
+  --green-600: 150 50% 34%;
+  --green-700: 150 48% 26%;
+  --green-800: 150 45% 18%;
+  --green-900: 150 42% 12%;
+  --green-950: 150 40% 6%;
+
+  /* Red — vibrant */
+  --red-50: 350 60% 96%;
+  --red-100: 350 55% 90%;
+  --red-200: 350 50% 82%;
+  --red-300: 350 48% 70%;
+  --red-400: 350 55% 58%;
+  --red-500: 350 52% 48%;
+  --red-600: 350 50% 40%;
+  --red-700: 350 48% 32%;
+  --red-800: 350 45% 24%;
+  --red-900: 350 42% 16%;
+  --red-950: 350 40% 8%;
+
+  /* Yellow — bright */
+  --yellow-50: 45 100% 93%;
+  --yellow-100: 45 95% 85%;
+  --yellow-200: 45 90% 75%;
+  --yellow-300: 45 88% 64%;
+  --yellow-400: 45 85% 54%;
+  --yellow-500: 45 82% 46%;
+  --yellow-600: 45 80% 38%;
+  --yellow-700: 45 78% 30%;
+  --yellow-800: 45 75% 22%;
+  --yellow-900: 45 72% 14%;
+  --yellow-950: 45 70% 7%;
+
+  /* Purple — vibrant main accent */
+  --purple-50: 300 60% 96%;
+  --purple-100: 300 55% 90%;
+  --purple-200: 300 50% 82%;
+  --purple-300: 300 48% 70%;
+  --purple-400: 300 55% 58%;
+  --purple-500: 300 52% 48%;
+  --purple-600: 300 55% 45%;
+  --purple-700: 300 50% 36%;
+  --purple-800: 300 48% 28%;
+  --purple-900: 300 45% 18%;
+  --purple-950: 300 42% 10%;
+
+  /* Indigo — playful */
+  --indigo-50: 260 60% 95%;
+  --indigo-100: 260 55% 88%;
+  --indigo-200: 260 50% 78%;
+  --indigo-300: 260 48% 66%;
+  --indigo-400: 260 55% 52%;
+  --indigo-500: 260 52% 42%;
+  --indigo-600: 260 50% 34%;
+  --indigo-700: 260 48% 26%;
+  --indigo-800: 260 45% 18%;
+  --indigo-900: 260 42% 12%;
+  --indigo-950: 260 40% 6%;
+
   --radius: 1rem;
   --card-shadow: 0 4px 14px 0 rgb(0 0 0 / 0.08);
   --card-padding-x: 1.75rem;
   --card-padding-y: 1.75rem;
   --card-border-opacity: 0.6;
+  --card-bg: hsl(0 0% 100%);
   --card-bg-alt: hsl(300 60% 97% / 0.7);
   --sidebar-blur: 0px;
   --sidebar-glass-opacity: 1;
-  --table-stripe: hsl(300 50% 96% / 0.4);
+  --sidebar-glass-bg: hsl(300 45% 85%);
+  --table-stripe: hsl(300 50% 95% / 0.5);
   --section-spacing: 2rem;
   --section-padding: 2rem;
   --nav-item-height: 2.75rem;
+  --page-main-bg: hsl(300 30% 97%);
 }
 
-/* Playful: big shadows, large radius, generous spacing */
+/* Superlist: playful shadow overrides */
 .theme-superlist .shadow-sm {
   box-shadow: 0 2px 8px 0 rgb(0 0 0 / 0.06) !important;
 }
@@ -268,61 +563,41 @@
 .theme-superlist .shadow-xl {
   box-shadow: 0 8px 24px 0 rgb(0 0 0 / 0.10) !important;
 }
-.theme-superlist .rounded-xl,
-.theme-superlist .rounded-2xl {
-  border-radius: var(--radius) !important;
-}
-.theme-superlist .rounded-lg {
-  border-radius: 0.75rem !important;
-}
-.theme-superlist .rounded-md {
-  border-radius: 0.5rem !important;
-}
 .theme-superlist :where(.p-6, .p-8) {
   padding: var(--card-padding-y) var(--card-padding-x) !important;
-}
-.theme-superlist :where(.px-6, .px-8) {
-  padding-left: var(--card-padding-x) !important;
-  padding-right: var(--card-padding-x) !important;
-}
-.theme-superlist :where(.py-6, .py-8) {
-  padding-top: var(--card-padding-y) !important;
-  padding-bottom: var(--card-padding-y) !important;
 }
 .theme-superlist :where(.gap-4, .gap-6) {
   gap: 1.25rem !important;
 }
-.theme-superlist :where(.space-y-4, .space-y-6) > :not([hidden]) ~ :not([hidden]) {
-  --tw-space-y-reverse: 0;
-  margin-top: calc(1.25rem * calc(1 - var(--tw-space-y-reverse))) !important;
-  margin-bottom: calc(1.25rem * var(--tw-space-y-reverse)) !important;
-}
-.theme-superlist :where(th, td) {
-  padding: 0.75rem 1rem !important;
-}
-.theme-superlist thead th {
-  font-size: 0.75rem !important;
-}
 
 /* =============================================
    THEME: ⚡ Basedash — Dark Sidebar Data Tool
-   Compact, blue accent, dark sidebar
+   Dark sidebar, professional, compact, blue accent
    ============================================= */
 .theme-basedash {
   --background: 0 0% 100%;
-  --foreground: 0 0% 9%;
+  --foreground: 220 12% 18%;
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 9%;
+  --card-foreground: 220 12% 18%;
   --primary: 220 14% 20%;
   --primary-foreground: 0 0% 100%;
   --secondary: 220 10% 96%;
   --secondary-foreground: 220 14% 20%;
+  --muted: 220 8% 96%;
+  --muted-foreground: 220 8% 50%;
+  --accent: 220 10% 92%;
+  --accent-foreground: 220 14% 25%;
+  --destructive: 0 70% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 12% 88%;
+  --input: 220 12% 88%;
+  --ring: 220 80% 52%;
   --sidebar-background: 220 18% 12%;
-  --sidebar-foreground: 220 10% 80%;
+  --sidebar-foreground: 220 10% 72%;
   --sidebar-primary: 220 85% 60%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 220 14% 20%;
-  --sidebar-accent-foreground: 220 10% 90%;
+  --sidebar-accent-foreground: 220 10% 88%;
   --sidebar-border: 220 14% 18%;
   --sidebar-ring: 220 85% 60%;
   --brand-50: 220 40% 97%;
@@ -336,70 +611,145 @@
   --brand-800: 220 65% 28%;
   --brand-900: 220 60% 20%;
   --brand-950: 220 55% 12%;
-  --brand-secondary-50: 190 50% 96%;
-  --brand-secondary-100: 190 55% 90%;
-  --brand-secondary-200: 190 55% 80%;
-  --brand-secondary-300: 190 50% 68%;
-  --brand-secondary-400: 190 50% 55%;
-  --brand-secondary-500: 190 52% 42%;
-  --brand-secondary-600: 190 50% 34%;
-  --brand-secondary-700: 190 48% 26%;
-  --brand-secondary-800: 190 45% 20%;
-  --brand-secondary-900: 190 42% 14%;
-  --brand-secondary-950: 190 40% 8%;
+
+  /* Gray — neutral cool */
+  --gray-50: 220 10% 97%;
+  --gray-100: 220 10% 94%;
+  --gray-200: 220 10% 88%;
+  --gray-300: 220 8% 76%;
+  --gray-400: 220 8% 62%;
+  --gray-500: 220 8% 50%;
+  --gray-600: 220 8% 40%;
+  --gray-700: 220 8% 32%;
+  --gray-800: 220 8% 24%;
+  --gray-900: 220 8% 16%;
+  --gray-950: 220 8% 8%;
+
+  /* Slate — neutral cool */
+  --slate-50: 220 10% 97%;
+  --slate-100: 220 10% 94%;
+  --slate-200: 220 10% 88%;
+  --slate-300: 220 8% 76%;
+  --slate-400: 220 8% 62%;
+  --slate-500: 220 8% 50%;
+  --slate-600: 220 8% 40%;
+  --slate-700: 220 8% 32%;
+  --slate-800: 220 8% 24%;
+  --slate-900: 220 8% 16%;
+  --slate-950: 220 8% 8%;
+
+  /* Blue — vibrant professional blue accent */
+  --blue-50: 220 40% 97%;
+  --blue-100: 220 50% 93%;
+  --blue-200: 220 60% 86%;
+  --blue-300: 220 65% 76%;
+  --blue-400: 220 70% 64%;
+  --blue-500: 220 80% 52%;
+  --blue-600: 220 85% 48%;
+  --blue-700: 220 80% 38%;
+  --blue-800: 220 75% 30%;
+  --blue-900: 220 70% 22%;
+  --blue-950: 220 65% 14%;
+
+  /* Green — teal-tinted */
+  --green-50: 160 40% 95%;
+  --green-100: 160 38% 88%;
+  --green-200: 160 35% 78%;
+  --green-300: 160 35% 66%;
+  --green-400: 160 45% 52%;
+  --green-500: 160 42% 42%;
+  --green-600: 160 40% 34%;
+  --green-700: 160 38% 26%;
+  --green-800: 160 35% 18%;
+  --green-900: 160 32% 12%;
+  --green-950: 160 30% 6%;
+
+  /* Red — standard */
+  --red-50: 0 60% 96%;
+  --red-100: 0 55% 90%;
+  --red-200: 0 50% 82%;
+  --red-300: 0 48% 70%;
+  --red-400: 0 55% 58%;
+  --red-500: 0 52% 48%;
+  --red-600: 0 50% 40%;
+  --red-700: 0 48% 32%;
+  --red-800: 0 45% 24%;
+  --red-900: 0 42% 16%;
+  --red-950: 0 40% 8%;
+
+  /* Yellow — standard */
+  --yellow-50: 45 60% 94%;
+  --yellow-100: 45 55% 86%;
+  --yellow-200: 45 50% 76%;
+  --yellow-300: 45 48% 64%;
+  --yellow-400: 45 55% 52%;
+  --yellow-500: 45 52% 44%;
+  --yellow-600: 45 50% 36%;
+  --yellow-700: 45 48% 28%;
+  --yellow-800: 45 45% 20%;
+  --yellow-900: 45 42% 12%;
+  --yellow-950: 45 40% 6%;
+
+  /* Purple — standard */
+  --purple-50: 270 40% 96%;
+  --purple-100: 270 38% 90%;
+  --purple-200: 270 35% 82%;
+  --purple-300: 270 35% 70%;
+  --purple-400: 270 40% 58%;
+  --purple-500: 270 38% 48%;
+  --purple-600: 270 36% 40%;
+  --purple-700: 270 34% 32%;
+  --purple-800: 270 32% 24%;
+  --purple-900: 270 30% 16%;
+  --purple-950: 270 28% 8%;
+
+  /* Indigo — standard */
+  --indigo-50: 240 40% 96%;
+  --indigo-100: 240 38% 90%;
+  --indigo-200: 240 35% 82%;
+  --indigo-300: 240 35% 70%;
+  --indigo-400: 240 40% 58%;
+  --indigo-500: 240 38% 48%;
+  --indigo-600: 240 36% 40%;
+  --indigo-700: 240 34% 32%;
+  --indigo-800: 240 32% 24%;
+  --indigo-900: 240 30% 16%;
+  --indigo-950: 240 28% 8%;
+
   --radius: 0.375rem;
   --card-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --card-padding-x: 1rem;
   --card-padding-y: 0.875rem;
   --card-border-opacity: 0.8;
+  --card-bg: hsl(0 0% 100%);
   --card-bg-alt: hsl(220 40% 97%);
   --sidebar-blur: 0px;
   --sidebar-glass-opacity: 1;
+  --sidebar-glass-bg: hsl(220 18% 12%);
   --table-stripe: hsl(220 40% 96% / 0.5);
   --section-spacing: 0.875rem;
   --section-padding: 0.875rem;
   --nav-item-height: 2.125rem;
+  --page-main-bg: hsl(0 0% 100%);
 }
 
-/* Data Tool: compact, minimal shadows, tight */
+/* Basedash: compact, minimal, dark sidebar */
 .theme-basedash .shadow-sm,
 .theme-basedash .shadow-md,
 .theme-basedash .shadow-lg,
 .theme-basedash .shadow-xl {
   box-shadow: var(--card-shadow) !important;
 }
-.theme-basedash .rounded-xl,
-.theme-basedash .rounded-2xl {
-  border-radius: var(--radius) !important;
-}
-.theme-basedash .rounded-lg {
-  border-radius: calc(var(--radius) - 1px) !important;
-}
-.theme-basedash .rounded-md {
-  border-radius: calc(var(--radius) - 1px) !important;
-}
 .theme-basedash :where(.p-6, .p-8) {
   padding: var(--card-padding-y) var(--card-padding-x) !important;
-}
-.theme-basedash :where(.px-6, .px-8) {
-  padding-left: var(--card-padding-x) !important;
-  padding-right: var(--card-padding-x) !important;
-}
-.theme-basedash :where(.py-6, .py-8) {
-  padding-top: var(--card-padding-y) !important;
-  padding-bottom: var(--card-padding-y) !important;
 }
 .theme-basedash :where(.gap-4, .gap-6) {
   gap: 0.625rem !important;
 }
-.theme-basedash :where(.space-y-4, .space-y-6) > :not([hidden]) ~ :not([hidden]) {
-  --tw-space-y-reverse: 0;
-  margin-top: calc(0.625rem * calc(1 - var(--tw-space-y-reverse))) !important;
-  margin-bottom: calc(0.625rem * var(--tw-space-y-reverse)) !important;
-}
-.theme-basedash :where(th, td) {
-  padding: 0.375rem 0.625rem !important;
-  font-size: 0.8125rem !important;
+/* Basedash sidebar nav items — light text on dark bg */
+.theme-basedash [class*="sidebar"] a,
+.theme-basedash [class*="sidebar"] button {
+  color: hsl(220 10% 72%) !important;
 }
 
 /* =============================================
@@ -407,21 +757,31 @@
    Frosted glass, elevated shadows, elegant
    ============================================= */
 .theme-phantom {
-  --background: 0 0% 100%;
-  --foreground: 0 0% 9%;
+  --background: 0 0% 98%;
+  --foreground: 0 0% 18%;
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 9%;
-  --primary: 0 0% 9%;
+  --card-foreground: 0 0% 18%;
+  --primary: 0 0% 18%;
   --primary-foreground: 0 0% 98%;
-  --border: 0 0% 90%;
+  --secondary: 0 0% 94%;
+  --secondary-foreground: 0 0% 18%;
+  --muted: 0 0% 94%;
+  --muted-foreground: 0 0% 52%;
+  --accent: 0 0% 90%;
+  --accent-foreground: 0 0% 25%;
+  --destructive: 0 65% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 88%;
+  --input: 0 0% 88%;
+  --ring: 0 0% 45%;
   --sidebar-background: 0 0% 100%;
-  --sidebar-foreground: 0 0% 40%;
-  --sidebar-primary: 0 0% 9%;
+  --sidebar-foreground: 0 0% 38%;
+  --sidebar-primary: 0 0% 18%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 96%;
-  --sidebar-accent-foreground: 0 0% 9%;
-  --sidebar-border: 0 0% 90%;
-  --sidebar-ring: 0 0% 9%;
+  --sidebar-accent: 0 0% 94%;
+  --sidebar-accent-foreground: 0 0% 18%;
+  --sidebar-border: 0 0% 88%;
+  --sidebar-ring: 0 0% 18%;
   --brand-50: 0 0% 97%;
   --brand-100: 0 0% 92%;
   --brand-200: 0 0% 85%;
@@ -433,51 +793,138 @@
   --brand-800: 0 0% 22%;
   --brand-900: 0 0% 16%;
   --brand-950: 0 0% 10%;
-  --brand-secondary-50: 220 20% 97%;
-  --brand-secondary-100: 220 18% 92%;
-  --brand-secondary-200: 220 16% 85%;
-  --brand-secondary-300: 220 14% 72%;
-  --brand-secondary-400: 220 12% 58%;
-  --brand-secondary-500: 220 10% 44%;
-  --brand-secondary-600: 220 12% 36%;
-  --brand-secondary-700: 220 14% 28%;
-  --brand-secondary-800: 220 16% 20%;
-  --brand-secondary-900: 220 18% 14%;
-  --brand-secondary-950: 220 20% 8%;
+
+  /* Gray — completely neutral */
+  --gray-50: 0 0% 97%;
+  --gray-100: 0 0% 92%;
+  --gray-200: 0 0% 85%;
+  --gray-300: 0 0% 72%;
+  --gray-400: 0 0% 60%;
+  --gray-500: 0 0% 48%;
+  --gray-600: 0 0% 40%;
+  --gray-700: 0 0% 32%;
+  --gray-800: 0 0% 24%;
+  --gray-900: 0 0% 16%;
+  --gray-950: 0 0% 8%;
+
+  /* Slate — neutral */
+  --slate-50: 0 0% 97%;
+  --slate-100: 0 0% 92%;
+  --slate-200: 0 0% 85%;
+  --slate-300: 0 0% 72%;
+  --slate-400: 0 0% 60%;
+  --slate-500: 0 0% 48%;
+  --slate-600: 0 0% 40%;
+  --slate-700: 0 0% 32%;
+  --slate-800: 0 0% 24%;
+  --slate-900: 0 0% 16%;
+  --slate-950: 0 0% 8%;
+
+  /* Blue — desaturated, airy */
+  --blue-50: 210 30% 96%;
+  --blue-100: 210 28% 90%;
+  --blue-200: 210 25% 82%;
+  --blue-300: 210 22% 70%;
+  --blue-400: 210 20% 58%;
+  --blue-500: 210 18% 46%;
+  --blue-600: 210 16% 40%;
+  --blue-700: 210 14% 32%;
+  --blue-800: 210 12% 24%;
+  --blue-900: 210 10% 16%;
+  --blue-950: 210 8% 8%;
+
+  /* Green — desaturated */
+  --green-50: 150 20% 96%;
+  --green-100: 150 18% 90%;
+  --green-200: 150 15% 82%;
+  --green-300: 150 15% 70%;
+  --green-400: 150 18% 56%;
+  --green-500: 150 16% 46%;
+  --green-600: 150 14% 38%;
+  --green-700: 150 12% 30%;
+  --green-800: 150 10% 22%;
+  --green-900: 150 8% 14%;
+  --green-950: 150 6% 7%;
+
+  /* Red — desaturated */
+  --red-50: 0 20% 96%;
+  --red-100: 0 18% 90%;
+  --red-200: 0 15% 82%;
+  --red-300: 0 15% 70%;
+  --red-400: 0 18% 56%;
+  --red-500: 0 16% 46%;
+  --red-600: 0 14% 38%;
+  --red-700: 0 12% 30%;
+  --red-800: 0 10% 22%;
+  --red-900: 0 8% 14%;
+  --red-950: 0 6% 7%;
+
+  /* Yellow — desaturated */
+  --yellow-50: 45 25% 95%;
+  --yellow-100: 45 22% 88%;
+  --yellow-200: 45 18% 78%;
+  --yellow-300: 45 18% 66%;
+  --yellow-400: 45 20% 54%;
+  --yellow-500: 45 18% 44%;
+  --yellow-600: 45 16% 36%;
+  --yellow-700: 45 14% 28%;
+  --yellow-800: 45 12% 20%;
+  --yellow-900: 45 10% 12%;
+  --yellow-950: 45 8% 6%;
+
+  /* Purple — desaturated */
+  --purple-50: 270 20% 96%;
+  --purple-100: 270 18% 90%;
+  --purple-200: 270 15% 82%;
+  --purple-300: 270 15% 70%;
+  --purple-400: 270 18% 56%;
+  --purple-500: 270 16% 46%;
+  --purple-600: 270 14% 38%;
+  --purple-700: 270 12% 30%;
+  --purple-800: 270 10% 22%;
+  --purple-900: 270 8% 14%;
+  --purple-950: 270 6% 7%;
+
+  /* Indigo — desaturated */
+  --indigo-50: 240 20% 96%;
+  --indigo-100: 240 18% 90%;
+  --indigo-200: 240 15% 82%;
+  --indigo-300: 240 15% 70%;
+  --indigo-400: 240 18% 56%;
+  --indigo-500: 240 16% 46%;
+  --indigo-600: 240 14% 38%;
+  --indigo-700: 240 12% 30%;
+  --indigo-800: 240 10% 22%;
+  --indigo-900: 240 8% 14%;
+  --indigo-950: 240 6% 7%;
+
   --radius: 0.75rem;
   --card-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.08);
   --card-padding-x: 1.5rem;
   --card-padding-y: 1.5rem;
-  --card-border-opacity: 0.5;
-  --card-bg-alt: hsl(0 0% 96% / 0.7);
+  --card-border-opacity: 0.4;
+  --card-bg: hsla(0 0% 100% / 0.6);
+  --card-bg-alt: hsl(0 0% 95% / 0.5);
   --sidebar-blur: 12px;
   --sidebar-glass-opacity: 0.7;
-  --table-stripe: hsl(0 0% 96% / 0.4);
+  --sidebar-glass-bg: hsla(0 0% 100% / 0.7);
+  --table-stripe: hsl(0 0% 96% / 0.3);
   --section-spacing: 1.5rem;
   --section-padding: 1.5rem;
   --nav-item-height: 2.5rem;
+  --page-main-bg: hsl(0 0% 98%);
 }
 
-/* Glass: frosted effect, elevated shadows, thin borders */
+/* Phantom: glass effects, elevated shadows */
 .theme-phantom .shadow-sm {
-  box-shadow: 0 4px 16px 0 rgb(0 0 0 / 0.06) !important;
+  box-shadow: 0 4px 16px 0 rgb(0 0 0 / 0.04) !important;
 }
 .theme-phantom .shadow-md {
-  box-shadow: 0 6px 24px 0 rgb(0 0 0 / 0.08) !important;
+  box-shadow: 0 6px 24px 0 rgb(0 0 0 / 0.06) !important;
 }
 .theme-phantom .shadow-lg,
 .theme-phantom .shadow-xl {
   box-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.08), 0 2px 8px 0 rgb(0 0 0 / 0.04) !important;
-}
-.theme-phantom .rounded-xl,
-.theme-phantom .rounded-2xl {
-  border-radius: var(--radius) !important;
-}
-.theme-phantom .rounded-lg {
-  border-radius: 0.5rem !important;
-}
-.theme-phantom .rounded-md {
-  border-radius: 0.375rem !important;
 }
 .theme-phantom :where(.p-6, .p-8) {
   padding: var(--card-padding-y) var(--card-padding-x) !important;
@@ -485,24 +932,286 @@
 .theme-phantom :where(.gap-4, .gap-6) {
   gap: 1.25rem !important;
 }
-.theme-phantom :where(.space-y-4, .space-y-6) > :not([hidden]) ~ :not([hidden]) {
-  --tw-space-y-reverse: 0;
-  margin-top: calc(1.25rem * calc(1 - var(--tw-space-y-reverse))) !important;
-  margin-bottom: calc(1.25rem * var(--tw-space-y-reverse)) !important;
+
+/* =============================================
+   COMPONENT STYLE OVERRIDES — per theme
+   Cards, tables, nav items, etc.
+   ============================================= */
+
+/* =============================================
+   COMPONENT STYLE OVERRIDES — per theme
+   Cards, tables, nav items, etc.
+   ============================================= */
+
+/* Card base styles — theme-aware border colors */
+.theme-planhat .border-amber-100,
+.theme-planhat .border-amber-200\/60 {
+  border-color: hsl(220 12% 88%) !important;
 }
-.theme-phantom :where(th, td) {
-  padding: 0.625rem 1rem !important;
+.theme-superlist .border-amber-100,
+.theme-superlist .border-amber-200\/60 {
+  border-color: hsl(300 20% 82%) !important;
 }
-.theme-phantom thead tr,
+.theme-basedash .border-amber-100,
+.theme-basedash .border-amber-200\/60 {
+  border-color: hsl(220 12% 88%) !important;
+}
+.theme-phantom .border-amber-100,
+.theme-phantom .border-amber-200\/60 {
+  border-color: hsl(0 0% 88%) !important;
+}
+
+/* =============================================
+   🌟 CARD STRUCTURE per theme
+   ============================================= */
+
+/* Planhat: flat cards — no border, no shadow, just bg */
+.theme-planhat .border,
+.theme-planhat .border-b,
+.theme-planhat .border-t {
+  border-color: hsl(220 12% 86%) !important;
+}
+
+/* Superlist: colored TOP accent bar on cards */
+.theme-superlist div.rounded-lg.border.bg-card {
+  border-top: 3px solid hsl(300 55% 45%) !important;
+}
+/* Don't add top accent to nav items */
+.theme-superlist aside a[href],
+.theme-superlist aside button {
+  border-top: none !important;
+}
+
+/* Phantom: glass cards — transparent bg + subtle border */
+.theme-phantom div.rounded-lg.border.bg-card {
+  background: hsla(0 0% 100% / 0.6) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid hsla(0 0% 90% / 0.5) !important;
+}
+
+/* =============================================
+   🌟 NAV ACTIVE INDICATOR per theme
+   ============================================= */
+
+/* Planhat: active nav = flat left border indicator */
+.theme-planhat aside a[href],
+.theme-planhat aside button {
+  border-radius: 0 !important;
+  border-left: 3px solid transparent !important;
+}
+.theme-planhat aside a[href]:not([class*="hover"])[class*="bg-sidebar-accent"] {
+  border-left-color: hsl(220 10% 30%) !important;
+  background-color: hsl(220 12% 90%) !important;
+}
+/* Planhat: nav items hover = subtle bg */
+.theme-planhat aside a[href]:hover,
+.theme-planhat aside button:hover {
+  background-color: hsl(220 12% 90%) !important;
+}
+
+/* Superlist: active nav = full highlight with shadow */
+.theme-superlist aside a[href]:not([class*="hover"])[class*="bg-sidebar-accent"] {
+  box-shadow: 0 2px 8px 0 hsl(300 40% 70% / 0.5) !important;
+}
+
+/* Basedash: active nav = bright left border */
+.theme-basedash aside a[href],
+.theme-basedash aside button {
+  border-left: 3px solid transparent !important;
+}
+.theme-basedash aside a[href][class*="bg-sidebar-accent"] {
+  border-left: 3px solid hsl(220 85% 60%) !important;
+  background-color: hsl(220 14% 20%) !important;
+}
+
+/* =============================================
+   🌟 TABLE STYLES per theme
+   ============================================= */
+
+/* Planhat: compact, flat table header */
+.theme-planhat thead tr {
+  border-bottom: 2px solid hsl(220 12% 80%) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  font-size: 0.6875rem !important;
+}
+.theme-planhat thead th {
+  padding: 0.5rem 0.75rem !important;
+  font-weight: 600 !important;
+}
+.theme-planhat tbody tr {
+  border-bottom: 1px solid hsl(220 12% 90%) !important;
+}
+
+/* Superlist: playful table header with colored bg */
+.theme-superlist thead tr {
+  border-bottom: 2px solid hsl(300 45% 42%) !important;
+}
+.theme-superlist thead th {
+  font-weight: 700 !important;
+  font-size: 0.8125rem !important;
+}
+
+/* Basedash: clean, minimal table */
+.theme-basedash thead tr {
+  border-bottom: 1px solid hsl(220 12% 82%) !important;
+}
+.theme-basedash thead th {
+  font-weight: 600 !important;
+  color: hsl(220 8% 50%) !important;
+  text-transform: uppercase !important;
+  font-size: 0.6875rem !important;
+  letter-spacing: 0.04em !important;
+}
+
+/* Phantom: minimal table with thin separators */
+.theme-phantom thead tr {
+  border-bottom: 1px solid hsl(0 0% 85%) !important;
+}
 .theme-phantom tbody tr {
   border-bottom: 1px solid hsl(0 0% 92%) !important;
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+/* Table row hover — different per theme */
+.theme-planhat tbody tr:hover {
+  background-color: hsl(220 12% 94%) !important;
+}
+.theme-superlist tbody tr:hover {
+  background-color: hsl(300 50% 94%) !important;
+}
+.theme-basedash tbody tr:hover {
+  background-color: hsl(220 40% 96%) !important;
+}
+.theme-phantom tbody tr:hover {
+  background-color: hsl(0 0% 96% / 0.8) !important;
+}
+
+/* =============================================
+   🌟 BADGE / TAG shapes per theme
+   ============================================= */
+.theme-warm-amber span[class*="badge"] {
+  border-radius: var(--radius) !important;
+}
+.theme-planhat span[class*="badge"] {
+  border-radius: 2px !important;
+  text-transform: uppercase !important;
+  font-size: 0.625rem !important;
+  letter-spacing: 0.03em !important;
+}
+.theme-superlist span[class*="badge"] {
+  border-radius: 9999px !important;
+  padding: 0.125rem 0.75rem !important;
+}
+.theme-basedash span[class*="badge"] {
+  border-radius: 0.25rem !important;
+  font-size: 0.625rem !important;
+}
+.theme-phantom span[class*="badge"] {
+  border-radius: 0.5rem !important;
+  background: hsla(0 0% 100% / 0.5) !important;
+  backdrop-filter: blur(4px);
+}
+
+/* =============================================
+   🌟 BUTTON SHAPES per theme
+   ============================================= */
+.theme-planhat button[class*="btn"] {
+  border-radius: 4px !important;
+}
+.theme-superlist button[class*="btn"] {
+  border-radius: 9999px !important;
+}
+.theme-phantom button[class*="btn"] {
+  border-radius: 0.75rem !important;
+}
+
+/* =============================================
+   🌟 FOCUS RING per theme
+   ============================================= */
+.theme-planhat *:focus-visible {
+  outline: 2px solid hsl(220 10% 40%) !important;
+  outline-offset: 1px !important;
+  border-radius: 2px !important;
+}
+.theme-superlist *:focus-visible {
+  outline: 2px solid hsl(300 55% 50%) !important;
+  outline-offset: 2px !important;
+  border-radius: 8px !important;
+}
+.theme-basedash *:focus-visible {
+  outline: 2px solid hsl(220 85% 52%) !important;
+  outline-offset: 1px !important;
+}
+.theme-phantom *:focus-visible {
+  outline: 1px solid hsl(0 0% 40%) !important;
+  outline-offset: 1px !important;
+}
+
+/* =============================================
+   🌟 SECTION STYLE per theme
+   ============================================= */
+
+/* Planhat: section dividers are minimal */
+.theme-planhat hr,
+.theme-planhat .border-b {
+  border-color: hsl(220 12% 86%) !important;
+  border-width: 0 !important;
+  height: 1px !important;
+  background: hsl(220 12% 86%) !important;
+}
+
+/* Superlist: dotted playful dividers */
+.theme-superlist hr {
+  border: none !important;
+  border-top: 2px dotted hsl(300 40% 75%) !important;
+}
+.theme-superlist .border-b {
+  border-bottom: 2px dotted hsl(300 40% 75%) !important;
+}
+
+/* Basedash: clean thin dividers */
+.theme-basedash hr {
+  border: none !important;
+  height: 1px !important;
+  background: hsl(220 12% 86%) !important;
+}
+
+/* =============================================
+   🌟 SCROLLBAR per theme
+   ============================================= */
+.theme-planhat ::-webkit-scrollbar-thumb {
+  background: hsl(220 10% 80%) !important;
+  border-radius: 0 !important;
+}
+.theme-superlist ::-webkit-scrollbar-thumb {
+  background: hsl(300 40% 75%) !important;
+  border-radius: 10px !important;
+}
+.theme-basedash ::-webkit-scrollbar-thumb {
+  background: hsl(220 10% 30%) !important;
+  border-radius: 4px !important;
+}
+.theme-phantom ::-webkit-scrollbar-thumb {
+  background: hsl(0 0% 80%) !important;
+  border-radius: 8px !important;
+}
+
+/* =============================================
+   Sidebar glass background
+   Used by AppShell sidebar for glass/backdrop effects
+   ============================================= */
+.sidebar-glass-bg {
+  background: var(--sidebar-glass-bg);
+  backdrop-filter: blur(var(--sidebar-blur));
+  -webkit-backdrop-filter: blur(var(--sidebar-blur));
+}
+
+/* =============================================
+   Card glass background
+   ============================================= */
+.card-glass-bg {
+  background: var(--card-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }

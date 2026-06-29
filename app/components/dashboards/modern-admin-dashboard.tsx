@@ -161,11 +161,11 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
-                <p className="text-[#7a6a48] text-xs sm:text-sm font-medium truncate">总学生数</p>
-                <p className="text-2xl sm:text-3xl font-bold text-[#4a3a18]">{centerStats.total}</p>
+                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">总学生数</p>
+                <p className="text-2xl sm:text-3xl font-bold text-foreground">{centerStats.total}</p>
                 <div className="flex items-center mt-1 gap-2">
                   <span className="text-amber-600 text-xs font-medium">小学 {centerStats.primaryCount}</span>
-                  <span className="text-[#c8b898]">·</span>
+                  <span className="text-muted-foreground/40">·</span>
                   <span className="text-yellow-700 text-xs font-medium">中学 {centerStats.secondaryCount}</span>
                 </div>
               </div>
@@ -181,8 +181,8 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
-                <p className="text-[#7a6a48] text-xs sm:text-sm font-medium truncate">本月收入</p>
-                <p className="text-2xl sm:text-3xl font-bold text-[#4a3a18]">RM {financialStats?.monthlyRevenue?.toLocaleString() || '0'}</p>
+                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">本月收入</p>
+                <p className="text-2xl sm:text-3xl font-bold text-foreground">RM {financialStats?.monthlyRevenue?.toLocaleString() || '0'}</p>
                 <div className="flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 text-emerald-500 mr-1" />
                   <span className="text-emerald-500 text-xs font-medium">+15% 较上月</span>
@@ -200,8 +200,8 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
-                <p className="text-[#7a6a48] text-xs sm:text-sm font-medium truncate">今日出勤</p>
-                <p className="text-2xl sm:text-3xl font-bold text-[#4a3a18]">{stats?.todayAttendance || 0}</p>
+                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">今日出勤</p>
+                <p className="text-2xl sm:text-3xl font-bold text-foreground">{stats?.todayAttendance || 0}</p>
                 <div className="flex items-center mt-1">
                   <CheckCircle className="h-3 w-3 text-emerald-500 mr-1" />
                   <span className="text-emerald-500 text-xs font-medium">
@@ -221,8 +221,8 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
-                <p className="text-[#7a6a48] text-xs sm:text-sm font-medium truncate">活跃教师</p>
-                <p className="text-2xl sm:text-3xl font-bold text-[#4a3a18]">{centerStats.teachers}</p>
+                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">活跃教师</p>
+                <p className="text-2xl sm:text-3xl font-bold text-foreground">{centerStats.teachers}</p>
                 <div className="flex items-center mt-1">
                   <UserCheck className="h-3 w-3 text-amber-400 mr-1" />
                   <span className="text-amber-600 text-xs">{selectedCenter === 'all' ? totalTeachers : centerStats.teachers} 位在职教师</span>
