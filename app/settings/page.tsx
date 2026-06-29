@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useTheme, type ThemeId } from "@/contexts/theme-context"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import PageLayout from "@/components/layouts/PageLayout"
 import { Button } from "@/components/ui/button"
@@ -33,12 +34,14 @@ import {
   Pencil,
   Trash2,
   UserCog,
+  Palette,
 } from "lucide-react"
 
 export default function SettingsPage() {
   const router = useRouter()
   const { userProfile } = useAuth()
-  const [activeTab, setActiveTab] = useState("bank")
+  const { themeId, setTheme, availableThemes } = useTheme()
+  const [activeTab, setActiveTab] = useState("appearance")
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveError, setSaveError] = useState("")
@@ -363,6 +366,10 @@ export default function SettingsPage() {
             <TabsTrigger value="system" className="flex items-center gap-2">
               <Sliders className="h-4 w-4" />
               系统参数
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              外观主题
             </TabsTrigger>
             <TabsTrigger value="permissions" className="flex items-center gap-2">
               <Lock className="h-4 w-4" />
@@ -715,7 +722,70 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
-          {/* 3b. Permission Management */}
+          {/* 3b. Theme / Appearance */}
+          <TabsContent value="appearance" className="space-y-6 mt-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Palette className="h-5 w-5" />
+                      外观主题
+                    </CardTitle>
+                    <CardDescription>选择你喜欢的界面配色方案，切换即时生效</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                  {availableThemes.map((theme) => {
+                    const isActive = themeId === theme.id
+                    return (
+                      <button
+                        key={theme.id}
+                        onClick={() => setTheme(theme.id)}
+                        className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-md ${
+                          isActive
+                            ? "border-amber-500 bg-amber-50 shadow-sm ring-2 ring-amber-200"
+                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        {/* Preview swatches */}
+                        <div className="flex gap-1.5 mb-3">
+                          <div
+                            className="w-8 h-8 rounded-lg"
+                            style={{ backgroundColor: theme.previewBg, border: "1px solid rgba(0,0,0,0.08)" }}
+                          />
+                          <div
+                            className="w-8 h-8 rounded-lg"
+                            style={{ backgroundColor: theme.previewColor }}
+                          />
+                        </div>
+                        <h3 className="font-semibold text-sm">{theme.nameZh}</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">{theme.name}</p>
+                        <p className="text-xs text-gray-400 mt-1 leading-relaxed">{theme.description}</p>
+                        {isActive && (
+                          <div className="absolute top-2 right-2 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center">
+                            <CheckCircle2 className="h-3 w-3 text-white" />
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+                  <Palette className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                  <div className="text-sm text-amber-800">
+                    <p className="font-medium mb-1">主题切换说明</p>
+                    <p>切换主题会立即改变系统的品牌色调。当前选择会保存在浏览器中，下次访问自动恢复。</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* 3c. Permission Management */}
           <TabsContent value="permissions" className="space-y-6 mt-6">
             <Card>
               <CardHeader>

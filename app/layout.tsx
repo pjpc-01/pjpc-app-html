@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/pocketbase-auth-context"
 import QueryProvider from "@/components/providers/query-provider"
 import DashboardLayout from "@/components/layouts/DashboardLayout"
 import ThemeProvider from "@/components/providers/theme-provider"
+import { ThemeContextProvider } from "@/contexts/theme-context"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -29,13 +30,15 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <QueryProvider>
-            <AuthProvider>
-              <DashboardLayout>
-                {children}
-              </DashboardLayout>
-            </AuthProvider>
-          </QueryProvider>
+          <ThemeContextProvider>
+            <QueryProvider>
+              <AuthProvider>
+                <DashboardLayout>
+                  {children}
+                </DashboardLayout>
+              </AuthProvider>
+            </QueryProvider>
+          </ThemeContextProvider>
         </ThemeProvider>
       </body>
     </html>
