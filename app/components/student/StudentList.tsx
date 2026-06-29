@@ -111,10 +111,10 @@ export default function StudentList({
   }
 
   return (
-    <div className="rounded-md border border-[#d8ccb4] bg-white/90">
+    <div className="rounded-md border bg-card">
       <Table>
         <TableHeader>
-          <TableRow className="bg-[#f5f0e5]">
+          <TableRow className="bg-muted">
             <TableHead className="w-12">
               <Checkbox
                 checked={allSelected}
@@ -122,41 +122,41 @@ export default function StudentList({
               />
             </TableHead>
             <TableHead 
-              className="cursor-pointer hover:bg-[#ede4d0] text-[#5c4a30] font-semibold"
+              className="hover:bg-accent text-accent-foreground font-semibold cursor-pointer"
               onClick={() => handleSort('name')}
             >
               姓名
             </TableHead>
             <TableHead 
-              className="cursor-pointer hover:bg-[#ede4d0] text-[#5c4a30] font-semibold"
+              className="hover:bg-accent text-accent-foreground font-semibold cursor-pointer"
               onClick={() => handleSort('studentId')}
             >
               学号
             </TableHead>
             <TableHead 
-              className="cursor-pointer hover:bg-[#ede4d0] text-[#5c4a30] font-semibold"
+              className="hover:bg-accent text-accent-foreground font-semibold cursor-pointer"
               onClick={() => handleSort('grade')}
             >
               年级
             </TableHead>
-            <TableHead className="text-[#5c4a30] font-semibold">父亲</TableHead>
-            <TableHead className="text-[#5c4a30] font-semibold">母亲</TableHead>
-            <TableHead className="text-[#5c4a30] font-semibold">联系电话</TableHead>
+            <TableHead className="text-accent-foreground font-semibold">父亲</TableHead>
+            <TableHead className="text-accent-foreground font-semibold">母亲</TableHead>
+            <TableHead className="text-accent-foreground font-semibold">联系电话</TableHead>
             <TableHead 
-              className="cursor-pointer hover:bg-[#ede4d0] text-[#5c4a30] font-semibold"
+              className="hover:bg-accent text-accent-foreground font-semibold cursor-pointer"
               onClick={() => handleSort('status')}
             >
               状态
             </TableHead>
-            <TableHead className="w-24 text-[#5c4a30] font-semibold">操作</TableHead>
+            <TableHead className="w-24 text-accent-foreground font-semibold">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {sortedStudents.map((student, index) => (
             <TableRow 
               key={student.id} 
-              className={`hover:bg-yellow-50/60 cursor-pointer transition-colors group ${
-                index % 2 === 0 ? "bg-white" : "bg-[#fefcf6]"
+              className={`hover:bg-accent/60 cursor-pointer transition-colors group ${
+                index % 2 === 0 ? "bg-white" : "bg-muted/30"
               }`}
               onClick={() => onViewStudent(student)}
             >
@@ -169,7 +169,7 @@ export default function StudentList({
                   onClick={(e) => e.stopPropagation()}
                 />
               </TableCell>
-              <TableCell className="font-medium text-[#5c4a30]">
+              <TableCell className="font-medium text-foreground">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={student.avatar || undefined} />
@@ -180,15 +180,15 @@ export default function StudentList({
                   <span>{student.student_name}</span>
                 </div>
               </TableCell>
-              <TableCell className="text-[#9a8868] font-mono text-xs">{student.student_id}</TableCell>
+              <TableCell className="text-muted-foreground font-mono text-xs">{student.student_id}</TableCell>
               <TableCell>
                 <Badge variant="outline" className="bg-amber-50/60 text-amber-700 border-amber-200 font-normal">
                   {convertGradeToChinese(student.standard || '')}
                 </Badge>
               </TableCell>
-              <TableCell className="text-[#7a6a48]">{student.father_name || '-'}</TableCell>
-              <TableCell className="text-[#7a6a48]">{student.mother_name || '-'}</TableCell>
-              <TableCell className="text-[#9a8868]">
+              <TableCell className="text-muted-foreground">{student.father_name || '-'}</TableCell>
+              <TableCell className="text-muted-foreground">{student.mother_name || '-'}</TableCell>
+              <TableCell className="text-muted-foreground">
                 {student.father_phone || student.mother_phone ? (
                   <span className="text-xs">
                     {student.father_phone && <span>父: {student.father_phone}</span>}
@@ -212,7 +212,7 @@ export default function StudentList({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0 text-[#9a8868] hover:text-yellow-600 hover:bg-yellow-50"
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-accent-foreground hover:bg-accent"
                       onClick={(e) => {
                         e.stopPropagation();
                         onEditStudent(student);

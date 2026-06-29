@@ -339,8 +339,8 @@ export default function AppShell({
               onClick={() => toggleMenu(item.label)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                 expanded
-                  ? "bg-yellow-50 text-yellow-600"
-                  : "text-[#7a6a48] hover:bg-yellow-50/60 hover:text-yellow-600"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-accent-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
               }`}
             >
               <item.icon className="w-4 h-4 flex-shrink-0" />
@@ -352,7 +352,7 @@ export default function AppShell({
               />
             </button>
             {expanded && (
-            <div className="ml-4 mt-1 space-y-1 border-l border-[#c8b898] pl-3">
+            <div className="ml-4 mt-1 space-y-1 border-l border-sidebar-border/70 pl-3">
                 {item.children.map((child) => renderNavItem(child, depth + 1))}
               </div>
             )}
@@ -362,14 +362,14 @@ export default function AppShell({
             href={addCenterParam(item.href) || "#"}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
             active
-              ? "bg-yellow-50 text-yellow-600 font-semibold shadow-sm border border-yellow-200"
-              : "text-[#7a6a48] hover:bg-yellow-50/60 hover:text-yellow-600"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-sm border border-sidebar-border"
+              : "text-sidebar-accent-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
             }`}
           >
             <item.icon className="w-4 h-4 flex-shrink-0" />
             <span className="truncate">{item.label}</span>
             {active && (
-              <span className="ml-auto w-1.5 h-1.5 rounded-full bg-yellow-400"></span>
+              <span className="ml-auto w-1.5 h-1.5 rounded-full bg-sidebar-primary"></span>
             )}
           </Link>
         )}
@@ -439,7 +439,7 @@ export default function AppShell({
   }
 
   return (
-    <div className="min-h-screen bg-[#fefcf6]">
+    <div className="min-h-screen bg-background">
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
@@ -457,9 +457,9 @@ export default function AppShell({
           className="h-9 w-9 p-0 bg-white/80 backdrop-blur-sm shadow-md rounded-lg hover:bg-white"
         >
           {mobileOpen ? (
-            <X className="h-5 w-5 text-slate-700" />
+            <X className="h-5 w-5 text-foreground/60" />
           ) : (
-            <Menu className="h-5 w-5 text-slate-700" />
+            <Menu className="h-5 w-5 text-foreground/60" />
           )}
         </Button>
       </div>
@@ -467,27 +467,27 @@ export default function AppShell({
       {/* Desktop sidebar toggle — hamburger when collapsed, X when open */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className={`fixed z-50 hidden lg:flex items-center justify-center h-7 w-7 rounded-full bg-white border shadow-sm hover:bg-slate-50 transition-all duration-200 ${
+        className={`fixed z-50 hidden lg:flex items-center justify-center h-7 w-7 rounded-full bg-white border shadow-sm hover:bg-muted transition-all duration-200 ${
           sidebarOpen
             ? "top-3 left-[calc(16rem+0.75rem)]"
             : "top-3 left-3"
         }`}
       >
         {sidebarOpen ? (
-          <X className="h-3.5 w-3.5 text-slate-500" />
+          <X className="h-3.5 w-3.5 text-foreground/50" />
         ) : (
-          <Menu className="h-3.5 w-3.5 text-slate-500" />
+          <Menu className="h-3.5 w-3.5 text-foreground/50" />
         )}
       </button>
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-40 h-full bg-gradient-to-b from-[#f5f0e5] via-[#f5f0e5] to-[#ede4d0] border-r border-[#d8ccb4] transition-all duration-300 ease-in-out flex flex-col overflow-hidden ${
+        className={`fixed top-0 left-0 z-40 h-full bg-sidebar border-r border-sidebar-border sidebar-glass-bg transition-all duration-300 ease-in-out flex flex-col overflow-hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } ${sidebarOpen ? "lg:translate-x-0 lg:w-64" : "lg:-translate-x-full lg:w-0"}`}
       >
         {/* Logo */}
-        <div className="flex-shrink-0 p-5 border-b border-[#d8ccb4]">
+        <div className="flex-shrink-0 p-5 border-b border-sidebar-border">
           <Link href="/" className="flex items-center gap-3">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-yellow-300 to-yellow-100 rounded-lg blur opacity-30"></div>
@@ -496,8 +496,8 @@ export default function AppShell({
               </div>
             </div>
             <div className={`${!sidebarOpen ? "lg:hidden" : ""}`}>
-              <h1 className="text-sm font-bold text-[#5c4a30] tracking-tight">PJPC</h1>
-              <p className="text-[10px] text-[#9a8868]">{config.title}</p>
+              <h1 className="text-sm font-bold text-sidebar-foreground tracking-tight">PJPC</h1>
+              <p className="text-[10px] text-sidebar-foreground/60">{config.title}</p>
             </div>
           </Link>
         </div>
@@ -508,13 +508,13 @@ export default function AppShell({
         </nav>
 
         {/* Bottom section — 用户 + 分行 + 工具 */}
-        <div className="flex-shrink-0 border-t border-[#d8ccb4]">
+        <div className="flex-shrink-0 border-t border-sidebar-border">
           {/* Center filter */}
           <div className="px-3 pt-3 pb-2">
-            <p className="text-[10px] text-[#9a8868] uppercase tracking-wider font-semibold px-2 mb-1.5">分行筛选</p>
+            <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-wider font-semibold px-2 mb-1.5">分行筛选</p>
             <div className="flex flex-wrap gap-1">
               {centers.length === 0 ? (
-                <div className="text-[10px] text-[#9a8868] px-2">加载中...</div>
+                <div className="text-[10px] text-sidebar-foreground/50 px-2">加载中...</div>
               ) : (
                 [{ id: "all", code: "全部", icon: Building2 } as const, ...centers.map(c => ({ id: c.id, code: c.code, icon: School } as const))].map((c) => (
                 <button
@@ -527,8 +527,8 @@ export default function AppShell({
                   }}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     (searchParams?.get("center") || "all") === c.id
-                      ? "bg-yellow-100 text-yellow-600 border border-yellow-200"
-                      : "text-[#9a8868] hover:text-[#5c4a30] hover:bg-white/50"
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border"
+                      : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/40"
                   }`}
                 >
                   <c.icon className="h-3 w-3" />
@@ -538,25 +538,25 @@ export default function AppShell({
             </div>
           </div>
           {/* User info + tools */}
-          <div className="flex items-center justify-between px-3 py-2 border-t border-[#d8ccb4]/50">
+          <div className="flex items-center justify-between px-3 py-2 border-t border-sidebar-border/50">
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-7 h-7 rounded-full bg-gradient-to-r from-yellow-300 to-yellow-100 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 shadow-sm">
                 {userAvatar || userName?.charAt(0)?.toUpperCase() || "A"}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-[#5c4a30] leading-tight truncate">{userName || getRoleLabel(userRole)}</p>
+                <p className="text-xs font-medium text-sidebar-foreground leading-tight truncate">{userName || getRoleLabel(userRole)}</p>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-[#9a8868]">{getRoleLabel(userRole)}</span>
+                  <span className="text-[10px] text-sidebar-foreground/60">{getRoleLabel(userRole)}</span>
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                  <span className="text-[9px] text-[#9a8868]">在线</span>
+                  <span className="text-[9px] text-sidebar-foreground/60">在线</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-0.5">
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-[#9a8868] hover:text-yellow-600 hover:bg-yellow-50">
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-sidebar-foreground/50 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent">
                 <Bell className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-[#9a8868] hover:text-yellow-600 hover:bg-yellow-50">
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-sidebar-foreground/50 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent">
                 <LogOut className="h-3.5 w-3.5" />
               </Button>
             </div>
