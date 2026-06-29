@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react"
 
-export type ThemeId = "amber" | "ocean" | "forest" | "lavender" | "midnight"
+export type ThemeId = "amber" | "planhat" | "superlist" | "basedash" | "phantom"
 
 export interface ThemeInfo {
   id: ThemeId
@@ -11,48 +11,60 @@ export interface ThemeInfo {
   description: string
   previewColor: string
   previewBg: string
+  previewAccent: string
+  style: string
 }
 
 export const THEMES: ThemeInfo[] = [
   {
     id: "amber",
-    name: "Amber",
-    nameZh: "暖琥珀",
-    description: "温暖明亮的琥珀色系，温馨亲切",
+    name: "Warm Card",
+    nameZh: "🏡 暖琥珀",
+    description: "圆润卡片，暖琥珀色，温馨亲切 — 当前默认风格",
     previewColor: "#D97706",
     previewBg: "#FEF3C7",
+    previewAccent: "#FDE68A",
+    style: "card",
   },
   {
-    id: "ocean",
-    name: "Ocean",
-    nameZh: "海洋蓝",
-    description: "冷静专业的蓝色系，沉稳可靠",
-    previewColor: "#2563EB",
-    previewBg: "#DBEAFE",
+    id: "planhat",
+    name: "Flat Data",
+    nameZh: "📊 数据优先",
+    description: "扁平直角，低阴影，灰调配色，数据驱动 — 灵感 Planhat",
+    previewColor: "#64748B",
+    previewBg: "#F1F5F9",
+    previewAccent: "#CBD5E1",
+    style: "flat",
   },
   {
-    id: "forest",
-    name: "Forest",
-    nameZh: "森林绿",
-    description: "自然生长的绿色系，清新活力",
-    previewColor: "#059669",
-    previewBg: "#D1FAE5",
-  },
-  {
-    id: "lavender",
-    name: "Lavender",
-    nameZh: "薰衣草",
-    description: "优雅浪漫的紫色系，创意柔和",
-    previewColor: "#9333EA",
+    id: "superlist",
+    name: "Playful",
+    nameZh: "🎨 创意画板",
+    description: "超大圆角，色彩丰富，蓬松阴影，活泼创意 — 灵感 Superlist",
+    previewColor: "#A855F7",
     previewBg: "#F3E8FF",
+    previewAccent: "#E9D5FF",
+    style: "playful",
   },
   {
-    id: "midnight",
-    name: "Midnight",
-    nameZh: "午夜暗",
-    description: "深色背景护眼模式，适合夜间使用",
-    previewColor: "#F59E0B",
-    previewBg: "#1F2937",
+    id: "basedash",
+    name: "Data Tool",
+    nameZh: "⚡ 数据工具",
+    description: "深色侧栏，紧凑表格，蓝色系专业 — 灵感 Basedash",
+    previewColor: "#3B82F6",
+    previewBg: "#EFF6FF",
+    previewAccent: "#BFDBFE",
+    style: "compact",
+  },
+  {
+    id: "phantom",
+    name: "Glassmorphism",
+    nameZh: "✨ 幻影玻璃",
+    description: "毛玻璃效果，优雅中性色，高级感 — 灵感 Phantom",
+    previewColor: "#6B7280",
+    previewBg: "#F9FAFB",
+    previewAccent: "#E5E7EB",
+    style: "glass",
   },
 ]
 
@@ -68,6 +80,14 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 const STORAGE_KEY = "pjpc-theme"
 const DEFAULT_THEME: ThemeId = "amber"
 
+// Backward compatibility: old theme IDs → new theme IDs
+const THEME_MIGRATION: Record<string, ThemeId> = {
+  ocean: "planhat",
+  forest: "superlist",
+  lavender: "basedash",
+  midnight: "phantom",
+}
+
 export function useTheme() {
   const context = useContext(ThemeContext)
   if (context === undefined) {
@@ -80,12 +100,16 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   const [themeId, setThemeId] = useState<ThemeId>(DEFAULT_THEME)
   const [mounted, setMounted] = useState(false)
 
-  // On mount, read saved theme from localStorage
+  // On mount, read saved theme from localStorage (with migration support)
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY) as ThemeId | null
-      if (saved && THEMES.some((t) => t.id === saved)) {
-        setThemeId(saved)
+      const saved = localStorage.getItem(STORAGE_KEY) as string | null
+      if (saved) {
+        // Migrate old theme names
+        const migrated = THEME_MIGRATION[saved] || saved
+        if (THEMES.some((t) => t.id === migrated)) {
+          setThemeId(migrated as ThemeId)
+        }
       }
     } catch {}
     setMounted(true)
@@ -117,7 +141,7 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
 
   const themeInfo = THEMES.find((t) => t.id === themeId) || THEMES[0]
 
-  // Prevent flash of wrong theme during SSR — still wrap with provider
+  // Still wrap with provider even before mount for SSR
   return (
     <ThemeContext.Provider
       value={{
