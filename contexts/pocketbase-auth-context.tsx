@@ -153,6 +153,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const initializeAuth = async () => {
           // 检查AuthStore是否有有效的认证数据
           if (pbInstance.authStore.model && pbInstance.authStore.model.id) {
+            // 检查"记住我"偏好—如果用户登录时未勾选，此会话只在同tab有效
+            if (typeof window !== 'undefined') {
+              const sessionOnly = localStorage.getItem('pb_session_only')
+              if (sessionOnly === '1') {
+                const sessionActive = sessionStorage.getItem('pb_session_active')
+                if (!sessionActive) {
+                  // 这是新打开的tab或浏览器重启，清除认证
+                  console.log('🔒 Session-only mode: clearing auth for new tab')
+                  pbInstance.authStore.clear()
+                  setUser(null)
+                  setUserProfile(null)
+                  setLoading(false)
+                  return
+                }
+              } else {
+                // 勾选了"记住我"或者没有偏好，保存session活性标记
+                sessionStorage.setItem('pb_session_active', '1')
+              }
+            }
+
             setUser(pbInstance.authStore.model)
             try {
               const profile = await fetchUserProfile(pbInstance.authStore.model)
@@ -373,13 +393,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = useCallback(async (email: string, password: string, name: string, role: "teacher" | "parent" | "accountant") => {
     try {
       setError(null)
-      
-      // 验证密码强度
-      if (!isPasswordStrong(password)) {
-        const errorMsg = "密码必须包含至少8位字符，包括大小写字母、数字和特殊字符"
-        setError(errorMsg)
-        throw new Error(errorMsg)
-      }
 
       // 创建用户
       const userData = {
@@ -491,13 +504,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // 验证当前密码
       await pbInstance.collection('users').authWithPassword(user.email, currentPassword)
-
-      // 验证新密码强度
-      if (!isPasswordStrong(newPassword)) {
-        const errorMsg = "新密码必须包含至少8位字符，包括大小写字母、数字和特殊字符"
-        setError(errorMsg)
-        throw new Error(errorMsg)
-      }
 
       await pbInstance.collection('users').update(user.id, {
         password: newPassword,

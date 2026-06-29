@@ -26,6 +26,8 @@ import {
   Pause,
   RefreshCw
 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 interface ClassScheduleProps {
   teacherId?: string
@@ -45,6 +47,7 @@ interface ScheduleItem {
 }
 
 export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
+  const router = useRouter()
   const [schedule, setSchedule] = useState<ScheduleItem[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -273,7 +276,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
               <BookOpen className="h-5 w-5" />
               今日课程 ({filteredSchedule.length})
             </CardTitle>
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2" onClick={() => router.push('/schedule-management')}>
               <Plus className="h-4 w-4" />
               添加课程
             </Button>
@@ -325,21 +328,35 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
                     </div>
                     <div className="flex items-center gap-2">
                       {item.status === 'upcoming' && (
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline"
+                          onClick={() => {
+                            setSchedule(prev => prev.map(s => 
+                              s.id === item.id ? { ...s, status: 'active' } : s
+                            ))
+                            toast.success("课程已开始", { description: `${item.subject} - ${item.className}` })
+                          }}>
                           <Play className="h-3 w-3 mr-1" />
                           开始
                         </Button>
                       )}
                       {item.status === 'active' && (
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline"
+                          onClick={() => {
+                            setSchedule(prev => prev.map(s => 
+                              s.id === item.id ? { ...s, status: 'completed' } : s
+                            ))
+                            toast.success("课程已完成", { description: `${item.subject} - ${item.className}` })
+                          }}>
                           <Pause className="h-3 w-3 mr-1" />
                           暂停
                         </Button>
                       )}
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline"
+                        onClick={() => toast.info("编辑课程", { description: "编辑课程详情功能即将上线" })}>
                         <Edit className="h-3 w-3" />
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline"
+                        onClick={() => toast.info("调课申请", { description: "调课/换课功能即将上线" })}>
                         <RefreshCw className="h-3 w-3" />
                       </Button>
                     </div>

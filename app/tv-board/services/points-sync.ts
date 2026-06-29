@@ -445,7 +445,7 @@ export class PointsSyncService {
   private async triggerSSEUpdate(event: string, data?: any) {
     try {
       // 动态导入SSE模块避免循环依赖
-      const { checkForUpdates } = await import('../../api/events/route')
+      const { checkForUpdates } = await import('@/lib/sse-broadcast')
       await checkForUpdates()
       console.log(`[PointsSync] SSE更新已触发`)
     } catch (error) {

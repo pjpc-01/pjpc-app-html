@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase } from '@/lib/pocketbase'
 import { authenticateAdmin } from '@/lib/auth-utils'
-import { TeacherLeaveRecord } from '@/lib/pocketbase-schema'
+import type { TeacherLeaveRecord } from '@/components/teacher/TeacherLeaveManagement'
 
 // 获取教师请假记录
 export async function GET(request: NextRequest) {

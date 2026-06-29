@@ -13,7 +13,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   images: {
     unoptimized: true,
@@ -53,6 +53,15 @@ const nextConfig = {
       }
     }
     return config
+  },
+
+  async rewrites() {
+    return [
+      {
+        source: '/api/pocketbase-proxy/:path*',
+        destination: 'http://127.0.0.1:8090/:path*',
+      },
+    ]
   },
 
   serverExternalPackages: ['googleapis'],

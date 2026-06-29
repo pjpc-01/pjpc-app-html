@@ -75,9 +75,32 @@ export interface PointsStats {
 }
 
 // 兼容旧代码的类型别名
-export type TransactionType = 'add_points' | 'deduct_points' | 'redeem_gift'
-export type TransactionStatus = 'completed' | 'pending' | 'cancelled'
-export type PointSeason = 'weekly' | 'monthly' | 'semester' | 'yearly'
+// 运行时值（用于API调用）
+export const TransactionType = {
+  Add: 'add_points',
+  Deduct: 'deduct_points',
+  Redeem: 'redeem_gift',
+} as const
+
+export type TransactionType = (typeof TransactionType)[keyof typeof TransactionType]
+
+export const TransactionStatus = {
+  Pending: 'pending',
+  Completed: 'completed',
+  Approved: 'approved',
+  Cancelled: 'cancelled',
+} as const
+
+export type TransactionStatus = (typeof TransactionStatus)[keyof typeof TransactionStatus]
+
+export const PointSeason = {
+  Weekly: 'weekly',
+  Monthly: 'monthly',
+  Semester: 'semester',
+  Yearly: 'yearly',
+} as const
+
+export type PointSeason = (typeof PointSeason)[keyof typeof PointSeason]
 export interface TeacherWithNFC {
   id: string
   name: string

@@ -39,6 +39,7 @@ import {
 
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { formatDate } from "@/lib/utils"
+import { toast } from "sonner"
 
 // Types
 interface TeacherPerformanceEvaluation {
@@ -95,6 +96,7 @@ export default function TeacherPerformanceManagement() {
   // Dialog states
   const [evaluationDialogOpen, setEvaluationDialogOpen] = useState(false)
   const [editingEvaluation, setEditingEvaluation] = useState<TeacherPerformanceEvaluation | null>(null)
+  const [viewingEvaluation, setViewingEvaluation] = useState<TeacherPerformanceEvaluation | null>(null)
   
   // Form states
   const [evaluationForm, setEvaluationForm] = useState({
@@ -236,6 +238,25 @@ export default function TeacherPerformanceManagement() {
       }
     } catch (error) {
       setError('创建绩效评估失败')
+    }
+  }
+
+  // 删除绩效评估
+  const handleDeleteEvaluation = async (evaluationId: string) => {
+    if (!confirm("确定要删除这条绩效评估记录吗？此操作不可恢复。")) return
+    try {
+      const response = await fetch(`/api/teacher-performance?id=${evaluationId}`, {
+        method: 'DELETE'
+      })
+      const result = await response.json()
+      if (result.success) {
+        toast.success("删除成功")
+        fetchEvaluations()
+      } else {
+        toast.error("删除失败", { description: result.error })
+      }
+    } catch (error) {
+      toast.error("删除失败", { description: "网络错误，请重试" })
     }
   }
 
@@ -507,13 +528,33 @@ export default function TeacherPerformanceManagement() {
                     <TableCell>{formatDate(evaluation.evaluation_date)}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => setViewingEvaluation(evaluation)}>
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => {
+                          setEditingEvaluation(evaluation)
+                          setEvaluationForm({
+                            teacher_id: evaluation.teacher_id,
+                            evaluation_period: evaluation.evaluation_period,
+                            year: evaluation.year,
+                            quarter: evaluation.quarter,
+                            teaching_quality: evaluation.teaching_quality,
+                            student_satisfaction: evaluation.student_satisfaction,
+                            attendance_score: evaluation.attendance_score,
+                            punctuality_score: evaluation.punctuality_score,
+                            teamwork_score: evaluation.teamwork_score,
+                            communication_score: evaluation.communication_score,
+                            strengths: evaluation.strengths || [],
+                            areas_for_improvement: evaluation.areas_for_improvement || [],
+                            goals_next_period: evaluation.goals_next_period || [],
+                            recommendations: evaluation.recommendations || [],
+                            notes: evaluation.notes || ''
+                          })
+                          setEvaluationDialogOpen(true)
+                        }}>
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => handleDeleteEvaluation(evaluation.id)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -525,6 +566,77 @@ export default function TeacherPerformanceManagement() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* 查看绩效评估详情对话框 */}
+      <Dialog open={!!viewingEvaluation} onOpenChange={(open) => !open && setViewingEvaluation(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>绩效评估详情</DialogTitle>
+            <DialogDescription>
+              {viewingEvaluation?.expand?.teacher_id?.name} — {viewingEvaluation?.year}年Q{viewingEvaluation?.quarter}
+            </DialogDescription>
+          </DialogHeader>
+          {viewingEvaluation && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>教师</Label>
+                  <p className="font-medium">{viewingEvaluation.expand?.teacher_id?.name}</p>
+                </div>
+                <div>
+                  <Label>评估期间</Label>
+                  <p className="font-medium">{viewingEvaluation.evaluation_period}</p>
+                </div>
+                <div>
+                  <Label>总分</Label>
+                  <p className="text-2xl font-bold text-blue-600">{viewingEvaluation.overall_score}/10</p>
+                </div>
+                <div>
+                  <Label>等级</Label>
+                  <Badge className={getScoreLevel(viewingEvaluation.overall_score).color}>
+                    {getScoreLevel(viewingEvaluation.overall_score).level}
+                  </Badge>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label>教学质量</Label>
+                  <p>{viewingEvaluation.teaching_quality}/10</p>
+                </div>
+                <div className="space-y-1">
+                  <Label>学生满意度</Label>
+                  <p>{viewingEvaluation.student_satisfaction}/10</p>
+                </div>
+                <div className="space-y-1">
+                  <Label>出勤情况</Label>
+                  <p>{viewingEvaluation.attendance_score}/10</p>
+                </div>
+                <div className="space-y-1">
+                  <Label>守时情况</Label>
+                  <p>{viewingEvaluation.punctuality_score}/10</p>
+                </div>
+                <div className="space-y-1">
+                  <Label>团队合作</Label>
+                  <p>{viewingEvaluation.teamwork_score}/10</p>
+                </div>
+                <div className="space-y-1">
+                  <Label>沟通能力</Label>
+                  <p>{viewingEvaluation.communication_score}/10</p>
+                </div>
+              </div>
+              {viewingEvaluation.notes && (
+                <div>
+                  <Label>评估备注</Label>
+                  <p className="text-sm text-gray-600 mt-1">{viewingEvaluation.notes}</p>
+                </div>
+              )}
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => setViewingEvaluation(null)}>关闭</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* 绩效评估对话框 */}
       <Dialog open={evaluationDialogOpen} onOpenChange={setEvaluationDialogOpen}>

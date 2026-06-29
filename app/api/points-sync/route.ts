@@ -20,16 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 创建交易并更新积分
-    const result = await pointsSyncService.createTransactionAndUpdatePoints({
-      student_id: body.student_id,
-      teacher_id: body.teacher_id,
-      points_change: Number(body.points_change),
-      transaction_type: body.transaction_type,
-      reason: body.reason,
-      gift_name: body.gift_name,
-      gift_points: body.gift_points ? Number(body.gift_points) : undefined
-    })
-
+    const result = await pointsSyncService.createTransactionAndUpdatePoints(body as any)
     if (result.success) {
       return NextResponse.json({
         success: true,

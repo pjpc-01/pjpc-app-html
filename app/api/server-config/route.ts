@@ -4,14 +4,14 @@ import PocketBase from 'pocketbase'
 const POCKETBASE_URL = 'http://pjpc.tplinkdns.com:8090'
 
 export async function GET() {
-  const config = {
+  const config: any = {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
     pocketbase: {
       url: POCKETBASE_URL,
       status: 'unknown'
     },
-    tests: []
+    tests: [] as any[],
   }
 
   try {
@@ -131,8 +131,8 @@ export async function GET() {
   }
 
   // 计算总体状态
-  const successCount = config.tests.filter(t => t.status === 'success').length
-  const errorCount = config.tests.filter(t => t.status === 'error').length
+  const successCount = config.tests.filter((t: any) => t.status === 'success').length
+  const errorCount = config.tests.filter((t: any) => t.status === 'error').length
   const totalTests = config.tests.length
 
   config.summary = {

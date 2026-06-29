@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     console.log('🔍 开始积分数据健康检查...')
     
     // 获取所有学生积分记录
-    let allStudentPoints = []
+    let allStudentPoints: any[] = []
     try {
       allStudentPoints = await pb.collection('student_points').getFullList({
         expand: 'student_id'
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     }
     
     // 获取所有积分交易记录
-    let allTransactions = []
+    let allTransactions: any[] = []
     try {
       allTransactions = await pb.collection('point_transactions').getFullList({
         sort: 'created'

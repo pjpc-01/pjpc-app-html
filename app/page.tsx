@@ -36,6 +36,13 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("overview")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
+  // 未认证用户重定向到登录页
+  useEffect(() => {
+    if (!loading && !user && !userProfile) {
+      router.replace("/login")
+    }
+  }, [loading, user, userProfile, router])
+
   // 家长角色重定向到家长门户
   useEffect(() => {
     if (!loading && userProfile?.role === "parent") {

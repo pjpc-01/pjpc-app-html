@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase } from '@/lib/pocketbase'
+import { authenticateAdmin } from '@/lib/auth-utils'
 
 // 积分数据完整性验证工具
 export async function GET(request: NextRequest) {
