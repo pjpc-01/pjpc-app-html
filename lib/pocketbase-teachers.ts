@@ -137,7 +137,7 @@ export const getAllTeachers = async (): Promise<Teacher[]> => {
         department: item.department,
         position: item.position || '',
         subjects: item.department ? [item.department] : [],
-        experience: item.socsoNo,
+        experience: item.experience || item.yearsOfExperience || 0,
         status: item.status,
         joinDate: item.hireDate || item.joinDate || '',
         epfNo: item.epfNo?.toString() || '',
