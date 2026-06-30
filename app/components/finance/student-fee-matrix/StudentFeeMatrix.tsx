@@ -36,6 +36,7 @@ export const StudentFeeMatrix = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedGradeFilter, setSelectedGradeFilter] = useState<string>("all")
   const [batchMode, setBatchMode] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   // Show all fees regardless of status - status is just for display in fee management
   const allFees = fees
@@ -265,8 +266,6 @@ export const StudentFeeMatrix = () => {
     )
     return studentInvoicesThisMonth.length > 0
   }
-
-  const [isSaving, setIsSaving] = useState(false)
 
   const toggleEditMode = async () => {
     if (!editMode) {
