@@ -355,33 +355,13 @@ export default function SettingsPage() {
         {/* Settings Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-2 md:grid-cols-7 w-full">
-            <TabsTrigger value="bank" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              银行账户
-            </TabsTrigger>
-            <TabsTrigger value="rates" className="flex items-center gap-2">
-              <Percent className="h-4 w-4" />
-              EPF/Socso/EIS
-            </TabsTrigger>
-            <TabsTrigger value="system" className="flex items-center gap-2">
-              <Sliders className="h-4 w-4" />
-              系统参数
-            </TabsTrigger>
             <TabsTrigger value="appearance" className="flex items-center gap-2">
               <Palette className="h-4 w-4" />
               外观主题
             </TabsTrigger>
-            <TabsTrigger value="permissions" className="flex items-center gap-2">
-              <Lock className="h-4 w-4" />
-              权限管理
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              用户管理
-            </TabsTrigger>
-            <TabsTrigger value="audit" className="flex items-center gap-2">
-              <History className="h-4 w-4" />
-              审核日志
+            <TabsTrigger value="params" className="flex items-center gap-2">
+              <Sliders className="h-4 w-4" />
+              系统参数
             </TabsTrigger>
           </TabsList>
 
@@ -912,58 +892,6 @@ export default function SettingsPage() {
                     <p>管理员拥有所有权限且不可修改。其他角色的权限可以按需开启或关闭。</p>
                     <p className="text-xs mt-1">修改后点击"保存权限"以生效。</p>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* 4. User Management */}
-          <TabsContent value="users" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  用户管理
-                </CardTitle>
-                <CardDescription>管理系统用户、角色和权限</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <p className="text-2xl font-bold text-amber-700">{userStats.total}</p>
-                      <p className="text-xs text-gray-500">总注册用户</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <p className="text-2xl font-bold text-green-600">{userStats.active}</p>
-                      <p className="text-xs text-gray-500">活跃用户</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <p className="text-2xl font-bold text-yellow-600">{userStats.pending}</p>
-                      <p className="text-xs text-gray-500">待审核</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <p className="text-2xl font-bold text-orange-700">{userStats.admin}</p>
-                      <p className="text-xs text-gray-500">管理员</p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="flex items-center justify-center gap-4 pt-4">
-                  <Button onClick={() => router.push("/user-management")}>
-                    <Users className="h-4 w-4 mr-2" />
-                    进入详细用户管理
-                  </Button>
-                  <Button variant="outline" onClick={fetchStats}>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    刷新数据
-                  </Button>
                 </div>
               </CardContent>
             </Card>
