@@ -380,11 +380,13 @@ export default function StudentManagementPage() {
   }
 
   const handleDeleteStudent = async (studentId: string) => {
+    if (!confirm("确定要删除此学生？此操作不可撤销。")) return
     try {
       await deleteStudent(studentId)
       refetch()
     } catch (error) {
       console.error("Error deleting student:", error)
+      alert("删除失败: " + (error instanceof Error ? error.message : "未知错误"))
     }
   }
 

@@ -28,6 +28,7 @@ import {
   Save, 
   Download, 
   Upload,
+  Search,
   Calendar as CalendarIcon,
   Users,
   GraduationCap,
@@ -97,7 +98,7 @@ export default function AdvancedFilters({
   onSavePreset,
   onLoadPreset
 }: AdvancedFiltersProps) {
-  const [showFilters, setShowFilters] = useState(false)
+  const [showFilters, setShowFilters] = useState(true)
   const [showPresets, setShowPresets] = useState(false)
   const [savedPresets, setSavedPresets] = useState<FilterPreset[]>([])
   const [presetName, setPresetName] = useState("")
@@ -288,6 +289,25 @@ export default function AdvancedFilters({
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* 搜索框 — 始终可见 */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="搜索学生姓名、学号、家长姓名..."
+            value={filters.searchTerm}
+            onChange={(e) => updateFilter('searchTerm', e.target.value)}
+            className="pl-10"
+          />
+          {filters.searchTerm && (
+            <button
+              onClick={() => updateFilter('searchTerm', '')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
         {/* 预设面板 */}
         {showPresets && (
           <div className="border rounded-lg p-4 bg-gray-50">

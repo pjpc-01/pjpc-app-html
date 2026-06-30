@@ -432,9 +432,22 @@ export const updateStudent = async (id: string, studentData: StudentUpdateData):
   }
 }
 
-// 删除学生 - 暂时禁用，需要创建相应的API端点
+// 删除学生 - 通过 proxy API 调用 PocketBase DELETE
 export const deleteStudent = async (id: string): Promise<void> => {
-  throw new Error('删除学生功能暂时不可用，需要创建相应的API端点')
+  try {
+    console.log('🗑️ 删除学生:', id)
+    const response = await fetch(`/api/pocketbase-proxy/api/collections/students/records/${id}`, {
+      method: 'DELETE',
+    })
+    if (!response.ok && response.status !== 204) {
+      const errData = await response.json().catch(() => ({}))
+      throw new Error(errData?.message || `HTTP ${response.status}`)
+    }
+    console.log('✅ 学生删除成功:', id)
+  } catch (error) {
+    console.error('❌ 删除学生失败:', error)
+    throw new Error(`删除学生失败: ${error instanceof Error ? error.message : '未知错误'}`)
+  }
 }
 
 // 根据ID获取学生
