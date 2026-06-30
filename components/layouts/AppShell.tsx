@@ -263,7 +263,7 @@ export default function AppShell({
   }, [])
 
   const config = ROLE_CONFIGS[userRole] || ROLE_CONFIGS.admin
-  const { logout, user } = useAuth()
+  const { logout, user, loading } = useAuth()
 
   const handleLogout = async () => {
     try {
@@ -340,6 +340,16 @@ export default function AppShell({
   // 登录页直接渲染内容，不显示侧边栏
   if (pathname === '/login') {
     return <>{children}</>
+  }
+
+  // 路由守卫：未登录用户重定向到登录页
+  if (!loading && !user) {
+    router.replace('/login')
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">正在跳转登录页...</p>
+      </div>
+    )
   }
 
   const renderNavItem = (item: NavItem, depth = 0) => {
