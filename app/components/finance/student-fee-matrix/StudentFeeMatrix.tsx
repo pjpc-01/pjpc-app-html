@@ -266,18 +266,29 @@ export const StudentFeeMatrix = () => {
     return studentInvoicesThisMonth.length > 0
   }
 
+  const [isSaving, setIsSaving] = useState(false)
+
   const toggleEditMode = async () => {
     if (!editMode) {
       // Entering edit mode
       console.log('🔄 [StudentFeeMatrix] Entering edit mode')
       setEditMode(true)
       enterEditMode()
-      setBatchMode(false) // Reset batch mode when entering edit mode
+      setBatchMode(false)
     } else {
-      // Exiting edit mode
-      console.log('🔄 [StudentFeeMatrix] Exiting edit mode')
-      setEditMode(false)
-      await exitEditMode()
+      // Exiting edit mode — save FIRST, then switch UI
+      console.log('🔄 [StudentFeeMatrix] Exiting edit mode, saving...')
+      setIsSaving(true)
+      try {
+        await exitEditMode()
+        setEditMode(false)
+      } catch (err) {
+        console.error('❌ Save failed:', err)
+        // Still exit edit mode so user isn't stuck
+        setEditMode(false)
+      } finally {
+        setIsSaving(false)
+      }
     }
   }
 
@@ -301,6 +312,7 @@ export const StudentFeeMatrix = () => {
         onToggleEditMode={toggleEditMode}
         batchMode={batchMode}
         onToggleBatchMode={toggleBatchMode}
+        isSaving={isSaving}
       />
 
       <SearchAndFilter

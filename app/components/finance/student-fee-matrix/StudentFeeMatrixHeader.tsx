@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { Users, Edit3 } from "lucide-react"
+import { Users, Edit3, Loader2 } from "lucide-react"
 import { ToggleSwitch } from "../ToggleSwitch"
 
 interface StudentFeeMatrixHeaderProps {
@@ -7,13 +7,15 @@ interface StudentFeeMatrixHeaderProps {
   onToggleEditMode: () => void
   batchMode: boolean
   onToggleBatchMode: () => void
+  isSaving?: boolean
 }
 
 export const StudentFeeMatrixHeader = ({
   editMode,
   onToggleEditMode,
   batchMode,
-  onToggleBatchMode
+  onToggleBatchMode,
+  isSaving = false
 }: StudentFeeMatrixHeaderProps) => {
   return (
     <div className="flex items-center justify-between">
@@ -26,13 +28,18 @@ export const StudentFeeMatrixHeader = ({
       </div>
       <div className="flex gap-4 items-center">
         <Button 
-          variant={editMode ? "default" : "outline"}
+          variant={editMode ? "default" : "outline"} 
           size="sm" 
           onClick={onToggleEditMode}
+          disabled={isSaving}
           className="flex items-center gap-2"
         >
-          <Edit3 className="h-4 w-4" />
-          {editMode ? "退出编辑" : "编辑"}
+          {isSaving ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Edit3 className="h-4 w-4" />
+          )}
+          {isSaving ? "保存中..." : editMode ? "退出编辑（保存）" : "编辑"}
         </Button>
         
         <div className="flex items-center gap-2">
