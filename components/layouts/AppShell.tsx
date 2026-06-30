@@ -254,6 +254,20 @@ export default function AppShell({
   const [mobileOpen, setMobileOpen] = useState(false)
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set())
   const [centers, setCenters] = useState<{id:string;code:string;name:string}[]>([])
+  const [rolePerms, setRolePerms] = useState<Record<string, boolean>>({})
+
+  // Fetch permissions for current user role
+  useEffect(() => {
+    if (userRole) {
+      fetch(`/api/pocketbase-proxy/api/collections/role_permissions/records?filter=(role%3D'${userRole}')`)
+        .then(r => r.json())
+        .then(d => {
+          const perms = d?.items?.[0]?.permissions || {}
+          setRolePerms(perms)
+        })
+        .catch(() => {})
+    }
+  }, [userRole])
 
   // Fetch centers for sidebar filter
   useEffect(() => {
@@ -265,6 +279,50 @@ export default function AppShell({
 
   const config = ROLE_CONFIGS[userRole] || ROLE_CONFIGS.admin
   const { logout, user, loading } = useAuth()
+
+  // Permission key mapping for nav items
+  // Parents: check by label. Children: check by href path.
+  const PARENT_PERM: Record<string, string> = {
+    "仪表板": "dashboard", "学生管理": "students", "教师管理": "teachers",
+    "财务管理": "finance", "课程管理": "courses", "考勤系统": "attendance",
+    "系统设置": "settings",
+  }
+  const CHILD_PERM: Record<string, string> = {
+    "/student-management": "students.list", "/daily-logs": "daily-logs",
+    "/grades": "grades", "/points-management": "points",
+    "/pickup": "pickup", "/photo-moments": "photos", "/parent-management": "parents",
+    "/report-cards": "report-cards", "/homework": "homework",
+    "/teacher-management": "teachers.list", "/schedule-management": "schedule",
+    "/finance/overview": "finance.overview", "/finance/fees": "finance.fees",
+    "/finance/payments": "finance.payments", "/finance/bank": "finance.bank",
+    "/finance/expenses": "finance.expenses", "/finance/payroll": "finance.payroll",
+    "/finance/budget": "finance.budget", "/finance/reports": "finance.reports",
+    "/inventory": "inventory",
+    "/student-checkin": "attendance.checkin", "/teacher-checkin": "attendance.teacher",
+    "/attendance-reports": "attendance.reports",
+    "/settings": "settings.general", "/user-management": "settings.users",
+    "/center-management": "settings.centers",
+  }
+
+  // Filter nav items based on permissions
+  const filterByPerms = (items: NavItem[]): NavItem[] => {
+    return items.filter(item => {
+      if (item.children) {
+        // Parent item: check parent permission key
+        const parentKey = PARENT_PERM[item.label]
+        if (parentKey && rolePerms[parentKey] === false) return false
+        // Filter children
+        item.children = filterByPerms(item.children)
+        return item.children.length > 0
+      }
+      // Leaf item: check child permission key by href
+      const childKey = item.href ? CHILD_PERM[item.href] : undefined
+      if (childKey && rolePerms[childKey] === false) return false
+      return true
+    })
+  }
+
+  const filteredNavItems = filterByPerms(config.navItems)
 
   const handleLogout = async () => {
     try {
@@ -313,7 +371,7 @@ export default function AppShell({
 
   // Auto-expand parent menu if a child is active
   useEffect(() => {
-    config.navItems.forEach((item) => {
+    filteredNavItems.forEach((item) => {
       if (item.children) {
         const hasActiveChild = item.children.some((child) => isActive(child.href))
         if (hasActiveChild) {
@@ -531,7 +589,7 @@ export default function AppShell({
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-          {config.navItems.map((item) => renderNavItem(item))}
+          {filteredNavItems.map((item) => renderNavItem(item))}
         </nav>
 
         {/* Bottom section — 用户 + 分行 + 工具 */}

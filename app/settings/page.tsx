@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useTheme, type ThemeId } from "@/contexts/theme-context"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import PageLayout from "@/components/layouts/PageLayout"
+import PermissionEditor from "@/components/admin/PermissionEditor"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -358,6 +359,10 @@ export default function SettingsPage() {
             <TabsTrigger value="appearance" className="flex items-center gap-2">
               <Palette className="h-4 w-4" />
               外观主题
+            </TabsTrigger>
+            <TabsTrigger value="permissions" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              权限管理
             </TabsTrigger>
             <TabsTrigger value="params" className="flex items-center gap-2">
               <Sliders className="h-4 w-4" />
@@ -771,130 +776,7 @@ export default function SettingsPage() {
 
           {/* 3c. Permission Management */}
           <TabsContent value="permissions" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Lock className="h-5 w-5" />
-                      角色权限管理
-                    </CardTitle>
-                    <CardDescription>为不同用户角色分配模块访问权限</CardDescription>
-                  </div>
-                  <Button onClick={() => handleSave("permissions")} disabled={saving}>
-                    <Save className="h-4 w-4 mr-2" />
-                    {saving ? "保存中..." : "保存权限"}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Role Selector */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {ROLES.map((role) => (
-                    <button
-                      key={role.id}
-                      onClick={() => setSelectedRole(role.id)}
-                      className={`p-4 rounded-xl border-2 text-left transition-all ${
-                        selectedRole === role.id
-                          ? "border-amber-500 bg-amber-50 shadow-sm"
-                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Shield className={`h-4 w-4 ${
-                          role.id === "admin" ? "text-orange-700" :
-                          role.id === "teacher" ? "text-amber-700" :
-                          role.id === "parent" ? "text-green-600" : "text-amber-600"
-                        }`} />
-                        <span className="font-semibold text-sm">{role.label}</span>
-                      </div>
-                      <p className="text-xs text-gray-500">{role.desc}</p>
-                      <div className="mt-2">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${role.color}`}>
-                          {role.id === "admin"
-                            ? `${PERMISSIONS.length}/${PERMISSIONS.length} 权限`
-                            : `${Object.values(rolePermissions[role.id] || {}).filter(Boolean).length}/${PERMISSIONS.length} 权限`}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Permission Toggles for Selected Role */}
-                <div className="border rounded-xl overflow-hidden">
-                  <div className="bg-gray-50 px-4 py-3 border-b flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <UserCog className="h-4 w-4 text-gray-600" />
-                      <span className="font-medium text-sm">
-                        {ROLES.find((r) => r.id === selectedRole)?.label || selectedRole} 权限配置
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">全选</span>
-                      <Switch
-                        checked={PERMISSIONS.every((p) => rolePermissions[selectedRole]?.[p.id])}
-                        onCheckedChange={(checked) => {
-                          setRolePermissions((prev) => ({
-                            ...prev,
-                            [selectedRole]: Object.fromEntries(PERMISSIONS.map((p) => [p.id, checked])),
-                          }))
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="divide-y">
-                    {PERMISSIONS.map((perm) => (
-                      <div key={perm.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-1.5 rounded-lg ${
-                            rolePermissions[selectedRole]?.[perm.id]
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-gray-100 text-gray-400"
-                          }`}>
-                            {perm.id.includes("manage") ? (
-                              <Pencil className="h-4 w-4" />
-                            ) : perm.id.includes("view") ? (
-                              <Eye className="h-4 w-4" />
-                            ) : perm.id === "settings" || perm.id === "users_manage" ? (
-                              <Lock className="h-4 w-4" />
-                            ) : (
-                              <Shield className="h-4 w-4" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">{perm.label}</p>
-                            <p className="text-xs text-gray-400">{perm.description}</p>
-                          </div>
-                        </div>
-                        <Switch
-                          checked={rolePermissions[selectedRole]?.[perm.id] ?? false}
-                          onCheckedChange={(checked) => {
-                            setRolePermissions((prev) => ({
-                              ...prev,
-                              [selectedRole]: {
-                                ...(prev[selectedRole] || {}),
-                                [perm.id]: checked,
-                              },
-                            }))
-                          }}
-                          disabled={selectedRole === "admin"}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Preview */}
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-                  <div className="text-sm text-amber-800">
-                    <p className="font-medium mb-1">权限说明</p>
-                    <p>管理员拥有所有权限且不可修改。其他角色的权限可以按需开启或关闭。</p>
-                    <p className="text-xs mt-1">修改后点击"保存权限"以生效。</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <PermissionEditor />
           </TabsContent>
 
           {/* 5. Audit Logs */}
