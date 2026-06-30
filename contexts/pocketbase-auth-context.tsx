@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react"
+import { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from "react"
 import PocketBase from 'pocketbase'
 import { UserProfile, checkPocketBaseConnection, getPocketBase } from "@/lib/pocketbase"
 
@@ -46,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking')
+  const manualLogoutRef = useRef(false)
 
   // 检查PocketBase连接状态
   const checkConnection = useCallback(async () => {
@@ -188,6 +189,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             pbInstance.authStore.clear()
             setUser(null)
             setUserProfile(null)
+            setLoading(false)
+          } else if (manualLogoutRef.current) {
+            // 手动登出后，不再自动登录
+            console.log('🔒 手动登出，跳过自动登录')
+            manualLogoutRef.current = false
             setLoading(false)
           } else {
             // 没有认证状态，尝试自动管理员登录（开发环境）
@@ -455,8 +461,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     try {
       setError(null)
+      manualLogoutRef.current = true
       const pbInstance = await getPocketBaseInstance()
       pbInstance.authStore.clear()
+      setUser(null)
+      setUserProfile(null)
     } catch (error: any) {
       const errorMessage = "登出失败，请重试"
       setError(errorMessage)

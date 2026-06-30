@@ -263,7 +263,7 @@ export default function AppShell({
   }, [])
 
   const config = ROLE_CONFIGS[userRole] || ROLE_CONFIGS.admin
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
 
   const handleLogout = async () => {
     try {
@@ -336,6 +336,11 @@ export default function AppShell({
     window.addEventListener("resize", handleResize)
     return () => window.removeEventListener("resize", handleResize)
   }, [])
+
+  // 登录页直接渲染内容，不显示侧边栏
+  if (pathname === '/login') {
+    return <>{children}</>
+  }
 
   const renderNavItem = (item: NavItem, depth = 0) => {
     const active = isActive(item.href)
@@ -550,32 +555,46 @@ export default function AppShell({
           </div>
           {/* User info + tools */}
           <div className="flex items-center justify-between px-3 py-2 border-t border-sidebar-border/50">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-r from-yellow-300 to-yellow-100 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 shadow-sm">
-                {userAvatar || userName?.charAt(0)?.toUpperCase() || "A"}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-medium text-sidebar-foreground leading-tight truncate">{userName || getRoleLabel(userRole)}</p>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-sidebar-foreground/60">{getRoleLabel(userRole)}</span>
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                  <span className="text-[9px] text-sidebar-foreground/60">在线</span>
+            {user ? (
+              <>
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-r from-yellow-300 to-yellow-100 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 shadow-sm">
+                    {userAvatar || userName?.charAt(0)?.toUpperCase() || "A"}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-sidebar-foreground leading-tight truncate">{userName || getRoleLabel(userRole)}</p>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-sidebar-foreground/60">{getRoleLabel(userRole)}</span>
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                      <span className="text-[9px] text-sidebar-foreground/60">在线</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-0.5">
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-sidebar-foreground/50 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent">
-                <Bell className="h-3.5 w-3.5" />
-              </Button>
+                <div className="flex items-center gap-0.5">
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-sidebar-foreground/50 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent">
+                    <Bell className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-sidebar-foreground/50 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </>
+            ) : (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 w-7 p-0 text-sidebar-foreground/50 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"
-                onClick={handleLogout}
+                className="w-full text-xs text-sidebar-foreground/60 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent justify-center gap-2"
+                onClick={() => router.push("/login")}
               >
-                <LogOut className="h-3.5 w-3.5" />
+                <LogOut className="h-3.5 w-3.5 rotate-180" />
+                登入
               </Button>
-            </div>
+            )}
           </div>
         </div>
       </aside>
