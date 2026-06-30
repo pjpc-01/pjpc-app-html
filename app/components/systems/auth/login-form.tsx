@@ -81,7 +81,11 @@ export default function LoginForm() {
 
     try {
       await signUp(signupForm.email, signupForm.password, signupForm.name, signupForm.role)
-      setSuccess("注册成功！请等待管理员审核后即可登录。")
+      setSuccess("🎉 注册成功！请等待管理员审核，审核通过后即可登录。")
+      // 清空注册表单
+      setSignupForm({ name: "", email: "", password: "", confirmPassword: "", role: "" })
+      // 切换到登录标签，方便用户直接登录
+      setTimeout(() => setActiveTab("login"), 1500)
     } catch (error: any) {
       console.error("注册错误:", error)
       setError(error.message)
