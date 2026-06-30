@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { useTheme, type ThemeId } from "@/contexts/theme-context"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import PageLayout from "@/components/layouts/PageLayout"
-import PermissionEditor from "@/components/admin/PermissionEditor"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -264,6 +263,7 @@ export default function SettingsPage() {
   return (
     <PageLayout
       title="系统设置"
+      description=""
       userRole="admin"
       status="系统正常"
       background="bg-gray-50"
@@ -355,14 +355,10 @@ export default function SettingsPage() {
 
         {/* Settings Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-2 md:grid-cols-7 w-full">
+          <TabsList className="grid grid-cols-2 w-full max-w-md">
             <TabsTrigger value="appearance" className="flex items-center gap-2">
               <Palette className="h-4 w-4" />
               外观主题
-            </TabsTrigger>
-            <TabsTrigger value="permissions" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              权限管理
             </TabsTrigger>
             <TabsTrigger value="params" className="flex items-center gap-2">
               <Sliders className="h-4 w-4" />
@@ -772,11 +768,6 @@ export default function SettingsPage() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* 3c. Permission Management */}
-          <TabsContent value="permissions" className="space-y-6 mt-6">
-            <PermissionEditor />
           </TabsContent>
 
           {/* 5. Audit Logs */}

@@ -7,7 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Loader2, CheckCircle, XCircle, Trash2, ArrowLeft, Users, Shield, ShieldOff, Ban } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Loader2, Trash2, ArrowLeft, Users, ShieldOff, Shield,
+  CheckCircle2, MailCheck, MailX, UserCog,
+} from "lucide-react"
+import PermissionEditor from "@/components/admin/PermissionEditor"
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "管理员",
@@ -16,11 +21,12 @@ const ROLE_LABELS: Record<string, string> = {
   accountant: "会计",
 }
 
-const STATUS_BADGE: Record<string, { label: string; variant: "secondary" | "default" | "destructive" | "outline" }> = {
-  pending: { label: "待审核", variant: "secondary" },
-  approved: { label: "已通过", variant: "default" },
-  suspended: { label: "已停用", variant: "destructive" },
-}
+const ROLE_OPTIONS = [
+  { value: "admin", label: "管理员" },
+  { value: "teacher", label: "老师" },
+  { value: "parent", label: "家长" },
+  { value: "accountant", label: "会计" },
+]
 
 export default function UserManagementPage() {
   const router = useRouter()
@@ -49,17 +55,35 @@ export default function UserManagementPage() {
     if (isAdmin) fetchUsers()
   }, [isAdmin])
 
-  const updateUserStatus = async (userId: string, status: string) => {
+  // ─── Change user role ──────────────────────────────────────────
+  const changeRole = async (userId: string, newRole: string) => {
     setUpdating(userId)
     try {
       await fetch(`/api/pocketbase-proxy/api/collections/users/records/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ role: newRole }),
       })
       await fetchUsers()
     } catch (e) {
-      console.error("更新用户状态失败:", e)
+      console.error("修改角色失败:", e)
+    } finally {
+      setUpdating(null)
+    }
+  }
+
+  // ─── Toggle email verification ─────────────────────────────────
+  const toggleVerified = async (userId: string, current: boolean) => {
+    setUpdating(userId)
+    try {
+      await fetch(`/api/pocketbase-proxy/api/collections/users/records/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ verified: !current }),
+      })
+      await fetchUsers()
+    } catch (e) {
+      console.error("更新验证状态失败:", e)
     } finally {
       setUpdating(null)
     }
@@ -98,8 +122,8 @@ export default function UserManagementPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">用户管理</h1>
-          <p className="text-sm text-muted-foreground">管理系统用户账号，审核新注册和停用用户</p>
+          <h1 className="text-2xl font-bold tracking-tight">用户与权限管理</h1>
+          <p className="text-sm text-muted-foreground">管理用户账号、角色权限和导航权限</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => router.push("/")} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
@@ -107,121 +131,132 @@ export default function UserManagementPage() {
         </Button>
       </div>
 
-      {/* User list */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
+      <Tabs defaultValue="users">
+        <TabsList className="grid grid-cols-2 w-full max-w-md">
+          <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            所有用户
-            {!loading && <span className="text-sm font-normal text-muted-foreground">（{users.length} 人）</span>}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : users.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">暂无用户</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>姓名</TableHead>
-                    <TableHead>邮箱</TableHead>
-                    <TableHead>角色</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>注册时间</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name || "—"}</TableCell>
-                      <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{ROLE_LABELS[user.role] || user.role}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={STATUS_BADGE[user.status]?.variant || "outline"}>
-                          {STATUS_BADGE[user.status]?.label || user.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {new Date(user.created).toLocaleDateString("zh-CN")}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {user.status === "pending" && (
-                            <>
+            用户列表
+          </TabsTrigger>
+          <TabsTrigger value="permissions" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            角色权限
+          </TabsTrigger>
+        </TabsList>
+
+        {/* ─── Tab 1: User List ──────────────────────────────────── */}
+        <TabsContent value="users" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                所有用户
+                {!loading && <span className="text-sm font-normal text-muted-foreground">（{users.length} 人）</span>}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : users.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">暂无用户</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>姓名</TableHead>
+                        <TableHead>邮箱</TableHead>
+                        <TableHead>角色</TableHead>
+                        <TableHead>验证</TableHead>
+                        <TableHead>注册时间</TableHead>
+                        <TableHead className="text-right">操作</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.name || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{user.email}</TableCell>
+
+                          {/* ─── Role selector ─────────────────────────── */}
+                          <TableCell>
+                            <select
+                              value={user.role || "teacher"}
+                              onChange={(e) => changeRole(user.id, e.target.value)}
+                              disabled={updating === user.id || user.id === userProfile?.id}
+                              className="text-sm rounded-md border border-amber-200 bg-white px-2 py-1 font-medium text-foreground hover:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                              {ROLE_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </select>
+                            {user.id === userProfile?.id && (
+                              <span className="text-xs text-muted-foreground ml-1">（你）</span>
+                            )}
+                          </TableCell>
+
+                          {/* ─── Email verified badge ──────────────────── */}
+                          <TableCell>
+                            <button
+                              onClick={() => toggleVerified(user.id, user.verified)}
+                              disabled={updating === user.id}
+                              className="inline-flex items-center gap-1 transition-opacity hover:opacity-80 disabled:opacity-50"
+                              title={user.verified ? "点击取消验证" : "点击标记已验证"}
+                            >
+                              {user.verified ? (
+                                <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
+                                  <MailCheck className="h-3 w-3 mr-1" />
+                                  已验证
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-muted-foreground hover:bg-muted">
+                                  <MailX className="h-3 w-3 mr-1" />
+                                  未验证
+                                </Badge>
+                              )}
+                            </button>
+                          </TableCell>
+
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(user.created).toLocaleDateString("zh-CN")}
+                          </TableCell>
+
+                          {/* ─── Actions ──────────────────────────────── */}
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              {updating === user.id && (
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mr-1" />
+                              )}
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                onClick={() => updateUserStatus(user.id, "approved")}
-                                disabled={updating === user.id}
-                                title="批准"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive-foreground hover:bg-destructive/10"
+                                onClick={() => deleteUser(user.id)}
+                                disabled={updating === user.id || user.id === userProfile?.id}
+                                title={user.id === userProfile?.id ? "不能删除自己" : "删除"}
                               >
-                                <CheckCircle className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => updateUserStatus(user.id, "suspended")}
-                                disabled={updating === user.id}
-                                title="拒绝"
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                          {user.status === "approved" && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                              onClick={() => updateUserStatus(user.id, "suspended")}
-                              disabled={updating === user.id}
-                              title="停用"
-                            >
-                              <Ban className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {user.status === "suspended" && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                              onClick={() => updateUserStatus(user.id, "approved")}
-                              disabled={updating === user.id}
-                              title="恢复"
-                            >
-                              <Shield className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-destructive hover:text-destructive-foreground hover:bg-destructive/10"
-                            onClick={() => deleteUser(user.id)}
-                            disabled={updating === user.id}
-                            title="删除"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ─── Tab 2: Role Permissions ────────────────────────────── */}
+        <TabsContent value="permissions" className="mt-4">
+          <PermissionEditor />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
