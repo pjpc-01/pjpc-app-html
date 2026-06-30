@@ -181,6 +181,8 @@ export default function StudentForm({
     
     // 重置学号生成标志
     hasGeneratedStudentId.current = false
+    // 重置初始加载标志，下次打开对话框时不自动生成学号
+    isInitialLoad.current = true
   }, [student, open])
 
   const validateForm = (): boolean => {
@@ -386,9 +388,19 @@ export default function StudentForm({
   // 使用 useRef 来跟踪是否已经生成过学号，避免重复生成
   const hasGeneratedStudentId = useRef(false)
   const generateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  // 标记是否是初始加载（首次打开对话框），初始加载不自动生成学号
+  const isInitialLoad = useRef(true)
   
   // 当性别、服务类型或中心改变时，自动生成学号（仅在添加模式下）
+  // 注意：初始打开对话框时不自动生成，只有用户手动更改后才触发
   useEffect(() => {
+    // 跳过初始加载的自动生成 — 学号留空让用户手动输入
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false
+      console.log('初始加载，跳过学号自动生成')
+      return
+    }
+    
     if (!isEditing && formData.gender && formData.serviceType && formData.center) {
       // 如果已经生成过学号，则跳过
       if (hasGeneratedStudentId.current) {
@@ -409,25 +421,11 @@ export default function StudentForm({
       
       // 使用防抖机制，延迟500ms后生成学号
       generateTimeoutRef.current = setTimeout(() => {
-        // 避免重复生成相同的学号
-        const currentStudentId = formData.student_id
-        
-        // 如果已经有学号且不是空字符串，则跳过生成
-        if (currentStudentId && currentStudentId.trim() !== '') {
-          console.log('学号已存在，跳过生成:', currentStudentId)
-          hasGeneratedStudentId.current = true
-          return
-        }
-        
         const newStudentId = generateStudentId()
-        
-        // 只有当新生成的学号与当前学号不同时才更新
-        if (newStudentId !== currentStudentId) {
-          console.log('触发学号重新生成:', { 旧学号: currentStudentId, 新学号: newStudentId })
+        if (newStudentId) {
+          console.log('用户更改后自动生成学号:', newStudentId)
           setFormData(prev => ({ ...prev, student_id: newStudentId }))
           hasGeneratedStudentId.current = true
-        } else {
-          console.log('学号无需更新，保持:', currentStudentId)
         }
       }, 500)
     }
