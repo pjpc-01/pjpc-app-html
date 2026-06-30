@@ -434,8 +434,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let errorMessage = "注册失败"
       
       if (error.data) {
-        // PocketBase错误详情
-        const data = error.data
+        // PocketBase SDK v0.22.x: error.data = 整个响应对象 {code, message, data: {...}}
+        // 验证详情在 error.data.data 中
+        const data = error.data.data || error.data
         if (data.email) {
           errorMessage = `邮箱错误: ${data.email.message}`
         } else if (data.password) {
