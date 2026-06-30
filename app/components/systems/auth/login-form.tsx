@@ -258,12 +258,12 @@ export default function LoginForm() {
                       <Input
                         id="signup-password"
                         type="password"
-                        placeholder="请输入密码（至少6位）"
+                        placeholder="请输入密码（至少8位）"
                         value={signupForm.password}
                         onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
                         className="pl-10"
                         required
-                        minLength={6}
+                        minLength={8}
                       />
                     </div>
                   </div>
