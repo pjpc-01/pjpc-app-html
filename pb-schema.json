@@ -5917,7 +5917,7 @@
     {
       "id": "luc2wm6f90wwfhb",
       "created": "2026-06-30 08:46:45.942Z",
-      "updated": "2026-06-30 08:46:45.942Z",
+      "updated": "2026-06-30 09:34:26.943Z",
       "name": "role_permissions",
       "type": "base",
       "system": false,
@@ -5946,6 +5946,20 @@
           "unique": false,
           "options": {
             "maxSize": 1000000
+          }
+        },
+        {
+          "system": false,
+          "id": "epu2ptmg",
+          "name": "label",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 50,
+            "pattern": ""
           }
         }
       ],
