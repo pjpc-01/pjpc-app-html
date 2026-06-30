@@ -23,6 +23,7 @@ export default function SecureLoginForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
   const [activeTab, setActiveTab] = useState("login")
+  console.log('[SecureLoginForm] RENDER, activeTab:', activeTab)
 
   // 登录表单状态
   const [loginData, setLoginData] = useState({
@@ -180,7 +181,7 @@ export default function SecureLoginForm() {
               </Alert>
             )}
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs defaultValue="login" onValueChange={(v) => { console.log('[Tab Debug] onValueChange:', v); setActiveTab(v); }} className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="login">登录</TabsTrigger>
                 <TabsTrigger value="register">注册</TabsTrigger>
