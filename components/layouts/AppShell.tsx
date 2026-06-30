@@ -126,6 +126,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         icon: Settings,
         children: [
           { label: "系统设置", href: "/settings", icon: Settings },
+          { label: "用户管理", href: "/user-management", icon: Users },
           { label: "分院管理", href: "/center-management", icon: Building },
         ],
       },
