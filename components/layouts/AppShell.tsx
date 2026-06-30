@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams, useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/pocketbase-auth-context"
 import {
   LayoutDashboard,
   Users,
@@ -262,6 +263,16 @@ export default function AppShell({
   }, [])
 
   const config = ROLE_CONFIGS[userRole] || ROLE_CONFIGS.admin
+  const { logout } = useAuth()
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      router.push("/login")
+    } catch (e) {
+      console.error("登出失败:", e)
+    }
+  }
 
   // 【全局分行筛选】所有导航链接自动携带当前?center=参数，切换页面不丢失筛选
   const addCenterParam = (href: string | undefined): string | undefined => {
@@ -556,7 +567,12 @@ export default function AppShell({
               <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-sidebar-foreground/50 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent">
                 <Bell className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-sidebar-foreground/50 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 text-sidebar-foreground/50 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"
+                onClick={handleLogout}
+              >
                 <LogOut className="h-3.5 w-3.5" />
               </Button>
             </div>
