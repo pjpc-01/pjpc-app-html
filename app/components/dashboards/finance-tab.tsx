@@ -14,7 +14,7 @@ import {
   RefreshCw,
 } from "lucide-react"
 import FinanceOverview from "../finance/FinanceOverview"
-import FeeManagement from "../finance/fee-management/FeeManagement"
+import FeeManagement from "../finance/FeeManagement"
 import InvoiceManagement from "../finance/invoice-management/InvoiceManagement"
 import PaymentManagement from "../finance/PaymentManagement"
 import ReminderManagement from "../finance/payment-management/ReminderManagement"
