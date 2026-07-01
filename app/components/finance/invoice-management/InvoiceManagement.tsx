@@ -19,82 +19,22 @@ import {
 } from "@/components/ui/dialog"
 import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Edit, Settings, Loader2 } from "lucide-react"
 import { useInvoices } from "@/hooks/useInvoices"
-import { downloadInvoicePDF, printInvoicePDF, PDFOptions } from "@/lib/pdf-generator"
+import { downloadInvoicePDF, printInvoicePDF } from "@/lib/pdf-generator"
 import { useStudents } from "@/hooks/useStudents"
 import { useStudentFees } from "@/hooks/useStudentFees"
 import { useFees } from "@/hooks/useFees"
 import { useReceipts } from "@/hooks/useReceipts"
 import { usePayments } from "@/hooks/usePayments"
-import { renderInvoiceTemplate, type TemplateData } from "@/lib/template-renderer"
-import { InvoiceTemplate } from "./InvoiceTemplateManager"
 import { InvoiceCreateDialog } from "./InvoiceCreateDialog"
 import { InvoiceList } from "./InvoiceList"
-import InvoiceTemplateManager from "./InvoiceTemplateManager"
+import InvoiceSettingsManager, { type InvoiceSettingsPreset } from "./InvoiceSettingsManager"
 import { getStatusBadge } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
-const TEMPLATES_STORAGE_KEY = 'pjpc_invoice_templates'
-
-const DEFAULT_TEMPLATE: InvoiceTemplate = {
-  id: "1",
-  name: "标准发票模板",
-  description: "默认的学校发票模板",
-  htmlContent: `
-        <div class="invoice-template">
-          <div class="header">
-            <h1>{{schoolName}}</h1>
-            <p>{{schoolAddress}}</p>
-            <p>电话: {{schoolPhone}}</p>
-          </div>
-          <div class="invoice-info">
-            <h2>发票</h2>
-            <p>发票号码: {{invoiceNumber}}</p>
-            <p>开具日期: {{issueDate}}</p>
-            <p>到期日期: {{dueDate}}</p>
-          </div>
-          <div class="student-info">
-            <h3>学生信息</h3>
-            <p>学生姓名: {{studentName}}</p>
-            <p>年级: {{studentGrade}}</p>
-            <p>家长姓名: {{parentName}}</p>
-          </div>
-          <div class="items">
-            <h3>费用明细</h3>
-            {{#each items}}
-            <div class="item">
-              <span>{{name}}</span>
-              <span>RM {{amount}}</span>
-            </div>
-            {{/each}}
-          </div>
-          <div class="total">
-            <h3>总计: RM {{totalAmount}}</h3>
-          </div>
-        </div>
-      `,
-  variables: [
-    "schoolName", "schoolAddress", "schoolPhone", "invoiceNumber", 
-    "issueDate", "dueDate", "studentName", "studentGrade", 
-    "parentName", "items", "totalAmount"
-  ],
-  isDefault: true,
-  createdAt: "2024-01-01",
-  updatedAt: "2024-01-01"
-}
 
 // Types
 interface InvoiceFormData {
   dueDate: string
   notes: string
-}
-
-// Constants
-const PDF_OPTIONS: PDFOptions = {
-  schoolName: "智慧教育学校",
-  schoolAddress: "北京市朝阳区教育路123号",
-  schoolPhone: "010-12345678",
-  schoolEmail: "info@smarteducation.com",
-  taxNumber: "91110105MA12345678"
 }
 
 // Utility functions
@@ -142,9 +82,8 @@ export default function InvoiceManagement() {
   const [isCreateInvoiceDialogOpen, setIsCreateInvoiceDialogOpen] = useState(false)
 
   const [isInvoiceDetailDialogOpen, setIsInvoiceDetailDialogOpen] = useState(false)
-  const [isTemplateManagerOpen, setIsTemplateManagerOpen] = useState(false)
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
-  const [settingsTab, setSettingsTab] = useState<'invoice-template' | 'message-formats'>('invoice-template')
+  const [settingsTab, setSettingsTab] = useState<'school-settings' | 'message-formats'>('school-settings')
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
   const [selectedStudentForInvoice, setSelectedStudentForInvoice] = useState<any>(null)
   const [isCreateInvoiceFormOpen, setIsCreateInvoiceFormOpen] = useState(false)
@@ -157,26 +96,30 @@ export default function InvoiceManagement() {
     notes: ''
   })
 
-  // Template management
-  const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplate | null>(null)
-  const [isTemplateSelectDialogOpen, setIsTemplateSelectDialogOpen] = useState(false)
-  // Load templates from localStorage on mount
-  const [availableTemplates, setAvailableTemplates] = useState<InvoiceTemplate[]>(() => {
+  // Settings state
+  const [pdfOptions, setPdfOptions] = useState<InvoiceSettingsPreset>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem(TEMPLATES_STORAGE_KEY)
+        const saved = localStorage.getItem('pjpc_invoice_settings_active')
         if (saved) return JSON.parse(saved)
       } catch {}
     }
-    return [DEFAULT_TEMPLATE]
+    return {
+      id: "default", name: "默认设置", schoolName: "智慧教育学校", schoolNameEn: "",
+      schoolLogo: "", schoolAddress: "", schoolPhone: "", schoolEmail: "", schoolWebsite: "",
+      taxNumber: "", bankName: "", bankAccount: "", bankHolder: "",
+      primaryColor: "#1e40af", secondaryColor: "#3b82f6", accentColor: "#f59e0b",
+      footerText: "", paymentTerms: "", receiptNote: "",
+      isDefault: true, createdAt: "", updatedAt: ""
+    }
   })
 
-  // Sync templates to localStorage on change
+  // Sync active settings to localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(availableTemplates))
+      localStorage.setItem('pjpc_invoice_settings_active', JSON.stringify(pdfOptions))
     }
-  }, [availableTemplates])
+  }, [pdfOptions])
 
   // Message format templates
   const [messageFormats, setMessageFormats] = useState({
@@ -252,16 +195,9 @@ export default function InvoiceManagement() {
   }, [availableStudents, calculateStudentTotal, activeFees])
 
   // Event handlers
-  // Get current template HTML for PDF generation
-  const getTemplateHtml = () => {
-    const template = selectedTemplate || availableTemplates.find(t => t.isDefault)
-    return template?.htmlContent || ''
-  }
-
   const handleDownloadInvoice = async (invoice: any) => {
     try {
-      const templateHtml = getTemplateHtml()
-      await downloadInvoicePDF(invoice, PDF_OPTIONS, templateHtml)
+      await downloadInvoicePDF(invoice, pdfOptions)
     } catch (error) {
       console.error('Failed to download invoice:', error)
     }
@@ -269,8 +205,7 @@ export default function InvoiceManagement() {
 
   const handlePrintInvoice = async (invoice: any) => {
     try {
-      const templateHtml = getTemplateHtml()
-      await printInvoicePDF(invoice, PDF_OPTIONS, templateHtml)
+      await printInvoicePDF(invoice, pdfOptions)
     } catch (error) {
       console.error('Failed to print invoice:', error)
     }
@@ -313,7 +248,7 @@ export default function InvoiceManagement() {
         .replace(/\{\{customMessage\}\}/g, templateData.customMessage)
 
       // Generate PDF for attachment
-      await downloadInvoicePDF(invoice, PDF_OPTIONS)
+      await downloadInvoicePDF(invoice, pdfOptions)
       
       // Encode message for WhatsApp URL
       const encodedMessage = encodeURIComponent(message)
@@ -383,7 +318,7 @@ export default function InvoiceManagement() {
         .replace(/\{\{customMessage\}\}/g, templateData.customMessage)
 
       // Generate PDF for attachment
-      await downloadInvoicePDF(invoice, PDF_OPTIONS)
+      await downloadInvoicePDF(invoice, pdfOptions)
       
       // Create mailto URL with attachment (note: mailto doesn't support attachments, but we can mention it)
       const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body + '\n\n附件: 发票PDF文件')}`
@@ -425,52 +360,22 @@ export default function InvoiceManagement() {
   const handleSubmitInvoice = () => {
     if (!selectedStudentForInvoice) return
 
-    const template = selectedTemplate || availableTemplates.find(t => t.isDefault)
-    
-    if (!template) {
-      console.error('No template available')
-      return
-    }
-
-    const templateData: TemplateData = {
-      schoolName: "智慧教育学校",
-      schoolAddress: "北京市朝阳区教育路123号",
-      schoolPhone: "010-12345678",
-      schoolEmail: "info@smarteducation.com",
-      invoiceNumber: generateInvoiceNumber(),
+    const newInvoice = {
+      studentName: selectedStudentForInvoice.name,
+      studentId: selectedStudentForInvoice.id,
+      studentGrade: selectedStudentForInvoice.grade || selectedStudentForInvoice.standard,
+      items: [{ name: "学生费用", amount: selectedStudentForInvoice.amount }],
+      status: "issued" as const,
       issueDate: new Date().toISOString().split('T')[0],
       dueDate: invoiceFormData.dueDate,
-      studentName: selectedStudentForInvoice.name,
-      studentGrade: selectedStudentForInvoice.standard,
-      parentName: selectedStudentForInvoice.parentName,
-      items: [
-        { name: "学生费用", amount: selectedStudentForInvoice.amount }
-      ],
-      totalAmount: selectedStudentForInvoice.amount,
-      tax: 0,
-      discount: 0,
-             paymentMethod: 'bank_transfer', // Default payment method
-       notes: invoiceFormData.notes
+      notes: invoiceFormData.notes || '',
+      totalAmount: selectedStudentForInvoice.amount
     }
-
-    const renderedHtml = renderInvoiceTemplate(template.htmlContent, templateData)
-
-         const newInvoice = {
-       studentName: selectedStudentForInvoice.name,
-       studentId: selectedStudentForInvoice.id,
-       studentGrade: selectedStudentForInvoice.grade || selectedStudentForInvoice.standard,
-       items: templateData.items,
-       status: "issued" as const,
-       issueDate: templateData.issueDate,
-       dueDate: templateData.dueDate,
-       notes: templateData.notes || '',
-       totalAmount: selectedStudentForInvoice.amount
-     }
 
     createInvoice(newInvoice)
     setIsCreateInvoiceFormOpen(false)
     setSelectedStudentForInvoice(null)
-         setInvoiceFormData({ dueDate: '', notes: '' })
+    setInvoiceFormData({ dueDate: '', notes: '' })
   }
 
   // Load saved message formats from localStorage on mount
@@ -596,11 +501,6 @@ export default function InvoiceManagement() {
         }}
         invoiceFormData={invoiceFormData}
         setInvoiceFormData={setInvoiceFormData}
-        availableTemplates={availableTemplates}
-        selectedTemplate={selectedTemplate}
-        setSelectedTemplate={setSelectedTemplate}
-        isTemplateSelectDialogOpen={isTemplateSelectDialogOpen}
-        setIsTemplateSelectDialogOpen={setIsTemplateSelectDialogOpen}
       />
 
 
@@ -616,20 +516,16 @@ export default function InvoiceManagement() {
             <DialogDescription>管理发票模板和消息格式</DialogDescription>
           </DialogHeader>
           
-          <Tabs value={settingsTab} onValueChange={(value) => setSettingsTab(value as 'invoice-template' | 'message-formats')}>
+          <Tabs value={settingsTab} onValueChange={(value) => setSettingsTab(value as 'school-settings' | 'message-formats')}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="invoice-template">发票模板</TabsTrigger>
+              <TabsTrigger value="school-settings">学校设置</TabsTrigger>
               <TabsTrigger value="message-formats">消息格式</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="invoice-template" className="space-y-4">
-              <div className="border rounded-lg p-4">
-                <h3 className="text-lg font-semibold mb-4">发票模板管理</h3>
-                <InvoiceTemplateManager 
-                  templates={availableTemplates}
-                  onTemplatesChange={setAvailableTemplates}
-                />
-              </div>
+            <TabsContent value="school-settings" className="space-y-4">
+              <InvoiceSettingsManager 
+                onSettingsChange={setPdfOptions}
+              />
             </TabsContent>
             
             <TabsContent value="message-formats" className="space-y-6">

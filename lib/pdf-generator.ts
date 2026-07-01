@@ -1,180 +1,146 @@
 import jsPDF from "jspdf"
 import "jspdf-autotable"
 import { Invoice } from '@/hooks/useInvoices'
-import { renderInvoiceTemplate, type TemplateData } from './template-renderer'
+import { type InvoiceSettingsPreset } from '@/app/components/finance/invoice-management/InvoiceSettingsManager'
 
-export interface PDFOptions {
-  schoolName: string
-  schoolLogo?: string
-  schoolAddress: string
-  schoolPhone: string
-  schoolEmail: string
-  taxNumber: string
+// Re-export for convenience
+export type { InvoiceSettingsPreset } from '@/app/components/finance/invoice-management/InvoiceSettingsManager'
+
+// Status helper
+const getStatusText = (status: string): string => {
+  const map: Record<string,string> = {draft:'草稿',issued:'已开具',sent:'已发送',pending:'待付款',overdue:'已逾期',paid:'已付款',cancelled:'已取消'}
+  return map[status] || status
 }
 
-// ── Generate PDF from HTML template ──
+// ── Generate PDF using InvoiceSettingsPreset ──
 export const generateInvoicePDF = async (
   invoice: Invoice,
-  options: PDFOptions,
-  templateHtml?: string
+  settings: InvoiceSettingsPreset
 ): Promise<Blob> => {
   const doc = new jsPDF()
-
-  if (templateHtml) {
-    // === TEMPLATE PATH ===
-    // Build TemplateData from invoice
-    const templateData: TemplateData = {
-      schoolName: options.schoolName,
-      schoolAddress: options.schoolAddress,
-      schoolPhone: options.schoolPhone,
-      schoolEmail: options.schoolEmail,
-      invoiceNumber: invoice.invoiceNumber || '',
-      issueDate: invoice.issueDate || '',
-      dueDate: invoice.dueDate || '',
-      studentName: (invoice as any).studentName || (invoice as any).student || '',
-      studentGrade: (invoice as any).grade || (invoice as any).standard || '',
-      parentName: (invoice as any).parentName || (invoice as any).parent_name || '',
-      items: (invoice.items || []).map((i: any) => ({
-        name: i.name || i.description || '',
-        amount: Number(i.amount) || 0
-      })),
-      totalAmount: Number(invoice.totalAmount) || 0,
-      tax: Number((invoice as any).tax) || 0,
-      discount: Number((invoice as any).discount) || 0,
-      paymentMethod: (invoice as any).paymentMethod || '',
-      notes: (invoice as any).notes || ''
-    }
-
-    // Render the HTML template with data
-    const renderedHtml = renderInvoiceTemplate(templateHtml, templateData)
-
-    // Wrap in a styled container for PDF conversion
-    const fullHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-  body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 11px; color: #333; margin: 0; padding: 20px; }
-  .invoice-template { max-width: 780px; margin: 0 auto; }
-  .header { text-align: center; margin-bottom: 16px; }
-  .header h1 { font-size: 20px; margin: 0 0 4px 0; color: #4f46e5; }
-  .header p { margin: 2px 0; font-size: 10px; color: #666; }
-  .invoice-info { margin-bottom: 16px; }
-  .invoice-info h2 { font-size: 16px; margin: 0 0 8px 0; }
-  .invoice-info p { margin: 2px 0; }
-  .student-info { margin-bottom: 16px; }
-  .student-info h3 { font-size: 13px; margin: 0 0 6px 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
-  .items { margin-bottom: 16px; }
-  .items h3 { font-size: 13px; margin: 0 0 6px 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
-  .item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dotted #e5e7eb; }
-  .total { text-align: right; font-size: 16px; font-weight: bold; margin-top: 12px; padding-top: 8px; border-top: 2px solid #333; }
-  table { width: 100%; border-collapse: collapse; }
-  table th { background: #4f46e5; color: white; padding: 6px 10px; text-align: left; font-size: 10px; }
-  table td { padding: 6px 10px; border-bottom: 1px solid #e5e7eb; font-size: 10px; }
-  .notes-section { margin-top: 16px; font-size: 10px; color: #666; }
-</style>
-</head>
-<body>
-  ${renderedHtml}
-</body>
-</html>`
-
-    // Convert HTML to PDF using jsPDF.html() (html2canvas internally)
-    await doc.html(fullHtml, {
-      callback: function (doc) {
-        // PDF generated — callback fires when done
-      },
-      x: 5,
-      y: 5,
-      width: doc.internal.pageSize.getWidth() - 10,
-      windowWidth: 820
-    })
-
-    return doc.output("blob")
-  }
-
-  // === FALLBACK: Hardcoded layout (no template) ===
-  return generateHardcodedPDF(invoice, options, doc)
-}
-
-// ── Fallback hardcoded layout ──
-function generateHardcodedPDF(invoice: Invoice, options: PDFOptions, doc: jsPDF): Blob {
   const pageW = doc.internal.pageSize.getWidth()
 
-  // Header / School Info
-  doc.setFontSize(20)
-  doc.setTextColor(79, 70, 229)
-  doc.text(options.schoolName, pageW / 2, 20, { align: "center" })
-  doc.setFontSize(9)
-  doc.setTextColor(100)
-  doc.text(options.schoolAddress, pageW / 2, 27, { align: "center" })
-  doc.text(`Tel: ${options.schoolPhone}  |  Email: ${options.schoolEmail}`, pageW / 2, 32, { align: "center" })
-  doc.text(`Tax No: ${options.taxNumber}`, pageW / 2, 37, { align: "center" })
+  const primaryHex = settings.primaryColor || '#1e40af'
+  const secondaryHex = settings.secondaryColor || '#3b82f6'
+  const accentHex = settings.accentColor || '#f59e0b'
+
+  // ── Header Gradient (simulated) ──
+  doc.setFillColor(hexToRGB(primaryHex).r, hexToRGB(primaryHex).g, hexToRGB(primaryHex).b)
+  doc.rect(0, 0, pageW, 40, 'F')
+
+  doc.setFontSize(22)
+  doc.setTextColor(255, 255, 255)
+  doc.text(settings.schoolName || '智慧教育学校', pageW / 2, 16, { align: "center" })
+  if (settings.schoolNameEn) {
+    doc.setFontSize(10)
+    doc.text(settings.schoolNameEn, pageW / 2, 23, { align: "center" })
+  }
+
+  // Badge
+  doc.setFontSize(12)
+  doc.setTextColor(255, 255, 255)
+  doc.text('INVOICE 发票', pageW - 14, 14, { align: "right" })
 
   doc.setDrawColor(200)
-  doc.line(14, 42, pageW - 14, 42)
+  doc.line(14, 45, pageW - 14, 45)
 
-  // Invoice Info
+  // ── Invoice Info ──
   doc.setFontSize(16)
-  doc.setTextColor(51)
-  doc.text(`Invoice #${invoice.invoiceNumber}`, 14, 52)
+  doc.setTextColor(hexToRGB(primaryHex).r, hexToRGB(primaryHex).g, hexToRGB(primaryHex).b)
+  doc.text(`Invoice #${invoice.invoiceNumber || ''}`, 14, 55)
   doc.setFontSize(10)
-  doc.setTextColor(100)
-  doc.text(`Issue: ${invoice.issueDate}`, 14, 59)
-  doc.text(`Due: ${invoice.dueDate}`, 14, 65)
-  doc.text(`Student: ${(invoice as any).studentName || (invoice as any).student || ''}`, 14, 71)
+  doc.setTextColor(80)
+  doc.text(`Issue: ${invoice.issueDate || ''}`, 14, 62)
+  doc.text(`Due: ${invoice.dueDate || ''}`, 14, 68)
+  doc.text(`Student: ${(invoice as any).studentName || (invoice as any).student || ''}`, 14, 74)
+  doc.text(`Status: ${getStatusText(invoice.status || '')}`, 14, 80)
 
-  // Items Table
+  // ── School Info ──
+  doc.setFontSize(9)
+  doc.setTextColor(120)
+  const schoolInfoLines = [settings.schoolAddress, settings.schoolPhone, settings.schoolEmail].filter(Boolean)
+  schoolInfoLines.forEach((line, i) => {
+    doc.text(line, pageW - 14, 55 + i * 5, { align: "right" })
+  })
+
+  // ── Items Table ──
   const tableRows = (invoice.items || []).map((item: any) => [
     item.name || item.description || "—",
     `RM ${(item.amount || 0).toFixed(2)}`
   ])
   if (tableRows.length > 0) {
     (doc as any).autoTable({
-      startY: 80,
+      startY: 88,
       head: [["Item", "Amount (RM)"]],
       body: tableRows,
       theme: "grid",
-      headStyles: { fillColor: [79, 70, 229], textColor: 255 },
+      headStyles: { fillColor: [hexToRGB(primaryHex).r, hexToRGB(primaryHex).g, hexToRGB(primaryHex).b], textColor: 255 },
       styles: { font: "helvetica", fontSize: 10 },
       columnStyles: { 1: { halign: "right" } },
     })
   }
 
-  const finalY = (doc as any).lastAutoTable?.finalY || 80
+  const finalY = (doc as any).lastAutoTable?.finalY || 88
 
-  // Total
+  // ── Total ──
   doc.setFontSize(14)
-  doc.setTextColor(51)
+  doc.setTextColor(hexToRGB(primaryHex).r, hexToRGB(primaryHex).g, hexToRGB(primaryHex).b)
   doc.text(`Total: RM ${(invoice.totalAmount || 0).toFixed(2)}`, pageW - 14, finalY + 12, { align: "right" })
 
-  // Notes
+  // ── Payment Info (Bank) ──
+  if (settings.bankName || settings.bankAccount) {
+    const bankY = finalY + 25
+    doc.setDrawColor(hexToRGB(accentHex).r, hexToRGB(accentHex).g, hexToRGB(accentHex).b)
+    doc.setLineWidth(0.5)
+    doc.line(14, bankY, 14, bankY + 20)
+    doc.setLineWidth(0.2)
+    doc.setFontSize(9)
+    doc.setTextColor(80)
+    doc.text('Payment Info:', 20, bankY + 4)
+    doc.setFontSize(8)
+    let bY = bankY + 10
+    if (settings.bankName) { doc.text(`Bank: ${settings.bankName}`, 20, bY); bY += 5 }
+    if (settings.bankAccount) { doc.text(`Account: ${settings.bankAccount}`, 20, bY); bY += 5 }
+    if (settings.bankHolder) { doc.text(`Holder: ${settings.bankHolder}`, 20, bY) }
+  }
+
+  // ── Notes ──
   if ((invoice as any).notes) {
     doc.setFontSize(9)
     doc.setTextColor(100)
-    doc.text(`Notes: ${(invoice as any).notes}`, 14, finalY + 25)
+    doc.text(`Notes: ${(invoice as any).notes}`, 14, finalY + 60)
   }
 
-  // Footer
+  // ── Footer ──
   const footerY = doc.internal.pageSize.getHeight() - 15
   doc.setDrawColor(200)
   doc.line(14, footerY - 5, pageW - 14, footerY - 5)
   doc.setFontSize(8)
   doc.setTextColor(150)
-  doc.text(`Thank you for choosing ${options.schoolName}.`, pageW / 2, footerY, { align: "center" })
+  const footerText = settings.footerText || `Thank you for choosing ${settings.schoolName}.`
+  doc.text(footerText, pageW / 2, footerY, { align: "center" })
+  doc.text(`${settings.schoolName}${settings.taxNumber ? ' · Tax: ' + settings.taxNumber : ''}`, pageW / 2, footerY + 5, { align: "center" })
 
   return doc.output("blob")
+}
+
+// ── Hex to RGB ──
+function hexToRGB(hex: string): { r: number; g: number; b: number } {
+  const clean = hex.replace('#', '')
+  return {
+    r: parseInt(clean.substring(0, 2), 16),
+    g: parseInt(clean.substring(2, 4), 16),
+    b: parseInt(clean.substring(4, 6), 16),
+  }
 }
 
 // ── Download PDF ──
 export const downloadInvoicePDF = async (
   invoice: Invoice,
-  options: PDFOptions,
-  templateHtml?: string
+  settings: InvoiceSettingsPreset
 ): Promise<void> => {
   try {
-    const blob = await generateInvoicePDF(invoice, options, templateHtml)
+    const blob = await generateInvoicePDF(invoice, settings)
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -192,11 +158,10 @@ export const downloadInvoicePDF = async (
 // ── Print PDF ──
 export const printInvoicePDF = async (
   invoice: Invoice,
-  options: PDFOptions,
-  templateHtml?: string
+  settings: InvoiceSettingsPreset
 ): Promise<void> => {
   try {
-    const blob = await generateInvoicePDF(invoice, options, templateHtml)
+    const blob = await generateInvoicePDF(invoice, settings)
     const url = URL.createObjectURL(blob)
     const printWindow = window.open(url, '_blank')
     if (printWindow) {
