@@ -1,6 +1,9 @@
-import jsPDF from "jspdf"
-import "jspdf-autotable"
+import { jsPDF } from "jspdf"
+import autoTable from "jspdf-autotable"
 import { Invoice } from '@/hooks/useInvoices'
+
+// Register autoTable plugin on jsPDF prototype (required for Next.js ESM)
+;(jsPDF as any).API.autoTable = autoTable
 import { type InvoiceSettingsPreset } from '@/app/components/finance/invoice-management/InvoiceSettingsManager'
 
 // Re-export for convenience

@@ -1,4 +1,6 @@
 export { default as InvoiceManagement } from './InvoiceManagement'
-export { default as InvoiceCreateDialog } from './InvoiceCreateDialog'
-export { default as InvoiceList } from './InvoiceList'
+export { InvoiceCreateDialog } from './InvoiceCreateDialog'
+export { InvoiceList } from './InvoiceList'
 export { default as InvoiceTemplateManager } from './InvoiceTemplateManager'
+export { default as InvoiceSettingsManager } from './InvoiceSettingsManager'
+export type { InvoiceSettingsPreset } from './InvoiceSettingsManager'
