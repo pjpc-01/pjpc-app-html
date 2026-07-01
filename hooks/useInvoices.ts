@@ -91,15 +91,16 @@ export const useInvoices = () => {
     })
   }, [invoices, filters])
 
-  const generateInvoiceFromStudentFees = useCallback(async (studentId: string, studentName: string, studentGrade: string, month?: string) => {
+  const generateInvoiceFromStudentFees = useCallback(async (
+    studentId: string, 
+    studentName: string, 
+    studentGrade: string, 
+    items: { name: string; amount: number }[],
+    month?: string
+  ) => {
     const currentDate = new Date()
     const issueDate = currentDate.toISOString().split('T')[0]
     const dueDate = new Date(currentDate.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    
-    const items = [
-      { name: '基础学费', amount: 800 },
-      { name: '特色课程费', amount: 400 }
-    ]
     
     const totalAmount = items.reduce((sum, item) => sum + item.amount, 0)
     
@@ -108,7 +109,7 @@ export const useInvoices = () => {
       studentName,
       studentGrade,
       totalAmount,
-      items,
+      items: items.length > 0 ? items : [{ name: '学生费用', amount: totalAmount }],
       status: 'issued',
       issueDate,
       dueDate,

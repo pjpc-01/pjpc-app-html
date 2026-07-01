@@ -73,7 +73,7 @@ export default function InvoiceManagement() {
 
   // Data hooks
   const { students } = useStudents()
-  const { calculateStudentTotal } = useStudentFees()
+  const { calculateStudentTotal, isAssigned } = useStudentFees()
   const { fees } = useFees()
   const { createReceipt } = useReceipts()
   const { payments } = usePayments()
@@ -360,16 +360,23 @@ export default function InvoiceManagement() {
   const handleSubmitInvoice = () => {
     if (!selectedStudentForInvoice) return
 
+    // Build invoice items from actual student fee allocation
+    const invoiceItems = activeFees
+      .filter(fee => isAssigned(selectedStudentForInvoice.id, fee.id))
+      .map(fee => ({ name: fee.name, amount: fee.amount }))
+    
+    const totalAmount = invoiceItems.reduce((sum, item) => sum + item.amount, 0)
+
     const newInvoice = {
       studentName: selectedStudentForInvoice.name,
       studentId: selectedStudentForInvoice.id,
       studentGrade: selectedStudentForInvoice.grade || selectedStudentForInvoice.standard,
-      items: [{ name: "学生费用", amount: selectedStudentForInvoice.amount }],
+      items: invoiceItems.length > 0 ? invoiceItems : [{ name: "学生费用", amount: selectedStudentForInvoice.amount || totalAmount }],
       status: "issued" as const,
       issueDate: new Date().toISOString().split('T')[0],
       dueDate: invoiceFormData.dueDate,
       notes: invoiceFormData.notes || '',
-      totalAmount: selectedStudentForInvoice.amount
+      totalAmount: totalAmount || selectedStudentForInvoice.amount || 0
     }
 
     createInvoice(newInvoice)
@@ -499,16 +506,22 @@ export default function InvoiceManagement() {
             selectedGrades.length === 0 || selectedGrades.includes(s.standard)
           )
           target.forEach((student: any) => {
+            // Build invoice items from actual student fee allocation
+            const invoiceItems = activeFees
+              .filter(fee => isAssigned(student.id, fee.id))
+              .map(fee => ({ name: fee.name, amount: fee.amount }))
+            const totalAmount = invoiceItems.reduce((sum: number, item: any) => sum + item.amount, 0)
+            
             createInvoice({
               studentName: student.name,
               studentId: student.id,
               studentGrade: student.grade || student.standard,
-              items: [{ name: "学生费用", amount: student.amount || 0 }],
+              items: invoiceItems.length > 0 ? invoiceItems : [{ name: "学生费用", amount: student.amount || totalAmount || 0 }],
               status: "issued",
               issueDate: new Date().toISOString().split('T')[0],
               dueDate: formData.dueDate || new Date(Date.now() + 14*86400000).toISOString().split('T')[0],
               notes: formData.notes || '',
-              totalAmount: student.amount || 0
+              totalAmount: totalAmount || student.amount || 0
             } as any)
           })
           setIsCreateInvoiceDialogOpen(false)
@@ -737,7 +750,7 @@ export default function InvoiceManagement() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-600">学生姓名</p>
-                      <p className="font-semibold">{selectedInvoice.student}</p>
+                      <p className="font-semibold">{selectedInvoice.studentName || selectedInvoice.student}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">学生ID</p>

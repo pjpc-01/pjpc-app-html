@@ -272,20 +272,28 @@ export const StudentFeeMatrix = () => {
     if (!editMode) {
       // Entering edit mode
       console.log('🔄 [StudentFeeMatrix] Entering edit mode')
-      setEditMode(true)
       enterEditMode()
+      setEditMode(true)
       setBatchMode(false)
     } else {
       // Exiting edit mode — save FIRST, then switch UI
       console.log('🔄 [StudentFeeMatrix] Exiting edit mode, saving...')
       setIsSaving(true)
       try {
-        await exitEditMode()
-        setEditMode(false)
+        const result = await exitEditMode()
+        // Only exit edit mode if save succeeded (no failures)
+        if (result && result.failures && result.failures.length === 0) {
+          setEditMode(false)
+          console.log('✅ [StudentFeeMatrix] Save succeeded, exiting edit mode')
+        } else {
+          const failCount = result?.failures?.length || 0
+          console.error(`❌ [StudentFeeMatrix] Save had ${failCount} failures, staying in edit mode`)
+          alert(`保存失败：${failCount} 条记录未能保存。请检查网络后重试。`)
+        }
       } catch (err) {
         console.error('❌ Save failed:', err)
-        // Still exit edit mode so user isn't stuck
-        setEditMode(false)
+        alert('保存失败：' + (err instanceof Error ? err.message : String(err)))
+        // Stay in edit mode so user can retry
       } finally {
         setIsSaving(false)
       }

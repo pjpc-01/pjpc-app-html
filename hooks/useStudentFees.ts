@@ -394,7 +394,7 @@ export function useStudentFees() {
       setIsEditMode(false);
       setLocalFeeAssignments(new Map());
       debugLog('✅ Successfully exited edit mode');
-      return;
+      return { savedCount: result?.savedCount ?? 0, failures: [] };
     }
 
     // BUG #5: notify the user instead of failing silently.
@@ -428,6 +428,7 @@ export function useStudentFees() {
       }
     }
     // Keep edit mode + localFeeAssignments so the user can retry.
+    return { savedCount: result?.savedCount ?? 0, failures: result?.failures ?? [] };
   }, [debugLog, saveChangesToPocketBase]);
 
   // Load data on mount and when PocketBase is ready

@@ -66,18 +66,11 @@ export function InvoiceCreateDialog({
       return aIndex - bIndex
     })
 
-  const studentsWithAmounts = students.map(student => ({
-    ...student,
-    amount: 1200 // This should be calculated from actual fee data
-  }))
+  const studentsWithAmounts = students
 
   // Filter students by selected grades (show all if no grades selected)
   const filteredStudents = students
     .filter(student => selectedGrades.length === 0 || selectedGrades.includes(student.standard))
-    .map(student => ({
-      ...student,
-      amount: 1200 // This should be calculated from actual fee data
-    }))
 
   // Get selected student objects
   const selectedStudentObjects = studentsWithAmounts.filter(student => 
