@@ -1,6 +1,7 @@
 import jsPDF from "jspdf"
 import "jspdf-autotable"
 import { Invoice } from '@/hooks/useInvoices'
+import { renderInvoiceTemplate, type TemplateData } from './template-renderer'
 
 export interface PDFOptions {
   schoolName: string
@@ -11,17 +12,97 @@ export interface PDFOptions {
   taxNumber: string
 }
 
-// Status helpers
-const getStatusText = (status: string): string => {
-  const map: Record<string,string> = {draft:'草稿',issued:'已开具',sent:'已发送',pending:'待付款',overdue:'已逾期',paid:'已付款',cancelled:'已取消'}
-  return map[status] || status
+// ── Generate PDF from HTML template ──
+export const generateInvoicePDF = async (
+  invoice: Invoice,
+  options: PDFOptions,
+  templateHtml?: string
+): Promise<Blob> => {
+  const doc = new jsPDF()
+
+  if (templateHtml) {
+    // === TEMPLATE PATH ===
+    // Build TemplateData from invoice
+    const templateData: TemplateData = {
+      schoolName: options.schoolName,
+      schoolAddress: options.schoolAddress,
+      schoolPhone: options.schoolPhone,
+      schoolEmail: options.schoolEmail,
+      invoiceNumber: invoice.invoiceNumber || '',
+      issueDate: invoice.issueDate || '',
+      dueDate: invoice.dueDate || '',
+      studentName: (invoice as any).studentName || (invoice as any).student || '',
+      studentGrade: (invoice as any).grade || (invoice as any).standard || '',
+      parentName: (invoice as any).parentName || (invoice as any).parent_name || '',
+      items: (invoice.items || []).map((i: any) => ({
+        name: i.name || i.description || '',
+        amount: Number(i.amount) || 0
+      })),
+      totalAmount: Number(invoice.totalAmount) || 0,
+      tax: Number((invoice as any).tax) || 0,
+      discount: Number((invoice as any).discount) || 0,
+      paymentMethod: (invoice as any).paymentMethod || '',
+      notes: (invoice as any).notes || ''
+    }
+
+    // Render the HTML template with data
+    const renderedHtml = renderInvoiceTemplate(templateHtml, templateData)
+
+    // Wrap in a styled container for PDF conversion
+    const fullHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 11px; color: #333; margin: 0; padding: 20px; }
+  .invoice-template { max-width: 780px; margin: 0 auto; }
+  .header { text-align: center; margin-bottom: 16px; }
+  .header h1 { font-size: 20px; margin: 0 0 4px 0; color: #4f46e5; }
+  .header p { margin: 2px 0; font-size: 10px; color: #666; }
+  .invoice-info { margin-bottom: 16px; }
+  .invoice-info h2 { font-size: 16px; margin: 0 0 8px 0; }
+  .invoice-info p { margin: 2px 0; }
+  .student-info { margin-bottom: 16px; }
+  .student-info h3 { font-size: 13px; margin: 0 0 6px 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
+  .items { margin-bottom: 16px; }
+  .items h3 { font-size: 13px; margin: 0 0 6px 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
+  .item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dotted #e5e7eb; }
+  .total { text-align: right; font-size: 16px; font-weight: bold; margin-top: 12px; padding-top: 8px; border-top: 2px solid #333; }
+  table { width: 100%; border-collapse: collapse; }
+  table th { background: #4f46e5; color: white; padding: 6px 10px; text-align: left; font-size: 10px; }
+  table td { padding: 6px 10px; border-bottom: 1px solid #e5e7eb; font-size: 10px; }
+  .notes-section { margin-top: 16px; font-size: 10px; color: #666; }
+</style>
+</head>
+<body>
+  ${renderedHtml}
+</body>
+</html>`
+
+    // Convert HTML to PDF using jsPDF.html() (html2canvas internally)
+    await doc.html(fullHtml, {
+      callback: function (doc) {
+        // PDF generated — callback fires when done
+      },
+      x: 5,
+      y: 5,
+      width: doc.internal.pageSize.getWidth() - 10,
+      windowWidth: 820
+    })
+
+    return doc.output("blob")
+  }
+
+  // === FALLBACK: Hardcoded layout (no template) ===
+  return generateHardcodedPDF(invoice, options, doc)
 }
 
-export const generateInvoicePDF = async (invoice: Invoice, options: PDFOptions): Promise<Blob> => {
-  const doc = new jsPDF()
+// ── Fallback hardcoded layout ──
+function generateHardcodedPDF(invoice: Invoice, options: PDFOptions, doc: jsPDF): Blob {
   const pageW = doc.internal.pageSize.getWidth()
 
-  // ── Header / School Info ──
+  // Header / School Info
   doc.setFontSize(20)
   doc.setTextColor(79, 70, 229)
   doc.text(options.schoolName, pageW / 2, 20, { align: "center" })
@@ -34,7 +115,7 @@ export const generateInvoicePDF = async (invoice: Invoice, options: PDFOptions):
   doc.setDrawColor(200)
   doc.line(14, 42, pageW - 14, 42)
 
-  // ── Invoice Info ──
+  // Invoice Info
   doc.setFontSize(16)
   doc.setTextColor(51)
   doc.text(`Invoice #${invoice.invoiceNumber}`, 14, 52)
@@ -42,17 +123,16 @@ export const generateInvoicePDF = async (invoice: Invoice, options: PDFOptions):
   doc.setTextColor(100)
   doc.text(`Issue: ${invoice.issueDate}`, 14, 59)
   doc.text(`Due: ${invoice.dueDate}`, 14, 65)
-  doc.text(`Student: ${invoice.studentName}`, 14, 71)
-  doc.text(`Status: ${getStatusText(invoice.status)}`, 14, 77)
+  doc.text(`Student: ${(invoice as any).studentName || (invoice as any).student || ''}`, 14, 71)
 
-  // ── Items Table ──
+  // Items Table
   const tableRows = (invoice.items || []).map((item: any) => [
     item.name || item.description || "—",
     `RM ${(item.amount || 0).toFixed(2)}`
   ])
   if (tableRows.length > 0) {
     (doc as any).autoTable({
-      startY: 85,
+      startY: 80,
       head: [["Item", "Amount (RM)"]],
       body: tableRows,
       theme: "grid",
@@ -62,35 +142,39 @@ export const generateInvoicePDF = async (invoice: Invoice, options: PDFOptions):
     })
   }
 
-  const finalY = (doc as any).lastAutoTable?.finalY || 85
+  const finalY = (doc as any).lastAutoTable?.finalY || 80
 
-  // ── Total ──
+  // Total
   doc.setFontSize(14)
   doc.setTextColor(51)
   doc.text(`Total: RM ${(invoice.totalAmount || 0).toFixed(2)}`, pageW - 14, finalY + 12, { align: "right" })
 
-  // ── Notes ──
-  if (invoice.notes) {
+  // Notes
+  if ((invoice as any).notes) {
     doc.setFontSize(9)
     doc.setTextColor(100)
-    doc.text(`Notes: ${invoice.notes}`, 14, finalY + 25)
+    doc.text(`Notes: ${(invoice as any).notes}`, 14, finalY + 25)
   }
 
-  // ── Footer ──
+  // Footer
   const footerY = doc.internal.pageSize.getHeight() - 15
   doc.setDrawColor(200)
   doc.line(14, footerY - 5, pageW - 14, footerY - 5)
   doc.setFontSize(8)
   doc.setTextColor(150)
   doc.text(`Thank you for choosing ${options.schoolName}.`, pageW / 2, footerY, { align: "center" })
-  doc.text("This invoice is auto-generated by the system.", pageW / 2, footerY + 5, { align: "center" })
 
   return doc.output("blob")
 }
 
-export const downloadInvoicePDF = async (invoice: Invoice, options: PDFOptions): Promise<void> => {
+// ── Download PDF ──
+export const downloadInvoicePDF = async (
+  invoice: Invoice,
+  options: PDFOptions,
+  templateHtml?: string
+): Promise<void> => {
   try {
-    const blob = await generateInvoicePDF(invoice, options)
+    const blob = await generateInvoicePDF(invoice, options, templateHtml)
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -105,9 +189,14 @@ export const downloadInvoicePDF = async (invoice: Invoice, options: PDFOptions):
   }
 }
 
-export const printInvoicePDF = async (invoice: Invoice, options: PDFOptions): Promise<void> => {
+// ── Print PDF ──
+export const printInvoicePDF = async (
+  invoice: Invoice,
+  options: PDFOptions,
+  templateHtml?: string
+): Promise<void> => {
   try {
-    const blob = await generateInvoicePDF(invoice, options)
+    const blob = await generateInvoicePDF(invoice, options, templateHtml)
     const url = URL.createObjectURL(blob)
     const printWindow = window.open(url, '_blank')
     if (printWindow) {
