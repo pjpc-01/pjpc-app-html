@@ -179,7 +179,7 @@ export function InvoiceList({
                     <TableCell>{invoice.studentName}</TableCell>
                     <TableCell>{invoice.grade}</TableCell>
                     <TableCell className="font-semibold text-green-600">
-                      {formatCurrency(invoice.amount)}
+                      {formatCurrency(invoice.totalAmount)}
                     </TableCell>
                     <TableCell>
                       {getPaymentStatusBadge(invoice.id)}

@@ -495,9 +495,23 @@ export default function InvoiceManagement() {
         students={studentsWithAmounts}
         onCreateInvoice={handleCreateInvoiceForStudent}
         onBulkCreate={(selectedGrades, formData) => {
-          // Handle bulk invoice creation
-          console.log('Bulk create invoices for grades:', selectedGrades, 'form data:', formData)
-          // You can implement the actual bulk creation logic here
+          const target = studentsWithAmounts.filter((s: any) => 
+            selectedGrades.length === 0 || selectedGrades.includes(s.standard)
+          )
+          target.forEach((student: any) => {
+            createInvoice({
+              studentName: student.name,
+              studentId: student.id,
+              studentGrade: student.grade || student.standard,
+              items: [{ name: "学生费用", amount: student.amount || 0 }],
+              status: "issued",
+              issueDate: new Date().toISOString().split('T')[0],
+              dueDate: formData.dueDate || new Date(Date.now() + 14*86400000).toISOString().split('T')[0],
+              notes: formData.notes || '',
+              totalAmount: student.amount || 0
+            } as any)
+          })
+          setIsCreateInvoiceDialogOpen(false)
         }}
         invoiceFormData={invoiceFormData}
         setInvoiceFormData={setInvoiceFormData}
