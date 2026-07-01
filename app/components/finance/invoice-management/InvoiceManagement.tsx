@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -32,7 +32,55 @@ import { InvoiceList } from "./InvoiceList"
 import InvoiceTemplateManager from "./InvoiceTemplateManager"
 import { getStatusBadge } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useEffect } from "react"
+
+const TEMPLATES_STORAGE_KEY = 'pjpc_invoice_templates'
+
+const DEFAULT_TEMPLATE: InvoiceTemplate = {
+  id: "1",
+  name: "标准发票模板",
+  description: "默认的学校发票模板",
+  htmlContent: `
+        <div class="invoice-template">
+          <div class="header">
+            <h1>{{schoolName}}</h1>
+            <p>{{schoolAddress}}</p>
+            <p>电话: {{schoolPhone}}</p>
+          </div>
+          <div class="invoice-info">
+            <h2>发票</h2>
+            <p>发票号码: {{invoiceNumber}}</p>
+            <p>开具日期: {{issueDate}}</p>
+            <p>到期日期: {{dueDate}}</p>
+          </div>
+          <div class="student-info">
+            <h3>学生信息</h3>
+            <p>学生姓名: {{studentName}}</p>
+            <p>年级: {{studentGrade}}</p>
+            <p>家长姓名: {{parentName}}</p>
+          </div>
+          <div class="items">
+            <h3>费用明细</h3>
+            {{#each items}}
+            <div class="item">
+              <span>{{name}}</span>
+              <span>RM {{amount}}</span>
+            </div>
+            {{/each}}
+          </div>
+          <div class="total">
+            <h3>总计: RM {{totalAmount}}</h3>
+          </div>
+        </div>
+      `,
+  variables: [
+    "schoolName", "schoolAddress", "schoolPhone", "invoiceNumber", 
+    "issueDate", "dueDate", "studentName", "studentGrade", 
+    "parentName", "items", "totalAmount"
+  ],
+  isDefault: true,
+  createdAt: "2024-01-01",
+  updatedAt: "2024-01-01"
+}
 
 // Types
 interface InvoiceFormData {
@@ -112,54 +160,23 @@ export default function InvoiceManagement() {
   // Template management
   const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplate | null>(null)
   const [isTemplateSelectDialogOpen, setIsTemplateSelectDialogOpen] = useState(false)
-  const [availableTemplates, setAvailableTemplates] = useState<InvoiceTemplate[]>([
-    {
-      id: "1",
-      name: "标准发票模板",
-      description: "默认的学校发票模板",
-      htmlContent: `
-        <div class="invoice-template">
-          <div class="header">
-            <h1>{{schoolName}}</h1>
-            <p>{{schoolAddress}}</p>
-            <p>电话: {{schoolPhone}}</p>
-          </div>
-          <div class="invoice-info">
-            <h2>发票</h2>
-            <p>发票号码: {{invoiceNumber}}</p>
-            <p>开具日期: {{issueDate}}</p>
-            <p>到期日期: {{dueDate}}</p>
-          </div>
-          <div class="student-info">
-            <h3>学生信息</h3>
-            <p>学生姓名: {{studentName}}</p>
-            <p>年级: {{studentGrade}}</p>
-            <p>家长姓名: {{parentName}}</p>
-          </div>
-          <div class="items">
-            <h3>费用明细</h3>
-            {{#each items}}
-            <div class="item">
-              <span>{{name}}</span>
-              <span>RM {{amount}}</span>
-            </div>
-            {{/each}}
-          </div>
-          <div class="total">
-            <h3>总计: RM {{totalAmount}}</h3>
-          </div>
-        </div>
-      `,
-      variables: [
-        "schoolName", "schoolAddress", "schoolPhone", "invoiceNumber", 
-        "issueDate", "dueDate", "studentName", "studentGrade", 
-        "parentName", "items", "totalAmount"
-      ],
-      isDefault: true,
-      createdAt: "2024-01-01",
-      updatedAt: "2024-01-01"
+  // Load templates from localStorage on mount
+  const [availableTemplates, setAvailableTemplates] = useState<InvoiceTemplate[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(TEMPLATES_STORAGE_KEY)
+        if (saved) return JSON.parse(saved)
+      } catch {}
     }
-  ])
+    return [DEFAULT_TEMPLATE]
+  })
+
+  // Sync templates to localStorage on change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(availableTemplates))
+    }
+  }, [availableTemplates])
 
   // Message format templates
   const [messageFormats, setMessageFormats] = useState({
@@ -235,9 +252,16 @@ export default function InvoiceManagement() {
   }, [availableStudents, calculateStudentTotal, activeFees])
 
   // Event handlers
+  // Get current template HTML for PDF generation
+  const getTemplateHtml = () => {
+    const template = selectedTemplate || availableTemplates.find(t => t.isDefault)
+    return template?.htmlContent || ''
+  }
+
   const handleDownloadInvoice = async (invoice: any) => {
     try {
-      await downloadInvoicePDF(invoice, PDF_OPTIONS)
+      const templateHtml = getTemplateHtml()
+      await downloadInvoicePDF(invoice, PDF_OPTIONS, templateHtml)
     } catch (error) {
       console.error('Failed to download invoice:', error)
     }
@@ -245,7 +269,8 @@ export default function InvoiceManagement() {
 
   const handlePrintInvoice = async (invoice: any) => {
     try {
-      await printInvoicePDF(invoice, PDF_OPTIONS)
+      const templateHtml = getTemplateHtml()
+      await printInvoicePDF(invoice, PDF_OPTIONS, templateHtml)
     } catch (error) {
       console.error('Failed to print invoice:', error)
     }
@@ -600,7 +625,10 @@ export default function InvoiceManagement() {
             <TabsContent value="invoice-template" className="space-y-4">
               <div className="border rounded-lg p-4">
                 <h3 className="text-lg font-semibold mb-4">发票模板管理</h3>
-                <InvoiceTemplateManager />
+                <InvoiceTemplateManager 
+                  templates={availableTemplates}
+                  onTemplatesChange={setAvailableTemplates}
+                />
               </div>
             </TabsContent>
             

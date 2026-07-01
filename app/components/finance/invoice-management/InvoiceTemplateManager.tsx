@@ -40,6 +40,11 @@ export interface InvoiceTemplate {
   updatedAt: string
 }
 
+interface InvoiceTemplateManagerProps {
+  templates: InvoiceTemplate[]
+  onTemplatesChange: (templates: InvoiceTemplate[]) => void
+}
+
 // Utility functions
 const renderTemplatePreview = (template: InvoiceTemplate) => {
   const sampleData = {
@@ -94,57 +99,8 @@ const AVAILABLE_VARIABLES = [
   { code: '{{amount}}', description: '项目金额' }
 ]
 
-export default function InvoiceTemplateManager() {
+export default function InvoiceTemplateManager({ templates, onTemplatesChange }: InvoiceTemplateManagerProps) {
   // State
-  const [templates, setTemplates] = useState<InvoiceTemplate[]>([
-    {
-      id: "1",
-      name: "标准发票模板",
-      description: "默认的学校发票模板",
-      htmlContent: `
-        <div class="invoice-template">
-          <div class="header">
-            <h1>{{schoolName}}</h1>
-            <p>{{schoolAddress}}</p>
-            <p>电话: {{schoolPhone}}</p>
-          </div>
-          <div class="invoice-info">
-            <h2>发票</h2>
-            <p>发票号码: {{invoiceNumber}}</p>
-            <p>开具日期: {{issueDate}}</p>
-            <p>到期日期: {{dueDate}}</p>
-          </div>
-          <div class="student-info">
-            <h3>学生信息</h3>
-            <p>学生姓名: {{studentName}}</p>
-            <p>年级: {{studentGrade}}</p>
-            <p>家长姓名: {{parentName}}</p>
-          </div>
-          <div class="items">
-            <h3>费用明细</h3>
-            {{#each items}}
-            <div class="item">
-              <span>{{name}}</span>
-              <span>RM {{amount}}</span>
-            </div>
-            {{/each}}
-          </div>
-          <div class="total">
-            <h3>总计: RM {{totalAmount}}</h3>
-          </div>
-        </div>
-      `,
-      variables: [
-        "schoolName", "schoolAddress", "schoolPhone", "invoiceNumber", 
-        "issueDate", "dueDate", "studentName", "studentGrade", 
-        "parentName", "items", "totalAmount"
-      ],
-      isDefault: true,
-      createdAt: "2024-01-01",
-      updatedAt: "2024-01-01"
-    }
-  ])
-
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -186,17 +142,17 @@ export default function InvoiceTemplateManager() {
       updatedAt: new Date().toISOString().split('T')[0]
     }
 
-    setTemplates(prev => [...prev, newTemplate])
+    onTemplatesChange([...templates, newTemplate])
     setUploadFormData({ name: "", description: "", htmlContent: "" })
     setIsUploadDialogOpen(false)
   }
 
   const handleDeleteTemplate = (templateId: string) => {
-    setTemplates(prev => prev.filter(t => t.id !== templateId))
+    onTemplatesChange(templates.filter(t => t.id !== templateId))
   }
 
   const handleSetDefault = (templateId: string) => {
-    setTemplates(prev => prev.map(t => ({
+    onTemplatesChange(templates.map(t => ({
       ...t,
       isDefault: t.id === templateId
     })))
@@ -509,7 +465,13 @@ export default function InvoiceTemplateManager() {
                 </Button>
                 <Button 
                   onClick={() => {
-                    // TODO: Implement save functionality
+                    if (!selectedTemplate) return
+                    onTemplatesChange(
+                      templates.map(t => t.id === selectedTemplate.id 
+                        ? { ...selectedTemplate, updatedAt: new Date().toISOString().split('T')[0] }
+                        : t
+                      )
+                    )
                     setIsEditDialogOpen(false)
                   }}
                 >
