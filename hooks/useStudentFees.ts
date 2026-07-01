@@ -14,6 +14,7 @@ export interface StudentFee {
   students: string;      // student id (relation)
   fee_items: FeeItem[];  // fee items as parsed array
   totalAmount: number;
+  status: string;        // 'pending' | 'paid' | 'overdue' | ...
   expand?: {
     students?: {
       id: string;
@@ -36,7 +37,6 @@ export function useStudentFees() {
 
   const isMountedRef = useRef(true);
   const pbRef = useRef<any>(null);
-  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { user, connectionStatus } = useAuth();
   const [pb, setPb] = useState<any>(null);
@@ -98,6 +98,7 @@ export function useStudentFees() {
         students: record.students,
         fee_items: safeParse(record.fee_items),
         totalAmount: record.totalAmount || 0,
+        status: record.status || 'pending',
         expand: record.expand
       }));
 
@@ -114,6 +115,8 @@ export function useStudentFees() {
       debugLog(`✅ Loaded ${processedData.length} student fee records`);
     } catch (err: any) {
       debugLog('❌ Error fetching student fees:', err);
+      // BUG #2: Do NOT clear local edits on fetch failure. Only surface the
+      // error so the user can retry without losing their in-progress work.
       if (isMountedRef.current) {
         setError(`Failed to fetch student fees: ${err.message}`);
       }
@@ -203,28 +206,80 @@ export function useStudentFees() {
     debugLog(`🔄 Entered edit mode with ${initialAssignments.size} students initialized`);
   }, [feeByStudentId, debugLog]);
 
-  // Save changes to PocketBase
+  // Toggle a fee across multiple students at once (used by batch mode).
+  // Each student's local assignment set is updated in place; students without
+  // a prior entry are initialised so the change is captured.
+  const setFeeForStudents = useCallback(
+    (studentIds: string[], feeId: string, targetState: boolean) => {
+      setLocalFeeAssignments(prev => {
+        const newMap = new Map(prev);
+        studentIds.forEach(id => {
+          const feeSet = new Set(newMap.get(id) || []);
+          if (targetState) {
+            feeSet.add(feeId);
+          } else {
+            feeSet.delete(feeId);
+          }
+          newMap.set(id, feeSet);
+        });
+        return newMap;
+      });
+    },
+    []
+  );
+
+  // Save changes to PocketBase.
+  // BUG #1: previously the loop bailed out on the first throw inside the for,
+  // silently dropping any students that came after the failure and still
+  // clearing localFeeAssignments on success of the wrapper. We now collect
+  // per-student results so partial failures are surfaced and the editable
+  // state is preserved until everything is durably persisted + refreshed.
+  // BUG #8: the update branch previously dropped the `status` field, so a
+  // record that was already 'paid' stayed 'paid' even when new fee items
+  // were added. Now, when assignments change and the existing status is
+  // 'paid', it is reset to 'pending' because the outstanding set changed.
   const saveChangesToPocketBase = useCallback(async () => {
     const pbInstance = pbRef.current;
     if (!pbInstance) {
       debugLog('⚠️ PocketBase not initialized, cannot save');
-      return;
+      return {
+        savedCount: 0,
+        failures: [{ studentId: '__pb__', error: new Error('PocketBase not initialized') }],
+      };
     }
 
-    debugLog(`🔄 Saving changes to PocketBase, ${localFeeAssignments.size} students`);
+    const totalStudents = localFeeAssignments.size;
+    debugLog(`🔄 Saving changes to PocketBase, ${totalStudents} students`);
 
-    if (localFeeAssignments.size === 0) {
+    if (totalStudents === 0) {
       debugLog('🔄 No local assignments to save');
-      return;
+      return { savedCount: 0, failures: [] as { studentId: string; error: any }[] };
     }
 
-    try {
-      // Get all fees to calculate amounts
-      const allFees = await pbInstance.collection("fee_items").getFullList();
-      debugLog(`🔄 Loaded ${allFees.length} fee items for calculation`);
+    const failures: { studentId: string; error: any }[] = [];
+    let savedCount = 0;
 
-      // Process each student's assignments
-      for (const [studentId, feeIds] of localFeeAssignments) {
+    // Get all fees to calculate amounts (load once, share across students)
+    let allFees: any[];
+    try {
+      allFees = await pbInstance.collection("fee_items").getFullList();
+      debugLog(`🔄 Loaded ${allFees.length} fee items for calculation`);
+    } catch (err: any) {
+      debugLog('❌ Could not load fee_items for amount calculation:', err);
+      // Cannot proceed at all — every student fails.
+      localFeeAssignments.forEach((_, studentId) => {
+        failures.push({ studentId, error: err });
+      });
+      if (isMountedRef.current) {
+        setError(`无法加载费用项目：${err?.message ?? err}。保存已取消，请重试。`);
+      }
+      return { savedCount: 0, failures };
+    }
+
+    // Process each student's assignments individually so a single failure
+    // does not abort the rest of the batch.
+    for (const [studentId, feeIds] of localFeeAssignments) {
+      try {
         // Calculate total amount from assigned fees
         const totalAmount = allFees
           .filter((fee: any) => feeIds.has(fee.id))
@@ -246,12 +301,19 @@ export function useStudentFees() {
         const existingRecord = feeByStudentId.get(studentId);
 
         if (existingRecord) {
-          // Update existing record
+          // BUG #8: update branch also updates `status`. If fee items are
+          // assigned and the record was previously "paid", flip back to
+          // "pending" because the outstanding set has changed.
+          const previousStatus = existingRecord.status || 'pending';
+          const newStatus =
+            feeItems.length > 0 && previousStatus === 'paid' ? 'pending' : previousStatus;
+
           await pbInstance.collection("student_fees").update(existingRecord.id, {
             fee_items: JSON.stringify(feeItems),
-            totalAmount: totalAmount
+            totalAmount: totalAmount,
+            status: newStatus,
           });
-          debugLog(`✅ Updated record for student: ${studentId}`);
+          debugLog(`✅ Updated record for student: ${studentId} (status: ${previousStatus} → ${newStatus})`);
         } else {
           // Create new record — use student ID directly for the relation field
           await pbInstance.collection("student_fees").create({
@@ -264,42 +326,108 @@ export function useStudentFees() {
           });
           debugLog(`✅ Created new record for student: ${studentId}`);
         }
+        savedCount++;
+      } catch (err: any) {
+        debugLog(`❌ Failed saving for student ${studentId}:`, err);
+        failures.push({ studentId, error: err });
       }
+    }
 
-      debugLog('✅ Successfully saved all changes to PocketBase');
+    // Only refresh remote data when every record was saved. If anything failed
+    // we keep the local edits so the user can retry without losing work, and
+    // surface the error message.
+    if (failures.length > 0) {
+      const failedIds = failures.map(f => f.studentId).join(', ');
+      debugLog(`⚠️ Save finished with ${failures.length}/${totalStudents} failures: ${failedIds}`);
+      if (isMountedRef.current) {
+        setError(`部分保存失败：${failures.length} 条记录未能保存（${failedIds}）。已保存 ${savedCount} 条。请重试未保存的记录。`);
+      }
+      return { savedCount, failures };
+    }
 
-      // Wait briefly before refreshing
-      await new Promise(resolve => setTimeout(resolve, 300));
+    debugLog(`✅ Successfully saved all ${savedCount} students to PocketBase`);
 
-      if (!isMountedRef.current) return;
+    // Wait briefly before refreshing so PocketBase has propagated writes
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (!isMountedRef.current) return { savedCount, failures: [] };
 
-      // Refresh data from PocketBase
+    // BUG #2: refresh failure must NOT clear localFeeAssignments — keep them
+    // so the user can retry. Catch here and report via the failures array
+    // using a sentinel student id so callers can distinguish a refresh error.
+    try {
       await fetchStudentFees();
       debugLog('📊 Data refresh completed');
-    } catch (error) {
-      debugLog('❌ Error during saveChangesToPocketBase:', error);
-      throw error;
+    } catch (refreshErr: any) {
+      debugLog('❌ Save succeeded but post-save refresh failed:', refreshErr);
+      if (isMountedRef.current) {
+        setError(`保存成功，但数据刷新失败：${refreshErr?.message ?? refreshErr}。本地编辑已保留，请手动刷新或重试。`);
+      }
+      return {
+        savedCount,
+        failures: [{ studentId: '__refresh__', error: refreshErr }],
+      };
     }
+
+    return { savedCount, failures: [] };
   }, [pb, localFeeAssignments, feeByStudentId, fetchStudentFees, debugLog]);
 
-  // Exit edit mode and save changes
+  // Exit edit mode and save changes.
+  // BUG #5: previously the catch block silently swallowed save failures and
+  // still dropped localFeeAssignments, causing silent data loss. Now we
+  // inspect the save result: only clear local state and exit edit mode when
+  // every record was saved AND the post-save refresh succeeded. On any
+  // failure we keep the local edits, surface the error message, and alert
+  // the user so they know to retry.
   const exitEditMode = useCallback(async () => {
     debugLog('🔄 Exiting edit mode and saving changes');
 
-    try {
-      // Save changes to PocketBase first
-      await saveChangesToPocketBase();
+    const result = await saveChangesToPocketBase().catch((err: any) => {
+      // Defensive: saveChangesToPocketBase should not throw, but guard anyway.
+      debugLog('❌ saveChangesToPocketBase threw unexpectedly:', err);
+      return { savedCount: 0, failures: [{ studentId: '__unexpected__', error: err }] };
+    });
 
-      // Exit edit mode after save succeeds
+    const totalFailures = result?.failures?.length ?? 0;
+
+    if (totalFailures === 0) {
+      // Everything saved and refreshed — safe to discard local edits.
       setIsEditMode(false);
       setLocalFeeAssignments(new Map());
       debugLog('✅ Successfully exited edit mode');
-    } catch (error) {
-      debugLog('❌ Error during exitEditMode:', error);
-      // Still exit edit mode even if save fails
-      setIsEditMode(false);
-      setLocalFeeAssignments(new Map());
+      return;
     }
+
+    // BUG #5: notify the user instead of failing silently.
+    const isRefreshFailure = result?.failures?.some(f => f.studentId === '__refresh__');
+    const isPbFailure = result?.failures?.some(f => f.studentId === '__pb__');
+    const failedStudentCount =
+      result?.failures?.filter(
+        f =>
+          f.studentId !== '__refresh__' &&
+          f.studentId !== '__pb__' &&
+          f.studentId !== '__unexpected__'
+      ).length ?? 0;
+
+    const message = isRefreshFailure
+      ? '保存成功，但服务器数据刷新失败。本地编辑已保留，请手动刷新页面后重试。'
+      : isPbFailure
+        ? '保存失败：PocketBase 未初始化或不可达。本地编辑已保留，请检查网络后重试。'
+        : `保存失败：${failedStudentCount} 条学生记录未能保存。本地编辑已保留，请重试。`;
+
+    debugLog('❌ Staying in edit mode due to save failures:', message);
+    if (isMountedRef.current) {
+      setError(message);
+    }
+    // Surface to the user via a blocking alert so it cannot be missed (the
+    // in-app error banner is also set above for redundancy).
+    if (typeof window !== 'undefined') {
+      try {
+        window.alert(message);
+      } catch {
+        /* window may be undefined in SSR — ignore */
+      }
+    }
+    // Keep edit mode + localFeeAssignments so the user can retry.
   }, [debugLog, saveChangesToPocketBase]);
 
   // Load data on mount and when PocketBase is ready
@@ -366,9 +494,6 @@ export function useStudentFees() {
 
     return () => {
       cancelled = true;
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current);
-      }
     };
   }, [pb, safeParse, debugLog]);
 
@@ -382,6 +507,7 @@ export function useStudentFees() {
 
   return {
     studentFees,
+    feeByStudentId,
     loading,
     error,
     fetchStudentFees,
@@ -394,6 +520,7 @@ export function useStudentFees() {
     calculateStudentTotal: (studentId: string) => getStudentAmount(studentId),
     assignFeeToStudent,
     removeFeeFromStudent,
+    setFeeForStudents,
     isEditMode,
     enterEditMode,
     exitEditMode,

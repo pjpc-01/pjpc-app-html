@@ -37,6 +37,7 @@ interface StudentCardProps {
   removeFeeFromStudent: (studentId: string, feeId: string) => void
   hasInvoiceThisMonth: (studentId: string) => boolean
   batchMode: boolean
+  onBatchToggleFee: (feeId: string, targetState: boolean) => void
 }
 
 export const StudentCard = ({
@@ -57,7 +58,8 @@ export const StudentCard = ({
   assignFeeToStudent,
   removeFeeFromStudent,
   hasInvoiceThisMonth,
-  batchMode
+  batchMode,
+  onBatchToggleFee
 }: StudentCardProps) => {
   const studentId = student.id
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
@@ -65,25 +67,15 @@ export const StudentCard = ({
   const toggleFeeAssignment = (feeId: string) => {
     if (!editMode) return
 
-    console.log('👤 [费用分配] Student name:', student.student_name)
-    
     if (batchMode) {
-      console.log('🔄 [费用分配] Batch mode - toggling for all students')
-      // In batch mode, toggle the same fee for all students
+      console.log('🔄 Batch mode - toggling fee for ALL students')
       const currentState = isAssigned(studentId, feeId)
       const targetState = !currentState
-      
-      if (targetState) {
-        assignFeeToStudent(studentId, feeId)
-      } else {
-        removeFeeFromStudent(studentId, feeId)
-      }
+      onBatchToggleFee(feeId, targetState)
     } else {
-      console.log('🔄 [费用分配] Normal mode - toggling for this student only')
-      // Normal mode, toggle just for this student
+      console.log('🔄 Normal mode - toggling for this student only')
       const currentState = isAssigned(studentId, feeId)
       const targetState = !currentState
-      
       if (targetState) {
         assignFeeToStudent(studentId, feeId)
       } else {

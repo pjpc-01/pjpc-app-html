@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,17 +10,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus, FileText, Download, Search, Calendar, DollarSign, Loader2 } from "lucide-react"
+import { Plus, FileText, Download, Search, Calendar, DollarSign, Loader2, Eye, Printer } from "lucide-react"
 import { toast } from "sonner"
 import { useInvoices } from "@/hooks/useInvoices"
 import { useStudents } from "@/hooks/useStudents"
 import { useFees } from "@/hooks/useFees"
+import { useStudentFees } from "@/hooks/useStudentFees"
 import { exportInvoicePDF } from "@/lib/pdf-export"
 
 export default function InvoiceManagement() {
   const { invoices, loading, createInvoice } = useInvoices()
   const { students } = useStudents()
   const { fees } = useFees()
+  const { feeByStudentId } = useStudentFees()
 
   const searchParams = useSearchParams()
   const centerFilter = searchParams.get("center")
@@ -31,7 +33,11 @@ export default function InvoiceManagement() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
-  const filteredInvoices = invoices.filter(inv => {
+  // Detail dialog state
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
+
+  const filteredInvoices = invoices.filter((inv: any) => {
     // Center filter: cross-reference student's centerId
     if (centerFilter && centerFilter !== "all") {
       const student = students.find(s => s.id === inv.studentId)
@@ -46,7 +52,29 @@ export default function InvoiceManagement() {
   const activeStudents = students.filter(s => s.status !== "graduated")
   const activeFees = fees.filter(f => f.status === "active")
 
-  const selectedStudentData = activeStudents.find(s => s.id === selectedStudent)
+  const selectedStudentData = activeStudents.find(s => s.id === selectedStudent) as any
+
+  // Auto-fill fee items from student_fees when a student is selected
+  const handleSelectStudent = useCallback((studentId: string) => {
+    setSelectedStudent(studentId)
+    const studentFeeRecord = feeByStudentId.get(studentId)
+    if (studentFeeRecord && Array.isArray(studentFeeRecord.fee_items)) {
+      // Only include active fee items that also exist in the activeFees list
+      const activeFeeIds = new Set(activeFees.map(f => f.id))
+      const autoItems = studentFeeRecord.fee_items
+        .filter((item: any) => item.active === true && activeFeeIds.has(item.id))
+        .map((item: any) => item.id)
+      setSelectedFeeItems(autoItems)
+      if (autoItems.length > 0) {
+        toast.info(`已自动填入 ${autoItems.length} 项费用`)
+      } else if (studentFeeRecord.fee_items.length > 0) {
+        toast.warning("该学生有费用记录，但当前无匹配的活跃费用项目")
+      }
+    } else {
+      // No student fee record — start with empty selection
+      setSelectedFeeItems([])
+    }
+  }, [feeByStudentId, activeFees])
 
   const toggleFeeItem = (feeId: string) => {
     setSelectedFeeItems(prev =>
@@ -83,7 +111,7 @@ export default function InvoiceManagement() {
         issueDate: currentDate.toISOString().split("T")[0],
         dueDate: dueDate.toISOString().split("T")[0],
         notes: `${currentDate.toLocaleString("zh-CN", { month: "long" })}学费`,
-      })
+      } as any)
 
       toast.success("发票创建成功")
       setIsOpen(false)
@@ -96,19 +124,59 @@ export default function InvoiceManagement() {
     }
   }
 
+  const buildInvoicePDFData = (invoice: any) => ({
+    invoiceNo: invoice.invoiceNumber || "N/A",
+    studentName: invoice.studentName || "未知学生",
+    date: invoice.issueDate || invoice.issue_date || "",
+    items: (invoice.items && invoice.items.length > 0
+      ? invoice.items.map((it: any) => ({ description: it.name || it.description || "学费", amount: it.amount || 0 }))
+      : [{ description: "学费", amount: invoice.totalAmount || 0 }]),
+    total: invoice.totalAmount || 0,
+    status: invoice.status || "issued",
+  })
+
   const handleDownloadPDF = (invoice: any) => {
     try {
-      exportInvoicePDF({
-        invoiceNo: invoice.invoiceNumber || "N/A",
-        studentName: invoice.studentName || "未知学生",
-        date: invoice.issueDate || invoice.issue_date || "",
-        items: invoice.items || [{ description: "学费", amount: invoice.totalAmount }],
-        total: invoice.totalAmount || 0,
-        status: invoice.status || "issued",
-      })
+      exportInvoicePDF(buildInvoicePDFData(invoice))
       toast.success("发票 PDF 已下载")
     } catch (err) {
       toast.error("下载失败")
+    }
+  }
+
+  const handlePrintInvoice = (invoice: any) => {
+    try {
+      exportInvoicePDF(buildInvoicePDFData(invoice))
+      toast.success("PDF 已生成，请在弹窗中打印")
+    } catch (err) {
+      toast.error("打印失败")
+    }
+  }
+
+  const openDetail = (invoice: any) => {
+    setSelectedInvoice(invoice)
+    setDetailOpen(true)
+  }
+
+  const getStatusBadge = (status: string) => (
+    <Badge variant={
+      status === "paid" ? "default" :
+      status === "partially_paid" ? "secondary" :
+      status === "overdue" ? "destructive" : "outline"
+    }>
+      {status === "paid" ? "已付款" :
+       status === "partially_paid" ? "部分付款" :
+       status === "overdue" ? "已逾期" :
+       status === "issued" ? "已发出" : status}
+    </Badge>
+  )
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "-"
+    try {
+      return new Date(dateStr).toLocaleDateString("zh-CN")
+    } catch {
+      return dateStr
     }
   }
 
@@ -137,7 +205,7 @@ export default function InvoiceManagement() {
                 <DialogTitle className="text-xl">创建新发票</DialogTitle>
               </div>
               <DialogDescription>
-                选择学生和费用项目，自动生成发票和应缴金额
+                选择学生后自动填入已分配的费用项目，您仍可手动增删
               </DialogDescription>
             </DialogHeader>
 
@@ -145,18 +213,24 @@ export default function InvoiceManagement() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold">选择学生</Label>
-                  <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                  <Select value={selectedStudent} onValueChange={handleSelectStudent}>
                     <SelectTrigger>
                       <SelectValue placeholder="请选择学生" />
                     </SelectTrigger>
                     <SelectContent>
-                      {activeStudents.map(s => (
+                      {activeStudents.map((s: any) => (
                         <SelectItem key={s.id} value={s.id}>
                           {s.student_name || s.name || "未知学生"}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {selectedStudent && feeByStudentId.has(selectedStudent) && (
+                    <p className="text-xs text-indigo-600 flex items-center gap-1">
+                      <DollarSign className="h-3 w-3" />
+                      已从学生费用记录自动填入费用项目
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -275,24 +349,20 @@ export default function InvoiceManagement() {
                     <TableCell className="font-medium">{invoice.studentName}</TableCell>
                     <TableCell className="font-mono font-semibold">RM {(invoice.totalAmount || 0).toLocaleString()}</TableCell>
                     <TableCell>
-                      <Badge variant={
-                        invoice.status === "paid" ? "default" :
-                        invoice.status === "partially_paid" ? "secondary" :
-                        invoice.status === "overdue" ? "destructive" : "outline"
-                      }>
-                        {invoice.status === "paid" ? "已付款" :
-                         invoice.status === "partially_paid" ? "部分付款" :
-                         invoice.status === "overdue" ? "已逾期" :
-                         invoice.status === "issued" ? "已发出" : invoice.status}
-                      </Badge>
+                      {getStatusBadge(invoice.status)}
                     </TableCell>
                     <TableCell className="text-sm text-slate-500">
                       {invoice.dueDate || invoice.due_date || "-"}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Button variant="ghost" size="sm" onClick={() => handleDownloadPDF(invoice)}>
-                        <Download className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-center gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openDetail(invoice)} title="查看详情">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDownloadPDF(invoice)} title="下载 PDF">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -301,6 +371,147 @@ export default function InvoiceManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Invoice Detail Dialog */}
+      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-indigo-500" />
+              发票详情 - {selectedInvoice?.invoiceNumber}
+            </DialogTitle>
+            <DialogDescription>查看发票的详细信息</DialogDescription>
+          </DialogHeader>
+
+          {selectedInvoice && (
+            <div className="space-y-6">
+              {/* Invoice Header */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">发票号码</p>
+                    <p className="font-semibold text-lg">{selectedInvoice.invoiceNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">状态</p>
+                    <div className="mt-1">{getStatusBadge(selectedInvoice.status)}</div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">开具日期</p>
+                    <p className="font-semibold">{formatDate(selectedInvoice.issueDate || selectedInvoice.issue_date)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">到期日期</p>
+                    <p className="font-semibold">{formatDate(selectedInvoice.dueDate || selectedInvoice.due_date)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Student Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">学生信息</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">学生姓名</p>
+                      <p className="font-semibold">{selectedInvoice.studentName || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">学生ID</p>
+                      <p className="font-semibold font-mono text-sm">{selectedInvoice.studentId || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">年级</p>
+                      <p className="font-semibold">{selectedInvoice.studentGrade || selectedInvoice.grade || "未指定"}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Invoice Items */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">费用明细</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="border rounded-lg">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>项目</TableHead>
+                          <TableHead className="text-right">金额</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {selectedInvoice.items && selectedInvoice.items.length > 0 ? (
+                          selectedInvoice.items.map((item: any, index: number) => (
+                            <TableRow key={index}>
+                              <TableCell>{item.name || item.description || "-"}</TableCell>
+                              <TableCell className="text-right font-semibold">
+                                RM {(item.amount || 0).toLocaleString()}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell>学生费用</TableCell>
+                            <TableCell className="text-right font-semibold">
+                              RM {(selectedInvoice.totalAmount || 0).toLocaleString()}
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Totals */}
+                  <div className="mt-4 space-y-2">
+                    <div className="flex justify-between text-lg font-bold border-t pt-2">
+                      <span>总计:</span>
+                      <span className="text-green-600">RM {(selectedInvoice.totalAmount || 0).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Notes */}
+              {selectedInvoice.notes && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">备注</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700 whitespace-pre-wrap">{selectedInvoice.notes}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => handleDownloadPDF(selectedInvoice)}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  下载 PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handlePrintInvoice(selectedInvoice)}
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  打印
+                </Button>
+                <Button onClick={() => setDetailOpen(false)}>
+                  关闭
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

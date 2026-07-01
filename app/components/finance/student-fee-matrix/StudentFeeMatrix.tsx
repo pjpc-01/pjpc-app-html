@@ -22,6 +22,7 @@ export const StudentFeeMatrix = () => {
     getStudentAmount,
     assignFeeToStudent,
     removeFeeFromStudent,
+    setFeeForStudents,
     isEditMode: hookEditMode,
     enterEditMode,
     exitEditMode
@@ -296,6 +297,12 @@ export const StudentFeeMatrix = () => {
     setBatchMode(!batchMode)
   }
 
+  // Batch mode: toggle a fee for ALL filtered students at once
+  const batchToggleFee = (feeId: string, targetState: boolean) => {
+    const allStudentIds = filteredStudents.map(s => s.id)
+    setFeeForStudents(allStudentIds, feeId, targetState)
+  }
+
   const clearSearch = () => {
     setSearchTerm("")
   }
@@ -380,6 +387,7 @@ export const StudentFeeMatrix = () => {
                 removeFeeFromStudent={removeFeeFromStudent}
                 hasInvoiceThisMonth={hasInvoiceThisMonth}
                 batchMode={batchMode}
+                onBatchToggleFee={batchToggleFee}
               />
             )
           })
