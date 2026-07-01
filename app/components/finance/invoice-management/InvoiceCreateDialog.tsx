@@ -29,11 +29,11 @@ interface InvoiceCreateDialogProps {
   onBulkCreate: (selectedGrades: string[], formData: any) => void
   invoiceFormData: any
   setInvoiceFormData: (data: any) => void
-  availableTemplates: InvoiceTemplate[]
-  selectedTemplate: InvoiceTemplate | null
-  setSelectedTemplate: (template: InvoiceTemplate | null) => void
-  isTemplateSelectDialogOpen: boolean
-  setIsTemplateSelectDialogOpen: (open: boolean) => void
+  availableTemplates?: InvoiceTemplate[]
+  selectedTemplate?: InvoiceTemplate | null
+  setSelectedTemplate?: (template: InvoiceTemplate | null) => void
+  isTemplateSelectDialogOpen?: boolean
+  setIsTemplateSelectDialogOpen?: (open: boolean) => void
 }
 
 export function InvoiceCreateDialog({
@@ -44,11 +44,11 @@ export function InvoiceCreateDialog({
   onBulkCreate,
   invoiceFormData,
   setInvoiceFormData,
-  availableTemplates,
-  selectedTemplate,
-  setSelectedTemplate,
-  isTemplateSelectDialogOpen,
-  setIsTemplateSelectDialogOpen
+  availableTemplates = [],
+  selectedTemplate = null,
+  setSelectedTemplate = () => {},
+  isTemplateSelectDialogOpen = false,
+  setIsTemplateSelectDialogOpen = () => {}
 }: InvoiceCreateDialogProps) {
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
