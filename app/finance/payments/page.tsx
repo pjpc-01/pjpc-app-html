@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import PageLayout from "@/components/layouts/PageLayout"
-import InvoiceManagement from "@/app/components/finance/InvoiceManagement"
+import InvoiceManagement from "@/app/components/finance/invoice-management/InvoiceManagement"
 import PaymentManagement from "@/app/components/finance/PaymentManagement"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, FileText, CreditCard } from "lucide-react"

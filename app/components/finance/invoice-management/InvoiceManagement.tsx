@@ -230,7 +230,7 @@ export default function InvoiceManagement() {
   const studentsWithAmounts = useMemo(() => {
     return availableStudents.map(student => ({
       ...student,
-      amount: calculateStudentTotal(student.id, activeFees)
+      amount: calculateStudentTotal(student.id)
     }))
   }, [availableStudents, calculateStudentTotal, activeFees])
 
@@ -262,7 +262,7 @@ export default function InvoiceManagement() {
       
       // Get student phone number from the invoice or student data
       const student = students.find(s => s.id === invoice.studentId)
-      const phoneNumber = student?.motherPhone || student?.fatherPhone || student?.emergencyContact || ''
+      const phoneNumber = student?.mother_phone || student?.father_phone || student?.emergencyContact || ''
       
       if (!phoneNumber) {
         throw new Error('无法找到学生或家长的电话号码')
@@ -320,7 +320,7 @@ export default function InvoiceManagement() {
       
       // Get student email from the invoice or student data
       const student = students.find(s => s.id === invoice.studentId)
-      const email = student?.parentEmail || ''
+      const email = student?.email || ''
       
       if (!email) {
         throw new Error('无法找到学生或家长的邮箱地址')
@@ -811,7 +811,7 @@ export default function InvoiceManagement() {
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">家长邮箱</p>
-                      <p className="font-semibold">{selectedInvoice.parentEmail || '未提供'}</p>
+                      <p className="font-semibold">{selectedInvoice.email || '未提供'}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1026,7 +1026,7 @@ export default function InvoiceManagement() {
                         <span className="font-medium">邮箱地址:</span> 
                         {(() => {
                           const student = students.find(s => s.id === selectedInvoice.studentId)
-                          const email = student?.parentEmail || '未提供'
+                          const email = student?.email || '未提供'
                           return ` ${email}`
                         })()}
                       </p>
