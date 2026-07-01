@@ -13,10 +13,10 @@ import {
   TrendingUp,
   RefreshCw,
 } from "lucide-react"
-import FinanceOverview from "../finance/reports-overview/FinanceOverview"
+import FinanceOverview from "../finance/FinanceOverview"
 import FeeManagement from "../finance/fee-management/FeeManagement"
 import InvoiceManagement from "../finance/invoice-management/InvoiceManagement"
-import PaymentManagement from "../finance/payment-management/PaymentManagement"
+import PaymentManagement from "../finance/PaymentManagement"
 import ReminderManagement from "../finance/payment-management/ReminderManagement"
 import FinancialReports from "../finance/reports-overview/FinancialReports"
 import { StudentFeeMatrix } from "../finance/student-fee-matrix/StudentFeeMatrix"
