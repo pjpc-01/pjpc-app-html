@@ -32,12 +32,6 @@ import { getStatusBadge } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // Types
-interface InvoiceFormData {
-  dueDate: string
-  notes: string
-}
-
-// Utility functions
 const getInvoiceStatusBadge = (status: string) => {
   const statusMap = {
     draft: { variant: "outline" as const, text: "草稿" },
@@ -85,16 +79,10 @@ export default function InvoiceManagement() {
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
   const [settingsTab, setSettingsTab] = useState<'school-settings' | 'message-formats'>('school-settings')
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
-  const [selectedStudentForInvoice, setSelectedStudentForInvoice] = useState<any>(null)
-  const [isCreateInvoiceFormOpen, setIsCreateInvoiceFormOpen] = useState(false)
   const [isSendMessageDialogOpen, setIsSendMessageDialogOpen] = useState(false)
   const [sendMethod, setSendMethod] = useState<'whatsapp' | 'email'>('whatsapp')
   const [messageContent, setMessageContent] = useState('')
   const [isSending, setIsSending] = useState(false)
-  const [invoiceFormData, setInvoiceFormData] = useState<InvoiceFormData>({
-    dueDate: '',
-    notes: ''
-  })
 
   // Settings state
   const [pdfOptions, setPdfOptions] = useState<InvoiceSettingsPreset>(() => {
@@ -351,38 +339,23 @@ export default function InvoiceManagement() {
     }
   }
 
-  const handleCreateInvoiceForStudent = (student: any) => {
-    setSelectedStudentForInvoice(student)
-    setIsCreateInvoiceFormOpen(true)
-    setIsCreateInvoiceDialogOpen(false)
-  }
-
-  const handleSubmitInvoice = () => {
-    if (!selectedStudentForInvoice) return
-
-    // Build invoice items from actual student fee allocation
+  const handleDirectCreate = (student: any, dueDate: string, notes: string) => {
     const invoiceItems = activeFees
-      .filter(fee => isAssigned(selectedStudentForInvoice.id, fee.id))
+      .filter(fee => isAssigned(student.id, fee.id))
       .map(fee => ({ name: fee.name, amount: fee.amount }))
-    
     const totalAmount = invoiceItems.reduce((sum, item) => sum + item.amount, 0)
-
-    const newInvoice = {
-      studentName: selectedStudentForInvoice.name,
-      studentId: selectedStudentForInvoice.id,
-      studentGrade: selectedStudentForInvoice.grade || selectedStudentForInvoice.standard,
-      items: invoiceItems.length > 0 ? invoiceItems : [{ name: "学生费用", amount: selectedStudentForInvoice.amount || totalAmount }],
+    
+    createInvoice({
+      studentName: student.name || student.student_name,
+      studentId: student.id,
+      studentGrade: student.grade || student.standard,
+      items: invoiceItems.length > 0 ? invoiceItems : [{ name: "学生费用", amount: student.amount || totalAmount || 0 }],
       status: "issued" as const,
       issueDate: new Date().toISOString().split('T')[0],
-      dueDate: invoiceFormData.dueDate,
-      notes: invoiceFormData.notes || '',
-      totalAmount: totalAmount || selectedStudentForInvoice.amount || 0
-    }
-
-    createInvoice(newInvoice)
-    setIsCreateInvoiceFormOpen(false)
-    setSelectedStudentForInvoice(null)
-    setInvoiceFormData({ dueDate: '', notes: '' })
+      dueDate: dueDate,
+      notes: notes || '',
+      totalAmount: totalAmount || student.amount || 0
+    } as any)
   }
 
   // Load saved message formats from localStorage on mount
@@ -500,20 +473,19 @@ export default function InvoiceManagement() {
         isOpen={isCreateInvoiceDialogOpen}
         onOpenChange={setIsCreateInvoiceDialogOpen}
         students={studentsWithAmounts}
-        onCreateInvoice={handleCreateInvoiceForStudent}
+        onDirectCreate={handleDirectCreate}
         onBulkCreate={(selectedGrades, formData) => {
           const target = studentsWithAmounts.filter((s: any) => 
             selectedGrades.length === 0 || selectedGrades.includes(s.standard)
           )
           target.forEach((student: any) => {
-            // Build invoice items from actual student fee allocation
             const invoiceItems = activeFees
               .filter(fee => isAssigned(student.id, fee.id))
               .map(fee => ({ name: fee.name, amount: fee.amount }))
             const totalAmount = invoiceItems.reduce((sum: number, item: any) => sum + item.amount, 0)
             
             createInvoice({
-              studentName: student.name,
+              studentName: student.name || student.student_name,
               studentId: student.id,
               studentGrade: student.grade || student.standard,
               items: invoiceItems.length > 0 ? invoiceItems : [{ name: "学生费用", amount: student.amount || totalAmount || 0 }],
@@ -526,8 +498,6 @@ export default function InvoiceManagement() {
           })
           setIsCreateInvoiceDialogOpen(false)
         }}
-        invoiceFormData={invoiceFormData}
-        setInvoiceFormData={setInvoiceFormData}
       />
 
 
@@ -652,57 +622,6 @@ export default function InvoiceManagement() {
               </div>
             </TabsContent>
           </Tabs>
-        </DialogContent>
-      </Dialog>
-
-      {/* Create Invoice Form */}
-      <Dialog open={isCreateInvoiceFormOpen} onOpenChange={setIsCreateInvoiceFormOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>创建发票 - {selectedStudentForInvoice?.name}</DialogTitle>
-            <DialogDescription>为学生创建新的发票</DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-                         <div>
-               <Label htmlFor="dueDate">到期日期</Label>
-               <Input
-                 id="dueDate"
-                 type="date"
-                 value={invoiceFormData.dueDate}
-                 onChange={(e) => setInvoiceFormData(prev => ({ ...prev, dueDate: e.target.value }))}
-               />
-             </div>
-            
-            <div>
-              <Label htmlFor="notes">备注</Label>
-              <Textarea
-                id="notes"
-                value={invoiceFormData.notes}
-                onChange={(e) => setInvoiceFormData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="输入发票备注信息..."
-              />
-            </div>
-            
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-2">发票信息</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><span className="font-medium">学生:</span> {selectedStudentForInvoice?.name}</div>
-                <div><span className="font-medium">年级:</span> {selectedStudentForInvoice?.standard}</div>
-                <div><span className="font-medium">金额:</span> RM {selectedStudentForInvoice?.amount}</div>
-                <div><span className="font-medium">发票号:</span> {generateInvoiceNumber()}</div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsCreateInvoiceFormOpen(false)}>
-              取消
-            </Button>
-            <Button onClick={handleSubmitInvoice}>
-              创建发票
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
 
