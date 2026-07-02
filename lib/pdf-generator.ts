@@ -141,13 +141,19 @@ export const downloadInvoicePDF = async (invoice: Invoice, settings: InvoiceSett
   try {
     const blob = await generateInvoicePDF(invoice, settings)
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `Invoice_${invoice.invoiceNumber}.pdf`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    // Use window.open for better cross-environment compatibility (Cloudflare tunnel, sandboxed iframes)
+    const w = window.open(url, '_blank')
+    if (!w) {
+      // Fallback to anchor click
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Invoice_${invoice.invoiceNumber}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    }
+    // Delay revoke to allow browser to load the blob
+    setTimeout(() => URL.revokeObjectURL(url), 3000)
   } catch (e) {
     console.error('PDF download failed:', e)
     throw new Error('PDF download failed')
