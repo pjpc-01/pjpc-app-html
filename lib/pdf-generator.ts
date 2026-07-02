@@ -69,7 +69,7 @@ export const generateInvoicePDF = async (invoice: Invoice, settings: InvoiceSett
   // School info
   doc.setFont(cn, "normal")
   doc.setFontSize(8)
-  doc.setTextColor(120)
+  doc.setTextColor(120);
   [settings.schoolAddress, settings.schoolPhone, settings.schoolEmail].filter(Boolean).forEach((l,i) => {
     doc.text(l, pw-14, 55+i*5, { align: "right" })
   })
