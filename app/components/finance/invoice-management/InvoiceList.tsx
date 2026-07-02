@@ -87,9 +87,9 @@ export function InvoiceList({
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('zh-CN', {
+    return new Intl.NumberFormat('ms-MY', {
       style: 'currency',
-      currency: 'CNY'
+      currency: 'MYR'
     }).format(amount)
   }
 
