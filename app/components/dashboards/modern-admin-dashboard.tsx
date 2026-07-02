@@ -614,8 +614,26 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                   outerRadius={80}
                   paddingAngle={4}
                   dataKey="value"
-                  label={(entry: { name?: string; value?: number }) => `${entry.name}: ${entry.value ?? 0}`}
-                  labelLine={false}
+                  label={({ name, value, cx, cy, midAngle, innerRadius, outerRadius }) => {
+                    const RADIAN = Math.PI / 180
+                    const radius = outerRadius * 1.35
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN)
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN)
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        fill="#1e293b"
+                        textAnchor={x > cx ? "start" : "end"}
+                        dominantBaseline="central"
+                        fontSize={12}
+                        fontWeight={600}
+                      >
+                        {`${name} ${value ?? 0}人`}
+                      </text>
+                    )
+                  }}
+                  labelLine={true}
                   >
                   {genderDistribution.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={AMBER_COLORS[index % AMBER_COLORS.length]} />

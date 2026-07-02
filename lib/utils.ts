@@ -339,8 +339,8 @@ export class Validator {
 
 // 格式化工具
 export class Formatter {
-  static formatCurrency(amount: number, currency: string = 'CNY'): string {
-    return new Intl.NumberFormat('zh-CN', {
+  static formatCurrency(amount: number, currency: string = 'MYR'): string {
+    return new Intl.NumberFormat('ms-MY', {
       style: 'currency',
       currency: currency
     }).format(amount)
