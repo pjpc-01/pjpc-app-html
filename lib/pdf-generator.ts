@@ -1,9 +1,7 @@
-import { jsPDF } from "jspdf"
+import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { Invoice } from '@/hooks/useInvoices'
 
-// Register autoTable plugin on jsPDF prototype (required for Next.js ESM)
-;(jsPDF as any).API.autoTable = autoTable
 import { type InvoiceSettingsPreset } from '@/app/components/finance/invoice-management/InvoiceSettingsManager'
 
 // Re-export for convenience
@@ -72,7 +70,7 @@ export const generateInvoicePDF = async (
     `RM ${(item.amount || 0).toFixed(2)}`
   ])
   if (tableRows.length > 0) {
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 88,
       head: [["Item", "Amount (RM)"]],
       body: tableRows,
