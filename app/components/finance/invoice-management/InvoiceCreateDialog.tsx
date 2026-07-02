@@ -14,14 +14,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { FileText, Users, AlertCircle } from "lucide-react"
-import { useStudentFees } from "@/hooks/useStudentFees"
-import { useFees } from "@/hooks/useFees"
+import { FileText, Users, AlertCircle, Loader2 } from "lucide-react"
 
 interface InvoiceCreateDialogProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
   students: any[]
+  activeFees: any[]
+  isFeeAssigned: (studentId: string, feeId: string) => boolean
+  calculateStudentTotal: (studentId: string) => number
   onDirectCreate: (student: any, dueDate: string, notes: string) => void
   onBulkCreate: (selectedGrades: string[], formData: any) => void
 }
@@ -30,6 +31,9 @@ export function InvoiceCreateDialog({
   isOpen,
   onOpenChange,
   students,
+  activeFees,
+  isFeeAssigned,
+  calculateStudentTotal,
   onDirectCreate,
   onBulkCreate,
 }: InvoiceCreateDialogProps) {
@@ -37,10 +41,6 @@ export function InvoiceCreateDialog({
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [dueDate, setDueDate] = useState("")
   const [notes, setNotes] = useState("")
-  
-  const { isAssigned, calculateStudentTotal } = useStudentFees()
-  const { fees } = useFees()
-  const activeFees = useMemo(() => fees.filter(fee => fee.status === 'active'), [fees])
   
   const gradeOrder = [
     '一年级', '二年级', '三年级', '四年级', '五年级', '六年级',
@@ -57,19 +57,18 @@ export function InvoiceCreateDialog({
     selectedStudents.includes(s.id || s.id?.toString())
   )
 
-  // Calculate fee breakdown for preview
+  // Calculate fee breakdown for preview using parent's loaded hooks
   const feePreview = useMemo(() => {
     if (selectedStudents.length === 0) return null
-    // For single student preview, show their actual fee items
     const firstStudent = selectedStudentObjects[0]
     if (!firstStudent) return null
     const studentId = firstStudent.id
     const items = activeFees
-      .filter(fee => isAssigned(studentId, fee.id))
+      .filter(fee => isFeeAssigned(studentId, fee.id))
       .map(fee => ({ name: fee.name, amount: fee.amount }))
     const total = items.reduce((sum, it) => sum + it.amount, 0)
     return { items, total, studentName: firstStudent.name || firstStudent.student_name }
-  }, [selectedStudents, activeFees, isAssigned, selectedStudentObjects])
+  }, [selectedStudents, activeFees, isFeeAssigned, selectedStudentObjects])
 
   const handleGradeToggle = (grade: string) => {
     setSelectedGrades(prev => 
@@ -127,7 +126,7 @@ export function InvoiceCreateDialog({
                 <Badge
                   key={grade}
                   variant={selectedGrades.includes(grade) ? "default" : "outline"}
-                  className="cursor-pointer"
+                  className="cursor-pointer select-none"
                   onClick={() => handleGradeToggle(grade)}
                 >
                   {grade}
@@ -142,7 +141,7 @@ export function InvoiceCreateDialog({
               <Label className="text-sm font-medium">选择学生</Label>
               <span className="text-xs text-muted-foreground">
                 {selectedGrades.length > 0 
-                  ? `${selectedGrades.length} 个年级 · ${filteredStudents.length} 人`
+                  ? `${selectedGrades.length} 年级 · ${filteredStudents.length} 人`
                   : `全部 · ${filteredStudents.length} 人`
                 }
               </span>
@@ -195,7 +194,7 @@ export function InvoiceCreateDialog({
                             {student.name || student.student_name}
                             {amount === 0 && (
                               <span className="ml-2 text-xs text-amber-600">
-                                <AlertCircle className="h-3 w-3 inline" /> 未分配费用
+                                <AlertCircle className="h-3 w-3 inline" /> 未分配
                               </span>
                             )}
                           </TableCell>

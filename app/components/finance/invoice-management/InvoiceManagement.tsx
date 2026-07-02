@@ -473,6 +473,9 @@ export default function InvoiceManagement() {
         isOpen={isCreateInvoiceDialogOpen}
         onOpenChange={setIsCreateInvoiceDialogOpen}
         students={studentsWithAmounts}
+        activeFees={activeFees}
+        isFeeAssigned={isAssigned}
+        calculateStudentTotal={calculateStudentTotal}
         onDirectCreate={handleDirectCreate}
         onBulkCreate={(selectedGrades, formData) => {
           const target = studentsWithAmounts.filter((s: any) => 
