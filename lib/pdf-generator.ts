@@ -13,119 +13,7 @@ const getStatusText = (status: string): string => {
   return map[status] || status
 }
 
-// ── Generate PDF using InvoiceSettingsPreset ──
-export const generateInvoicePDF = async (
-  invoice: Invoice,
-  settings: InvoiceSettingsPreset
-): Promise<Blob> => {
-  const doc = new jsPDF()
-  const pageW = doc.internal.pageSize.getWidth()
-
-  const primaryHex = settings.primaryColor || '#1e40af'
-  const secondaryHex = settings.secondaryColor || '#3b82f6'
-  const accentHex = settings.accentColor || '#f59e0b'
-
-  // ── Header Gradient (simulated) ──
-  doc.setFillColor(hexToRGB(primaryHex).r, hexToRGB(primaryHex).g, hexToRGB(primaryHex).b)
-  doc.rect(0, 0, pageW, 40, 'F')
-
-  doc.setFontSize(22)
-  doc.setTextColor(255, 255, 255)
-  doc.text(settings.schoolName || '智慧教育学校', pageW / 2, 16, { align: "center" })
-  if (settings.schoolNameEn) {
-    doc.setFontSize(10)
-    doc.text(settings.schoolNameEn, pageW / 2, 23, { align: "center" })
-  }
-
-  // Badge
-  doc.setFontSize(12)
-  doc.setTextColor(255, 255, 255)
-  doc.text('INVOICE 发票', pageW - 14, 14, { align: "right" })
-
-  doc.setDrawColor(200)
-  doc.line(14, 45, pageW - 14, 45)
-
-  // ── Invoice Info ──
-  doc.setFontSize(16)
-  doc.setTextColor(hexToRGB(primaryHex).r, hexToRGB(primaryHex).g, hexToRGB(primaryHex).b)
-  doc.text(`Invoice #${invoice.invoiceNumber || ''}`, 14, 55)
-  doc.setFontSize(10)
-  doc.setTextColor(80)
-  doc.text(`Issue: ${invoice.issueDate || ''}`, 14, 62)
-  doc.text(`Due: ${invoice.dueDate || ''}`, 14, 68)
-  doc.text(`Student: ${(invoice as any).studentName || (invoice as any).student || ''}`, 14, 74)
-  doc.text(`Status: ${getStatusText(invoice.status || '')}`, 14, 80)
-
-  // ── School Info ──
-  doc.setFontSize(9)
-  doc.setTextColor(120)
-  const schoolInfoLines = [settings.schoolAddress, settings.schoolPhone, settings.schoolEmail].filter(Boolean)
-  schoolInfoLines.forEach((line, i) => {
-    doc.text(line, pageW - 14, 55 + i * 5, { align: "right" })
-  })
-
-  // ── Items Table ──
-  const tableRows = (invoice.items || []).map((item: any) => [
-    item.name || item.description || "—",
-    `RM ${(item.amount || 0).toFixed(2)}`
-  ])
-  if (tableRows.length > 0) {
-    autoTable(doc, {
-      startY: 88,
-      head: [["Item", "Amount (RM)"]],
-      body: tableRows,
-      theme: "grid",
-      headStyles: { fillColor: [hexToRGB(primaryHex).r, hexToRGB(primaryHex).g, hexToRGB(primaryHex).b], textColor: 255 },
-      styles: { font: "helvetica", fontSize: 10 },
-      columnStyles: { 1: { halign: "right" } },
-    })
-  }
-
-  const finalY = (doc as any).lastAutoTable?.finalY || 88
-
-  // ── Total ──
-  doc.setFontSize(14)
-  doc.setTextColor(hexToRGB(primaryHex).r, hexToRGB(primaryHex).g, hexToRGB(primaryHex).b)
-  doc.text(`Total: RM ${(invoice.totalAmount || 0).toFixed(2)}`, pageW - 14, finalY + 12, { align: "right" })
-
-  // ── Payment Info (Bank) ──
-  if (settings.bankName || settings.bankAccount) {
-    const bankY = finalY + 25
-    doc.setDrawColor(hexToRGB(accentHex).r, hexToRGB(accentHex).g, hexToRGB(accentHex).b)
-    doc.setLineWidth(0.5)
-    doc.line(14, bankY, 14, bankY + 20)
-    doc.setLineWidth(0.2)
-    doc.setFontSize(9)
-    doc.setTextColor(80)
-    doc.text('Payment Info:', 20, bankY + 4)
-    doc.setFontSize(8)
-    let bY = bankY + 10
-    if (settings.bankName) { doc.text(`Bank: ${settings.bankName}`, 20, bY); bY += 5 }
-    if (settings.bankAccount) { doc.text(`Account: ${settings.bankAccount}`, 20, bY); bY += 5 }
-    if (settings.bankHolder) { doc.text(`Holder: ${settings.bankHolder}`, 20, bY) }
-  }
-
-  // ── Notes ──
-  if ((invoice as any).notes) {
-    doc.setFontSize(9)
-    doc.setTextColor(100)
-    doc.text(`Notes: ${(invoice as any).notes}`, 14, finalY + 60)
-  }
-
-  // ── Footer ──
-  const footerY = doc.internal.pageSize.getHeight() - 15
-  doc.setDrawColor(200)
-  doc.line(14, footerY - 5, pageW - 14, footerY - 5)
-  doc.setFontSize(8)
-  doc.setTextColor(150)
-  const footerText = settings.footerText || `Thank you for choosing ${settings.schoolName}.`
-  doc.text(footerText, pageW / 2, footerY, { align: "center" })
-  doc.text(`${settings.schoolName}${settings.taxNumber ? ' · Tax: ' + settings.taxNumber : ''}`, pageW / 2, footerY + 5, { align: "center" })
-
-  return doc.output("blob")
-}
-
-// ── Hex to RGB ──
+// Hex to RGB
 function hexToRGB(hex: string): { r: number; g: number; b: number } {
   const clean = hex.replace('#', '')
   return {
@@ -133,6 +21,122 @@ function hexToRGB(hex: string): { r: number; g: number; b: number } {
     g: parseInt(clean.substring(2, 4), 16),
     b: parseInt(clean.substring(4, 6), 16),
   }
+}
+
+// ── Build HTML string for the invoice ──
+function buildInvoiceHTML(invoice: Invoice, settings: InvoiceSettingsPreset): string {
+  const primaryHex = settings.primaryColor || '#1e40af'
+  const accentHex = settings.accentColor || '#f59e0b'
+  const rgb = hexToRGB(primaryHex)
+  const rgbAccent = hexToRGB(accentHex)
+  
+  const itemsHTML = (invoice.items || []).map((item: any) => 
+    `<tr><td style="padding:6px 8px;border-bottom:1px solid #e5e7eb">${item.name || item.description || "—"}</td><td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right">RM ${(item.amount || 0).toFixed(2)}</td></tr>`
+  ).join('')
+  
+  const bankHTML = (settings.bankName || settings.bankAccount) ? `
+    <div style="margin-top:16px;border-left:3px solid ${accentHex};padding-left:12px">
+      <p style="font-size:10px;margin:0 0 4px;color:#6b7280">Payment Info</p>
+      ${settings.bankName ? `<p style="font-size:9px;margin:0;color:#374151">Bank: ${settings.bankName}</p>` : ''}
+      ${settings.bankAccount ? `<p style="font-size:9px;margin:0;color:#374151">Account: ${settings.bankAccount}</p>` : ''}
+      ${settings.bankHolder ? `<p style="font-size:9px;margin:0;color:#374151">Holder: ${settings.bankHolder}</p>` : ''}
+    </div>` : ''
+    
+  const notesHTML = (invoice as any).notes ? `<p style="font-size:9px;color:#6b7280;margin-top:12px">Notes: ${(invoice as any).notes}</p>` : ''
+    
+  const footerText = settings.footerText || `Thank you for choosing ${settings.schoolName || 'our school'}.`
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box }
+  body { font-family: "Noto Sans SC", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif; color:#1f2937; padding:0; }
+</style>
+</head>
+<body>
+<div style="width:595px;margin:0 auto">
+
+  <!-- Header -->
+  <div style="background:${primaryHex};color:#fff;padding:16px 20px;position:relative">
+    <div style="font-size:22px;font-weight:700;text-align:center">${settings.schoolName || '智慧教育学校'}</div>
+    ${settings.schoolNameEn ? `<div style="font-size:10px;text-align:center;margin-top:2px">${settings.schoolNameEn}</div>` : ''}
+    <div style="position:absolute;right:20px;top:14px;font-size:12px">INVOICE 发票</div>
+  </div>
+
+  <!-- Invoice Info -->
+  <div style="display:flex;justify-content:space-between;padding:14px 20px">
+    <div>
+      <div style="font-size:16px;font-weight:700;color:${primaryHex}">Invoice #${invoice.invoiceNumber || ''}</div>
+      <div style="font-size:10px;color:#6b7280;margin-top:2px">Issue: ${invoice.issueDate || ''}</div>
+      <div style="font-size:10px;color:#6b7280">Due: ${invoice.dueDate || ''}</div>
+      <div style="font-size:10px;color:#6b7280">Student: ${(invoice as any).studentName || (invoice as any).student || ''}</div>
+      <div style="font-size:10px;color:#6b7280">Status: ${getStatusText(invoice.status || '')}</div>
+    </div>
+    <div style="text-align:right;font-size:9px;color:#9ca3af">
+      ${settings.schoolAddress ? `<div>${settings.schoolAddress}</div>` : ''}
+      ${settings.schoolPhone ? `<div>${settings.schoolPhone}</div>` : ''}
+      ${settings.schoolEmail ? `<div>${settings.schoolEmail}</div>` : ''}
+    </div>
+  </div>
+
+  <!-- Items Table -->
+  <div style="padding:0 20px">
+    ${(invoice.items || []).length > 0 ? `
+    <table style="width:100%;border-collapse:collapse;font-size:10px">
+      <thead>
+        <tr style="background:${primaryHex};color:#fff">
+          <th style="padding:6px 8px;text-align:left">Item</th>
+          <th style="padding:6px 8px;text-align:right">Amount (RM)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsHTML}
+      </tbody>
+    </table>
+    ` : ''}
+
+    <!-- Total -->
+    <div style="text-align:right;font-size:14px;font-weight:700;color:${primaryHex};padding-top:8px;border-top:1px solid #e5e7eb;margin-top:8px">
+      Total: RM ${(invoice.totalAmount || 0).toFixed(2)}
+    </div>
+  </div>
+
+  <!-- Payment Info -->
+  <div style="padding:0 20px">
+    ${bankHTML}
+    ${notesHTML}
+  </div>
+
+  <!-- Footer -->
+  <div style="margin-top:24px;padding:10px 20px;border-top:1px solid #e5e7eb;text-align:center;font-size:8px;color:#9ca3af">
+    <div>${footerText}</div>
+    <div>${settings.schoolName || ''}${settings.taxNumber ? ' · Tax: ' + settings.taxNumber : ''}</div>
+  </div>
+
+</div>
+</body>
+</html>`
+}
+
+// ── Generate PDF using jsPDF html() for native Chinese rendering ──
+export const generateInvoicePDF = async (
+  invoice: Invoice,
+  settings: InvoiceSettingsPreset
+): Promise<Blob> => {
+  const doc = new jsPDF({ unit: 'px', format: 'a4' })
+  const html = buildInvoiceHTML(invoice, settings)
+  
+  await doc.html(html, {
+    x: 0,
+    y: 0,
+    width: doc.internal.pageSize.getWidth(),
+    windowWidth: 595, // A4 width in px at 72dpi
+    autoPaging: 'text',
+  })
+  
+  return doc.output("blob")
 }
 
 // ── Download PDF ──
