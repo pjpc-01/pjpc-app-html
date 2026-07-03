@@ -1,76 +1,84 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { nfcManager } from '@/lib/nfc-rfid'
 
-// 静态导出配置
-export const dynamic = 'force-static'
+const PB_URL = 'http://127.0.0.1:8090'
+const PB_ADMIN = { email: 'admin@pjpc.com', password: '1234567890' }
 
-export async function POST(request: NextRequest) {
+async function pbAuth(): Promise<string> {
+  const res = await fetch(`${PB_URL}/api/admins/auth-with-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identity: PB_ADMIN.email, password: PB_ADMIN.password }),
+  })
+  if (!res.ok) throw new Error('Auth failed')
+  return (await res.json()).token
+}
+
+// GET: list all devices
+export async function GET(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { name, location, deviceType, status, ipAddress, macAddress, firmwareVersion, notes } = body
+    const token = await pbAuth()
+    const url = new URL(request.url)
+    const center = url.searchParams.get('center')
 
-    // 验证必要参数
-    if (!name || !location) {
-      return NextResponse.json(
-        { error: 'Missing required parameters' },
-        { status: 400 }
-      )
-    }
+    let filter = ''
+    if (center) filter = `center="${center}"`
 
-    // 添加新设备
-    const deviceData: any = {
-      name,
-      location,
-      deviceType: deviceType || 'NFC',
-      status: status || 'online',
-      ipAddress,
-      macAddress,
-      firmwareVersion,
-      cardCount: 0,
-      errorCount: 0,
-      notes,
-    }
-    const newDevice = await nfcManager.addDevice(deviceData)
-
-    return NextResponse.json({
-      success: true,
-      data: newDevice,
-      message: 'Device added successfully'
-    })
-
-  } catch (error) {
-    console.error('Error adding NFC device:', error)
-    
-    return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : 'Failed to add device',
-        success: false
-      },
-      { status: 500 }
+    const res = await fetch(
+      `${PB_URL}/api/collections/nfc_devices/records?perPage=100&sort=-created&filter=${encodeURIComponent(filter)}`,
+      { headers: { Authorization: token } }
     )
+    const data = await res.json()
+    return NextResponse.json({ success: true, data: data.items || [] })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
-export async function GET(request: NextRequest) {
+// POST: register a new device
+export async function POST(request: NextRequest) {
   try {
-    // 获取所有设备
-    const devices = await nfcManager.getAllDevices()
+    const token = await pbAuth()
+    const body = await request.json()
 
-    return NextResponse.json({
-      success: true,
-      data: devices,
-      count: devices.length
+    const res = await fetch(`${PB_URL}/api/collections/nfc_devices/records`, {
+      method: 'POST',
+      headers: { Authorization: token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: body.name || 'New Device',
+        location: body.location || '',
+        deviceType: body.deviceType || 'nfc',
+        status: body.status || 'offline',
+        ipAddress: body.ipAddress || '',
+        port: body.port || null,
+        center: body.center || '',
+        notes: body.notes || '',
+      }),
     })
-
-  } catch (error) {
-    console.error('Error fetching NFC devices:', error)
-    
-    return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : 'Failed to fetch devices',
-        success: false
-      },
-      { status: 500 }
-    )
+    const data = await res.json()
+    if (!res.ok) return NextResponse.json({ error: data }, { status: res.status })
+    return NextResponse.json({ success: true, data })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
-} 
+}
+
+// PATCH: update device
+export async function PATCH(request: NextRequest) {
+  try {
+    const token = await pbAuth()
+    const body = await request.json()
+    const { id, ...updates } = body
+    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+    const res = await fetch(`${PB_URL}/api/collections/nfc_devices/records/${id}`, {
+      method: 'PATCH',
+      headers: { Authorization: token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    })
+    const data = await res.json()
+    if (!res.ok) return NextResponse.json({ error: data }, { status: res.status })
+    return NextResponse.json({ success: true, data })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}

@@ -1,228 +1,132 @@
 import { NextRequest, NextResponse } from 'next/server'
-import PocketBase from 'pocketbase'
 
-// 创建PocketBase实例
-const pb = new PocketBase('http://pjpc.tplinkdns.com:8090')
+const PB_URL = 'http://127.0.0.1:8090'
+const PB_ADMIN = { email: 'admin@pjpc.com', password: '1234567890' }
 
-// 管理员认证
-async function authenticateAdmin() {
-  try {
-    await pb.admins.authWithPassword(
-      process.env.POCKETBASE_ADMIN_EMAIL || 'admin@pjpc.com',
-      process.env.POCKETBASE_ADMIN_PASSWORD || 'admin123'
-    )
-    console.log('✅ 管理员认证成功')
-    return true
-  } catch (error) {
-    console.error('❌ 管理员认证失败:', error)
-    return false
-  }
+async function pbAuth(): Promise<string> {
+  const res = await fetch(`${PB_URL}/api/admins/auth-with-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identity: PB_ADMIN.email, password: PB_ADMIN.password }),
+  })
+  if (!res.ok) throw new Error(`Auth failed: ${res.status}`)
+  const data = await res.json()
+  return data.token
 }
 
-// POST - NFC自动考勤
+async function pbGet(token: string, collection: string, filter: string) {
+  const url = `${PB_URL}/api/collections/${collection}/records?perPage=1&filter=${encodeURIComponent(filter)}`
+  const res = await fetch(url, { headers: { Authorization: token } })
+  return res.json()
+}
+
+async function pbCreate(token: string, collection: string, data: any) {
+  const res = await fetch(`${PB_URL}/api/collections/${collection}/records`, {
+    method: 'POST',
+    headers: { Authorization: token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  return res.json()
+}
+
+async function pbUpdate(token: string, collection: string, id: string, data: any) {
+  const res = await fetch(`${PB_URL}/api/collections/${collection}/records/${id}`, {
+    method: 'PATCH',
+    headers: { Authorization: token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  return res.json()
+}
+
+// POST - NFC自动考勤（签到/签退）
 export async function POST(request: NextRequest) {
   try {
-    console.log('📱 NFC自动考勤请求')
-    
-    // 管理员认证
-    const authSuccess = await authenticateAdmin()
-    if (!authSuccess) {
-      return NextResponse.json({ error: '认证失败' }, { status: 401 })
-    }
-    
-    // 获取请求数据
     const body = await request.json()
-    const { 
-      studentId, 
-      center, 
-      timestamp, 
-      method = 'nfc_card_number', 
-      nfcType = 'hardware_id',
-      notes = ''
-    } = body
-    
-    console.log('📋 NFC考勤数据:', { studentId, center, method, nfcType })
-    
-    // 验证必需字段
+    const { studentId, center, method = 'nfc', notes = '' } = body
+
     if (!studentId || !center) {
-      return NextResponse.json(
-        { error: '缺少必需参数: studentId, center' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: '缺少必需参数: studentId, center' }, { status: 400 })
     }
-    
-    // 获取学生信息
-    const studentResponse = await pb.collection('students').getList(1, 1, {
-      filter: `student_id = "${studentId}"`
-    })
-    
-    if (studentResponse.items.length === 0) {
-      return NextResponse.json(
-        { error: '学生不存在' },
-        { status: 404 }
-      )
+
+    // 1. 认证
+    let token: string
+    try {
+      token = await pbAuth()
+    } catch {
+      return NextResponse.json({ error: 'PocketBase 认证失败' }, { status: 401 })
     }
-    
-    const student = studentResponse.items[0]
+
+    // 2. 查找学生
+    const studentRes = await pbGet(token, 'students', `student_id="${studentId}"`)
+    if (!studentRes.items || studentRes.items.length === 0) {
+      return NextResponse.json({ error: '学生不存在', studentId }, { status: 404 })
+    }
+    const student = studentRes.items[0]
+
+    // 3. 查找今日考勤（date 字段用范围匹配）
     const now = new Date()
     const today = now.toISOString().split('T')[0]
-    
-    // 检查今天是否已经考勤
-    const existingRecord = await pb.collection('student_attendance').getList(1, 1, {
-      filter: `student_id = "${studentId}" && center = "${center}" && date = "${today}"`
-    })
-    
-    if (existingRecord.items.length > 0) {
-      console.log('⚠️ 今天已经考勤过了')
-      return NextResponse.json({
-        success: true,
-        message: '今天已经考勤过了',
-        data: existingRecord.items[0],
-        student: {
-          id: studentId,
-          name: student.student_name
-        }
-      })
-    }
-    
-    // 智能签到/签退逻辑
-    const checkinTimestamp = now.toISOString()
-    
-    // 检查今天是否已有考勤记录
-    const existingRecords = await pb.collection('student_attendance').getList(1, 1, {
-      filter: `student_id = "${studentId}" && center = "${center}" && date = "${today}"`,
-      sort: '-created'
-    })
-    
-    console.log('🔍 检查现有记录:', {
-      studentId,
-      center,
-      today,
-      existingCount: existingRecords.items.length,
-      existingRecord: existingRecords.items[0] || null
-    })
-    
-    let record = null
-    let action = ''
-    
-    if (existingRecords.items.length === 0) {
-      // 第一次操作 - 签到
-      const attendanceData = {
+    const dateFilter = `student_id="${studentId}" && date >= "${today} 00:00:00" && date <= "${today} 23:59:59"`
+    const existingRes = await fetch(
+      `${PB_URL}/api/collections/student_attendance/records?perPage=1&sort=-created&filter=${encodeURIComponent(dateFilter)}`,
+      { headers: { Authorization: token } }
+    ).then(r => r.json())
+
+    let record: any
+    let action: string
+
+    if (!existingRes.items || existingRes.items.length === 0) {
+      // 签到
+      record = await pbCreate(token, 'student_attendance', {
         student_id: studentId,
-        student_name: student.student_name,
-        center: center,
+        student_name: student.name || student.student_name || studentId,
+        center,
         branch_name: center,
         date: today,
-        check_in: checkinTimestamp,
-        check_out: null,
+        check_in: now.toISOString(),
         status: 'present',
-        notes: notes || `NFC自动考勤 - ${method}`,
-        teacher_id: 'system',
-        teacher_name: '系统',
-        device_info: JSON.stringify({ 
-          method, 
-          nfcType, 
-          timestamp: timestamp || now.toISOString(),
-          source: 'nfc_auto'
-        }),
-        method: method,
-        timestamp: now.toISOString()
-      }
-      
-      record = await pb.collection('student_attendance').create(attendanceData)
-      action = '签到'
-      console.log('✅ 学生签到成功:', student.student_name)
-      
-    } else {
-      // 已有记录，检查是否可以签退
-      const existingRecord = existingRecords.items[0]
-      
-      console.log('🔍 检查现有记录状态:', {
-        hasCheckIn: !!existingRecord.check_in,
-        hasCheckOut: !!existingRecord.check_out,
-        checkIn: existingRecord.check_in,
-        checkOut: existingRecord.check_out
+        method,
+        notes: notes || `NFC打卡 - ${method}`,
+        device_info: JSON.stringify({ method, source: 'nfc' }),
       })
-      
-      if (existingRecord.check_out) {
-        // 已经完成签到签退，创建新的记录（允许多次签到签退）
-        console.log('🔄 已有完整记录，创建新的签到记录...')
-        
-        const attendanceData = {
+      action = '签到'
+    } else {
+      const lastRecord = existingRes.items[0]
+      const hasCheckOut = lastRecord.check_out && lastRecord.check_out !== ''
+      if (!hasCheckOut) {
+        // 签退
+        record = await pbUpdate(token, 'student_attendance', lastRecord.id, {
+          check_out: now.toISOString(),
+          notes: (lastRecord.notes || '') + ` | NFC签退 - ${method}`,
+        })
+        action = '签退'
+      } else {
+        // 再次签到
+        record = await pbCreate(token, 'student_attendance', {
           student_id: studentId,
-          student_name: student.student_name,
-          center: center,
+          student_name: student.name || student.student_name || studentId,
+          center,
           branch_name: center,
           date: today,
-          check_in: checkinTimestamp,
-          check_out: null,
+          check_in: now.toISOString(),
           status: 'present',
-          notes: notes || `NFC自动考勤 - ${method} (第${existingRecords.items.length + 1}次)`,
-          teacher_id: 'system',
-          teacher_name: '系统',
-          device_info: JSON.stringify({ 
-            method, 
-            nfcType, 
-            timestamp: timestamp || now.toISOString(),
-            source: 'nfc_auto'
-          }),
-          method: method,
-          timestamp: now.toISOString()
-        }
-        
-        record = await pb.collection('student_attendance').create(attendanceData)
+          method,
+          notes: notes || `NFC打卡 - ${method}`,
+          device_info: JSON.stringify({ method, source: 'nfc' }),
+        })
         action = '签到'
-        console.log('✅ 学生新签到成功:', student.student_name)
-        
-      } else {
-        // 可以签退
-        console.log('🔄 开始执行签退更新...')
-        
-        const updateData = {
-          check_out: checkinTimestamp,
-          notes: existingRecord.notes + ` | NFC自动签退 - ${method}`,
-          device_info: JSON.stringify({
-            ...JSON.parse(existingRecord.device_info || '{}'),
-            checkOut: {
-              method,
-              nfcType,
-              timestamp: checkinTimestamp,
-              source: 'nfc_auto'
-            }
-          })
-        }
-        
-        console.log('🔍 签退更新数据:', updateData)
-        
-        record = await pb.collection('student_attendance').update(existingRecord.id, updateData)
-        
-        console.log('✅ 签退更新结果:', record)
-        
-        action = '签退'
-        console.log('✅ 学生签退成功:', student.student_name)
       }
     }
-    
+
     return NextResponse.json({
       success: true,
+      action,
+      message: `${action}成功`,
       data: record,
-      action: action,
-      message: `NFC${action}记录成功`,
-      student: {
-        id: studentId,
-        name: student.student_name
-      }
+      student: { id: studentId, name: student.name || student.student_name },
     })
-    
-  } catch (error) {
-    console.error('❌ NFC考勤记录失败:', error)
-    return NextResponse.json(
-      { 
-        success: false,
-        error: '考勤记录失败',
-        details: error instanceof Error ? error.message : '未知错误'
-      },
-      { status: 500 }
-    )
+  } catch (error: any) {
+    console.error('NFC考勤失败:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

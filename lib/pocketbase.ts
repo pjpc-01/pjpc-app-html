@@ -281,4 +281,18 @@ export const authenticateAdmin = async (): Promise<void> => {
     }
     if (authLock) throw new Error('认证锁超时')
   }
+
+  authLock = true
+  try {
+    await pb.admins.authWithPassword(
+      process.env.POCKETBASE_ADMIN_EMAIL || 'admin@pjpc.com',
+      process.env.POCKETBASE_ADMIN_PASSWORD || '1234567890'
+    )
+    isAuthenticated = true
+  } catch (error) {
+    isAuthenticated = false
+    throw error
+  } finally {
+    authLock = false
+  }
 }

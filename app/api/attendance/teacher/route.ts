@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     const pb = new PocketBase('http://127.0.0.1:8090')
     
     // 管理员认证
-    await pb.admins.authWithPassword('admin@pjpc.com', 'admin123')
+    await pb.admins.authWithPassword('admin@pjpc.com', '1234567890')
     console.log('✅ API: PocketBase管理员认证成功')
     
     // 检查今日考勤记录（支持check-in和check-out）
