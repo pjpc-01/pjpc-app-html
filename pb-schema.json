@@ -78,7 +78,7 @@
     {
       "id": "yot737rl8uqqnh8",
       "created": "2026-06-09 02:57:49.251Z",
-      "updated": "2026-06-24 09:39:29.275Z",
+      "updated": "2026-07-03 09:56:52.664Z",
       "name": "students",
       "type": "base",
       "system": false,
@@ -356,6 +356,20 @@
             "maxSize": 2097152,
             "protected": false
           }
+        },
+        {
+          "system": false,
+          "id": "vkyd5rla",
+          "name": "balance",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
         }
       ],
       "indexes": [],
@@ -611,7 +625,7 @@
     {
       "id": "ez1iq2paxliaj2b",
       "created": "2026-06-12 07:35:08.988Z",
-      "updated": "2026-06-12 07:35:08.988Z",
+      "updated": "2026-07-03 10:05:51.682Z",
       "name": "invoices",
       "type": "base",
       "system": false,
@@ -752,6 +766,34 @@
             "min": null,
             "max": null,
             "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "9rvolhek",
+          "name": "period",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "idxq3kfc",
+          "name": "amount",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
           }
         }
       ],
