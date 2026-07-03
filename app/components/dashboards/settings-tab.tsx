@@ -33,6 +33,7 @@ import {
 import SecurityMonitoring from "../systems/security-monitoring"
 import CommunicationSystem from "../systems/communication-system"
 import EnterpriseUserApproval from "../management/admin/enterprise-user-approval"
+import BackupRestore from "../settings/BackupRestore"
 // UnifiedAttendanceSystem 已整合到 /attendance 页面
 
 interface SettingsTabProps {
@@ -245,29 +246,7 @@ export default function SettingsTab({ stats, statsLoading, setActiveTab }: Setti
             </div>
           )}
           {settingsSubTab === "backup-restore" && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">备份恢复</h3>
-                  <p className="text-sm text-gray-500">数据备份和恢复管理</p>
-                </div>
-                <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
-                  即将推出
-                </Badge>
-              </div>
-              
-              <div className="text-center py-12">
-                <Settings className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                <h4 className="text-lg font-medium text-gray-900 mb-2">备份恢复功能</h4>
-                <p className="text-gray-500 mb-4">数据备份和恢复功能正在开发中</p>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <p>• 自动数据备份</p>
-                  <p>• 手动备份创建</p>
-                  <p>• 数据恢复功能</p>
-                  <p>• 备份历史管理</p>
-                </div>
-              </div>
-            </div>
+            <BackupRestore />
           )}
         </div>
       </div>
