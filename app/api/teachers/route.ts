@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const authRes = await fetch('http://127.0.0.1:8090/api/admins/auth-with-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identity: 'admin@pjpc.com', password: 'admin123' }),
+      body: JSON.stringify({ identity: 'admin@pjpc.com', password: '1234567890' }),
     })
     const authData = await authRes.json()
     const token = authData.token
