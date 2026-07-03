@@ -8,7 +8,6 @@ const execAsync = promisify(exec)
 
 const PB_DATA_DIR = path.join(process.cwd(), "pb_data")
 const BACKUP_DIR = path.join(PB_DATA_DIR, "backups")
-const ONEDRIVE_BACKUP_DIR = "/mnt/c/Users/PJPC/OneDrive/PJPC_Backups"
 
 // GET: list existing backups
 export async function GET(request: NextRequest) {
@@ -76,25 +75,8 @@ export async function POST(request: NextRequest) {
 
     const stat = fs.statSync(backupPath)
 
-    // Also copy to OneDrive if available
-    let oneDrivePath: string | null = null
-    if (fs.existsSync("/mnt/c/Users/PJPC/OneDrive")) {
-      try {
-        if (!fs.existsSync(ONEDRIVE_BACKUP_DIR)) {
-          fs.mkdirSync(ONEDRIVE_BACKUP_DIR, { recursive: true })
-        }
-        fs.copyFileSync(backupPath, path.join(ONEDRIVE_BACKUP_DIR, backupName))
-        oneDrivePath = path.join(ONEDRIVE_BACKUP_DIR, backupName)
-      } catch (e) {
-        console.warn("OneDrive copy failed (non-critical):", e)
-      }
-    }
-
-    // Clean up old backups: keep last 7 locally, last 30 on OneDrive
+    // Clean up old backups: keep last 7
     cleanOldBackups(BACKUP_DIR, 7)
-    if (fs.existsSync(ONEDRIVE_BACKUP_DIR)) {
-      cleanOldBackups(ONEDRIVE_BACKUP_DIR, 30)
-    }
 
     return NextResponse.json({
       success: true,
@@ -104,7 +86,6 @@ export async function POST(request: NextRequest) {
         sizeFormatted: formatSize(stat.size),
         created: stat.mtime.toISOString(),
         localPath: backupPath,
-        oneDrivePath,
       },
     })
   } catch (error: any) {

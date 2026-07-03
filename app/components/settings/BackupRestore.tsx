@@ -10,9 +10,7 @@ import {
   RefreshCw,
   Shield,
   CheckCircle2,
-  AlertCircle,
   Clock,
-  Cloud,
   FolderOpen,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -23,7 +21,6 @@ interface BackupInfo {
   sizeFormatted: string
   created: string
   localPath?: string
-  oneDrivePath?: string
 }
 
 export default function BackupRestore() {
@@ -61,9 +58,6 @@ export default function BackupRestore() {
       const data = await res.json()
       if (data.success) {
         toast.success(`备份成功！${data.backup.sizeFormatted}`)
-        if (data.backup.oneDrivePath) {
-          toast.success("已同步到 OneDrive 云盘")
-        }
         fetchBackups()
       } else {
         toast.error(`备份失败: ${data.error}`)
@@ -167,18 +161,12 @@ export default function BackupRestore() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-sky-100">
-                <Cloud className="h-5 w-5 text-sky-600" />
+              <div className="p-2 rounded-lg bg-green-100">
+                <Download className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">云同步</p>
-                {lastBackup?.oneDrivePath ? (
-                  <p className="font-medium text-green-600 flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3" /> OneDrive 已同步
-                  </p>
-                ) : (
-                  <p className="font-medium text-gray-400">仅本地</p>
-                )}
+                <p className="text-sm text-gray-500">恢复方式</p>
+                <p className="font-medium text-gray-900 text-sm">下载后解压覆盖</p>
               </div>
             </div>
           </CardContent>
@@ -195,7 +183,7 @@ export default function BackupRestore() {
               <p>• 所有业务数据（学生、教师、费用、发票等）</p>
               <p>• 迁移记录和数据库结构</p>
               <p className="mt-2 text-indigo-600">
-                本地保留最近 7 个备份，OneDrive 保留最近 30 个
+                本地保留最近 7 个备份，可从下方列表下载
               </p>
             </div>
           </div>
@@ -236,10 +224,6 @@ export default function BackupRestore() {
                       <p className="text-xs text-gray-500">
                         {formatDate(backup.created)} · {backup.sizeFormatted}
                       </p>
-                    </div>
-                    {backup.oneDrivePath && (
-                      <Cloud className="h-3 w-3 text-sky-500" title="已同步到 OneDrive" />
-                    )}
                   </div>
                   <Button
                     variant="ghost"
