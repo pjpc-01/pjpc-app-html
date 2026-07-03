@@ -124,6 +124,16 @@ export const StudentCard = ({
                       RM {studentTotal}
                     </span>
                   </div>
+                  {(student as any).balance !== undefined && (student as any).balance !== 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-orange-600">
+                        {(student as any).balance > 0 ? "余额抵扣" : "上期欠款"}
+                      </span>
+                      <span className={`font-semibold ${(student as any).balance > 0 ? "text-orange-500" : "text-red-500"}`}>
+                        {(student as any).balance > 0 ? "-" : "+"}RM {Math.abs((student as any).balance)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
