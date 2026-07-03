@@ -499,6 +499,35 @@ export interface TeacherSalaryRecord {
   payment_date?: string
   payment_method?: string
   bank_reference?: string
+  created_by?: string
+  notes?: string
+  created: string
+  updated: string
+}
+
+/**
+ * 教师绩效评估集合
+ */
+export interface TeacherPerformanceEvaluation {
+  id: string
+  teacher_id: string
+  evaluation_period: string
+  year: number
+  quarter: number
+  evaluator_id: string
+  teaching_quality: number
+  student_satisfaction: number
+  attendance_score: number
+  punctuality_score: number
+  teamwork_score: number
+  communication_score: number
+  overall_score: number
+  strengths: string[]
+  areas_for_improvement: string[]
+  goals_next_period: string[]
+  recommendations: string[]
+  status: 'draft' | 'submitted' | 'reviewed' | 'approved'
+  evaluation_date: string
   notes?: string
   created: string
   updated: string

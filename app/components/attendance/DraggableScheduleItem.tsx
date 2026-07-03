@@ -90,7 +90,6 @@ export default function DraggableScheduleItem({
   return (
     <div
       ref={setNodeRef}
-      style={style}
       className={`
         p-2 rounded text-xs border-l-2 cursor-move select-none
         transition-all duration-200 hover:shadow-md

@@ -55,7 +55,7 @@ interface UserManagementTableProps {
   aiSuggestions: Record<string, AISuggestion>
   aiLoading: Record<string, boolean>
   aiEnabled: boolean
-  selectedUsers: string[]
+  selectedUsers: Set<string>
   selectAll: boolean
   updating: string | null
   onSelectAll: (checked: boolean) => void
@@ -152,14 +152,14 @@ export default function UserManagementTable({
             用户审核管理
           </CardTitle>
           <div className="flex items-center gap-2">
-            {selectedUsers.length > 0 && (
+            {selectedUsers.size > 0 && (
               <Button
                 variant="outline"
                 size="sm"
                 className="flex items-center gap-2"
               >
                 <CheckSquare className="h-4 w-4" />
-                批量操作 ({selectedUsers.length})
+                批量操作 ({selectedUsers.size})
               </Button>
             )}
             <Button variant="outline" size="sm">

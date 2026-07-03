@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase } from '@/lib/pocketbase'
+import { authenticateAdmin } from '@/lib/auth-utils'
 
 // 获取教师个人档案数据
 export async function GET(request: NextRequest) {
