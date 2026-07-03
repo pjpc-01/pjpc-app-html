@@ -126,6 +126,22 @@ export default function TeacherSalaryManagement() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isAdjusting, setIsAdjusting] = useState(false)
   
+  // Global salary settings (EPF/SOCSO/EIS/TAX rates)
+  const [globalRates, setGlobalRates] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('salary_global_rates')
+      if (saved) return JSON.parse(saved)
+    }
+    return { epf: 0.11, socso: 0.005, eis: 0.002, tax: 0 }
+  })
+  
+  // Persist global rates to localStorage
+  const updateGlobalRates = (updates: Partial<typeof globalRates>) => {
+    const next = { ...globalRates, ...updates }
+    setGlobalRates(next)
+    localStorage.setItem('salary_global_rates', JSON.stringify(next))
+  }
+  
   // Dialog states
   const [structureDialogOpen, setStructureDialogOpen] = useState(false)
   const [recordDialogOpen, setRecordDialogOpen] = useState(false)
@@ -371,10 +387,10 @@ export default function TeacherSalaryManagement() {
           allowance_transport: 0,
           allowance_meal: 0,
           allowance_other: 0,
-          epf_rate: 0.11,
-          socso_rate: 0.005,
-          eis_rate: 0.002,
-          tax_rate: 0,
+          epf_rate: globalRates.epf,
+          socso_rate: globalRates.socso,
+          eis_rate: globalRates.eis,
+          tax_rate: globalRates.tax,
           salary_type: 'monthly',
           effective_date: '',
           end_date: '',
@@ -390,6 +406,31 @@ export default function TeacherSalaryManagement() {
   }
 
   // 编辑薪资结构
+  // 新建薪资结构（重置表单用全局费率）
+  const handleCreateStructure = () => {
+    setEditingStructure(null)
+    setStructureForm(prev => ({
+      ...prev,
+      teacher_id: '',
+      base_salary: 0,
+      hourly_rate: 0,
+      overtime_rate: 0,
+      allowance_fixed: 0,
+      allowance_transport: 0,
+      allowance_meal: 0,
+      allowance_other: 0,
+      epf_rate: globalRates.epf,
+      socso_rate: globalRates.socso,
+      eis_rate: globalRates.eis,
+      tax_rate: globalRates.tax,
+      salary_type: 'monthly',
+      effective_date: '',
+      end_date: '',
+      notes: ''
+    }))
+    setStructureDialogOpen(true)
+  }
+
   const handleEditStructure = (structure: TeacherSalaryStructure) => {
     setEditingStructure(structure)
     setStructureForm({
@@ -401,10 +442,10 @@ export default function TeacherSalaryManagement() {
       allowance_transport: structure.allowance_transport || 0,
       allowance_meal: structure.allowance_meal || 0,
       allowance_other: structure.allowance_other || 0,
-      epf_rate: structure.epf_rate,
-      socso_rate: structure.socso_rate,
-      eis_rate: structure.eis_rate,
-      tax_rate: structure.tax_rate,
+      epf_rate: structure.epf_rate ?? globalRates.epf,
+      socso_rate: structure.socso_rate ?? globalRates.socso,
+      eis_rate: structure.eis_rate ?? globalRates.eis,
+      tax_rate: structure.tax_rate ?? globalRates.tax,
       salary_type: structure.salary_type,
       effective_date: structure.effective_date?.split(' ')[0] || '',
       end_date: structure.end_date?.split(' ')[0] || '',
@@ -505,7 +546,7 @@ export default function TeacherSalaryManagement() {
     <div className="space-y-6">
       {/* 操作按钮 */}
       <div className="flex justify-end gap-2">
-        <Button onClick={() => setStructureDialogOpen(true)}>
+        <Button onClick={handleCreateStructure}>
           <Plus className="w-4 h-4 mr-2" />
           新建薪资结构
         </Button>
@@ -565,6 +606,77 @@ export default function TeacherSalaryManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {/* 全局薪资参数设置 */}
+      <Card className="mb-6 border-blue-200 bg-blue-50/30">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            薪资参数设置
+          </CardTitle>
+          <CardDescription>设置 EPF、SOCSO、EIS、所得税等默认扣款比率，新建薪资结构时自动应用</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <Label htmlFor="global_epf">EPF 比率 (%)</Label>
+              <Input
+                id="global_epf"
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                value={(globalRates.epf * 100).toFixed(1)}
+                onChange={(e) => updateGlobalRates({ epf: (parseFloat(e.target.value) || 0) / 100 })}
+                className="bg-white"
+              />
+              <p className="text-xs text-gray-500 mt-1">雇员公积金</p>
+            </div>
+            <div>
+              <Label htmlFor="global_socso">SOCSO 比率 (%)</Label>
+              <Input
+                id="global_socso"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={(globalRates.socso * 100).toFixed(2)}
+                onChange={(e) => updateGlobalRates({ socso: (parseFloat(e.target.value) || 0) / 100 })}
+                className="bg-white"
+              />
+              <p className="text-xs text-gray-500 mt-1">社会保险</p>
+            </div>
+            <div>
+              <Label htmlFor="global_eis">EIS 比率 (%)</Label>
+              <Input
+                id="global_eis"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={(globalRates.eis * 100).toFixed(2)}
+                onChange={(e) => updateGlobalRates({ eis: (parseFloat(e.target.value) || 0) / 100 })}
+                className="bg-white"
+              />
+              <p className="text-xs text-gray-500 mt-1">就业保险</p>
+            </div>
+            <div>
+              <Label htmlFor="global_tax">PCB 税率 (%)</Label>
+              <Input
+                id="global_tax"
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                value={(globalRates.tax * 100).toFixed(1)}
+                onChange={(e) => updateGlobalRates({ tax: (parseFloat(e.target.value) || 0) / 100 })}
+                className="bg-white"
+              />
+              <p className="text-xs text-gray-500 mt-1">每月预扣税（0=不扣）</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 自动操作按钮 */}
       <div className="flex gap-4 mb-6">
