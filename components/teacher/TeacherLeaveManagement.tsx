@@ -40,7 +40,7 @@ import { formatDate } from "@/lib/utils"
 import { toast } from "sonner"
 
 // Types
-interface TeacherLeaveRecord {
+export interface TeacherLeaveRecord {
   id: string
   teacher_id: string
   leave_type: 'annual' | 'sick' | 'emergency' | 'maternity' | 'paternity' | 'unpaid'

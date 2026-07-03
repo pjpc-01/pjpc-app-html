@@ -74,23 +74,23 @@ export interface InvoiceSettingsPreset {
 const createDefaultPreset = (overrides?: Partial<InvoiceSettingsPreset>): InvoiceSettingsPreset => ({
   id: Date.now().toString(),
   name: "默认设置",
-  schoolName: "智慧教育学校",
-  schoolNameEn: "Smart Education School",
+  schoolName: "",
+  schoolNameEn: "",
   schoolLogo: "",
-  schoolAddress: "北京市朝阳区教育路123号",
-  schoolPhone: "010-12345678",
-  schoolEmail: "info@smarteducation.com",
+  schoolAddress: "",
+  schoolPhone: "",
+  schoolEmail: "",
   schoolWebsite: "",
-  taxNumber: "91110105MA12345678",
-  bankName: "马来亚银行",
-  bankAccount: "1234-5678-9012",
-  bankHolder: "智慧教育学校",
+  taxNumber: "",
+  bankName: "",
+  bankAccount: "",
+  bankHolder: "",
   primaryColor: "#1e40af",
   secondaryColor: "#3b82f6",
   accentColor: "#f59e0b",
-  footerText: "感谢您的信任与支持！本发票由系统自动生成。",
-  paymentTerms: "请在到期日期前完成付款。逾期将产生额外费用。",
-  receiptNote: "此收据仅作为付款凭证，不具有发票效力。",
+  footerText: "",
+  paymentTerms: "",
+  receiptNote: "",
   isDefault: true,
   createdAt: new Date().toISOString().split('T')[0],
   updatedAt: new Date().toISOString().split('T')[0],
@@ -377,43 +377,123 @@ export default function InvoiceSettingsManager({ onSettingsChange, activePresetI
   const logoSpanRef = useRef<HTMLInputElement>(null)
   const previewRef = useRef<HTMLIFrameElement>(null)
 
-  // Load presets from localStorage on mount
+  // Load presets from PocketBase on mount
   useEffect(() => {
-    const saved = localStorage.getItem('invoiceSettingsPresets')
-    if (saved) {
+    let cancelled = false
+    const loadPresets = async () => {
       try {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setPresets(parsed)
-          const defaultId = activePresetId || parsed.find((p: any) => p.isDefault)?.id || parsed[0].id
+        const res = await fetch('/api/pocketbase-proxy/api/collections/invoice_settings/records?perPage=50&sort=-created')
+        if (!res.ok) throw new Error('Failed to fetch')
+        const data = await res.json()
+        const items = data.items || []
+        
+        if (items.length > 0) {
+          // Map PB records to InvoiceSettingsPreset
+          const mapped = items.map((r: any) => ({
+            ...r,
+            id: r.id,
+            name: r.name || '默认设置',
+            schoolLogo: r.schoolLogo || '',
+            schoolName: r.schoolName || '',
+            schoolNameEn: r.schoolNameEn || '',
+            schoolAddress: r.schoolAddress || '',
+            schoolPhone: r.schoolPhone || '',
+            schoolEmail: r.schoolEmail || '',
+            schoolWebsite: r.schoolWebsite || '',
+            taxNumber: r.taxNumber || '',
+            bankName: r.bankName || '',
+            bankAccount: r.bankAccount || '',
+            bankHolder: r.bankHolder || '',
+            primaryColor: r.primaryColor || '#1e40af',
+            secondaryColor: r.secondaryColor || '#3b82f6',
+            accentColor: r.accentColor || '#f59e0b',
+            footerText: r.footerText || '',
+            paymentTerms: r.paymentTerms || '',
+            receiptNote: r.receiptNote || '',
+            isDefault: r.isDefault || false,
+            createdAt: r.created || '',
+            updatedAt: r.updated || '',
+          })) as InvoiceSettingsPreset[]
+          
+          if (cancelled) return
+          setPresets(mapped)
+          const defaultId = activePresetId || mapped.find((p: any) => p.isDefault)?.id || mapped[0].id
           setActiveId(defaultId)
-          const active = parsed.find((p: any) => p.id === defaultId)
-          if (active) setSettings(active)
+          const active = mapped.find((p: any) => p.id === defaultId)
+          if (active) {
+            setSettings(active)
+            if (onSettingsChange) onSettingsChange(active)
+          }
           return
         }
-      } catch (e) { /* fall through */ }
+      } catch (e) {
+        console.error('Failed to load invoice settings from PB:', e)
+      }
+      
+      // Fallback: try localStorage migration
+      if (cancelled) return
+      try {
+        const saved = localStorage.getItem('invoiceSettingsPresets')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            // Migrate to PB
+            for (const p of parsed) {
+              await fetch('/api/pocketbase-proxy/api/collections/invoice_settings/records', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...p, id: undefined })
+              })
+            }
+            // Reload
+            window.location.reload()
+            return
+          }
+        }
+      } catch {}
+      
+      // No presets anywhere, create default in-memory
+      const defaultPreset = createDefaultPreset()
+      setPresets([defaultPreset])
+      setActiveId(defaultPreset.id)
+      setSettings(defaultPreset)
     }
-    // No saved presets, create default
-    const defaultPreset = createDefaultPreset()
-    setPresets([defaultPreset])
-    setActiveId(defaultPreset.id)
-    setSettings(defaultPreset)
-    savePresets([defaultPreset])
+    loadPresets()
+    return () => { cancelled = true }
   }, [])
 
-  // Save presets to localStorage
-  const savePresets = (updatedPresets: InvoiceSettingsPreset[]) => {
-    setPresets(updatedPresets)
-    localStorage.setItem('invoiceSettingsPresets', JSON.stringify(updatedPresets))
+  // Save a single preset to PocketBase (POST for new, PATCH for existing)
+  const savePreset = async (preset: InvoiceSettingsPreset, isNew: boolean = false) => {
+    const { id, createdAt, updatedAt, ...data } = preset as any
+    const url = isNew 
+      ? '/api/pocketbase-proxy/api/collections/invoice_settings/records'
+      : `/api/pocketbase-proxy/api/collections/invoice_settings/records/${id}`
+    const method = isNew ? 'POST' : 'PATCH'
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    if (!res.ok) throw new Error('Failed to save preset')
+    return await res.json()
   }
 
-  // Update current settings and persist
-  const updateSettings = (updates: Partial<InvoiceSettingsPreset>) => {
+  // Delete a preset from PocketBase
+  const deletePreset = async (presetId: string) => {
+    await fetch(`/api/pocketbase-proxy/api/collections/invoice_settings/records/${presetId}`, {
+      method: 'DELETE'
+    })
+  }
+
+  // Update current settings and persist to PB
+  const updateSettings = async (updates: Partial<InvoiceSettingsPreset>) => {
     const newSettings = { ...settings, ...updates, updatedAt: new Date().toISOString().split('T')[0] }
     setSettings(newSettings)
     // Update in presets list
     const updated = presets.map(p => p.id === activeId ? newSettings : p)
-    savePresets(updated)
+    setPresets(updated)
+    // Save to PB
+    try { await savePreset(newSettings) } catch (e) { console.error('Save failed:', e) }
     if (onSettingsChange) onSettingsChange(newSettings)
   }
 
@@ -428,7 +508,7 @@ export default function InvoiceSettingsManager({ onSettingsChange, activePresetI
   }
 
   // Save current as new preset
-  const handleSaveAsNew = () => {
+  const handleSaveAsNew = async () => {
     if (!newPresetName.trim()) return
     const newPreset = createDefaultPreset({
       ...settings,
@@ -436,46 +516,65 @@ export default function InvoiceSettingsManager({ onSettingsChange, activePresetI
       name: newPresetName.trim(),
       isDefault: false,
     })
-    const updated = [...presets, newPreset]
-    savePresets(updated)
-    setActiveId(newPreset.id)
-    setSettings(newPreset)
+    try {
+      const saved = await savePreset(newPreset, true)
+      const savedPreset = { ...newPreset, id: saved.id }
+      setPresets(prev => [...prev, savedPreset])
+      setActiveId(saved.id)
+      setSettings(savedPreset)
+    } catch (e) {
+      console.error('Save as new failed:', e)
+    }
     setNewPresetName("")
     setIsNewPresetDialogOpen(false)
   }
 
   // Duplicate current preset
-  const handleDuplicate = () => {
+  const handleDuplicate = async () => {
     const dup = createDefaultPreset({
       ...settings,
       id: Date.now().toString(),
       name: settings.name + " (副本)",
       isDefault: false,
     })
-    const updated = [...presets, dup]
-    savePresets(updated)
-    setActiveId(dup.id)
-    setSettings(dup)
+    try {
+      const saved = await savePreset(dup, true)
+      const savedPreset = { ...dup, id: saved.id }
+      setPresets(prev => [...prev, savedPreset])
+      setActiveId(saved.id)
+      setSettings(savedPreset)
+    } catch (e) {
+      console.error('Duplicate failed:', e)
+    }
   }
 
   // Delete preset
-  const handleDeletePreset = () => {
+  const handleDeletePreset = async () => {
     if (presets.length <= 1) {
       alert("至少需要保留一个预设")
       return
     }
-    const updated = presets.filter(p => p.id !== activeId)
-    savePresets(updated)
-    // Switch to first available
-    setActiveId(updated[0].id)
-    setSettings(updated[0])
+    try {
+      await deletePreset(activeId)
+      const updated = presets.filter(p => p.id !== activeId)
+      setPresets(updated)
+      setActiveId(updated[0].id)
+      setSettings(updated[0])
+    } catch (e) {
+      console.error('Delete failed:', e)
+    }
   }
 
   // Set as default
-  const handleSetDefault = () => {
+  const handleSetDefault = async () => {
     const updated = presets.map(p => ({ ...p, isDefault: p.id === activeId }))
-    savePresets(updated)
     setPresets(updated)
+    // Update all presets in PB
+    for (const p of updated) {
+      if (p.isDefault !== presets.find(op => op.id === p.id)?.isDefault) {
+        try { await savePreset(p) } catch (e) { console.error('Set default failed:', e) }
+      }
+    }
   }
 
   // Handle logo upload

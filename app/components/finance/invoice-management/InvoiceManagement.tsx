@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog"
 import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Edit, Settings, Loader2 } from "lucide-react"
 import { useInvoices } from "@/hooks/useInvoices"
-import { downloadInvoicePDF, printInvoicePDF } from "@/lib/pdf-generator"
+import { downloadInvoicePDF, printInvoicePDF, generateInvoiceHTML } from "@/lib/pdf-generator"
 import { useStudents } from "@/hooks/useStudents"
 import { useStudentFees } from "@/hooks/useStudentFees"
 import { useFees } from "@/hooks/useFees"
@@ -84,27 +84,63 @@ export default function InvoiceManagement() {
   const [messageContent, setMessageContent] = useState('')
   const [isSending, setIsSending] = useState(false)
 
-  // Settings state
-  const [pdfOptions, setPdfOptions] = useState<InvoiceSettingsPreset>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('pjpc_invoice_settings_active')
-        if (saved) return JSON.parse(saved)
-      } catch {}
-    }
-    return {
-      id: "default", name: "默认设置", schoolName: "智慧教育学校", schoolNameEn: "",
-      schoolLogo: "", schoolAddress: "", schoolPhone: "", schoolEmail: "", schoolWebsite: "",
-      taxNumber: "", bankName: "", bankAccount: "", bankHolder: "",
-      primaryColor: "#1e40af", secondaryColor: "#3b82f6", accentColor: "#f59e0b",
-      footerText: "", paymentTerms: "", receiptNote: "",
-      isDefault: true, createdAt: "", updatedAt: ""
-    }
+  // Settings state - load from PB on mount
+  const [pdfOptions, setPdfOptions] = useState<InvoiceSettingsPreset>({
+    id: "default", name: "默认设置", schoolName: "", schoolNameEn: "",
+    schoolLogo: "", schoolAddress: "", schoolPhone: "", schoolEmail: "", schoolWebsite: "",
+    taxNumber: "", bankName: "", bankAccount: "", bankHolder: "",
+    primaryColor: "#1e40af", secondaryColor: "#3b82f6", accentColor: "#f59e0b",
+    footerText: "", paymentTerms: "", receiptNote: "",
+    isDefault: true, createdAt: "", updatedAt: ""
   })
 
-  // Sync active settings to localStorage
+  // Load settings from PB on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    const loadFromPB = async () => {
+      try {
+        const res = await fetch('/api/pocketbase-proxy/api/collections/invoice_settings/records?perPage=50&sort=-created')
+        if (!res.ok) return
+        const data = await res.json()
+        const items = data.items || []
+        if (items.length > 0) {
+          const defaultPreset = items.find((r: any) => r.isDefault) || items[0]
+          const mapped = {
+            ...defaultPreset,
+            id: defaultPreset.id,
+            schoolLogo: defaultPreset.schoolLogo || '',
+            schoolName: defaultPreset.schoolName || '',
+            schoolNameEn: defaultPreset.schoolNameEn || '',
+            schoolAddress: defaultPreset.schoolAddress || '',
+            schoolPhone: defaultPreset.schoolPhone || '',
+            schoolEmail: defaultPreset.schoolEmail || '',
+            schoolWebsite: defaultPreset.schoolWebsite || '',
+            taxNumber: defaultPreset.taxNumber || '',
+            bankName: defaultPreset.bankName || '',
+            bankAccount: defaultPreset.bankAccount || '',
+            bankHolder: defaultPreset.bankHolder || '',
+            primaryColor: defaultPreset.primaryColor || '#1e40af',
+            secondaryColor: defaultPreset.secondaryColor || '#3b82f6',
+            accentColor: defaultPreset.accentColor || '#f59e0b',
+            footerText: defaultPreset.footerText || '',
+            paymentTerms: defaultPreset.paymentTerms || '',
+            receiptNote: defaultPreset.receiptNote || '',
+            isDefault: true,
+            createdAt: defaultPreset.created || '',
+            updatedAt: defaultPreset.updated || '',
+          } as InvoiceSettingsPreset
+          setPdfOptions(mapped)
+          localStorage.setItem('pjpc_invoice_settings_active', JSON.stringify(mapped))
+        }
+      } catch (e) {
+        console.error('Failed to load invoice settings from PB:', e)
+      }
+    }
+    loadFromPB()
+  }, [])
+
+  // Sync active settings to localStorage (for fast initial load)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && pdfOptions.schoolName) {
       localStorage.setItem('pjpc_invoice_settings_active', JSON.stringify(pdfOptions))
     }
   }, [pdfOptions])
@@ -185,6 +221,8 @@ export default function InvoiceManagement() {
   // Event handlers
   const handleDownloadInvoice = async (invoice: any) => {
     try {
+      console.log('📄 PDF Download - invoice:', { id: invoice.id, studentName: invoice.studentName, itemsCount: invoice.items?.length, items: invoice.items, totalAmount: invoice.totalAmount })
+      console.log('📄 PDF Download - pdfOptions:', { schoolName: pdfOptions.schoolName, primaryColor: pdfOptions.primaryColor, bankName: pdfOptions.bankName })
       await downloadInvoicePDF(invoice, pdfOptions)
     } catch (error) {
       console.error('Failed to download invoice:', error)
@@ -640,162 +678,19 @@ export default function InvoiceManagement() {
           </DialogHeader>
           
           {selectedInvoice && (
-            <div className="space-y-6">
-              {/* Invoice Header */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600">发票号码</p>
-                    <p className="font-semibold text-lg">{selectedInvoice.invoiceNumber}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">状态</p>
-                    <div className="mt-1">{getInvoiceStatusBadge(selectedInvoice.status)}</div>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">开具日期</p>
-                    <p className="font-semibold">{new Date(selectedInvoice.issueDate).toLocaleDateString('zh-CN')}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">到期日期</p>
-                    <p className="font-semibold">{new Date(selectedInvoice.dueDate).toLocaleDateString('zh-CN')}</p>
-                  </div>
-                </div>
+            <div className="space-y-4">
+              {/* PDF Preview iframe */}
+              <div className="w-full border rounded-lg overflow-hidden bg-white">
+                <iframe
+                  srcDoc={generateInvoiceHTML(selectedInvoice, pdfOptions)}
+                  className="w-full border-0"
+                  style={{ height: '70vh', minHeight: '500px' }}
+                  title="发票预览"
+                />
               </div>
 
-              {/* Student Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">学生信息</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-600">学生姓名</p>
-                      <p className="font-semibold">{selectedInvoice.studentName || selectedInvoice.student}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">学生ID</p>
-                      <p className="font-semibold">{selectedInvoice.studentId}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">年级</p>
-                      <p className="font-semibold">{selectedInvoice.grade || '未指定'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">家长邮箱</p>
-                      <p className="font-semibold">{selectedInvoice.email || '未提供'}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Invoice Items */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">费用明细</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="border rounded-lg">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>项目</TableHead>
-                          <TableHead className="text-right">金额</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {selectedInvoice.items && selectedInvoice.items.map((item: any, index: number) => (
-                          <TableRow key={index}>
-                            <TableCell>{item.name}</TableCell>
-                            <TableCell className="text-right font-semibold">
-                              RM {item.amount?.toLocaleString()}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                        {(!selectedInvoice.items || selectedInvoice.items.length === 0) && (
-                          <TableRow>
-                            <TableCell>学生费用</TableCell>
-                            <TableCell className="text-right font-semibold">
-                              RM {selectedInvoice.amount?.toLocaleString()}
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                  
-                  {/* Totals */}
-                  <div className="mt-4 space-y-2">
-                    {selectedInvoice.tax !== null && selectedInvoice.tax !== undefined && Number(selectedInvoice.tax) > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span>税费:</span>
-                        <span>RM {selectedInvoice.tax.toLocaleString()}</span>
-                      </div>
-                    )}
-                    {selectedInvoice.discount !== null && selectedInvoice.discount !== undefined && Number(selectedInvoice.discount) > 0 && (
-                      <div className="flex justify-between text-sm text-red-600">
-                        <span>折扣:</span>
-                        <span>-RM {selectedInvoice.discount.toLocaleString()}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-lg font-bold border-t pt-2">
-                      <span>总计:</span>
-                      <span className="text-green-600">RM {selectedInvoice.totalAmount?.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-                             {/* Payment Information */}
-               <Card>
-                 <CardHeader>
-                   <CardTitle className="text-lg">付款信息</CardTitle>
-                 </CardHeader>
-                 <CardContent>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div>
-                       <p className="text-sm text-gray-600">付款日期</p>
-                       <p className="font-semibold">
-                         {selectedInvoice.paidDate 
-                           ? new Date(selectedInvoice.paidDate).toLocaleDateString('zh-CN')
-                           : '未付款'
-                         }
-                       </p>
-                     </div>
-                     <div>
-                       <p className="text-sm text-gray-600">提醒发送</p>
-                       <p className="font-semibold">
-                         {selectedInvoice.reminderSent ? '已发送' : '未发送'}
-                       </p>
-                     </div>
-                     <div>
-                       <p className="text-sm text-gray-600">最后提醒日期</p>
-                       <p className="font-semibold">
-                         {selectedInvoice.lastReminderDate 
-                           ? new Date(selectedInvoice.lastReminderDate).toLocaleDateString('zh-CN')
-                           : '无'
-                         }
-                       </p>
-                     </div>
-                   </div>
-                 </CardContent>
-               </Card>
-
-              {/* Notes */}
-              {selectedInvoice.notes && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">备注</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-700 whitespace-pre-wrap">{selectedInvoice.notes}</p>
-                  </CardContent>
-                </Card>
-              )}
-
               {/* Action Buttons */}
-              <div className="flex justify-end gap-2 pt-4 border-t">
+              <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="outline"
                   onClick={() => handleDownloadInvoice(selectedInvoice)}
@@ -813,10 +708,9 @@ export default function InvoiceManagement() {
                 <Button
                   variant="outline"
                   onClick={() => handleSendInvoice(selectedInvoice)}
-                  disabled={selectedInvoice.status === 'sent'}
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  {selectedInvoice.status === 'sent' ? '已发送' : '发送'}
+                  发送
                 </Button>
                 <Button onClick={() => setIsInvoiceDetailDialogOpen(false)}>
                   关闭
