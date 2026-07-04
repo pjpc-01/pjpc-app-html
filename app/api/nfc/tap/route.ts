@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const PB_URL = 'http://127.0.0.1:8090'
+const PB_ADMIN = { email: 'admin@pjpc.com', password: '1234567890' }
 
 async function pbAuth(): Promise<string> {
   const res = await fetch(`${PB_URL}/api/admins/auth-with-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identity: 'admin@pjpc.com', password: '1234567890' }),
+    body: JSON.stringify({ identity: PB_ADMIN.email, password: PB_ADMIN.password }),
   })
   if (!res.ok) throw new Error('Auth failed')
   return (await res.json()).token
 }
 
-// POST: NFC card tapped — resolve card_uid → student info
+// POST: NFC card tapped — resolve card_uid → person (student or teacher)
 export async function POST(request: NextRequest) {
   try {
     const token = await pbAuth()
@@ -22,9 +23,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '缺少 card_uid' }, { status: 400 })
     }
 
-    // 1. Look up NFC card
+    // 1. Look up NFC card — expand both studentId and teacherId
     const cardRes = await fetch(
-      `${PB_URL}/api/collections/nfc_cards/records?perPage=1&expand=studentId&filter=${encodeURIComponent(`card_uid="${card_uid}"`)}`,
+      `${PB_URL}/api/collections/nfc_cards/records?perPage=1&expand=studentId,teacherId&filter=${encodeURIComponent(`card_uid="${card_uid}"`)}`,
       { headers: { Authorization: token } }
     )
     const cardData = await cardRes.json()
@@ -36,28 +37,59 @@ export async function POST(request: NextRequest) {
     const card = cardData.items[0]
 
     if (card.status !== 'active') {
+      const statusMap: Record<string, string> = { lost: '挂失', inactive: '停用' }
       return NextResponse.json({
         found: false,
-        error: `卡片已${card.status === 'lost' ? '挂失' : card.status === 'inactive' ? '停用' : card.status}`,
+        error: `卡片已${statusMap[card.status] || card.status}`,
         card: { uid: card.card_uid, status: card.status },
       }, { status: 403 })
     }
 
-    // 2. Extract student info from expanded relation
-    const expandedStudents = card.expand?.studentId
-    if (!expandedStudents || (Array.isArray(expandedStudents) && expandedStudents.length === 0)) {
+    // 2. Resolve person based on card type
+    const personType = card.type || 'student'
+
+    if (personType === 'teacher') {
+      const teachers = card.expand?.teacherId
+      if (!teachers || (Array.isArray(teachers) && teachers.length === 0)) {
+        return NextResponse.json({ found: false, error: '卡片未绑定教师' }, { status: 404 })
+      }
+      const teacher = Array.isArray(teachers) ? teachers[0] : teachers
+
+      return NextResponse.json({
+        found: true,
+        person_type: 'teacher',
+        person: {
+          id: teacher.id,
+          teacher_id: teacher.id,
+          name: teacher.name,
+          center: teacher.center || '',
+          position: teacher.position || '',
+        },
+        card: {
+          uid: card.card_uid,
+          type: card.type,
+          issued_date: card.issued_date,
+        },
+      })
+    }
+
+    // Default: student
+    const students = card.expand?.studentId
+    if (!students || (Array.isArray(students) && students.length === 0)) {
       return NextResponse.json({ found: false, error: '卡片未绑定学生' }, { status: 404 })
     }
 
-    const student = Array.isArray(expandedStudents) ? expandedStudents[0] : expandedStudents
+    const student = Array.isArray(students) ? students[0] : students
 
     return NextResponse.json({
       found: true,
-      student: {
+      person_type: 'student',
+      person: {
         id: student.student_id,
+        student_id: student.student_id,
         name: student.name,
-        center: student.center,
-        grade: student.grade,
+        center: student.center || '',
+        grade: student.grade || '',
       },
       card: {
         uid: card.card_uid,
@@ -66,6 +98,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error: any) {
+    console.error('NFC Tap 失败:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

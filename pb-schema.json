@@ -5418,14 +5418,14 @@
     {
       "id": "c21d91di524jrjz",
       "created": "2026-06-23 06:54:56.115Z",
-      "updated": "2026-06-23 06:54:56.115Z",
+      "updated": "2026-07-03 11:20:45.923Z",
       "name": "nfc_cards",
       "type": "base",
       "system": false,
       "schema": [
         {
           "system": false,
-          "id": "2gxv34da",
+          "id": "rgzj7uzz",
           "name": "card_uid",
           "type": "text",
           "required": true,
@@ -5439,7 +5439,7 @@
         },
         {
           "system": false,
-          "id": "uopekxdk",
+          "id": "k0cdtcte",
           "name": "studentId",
           "type": "relation",
           "required": false,
@@ -5449,13 +5449,29 @@
             "collectionId": "yot737rl8uqqnh8",
             "cascadeDelete": false,
             "minSelect": null,
-            "maxSelect": null,
+            "maxSelect": 1,
             "displayFields": null
           }
         },
         {
           "system": false,
-          "id": "k2rsfave",
+          "id": "2x7puyig",
+          "name": "teacherId",
+          "type": "relation",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "collectionId": "djvae07iufj859g",
+            "cascadeDelete": false,
+            "minSelect": null,
+            "maxSelect": 1,
+            "displayFields": null
+          }
+        },
+        {
+          "system": false,
+          "id": "5tnp4q4n",
           "name": "status",
           "type": "select",
           "required": false,
@@ -5472,7 +5488,7 @@
         },
         {
           "system": false,
-          "id": "zohnkq0m",
+          "id": "atnqlbdy",
           "name": "type",
           "type": "select",
           "required": false,
@@ -5482,14 +5498,13 @@
             "maxSelect": 1,
             "values": [
               "student",
-              "teacher",
-              "admin"
+              "teacher"
             ]
           }
         },
         {
           "system": false,
-          "id": "okalwp54",
+          "id": "nxuvwwv4",
           "name": "issued_date",
           "type": "date",
           "required": false,
@@ -5502,7 +5517,7 @@
         },
         {
           "system": false,
-          "id": "dfnf2zng",
+          "id": "bw6po9qp",
           "name": "notes",
           "type": "text",
           "required": false,
