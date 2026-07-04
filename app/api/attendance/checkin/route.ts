@@ -10,8 +10,7 @@ async function pbAuth(): Promise<string> {
     body: JSON.stringify({ identity: PB_ADMIN.email, password: PB_ADMIN.password }),
   })
   if (!res.ok) throw new Error(`Auth failed: ${res.status}`)
-  const data = await res.json()
-  return data.token
+  return (await res.json()).token
 }
 
 async function pbGet(token: string, collection: string, filter: string) {
@@ -38,17 +37,25 @@ async function pbUpdate(token: string, collection: string, id: string, data: any
   return res.json()
 }
 
-// POST - NFC自动考勤（签到/签退）
+// POST — 统一考勤（学生 + 教师）
+// Body: { person_id, person_type: 'student'|'teacher', person_name, center, method?, notes? }
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { studentId, center, method = 'nfc', notes = '' } = body
+    const {
+      person_id,
+      person_type = 'student',
+      person_name,
+      center,
+      method = 'nfc',
+      notes = '',
+    } = body
 
-    if (!studentId || !center) {
-      return NextResponse.json({ error: '缺少必需参数: studentId, center' }, { status: 400 })
+    if (!person_id || !center) {
+      return NextResponse.json({ error: '缺少必需参数: person_id, center' }, { status: 400 })
     }
 
-    // 1. 认证
+    // 1. Auth
     let token: string
     try {
       token = await pbAuth()
@@ -56,19 +63,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'PocketBase 认证失败' }, { status: 401 })
     }
 
-    // 2. 查找学生
-    const studentRes = await pbGet(token, 'students', `student_id="${studentId}"`)
-    if (!studentRes.items || studentRes.items.length === 0) {
-      return NextResponse.json({ error: '学生不存在', studentId }, { status: 404 })
-    }
-    const student = studentRes.items[0]
+    // 2. Determine collection and ID field based on person_type
+    const isTeacher = person_type === 'teacher'
+    const collectionName = isTeacher ? 'teacher_attendance' : 'student_attendance'
+    const idField = isTeacher ? 'teacher_id' : 'student_id'
+    const nameField = isTeacher ? 'teacher_name' : 'student_name'
 
-    // 3. 查找今日考勤（date 字段用范围匹配）
+    // 3. Resolve name if not provided
+    let resolvedName = person_name || person_id
+    if (!person_name && !isTeacher) {
+      try {
+        const studentRes = await pbGet(token, 'students', `student_id="${person_id}"`)
+        if (studentRes.items?.length > 0) {
+          resolvedName = studentRes.items[0].name || person_id
+        }
+      } catch { /* use person_id as fallback */ }
+    }
+
+    // 4. Look up today's existing attendance record
     const now = new Date()
     const today = now.toISOString().split('T')[0]
-    const dateFilter = `student_id="${studentId}" && date >= "${today} 00:00:00" && date <= "${today} 23:59:59"`
+    const dateFilter = isTeacher
+      ? `${idField}="${person_id}" && check_in >= "${today}"`
+      : `${idField}="${person_id}" && date >= "${today} 00:00:00" && date <= "${today} 23:59:59"`
+
     const existingRes = await fetch(
-      `${PB_URL}/api/collections/student_attendance/records?perPage=1&sort=-created&filter=${encodeURIComponent(dateFilter)}`,
+      `${PB_URL}/api/collections/${collectionName}/records?perPage=1&sort=-created&filter=${encodeURIComponent(dateFilter)}`,
       { headers: { Authorization: token } }
     ).then(r => r.json())
 
@@ -76,44 +96,56 @@ export async function POST(request: NextRequest) {
     let action: string
 
     if (!existingRes.items || existingRes.items.length === 0) {
-      // 签到
-      record = await pbCreate(token, 'student_attendance', {
-        student_id: studentId,
-        student_name: student.name || student.student_name || studentId,
+      // === CHECK-IN ===
+      const recordData: any = {
+        [idField]: person_id,
+        [nameField]: resolvedName,
         center,
-        branch_name: center,
         date: today,
         check_in: now.toISOString(),
         status: 'present',
         method,
         notes: notes || `NFC打卡 - ${method}`,
         device_info: JSON.stringify({ method, source: 'nfc' }),
-      })
+      }
+
+      // Add branch fields for teacher
+      if (isTeacher) {
+        recordData.branch_code = center
+        recordData.branch_name = center
+      }
+
+      record = await pbCreate(token, collectionName, recordData)
       action = '签到'
     } else {
       const lastRecord = existingRes.items[0]
       const hasCheckOut = lastRecord.check_out && lastRecord.check_out !== ''
+
       if (!hasCheckOut) {
-        // 签退
-        record = await pbUpdate(token, 'student_attendance', lastRecord.id, {
+        // === CHECK-OUT ===
+        record = await pbUpdate(token, collectionName, lastRecord.id, {
           check_out: now.toISOString(),
           notes: (lastRecord.notes || '') + ` | NFC签退 - ${method}`,
         })
         action = '签退'
       } else {
-        // 再次签到
-        record = await pbCreate(token, 'student_attendance', {
-          student_id: studentId,
-          student_name: student.name || student.student_name || studentId,
+        // === CHECK-IN AGAIN ===
+        const recordData: any = {
+          [idField]: person_id,
+          [nameField]: resolvedName,
           center,
-          branch_name: center,
           date: today,
           check_in: now.toISOString(),
           status: 'present',
           method,
           notes: notes || `NFC打卡 - ${method}`,
           device_info: JSON.stringify({ method, source: 'nfc' }),
-        })
+        }
+        if (isTeacher) {
+          recordData.branch_code = center
+          recordData.branch_name = center
+        }
+        record = await pbCreate(token, collectionName, recordData)
         action = '签到'
       }
     }
@@ -122,11 +154,12 @@ export async function POST(request: NextRequest) {
       success: true,
       action,
       message: `${action}成功`,
+      person_type,
       data: record,
-      student: { id: studentId, name: student.name || student.student_name },
+      person: { id: person_id, name: resolvedName, type: person_type },
     })
   } catch (error: any) {
-    console.error('NFC考勤失败:', error)
+    console.error('统一考勤失败:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

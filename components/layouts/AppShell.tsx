@@ -116,9 +116,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         label: "考勤系统",
         icon: ClipboardCheck,
         children: [
-          { label: "学生签到", href: "/student-checkin", icon: UserCheck },
-          { label: "教师签到", href: "/teacher-checkin", icon: UserCog },
-          { label: "考勤报表", href: "/attendance-reports", icon: FileText },
+          { label: "考勤中心", href: "/attendance", icon: ClipboardCheck },
         ],
       },
       {
