@@ -62,7 +62,7 @@ export default function UnifiedAttendanceHub() {
   useEffect(() => { fetchRecords(); fetchReport() }, [fetchRecords, fetchReport])
 
   useEffect(() => {
-    const interval = setInterval(() => { fetchRecords(); fetchReport() }, 5000)
+    const interval = setInterval(() => { fetchRecords(); fetchReport() }, 30000)
     return () => clearInterval(interval)
   }, [fetchRecords, fetchReport])
 

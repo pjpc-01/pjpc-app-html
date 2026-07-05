@@ -7,7 +7,7 @@
     {
       "id": "_pb_users_auth_",
       "created": "2026-06-08 00:48:54.362Z",
-      "updated": "2026-06-18 05:00:39.924Z",
+      "updated": "2026-07-05 03:13:45.034Z",
       "name": "users",
       "type": "auth",
       "system": false,
@@ -46,6 +46,48 @@
           "system": false,
           "id": "0ljkbthb",
           "name": "role",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "nz5g8mci",
+          "name": "card_id",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": true,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "8msujyry",
+          "name": "teacher_id",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "5beoefzz",
+          "name": "center",
           "type": "text",
           "required": false,
           "presentable": false,
@@ -5418,7 +5460,7 @@
     {
       "id": "c21d91di524jrjz",
       "created": "2026-06-23 06:54:56.115Z",
-      "updated": "2026-07-03 11:20:45.923Z",
+      "updated": "2026-07-05 06:22:43.399Z",
       "name": "nfc_cards",
       "type": "base",
       "system": false,
@@ -5519,6 +5561,20 @@
           "system": false,
           "id": "bw6po9qp",
           "name": "notes",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "gqk1maq5",
+          "name": "nfc_uid",
           "type": "text",
           "required": false,
           "presentable": false,

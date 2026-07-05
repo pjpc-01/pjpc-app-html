@@ -196,9 +196,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             manualLogoutRef.current = false
             setLoading(false)
           } else {
-            // 没有认证状态，尝试自动管理员登录（开发环境）
-            // 自动登录开发者账号（开发/生产模式都生效）
-            console.log('🔧 尝试自动登录开发者账号')
+            // 没有认证状态，开发环境自动登录
+            // 生产环境需要用户手动登录
+            if (process.env.NODE_ENV !== 'development') {
+              console.log('🔒 生产环境，需要手动登录')
+              setLoading(false)
+              return
+            }
+            console.log('🔧 [DEV] 尝试自动登录开发者账号')
             try {
               const devEmail = 'dev@pjpc.com'
               const devPassword = 'DevAdmin123!'

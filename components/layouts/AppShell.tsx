@@ -72,7 +72,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
           { label: "学生列表", href: "/student-management", icon: Users },
           { label: "每日日志", href: "/daily-logs", icon: FileEdit },
           { label: "成绩管理", href: "/grades", icon: GraduationCap },
-          { label: "积分管理", href: "/points-management", icon: Star },
+          { label: "积分管理", href: "/points", icon: Star },
           { label: "接送管理", href: "/pickup", icon: Truck },
           { label: "随手拍", href: "/photo-moments", icon: Camera },
           { label: "家长管理", href: "/parent-management", icon: Users },
@@ -120,7 +120,6 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         icon: ClipboardCheck,
         children: [
           { label: "考勤中心", href: "/attendance", icon: ClipboardCheck },
-          { label: "积分系统", href: "/points", icon: Star },
           { label: "卡片管理", href: "/card-management", icon: CreditCard },
         ],
       },
@@ -400,10 +399,9 @@ export default function AppShell({
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
-  // 登录页：如果不需要登录系统，直接跳过登录页
+  // 登录页不显示 AppShell 侧边栏
   if (pathname === '/login') {
-    router.replace('/')
-    return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-sm text-muted-foreground">跳转中...</p></div>
+    return <>{children}</>
   }
 
   const renderNavItem = (item: NavItem, depth = 0) => {

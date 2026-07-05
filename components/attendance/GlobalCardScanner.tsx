@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react"
 import { CheckCircle, XCircle, Loader2 } from "lucide-react"
+import { useAuth } from "@/contexts/pocketbase-auth-context"
 
 // ─── Toast ────────────────────────────────────────────
 
@@ -44,6 +45,7 @@ function Toast({ status, message, personName, onClose }: {
 // ─── 全局考勤读卡器 (USB Card Reader) ─────────────────
 
 export default function GlobalCardScanner() {
+  const { user, loading } = useAuth()
   const [status, setStatus] = useState<"success" | "error" | "loading" | null>(null)
   const [msg, setMsg] = useState("")
   const [personName, setPersonName] = useState("")
@@ -57,6 +59,9 @@ export default function GlobalCardScanner() {
   const dismiss = useCallback(() => { setStatus(null); setMsg(""); setPersonName("") }, [])
 
   const handleCard = useCallback(async (cardId: string) => {
+    // 未登录不处理
+    if (!user) return
+
     console.log(`💳 [考勤] 检测到卡号: ${cardId}`)
     show("loading", `读取卡号: ${cardId}`)
 
@@ -97,9 +102,12 @@ export default function GlobalCardScanner() {
     } catch (err: any) {
       show("error", `网络错误: ${err.message}`)
     }
-  }, [show])
+  }, [show, user])
 
   useEffect(() => {
+    // 未登录不启动读卡器
+    if (!user) return
+
     let buffer = ""; let lastTime = 0
 
     const onKey = (e: KeyboardEvent) => {
@@ -121,7 +129,7 @@ export default function GlobalCardScanner() {
     document.addEventListener("keydown", onKey)
     console.log("💳 [全局考勤读卡器] ✅ 已启动 (USB 刷卡=打卡)")
     return () => document.removeEventListener("keydown", onKey)
-  }, [handleCard])
+  }, [handleCard, user])
 
   return <Toast status={status} message={msg} personName={personName || undefined} onClose={dismiss} />
 }

@@ -991,13 +991,12 @@ div.rounded-lg.border.bg-card:hover {
   margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse))) !important;
 }
 /* Planhat: card header less padding */
-.theme-planhat .flex.flex-col.space-y-1\\.5.p-6 {
+.theme-planhat [class*="space-y-1.5"].p-6 {
   padding: 0.75rem 1rem !important;
 }
 .theme-planhat .text-2xl.font-semibold {
   font-size: 1.125rem !important;
   font-weight: 700 !important;
-  letter-spacing: -0.01em !important;
 }
 
 /* =============================================
@@ -1072,7 +1071,7 @@ div.rounded-lg.border.bg-card:hover {
   letter-spacing: -0.01em !important;
 }
 /* Basedash: card header compact */
-.theme-basedash .flex.flex-col.space-y-1\\.5.p-6 {
+.theme-basedash [class*="space-y-1.5"].p-6 {
   padding: 0.75rem 1rem !important;
 }
 
@@ -1128,7 +1127,7 @@ button.inline-flex.items-center.justify-center.whitespace-nowrap.rounded-md.text
 .theme-planhat button.border.border-input.bg-background {
   border-color: hsl(220 12% 82%) !important;
 }
-.theme-planhat button.hover\\:bg-accent:hover {
+.theme-planhat button:hover {
   background: hsl(220 12% 92%) !important;
 }
 /* Planhat: compact button sizes */
@@ -1165,7 +1164,7 @@ button.inline-flex.items-center.justify-center.whitespace-nowrap.rounded-md.text
   border-color: hsl(300 30% 78%) !important;
   border-width: 2px !important;
 }
-.theme-superlist button.hover\\:bg-accent:hover {
+.theme-superlist button:hover {
   background: hsl(300 40% 88%) !important;
 }
 /* Superlist: taller buttons */
@@ -1615,7 +1614,7 @@ button.inline-flex.items-center.justify-center.whitespace-nowrap.rounded-md.text
   margin-top: calc(0px * calc(1 - var(--tw-space-y-reverse))) !important;
 }
 /* Planhat: sidebar link active dot */
-.theme-planhat aside span.w-1\\.5.h-1\\.5.rounded-full {
+.theme-planhat aside [class*="w-1.5"][class*="h-1.5"].rounded-full {
   display: none !important;
 }
 
