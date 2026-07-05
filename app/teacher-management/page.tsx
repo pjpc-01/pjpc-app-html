@@ -1,21 +1,33 @@
 "use client"
 export const dynamic = "force-dynamic"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import PageLayout from "@/components/layouts/PageLayout"
 import TeachersTab from "@/app/components/dashboards/teachers-tab"
 import TeacherLeaveManagement from "@/components/teacher/TeacherLeaveManagement"
 import TeacherPerformanceManagement from "@/components/teacher/TeacherPerformanceManagement"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, Users, CalendarCheck, BarChart3 } from "lucide-react"
+
+type TabKey = "teachers" | "leave" | "performance"
 
 export default function TeacherManagementPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { userProfile, loading } = useAuth()
-  const [activeTab, setActiveTab] = useState("teachers")
+
+  // Read tab from URL param — sidebar links use ?tab=leave / ?tab=performance
+  const tabParam = searchParams?.get("tab") as TabKey | null
+  const [activeTab, setActiveTab] = useState<TabKey>(tabParam || "teachers")
+
+  // Sync URL param changes
+  useEffect(() => {
+    if (tabParam && tabParam !== activeTab) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
 
   // ===========================================================================
   // DEV MODE: FULL AUTH BYPASS
@@ -49,14 +61,6 @@ export default function TeacherManagementPage() {
                   effectiveProfile?.email?.includes('pjpcemerlang')
   
   if (!isAdmin) {
-    console.log('❌ 访问被拒绝 - 用户角色检查:', {
-      userProfile,
-      role: effectiveProfile?.role,
-      email: effectiveProfile?.email,
-      isAdmin,
-      nodeEnv: process.env.NODE_ENV
-    })
-    
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md">
@@ -79,10 +83,18 @@ export default function TeacherManagementPage() {
     )
   }
 
+  // Page config by tab — no tab bar UI, controlled entirely by sidebar URL
+  const tabConfig: Record<TabKey, { title: string; description: string }> = {
+    teachers: { title: "教师列表", description: "管理所有教师信息、权限和教学安排" },
+    leave:    { title: "请假管理", description: "审核和管理教师请假申请" },
+    performance: { title: "绩效管理", description: "查看和管理教师绩效考核" },
+  }
+  const current = tabConfig[activeTab]
+
   return (
     <PageLayout
-      title="教师管理"
-      description="管理所有教师信息、权限和教学安排"
+      title={current.title}
+      description={current.description}
       userRole="admin"
       status="系统正常"
       background="bg-gray-50"
@@ -97,28 +109,10 @@ export default function TeacherManagementPage() {
         </Button>
       }
     >
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="teachers" className="flex items-center gap-1">
-            <Users className="h-4 w-4" />教师列表
-          </TabsTrigger>
-          <TabsTrigger value="leave" className="flex items-center gap-1">
-            <CalendarCheck className="h-4 w-4" />请假管理
-          </TabsTrigger>
-          <TabsTrigger value="performance" className="flex items-center gap-1">
-            <BarChart3 className="h-4 w-4" />绩效管理
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="teachers">
-          <TeachersTab setActiveTab={setActiveTab} />
-        </TabsContent>
-        <TabsContent value="leave">
-          <TeacherLeaveManagement />
-        </TabsContent>
-        <TabsContent value="performance">
-          <TeacherPerformanceManagement />
-        </TabsContent>
-      </Tabs>
+      {/* No Tabs bar — switching is done via sidebar navigation */}
+      {activeTab === "teachers" && <TeachersTab setActiveTab={setActiveTab} />}
+      {activeTab === "leave" && <TeacherLeaveManagement />}
+      {activeTab === "performance" && <TeacherPerformanceManagement />}
     </PageLayout>
   )
 }

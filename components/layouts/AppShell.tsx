@@ -26,6 +26,7 @@ import {
   BarChart3,
   School,
   Calendar,
+  CalendarCheck,
   FileText,
   UserCheck,
   CreditCard,
@@ -84,6 +85,8 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         icon: UserCog,
         children: [
           { label: "教师列表", href: "/teacher-management", icon: UserCog },
+          { label: "请假管理", href: "/teacher-management?tab=leave", icon: CalendarCheck },
+          { label: "绩效管理", href: "/teacher-management?tab=performance", icon: BarChart3 },
           { label: "教师排班", href: "/schedule-management", icon: Calendar },
         ],
       },
@@ -117,6 +120,8 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         icon: ClipboardCheck,
         children: [
           { label: "考勤中心", href: "/attendance", icon: ClipboardCheck },
+          { label: "积分系统", href: "/points", icon: Star },
+          { label: "卡片管理", href: "/card-management", icon: CreditCard },
         ],
       },
       {
@@ -298,6 +303,7 @@ export default function AppShell({
     "/inventory": "inventory",
     "/student-checkin": "attendance.checkin", "/teacher-checkin": "attendance.teacher",
     "/attendance-reports": "attendance.reports",
+    "/card-management": "attendance.cards",
     "/settings": "settings.general", "/user-management": "settings.users",
     "/center-management": "settings.centers",
   }
@@ -394,19 +400,10 @@ export default function AppShell({
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
-  // 登录页直接渲染内容，不显示侧边栏
+  // 登录页：如果不需要登录系统，直接跳过登录页
   if (pathname === '/login') {
-    return <>{children}</>
-  }
-
-  // 路由守卫：未登录用户重定向到登录页
-  if (!loading && !user) {
-    router.replace('/login')
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">正在跳转登录页...</p>
-      </div>
-    )
+    router.replace('/')
+    return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-sm text-muted-foreground">跳转中...</p></div>
   }
 
   const renderNavItem = (item: NavItem, depth = 0) => {

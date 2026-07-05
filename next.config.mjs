@@ -27,33 +27,8 @@ const nextConfig = {
     pagesBufferLength: 2,
   },
 
-  // Optimize HMR & Webpack performance
-  webpack: (config, { dev, isServer }) => {
-    if (dev && !isServer) {
-      config.watchOptions = {
-        poll: 1000,
-        aggregateTimeout: 300,
-        ignored: ['**/node_modules', '**/.git', '**/.next', '**/dist', '**/.cache'],
-      }
-      config.optimization = {
-        ...config.optimization,
-        removeAvailableModules: false,
-        removeEmptyChunks: false,
-        splitChunks: {
-          chunks: 'all',
-          cacheGroups: {
-            vendor: {
-              test: /[\\/]node_modules[\\/]/,
-              name: 'vendors',
-              chunks: 'all',
-              priority: 10,
-            },
-          },
-        },
-      }
-    }
-    return config
-  },
+  // WSL2 supports native inotify — no polling needed
+  // Use Turbopack (npm run dev:fast) for 10x faster HMR in dev
 
   // Proxy handled by app/api/pocketbase-proxy/[...path]/route.ts with admin auth
 

@@ -126,7 +126,9 @@ export const checkPocketBaseConnection = async () => {
   }
 }
 
-export const pb = new PocketBase(process.env.POCKETBASE_URL || 'http://127.0.0.1:8090') 
+export const pb = typeof window !== 'undefined' 
+  ? new PocketBase('/api/pocketbase-proxy')
+  : new PocketBase(process.env.POCKETBASE_URL || 'http://127.0.0.1:8090')
 export * from './pocketbase-schema'
 export type { Student as StudentFromStudents, StudentCreateData, StudentUpdateData } from './pocketbase-students'
 export { getAllStudents, addStudent, updateStudent, deleteStudent, getStudentById, searchStudents, getStudentsByCenter, getStudentsByStatus } from './pocketbase-students'
@@ -273,6 +275,14 @@ export const validateCollectionFields = async (collectionName: string, interface
 
 export const authenticateAdmin = async (): Promise<void> => {
   if (isAuthenticated) return
+  
+  // When running in browser (via proxy), the proxy handles admin auth server-side.
+  // Skip client-side admin auth to avoid SDK version mismatch (_superusers vs admins).
+  if (typeof window !== 'undefined') {
+    isAuthenticated = true
+    return
+  }
+  
   if (authLock) {
     let waitTime = 0
     while (authLock && waitTime < 5000) {

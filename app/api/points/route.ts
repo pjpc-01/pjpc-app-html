@@ -1,105 +1,99 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPocketBase, authenticateAdmin } from '@/lib/pocketbase'
 
-export const dynamic = 'force-dynamic'
+const PB_URL = 'http://127.0.0.1:8090'
+const PB_ADMIN = { email: 'admin@pjpc.com', password: '1234567890' }
 
-// GET — 查询积分记录
-export async function GET(request: NextRequest) {
-  try {
-    const pb = await getPocketBase()
-    const { searchParams } = new URL(request.url)
-    const studentId = searchParams.get('studentId')
-    const page = parseInt(searchParams.get('page') || '1')
-    const perPage = parseInt(searchParams.get('perPage') || '50')
-    const sort = searchParams.get('sort') || '-total_points'
-
-    await authenticateAdmin()
-
-    let filter = ''
-    if (studentId) filter = `studentId = "${studentId}"`
-
-    const result = await pb.collection('points').getList(page, perPage, {
-      filter,
-      sort,
-      expand: 'studentId',
-    })
-
-    return NextResponse.json({ success: true, data: result })
-  } catch (error) {
-    console.error('❌ 获取积分失败:', error)
-    return NextResponse.json(
-      { error: '获取积分失败', details: error instanceof Error ? error.message : '未知错误' },
-      { status: 500 }
-    )
-  }
+async function pbAuth(): Promise<string> {
+  const res = await fetch(`${PB_URL}/api/admins/auth-with-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identity: PB_ADMIN.email, password: PB_ADMIN.password }),
+  })
+  if (!res.ok) throw new Error('Auth failed')
+  return (await res.json()).token
 }
 
-// POST — 创建/更新学生积分
+// POST — 加分/减分
+// Body: { card_uid?, student_id?, points, reason?, mode? }
+// mode="direct" → 直接用 student_id，跳过查卡
 export async function POST(request: NextRequest) {
   try {
-    const pb = await getPocketBase()
-    const body = await request.json()
-    const { studentId, points: pts, reason, category, operatorId, nfc_card_uid } = body
+    const token = await pbAuth()
+    const { card_uid, student_id, points = 1, reason = '', mode } = await request.json()
 
-    if (!studentId || pts === undefined) {
-      return NextResponse.json({ error: '缺少必需字段: studentId, points' }, { status: 400 })
+    if (!card_uid && !student_id) return NextResponse.json({ error: '缺少 card_uid 或 student_id' }, { status: 400 })
+
+    let student: any
+
+    if (mode === 'direct' && student_id) {
+      // 直接查学生
+      const sRes = await fetch(
+        `${PB_URL}/api/collections/students/records/${student_id}`,
+        { headers: { Authorization: token } }
+      ).then(r => r.json())
+      if (!sRes.id) return NextResponse.json({ error: '学生不存在' }, { status: 404 })
+      student = sRes
+    } else if (card_uid) {
+      // 查卡找人
+      const cardRes = await fetch(
+        `${PB_URL}/api/collections/nfc_cards/records?perPage=1&expand=studentId&filter=card_uid="${card_uid}"`,
+        { headers: { Authorization: token } }
+      ).then(r => r.json())
+
+      if (!cardRes.items?.length) return NextResponse.json({ error: '未注册的卡片' }, { status: 404 })
+      const card = cardRes.items[0]
+      if (card.type !== 'student' || !card.studentId) return NextResponse.json({ error: '仅支持学生卡' }, { status: 400 })
+      student = card.expand?.studentId
+      if (!student) return NextResponse.json({ error: '卡片未绑定学生' }, { status: 404 })
     }
 
-    await authenticateAdmin()
+    const currentPoints = student.points || 0
+    const newPoints = Math.max(0, currentPoints + points)  // 不低于0
 
-    // 查找或创建 points 记录
-    let pointRecord
-    try {
-      const existing = await pb.collection('points').getList(1, 1, {
-        filter: `studentId = "${studentId}"`,
-      })
-      if (existing.items.length > 0) {
-        pointRecord = existing.items[0]
-      }
-    } catch { /* not found, will create */ }
-
-    const today = new Date().toISOString().split('T')[0]
-
-    if (pointRecord) {
-      // 更新积分
-      const newTotal = Math.max(0, (pointRecord.total_points || 0) + pts)
-      const newWeekly = Math.max(0, (pointRecord.weekly_points || 0) + pts)
-      const newMonthly = Math.max(0, (pointRecord.monthly_points || 0) + pts)
-      await pb.collection('points').update(pointRecord.id, {
-        total_points: newTotal,
-        weekly_points: newWeekly,
-        monthly_points: newMonthly,
-      })
-    } else {
-      // 创建新记录
-      pointRecord = await pb.collection('points').create({
-        studentId,
-        total_points: Math.max(0, pts),
-        weekly_points: Math.max(0, pts),
-        monthly_points: Math.max(0, pts),
-      })
-    }
-
-    // 创建积分交易记录
-    const transaction = await pb.collection('points_transactions').create({
-      studentId,
-      points: pts,
-      reason: reason || '',
-      category: category || 'other',
-      operatorId: operatorId || '',
-      nfc_card_uid: nfc_card_uid || '',
-      date: today,
+    await fetch(`${PB_URL}/api/collections/students/records/${student.id}`, {
+      method: 'PATCH',
+      headers: { Authorization: token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ points: newPoints }),
     })
 
     return NextResponse.json({
       success: true,
-      data: { points: pointRecord, transaction },
+      student: {
+        id: student.id,
+        name: student.name,
+        points_before: currentPoints,
+        points_added: points,
+        points_total: newPoints,
+      },
+      reason,
     })
-  } catch (error) {
-    console.error('❌ 积分操作失败:', error)
-    return NextResponse.json(
-      { error: '积分操作失败', details: error instanceof Error ? error.message : '未知错误' },
-      { status: 500 }
-    )
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+// GET — 获取学生积分排行
+export async function GET(request: NextRequest) {
+  try {
+    const token = await pbAuth()
+    const { searchParams } = new URL(request.url)
+    const limit = parseInt(searchParams.get('limit') || '50')
+
+    const res = await fetch(
+      `${PB_URL}/api/collections/students/records?perPage=${limit}&sort=-points&fields=id,name,points,center&filter=points>0`,
+      { headers: { Authorization: token } }
+    ).then(r => r.json())
+
+    return NextResponse.json({
+      success: true,
+      students: (res.items || []).map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        points: s.points || 0,
+        center: s.center || '',
+      })),
+    })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
