@@ -23,9 +23,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '缺少 card_uid' }, { status: 400 })
     }
 
-    // 1. Look up NFC card — expand both studentId and teacherId
+    // 1. Look up NFC card — search both card_uid and nfc_uid
+    const filter = encodeURIComponent(`card_uid="${card_uid}" || nfc_uid="${card_uid}"`)
     const cardRes = await fetch(
-      `${PB_URL}/api/collections/nfc_cards/records?perPage=1&expand=studentId,teacherId&filter=${encodeURIComponent(`card_uid="${card_uid}"`)}`,
+      `${PB_URL}/api/collections/nfc_cards/records?perPage=1&expand=studentId,teacherId&filter=${filter}`,
       { headers: { Authorization: token } }
     )
     const cardData = await cardRes.json()

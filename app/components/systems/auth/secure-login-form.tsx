@@ -11,7 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Eye, EyeOff, GraduationCap, AlertTriangle, CheckCircle, Loader2, Shield } from "lucide-react"
+import { Eye, EyeOff, GraduationCap, AlertTriangle, CheckCircle, Loader2, Shield, SmartphoneNfc, XCircle } from "lucide-react"
+import { useNfcAuth } from "@/contexts/nfc-auth-context"
 
 export default function SecureLoginForm() {
   const { signIn, signUp, resetPassword } = useAuth()
@@ -42,6 +43,99 @@ export default function SecureLoginForm() {
 
   // 密码重置状态
   const [resetEmail, setResetEmail] = useState("")
+
+  // NFC 登入状态
+  const { loginWithCard } = useNfcAuth()
+  const [nfcScanning, setNfcScanning] = useState(false)
+  const [nfcStatus, setNfcStatus] = useState<{ ok: boolean; msg: string } | null>(null)
+
+  const handleNfcLogin = async () => {
+    if (typeof window === "undefined" || !("NDEFReader" in window)) {
+      setNfcStatus({ ok: false, msg: "此设备不支持 NFC（仅 Android Chrome 支持）" })
+      return
+    }
+
+    setNfcScanning(true)
+    setNfcStatus({ ok: true, msg: "请将教师卡片贴近手机背面..." })
+    setError("")
+
+    try {
+      const ndef = new (window as any).NDEFReader()
+      await ndef.scan()
+
+      ndef.onreading = async (event: any) => {
+        const { message, serialNumber } = event
+
+        // Extract UID: try NDEF text record first, fall back to serialNumber
+        let cardId: string | null = null
+        if (message?.records) {
+          for (const record of message.records) {
+            try {
+              if (record.recordType === "text") {
+                const decoder = new TextDecoder(record.encoding || "utf-8")
+                const text = decoder.decode(record.data).trim()
+                if (text.length >= 8 && text.length <= 20 && /^[0-9A-Fa-f]+$/.test(text)) {
+                  cardId = text
+                  break
+                }
+              }
+            } catch {}
+          }
+        }
+        if (!cardId) cardId = serialNumber || null
+
+        // Normalize & convert: hex serialNumber → decimal (to match DB format)
+        // e.g., "2B:28:86:04" → "2B288604" → decimal "0724076036"
+        let lookupIds: string[] = []
+        if (cardId) {
+          const clean = cardId.replace(/:/g, "")
+          lookupIds.push(clean) // always try raw hex
+          // If looks like hex, also try decimal conversion
+          if (/^[0-9A-Fa-f]+$/.test(clean) && clean.length <= 8) {
+            const decimal = parseInt(clean, 16).toString().padStart(10, "0")
+            lookupIds.push(decimal)
+          }
+        }
+
+        if (lookupIds.length === 0) {
+          setNfcStatus({ ok: false, msg: "无法读取卡号，请重试" })
+          setNfcScanning(false)
+          return
+        }
+
+        console.log("📱 [NFC 登入] 检测到 UID:", lookupIds)
+        setNfcStatus({ ok: true, msg: `读取卡号: ${lookupIds[0]}，验证中...` })
+
+        // Try each format until one works
+        let result = { success: false, error: "" }
+        for (const id of lookupIds) {
+          result = await loginWithCard(id)
+          if (result.success) break
+        }
+
+        if (!result.success) {
+          setNfcStatus({ ok: false, msg: result.error || "登入失败" })
+          setNfcScanning(false)
+          return
+        }
+
+        setNfcStatus({ ok: true, msg: "✅ 登入成功，跳转中..." })
+        setNfcScanning(false)
+        
+        setTimeout(() => {
+          router.push("/")
+        }, 500)
+      }
+
+      ndef.onreadingerror = () => {
+        setNfcStatus({ ok: false, msg: "读取失败，请重试" })
+        setNfcScanning(false)
+      }
+    } catch (err: any) {
+      setNfcStatus({ ok: false, msg: `NFC 错误: ${err.message}` })
+      setNfcScanning(false)
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -390,6 +484,40 @@ export default function SecureLoginForm() {
                 </form>
               </TabsContent>
             </Tabs>
+          </CardContent>
+        </Card>
+
+        {/* 📱 NFC 教师登入 */}
+        <Card className="mt-4 border-blue-200 bg-blue-50/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-blue-800 flex items-center gap-2">
+              <SmartphoneNfc className="h-4 w-4" />
+              NFC 快速登入
+            </CardTitle>
+            <CardDescription className="text-xs text-blue-600">
+              教师可使用手机 NFC 刷卡快速登入（仅 Android Chrome 支持）
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {nfcStatus && (
+              <div className={`mb-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs ${
+                nfcStatus.ok ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+              }`}>
+                {nfcScanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                 : nfcStatus.ok ? <CheckCircle className="h-3.5 w-3.5" />
+                 : <XCircle className="h-3.5 w-3.5" />}
+                {nfcStatus.msg}
+              </div>
+            )}
+            <Button
+              onClick={handleNfcLogin}
+              disabled={nfcScanning}
+              variant="outline"
+              className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"
+            >
+              <SmartphoneNfc className="h-4 w-4 mr-2" />
+              {nfcScanning ? "扫描中..." : "📱 手机 NFC 刷卡登入"}
+            </Button>
           </CardContent>
         </Card>
 

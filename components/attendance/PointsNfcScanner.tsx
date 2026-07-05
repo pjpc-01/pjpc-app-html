@@ -30,18 +30,67 @@ export default function PointsNfcScanner() {
       const ndef = new window.NDEFReader()
       await ndef.scan()
 
-      ndef.onreading = async ({ serialNumber }: any) => {
-        const cardId = serialNumber
-        console.log(`📱 [手机NFC] 检测到卡号: ${cardId}`)
-        setStatus({ ok: true, msg: `读取卡号: ${cardId}` })
+      // Extract UID: try NDEF text record first, fall back to serialNumber
+      const extractUid = (message: any, serialNumber: string): string | null => {
+        if (message?.records) {
+          for (const record of message.records) {
+            try {
+              if (record.recordType === "text") {
+                const decoder = new TextDecoder(record.encoding || "utf-8")
+                const text = decoder.decode(record.data).trim()
+                if (text.length >= 8 && text.length <= 20 && /^[0-9A-Fa-f]+$/.test(text)) {
+                  console.log(`📱 [手机NFC] NDEF文本: ${text}`)
+                  return text
+                }
+              }
+              if (record.recordType === "url") {
+                const decoder = new TextDecoder()
+                const url = decoder.decode(record.data)
+                const uid = new URL(url).searchParams.get("uid")
+                if (uid) return uid
+              }
+            } catch {}
+          }
+        }
+        return serialNumber || null
+      }
 
+      ndef.onreading = async (event: any) => {
         try {
-          const tapRes = await fetch("/api/nfc/tap", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ card_uid: cardId }),
-          })
-          const tapData = await tapRes.json()
+          const { message, serialNumber } = event
+          const cardId = extractUid(message, serialNumber)
+
+          // Build lookup IDs: raw hex + decimal conversion
+          let lookupIds: string[] = []
+          if (cardId) {
+            const clean = cardId.replace(/:/g, "")
+            lookupIds.push(clean)
+            if (/^[0-9A-Fa-f]+$/.test(clean) && clean.length <= 8) {
+              const decimal = parseInt(clean, 16).toString().padStart(10, "0")
+              lookupIds.push(decimal)
+            }
+          }
+
+          if (lookupIds.length === 0) {
+            setStatus({ ok: false, msg: "无法读取卡号" })
+            setScanning(false)
+            return
+          }
+
+          // Try each format
+          let tapData: any = { found: false }
+          for (const id of lookupIds) {
+            const tapRes = await fetch("/api/nfc/tap", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ card_uid: id }),
+            })
+            tapData = await tapRes.json()
+            if (tapData.found) break
+          }
+
+          console.log(`📱 [手机NFC] UID: ${lookupIds[0]}, found: ${tapData.found}`)
+          setStatus({ ok: true, msg: `读取卡号: ${lookupIds[0]}` })
 
           if (!tapData.found) {
             setStatus({ ok: false, msg: tapData.error || "未注册的卡片" })

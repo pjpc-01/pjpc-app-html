@@ -1,6 +1,8 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react"
+import PocketBase from 'pocketbase'
+import { getPocketBase } from "@/lib/pocketbase"
 
 export interface NfcTeacher {
   id: string
@@ -111,17 +113,35 @@ export function NfcAuthProvider({ children }: { children: React.ReactNode }) {
         login_time: Date.now(),
       }))
 
+      // 🔑 Also save PocketBase auth so the main app recognizes the login
+      if (data.pb_token && data.pb_record) {
+        try {
+          const pb = await getPocketBase()
+          pb.authStore.save(data.pb_token, data.pb_record)
+          console.log('✅ [NFC] PocketBase auth saved:', data.pb_record.email)
+        } catch (pbErr) {
+          console.warn('⚠️ [NFC] Failed to save PocketBase auth:', pbErr)
+        }
+      }
+
       return { success: true }
     } catch (err: any) {
       return { success: false, error: err.message }
     }
   }, [])
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     setTeacher(null)
     setToken(null)
     setPendingStudent(null)
     localStorage.removeItem(STORAGE_KEY)
+
+    // Also clear PocketBase auth
+    try {
+      const pb = await getPocketBase()
+      pb.authStore.clear()
+      console.log('✅ [NFC] PocketBase auth cleared')
+    } catch {}
   }, [])
 
   const clearPendingStudent = useCallback(() => {

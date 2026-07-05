@@ -27,8 +27,25 @@ const nextConfig = {
     pagesBufferLength: 2,
   },
 
-  // WSL2 supports native inotify — no polling needed
-  // Use Turbopack (npm run dev:fast) for 10x faster HMR in dev
+  // WSL2 file watching is unreliable with inotify — use polling to avoid phantom change events
+  // that cause constant recompilation and Fast Refresh flicker.
+
+  // Exclude pb_data, .next, node_modules from file watching
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.watchOptions = {
+        poll: 1000,           // poll every 1s instead of inotify (fixes WSL phantom changes)
+        aggregateTimeout: 300, // debounce 300ms before recompile
+        ignored: [
+          '**/pb_data/**',
+          '**/node_modules/**',
+          '**/.git/**',
+          '**/.next/**',
+        ],
+      }
+    }
+    return config
+  },
 
   // Proxy handled by app/api/pocketbase-proxy/[...path]/route.ts with admin auth
 
