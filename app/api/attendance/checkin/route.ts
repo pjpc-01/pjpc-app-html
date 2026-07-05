@@ -13,12 +13,6 @@ async function pbAuth(): Promise<string> {
   return (await res.json()).token
 }
 
-async function pbGet(token: string, collection: string, filter: string) {
-  const url = `${PB_URL}/api/collections/${collection}/records?perPage=1&filter=${encodeURIComponent(filter)}`
-  const res = await fetch(url, { headers: { Authorization: token } })
-  return res.json()
-}
-
 async function pbCreate(token: string, collection: string, data: any) {
   const res = await fetch(`${PB_URL}/api/collections/${collection}/records`, {
     method: 'POST',
@@ -28,17 +22,8 @@ async function pbCreate(token: string, collection: string, data: any) {
   return res.json()
 }
 
-async function pbUpdate(token: string, collection: string, id: string, data: any) {
-  const res = await fetch(`${PB_URL}/api/collections/${collection}/records/${id}`, {
-    method: 'PATCH',
-    headers: { Authorization: token, 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  return res.json()
-}
-
-// POST — 统一考勤（学生 + 教师）
-// Body: { person_id, person_type: 'student'|'teacher', person_name, center, method?, notes? }
+// POST — 统一考勤打卡
+// 每次刷卡 = 一条独立记录。自动判断签到/签退（基于今日上次操作）
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -51,115 +36,85 @@ export async function POST(request: NextRequest) {
       notes = '',
     } = body
 
-    if (!person_id || !center) {
-      return NextResponse.json({ error: '缺少必需参数: person_id, center' }, { status: 400 })
+    if (!person_id) {
+      return NextResponse.json({ error: '缺少必需参数: person_id' }, { status: 400 })
     }
+    const resolvedCenter = center || 'BATU14'
 
-    // 1. Auth
+    // Auth
     let token: string
-    try {
-      token = await pbAuth()
-    } catch {
-      return NextResponse.json({ error: 'PocketBase 认证失败' }, { status: 401 })
-    }
+    try { token = await pbAuth() }
+    catch { return NextResponse.json({ error: 'PocketBase 认证失败' }, { status: 401 }) }
 
-    // 2. Determine collection and ID field based on person_type
+    // Determine collection + fields
     const isTeacher = person_type === 'teacher'
     const collectionName = isTeacher ? 'teacher_attendance' : 'student_attendance'
     const idField = isTeacher ? 'teacher_id' : 'student_id'
     const nameField = isTeacher ? 'teacher_name' : 'student_name'
 
-    // 3. Resolve name if not provided
+    // Resolve name
     let resolvedName = person_name || person_id
-    if (!person_name && !isTeacher) {
-      try {
-        const studentRes = await pbGet(token, 'students', `student_id="${person_id}"`)
-        if (studentRes.items?.length > 0) {
-          resolvedName = studentRes.items[0].name || person_id
-        }
-      } catch { /* use person_id as fallback */ }
-    }
 
-    // 4. Look up today's existing attendance record
     const now = new Date()
     const today = now.toISOString().split('T')[0]
-    const dateFilter = isTeacher
-      ? `${idField}="${person_id}" && check_in >= "${today}"`
-      : `${idField}="${person_id}" && date >= "${today} 00:00:00" && date <= "${today} 23:59:59"`
 
-    const existingRes = await fetch(
+    // Look up today's LAST record for this person to decide 签到 vs 签退
+    const dateFilter = `${idField}="${person_id}" && created >= "${today} 00:00:00"`
+    const prevRes = await fetch(
       `${PB_URL}/api/collections/${collectionName}/records?perPage=1&sort=-created&filter=${encodeURIComponent(dateFilter)}`,
       { headers: { Authorization: token } }
     ).then(r => r.json())
 
-    let record: any
-    let action: string
+    let action: 'check_in' | 'check_out'
+    const prev = prevRes.items?.[0]
 
-    if (!existingRes.items || existingRes.items.length === 0) {
-      // === CHECK-IN ===
-      const recordData: any = {
-        [idField]: person_id,
-        [nameField]: resolvedName,
-        center,
-        date: today,
-        check_in: now.toISOString(),
-        status: 'present',
-        method,
-        notes: notes || `NFC打卡 - ${method}`,
-        device_info: JSON.stringify({ method, source: 'nfc' }),
-      }
-
-      // Add branch fields for teacher
-      if (isTeacher) {
-        recordData.branch_code = center
-        recordData.branch_name = center
-      }
-
-      record = await pbCreate(token, collectionName, recordData)
-      action = '签到'
+    if (!prev) {
+      // No record today → 签到
+      action = 'check_in'
     } else {
-      const lastRecord = existingRes.items[0]
-      const hasCheckOut = lastRecord.check_out && lastRecord.check_out !== ''
-
-      if (!hasCheckOut) {
-        // === CHECK-OUT ===
-        record = await pbUpdate(token, collectionName, lastRecord.id, {
-          check_out: now.toISOString(),
-          notes: (lastRecord.notes || '') + ` | NFC签退 - ${method}`,
-        })
-        action = '签退'
-      } else {
-        // === CHECK-IN AGAIN ===
-        const recordData: any = {
-          [idField]: person_id,
-          [nameField]: resolvedName,
-          center,
-          date: today,
-          check_in: now.toISOString(),
-          status: 'present',
-          method,
-          notes: notes || `NFC打卡 - ${method}`,
-          device_info: JSON.stringify({ method, source: 'nfc' }),
-        }
-        if (isTeacher) {
-          recordData.branch_code = center
-          recordData.branch_name = center
-        }
-        record = await pbCreate(token, collectionName, recordData)
-        action = '签到'
-      }
+      // Check the last action from notes prefix
+      const lastAction = (prev.notes || '').startsWith('[签退]') ? 'check_out' :
+                         (prev.notes || '').startsWith('[签到]') ? 'check_in' :
+                         prev.check_out ? 'check_out' : 'check_in'
+      // Toggle: 签到 → 签退, 签退 → 签到
+      action = lastAction === 'check_in' ? 'check_out' : 'check_in'
     }
+
+    const actionLabel = action === 'check_in' ? '签到' : '签退'
+    const actionNotes = `[${actionLabel}] ${notes || `NFC打卡 - ${method}`}`
+
+    // ALWAYS create a NEW record
+    const recordData: any = {
+      [idField]: person_id,
+      [nameField]: resolvedName,
+      center: resolvedCenter,
+      date: today,
+      check_in: now.toISOString(),
+      check_out: '',
+      status: 'present',
+      method,
+      notes: actionNotes,
+      device_info: JSON.stringify({ method, action, source: 'nfc' }),
+    }
+
+    if (isTeacher) {
+      recordData.branch_code = resolvedCenter
+      recordData.branch_name = resolvedCenter
+    }
+
+    const record = await pbCreate(token, collectionName, recordData)
 
     return NextResponse.json({
       success: true,
-      action,
-      message: `${action}成功`,
+      action: actionLabel,
+      action_key: action,
+      message: `${actionLabel}成功`,
       person_type,
       data: record,
       person: { id: person_id, name: resolvedName, type: person_type },
     })
   } catch (error: any) {
-    console.error('统一考勤失败:', error)
+    console.error('考勤打卡失败:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

@@ -1,7 +1,7 @@
 {
   "page": 1,
   "perPage": 100,
-  "totalItems": 43,
+  "totalItems": 44,
   "totalPages": 1,
   "items": [
     {
@@ -78,7 +78,7 @@
     {
       "id": "yot737rl8uqqnh8",
       "created": "2026-06-09 02:57:49.251Z",
-      "updated": "2026-07-03 09:56:52.664Z",
+      "updated": "2026-07-05 00:56:15.070Z",
       "name": "students",
       "type": "base",
       "system": false,
@@ -6453,6 +6453,111 @@
       "createRule": null,
       "updateRule": null,
       "deleteRule": null,
+      "options": {}
+    },
+    {
+      "id": "j6umamj8g2o3vka",
+      "created": "2026-07-05 00:56:30.040Z",
+      "updated": "2026-07-05 00:56:30.040Z",
+      "name": "point_logs",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "su19sdnr",
+          "name": "student",
+          "type": "relation",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "collectionId": "yot737rl8uqqnh8",
+            "cascadeDelete": false,
+            "minSelect": null,
+            "maxSelect": 1,
+            "displayFields": null
+          }
+        },
+        {
+          "system": false,
+          "id": "mjwsagsb",
+          "name": "teacher",
+          "type": "relation",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "collectionId": "djvae07iufj859g",
+            "cascadeDelete": false,
+            "minSelect": null,
+            "maxSelect": 1,
+            "displayFields": null
+          }
+        },
+        {
+          "system": false,
+          "id": "kttotcns",
+          "name": "amount",
+          "type": "number",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "xgnsmmjp",
+          "name": "reason",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "v80nre1q",
+          "name": "points_before",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "ej9yk6l9",
+          "name": "points_after",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": "",
+      "viewRule": "",
+      "createRule": "",
+      "updateRule": "",
+      "deleteRule": "",
       "options": {}
     }
   ]

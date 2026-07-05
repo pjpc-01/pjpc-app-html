@@ -7,6 +7,8 @@ import QueryProvider from "@/components/providers/query-provider"
 import DashboardLayout from "@/components/layouts/DashboardLayout"
 import ThemeProvider from "@/components/providers/theme-provider"
 import { ThemeContextProvider } from "@/contexts/theme-context"
+import { NfcAuthProvider } from "@/contexts/nfc-auth-context"
+import GlobalCardScanner from "@/components/attendance/GlobalCardScanner"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -33,9 +35,12 @@ export default function RootLayout({
           <ThemeContextProvider>
             <QueryProvider>
               <AuthProvider>
+                <NfcAuthProvider>
                 <DashboardLayout>
                   {children}
                 </DashboardLayout>
+                <GlobalCardScanner />
+                </NfcAuthProvider>
               </AuthProvider>
             </QueryProvider>
           </ThemeContextProvider>

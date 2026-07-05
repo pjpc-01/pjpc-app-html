@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, useCallback } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import PageLayout from "@/components/layouts/PageLayout"
 import TabbedPage from "@/components/layouts/TabbedPage"
@@ -688,18 +688,18 @@ export default function StudentManagementPage() {
           </Card>
       </div>
 
-      {/* 企业级筛选组件 */}
+      {/* 筛选组件 */}
       <AdvancedFilters
         students={students}
-        onFiltersChange={useCallback((newFilters) => {
-          console.log('🔍 学生管理: 收到筛选条件更新:', newFilters)
+        value={filters}
+        onChange={(newFilters) => {
           setFilters(prev => ({
             ...prev,
             ...newFilters,
             dateRange: newFilters.enrollmentDateRange || { from: undefined, to: undefined }
           }))
-        }, [])}
-        onClearFilters={clearFilters}
+        }}
+        onClear={clearFilters}
       />
 
       {/* 批量操作组件 */}

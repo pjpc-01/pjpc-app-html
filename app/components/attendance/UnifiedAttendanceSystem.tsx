@@ -141,6 +141,9 @@ export default function UnifiedAttendanceSystem({
   const showMessage = useCallback((type: 'success' | 'error' | 'info', text: string) => {
     if (type === 'success') setSuccess(text)
     else if (type === 'error') setError(text)
+    else if (type === 'info') { setSuccess(null); setError(null); }
+    // Always log to console for debugging
+    console.log(`[NFC ${type}] ${text}`)
     setTimeout(() => {
       setSuccess(null)
       setError(null)
@@ -384,6 +387,9 @@ export default function UnifiedAttendanceSystem({
   const handleCardScan = useCallback((cardNumber: string) => {
     if (cardNumber.length < 10) return
     
+    // 始终输出到 console，方便调试
+    console.log(`💳 [NFC] 检测到卡号: ${cardNumber}`)
+    
     const now = Date.now()
     
     // 防重复扫描
@@ -430,7 +436,7 @@ export default function UnifiedAttendanceSystem({
   useEffect(() => {
     let inputBuffer = ''
     let lastInputTime = 0
-    const debounceTime = 100
+    const debounceTime = 1000 // USB 读卡器快速输入缓冲窗口 (原 100ms 太短)
     
     const handleKeyPress = (event: KeyboardEvent) => {
       const now = Date.now()
@@ -586,6 +592,13 @@ export default function UnifiedAttendanceSystem({
             <AlertDescription className="text-green-800">{success}</AlertDescription>
           </Alert>
         )}
+
+        {/* NFC 扫描器状态指示器 */}
+        <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+          <span className="text-blue-700 font-medium">USB 读卡器已就绪</span>
+          <span className="text-blue-500 text-xs ml-auto">将卡片靠近读卡器自动识别</span>
+        </div>
 
         {/* 统计卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

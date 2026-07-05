@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
           id: teacher.id,
           teacher_id: teacher.id,
           name: teacher.name,
-          center: teacher.center || '',
+          center: teacher.centerId || teacher.center_assignment || teacher.center || 'BATU14',
           position: teacher.position || '',
         },
         card: {
@@ -85,8 +85,8 @@ export async function POST(request: NextRequest) {
       found: true,
       person_type: 'student',
       person: {
-        id: student.student_id,
-        student_id: student.student_id,
+        id: student.student_id || student.id,
+        student_id: student.student_id || student.id,
         name: student.name,
         center: student.center || '',
         grade: student.grade || '',
