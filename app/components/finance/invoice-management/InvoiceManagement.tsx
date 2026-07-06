@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog"
 import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Edit, Settings, Loader2 } from "lucide-react"
 import { useInvoices } from "@/hooks/useInvoices"
-import { downloadInvoicePDF, printInvoicePDF, generateInvoiceHTML } from "@/lib/pdf-generator"
+import { downloadInvoicePDF, printInvoicePDF, generateInvoiceHTML, generateInvoicePDF } from "@/lib/pdf-generator"
 import { useStudents } from "@/hooks/useStudents"
 import { useStudentFees } from "@/hooks/useStudentFees"
 import { useFees } from "@/hooks/useFees"
@@ -149,29 +149,31 @@ export default function InvoiceManagement() {
   const [messageFormats, setMessageFormats] = useState({
     whatsapp: {
       subject: "发票通知",
-      template: `您好！这是来自智慧教育学校的发票通知。
+      template: `亲爱的家长，
 
-发票号码: {{invoiceNumber}}
-学生姓名: {{studentName}}
-金额: RM {{totalAmount}}
-到期日期: {{dueDate}}
+以下是 {{studentName}} 的学费发票：
+
+📋 发票号: {{invoiceNumber}}
+💰 金额: RM {{totalAmount}}
+📅 到期日: {{dueDate}}
 
 {{customMessage}}
 
+请通过以下方式付款：
+银行: Maybank | 账户: (请联系中心获取)
+
 谢谢！
-智慧教育学校`,
+Prospek Cemerlang`,
       variables: ["invoiceNumber", "studentName", "totalAmount", "dueDate", "customMessage"]
     },
     email: {
       subject: "发票通知 - {{invoiceNumber}}",
       template: `尊敬的家长：
 
-您好！这是来自智慧教育学校的发票通知。
+以下是 {{studentName}}（{{studentGrade}}）的学费发票：
 
 发票详情：
 - 发票号码: {{invoiceNumber}}
-- 学生姓名: {{studentName}}
-- 年级: {{studentGrade}}
 - 金额: RM {{totalAmount}}
 - 开具日期: {{issueDate}}
 - 到期日期: {{dueDate}}
@@ -180,7 +182,6 @@ export default function InvoiceManagement() {
 {{#each items}}
 - {{name}}: RM {{amount}}
 {{/each}}
-
 {{#if tax}}
 税费: RM {{tax}}
 {{/if}}
@@ -191,18 +192,10 @@ export default function InvoiceManagement() {
 
 {{customMessage}}
 
-付款方式：
-- 银行转账
-- 现金
-- 支票
-- 在线支付
-
-如有任何问题，请随时联系我们。
-
+如有任何问题，请联系中心。
 谢谢！
-智慧教育学校
-电话: 010-12345678
-邮箱: info@smarteducation.com`,
+
+Prospek Cemerlang`,
       variables: ["invoiceNumber", "studentName", "studentGrade", "totalAmount", "issueDate", "dueDate", "items", "tax", "discount", "customMessage"]
     }
   })
@@ -246,49 +239,96 @@ export default function InvoiceManagement() {
     try {
       setIsSending(true)
       
-      // Get student phone number from the invoice or student data
+      // Get student phone number
       const student = students.find(s => s.id === invoice.studentId)
-      const phoneNumber = student?.mother_phone || student?.father_phone || student?.emergencyContact || ''
+      const phoneNumber = student?.mother_phone || student?.father_phone || student?.emergencyContact || student?.parentPhone || ''
       
       if (!phoneNumber) {
         throw new Error('无法找到学生或家长的电话号码')
       }
 
-      // Format phone number for WhatsApp (remove spaces, add country code if needed)
-      const formattedPhone = phoneNumber.replace(/\s+/g, '').replace(/^0/, '60')
+      const formattedPhone = phoneNumber.replace(/\s+/g, '').replace(/^0/, '60').replace(/^\+/, '')
       
-      // Create WhatsApp message using template
+      // 1. Generate PDF blob
+      const pdfBlob = await generateInvoicePDF(invoice, pdfOptions)
+      const pdfFile = new File([pdfBlob], `Invoice_${invoice.invoiceNumber}.pdf`, { type: 'application/pdf' })
+      
+      // 2. Build message
       const templateData = {
         invoiceNumber: invoice.invoiceNumber,
-        studentName: invoice.student,
+        studentName: invoice.studentName || invoice.student || '',
         totalAmount: invoice.totalAmount?.toLocaleString(),
         dueDate: new Date(invoice.dueDate).toLocaleDateString('zh-CN'),
         customMessage: messageContent || '请及时处理付款，如有疑问请联系我们。'
       }
       
-      const message = messageFormats.whatsapp.template
+      let message = messageFormats.whatsapp.template
         .replace(/\{\{invoiceNumber\}\}/g, templateData.invoiceNumber)
         .replace(/\{\{studentName\}\}/g, templateData.studentName)
         .replace(/\{\{totalAmount\}\}/g, templateData.totalAmount)
         .replace(/\{\{dueDate\}\}/g, templateData.dueDate)
         .replace(/\{\{customMessage\}\}/g, templateData.customMessage)
 
-      // Generate PDF for attachment
-      await downloadInvoicePDF(invoice, pdfOptions)
+      // 3. Try WhatsApp Cloud API first (one-click, sends PDF directly)
+      try {
+        // Upload PDF to get a public URL
+        const uploadForm = new FormData()
+        uploadForm.append('pdf', pdfBlob, `Invoice_${invoice.invoiceNumber}.pdf`)
+        uploadForm.append('invoiceNumber', invoice.invoiceNumber)
+        const uploadRes = await fetch('/api/invoice/pdf', { method: 'POST', body: uploadForm })
+        const uploadJson = await uploadRes.json()
+
+        if (uploadJson.success) {
+          const pdfUrl = window.location.origin + uploadJson.url
+          const cloudRes = await fetch('/api/invoice/whatsapp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to: formattedPhone, message, pdfUrl, invoiceNumber: invoice.invoiceNumber })
+          })
+          const cloudJson = await cloudRes.json()
+          if (cloudJson.success) {
+            updateInvoiceStatus(invoice.id, 'issued')
+            setIsSendMessageDialogOpen(false)
+            setMessageContent('')
+            return
+          }
+          // Cloud API failed or not configured — fall through to fallback
+        }
+      } catch (e) {
+        // Upload or Cloud API failed — fall through
+      }
+
+      // 4. Fallback: Web Share API (mobile)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        try {
+          await navigator.share({
+            files: [pdfFile],
+            title: `发票 ${invoice.invoiceNumber}`,
+            text: message
+          })
+          updateInvoiceStatus(invoice.id, 'issued')
+          setIsSendMessageDialogOpen(false)
+          setMessageContent('')
+          return
+        } catch (e) {
+          // cancelled
+        }
+      }
+
+      // 5. Last fallback: download PDF + open WhatsApp
+      const url = URL.createObjectURL(pdfBlob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Invoice_${invoice.invoiceNumber}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+
+      const encodedMessage = encodeURIComponent(message + '\n\n📎 请贴上刚下载的发票PDF文件')
+      window.open(`https://wa.me/${formattedPhone}?text=${encodedMessage}`, '_blank')
       
-      // Encode message for WhatsApp URL
-      const encodedMessage = encodeURIComponent(message)
-      
-      // Create WhatsApp URL
-      const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`
-      
-      // Open WhatsApp in new tab
-      window.open(whatsappUrl, '_blank')
-      
-      // Update invoice status
       updateInvoiceStatus(invoice.id, 'issued')
-      
-      // Close dialog
       setIsSendMessageDialogOpen(false)
       setMessageContent('')
       
@@ -304,7 +344,6 @@ export default function InvoiceManagement() {
     try {
       setIsSending(true)
       
-      // Get student email from the invoice or student data
       const student = students.find(s => s.id === invoice.studentId)
       const email = student?.email || ''
       
@@ -312,20 +351,23 @@ export default function InvoiceManagement() {
         throw new Error('无法找到学生或家长的邮箱地址')
       }
 
-      // Create email using template
+      // 1. Generate PDF blob
+      const pdfBlob = await generateInvoicePDF(invoice, pdfOptions)
+
+      // 2. Build email body
       const templateData = {
         invoiceNumber: invoice.invoiceNumber,
-        studentName: invoice.student,
-        studentGrade: invoice.grade || '未指定',
+        studentName: invoice.studentName || invoice.student || '',
+        studentGrade: invoice.studentGrade || invoice.grade || '未指定',
         totalAmount: invoice.totalAmount?.toLocaleString(),
         issueDate: new Date(invoice.issueDate).toLocaleDateString('zh-CN'),
         dueDate: new Date(invoice.dueDate).toLocaleDateString('zh-CN'),
         items: invoice.items && invoice.items.length > 0 
-          ? invoice.items.map((item: any) => `- ${item.name}: RM ${item.amount?.toLocaleString()}`).join('\n')
-          : `- 学生费用: RM ${invoice.amount?.toLocaleString()}`,
+          ? invoice.items.map((item: any) => `- ${item.name}: RM ${(item.amount || 0).toLocaleString()}`).join('\n')
+          : `- 学生费用: RM ${(invoice.totalAmount || invoice.amount || 0)?.toLocaleString()}`,
         tax: invoice.tax && invoice.tax > 0 ? `税费: RM ${invoice.tax.toLocaleString()}` : '',
         discount: invoice.discount && invoice.discount > 0 ? `折扣: RM ${invoice.discount.toLocaleString()}` : '',
-        customMessage: messageContent || '请及时处理付款，如有疑问请联系我们。'
+        customMessage: messageContent || '请及时处理付款，如有疑问请联系我们。',
       }
       
       const subject = messageFormats.email.subject
@@ -343,19 +385,28 @@ export default function InvoiceManagement() {
         .replace(/\{\{discount\}\}/g, templateData.discount)
         .replace(/\{\{customMessage\}\}/g, templateData.customMessage)
 
-      // Generate PDF for attachment
-      await downloadInvoicePDF(invoice, pdfOptions)
+      // 3. Send email with PDF attachment via server
+      const emailFormData = new FormData()
+      emailFormData.append('pdf', pdfBlob, `Invoice_${invoice.invoiceNumber}.pdf`)
+      emailFormData.append('to', email)
+      emailFormData.append('subject', subject)
+      emailFormData.append('body', body)
+      emailFormData.append('invoiceNumber', invoice.invoiceNumber)
+
+      const res = await fetch('/api/invoice/email', { method: 'POST', body: emailFormData })
+      const result = await res.json()
+
+      if (!res.ok) {
+        if (result.fallback) {
+          // SMTP not configured — fall back to mailto
+          const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body + '\n\n（请手动附上发票PDF）')}`
+          window.open(mailtoUrl, '_blank')
+        } else {
+          throw new Error(result.error || '发送失败')
+        }
+      }
       
-      // Create mailto URL with attachment (note: mailto doesn't support attachments, but we can mention it)
-      const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body + '\n\n附件: 发票PDF文件')}`
-      
-      // Open default email client
-      window.open(mailtoUrl, '_blank')
-      
-      // Update invoice status
       updateInvoiceStatus(invoice.id, 'issued')
-      
-      // Close dialog
       setIsSendMessageDialogOpen(false)
       setMessageContent('')
       

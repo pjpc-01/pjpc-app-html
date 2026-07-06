@@ -397,8 +397,10 @@ export default function StudentManagementPage() {
       }
       setSelectedStudents(new Set())
       refetch()
+      alert(`已删除 ${selectedStudents.length} 名学生`)
     } catch (error) {
       console.error("Error bulk deleting students:", error)
+      alert("批量删除失败: " + (error instanceof Error ? error.message : "未知错误"))
     }
   }
 

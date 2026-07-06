@@ -116,11 +116,19 @@ export default function SimpleStudentManagement({
 
   // 处理删除学生
   const handleDeleteStudent = async (studentId: string) => {
-    if (!confirm('确定要删除这个学生吗？')) return
+    if (!confirm('确定要删除这个学生吗？此操作不可撤销。')) return
     try {
       await deleteStudent(studentId)
-    } catch (error) {
+      alert('学生已删除')
+    } catch (error: any) {
+      const msg = error?.message || String(error)
       console.error('删除学生失败:', error)
+      // Check if it's a related records issue
+      if (msg.includes('related') || msg.includes('relation') || msg.includes('500') || msg.includes('400')) {
+        alert('删除失败：该学生可能有相关的发票、考勤或费用记录。请先删除相关记录或将学生状态改为"离校"。')
+      } else {
+        alert('删除失败：' + msg)
+      }
     }
   }
 
