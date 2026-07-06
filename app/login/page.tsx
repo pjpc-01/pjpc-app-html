@@ -7,7 +7,7 @@ import SecureLoginForm from '../components/systems/auth/secure-login-form'
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Logo & Title */}
         <div className="text-center">

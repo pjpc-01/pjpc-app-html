@@ -108,8 +108,32 @@ export default function Dashboard() {
     }
   }
 
+  // 加载中 — 显示全屏等待，避免卡在 "Preparing dashboard..."
+  if (loading) {
+    return (
+      <div className="glass-body min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 mx-auto mb-3 animate-spin text-amber-600" />
+          <p className="text-amber-800/60 text-sm">正在验证身份...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 未认证 — 立即跳转（兜底，正常 useEffect 已处理）
+  if (!user && !userProfile) {
+    return (
+      <div className="glass-body min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 mx-auto mb-3 animate-spin text-amber-600" />
+          <p className="text-amber-800/60 text-sm">跳转登录...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen">
+    <div className="glass-body min-h-screen">
       {error && (
         <Alert variant="destructive" className="mb-6 border-red-200 bg-red-50/80">
           <AlertTriangleIcon className="h-4 w-4" />
