@@ -10,171 +10,171 @@
 
 @layer base {
   /* =========================================
-     DEFAULT THEME: 🏡 Warm Amber
-     Warm, earthy tones with amber accents
+     DEFAULT THEME: 🪟 Phantom Glass
+     Neutral grey-white glassmorphism
      ========================================= */
   :root {
-    --background: 48 100% 96%;
-    --foreground: 33 25% 20%;
+    --background: 0 0% 98%;
+    --foreground: 0 0% 18%;
     --card: 0 0% 100%;
-    --card-foreground: 33 25% 20%;
+    --card-foreground: 0 0% 18%;
     --popover: 0 0% 100%;
-    --popover-foreground: 33 25% 20%;
-    --primary: 33 25% 20%;
-    --primary-foreground: 48 100% 96%;
-    --secondary: 40 40% 92%;
-    --secondary-foreground: 33 25% 20%;
-    --muted: 40 30% 94%;
-    --muted-foreground: 35 20% 48%;
-    --accent: 40 50% 88%;
-    --accent-foreground: 33 25% 20%;
-    --destructive: 6 65% 50%;
+    --popover-foreground: 0 0% 18%;
+    --primary: 0 0% 18%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 18%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 52%;
+    --accent: 0 0% 90%;
+    --accent-foreground: 0 0% 25%;
+    --destructive: 0 65% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 38 30% 82%;
-    --input: 38 30% 82%;
-    --ring: 35 60% 45%;
-    --chart-1: 35 75% 50%;
-    --chart-2: 80 55% 38%;
-    --chart-3: 200 50% 45%;
-    --chart-4: 300 40% 55%;
-    --chart-5: 10 65% 50%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 0 0% 45%;
+    --chart-1: 220 16% 40%;
+    --chart-2: 150 14% 38%;
+    --chart-3: 210 14% 32%;
+    --chart-4: 270 14% 38%;
+    --chart-5: 0 14% 38%;
     --radius: 0.75rem;
-    --sidebar-background: 40 40% 93%;
-    --sidebar-foreground: 33 18% 32%;
-    --sidebar-primary: 35 55% 35%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 38%;
+    --sidebar-primary: 0 0% 18%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 40 50% 86%;
-    --sidebar-accent-foreground: 35 50% 35%;
-    --sidebar-border: 38 28% 78%;
-    --sidebar-ring: 35 60% 45%;
+    --sidebar-accent: 0 0% 94%;
+    --sidebar-accent-foreground: 0 0% 18%;
+    --sidebar-border: 0 0% 88%;
+    --sidebar-ring: 0 0% 18%;
 
-    /* Brand palette */
-    --brand-50: 48 100% 96%;
-    --brand-100: 48 96% 89%;
-    --brand-200: 48 96% 76%;
-    --brand-300: 45 90% 65%;
-    --brand-400: 40 85% 55%;
-    --brand-500: 38 80% 45%;
-    --brand-600: 35 75% 38%;
-    --brand-700: 32 70% 30%;
-    --brand-800: 30 65% 25%;
-    --brand-900: 28 60% 20%;
-    --brand-950: 25 55% 15%;
-    --brand-secondary-50: 33 100% 96%;
-    --brand-secondary-100: 34 100% 92%;
-    --brand-secondary-200: 32 98% 83%;
-    --brand-secondary-300: 31 97% 72%;
-    --brand-secondary-400: 27 96% 61%;
-    --brand-secondary-500: 25 95% 53%;
-    --brand-secondary-600: 21 90% 48%;
-    --brand-secondary-700: 17 88% 40%;
-    --brand-secondary-800: 15 79% 34%;
-    --brand-secondary-900: 13 72% 28%;
-    --brand-secondary-950: 10 70% 18%;
+    /* Brand palette — neutral grey */
+    --brand-50: 0 0% 96%;
+    --brand-100: 0 0% 90%;
+    --brand-200: 0 0% 80%;
+    --brand-300: 0 0% 70%;
+    --brand-400: 0 0% 55%;
+    --brand-500: 0 0% 45%;
+    --brand-600: 0 0% 35%;
+    --brand-700: 0 0% 28%;
+    --brand-800: 0 0% 20%;
+    --brand-900: 0 0% 14%;
+    --brand-950: 0 0% 8%;
+    --brand-secondary-50: 0 0% 96%;
+    --brand-secondary-100: 0 0% 90%;
+    --brand-secondary-200: 0 0% 80%;
+    --brand-secondary-300: 0 0% 70%;
+    --brand-secondary-400: 0 0% 55%;
+    --brand-secondary-500: 0 0% 45%;
+    --brand-secondary-600: 0 0% 35%;
+    --brand-secondary-700: 0 0% 28%;
+    --brand-secondary-800: 0 0% 20%;
+    --brand-secondary-900: 0 0% 14%;
+    --brand-secondary-950: 0 0% 8%;
 
-    /* Gray scale — warm amber undertone */
-    --gray-50: 48 100% 96%;
-    --gray-100: 40 50% 92%;
-    --gray-200: 40 40% 86%;
-    --gray-300: 38 35% 76%;
-    --gray-400: 36 30% 60%;
-    --gray-500: 35 25% 48%;
-    --gray-600: 33 22% 38%;
-    --gray-700: 32 20% 30%;
-    --gray-800: 30 18% 22%;
-    --gray-900: 28 16% 14%;
-    --gray-950: 25 14% 8%;
+    /* Gray scale — neutral grey */
+    --gray-50: 0 0% 96%;
+    --gray-100: 0 0% 90%;
+    --gray-200: 0 0% 80%;
+    --gray-300: 0 0% 70%;
+    --gray-400: 0 0% 55%;
+    --gray-500: 0 0% 45%;
+    --gray-600: 0 0% 35%;
+    --gray-700: 0 0% 28%;
+    --gray-800: 0 0% 20%;
+    --gray-900: 0 0% 14%;
+    --gray-950: 0 0% 8%;
 
-    /* Slate — warm-toned slate */
-    --slate-50: 40 40% 95%;
-    --slate-100: 38 35% 90%;
-    --slate-200: 36 30% 82%;
-    --slate-300: 35 25% 70%;
-    --slate-400: 34 20% 55%;
-    --slate-500: 33 18% 42%;
-    --slate-600: 32 16% 35%;
-    --slate-700: 31 15% 28%;
-    --slate-800: 30 14% 20%;
-    --slate-900: 28 12% 13%;
-    --slate-950: 25 10% 7%;
+    /* Slate — neutral slates */
+    --slate-50: 210 10% 95%;
+    --slate-100: 210 8% 90%;
+    --slate-200: 210 8% 82%;
+    --slate-300: 210 6% 70%;
+    --slate-400: 210 5% 55%;
+    --slate-500: 210 4% 45%;
+    --slate-600: 210 4% 35%;
+    --slate-700: 210 4% 28%;
+    --slate-800: 210 3% 20%;
+    --slate-900: 210 3% 13%;
+    --slate-950: 210 2% 7%;
 
-    /* Blue — warm amber accent replaces default blue */
-    --blue-50: 35 100% 95%;
-    --blue-100: 38 90% 88%;
-    --blue-200: 40 85% 78%;
-    --blue-300: 38 80% 66%;
-    --blue-400: 36 78% 54%;
-    --blue-500: 35 75% 44%;
-    --blue-600: 33 70% 38%;
-    --blue-700: 32 65% 30%;
-    --blue-800: 30 60% 24%;
-    --blue-900: 28 55% 18%;
-    --blue-950: 25 50% 10%;
+    /* Blue — cool blue */
+    --blue-50: 214 100% 95%;
+    --blue-100: 214 95% 88%;
+    --blue-200: 214 90% 78%;
+    --blue-300: 214 85% 66%;
+    --blue-400: 214 80% 54%;
+    --blue-500: 214 75% 44%;
+    --blue-600: 214 70% 35%;
+    --blue-700: 214 65% 28%;
+    --blue-800: 214 60% 22%;
+    --blue-900: 214 55% 15%;
+    --blue-950: 214 50% 8%;
 
-    /* Green — warm olive green */
-    --green-50: 80 50% 94%;
-    --green-100: 80 45% 86%;
-    --green-200: 78 42% 76%;
-    --green-300: 76 40% 64%;
-    --green-400: 74 48% 50%;
-    --green-500: 72 46% 40%;
-    --green-600: 70 44% 34%;
-    --green-700: 68 42% 28%;
-    --green-800: 65 40% 22%;
-    --green-900: 62 38% 16%;
-    --green-950: 60 35% 10%;
+    /* Green — cool mint green */
+    --green-50: 160 60% 94%;
+    --green-100: 160 55% 86%;
+    --green-200: 160 50% 76%;
+    --green-300: 160 45% 64%;
+    --green-400: 160 40% 50%;
+    --green-500: 160 50% 40%;
+    --green-600: 160 55% 34%;
+    --green-700: 160 55% 28%;
+    --green-800: 160 55% 22%;
+    --green-900: 160 50% 16%;
+    --green-950: 160 45% 10%;
 
-    /* Red — warm brick red */
-    --red-50: 10 80% 95%;
-    --red-100: 10 75% 90%;
-    --red-200: 8 70% 80%;
-    --red-300: 6 68% 68%;
-    --red-400: 6 70% 56%;
-    --red-500: 6 65% 46%;
-    --red-600: 5 62% 38%;
-    --red-700: 4 60% 30%;
-    --red-800: 3 58% 22%;
-    --red-900: 2 55% 15%;
-    --red-950: 0 50% 8%;
+    /* Red — cool crimson */
+    --red-50: 0 75% 95%;
+    --red-100: 0 70% 90%;
+    --red-200: 0 65% 80%;
+    --red-300: 0 60% 68%;
+    --red-400: 0 65% 56%;
+    --red-500: 0 70% 46%;
+    --red-600: 0 75% 38%;
+    --red-700: 0 75% 30%;
+    --red-800: 0 70% 22%;
+    --red-900: 0 65% 15%;
+    --red-950: 0 60% 8%;
 
-    /* Yellow — amber gold */
-    --yellow-50: 48 100% 92%;
-    --yellow-100: 48 95% 84%;
-    --yellow-200: 46 90% 72%;
-    --yellow-300: 44 88% 62%;
-    --yellow-400: 42 85% 52%;
-    --yellow-500: 40 82% 44%;
-    --yellow-600: 38 78% 36%;
-    --yellow-700: 36 75% 28%;
-    --yellow-800: 34 72% 22%;
-    --yellow-900: 32 68% 15%;
-    --yellow-950: 30 65% 8%;
+    /* Yellow — pale yellow */
+    --yellow-50: 48 80% 94%;
+    --yellow-100: 48 75% 86%;
+    --yellow-200: 48 70% 74%;
+    --yellow-300: 48 65% 62%;
+    --yellow-400: 48 60% 52%;
+    --yellow-500: 48 65% 44%;
+    --yellow-600: 48 70% 36%;
+    --yellow-700: 48 70% 28%;
+    --yellow-800: 48 65% 22%;
+    --yellow-900: 48 60% 15%;
+    --yellow-950: 48 55% 8%;
 
-    /* Purple — warm purple */
-    --purple-50: 300 40% 95%;
-    --purple-100: 300 38% 88%;
-    --purple-200: 300 36% 78%;
-    --purple-300: 300 40% 66%;
-    --purple-400: 300 42% 54%;
-    --purple-500: 300 40% 44%;
-    --purple-600: 300 38% 36%;
-    --purple-700: 300 35% 28%;
-    --purple-800: 300 32% 20%;
-    --purple-900: 300 28% 13%;
-    --purple-950: 300 25% 7%;
+    /* Purple — cool violet */
+    --purple-50: 270 40% 95%;
+    --purple-100: 270 38% 88%;
+    --purple-200: 270 36% 78%;
+    --purple-300: 270 40% 66%;
+    --purple-400: 270 42% 54%;
+    --purple-500: 270 40% 44%;
+    --purple-600: 270 38% 36%;
+    --purple-700: 270 35% 28%;
+    --purple-800: 270 32% 20%;
+    --purple-900: 270 28% 13%;
+    --purple-950: 270 25% 7%;
 
-    /* Indigo — warm indigo */
-    --indigo-50: 220 50% 95%;
-    --indigo-100: 220 48% 88%;
-    --indigo-200: 220 46% 78%;
-    --indigo-300: 220 45% 66%;
-    --indigo-400: 220 48% 54%;
-    --indigo-500: 220 46% 44%;
-    --indigo-600: 220 44% 36%;
-    --indigo-700: 220 42% 28%;
-    --indigo-800: 220 40% 20%;
-    --indigo-900: 220 38% 13%;
-    --indigo-950: 220 35% 7%;
+    /* Indigo — cool indigo */
+    --indigo-50: 230 50% 95%;
+    --indigo-100: 230 48% 88%;
+    --indigo-200: 230 46% 78%;
+    --indigo-300: 230 45% 66%;
+    --indigo-400: 230 48% 54%;
+    --indigo-500: 230 46% 44%;
+    --indigo-600: 230 44% 36%;
+    --indigo-700: 230 42% 28%;
+    --indigo-800: 230 40% 20%;
+    --indigo-900: 230 38% 13%;
+    --indigo-950: 230 35% 7%;
 
     /* Style design tokens */
     --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
@@ -182,1774 +182,145 @@
     --card-padding-y: 1.5rem;
     --card-border-opacity: 1;
     --card-bg: hsl(0 0% 100%);
-    --card-bg-alt: hsl(var(--brand-50) / 0.8);
+    --card-bg-alt: hsl(0 0% 94%);
     --sidebar-blur: 0px;
     --sidebar-glass-opacity: 1;
     --sidebar-glass-bg: hsl(var(--sidebar-background));
-    --table-stripe: hsl(var(--brand-50) / 0.4);
+    --table-stripe: hsl(0 0% 94%);
     --section-spacing: 1.5rem;
     --section-padding: 1.5rem;
     --nav-item-height: 2.5rem;
     --page-main-bg: hsl(var(--background));
   }
-
-  .dark {
-    --background: 33 25% 8%;
-    --foreground: 40 30% 90%;
-    --card: 33 25% 10%;
-    --card-foreground: 40 30% 90%;
-    --popover: 33 25% 10%;
-    --popover-foreground: 40 30% 90%;
-    --primary: 40 30% 90%;
-    --primary-foreground: 33 25% 10%;
-    --secondary: 33 20% 18%;
-    --secondary-foreground: 40 30% 90%;
-    --muted: 33 20% 18%;
-    --muted-foreground: 35 20% 60%;
-    --accent: 35 25% 20%;
-    --accent-foreground: 40 30% 90%;
-    --destructive: 6 65% 40%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 33 20% 22%;
-    --input: 33 20% 22%;
-    --ring: 35 60% 50%;
-    --sidebar-background: 33 25% 10%;
-    --sidebar-foreground: 35 20% 70%;
-    --sidebar-primary: 35 60% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 33 20% 18%;
-    --sidebar-accent-foreground: 35 20% 80%;
-    --sidebar-border: 33 20% 20%;
-    --sidebar-ring: 35 60% 50%;
-  }
 }
 
 /* =============================================
-   THEME: 📊 Planhat — Flat Data Professional
-   Sharp corners, no shadows, compact gray,
-   neutral cool palette, data-dense
-   ============================================= */
-.theme-planhat {
-  --background: 220 15% 96%;
-  --foreground: 220 12% 20%;
-  --card: 0 0% 100%;
-  --card-foreground: 220 12% 20%;
-  --primary: 220 12% 20%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 220 12% 92%;
-  --secondary-foreground: 220 12% 20%;
-  --muted: 220 10% 94%;
-  --muted-foreground: 220 8% 50%;
-  --accent: 220 12% 90%;
-  --accent-foreground: 220 12% 25%;
-  --destructive: 0 60% 48%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 220 12% 86%;
-  --input: 220 12% 86%;
-  --ring: 220 10% 45%;
-  --sidebar-background: 220 15% 94%;
-  --sidebar-foreground: 220 10% 38%;
-  --sidebar-primary: 220 10% 30%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 220 12% 88%;
-  --sidebar-accent-foreground: 220 10% 30%;
-  --sidebar-border: 220 12% 84%;
-  --sidebar-ring: 220 10% 45%;
-  --brand-50: 210 20% 98%;
-  --brand-100: 210 18% 94%;
-  --brand-200: 210 16% 88%;
-  --brand-300: 210 14% 78%;
-  --brand-400: 210 12% 65%;
-  --brand-500: 210 10% 50%;
-  --brand-600: 210 12% 40%;
-  --brand-700: 210 14% 30%;
-  --brand-800: 210 16% 22%;
-  --brand-900: 210 18% 16%;
-  --brand-950: 210 20% 10%;
-
-  /* Planhat gray — neutral, cooler */
-  --gray-50: 220 15% 96%;
-  --gray-100: 220 12% 92%;
-  --gray-200: 220 12% 86%;
-  --gray-300: 220 10% 76%;
-  --gray-400: 220 8% 62%;
-  --gray-500: 220 8% 50%;
-  --gray-600: 220 8% 40%;
-  --gray-700: 220 8% 32%;
-  --gray-800: 220 8% 24%;
-  --gray-900: 220 8% 16%;
-  --gray-950: 220 8% 8%;
-
-  /* Slate — same as gray, very neutral */
-  --slate-50: 220 15% 96%;
-  --slate-100: 220 12% 92%;
-  --slate-200: 220 12% 86%;
-  --slate-300: 220 10% 76%;
-  --slate-400: 220 8% 62%;
-  --slate-500: 220 8% 50%;
-  --slate-600: 220 8% 40%;
-  --slate-700: 220 8% 32%;
-  --slate-800: 220 8% 24%;
-  --slate-900: 220 8% 16%;
-  --slate-950: 220 8% 8%;
-
-  /* Planhat blue — muted slate-blue */
-  --blue-50: 220 40% 97%;
-  --blue-100: 220 38% 92%;
-  --blue-200: 220 35% 85%;
-  --blue-300: 220 30% 74%;
-  --blue-400: 220 28% 62%;
-  --blue-500: 220 25% 50%;
-  --blue-600: 220 22% 42%;
-  --blue-700: 220 20% 34%;
-  --blue-800: 220 18% 26%;
-  --blue-900: 220 15% 18%;
-  --blue-950: 220 12% 10%;
-
-  /* Planhat green — muted */
-  --green-50: 160 25% 96%;
-  --green-100: 160 22% 90%;
-  --green-200: 160 20% 82%;
-  --green-300: 160 18% 70%;
-  --green-400: 160 20% 56%;
-  --green-500: 160 18% 46%;
-  --green-600: 160 16% 38%;
-  --green-700: 160 14% 30%;
-  --green-800: 160 12% 22%;
-  --green-900: 160 10% 14%;
-  --green-950: 160 8% 7%;
-
-  /* Planhat red — muted */
-  --red-50: 0 30% 96%;
-  --red-100: 0 28% 90%;
-  --red-200: 0 25% 82%;
-  --red-300: 0 22% 70%;
-  --red-400: 0 25% 56%;
-  --red-500: 0 24% 46%;
-  --red-600: 0 22% 38%;
-  --red-700: 0 20% 30%;
-  --red-800: 0 18% 22%;
-  --red-900: 0 15% 14%;
-  --red-950: 0 12% 7%;
-
-  /* Planhat yellow — muted */
-  --yellow-50: 45 30% 95%;
-  --yellow-100: 45 28% 88%;
-  --yellow-200: 45 25% 78%;
-  --yellow-300: 45 22% 66%;
-  --yellow-400: 45 25% 54%;
-  --yellow-500: 45 24% 44%;
-  --yellow-600: 45 22% 36%;
-  --yellow-700: 45 20% 28%;
-  --yellow-800: 45 18% 20%;
-  --yellow-900: 45 15% 12%;
-  --yellow-950: 45 12% 6%;
-
-  /* Planhat purple — muted */
-  --purple-50: 270 25% 96%;
-  --purple-100: 270 22% 90%;
-  --purple-200: 270 20% 82%;
-  --purple-300: 270 18% 70%;
-  --purple-400: 270 20% 56%;
-  --purple-500: 270 18% 46%;
-  --purple-600: 270 16% 38%;
-  --purple-700: 270 14% 30%;
-  --purple-800: 270 12% 22%;
-  --purple-900: 270 10% 14%;
-  --purple-950: 270 8% 7%;
-
-  /* Indigo — muted */
-  --indigo-50: 240 25% 96%;
-  --indigo-100: 240 22% 90%;
-  --indigo-200: 240 20% 82%;
-  --indigo-300: 240 18% 70%;
-  --indigo-400: 240 20% 56%;
-  --indigo-500: 240 18% 46%;
-  --indigo-600: 240 16% 38%;
-  --indigo-700: 240 14% 30%;
-  --indigo-800: 240 12% 22%;
-  --indigo-900: 240 10% 14%;
-  --indigo-950: 240 8% 7%;
-
-  --radius: 0.25rem;
-  --card-shadow: none;
-  --card-padding-x: 1rem;
-  --card-padding-y: 1rem;
-  --card-border-opacity: 1;
-  --card-bg: hsl(0 0% 100%);
-  --card-bg-alt: hsl(220 15% 96%);
-  --sidebar-blur: 0px;
-  --sidebar-glass-opacity: 1;
-  --sidebar-glass-bg: hsl(220 15% 94%);
-  --table-stripe: hsl(220 12% 95% / 0.6);
-  --section-spacing: 1rem;
-  --section-padding: 1rem;
-  --nav-item-height: 2.25rem;
-  --page-main-bg: hsl(220 15% 96%);
-}
-
-/* Planhat: flat, sharp, compact overrides */
-.theme-planhat .shadow-sm,
-.theme-planhat .shadow-md,
-.theme-planhat .shadow-lg,
-.theme-planhat .shadow-xl {
-  box-shadow: none !important;
-}
-.theme-planhat :where(.p-6, .p-8) {
-  padding: var(--card-padding-y) var(--card-padding-x) !important;
-}
-.theme-planhat :where(.gap-4, .gap-6) {
-  gap: 0.75rem !important;
-}
-
-/* =============================================
-   THEME: 🎨 Superlist — Playful Colorful
-   Purple accents, large radius, generous spacing
-   ============================================= */
-.theme-superlist {
-  --background: 300 30% 97%;
-  --foreground: 300 20% 18%;
-  --card: 0 0% 100%;
-  --card-foreground: 300 20% 18%;
-  --primary: 300 20% 18%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 300 25% 92%;
-  --secondary-foreground: 300 20% 18%;
-  --muted: 300 20% 94%;
-  --muted-foreground: 300 15% 50%;
-  --accent: 300 35% 88%;
-  --accent-foreground: 300 20% 18%;
-  --destructive: 350 70% 50%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 300 20% 82%;
-  --input: 300 20% 82%;
-  --ring: 300 55% 50%;
-  --sidebar-background: 300 45% 85%;
-  --sidebar-foreground: 300 30% 25%;
-  --sidebar-primary: 300 55% 40%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 300 40% 78%;
-  --sidebar-accent-foreground: 300 45% 30%;
-  --sidebar-border: 300 35% 75%;
-  --sidebar-ring: 300 55% 50%;
-  --brand-50: 300 60% 98%;
-  --brand-100: 300 50% 94%;
-  --brand-200: 300 45% 86%;
-  --brand-300: 300 42% 75%;
-  --brand-400: 300 48% 62%;
-  --brand-500: 300 55% 50%;
-  --brand-600: 300 52% 42%;
-  --brand-700: 300 50% 34%;
-  --brand-800: 300 48% 26%;
-  --brand-900: 300 45% 20%;
-  --brand-950: 300 42% 12%;
-
-  /* Gray — warm with purple undertone */
-  --gray-50: 300 30% 97%;
-  --gray-100: 300 25% 92%;
-  --gray-200: 300 22% 85%;
-  --gray-300: 300 20% 76%;
-  --gray-400: 300 18% 62%;
-  --gray-500: 300 18% 50%;
-  --gray-600: 300 16% 40%;
-  --gray-700: 300 14% 32%;
-  --gray-800: 300 12% 24%;
-  --gray-900: 300 10% 16%;
-  --gray-950: 300 8% 8%;
-
-  /* Superlist shifts MAIN ACCENT from blue → PURPLE */
-  --blue-50: 300 40% 95%;
-  --blue-100: 300 38% 88%;
-  --blue-200: 300 36% 78%;
-  --blue-300: 300 40% 66%;
-  --blue-400: 300 42% 54%;
-  --blue-500: 300 40% 44%;
-  --blue-600: 300 55% 42%;
-  --blue-700: 300 52% 34%;
-  --blue-800: 300 48% 26%;
-  --blue-900: 300 45% 18%;
-  --blue-950: 300 42% 10%;
-
-  /* Green — vibrant */
-  --green-50: 150 60% 95%;
-  --green-100: 150 55% 88%;
-  --green-200: 150 50% 78%;
-  --green-300: 150 48% 66%;
-  --green-400: 150 55% 52%;
-  --green-500: 150 52% 42%;
-  --green-600: 150 50% 34%;
-  --green-700: 150 48% 26%;
-  --green-800: 150 45% 18%;
-  --green-900: 150 42% 12%;
-  --green-950: 150 40% 6%;
-
-  /* Red — vibrant */
-  --red-50: 350 60% 96%;
-  --red-100: 350 55% 90%;
-  --red-200: 350 50% 82%;
-  --red-300: 350 48% 70%;
-  --red-400: 350 55% 58%;
-  --red-500: 350 52% 48%;
-  --red-600: 350 50% 40%;
-  --red-700: 350 48% 32%;
-  --red-800: 350 45% 24%;
-  --red-900: 350 42% 16%;
-  --red-950: 350 40% 8%;
-
-  /* Yellow — bright */
-  --yellow-50: 45 100% 93%;
-  --yellow-100: 45 95% 85%;
-  --yellow-200: 45 90% 75%;
-  --yellow-300: 45 88% 64%;
-  --yellow-400: 45 85% 54%;
-  --yellow-500: 45 82% 46%;
-  --yellow-600: 45 80% 38%;
-  --yellow-700: 45 78% 30%;
-  --yellow-800: 45 75% 22%;
-  --yellow-900: 45 72% 14%;
-  --yellow-950: 45 70% 7%;
-
-  /* Purple — vibrant main accent */
-  --purple-50: 300 60% 96%;
-  --purple-100: 300 55% 90%;
-  --purple-200: 300 50% 82%;
-  --purple-300: 300 48% 70%;
-  --purple-400: 300 55% 58%;
-  --purple-500: 300 52% 48%;
-  --purple-600: 300 55% 45%;
-  --purple-700: 300 50% 36%;
-  --purple-800: 300 48% 28%;
-  --purple-900: 300 45% 18%;
-  --purple-950: 300 42% 10%;
-
-  /* Indigo — playful */
-  --indigo-50: 260 60% 95%;
-  --indigo-100: 260 55% 88%;
-  --indigo-200: 260 50% 78%;
-  --indigo-300: 260 48% 66%;
-  --indigo-400: 260 55% 52%;
-  --indigo-500: 260 52% 42%;
-  --indigo-600: 260 50% 34%;
-  --indigo-700: 260 48% 26%;
-  --indigo-800: 260 45% 18%;
-  --indigo-900: 260 42% 12%;
-  --indigo-950: 260 40% 6%;
-
-  --radius: 1rem;
-  --card-shadow: 0 4px 14px 0 rgb(0 0 0 / 0.08);
-  --card-padding-x: 1.75rem;
-  --card-padding-y: 1.75rem;
-  --card-border-opacity: 0.6;
-  --card-bg: hsl(0 0% 100%);
-  --card-bg-alt: hsl(300 60% 97% / 0.7);
-  --sidebar-blur: 0px;
-  --sidebar-glass-opacity: 1;
-  --sidebar-glass-bg: hsl(300 45% 85%);
-  --table-stripe: hsl(300 50% 95% / 0.5);
-  --section-spacing: 2rem;
-  --section-padding: 2rem;
-  --nav-item-height: 2.75rem;
-  --page-main-bg: hsl(300 30% 97%);
-}
-
-/* Superlist: playful shadow overrides */
-.theme-superlist .shadow-sm {
-  box-shadow: 0 2px 8px 0 rgb(0 0 0 / 0.06) !important;
-}
-.theme-superlist .shadow-md {
-  box-shadow: 0 4px 14px 0 rgb(0 0 0 / 0.08) !important;
-}
-.theme-superlist .shadow-lg,
-.theme-superlist .shadow-xl {
-  box-shadow: 0 8px 24px 0 rgb(0 0 0 / 0.10) !important;
-}
-.theme-superlist :where(.p-6, .p-8) {
-  padding: var(--card-padding-y) var(--card-padding-x) !important;
-}
-.theme-superlist :where(.gap-4, .gap-6) {
-  gap: 1.25rem !important;
-}
-
-/* =============================================
-   THEME: ⚡ Basedash — Dark Sidebar Data Tool
-   Dark sidebar, professional, compact, blue accent
-   ============================================= */
-.theme-basedash {
-  --background: 0 0% 100%;
-  --foreground: 220 12% 18%;
-  --card: 0 0% 100%;
-  --card-foreground: 220 12% 18%;
-  --primary: 220 14% 20%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 220 10% 96%;
-  --secondary-foreground: 220 14% 20%;
-  --muted: 220 8% 96%;
-  --muted-foreground: 220 8% 50%;
-  --accent: 220 10% 92%;
-  --accent-foreground: 220 14% 25%;
-  --destructive: 0 70% 50%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 220 12% 88%;
-  --input: 220 12% 88%;
-  --ring: 220 80% 52%;
-  --sidebar-background: 220 18% 12%;
-  --sidebar-foreground: 220 10% 72%;
-  --sidebar-primary: 220 85% 60%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 220 14% 20%;
-  --sidebar-accent-foreground: 220 10% 88%;
-  --sidebar-border: 220 14% 18%;
-  --sidebar-ring: 220 85% 60%;
-  --brand-50: 220 40% 97%;
-  --brand-100: 220 50% 93%;
-  --brand-200: 220 60% 86%;
-  --brand-300: 220 65% 76%;
-  --brand-400: 220 70% 64%;
-  --brand-500: 220 80% 52%;
-  --brand-600: 220 75% 44%;
-  --brand-700: 220 70% 36%;
-  --brand-800: 220 65% 28%;
-  --brand-900: 220 60% 20%;
-  --brand-950: 220 55% 12%;
-
-  /* Gray — neutral cool */
-  --gray-50: 220 10% 97%;
-  --gray-100: 220 10% 94%;
-  --gray-200: 220 10% 88%;
-  --gray-300: 220 8% 76%;
-  --gray-400: 220 8% 62%;
-  --gray-500: 220 8% 50%;
-  --gray-600: 220 8% 40%;
-  --gray-700: 220 8% 32%;
-  --gray-800: 220 8% 24%;
-  --gray-900: 220 8% 16%;
-  --gray-950: 220 8% 8%;
-
-  /* Slate — neutral cool */
-  --slate-50: 220 10% 97%;
-  --slate-100: 220 10% 94%;
-  --slate-200: 220 10% 88%;
-  --slate-300: 220 8% 76%;
-  --slate-400: 220 8% 62%;
-  --slate-500: 220 8% 50%;
-  --slate-600: 220 8% 40%;
-  --slate-700: 220 8% 32%;
-  --slate-800: 220 8% 24%;
-  --slate-900: 220 8% 16%;
-  --slate-950: 220 8% 8%;
-
-  /* Blue — vibrant professional blue accent */
-  --blue-50: 220 40% 97%;
-  --blue-100: 220 50% 93%;
-  --blue-200: 220 60% 86%;
-  --blue-300: 220 65% 76%;
-  --blue-400: 220 70% 64%;
-  --blue-500: 220 80% 52%;
-  --blue-600: 220 85% 48%;
-  --blue-700: 220 80% 38%;
-  --blue-800: 220 75% 30%;
-  --blue-900: 220 70% 22%;
-  --blue-950: 220 65% 14%;
-
-  /* Green — teal-tinted */
-  --green-50: 160 40% 95%;
-  --green-100: 160 38% 88%;
-  --green-200: 160 35% 78%;
-  --green-300: 160 35% 66%;
-  --green-400: 160 45% 52%;
-  --green-500: 160 42% 42%;
-  --green-600: 160 40% 34%;
-  --green-700: 160 38% 26%;
-  --green-800: 160 35% 18%;
-  --green-900: 160 32% 12%;
-  --green-950: 160 30% 6%;
-
-  /* Red — standard */
-  --red-50: 0 60% 96%;
-  --red-100: 0 55% 90%;
-  --red-200: 0 50% 82%;
-  --red-300: 0 48% 70%;
-  --red-400: 0 55% 58%;
-  --red-500: 0 52% 48%;
-  --red-600: 0 50% 40%;
-  --red-700: 0 48% 32%;
-  --red-800: 0 45% 24%;
-  --red-900: 0 42% 16%;
-  --red-950: 0 40% 8%;
-
-  /* Yellow — standard */
-  --yellow-50: 45 60% 94%;
-  --yellow-100: 45 55% 86%;
-  --yellow-200: 45 50% 76%;
-  --yellow-300: 45 48% 64%;
-  --yellow-400: 45 55% 52%;
-  --yellow-500: 45 52% 44%;
-  --yellow-600: 45 50% 36%;
-  --yellow-700: 45 48% 28%;
-  --yellow-800: 45 45% 20%;
-  --yellow-900: 45 42% 12%;
-  --yellow-950: 45 40% 6%;
-
-  /* Purple — standard */
-  --purple-50: 270 40% 96%;
-  --purple-100: 270 38% 90%;
-  --purple-200: 270 35% 82%;
-  --purple-300: 270 35% 70%;
-  --purple-400: 270 40% 58%;
-  --purple-500: 270 38% 48%;
-  --purple-600: 270 36% 40%;
-  --purple-700: 270 34% 32%;
-  --purple-800: 270 32% 24%;
-  --purple-900: 270 30% 16%;
-  --purple-950: 270 28% 8%;
-
-  /* Indigo — standard */
-  --indigo-50: 240 40% 96%;
-  --indigo-100: 240 38% 90%;
-  --indigo-200: 240 35% 82%;
-  --indigo-300: 240 35% 70%;
-  --indigo-400: 240 40% 58%;
-  --indigo-500: 240 38% 48%;
-  --indigo-600: 240 36% 40%;
-  --indigo-700: 240 34% 32%;
-  --indigo-800: 240 32% 24%;
-  --indigo-900: 240 30% 16%;
-  --indigo-950: 240 28% 8%;
-
-  --radius: 0.375rem;
-  --card-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --card-padding-x: 1rem;
-  --card-padding-y: 0.875rem;
-  --card-border-opacity: 0.8;
-  --card-bg: hsl(0 0% 100%);
-  --card-bg-alt: hsl(220 40% 97%);
-  --sidebar-blur: 0px;
-  --sidebar-glass-opacity: 1;
-  --sidebar-glass-bg: hsl(220 18% 12%);
-  --table-stripe: hsl(220 40% 96% / 0.5);
-  --section-spacing: 0.875rem;
-  --section-padding: 0.875rem;
-  --nav-item-height: 2.125rem;
-  --page-main-bg: hsl(0 0% 100%);
-}
-
-/* Basedash: compact, minimal, dark sidebar */
-.theme-basedash .shadow-sm,
-.theme-basedash .shadow-md,
-.theme-basedash .shadow-lg,
-.theme-basedash .shadow-xl {
-  box-shadow: var(--card-shadow) !important;
-}
-.theme-basedash :where(.p-6, .p-8) {
-  padding: var(--card-padding-y) var(--card-padding-x) !important;
-}
-.theme-basedash :where(.gap-4, .gap-6) {
-  gap: 0.625rem !important;
-}
-/* Basedash sidebar nav items — light text on dark bg */
-.theme-basedash [class*="sidebar"] a,
-.theme-basedash [class*="sidebar"] button {
-  color: hsl(220 10% 72%) !important;
-}
-
-/* =============================================
-   THEME: ✨ Phantom — Glassmorphism Modern
-   Frosted glass, elevated shadows, elegant
-   ============================================= */
-.theme-phantom {
-  --background: 0 0% 98%;
-  --foreground: 0 0% 18%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 18%;
-  --primary: 0 0% 18%;
-  --primary-foreground: 0 0% 98%;
-  --secondary: 0 0% 94%;
-  --secondary-foreground: 0 0% 18%;
-  --muted: 0 0% 94%;
-  --muted-foreground: 0 0% 52%;
-  --accent: 0 0% 90%;
-  --accent-foreground: 0 0% 25%;
-  --destructive: 0 65% 50%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 88%;
-  --input: 0 0% 88%;
-  --ring: 0 0% 45%;
-  --sidebar-background: 0 0% 100%;
-  --sidebar-foreground: 0 0% 38%;
-  --sidebar-primary: 0 0% 18%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 94%;
-  --sidebar-accent-foreground: 0 0% 18%;
-  --sidebar-border: 0 0% 88%;
-  --sidebar-ring: 0 0% 18%;
-  --brand-50: 0 0% 97%;
-  --brand-100: 0 0% 92%;
-  --brand-200: 0 0% 85%;
-  --brand-300: 0 0% 72%;
-  --brand-400: 0 0% 60%;
-  --brand-500: 0 0% 45%;
-  --brand-600: 0 0% 38%;
-  --brand-700: 0 0% 30%;
-  --brand-800: 0 0% 22%;
-  --brand-900: 0 0% 16%;
-  --brand-950: 0 0% 10%;
-
-  /* Gray — completely neutral */
-  --gray-50: 0 0% 97%;
-  --gray-100: 0 0% 92%;
-  --gray-200: 0 0% 85%;
-  --gray-300: 0 0% 72%;
-  --gray-400: 0 0% 60%;
-  --gray-500: 0 0% 48%;
-  --gray-600: 0 0% 40%;
-  --gray-700: 0 0% 32%;
-  --gray-800: 0 0% 24%;
-  --gray-900: 0 0% 16%;
-  --gray-950: 0 0% 8%;
-
-  /* Slate — neutral */
-  --slate-50: 0 0% 97%;
-  --slate-100: 0 0% 92%;
-  --slate-200: 0 0% 85%;
-  --slate-300: 0 0% 72%;
-  --slate-400: 0 0% 60%;
-  --slate-500: 0 0% 48%;
-  --slate-600: 0 0% 40%;
-  --slate-700: 0 0% 32%;
-  --slate-800: 0 0% 24%;
-  --slate-900: 0 0% 16%;
-  --slate-950: 0 0% 8%;
-
-  /* Blue — desaturated, airy */
-  --blue-50: 210 30% 96%;
-  --blue-100: 210 28% 90%;
-  --blue-200: 210 25% 82%;
-  --blue-300: 210 22% 70%;
-  --blue-400: 210 20% 58%;
-  --blue-500: 210 18% 46%;
-  --blue-600: 210 16% 40%;
-  --blue-700: 210 14% 32%;
-  --blue-800: 210 12% 24%;
-  --blue-900: 210 10% 16%;
-  --blue-950: 210 8% 8%;
-
-  /* Green — desaturated */
-  --green-50: 150 20% 96%;
-  --green-100: 150 18% 90%;
-  --green-200: 150 15% 82%;
-  --green-300: 150 15% 70%;
-  --green-400: 150 18% 56%;
-  --green-500: 150 16% 46%;
-  --green-600: 150 14% 38%;
-  --green-700: 150 12% 30%;
-  --green-800: 150 10% 22%;
-  --green-900: 150 8% 14%;
-  --green-950: 150 6% 7%;
-
-  /* Red — desaturated */
-  --red-50: 0 20% 96%;
-  --red-100: 0 18% 90%;
-  --red-200: 0 15% 82%;
-  --red-300: 0 15% 70%;
-  --red-400: 0 18% 56%;
-  --red-500: 0 16% 46%;
-  --red-600: 0 14% 38%;
-  --red-700: 0 12% 30%;
-  --red-800: 0 10% 22%;
-  --red-900: 0 8% 14%;
-  --red-950: 0 6% 7%;
-
-  /* Yellow — desaturated */
-  --yellow-50: 45 25% 95%;
-  --yellow-100: 45 22% 88%;
-  --yellow-200: 45 18% 78%;
-  --yellow-300: 45 18% 66%;
-  --yellow-400: 45 20% 54%;
-  --yellow-500: 45 18% 44%;
-  --yellow-600: 45 16% 36%;
-  --yellow-700: 45 14% 28%;
-  --yellow-800: 45 12% 20%;
-  --yellow-900: 45 10% 12%;
-  --yellow-950: 45 8% 6%;
-
-  /* Purple — desaturated */
-  --purple-50: 270 20% 96%;
-  --purple-100: 270 18% 90%;
-  --purple-200: 270 15% 82%;
-  --purple-300: 270 15% 70%;
-  --purple-400: 270 18% 56%;
-  --purple-500: 270 16% 46%;
-  --purple-600: 270 14% 38%;
-  --purple-700: 270 12% 30%;
-  --purple-800: 270 10% 22%;
-  --purple-900: 270 8% 14%;
-  --purple-950: 270 6% 7%;
-
-  /* Indigo — desaturated */
-  --indigo-50: 240 20% 96%;
-  --indigo-100: 240 18% 90%;
-  --indigo-200: 240 15% 82%;
-  --indigo-300: 240 15% 70%;
-  --indigo-400: 240 18% 56%;
-  --indigo-500: 240 16% 46%;
-  --indigo-600: 240 14% 38%;
-  --indigo-700: 240 12% 30%;
-  --indigo-800: 240 10% 22%;
-  --indigo-900: 240 8% 14%;
-  --indigo-950: 240 6% 7%;
-
-  --radius: 0.75rem;
-  --card-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.08);
-  --card-padding-x: 1.5rem;
-  --card-padding-y: 1.5rem;
-  --card-border-opacity: 0.4;
-  --card-bg: hsla(0 0% 100% / 0.6);
-  --card-bg-alt: hsl(0 0% 95% / 0.5);
-  --sidebar-blur: 12px;
-  --sidebar-glass-opacity: 0.7;
-  --sidebar-glass-bg: hsla(0 0% 100% / 0.7);
-  --table-stripe: hsl(0 0% 96% / 0.3);
-  --section-spacing: 1.5rem;
-  --section-padding: 1.5rem;
-  --nav-item-height: 2.5rem;
-  --page-main-bg: hsl(0 0% 98%);
-}
-
-/* Phantom: glass effects, elevated shadows */
-.theme-phantom .shadow-sm {
-  box-shadow: 0 4px 16px 0 rgb(0 0 0 / 0.04) !important;
-}
-.theme-phantom .shadow-md {
-  box-shadow: 0 6px 24px 0 rgb(0 0 0 / 0.06) !important;
-}
-.theme-phantom .shadow-lg,
-.theme-phantom .shadow-xl {
-  box-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.08), 0 2px 8px 0 rgb(0 0 0 / 0.04) !important;
-}
-.theme-phantom :where(.p-6, .p-8) {
-  padding: var(--card-padding-y) var(--card-padding-x) !important;
-}
-.theme-phantom :where(.gap-4, .gap-6) {
-  gap: 1.25rem !important;
-}
-
-/* ==========================================================================
-   🎨 COMPONENT-LEVEL VISUAL DIFFERENTIATION — 5 design languages
-   Each theme now has unique: card/button/badge/table/tabs/input/nav styles
-   ========================================================================== */
-
-/* =============================================
-   🌟 CARD — structure, shadow, rounding, border per theme
-   =============================================
-
-   Warm Amber (default): warm rounded cards with soft shadow
-   ------------------------------------------------------- */
-/* Default card is rounded-lg border bg-card text-card-foreground shadow-sm */
-/* We enhance it with warmer hover effects */
-div.rounded-lg.border.bg-card {
-  transition: box-shadow 0.2s ease, transform 0.2s ease !important;
-}
-div.rounded-lg.border.bg-card:hover {
-  box-shadow: 0 4px 12px hsl(35 60% 45% / 0.12) !important;
-}
-
-/* =============================================
-   Planhat: flat, no shadows, sharp corners, data-dense
-   ============================================= */
-.theme-planhat div.rounded-lg.border.bg-card {
-  box-shadow: none !important;
-  border-radius: 4px !important;
-  border: 1px solid hsl(220 12% 86%) !important;
-}
-.theme-planhat div.rounded-lg.border.bg-card:hover {
-  box-shadow: none !important;
-  transform: none !important;
-}
-.theme-planhat .rounded-lg:where(.border) {
-  border-radius: 4px !important;
-}
-/* Planhat: compact card internals */
-.theme-planhat .p-6 {
-  padding: 0.875rem 1rem !important;
-}
-.theme-planhat .p-4 {
-  padding: 0.625rem 0.75rem !important;
-}
-.theme-planhat .gap-6 {
-  gap: 0.75rem !important;
-}
-.theme-planhat .gap-4 {
-  gap: 0.5rem !important;
-}
-.theme-planhat .space-y-6 > :not([hidden]) ~ :not([hidden]) {
-  --tw-space-y-reverse: 0;
-  margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse))) !important;
-  margin-bottom: calc(0.75rem * var(--tw-space-y-reverse)) !important;
-}
-.theme-planhat .space-y-4 > :not([hidden]) ~ :not([hidden]) {
-  --tw-space-y-reverse: 0;
-  margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse))) !important;
-}
-/* Planhat: card header less padding */
-.theme-planhat [class*="space-y-1.5"].p-6 {
-  padding: 0.75rem 1rem !important;
-}
-.theme-planhat .text-2xl.font-semibold {
-  font-size: 1.125rem !important;
-  font-weight: 700 !important;
-}
-
-/* =============================================
-   Superlist: large radius, elevated shadow, colored top accent
-   ============================================= */
-.theme-superlist div.rounded-lg.border.bg-card {
-  border-radius: 16px !important;
-  box-shadow: 0 4px 20px rgb(0 0 0 / 0.08) !important;
-  border: 1px solid hsl(300 20% 88% / 0.6) !important;
-  border-top: 3px solid hsl(300 55% 45%) !important;
-}
-.theme-superlist div.rounded-lg.border.bg-card:hover {
-  box-shadow: 0 8px 30px rgb(0 0 0 / 0.12) !important;
-  transform: translateY(-2px) !important;
-}
-/* Don't add top accent to sidebar cards */
-.theme-superlist aside div.rounded-lg.border.bg-card {
-  border-top: 1px solid hsl(300 20% 88% / 0.6) !important;
-}
-.theme-superlist aside a[href],
-.theme-superlist aside button {
-  border-top: none !important;
-}
-/* Superlist: generous card internals */
-.theme-superlist .p-6 {
-  padding: 1.75rem !important;
-}
-.theme-superlist .p-4 {
-  padding: 1.25rem !important;
-}
-.theme-superlist .gap-6 {
-  gap: 1.5rem !important;
-}
-.theme-superlist .gap-4 {
-  gap: 1.25rem !important;
-}
-/* Superlist: big, bold titles */
-.theme-superlist .text-2xl.font-semibold {
-  font-size: 1.5rem !important;
-  font-weight: 800 !important;
-  letter-spacing: -0.02em !important;
-  color: hsl(300 20% 18%) !important;
-}
-
-/* =============================================
-   Basedash: minimal shadow, compact, data-tool feel
-   ============================================= */
-.theme-basedash div.rounded-lg.border.bg-card {
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04) !important;
-  border-radius: 6px !important;
-  border: 1px solid hsl(220 12% 88%) !important;
-}
-.theme-basedash div.rounded-lg.border.bg-card:hover {
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.06) !important;
-}
-/* Basedash: compact internals */
-.theme-basedash .p-6 {
-  padding: 1rem !important;
-}
-.theme-basedash .p-4 {
-  padding: 0.75rem !important;
-}
-.theme-basedash .gap-6 {
-  gap: 1rem !important;
-}
-.theme-basedash .gap-4 {
-  gap: 0.75rem !important;
-}
-.theme-basedash .text-2xl.font-semibold {
-  font-size: 1.25rem !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.01em !important;
-}
-/* Basedash: card header compact */
-.theme-basedash [class*="space-y-1.5"].p-6 {
-  padding: 0.75rem 1rem !important;
-}
-
-/* =============================================
-   Phantom: glass cards, frosted, elevated shadow, airy
-   ============================================= */
-.theme-phantom div.rounded-lg.border.bg-card {
-  background: hsla(0 0% 100% / 0.55) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid hsla(0 0% 88% / 0.4) !important;
-  box-shadow: 0 8px 32px rgb(0 0 0 / 0.06), 0 1px 4px rgb(0 0 0 / 0.03) !important;
-  border-radius: 12px !important;
-}
-.theme-phantom div.rounded-lg.border.bg-card:hover {
-  box-shadow: 0 12px 40px rgb(0 0 0 / 0.09), 0 2px 6px rgb(0 0 0 / 0.04) !important;
-  background: hsla(0 0% 100% / 0.7) !important;
-}
-/* Phantom: spacious internals */
-.theme-phantom .p-6 {
-  padding: 1.5rem !important;
-}
-.theme-phantom .text-2xl.font-semibold {
-  font-weight: 500 !important;
-  letter-spacing: -0.01em !important;
-  color: hsl(0 0% 15%) !important;
-}
-
-/* =============================================
-   🌟 BUTTON styles per theme
-   =============================================
-
-   Warm Amber (default): rounded warm buttons
-   ------------------------------------------ */
-button.inline-flex.items-center.justify-center.whitespace-nowrap.rounded-md.text-sm.font-medium {
-  transition: all 0.15s ease !important;
-}
-
-/* =============================================
-   Planhat: flat, compact buttons with sharp corners
-   ============================================= */
-.theme-planhat button.inline-flex.items-center.justify-center.whitespace-nowrap.rounded-md.text-sm.font-medium {
-  border-radius: 4px !important;
-  font-size: 0.8125rem !important;
-  font-weight: 600 !important;
-}
-.theme-planhat button.bg-primary.text-primary-foreground {
-  background: hsl(220 12% 25%) !important;
-}
-.theme-planhat button.bg-primary.text-primary-foreground:hover {
-  background: hsl(220 12% 18%) !important;
-}
-.theme-planhat button.border.border-input.bg-background {
-  border-color: hsl(220 12% 82%) !important;
-}
-.theme-planhat button:hover {
-  background: hsl(220 12% 92%) !important;
-}
-/* Planhat: compact button sizes */
-.theme-planhat .h-10 {
-  height: 2.125rem !important;
-}
-.theme-planhat .px-4.py-2 {
-  padding: 0.375rem 0.75rem !important;
-}
-.theme-planhat .h-9 {
-  height: 2rem !important;
-}
-.theme-planhat .h-11 {
-  height: 2.25rem !important;
-}
-
-/* =============================================
-   Superlist: pill-shaped, colorful, playful buttons
-   ============================================= */
-.theme-superlist button.inline-flex.items-center.justify-center.whitespace-nowrap.rounded-md.text-sm.font-medium {
-  border-radius: 9999px !important;
-  padding-left: 1.25rem !important;
-  padding-right: 1.25rem !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.01em !important;
-}
-.theme-superlist button.bg-primary.text-primary-foreground {
-  background: hsl(300 55% 42%) !important;
-}
-.theme-superlist button.bg-primary.text-primary-foreground:hover {
-  background: hsl(300 55% 35%) !important;
-}
-.theme-superlist button.border.border-input.bg-background {
-  border-color: hsl(300 30% 78%) !important;
-  border-width: 2px !important;
-}
-.theme-superlist button:hover {
-  background: hsl(300 40% 88%) !important;
-}
-/* Superlist: taller buttons */
-.theme-superlist .h-10 {
-  height: 2.5rem !important;
-}
-
-/* =============================================
-   Basedash: bold, filled, blue-accent buttons
-   ============================================= */
-.theme-basedash button.inline-flex.items-center.justify-center.whitespace-nowrap.rounded-md.text-sm.font-medium {
-  border-radius: 6px !important;
-  font-weight: 600 !important;
-  font-size: 0.8125rem !important;
-}
-.theme-basedash button.bg-primary.text-primary-foreground {
-  background: hsl(220 80% 48%) !important;
-}
-.theme-basedash button.bg-primary.text-primary-foreground:hover {
-  background: hsl(220 80% 40%) !important;
-}
-.theme-basedash button.border.border-input.bg-background {
-  border-color: hsl(220 12% 82%) !important;
-}
-/* Basedash: larger buttons */
-.theme-basedash .h-10 {
-  height: 2.375rem !important;
-}
-
-/* =============================================
-   Phantom: subtle, ghost-like, glass buttons
-   ============================================= */
-.theme-phantom button.inline-flex.items-center.justify-center.whitespace-nowrap.rounded-md.text-sm.font-medium {
-  border-radius: 10px !important;
-  font-weight: 450 !important;
-  font-size: 0.8125rem !important;
-  letter-spacing: 0.01em !important;
-}
-.theme-phantom button.bg-primary.text-primary-foreground {
-  background: hsl(0 0% 20%) !important;
-}
-.theme-phantom button.bg-primary.text-primary-foreground:hover {
-  background: hsl(0 0% 12%) !important;
-}
-.theme-phantom button.border.border-input.bg-background {
-  background: hsla(0 0% 100% / 0.3) !important;
-  backdrop-filter: blur(4px) !important;
-  border-color: hsla(0 0% 80% / 0.5) !important;
-}
-
-/* =============================================
-   🌟 BADGE / TAG shapes per theme
-   =============================================
-
-   Warm Amber (default): pill badges with warm colors
-   ------------------------------------------------ */
-
-/* =============================================
-   Planhat: sharp, squared, uppercase, compact badges
-   ============================================= */
-.theme-planhat span.inline-flex.items-center.rounded-full.border {
-  border-radius: 2px !important;
-  text-transform: uppercase !important;
-  font-size: 0.625rem !important;
-  letter-spacing: 0.04em !important;
-  padding: 0.125rem 0.5rem !important;
-  font-weight: 700 !important;
-  border: none !important;
-}
-.theme-planhat .rounded-full {
-  border-radius: 2px !important;
-}
-
-/* =============================================
-   Superlist: pill badges, large, playful
-   ============================================= */
-.theme-superlist span.inline-flex.items-center.rounded-full.border {
-  border-radius: 9999px !important;
-  padding: 0.125rem 0.875rem !important;
-  font-size: 0.75rem !important;
-  font-weight: 700 !important;
-  border-width: 1.5px !important;
-}
-
-/* =============================================
-   Basedash: square-ish, compact, professional
-   ============================================= */
-.theme-basedash span.inline-flex.items-center.rounded-full.border {
-  border-radius: 4px !important;
-  font-size: 0.625rem !important;
-  font-weight: 600 !important;
-  padding: 0.125rem 0.5rem !important;
-  text-transform: uppercase !important;
-}
-
-/* =============================================
-   Phantom: glass badge, desaturated, subtle
-   ============================================= */
-.theme-phantom span.inline-flex.items-center.rounded-full.border {
-  border-radius: 8px !important;
-  background: hsla(0 0% 100% / 0.4) !important;
-  backdrop-filter: blur(4px) !important;
-  border: 1px solid hsla(0 0% 80% / 0.3) !important;
-  font-weight: 450 !important;
-  font-size: 0.6875rem !important;
-  color: hsl(0 0% 30%) !important;
-}
-
-/* =============================================
-   🌟 TABLE STYLES per theme
+   🪟 GLASSMORPHISM — per DESIGN.md v2.0
    ============================================= */
 
-/* Planhat: compact, flat, data-dense table */
-.theme-planhat thead tr {
-  border-bottom: 2px solid hsl(220 12% 78%) !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.06em !important;
-  font-size: 0.625rem !important;
+.glass {
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.70);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  transition: all 0.2s;
 }
-.theme-planhat thead th {
-  padding: 0.5rem 0.75rem !important;
-  font-weight: 700 !important;
-  color: hsl(220 8% 45%) !important;
+.glass:hover {
+  background: rgba(255,255,255,0.70);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06);
 }
-.theme-planhat tbody tr {
-  border-bottom: 1px solid hsl(220 12% 90%) !important;
-  height: 2.25rem !important;
-}
-.theme-planhat tbody td {
-  padding: 0.375rem 0.75rem !important;
-  font-size: 0.8125rem !important;
-}
-.theme-planhat tbody tr:hover {
-  background-color: hsl(220 12% 94%) !important;
-}
-/* Planhat: minimal zebra striping for data density */
-.theme-planhat tbody tr:nth-child(even) {
-  background-color: hsl(220 12% 97% / 0.5) !important;
-}
-.theme-planhat tbody tr:nth-child(even):hover {
-  background-color: hsl(220 12% 93%) !important;
+.glass-strong {
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(255,255,255,0.70);
 }
 
-/* Superlist: playful table with colored header accent */
-.theme-superlist thead tr {
-  border-bottom: 2.5px solid hsl(300 45% 42%) !important;
+.glass-stat {
+  background: rgba(255,255,255,0.70);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.70);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+  padding: 16px 24px;
+  transition: all 0.2s;
 }
-.theme-superlist thead th {
-  font-weight: 800 !important;
-  font-size: 0.8125rem !important;
-  color: hsl(300 20% 25%) !important;
-  padding: 0.75rem 1rem !important;
-}
-.theme-superlist tbody tr {
-  border-bottom: 1px solid hsl(300 20% 88%) !important;
-}
-.theme-superlist tbody tr:hover {
-  background-color: hsl(300 50% 94%) !important;
-}
-.theme-superlist tbody td {
-  padding: 0.75rem 1rem !important;
+.glass-stat:hover {
+  background: rgba(255,255,255,0.75);
+  transform: translateY(-2px);
 }
 
-/* Basedash: clean, minimal table with muted headers */
-.theme-basedash thead tr {
-  border-bottom: 1.5px solid hsl(220 12% 82%) !important;
+.glass-btn {
+  background: rgba(255,255,255,0.70);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(255,255,255,0.70);
+  border-radius: 8px;
+  font-weight: 600;
+  color: #1A1A1A;
+  transition: all 0.15s;
+  padding: 8px 16px;
 }
-.theme-basedash thead th {
-  font-weight: 600 !important;
-  color: hsl(220 8% 50%) !important;
-  text-transform: uppercase !important;
-  font-size: 0.65rem !important;
-  letter-spacing: 0.05em !important;
-  padding: 0.625rem 0.875rem !important;
+.glass-btn:hover {
+  background: rgba(255,255,255,0.75);
 }
-.theme-basedash tbody tr {
-  border-bottom: 1px solid hsl(220 10% 90%) !important;
+.glass-btn-primary {
+  background: linear-gradient(135deg, #999999, #666666);
+  color: #1A1A1A;
+  font-weight: 700;
+  border: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
 }
-.theme-basedash tbody tr:hover {
-  background-color: hsl(220 40% 96%) !important;
-}
-.theme-basedash tbody td {
-  padding: 0.625rem 0.875rem !important;
-}
-/* Basedash: zebra striping for better data scanning */
-.theme-basedash tbody tr:nth-child(even) {
-  background-color: hsl(220 30% 97%) !important;
-}
-.theme-basedash tbody tr:nth-child(even):hover {
-  background-color: hsl(220 40% 95%) !important;
+.glass-btn-primary:hover {
+  box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+  transform: translateY(-1px);
 }
 
-/* Phantom: minimal table, thin borders, airy */
-.theme-phantom thead tr {
-  border-bottom: 1px solid hsl(0 0% 82%) !important;
+.glass-input {
+  background: rgba(255,255,255,0.50);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(255,255,255,0.70);
+  border-radius: 8px;
+  padding: 8px 12px;
+  transition: all 0.15s;
 }
-.theme-phantom thead th {
-  font-weight: 500 !important;
-  font-size: 0.75rem !important;
-  color: hsl(0 0% 45%) !important;
-  padding: 0.75rem 1rem !important;
-  letter-spacing: 0.02em !important;
-}
-.theme-phantom tbody tr {
-  border-bottom: 1px solid hsl(0 0% 92%) !important;
-}
-.theme-phantom tbody tr:hover {
-  background-color: hsl(0 0% 96% / 0.6) !important;
-}
-.theme-phantom tbody td {
-  padding: 0.75rem 1rem !important;
-  font-size: 0.8125rem !important;
+.glass-input:focus {
+  border-color: #999999;
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.08);
+  outline: none;
 }
 
-/* =============================================
-   🌟 TABS styles per theme
-   =============================================
-
-   Planhat: flat tab bar with bottom indicator
-   ------------------------------------------ */
-.theme-planhat div.inline-flex.h-10.items-center.justify-center.rounded-md.bg-muted {
-  background: transparent !important;
-  border-bottom: 1px solid hsl(220 12% 86%) !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-  height: auto !important;
-  gap: 0 !important;
+.glass-row {
+  background: rgba(255,255,255,0.40);
+  border-radius: 8px;
+  transition: all 0.15s;
 }
-.theme-planhat button.inline-flex.items-center.justify-center.whitespace-nowrap.rounded-sm {
-  border-radius: 0 !important;
-  padding: 0.625rem 1rem !important;
-  border-bottom: 2px solid transparent !important;
-  margin-bottom: -1px !important;
-  font-weight: 600 !important;
-  font-size: 0.8125rem !important;
-  color: hsl(220 8% 50%) !important;
-}
-.theme-planhat button[data-state="active"].inline-flex.items-center.justify-center.whitespace-nowrap.rounded-sm {
-  background: transparent !important;
-  box-shadow: none !important;
-  border-bottom-color: hsl(220 12% 25%) !important;
-  color: hsl(220 12% 25%) !important;
+.glass-row:hover {
+  background: rgba(255,255,255,0.70);
 }
 
-/* Superlist: pill-shaped tabs, colorful */
-.theme-superlist div.inline-flex.h-10.items-center.justify-center.rounded-md.bg-muted {
-  background: hsl(300 30% 92%) !important;
-  border-radius: 9999px !important;
-  padding: 0.25rem !important;
-  gap: 0.25rem !important;
-}
-.theme-superlist button.inline-flex.items-center.justify-center.whitespace-nowrap.rounded-sm {
-  border-radius: 9999px !important;
-  padding: 0.5rem 1.25rem !important;
-  font-weight: 700 !important;
-  font-size: 0.8125rem !important;
-}
-.theme-superlist button[data-state="active"].inline-flex.items-center.justify-center.whitespace-nowrap.rounded-sm {
-  background: hsl(300 55% 42%) !important;
-  color: white !important;
-  box-shadow: 0 2px 8px hsl(300 40% 50% / 0.3) !important;
-}
-
-/* Basedash: segmented control style tabs */
-.theme-basedash div.inline-flex.h-10.items-center.justify-center.rounded-md.bg-muted {
-  background: hsl(220 10% 94%) !important;
-  border-radius: 6px !important;
-  border: 1px solid hsl(220 12% 84%) !important;
-  padding: 0.1875rem !important;
-}
-.theme-basedash button.inline-flex.items-center.justify-center.whitespace-nowrap.rounded-sm {
-  border-radius: 4px !important;
-  font-weight: 600 !important;
-  font-size: 0.8125rem !important;
-}
-.theme-basedash button[data-state="active"].inline-flex.items-center.justify-center.whitespace-nowrap.rounded-sm {
-  background: white !important;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.08) !important;
-  color: hsl(220 80% 40%) !important;
-}
-
-/* Phantom: minimal underline tabs */
-.theme-phantom div.inline-flex.h-10.items-center.justify-center.rounded-md.bg-muted {
-  background: transparent !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-  gap: 0 !important;
-  border-bottom: 1px solid hsl(0 0% 88%) !important;
-  height: auto !important;
-}
-.theme-phantom button.inline-flex.items-center.justify-center.whitespace-nowrap.rounded-sm {
-  border-radius: 0 !important;
-  padding: 0.75rem 1.25rem !important;
-  font-weight: 450 !important;
-  font-size: 0.8125rem !important;
-  color: hsl(0 0% 50%) !important;
-  position: relative !important;
-}
-.theme-phantom button[data-state="active"].inline-flex.items-center.justify-center.whitespace-nowrap.rounded-sm {
-  background: transparent !important;
-  box-shadow: none !important;
-  color: hsl(0 0% 18%) !important;
-  font-weight: 500 !important;
-}
-.theme-phantom button[data-state="active"].inline-flex.items-center.justify-center.whitespace-nowrap.rounded-sm::after {
-  content: '' !important;
-  position: absolute !important;
-  bottom: 0 !important;
-  left: 1.25rem !important;
-  right: 1.25rem !important;
-  height: 2px !important;
-  background: hsl(0 0% 18%) !important;
-}
-
-/* =============================================
-   🌟 INPUT styles per theme
-   =============================================
-
-   Planhat: flat, sharp inputs
-   -------------------------- */
-.theme-planhat input.flex.h-10.w-full.rounded-md.border.border-input {
-  border-radius: 4px !important;
-  border: 1px solid hsl(220 12% 82%) !important;
-  font-size: 0.8125rem !important;
-  padding: 0.375rem 0.625rem !important;
-  height: 2.125rem !important;
-  box-shadow: none !important;
-}
-.theme-planhat input:focus-visible {
-  outline: 2px solid hsl(220 10% 50%) !important;
-  outline-offset: 0px !important;
-  border-radius: 4px !important;
-}
-
-/* Superlist: playful, large-radius inputs */
-.theme-superlist input.flex.h-10.w-full.rounded-md.border.border-input {
-  border-radius: 12px !important;
-  border: 2px solid hsl(300 25% 82%) !important;
-  font-size: 0.875rem !important;
-  padding: 0.5rem 0.875rem !important;
-  height: 2.75rem !important;
-  background: hsl(0 0% 100%) !important;
-}
-.theme-superlist input:focus-visible {
-  outline: 2px solid hsl(300 55% 50%) !important;
-  outline-offset: 2px !important;
-  border-radius: 12px !important;
-}
-
-/* Basedash: clean, minimal inputs */
-.theme-basedash input.flex.h-10.w-full.rounded-md.border.border-input {
-  border-radius: 6px !important;
-  border: 1px solid hsl(220 12% 82%) !important;
-  font-size: 0.8125rem !important;
-  padding: 0.375rem 0.75rem !important;
-  background: hsl(0 0% 100%) !important;
-}
-.theme-basedash input:focus-visible {
-  outline: 2px solid hsl(220 85% 52%) !important;
-  outline-offset: -1px !important;
-  border-color: hsl(220 80% 52%) !important;
-}
-
-/* Phantom: glass inputs, subtle */
-.theme-phantom input.flex.h-10.w-full.rounded-md.border.border-input {
-  border-radius: 10px !important;
-  border: 1px solid hsla(0 0% 80% / 0.4) !important;
-  background: hsla(0 0% 100% / 0.4) !important;
-  backdrop-filter: blur(4px) !important;
-  height: 2.5rem !important;
-  font-size: 0.8125rem !important;
-  font-weight: 350 !important;
-  color: hsl(0 0% 20%) !important;
-}
-.theme-phantom input::placeholder {
-  color: hsl(0 0% 60%) !important;
-  font-weight: 300 !important;
-}
-.theme-phantom input:focus-visible {
-  outline: 1px solid hsl(0 0% 35%) !important;
-  outline-offset: 0px !important;
-  border-color: hsl(0 0% 50%) !important;
-}
-
-/* =============================================
-   🌟 SWITCH styles per theme
-   =============================================
-
-   Planhat: flat switch
-   ------------------- */
-.theme-planhat span[class*="peer"][class*="inline-flex"][class*="h-6"][class*="w-11"][class*="rounded-full"] {
-  border-radius: 2px !important;
-  height: 1.25rem !important;
-  width: 2.25rem !important;
-}
-.theme-planhat span[class*="pointer-events-none"][class*="block"][class*="h-5"][class*="w-5"][class*="rounded-full"] {
-  border-radius: 1px !important;
-  height: 0.875rem !important;
-  width: 0.875rem !important;
-}
-
-/* Superlist: colorful switch */
-.theme-superlist span[data-state="checked"][class*="peer"] {
-  background: hsl(300 55% 42%) !important;
-}
-
-/* Basedash: blue-accent switch */
-.theme-basedash span[data-state="checked"][class*="peer"] {
-  background: hsl(220 80% 48%) !important;
-}
-
-/* =============================================
-   🌟 NAV / SIDEBAR ITEM styles per theme
-   =============================================
-
-   Warm Amber (default): warm rounded nav items
-   ------------------------------------------- */
-
-/* =============================================
-   Planhat: flat, left-border indicator, compact
-   ============================================= */
-.theme-planhat aside a[href],
-.theme-planhat aside button {
-  border-radius: 0 !important;
-  border-left: 3px solid transparent !important;
-  padding: 0.5rem 0.75rem !important;
-  font-size: 0.8125rem !important;
-  font-weight: 500 !important;
-}
-.theme-planhat aside a[href]:not([class*="hover"])[class*="bg-sidebar-accent"] {
-  border-left-color: hsl(220 10% 30%) !important;
-  background-color: hsl(220 12% 90%) !important;
-}
-.theme-planhat aside a[href]:hover,
-.theme-planhat aside button:hover {
-  background-color: hsl(220 12% 90%) !important;
-}
-/* Planhat: sidebar top section compact */
-.theme-planhat aside .p-5 {
-  padding: 0.75rem 1rem !important;
-}
-.theme-planhat aside .px-3.py-4 {
-  padding: 0.5rem 0.75rem !important;
-}
-.theme-planhat aside .space-y-1 > :not([hidden]) ~ :not([hidden]) {
-  --tw-space-y-reverse: 0;
-  margin-top: calc(0px * calc(1 - var(--tw-space-y-reverse))) !important;
-}
-/* Planhat: sidebar link active dot */
-.theme-planhat aside [class*="w-1.5"][class*="h-1.5"].rounded-full {
-  display: none !important;
-}
-
-/* =============================================
-   Superlist: colorful nav with shadow highlight
-   ============================================= */
-.theme-superlist aside a[href],
-.theme-superlist aside button {
-  border-radius: 12px !important;
-  padding: 0.625rem 1rem !important;
-  font-size: 0.875rem !important;
-  font-weight: 600 !important;
-  transition: all 0.2s ease !important;
-}
-.theme-superlist aside a[href]:not([class*="hover"])[class*="bg-sidebar-accent"] {
-  box-shadow: 0 2px 12px 0 hsl(300 40% 65% / 0.4) !important;
-  border: 1px solid hsl(300 45% 55% / 0.3) !important;
-}
-.theme-superlist aside a[href]:hover,
-.theme-superlist aside button:hover {
-  background-color: hsl(300 40% 82%) !important;
-  transform: translateX(2px) !important;
-}
-/* Superlist: icon colors in sidebar */
-.theme-superlist aside svg {
-  color: hsl(300 55% 42%) !important;
-}
-
-/* =============================================
-   Basedash: dark sidebar, bright left border, light text
-   ============================================= */
-.theme-basedash aside a[href],
-.theme-basedash aside button {
-  border-left: 3px solid transparent !important;
-  padding: 0.5rem 0.875rem !important;
-  font-size: 0.8125rem !important;
-  font-weight: 500 !important;
-  color: hsl(220 10% 72%) !important;
-  border-radius: 0 4px 4px 0 !important;
-}
-.theme-basedash aside a[href][class*="bg-sidebar-accent"] {
-  border-left: 3px solid hsl(220 85% 60%) !important;
-  background-color: hsl(220 14% 20%) !important;
-  color: hsl(220 10% 92%) !important;
-}
-.theme-basedash aside a[href]:hover,
-.theme-basedash aside button:hover {
-  background-color: hsl(220 14% 18%) !important;
-  color: hsl(220 10% 85%) !important;
-}
-/* Basedash: sidebar icon colors */
-.theme-basedash aside svg {
-  color: hsl(220 10% 55%) !important;
-}
-.theme-basedash aside a[href][class*="bg-sidebar-accent"] svg {
-  color: hsl(220 85% 65%) !important;
-}
-/* Basedash: sidebar bottom user area */
-.theme-basedash aside .border-t {
-  border-color: hsl(220 14% 18%) !important;
-}
-/* Basedash: compact sidebar */
-.theme-basedash aside .p-5 {
-  padding: 0.75rem 1rem !important;
-}
-.theme-basedash aside .px-3.py-4 {
-  padding: 0.5rem 0.75rem !important;
-}
-
-/* =============================================
-   Phantom: clean, minimal nav with subtle highlight
-   ============================================= */
-.theme-phantom aside a[href],
-.theme-phantom aside button {
-  border-radius: 8px !important;
-  padding: 0.625rem 1rem !important;
-  font-size: 0.8125rem !important;
-  font-weight: 450 !important;
-  transition: all 0.15s ease !important;
-  color: hsl(0 0% 45%) !important;
-}
-.theme-phantom aside a[href]:not([class*="hover"])[class*="bg-sidebar-accent"] {
-  background: hsla(0 0% 94% / 0.6) !important;
-  backdrop-filter: blur(4px) !important;
-  color: hsl(0 0% 18%) !important;
-  font-weight: 500 !important;
-}
-.theme-phantom aside a[href]:hover,
-.theme-phantom aside button:hover {
-  background: hsla(0 0% 94% / 0.4) !important;
-}
-/* Phantom: subtle icon styling */
-.theme-phantom aside svg {
-  color: hsl(0 0% 50%) !important;
-  opacity: 0.7 !important;
-}
-.theme-phantom aside a[href][class*="bg-sidebar-accent"] svg {
-  opacity: 1 !important;
-}
-
-/* =============================================
-   🌟 SECTION DIVIDERS (hr / border-b) per theme
-   =============================================
-
-   Warm Amber (default): warm dividers
-   ----------------------------------- */
-
-/* =============================================
-   Planhat: hairline thin dividers
-   ============================================= */
-.theme-planhat hr {
-  border: none !important;
-  height: 1px !important;
-  background: hsl(220 12% 84%) !important;
-  margin: 0.75rem 0 !important;
-}
-.theme-planhat .border-b {
-  border-bottom: 1px solid hsl(220 12% 86%) !important;
-}
-
-/* =============================================
-   Superlist: dotted playful dividers
-   ============================================= */
-.theme-superlist hr {
-  border: none !important;
-  border-top: 2.5px dotted hsl(300 40% 75%) !important;
-  margin: 1.5rem 0 !important;
-}
-.theme-superlist .border-b {
-  border-bottom: 2px dotted hsl(300 40% 75%) !important;
-}
-
-/* =============================================
-   Basedash: clean thin dividers
-   ============================================= */
-.theme-basedash hr {
-  border: none !important;
-  height: 1px !important;
-  background: hsl(220 12% 84%) !important;
-  margin: 0.75rem 0 !important;
-}
-
-/* =============================================
-   Phantom: extremely subtle dividers
-   ============================================= */
-.theme-phantom hr {
-  border: none !important;
-  height: 1px !important;
-  background: hsla(0 0% 80% / 0.3) !important;
-  margin: 1rem 0 !important;
-}
-
-/* =============================================
-   🌟 FOCUS RING per theme
-   ============================================= */
-
-/* Planhat: sharp, muted focus ring */
-.theme-planhat *:focus-visible {
-  outline: 2px solid hsl(220 10% 40%) !important;
-  outline-offset: 1px !important;
-  border-radius: 2px !important;
-}
-
-/* Superlist: colorful, playful focus ring */
-.theme-superlist *:focus-visible {
-  outline: 2.5px solid hsl(300 55% 50%) !important;
-  outline-offset: 3px !important;
-  border-radius: 10px !important;
-}
-
-/* Basedash: crisp blue focus ring */
-.theme-basedash *:focus-visible {
-  outline: 2px solid hsl(220 85% 52%) !important;
-  outline-offset: 1px !important;
-  border-radius: 4px !important;
-}
-
-/* Phantom: minimal, subtle focus ring */
-.theme-phantom *:focus-visible {
-  outline: 1px solid hsl(0 0% 40%) !important;
-  outline-offset: 1px !important;
-  border-radius: 8px !important;
-}
-
-/* =============================================
-   🌟 SCROLLBAR per theme
-   ============================================= */
-
-/* Planhat: flat, thin scrollbar */
-.theme-planhat ::-webkit-scrollbar-thumb {
-  background: hsl(220 10% 78%) !important;
-  border-radius: 0 !important;
-}
-.theme-planhat ::-webkit-scrollbar {
-  width: 6px !important;
-}
-
-/* Superlist: playful rounded scrollbar */
-.theme-superlist ::-webkit-scrollbar-thumb {
-  background: hsl(300 40% 75%) !important;
-  border-radius: 10px !important;
-}
-.theme-superlist ::-webkit-scrollbar {
-  width: 8px !important;
-}
-
-/* Basedash: dark sidebar scrollbar */
-.theme-basedash ::-webkit-scrollbar-thumb {
-  background: hsl(220 10% 30%) !important;
-  border-radius: 4px !important;
-}
-.theme-basedash ::-webkit-scrollbar {
-  width: 6px !important;
-}
-
-/* Phantom: subtle scrollbar */
-.theme-phantom ::-webkit-scrollbar-thumb {
-  background: hsl(0 0% 80%) !important;
-  border-radius: 8px !important;
-}
-.theme-phantom ::-webkit-scrollbar {
-  width: 6px !important;
-}
-.theme-phantom ::-webkit-scrollbar-track {
-  background: transparent !important;
-}
-
-/* =============================================
-   🌟 GLOBAL TEXT / TYPOGRAPHY adjustments per theme
-   =============================================
-
-   Planhat: compact, precise typography
-   ----------------------------------- */
-.theme-planhat h2.text-lg.font-semibold {
-  font-size: 1rem !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.01em !important;
-}
-.theme-planhat p.text-sm.text-muted-foreground {
-  font-size: 0.75rem !important;
-}
-.theme-planhat .text-xs {
-  font-size: 0.6875rem !important;
-}
-.theme-planhat .text-sm {
-  font-size: 0.8125rem !important;
-}
-
-/* Superlist: bold, generous typography */
-.theme-superlist h2.text-lg.font-semibold {
-  font-size: 1.25rem !important;
-  font-weight: 800 !important;
-  letter-spacing: -0.02em !important;
-}
-
-/* Basedash: bold, statement typography */
-.theme-basedash h2.text-lg.font-semibold {
-  font-size: 1.125rem !important;
-  font-weight: 700 !important;
-  color: hsl(220 12% 15%) !important;
-}
-
-/* Phantom: light, airy typography */
-.theme-phantom h2.text-lg.font-semibold {
-  font-weight: 500 !important;
-  font-size: 1.125rem !important;
-  letter-spacing: 0.01em !important;
-  color: hsl(0 0% 15%) !important;
-}
-.theme-phantom p.text-sm.text-muted-foreground {
-  font-weight: 350 !important;
-  color: hsl(0 0% 50%) !important;
-}
-
-/* =============================================
-   🌟 INFO / ALERT BANNER styling per theme
-   ============================================= */
-
-/* Planhat: flat info banners */
-.theme-planhat div.bg-amber-50.border.border-amber-200 {
-  background: hsl(220 12% 95%) !important;
-  border: 1px solid hsl(220 12% 84%) !important;
-  border-radius: 4px !important;
-}
-
-/* Superlist: colorful info banners */
-.theme-superlist div.bg-amber-50.border.border-amber-200 {
-  background: hsl(300 50% 95%) !important;
-  border: 1.5px solid hsl(300 40% 80%) !important;
-  border-radius: 16px !important;
-}
-
-/* Basedash: clean info banners */
-.theme-basedash div.bg-amber-50.border.border-amber-200 {
-  background: hsl(220 40% 97%) !important;
-  border: 1px solid hsl(220 60% 86%) !important;
-  border-radius: 6px !important;
-  border-left: 3px solid hsl(220 80% 52%) !important;
-}
-
-/* Phantom: glass info banners */
-.theme-phantom div.bg-amber-50.border.border-amber-200 {
-  background: hsla(0 0% 100% / 0.4) !important;
-  backdrop-filter: blur(6px) !important;
-  border: 1px solid hsla(0 0% 80% / 0.3) !important;
-  border-radius: 10px !important;
-}
-
-/* =============================================
-   🌟 CARD INTERNAL SECTIONS (bg-amber-50 infobox inside card)
-   =============================================
-
-   Phantom: glass inner section
-   --------------------------- */
-.theme-phantom div.bg-amber-50.border.border-amber-200.rounded-lg.p-4 {
-  background: hsla(0 0% 100% / 0.3) !important;
-  backdrop-filter: blur(4px) !important;
-  border-color: hsla(0 0% 80% / 0.3) !important;
-}
-
-/* =============================================
-   Sidebar glass background
-   Used by AppShell sidebar for glass/backdrop effects
-   ============================================= */
-.sidebar-glass-bg {
-  background: var(--sidebar-glass-bg);
-  backdrop-filter: blur(var(--sidebar-blur));
-  -webkit-backdrop-filter: blur(var(--sidebar-blur));
-}
-
-/* =============================================
-   Card glass background
-   ============================================= */
-.card-glass-bg {
-  background: var(--card-bg);
+.glass-badge {
+  display: inline-flex; align-items: center;
+  background: rgba(255,255,255,0.45);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.50);
+  border-radius: 9999px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.glass-tabs {
+  display: inline-flex; gap: 4px;
+  background: rgba(255,255,255,0.40);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(255,255,255,0.70);
+  border-radius: 12px;
+  padding: 4px;
+}
+.glass-tab {
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.glass-body {
+  background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 40%, #EEEEEE 100%);
+  min-height: 100vh;
+}
+
+.glass-sidebar {
+  background: rgba(255,255,255,0.70);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border-right: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 2px 0 24px rgba(0,0,0,0.06);
 }

@@ -417,8 +417,8 @@ export default function AppShell({
               onClick={() => toggleMenu(item.label)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                 expanded
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-accent-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                  ? "bg-gray-200/30 text-gray-800"
+                  : "text-gray-600/60 hover:bg-gray-100/30 hover:text-gray-800"
               }`}
             >
               <item.icon className="w-4 h-4 flex-shrink-0" />
@@ -430,7 +430,7 @@ export default function AppShell({
               />
             </button>
             {expanded && (
-            <div className="ml-4 mt-1 space-y-1 border-l border-sidebar-border/70 pl-3">
+            <div className="ml-4 mt-1 space-y-1 border-l border-gray-200/30 pl-3">
                 {item.children.map((child) => renderNavItem(child, depth + 1))}
               </div>
             )}
@@ -440,14 +440,14 @@ export default function AppShell({
             href={addCenterParam(item.href) || "#"}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
             active
-              ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-sm border border-sidebar-border"
-              : "text-sidebar-accent-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+              ? "bg-gray-200/40 text-gray-800 font-semibold shadow-sm border border-gray-300/30"
+              : "text-gray-600/60 hover:bg-gray-100/30 hover:text-gray-800"
             }`}
           >
             <item.icon className="w-4 h-4 flex-shrink-0" />
             <span className="truncate">{item.label}</span>
             {active && (
-              <span className="ml-auto w-1.5 h-1.5 rounded-full bg-sidebar-primary"></span>
+              <span className="ml-auto w-1.5 h-1.5 rounded-full bg-gray-500"></span>
             )}
           </Link>
         )}
@@ -517,7 +517,7 @@ export default function AppShell({
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen glass-body">
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
@@ -560,39 +560,36 @@ export default function AppShell({
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-40 h-full bg-sidebar border-r border-sidebar-border sidebar-glass-bg transition-all duration-300 ease-in-out flex flex-col overflow-hidden ${
+        className={`fixed top-0 left-0 z-40 h-full glass-sidebar transition-all duration-300 ease-in-out flex flex-col overflow-hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } ${sidebarOpen ? "lg:translate-x-0 lg:w-64" : "lg:-translate-x-full lg:w-0"}`}
       >
         {/* Logo */}
-        <div className="flex-shrink-0 p-5 border-b border-sidebar-border">
+        <div className="flex-shrink-0 px-5 py-4 border-b border-gray-200/30">
           <Link href="/" className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-yellow-300 to-yellow-100 rounded-lg blur opacity-30"></div>
-              <div className="relative bg-gradient-to-r from-yellow-300 to-yellow-100 p-2 rounded-lg">
-                <GraduationCap className="h-5 w-5 text-white" />
-              </div>
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-gray-400 to-gray-500 shadow-lg shadow-gray-500/10">
+              <span className="text-sm font-bold text-gray-800">P</span>
             </div>
             <div className={`${!sidebarOpen ? "lg:hidden" : ""}`}>
-              <h1 className="text-sm font-bold text-sidebar-foreground tracking-tight">PJPC</h1>
-              <p className="text-[10px] text-sidebar-foreground/60">{config.title}</p>
+              <h1 className="text-sm font-bold text-gray-800/90 tracking-tight">PJPC</h1>
+              <p className="text-[10px] text-gray-500/50">{config.title}</p>
             </div>
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 scrollbar-thin scrollbar-thumb-gray-200/20 scrollbar-track-transparent">
           {filteredNavItems.map((item) => renderNavItem(item))}
         </nav>
 
         {/* Bottom section — 用户 + 分行 + 工具 */}
-        <div className="flex-shrink-0 border-t border-sidebar-border">
+        <div className="flex-shrink-0 border-t border-gray-200/30">
           {/* Center filter */}
           <div className="px-3 pt-3 pb-2">
-            <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-wider font-semibold px-2 mb-1.5">分行筛选</p>
+            <p className="text-[10px] text-gray-400/40 uppercase tracking-wider font-semibold px-2 mb-1.5">分行筛选</p>
             <div className="flex flex-wrap gap-1">
               {centers.length === 0 ? (
-                <div className="text-[10px] text-sidebar-foreground/50 px-2">加载中...</div>
+                <div className="text-[10px] text-gray-400/40 px-2">加载中...</div>
               ) : (
                 [{ id: "all", code: "全部", icon: Building2 } as const, ...centers.map(c => ({ id: c.id, code: c.code, icon: School } as const))].map((c) => (
                 <button
@@ -605,8 +602,8 @@ export default function AppShell({
                   }}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     (searchParams?.get("center") || "all") === c.id
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border"
-                      : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/40"
+                      ? "bg-gray-200/40 text-gray-800 border border-gray-300/30"
+                      : "text-gray-500/50 hover:text-gray-800 hover:bg-gray-100/30"
                   }`}
                 >
                   <c.icon className="h-3 w-3" />
@@ -616,30 +613,30 @@ export default function AppShell({
             </div>
           </div>
           {/* User info + tools */}
-          <div className="flex items-center justify-between px-3 py-2 border-t border-sidebar-border/50">
+          <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200/30">
             {user ? (
               <>
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-r from-yellow-300 to-yellow-100 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 shadow-sm">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-[10px] font-bold text-gray-800 flex-shrink-0 shadow-sm shadow-gray-500/10">
                     {userAvatar || userName?.charAt(0)?.toUpperCase() || "A"}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-medium text-sidebar-foreground leading-tight truncate">{userName || getRoleLabel(userRole)}</p>
+                    <p className="text-xs font-medium text-gray-800/90 leading-tight truncate">{userName || getRoleLabel(userRole)}</p>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-sidebar-foreground/60">{getRoleLabel(userRole)}</span>
+                      <span className="text-[10px] text-gray-500/50">{getRoleLabel(userRole)}</span>
                       <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                      <span className="text-[9px] text-sidebar-foreground/60">在线</span>
+                      <span className="text-[9px] text-gray-500/50">在线</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-0.5">
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-sidebar-foreground/50 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent">
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-gray-500/50 hover:text-gray-800 hover:bg-gray-100/30">
                     <Bell className="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 w-7 p-0 text-sidebar-foreground/50 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"
+                    className="h-7 w-7 p-0 text-gray-500/50 hover:text-gray-800 hover:bg-gray-100/30"
                     onClick={handleLogout}
                   >
                     <LogOut className="h-3.5 w-3.5" />
@@ -650,7 +647,7 @@ export default function AppShell({
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full text-xs text-sidebar-foreground/60 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent justify-center gap-2"
+                className="w-full text-xs text-gray-500/50 hover:text-gray-800 hover:bg-gray-100/30 justify-center gap-2"
                 onClick={() => router.push("/login")}
               >
                 <LogOut className="h-3.5 w-3.5 rotate-180" />
