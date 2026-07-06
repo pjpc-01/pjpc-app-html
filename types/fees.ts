@@ -7,6 +7,7 @@ export interface Fee {
   description?: string
   status: 'active' | 'inactive'
   category?: string
+  icon?: string          // Lucide icon name for the category (e.g. "GraduationCap")
   applicableCenters?: string[]
   applicableLevels?: string[]
 }
