@@ -12,8 +12,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Plus, Tag, CreditCard, FileText, MapPin, GraduationCap, Activity, DollarSign } from "lucide-react"
+import { Plus, Tag, CreditCard, FileText, MapPin, GraduationCap, Activity, DollarSign, BookOpen, Package, CalendarDays, Utensils, Bus, FolderOpen, School, ClipboardList, Receipt, Banknote, ScrollText, Library } from "lucide-react"
 import { Fee } from "@/types/fees"
+
+const ICON_OPTIONS: { value: string; label: string; icon: React.ReactNode }[] = [
+  { value: "GraduationCap", label: "教育/学费", icon: <GraduationCap className="h-4 w-4" /> },
+  { value: "BookOpen", label: "教材/书本", icon: <BookOpen className="h-4 w-4" /> },
+  { value: "Package", label: "杂费/用品", icon: <Package className="h-4 w-4" /> },
+  { value: "CalendarDays", label: "活动/日程", icon: <CalendarDays className="h-4 w-4" /> },
+  { value: "Utensils", label: "餐饮", icon: <Utensils className="h-4 w-4" /> },
+  { value: "Bus", label: "交通", icon: <Bus className="h-4 w-4" /> },
+  { value: "ClipboardList", label: "行政/注册", icon: <ClipboardList className="h-4 w-4" /> },
+  { value: "Receipt", label: "账单/收据", icon: <Receipt className="h-4 w-4" /> },
+  { value: "Banknote", label: "货币/金额", icon: <Banknote className="h-4 w-4" /> },
+  { value: "ScrollText", label: "文档/资料", icon: <ScrollText className="h-4 w-4" /> },
+  { value: "School", label: "学校/设施", icon: <School className="h-4 w-4" /> },
+  { value: "Library", label: "图书/资源", icon: <Library className="h-4 w-4" /> },
+  { value: "FolderOpen", label: "其他/未分类", icon: <FolderOpen className="h-4 w-4" /> },
+]
 
 interface AddFeeDialogProps {
   isOpen: boolean
@@ -99,6 +115,26 @@ export const AddFeeDialog = ({
                   <SelectItem value="material">教材/材料费</SelectItem>
                   <SelectItem value="admin">行政/注册费</SelectItem>
                   <SelectItem value="misc">其他杂项</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="icon" className="text-sm font-semibold flex items-center gap-2">
+                <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                分类图标
+              </Label>
+              <Select value={newFeeItem.icon || ""} onValueChange={(v) => onFeeItemInputChange("icon", v || undefined)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择分类图标" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">无图标</SelectItem>
+                  {ICON_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      <span className="flex items-center gap-2">{opt.icon}{opt.label}</span>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

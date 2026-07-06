@@ -10,7 +10,18 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Edit, Trash2, DollarSign, Plus, ChevronDown, ChevronRight } from "lucide-react"
+import { Edit, Trash2, DollarSign, Plus, ChevronDown, ChevronRight, GraduationCap, BookOpen, Package, CalendarDays, Utensils, Bus, FolderOpen, School, ClipboardList, Receipt, Banknote, ScrollText, Library } from "lucide-react"
+import { createElement, type ComponentType } from "react"
+
+const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
+  GraduationCap, BookOpen, Package, CalendarDays, Utensils, Bus,
+  ClipboardList, Receipt, Banknote, ScrollText, School, Library, FolderOpen,
+}
+
+const renderIcon = (iconName: string | undefined, className = "h-4 w-4") => {
+  const Icon = iconName ? ICON_MAP[iconName] : undefined
+  return Icon ? createElement(Icon, { className }) : <FolderOpen className={className} />
+}
 import { AddFeeDialog } from "./AddFeeDialog"
 import { EditFeeDialog } from "./EditFeeDialog"
 
@@ -244,11 +255,14 @@ export default function FeeManagement() {
                               ) : (
                                 <ChevronRight className="h-5 w-5 text-gray-500" />
                               )}
-                              <div>
-                                <CardTitle className="text-lg">{CATEGORY_MAP[category] || category}</CardTitle>
-                                <CardDescription>
-                                  {categoryFees.length} 项 • {activeCount} 已启用
-                                </CardDescription>
+                              <div className="flex items-center gap-2">
+                                {renderIcon(categoryFees.find(f => f.icon)?.icon, "h-5 w-5 text-muted-foreground")}
+                                <div>
+                                  <CardTitle className="text-lg">{CATEGORY_MAP[category] || category}</CardTitle>
+                                  <CardDescription>
+                                    {categoryFees.length} 项 • {activeCount} 已启用
+                                  </CardDescription>
+                                </div>
                               </div>
                             </div>
                             <div className="flex flex-col items-end gap-1">
@@ -270,6 +284,7 @@ export default function FeeManagement() {
                           <Table>
                             <TableHeader>
                               <TableRow>
+                                <TableHead className="w-8"></TableHead>
                                 <TableHead>项目名称</TableHead>
                                 <TableHead>金额</TableHead>
                                 <TableHead>费用类型</TableHead>
@@ -280,6 +295,9 @@ export default function FeeManagement() {
                             <TableBody>
                               {categoryFees.map((item) => (
                                 <TableRow key={item.id}>
+                                  <TableCell>
+                                    {renderIcon(item.icon, "h-4 w-4 text-muted-foreground")}
+                                  </TableCell>
                                   <TableCell>
                                     <div className="font-medium">{ITEM_NAME_MAP[item.name] || item.name}</div>
                                     {item.description && (

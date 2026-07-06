@@ -23,6 +23,7 @@ export const useFees = () => {
     type: (r.frequency as Fee["type"]) ?? "monthly", // Map DB 'frequency' to UI 'type'
     status: (r.status as Fee["status"]) ?? "active",
     description: r.description ?? "",
+    icon: r.icon, // Lucide icon name
     applicableCenters: [], // Not in current DB schema
     applicableLevels: [], // Not in current DB schema
     frequency_alias: r.frequency
