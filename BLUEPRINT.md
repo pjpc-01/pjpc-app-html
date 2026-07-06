@@ -1,6 +1,6 @@
 # PJPC 安亲班管理系统 — 战略蓝图
 
-> 最后更新：2026-06-23（UI 全面美化 + 双 header 修复）
+> 最后更新：2026-07-05（NFC双轨制 + 统一考勤大改 + 侧边栏清理 + WSL polling修复）
 > 一句话：**一所安亲班的完整操作系统** — 从学生入学到毕业、从收费到出粮、从打卡到家长通知，全流程覆盖
 
 ---
@@ -147,13 +147,13 @@
 | 系统基建 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% | 全局分行筛选+PB schema 版本化 |
 | 作业模块 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% | Homework CRUD + 批量批改 + 教师工作台联动 |
 | 家长端 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% | 独立管理+家长门户 5 页 |
-|| 库存模块 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% | Phase 4d：进销存管理 |
-|| 课程打磨 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% | Phase 5d：真实PB数据+冲突检测+班级管理 |
-|| 体验升级 | 🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜ 80% | Phase 5e：Cmd+K搜索+空状态骨架屏+双header修复 ✅ |
-|| 🔴 安亲班核心 | 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜ 25% | Phase 5f：每日日志 教师端✅ + grades PB已建 |
-|| 🔵 NFC/积分系统 | 🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 20% | PB collections 已建，前端待接 |
-|| 🧹 代码清理 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜ 90% | 批次1+2：-13,791行死代码 + 4个Bug修复 |
-|| 企业级 | ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ 5% | 审计日志/备份/通知中心 |
+| 库存模块 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% | Phase 4d：进销存管理 |
+| 课程打磨 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩 100% | Phase 5d：真实PB数据+冲突检测+班级管理 |
+| 体验升级 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜ 90% | Phase 5e：Cmd+K搜索+空状态骨架屏+双header修复 ✅ |
+| 🔴 安亲班核心 | 🟩🟩🟩🟩⬜⬜⬜⬜⬜⬜ 40% | Phase 5f：每日日志 ✅ + grades PB已建 + **积分页可用** |
+| 🔵 NFC/考勤大改 | 🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜ 80% | Phase 5g：NFC双轨制+统一考勤+积分NFC联动 ✅ |
+| 🧹 代码清理 | 🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜ 90% | 批次1+2：-13,791行死代码 + 4个Bug修复 |
+| 企业级 | ⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ 5% | 审计日志/备份/通知中心 |
 
 ### 页面路由 (52 条)
 
@@ -905,6 +905,74 @@ salary_structures:
 
 **5f-2 成绩管理 — PB 已建：**
 - PB `grades` collection（8字段：studentId/subject/term/year/score/grade_letter/teacher_comment/teacherId）
+
+---
+
+### 🟢 Phase 5g：NFC 双轨制 + 考勤大改（✅ 2026-07-05 完成）
+
+> 这是一次大规模重构：将散落各处的 NFC/考勤代码统一为两套清晰的系统。
+
+#### 5g-1 NFC 双轨制架构
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                   NFC 双轨制                              │
+│                                                          │
+│  轨道 1: USB 读卡器（桌面端）                              │
+│  ├─ 场景：前台/办公室电脑插着 USB 读卡器                    │
+│  ├─ 考勤：UnifiedAttendanceHub 键盘监听 → 自动打卡          │
+│  ├─ 积分：PointsNfcScanner 键盘监听 → 弹出积分加减          │
+│  └─ 登录：secure-login-form 键盘监听 → 教师 NFC 登录        │
+│                                                          │
+│  轨道 2: 手机 NFC（移动端）                                │
+│  ├─ 场景：教师手机 Chrome 扫 NFC 标签                       │
+│  ├─ 考勤：Web NFC API (NDEFReader) → 打卡                  │
+│  ├─ 积分：Web NFC API → 积分加减                           │
+│  └─ 登录：Web NFC API → 教师 NFC 登录                      │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### 5g-2 关键修复
+
+| # | 修复 | 文件 | 说明 |
+|---|------|------|------|
+| 1 | **hex→dec UID 转换** | `secure-login-form.tsx`, `PointsNfcScanner.tsx` | 手机 NFC 读 hex，DB 存 dec，统一 `hexToDecimal()` 转换 |
+| 2 | **双字段搜索** | `api/auth/nfc-login`, `api/nfc/tap` | API 同时搜索 `card_uid` 和 `nfc_uid`，兼容两种格式 |
+| 3 | **登录页空白** | `AppShell.tsx` | 未登录时跳过侧边栏渲染，直接显示 `{children}` |
+| 4 | **考勤闪烁** | `next.config.mjs` | WSL inotify 换 polling (`poll: 1000`)，排除 `.next` 目录 |
+| 5 | **考勤轮询** | `UnifiedAttendanceHub.tsx` | `setInterval` 5s → 30s，减少不必要的 API 请求 |
+| 6 | **侧边栏清理** | `AppShell.tsx` | 积分归入学生管理分组，删除重复的考勤下积分链接 |
+
+#### 5g-3 统一考勤系统
+
+```
+旧：StudentAttendanceSystem + TeacherAttendanceSystem (两个独立系统，各 1000+ 行)
+新：UnifiedAttendanceHub (一个页面统一处理学生+教师 NFC 打卡)
+
+路由：/attendance → 统一考勤主页
+     ├─ 总览 Tab：今日统计 + 快速操作
+     ├─ 扫卡考勤 Tab：USB/手机 NFC 自动识别学生/教师
+     ├─ 考勤记录 Tab：筛选 + 分页 + 导出 CSV
+     └─ 统计报表 Tab：月度统计（占位）
+```
+
+#### 5g-4 积分系统当前状态
+
+| 项目 | 状态 |
+|------|:----:|
+| PB `nfc_cards` collection | ✅ |
+| PB `points` / `points_transactions` | ✅ |
+| `/points` 页面加载 | ✅ |
+| NFC 扫码积分加减 | ⚠️ PointsNfcScanner 编译错已修，功能待完整验证 |
+| 积分排行榜/兑换/家长查看 | ⏳ 未做 |
+
+#### 5g-5 开发环境修复
+
+| 问题 | 修复 |
+|------|------|
+| webpack 持续重编译（每300ms）导致页面闪烁 | `watchOptions.poll: 1000` + `ignored: .next` |
+| PocketBase pb_data 触发 HMR | 已在 ignored 列表中 |
+| `next.config.mjs` 被检测到变更触发重启 | polling 模式下不再误检测 |
 
 ---
 
