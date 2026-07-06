@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PJPC Glassmorphism Preview</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Inter',sans-serif;
+  background:linear-gradient(135deg,#FFFBEB 0%,#FEF3C7 40%,#FDE68A 100%);
+  min-height:100vh;display:flex;color:#514A2E;
+  -webkit-font-smoothing:antialiased
+}
+
+/* Background orbs */
+.orb{position:fixed;border-radius:50%;filter:blur(70px);opacity:.35;pointer-events:none;z-index:0}
+.orb-1{width:380px;height:380px;background:radial-gradient(circle,rgba(232,200,106,.4),transparent);top:-80px;right:-60px}
+.orb-2{width:300px;height:300px;background:radial-gradient(circle,rgba(245,158,11,.25),transparent);bottom:-60px;left:-40px}
+.orb-3{width:250px;height:250px;background:radial-gradient(circle,rgba(138,106,56,.2),transparent);top:50%;left:55%}
+
+/* Sidebar */
+.sidebar{
+  width:240px;min-height:100vh;position:sticky;top:0;z-index:10;
+  background:rgba(255,251,235,.55);backdrop-filter:blur(28px) saturate(180%);
+  -webkit-backdrop-filter:blur(28px) saturate(180%);
+  border-right:1px solid rgba(255,255,255,.4);
+  box-shadow:2px 0 24px rgba(0,0,0,.04);
+  padding:20px 12px;display:flex;flex-direction:column;gap:2px
+}
+.logo{display:flex;align-items:center;gap:10px;padding:4px 8px 20px;border-bottom:1px solid rgba(232,200,106,.15);margin-bottom:4px}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,#E8C86A,#F59E0B);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:Nunito;font-weight:800;font-size:15px;color:#514A2E}
+.logo-text{font-family:Nunito;font-weight:700;font-size:16px}
+.nav-sec{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:rgba(81,74,46,.3);padding:14px 8px 4px;font-family:Nunito;font-weight:700}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;color:rgba(81,74,46,.55);font-weight:500;font-size:13px;cursor:pointer}
+.nav-item:hover{background:rgba(255,255,255,.5)}
+.nav-item.active{background:rgba(245,237,212,.6);color:#514A2E;border-left:3px solid #E8C86A}
+
+/* Main */
+.main{flex:1;padding:28px;display:flex;flex-direction:column;gap:20px;position:relative;z-index:1}
+.page-title{font-family:Nunito;font-size:28px;font-weight:700;color:#514A2E;letter-spacing:-.01em}
+.page-sub{font-size:13px;color:rgba(81,74,46,.4);margin-top:2px}
+.flex-r{display:flex;align-items:center;gap:10px}
+.between{justify-content:space-between}
+.mb4{margin-bottom:14px}
+
+/* Glass card */
+.glass{
+  background:rgba(255,255,255,.45);backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  border:1px solid rgba(255,255,255,.55);border-radius:16px;
+  box-shadow:0 8px 32px rgba(0,0,0,.06),0 1px 3px rgba(0,0,0,.04);
+  padding:24px;transition:all .2s
+}
+.glass:hover{background:rgba(255,255,255,.6);box-shadow:0 12px 40px rgba(0,0,0,.1)}
+.glass-strong{background:rgba(255,255,255,.65);border:1px solid rgba(255,255,255,.7)}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stat{
+  background:rgba(255,255,255,.5);backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  border:1px solid rgba(255,255,255,.55);border-radius:12px;
+  box-shadow:0 4px 16px rgba(0,0,0,.04);padding:16px 20px;transition:all .2s
+}
+.stat:hover{background:rgba(255,255,255,.65);transform:translateY(-2px)}
+.stat-icon{width:40px;height:40px;border-radius:10px;background:rgba(232,200,106,.2);display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:20px}
+.stat-val{font-family:Nunito;font-size:26px;font-weight:700;color:#514A2E;line-height:1.1}
+.stat-label{font-size:12px;color:rgba(81,74,46,.4);margin-top:4px;font-weight:500}
+
+/* Table */
+.gt{width:100%;border-collapse:separate;border-spacing:0 4px}
+.gt th{text-align:left;padding:8px 12px;font-family:Nunito;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:rgba(81,74,46,.3)}
+.gt td{padding:10px 12px;font-size:13px;color:#514A2E;font-weight:500}
+.gt tbody tr{background:rgba(255,255,255,.3);border-radius:8px;transition:all .15s}
+.gt tbody tr:hover{background:rgba(255,255,255,.5)}
+.gt td:first-child{border-radius:8px 0 0 8px}
+.gt td:last-child{border-radius:0 8px 8px 0}
+
+/* Badge */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:9999px;font-size:11px;font-family:Nunito;font-weight:600}
+.badge-ok{background:rgba(255,255,255,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.4);color:#514A2E}
+.badge-warn{background:#FEF3C7;color:#92400E}
+.badge-accent{background:rgba(232,200,106,.2);color:#514A2E}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-family:Nunito;font-weight:600;font-size:13px;border:none;cursor:pointer;transition:all .15s}
+.btn-glass{background:rgba(255,255,255,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.55);color:#514A2E}
+.btn-glass:hover{background:rgba(255,255,255,.65)}
+.btn-primary{background:linear-gradient(135deg,#E8C86A,#F59E0B);color:#514A2E;font-weight:700;box-shadow:0 4px 16px rgba(232,200,106,.3)}
+.btn-primary:hover{box-shadow:0 6px 24px rgba(232,200,106,.45);transform:translateY(-1px)}
+
+/* Tabs */
+.tabs{display:inline-flex;gap:4px;background:rgba(255,255,255,.3);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.55);border-radius:12px;padding:4px}
+.tab{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:500;border:none;background:transparent;cursor:pointer;color:rgba(81,74,46,.4);font-family:Nunito}
+.tab.active{background:rgba(255,255,255,.6);color:#514A2E}
+
+/* Input */
+.inp{background:rgba(255,255,255,.4);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.55);border-radius:8px;padding:8px 12px;font-size:13px;color:#514A2E;font-family:Inter;outline:none}
+.inp:focus{border-color:#E8C86A;box-shadow:0 0 0 3px rgba(232,200,106,.2)}
+.inp::placeholder{color:rgba(81,74,46,.25)}
+
+.card-title{font-family:Nunito;font-size:15px;font-weight:600;color:#514A2E;margin-bottom:2px}
+.card-desc{font-size:12px;color:rgba(81,74,46,.35);margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.av{width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,#E8C86A,#F59E0B);display:flex;align-items:center;justify-content:center;font-family:Nunito;font-weight:700;font-size:11px;color:#514A2E}
+
+@media(max-width:768px){.sidebar{display:none}.main{padding:16px}.stats{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.page-title{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div>
+
+<aside class="sidebar">
+  <div class="logo"><div class="logo-icon">P</div><span class="logo-text">PJPC</span></div>
+  <div class="nav-sec">运营</div>
+  <div class="nav-item active">📊 仪表板</div>
+  <div class="nav-item">👨‍🎓 学生</div>
+  <div class="nav-item">👨‍🏫 教师</div>
+  <div class="nav-sec">日常</div>
+  <div class="nav-item">📝 考勤</div>
+  <div class="nav-item">⭐ 积分</div>
+  <div class="nav-sec">财务</div>
+  <div class="nav-item">💰 财务</div>
+  <div class="nav-item">🧾 收费</div>
+  <div class="nav-sec">系统</div>
+  <div class="nav-item">⚙️ 设置</div>
+</aside>
+
+<main class="main">
+  <div class="flex-r between" style="margin-bottom:-8px">
+    <div><h1 class="page-title">仪表板</h1><p class="page-sub">PJPC 安亲班管理系统</p></div>
+    <div class="flex-r"><button class="btn btn-glass">🔔</button><div class="av" style="width:34px;height:34px;font-size:13px">陈</div></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-icon">👨‍🎓</div><div class="stat-val">158</div><div class="stat-label">在籍学生</div></div>
+    <div class="stat"><div class="stat-icon">👨‍🏫</div><div class="stat-val">28</div><div class="stat-label">在职教师</div></div>
+    <div class="stat"><div class="stat-icon">✅</div><div class="stat-val">142</div><div class="stat-label">今日出勤</div></div>
+    <div class="stat"><div class="stat-icon">💰</div><div class="stat-val">38.5k</div><div class="stat-label">本月收入 RM</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="glass"><div class="flex-r between mb4"><div><div class="card-title">今日考勤</div><div class="card-desc">学生出勤总览</div></div><button class="btn btn-glass" style="padding:5px 10px;font-size:11px">查看全部 →</button></div>
+      <table class="gt"><thead><tr><th>学生</th><th>年级</th><th>时间</th><th>状态</th></tr></thead><tbody>
+        <tr><td><div class="flex-r"><div class="av">林</div>林小明</div></td><td>Standard 3</td><td>08:15</td><td><span class="badge badge-ok">✓ 签到</span></td></tr>
+        <tr><td><div class="flex-r"><div class="av">陈</div>陈小华</div></td><td>Form 1</td><td>08:22</td><td><span class="badge badge-ok">✓ 签到</span></td></tr>
+        <tr><td><div class="flex-r"><div class="av">黄</div>黄小丽</div></td><td>Standard 5</td><td>08:35</td><td><span class="badge badge-warn">⏰ 迟到</span></td></tr>
+        <tr><td><div class="flex-r"><div class="av">张</div>张伟</div></td><td>Form 3</td><td>—</td><td><span class="badge badge-ok" style="opacity:.5">— 未到</span></td></tr>
+      </tbody></table>
+    </div>
+
+    <div class="glass"><div class="flex-r between mb4"><div><div class="card-title">财务快览</div><div class="card-desc">本月收支</div></div><button class="btn btn-glass" style="padding:5px 10px;font-size:11px">财务中心 →</button></div>
+      <div class="grid2" style="margin-bottom:16px">
+        <div class="glass-strong" style="padding:14px;border-radius:14px"><div style="font-size:11px;color:rgba(81,74,46,.35);font-weight:600">本月收入</div><div style="font-family:Nunito;font-size:22px;font-weight:700;color:#514A2E;margin-top:4px">RM 38,500</div><div style="font-size:11px;color:#8A6A38;margin-top:3px">↑ 12%</div></div>
+        <div class="glass-strong" style="padding:14px;border-radius:14px"><div style="font-size:11px;color:rgba(81,74,46,.35);font-weight:600">本月支出</div><div style="font-family:Nunito;font-size:22px;font-weight:700;color:#514A2E;margin-top:4px">RM 22,800</div><div style="font-size:11px;color:#8A6A38;margin-top:3px">↓ 5%</div></div>
+      </div>
+      <table class="gt"><thead><tr><th>项目</th><th>金额</th><th>状态</th></tr></thead><tbody>
+        <tr><td>学费 — Standard 1-6</td><td>RM 15,000</td><td><span class="badge badge-ok">已收</span></td></tr>
+        <tr><td>学费 — Form 1-5</td><td>RM 12,500</td><td><span class="badge badge-ok">已收</span></td></tr>
+        <tr><td>教材费</td><td>RM 8,000</td><td><span class="badge badge-warn">部分</span></td></tr>
+      </tbody></table>
+    </div>
+  </div>
+
+  <div class="glass">
+    <div class="flex-r between mb4"><div><div class="card-title">学生管理</div><div class="card-desc">158 名在籍学生</div></div><div class="flex-r"><input class="inp" placeholder="🔍 搜索学生..." style="width:180px"><button class="btn btn-primary">+ 添加</button></div></div>
+    <div class="tabs mb4"><div class="tab active">全部</div><div class="tab">BATU14</div><div class="tab">PU1</div><div class="tab">毕业</div></div>
+    <table class="gt"><thead><tr><th>姓名</th><th>年级</th><th>中心</th><th>学校</th><th>积分</th><th>状态</th></tr></thead><tbody>
+      <tr><td><div class="flex-r"><div class="av">林</div>林小明</div></td><td>Standard 3</td><td><span class="badge badge-accent">BATU14</span></td><td>SJK(C) Batu 14</td><td>⭐ 850</td><td><span class="badge badge-ok">在读</span></td></tr>
+      <tr><td><div class="flex-r"><div class="av">陈</div>陈小华</div></td><td>Form 1</td><td><span class="badge badge-accent">PU1</span></td><td>SMK Puchong Utama 1</td><td>⭐ 620</td><td><span class="badge badge-ok">在读</span></td></tr>
+      <tr><td><div class="flex-r"><div class="av">黄</div>黄小丽</div></td><td>Standard 5</td><td><span class="badge badge-accent">BATU14</span></td><td>SJK(C) Batu 14</td><td>⭐ 1,020</td><td><span class="badge badge-ok">在读</span></td></tr>
+      <tr><td><div class="flex-r"><div class="av">张</div>张伟</div></td><td>Form 3</td><td><span class="badge badge-accent">PU1</span></td><td>SMK Puchong Utama 1</td><td>⭐ 340</td><td><span class="badge badge-warn">请假</span></td></tr>
+    </tbody></table>
+  </div>
+</main>
+</body>
+</html>

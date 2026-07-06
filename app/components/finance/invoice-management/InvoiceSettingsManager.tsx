@@ -690,23 +690,33 @@ export default function InvoiceSettingsManager({ onSettingsChange, activePresetI
                     </div>
                   </div>
                   <div>
-                    <Label>学校标志 (Logo)</Label>
-                    <div className="flex items-center gap-3 mt-1">
-                      <div className="w-16 h-16 rounded-lg border bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <Label className="text-sm font-semibold mb-2 block">学校标志 (Logo)</Label>
+                    <div className="flex items-center gap-4 mt-1">
+                      <div className="w-20 h-20 rounded-xl border-2 border-dashed border-muted bg-muted/20 flex items-center justify-center overflow-hidden flex-shrink-0 group relative cursor-pointer hover:border-primary/40 transition-colors"
+                        onClick={() => logoSpanRef.current?.click()}>
                         {settings.schoolLogo ? (
-                          <img src={settings.schoolLogo} alt="logo" className="w-full h-full object-contain" />
+                          <>
+                            <img src={settings.schoolLogo} alt="logo" className="w-full h-full object-contain p-1" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Upload className="h-5 w-5 text-white" />
+                            </div>
+                          </>
                         ) : (
-                          <Building2 className="h-8 w-8 text-gray-300" />
+                          <div className="flex flex-col items-center text-muted-foreground">
+                            <Building2 className="h-8 w-8" />
+                            <span className="text-[10px] mt-1">点击上传</span>
+                          </div>
                         )}
                       </div>
-                      <div className="flex-1">
+                      <div className="flex flex-col gap-2">
                         <input ref={logoSpanRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                         <Button variant="outline" size="sm" onClick={() => logoSpanRef.current?.click()}>
                           <Upload className="h-4 w-4 mr-1" />上传Logo
                         </Button>
+                        <p className="text-xs text-muted-foreground">建议正方形，PNG/SVG</p>
                         {settings.schoolLogo && (
-                          <Button variant="ghost" size="sm" onClick={() => updateSettings({ schoolLogo: '' })} className="ml-2 text-red-500">
-                            移除
+                          <Button variant="ghost" size="sm" onClick={() => updateSettings({ schoolLogo: '' })} className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                            <Trash2 className="h-3.5 w-3.5 mr-1" />移除Logo
                           </Button>
                         )}
                       </div>
