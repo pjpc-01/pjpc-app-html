@@ -135,8 +135,9 @@ export default function BulkOperations({
 
   const getStatusDistribution = () => {
     const active = selectedStudents.filter(s => s.status === 'active').length
-    const inactive = selectedStudents.length - active
-    return { active, inactive }
+    const withdrawn = selectedStudents.filter(s => s.status === 'withdrawn').length
+    const inactive = selectedStudents.filter(s => s.status === 'inactive').length
+    return { active, withdrawn, inactive }
   }
 
   if (selectedStudents.length === 0) {
@@ -271,6 +272,7 @@ export default function BulkOperations({
                       <SelectItem value="no-change">不修改</SelectItem>
                       <SelectItem value="active">在读</SelectItem>
                       <SelectItem value="graduated">已毕业</SelectItem>
+                      <SelectItem value="withdrawn">已停学</SelectItem>
                       <SelectItem value="transferred">已转学</SelectItem>
                       <SelectItem value="inactive">非活跃</SelectItem>
                     </SelectContent>

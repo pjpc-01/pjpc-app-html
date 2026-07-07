@@ -59,7 +59,7 @@ export interface Student {
   cardType?: 'NFC' | 'RFID'
   studentUrl?: string
   balance?: number
-  status?: 'active' | 'inactive' | 'lost' | 'graduated'
+  status?: 'active' | 'inactive' | 'lost' | 'graduated' | 'withdrawn' | 'transferred'
   issuedDate?: string
   expiryDate?: string
   enrollmentDate?: string
@@ -124,7 +124,7 @@ export interface StudentCreateData {
   cardType?: 'NFC' | 'RFID'
   studentUrl?: string
   balance?: number
-  status?: 'active' | 'inactive' | 'lost' | 'graduated'
+  status?: 'active' | 'inactive' | 'lost' | 'graduated' | 'withdrawn' | 'transferred'
   issuedDate?: string
   expiryDate?: string
   enrollmentDate?: string

@@ -120,7 +120,7 @@
     {
       "id": "yot737rl8uqqnh8",
       "created": "2026-06-09 02:57:49.251Z",
-      "updated": "2026-07-05 00:56:15.070Z",
+      "updated": "2026-07-07 03:45:16.891Z",
       "name": "students",
       "type": "base",
       "system": false,
@@ -406,6 +406,20 @@
           "type": "number",
           "required": false,
           "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "xr0hq7yo",
+          "name": "points",
+          "type": "number",
+          "required": false,
+          "presentable": true,
           "unique": false,
           "options": {
             "min": null,
@@ -5385,7 +5399,7 @@
     {
       "id": "6xd6p7yhw8u8fsz",
       "created": "2026-06-23 06:52:52.329Z",
-      "updated": "2026-06-23 06:52:52.329Z",
+      "updated": "2026-07-07 03:06:10.200Z",
       "name": "points",
       "type": "base",
       "system": false,
@@ -5415,7 +5429,7 @@
           "presentable": false,
           "unique": false,
           "options": {
-            "min": 0,
+            "min": null,
             "max": null,
             "noDecimal": false
           }

@@ -249,7 +249,7 @@ export default function StudentManagementPage() {
     searchTerm: "",
     selectedGrade: "all",
     selectedCenter: "",
-    selectedStatus: "all",
+    selectedStatus: "active",
     selectedGender: "",
     selectedLevel: "",
     ageRange: [0, 25],

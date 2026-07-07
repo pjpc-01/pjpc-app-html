@@ -298,6 +298,7 @@ export default function FilterAnalytics({
                     <span className="text-sm">
                       {status === 'active' ? '在读' : 
                        status === 'graduated' ? '已毕业' : 
+                       status === 'withdrawn' ? '已停学' :
                        status === 'transferred' ? '已转学' : 
                        status === 'inactive' ? '非活跃' : status}
                     </span>

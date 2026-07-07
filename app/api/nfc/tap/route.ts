@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       found: true,
       person_type: 'student',
       person: {
-        id: student.student_id || student.id,
+        id: student.id,
         student_id: student.student_id || student.id,
         name: student.name,
         center: student.center || '',

@@ -32,7 +32,9 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
     
     // 基础统计
     const active = students.filter(s => s.status === 'active').length
-    const inactive = students.filter(s => s.status !== 'active').length
+    const withdrawn = students.filter(s => s.status === 'withdrawn').length
+    const graduated = students.filter(s => s.status === 'graduated').length
+    const inactive = students.filter(s => !['active', 'withdrawn', 'graduated'].includes(s.status || '')).length
     
     // 年级分布
     const gradeDistribution = students.reduce((acc, student) => {

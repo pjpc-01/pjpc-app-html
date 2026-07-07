@@ -1,14 +1,15 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import PageLayout from "@/components/layouts/PageLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Loader2, Star, Trophy, Medal, RefreshCw, Plus, Minus, Check, GraduationCap, History, LogOut } from "lucide-react"
-import { useNfcAuth } from "@/contexts/nfc-auth-context"
+import { Loader2, Star, Trophy, RefreshCw, Plus, Minus, Check, GraduationCap, History, LogIn } from "lucide-react"
+import { useAuth } from "@/contexts/pocketbase-auth-context"
+import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
 import PointsNfcScanner from "@/components/attendance/PointsNfcScanner"
 
 interface PointLog {
@@ -27,7 +28,9 @@ export default function PointsPage() {
   const studentIdParam = searchParams.get("studentId")
   const studentNameParam = searchParams.get("name")
 
-  const { isAuthenticated, teacher, token, logout, pendingStudent, clearPendingStudent } = useNfcAuth()
+  // PJPC app auth
+  const { user, isAuthenticated } = useAuth()
+  const { teacher } = useCurrentTeacher()
 
   // Student being adjusted
   const [currentStudent, setCurrentStudent] = useState<{
@@ -63,7 +66,6 @@ export default function PointsPage() {
           grade: data.grade || "",
           center: data.center || "",
         })
-        // Load history
         fetchLogs(studentId)
       }
     } catch (err) {
@@ -102,6 +104,19 @@ export default function PointsPage() {
     }
   }, [studentIdParam, studentNameParam, loadStudent])
 
+  // Listen for student-scanned event from NFC scanner
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      const { studentId, studentName } = e.detail
+      if (studentId) {
+        loadStudent(studentId, studentName)
+        router.replace(`/points?studentId=${studentId}&name=${encodeURIComponent(studentName || "")}`, { scroll: false })
+      }
+    }
+    window.addEventListener("pjpc:student-scanned", handler as EventListener)
+    return () => window.removeEventListener("pjpc:student-scanned", handler as EventListener)
+  }, [loadStudent, router])
+
   // ─── Adjust points ────────────────────────────────
 
   const handleConfirm = async () => {
@@ -112,14 +127,12 @@ export default function PointsPage() {
     try {
       const res = await fetch("/api/points/adjust", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token || ""}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           student_id: currentStudent.id,
           amount: delta,
           reason: reason || undefined,
+          teacher_id: teacher?.id || undefined,
         }),
       })
       const data = await res.json()
@@ -139,12 +152,6 @@ export default function PointsPage() {
     }
   }
 
-  // ─── Clean up pending on unmount ──────────────────
-
-  useEffect(() => {
-    return () => clearPendingStudent()
-  }, [])
-
   // ─── Render ───────────────────────────────────────
 
   const ranked = [...rankings].sort((a, b) => b.points - a.points)
@@ -152,7 +159,7 @@ export default function PointsPage() {
   return (
     <PageLayout
       title="积分系统"
-      description={isAuthenticated ? `当前: ${teacher?.name} 老师` : "请刷学生卡后刷教师卡授权"}
+      description={isAuthenticated && teacher ? `当前: ${teacher.teacher_name || teacher.name} 老师` : "请先登入 PJPC App"}
       backUrl="/"
       userRole="admin"
       background="from-amber-50 to-yellow-50"
@@ -163,30 +170,23 @@ export default function PointsPage() {
           isAuthenticated ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"
         }`}>
           <div className="flex items-center gap-2">
-            {isAuthenticated ? (
+            {isAuthenticated && teacher ? (
               <>
                 <GraduationCap className="h-4 w-4 text-green-600" />
                 <span className="text-sm font-medium text-green-700">
-                  {teacher?.name} 老师 · {teacher?.position}
+                  {teacher.teacher_name || teacher.name} 老师 · {teacher.position || "Teacher"}
                 </span>
                 <Badge variant="outline" className="text-[10px] bg-green-100 text-green-600 border-green-300">
-                  已授权
+                  已登入
                 </Badge>
               </>
             ) : (
               <>
-                <Star className="h-4 w-4 text-amber-500" />
-                <span className="text-sm text-amber-700">
-                  {pendingStudent ? `待授权: ${pendingStudent.name}` : "请先刷教师卡登入"}
-                </span>
+                <LogIn className="h-4 w-4 text-amber-500" />
+                <span className="text-sm text-amber-700">请先登入 PJPC App（NFC 刷卡或账号登入）</span>
               </>
             )}
           </div>
-          {isAuthenticated && (
-            <Button variant="ghost" size="sm" onClick={logout} className="text-gray-500 hover:text-red-600 text-xs h-7">
-              <LogOut className="h-3 w-3 mr-1" /> 登出
-            </Button>
-          )}
         </div>
 
         {/* ===== Main Grid ===== */}
@@ -194,33 +194,28 @@ export default function PointsPage() {
           {/* Left: Points Adjustment */}
           <div className="lg:col-span-1">
             <Card className={`border-2 transition-colors min-h-[400px] ${
-              currentStudent ? (isAuthenticated ? "border-green-400 bg-gradient-to-b from-green-50" : "border-amber-400 bg-gradient-to-b from-amber-50") :
+              currentStudent ? "border-green-400 bg-gradient-to-b from-green-50" :
               "border-gray-200 bg-white"
             }`}>
               <CardContent className="p-6 text-center">
-                {!currentStudent ? (
+                {!isAuthenticated ? (
+                  <>
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-100 mb-4">
+                      <LogIn className="h-10 w-10 text-amber-500" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-700 mb-1">请先登入</h3>
+                    <p className="text-sm text-gray-500 mb-4">使用 NFC 教师卡或账号密码登入 PJPC App</p>
+                    <Button onClick={() => router.push("/login")} className="bg-amber-600 hover:bg-amber-700">
+                      <LogIn className="h-4 w-4 mr-1" /> 前往登入
+                    </Button>
+                  </>
+                ) : !currentStudent ? (
                   <>
                     <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-100 mb-4">
                       <Star className="h-10 w-10 text-amber-500" />
                     </div>
                     <h3 className="text-lg font-bold text-gray-700 mb-1">等待刷学生卡</h3>
                     <PointsNfcScanner />
-                  </>
-                ) : !isAuthenticated ? (
-                  <>
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 mb-3">
-                      <GraduationCap className="h-8 w-8 text-amber-600" />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900">{currentStudent.name}</h3>
-                    <p className="text-sm text-gray-500">{currentStudent.grade} · {currentStudent.center}</p>
-                    <div className="mt-2 inline-flex items-center gap-1 bg-amber-100 rounded-full px-3 py-1">
-                      <Star className="h-4 w-4 text-amber-500" />
-                      <span className="font-bold text-amber-700">{currentStudent.points} 分</span>
-                    </div>
-                    <div className="mt-4 p-4 bg-amber-100/50 rounded-lg border border-amber-200">
-                      <p className="text-sm font-medium text-amber-800">⚠️ 需要教师授权</p>
-                      <p className="text-xs text-amber-600 mt-1">请教师刷 NFC 卡完成登入</p>
-                    </div>
                   </>
                 ) : (
                   <>
@@ -252,14 +247,12 @@ export default function PointsPage() {
                           onClick={() => setMode("add")}
                           className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
                             mode === "add" ? "bg-white shadow text-green-700" : "text-gray-500"
-                          }`}
-                        >➕ 加分</button>
+                          }`}>➕ 加分</button>
                         <button
                           onClick={() => setMode("subtract")}
                           className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
                             mode === "subtract" ? "bg-white shadow text-red-700" : "text-gray-500"
-                          }`}
-                        >➖ 减分</button>
+                          }`}>➖ 减分</button>
                       </div>
 
                       {/* Amount */}

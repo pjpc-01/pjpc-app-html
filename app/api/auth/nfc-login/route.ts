@@ -147,8 +147,16 @@ export async function POST(request: NextRequest) {
 
     const authData = await authRes.json()
 
+    // 5. Generate session token for NFC points adjust API
+    const sessionToken = Buffer.from(JSON.stringify({
+      teacher_id: teacher.id,
+      teacher_name: teacher.name,
+    })).toString('base64')
+
     return NextResponse.json({
       success: true,
+      // Session token for NFC operations (base64 JSON)
+      token: sessionToken,
       // PocketBase auth data
       pb_token: authData.token,
       pb_record: authData.record,
