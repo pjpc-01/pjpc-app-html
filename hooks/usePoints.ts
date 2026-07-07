@@ -54,6 +54,7 @@ export const usePoints = () => {
       })
       const items = (data || []).slice(0, limit).map((item: any) => ({
         ...item,
+        student_id: Array.isArray(item.studentId) ? item.studentId[0] : item.studentId,
         current_points: item.total_points || 0,
       }))
       return { items, totalItems: items.length }

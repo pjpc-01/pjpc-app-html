@@ -31,6 +31,7 @@ export default function StudentStats({
     const active = students.filter(s => s.status === 'active').length
     const graduated = students.filter(s => s.status === 'graduated').length
     const transferred = students.filter(s => s.status === 'transferred').length
+    const withdrawn = students.filter(s => s.status === 'withdrawn').length
     const inactive = students.filter(s => s.status === 'inactive').length
     
     // 按年级分组
@@ -59,6 +60,7 @@ export default function StudentStats({
       active,
       graduated,
       transferred,
+      withdrawn,
       inactive,
       byGrade,
       byStatus,

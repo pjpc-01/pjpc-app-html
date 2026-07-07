@@ -323,8 +323,10 @@ export default function SimpleStudentManagement({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={student.status === 'active' ? 'default' : 'secondary'}>
-                        {student.status === 'active' ? '在读' : student.status === 'graduated' ? '毕业' : '休学'}
+                      <Badge variant={student.status === 'active' ? 'default' : 'secondary'} className="whitespace-nowrap text-xs">
+                        {student.status === 'active' ? '在读' : 
+                         student.status === 'graduated' ? '毕业' : 
+                         student.status === 'withdrawn' ? '已停学' : '休学'}
                       </Badge>
                     </TableCell>
                     <TableCell>

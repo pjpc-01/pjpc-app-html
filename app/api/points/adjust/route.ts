@@ -13,25 +13,12 @@ async function pbAuth(): Promise<string> {
   return (await res.json()).token
 }
 
-function decodeSession(authHeader: string | null): { teacher_id: string; teacher_name: string } | null {
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null
-  try {
-    const token = authHeader.slice(7)
-    return JSON.parse(Buffer.from(token, 'base64').toString())
-  } catch { return null }
-}
-
 // POST: Adjust student points (+/-)
+// Body: { student_id, amount, reason, teacher_id }
 export async function POST(request: NextRequest) {
   try {
     const token = await pbAuth()
-    const session = decodeSession(request.headers.get('Authorization'))
-
-    if (!session) {
-      return NextResponse.json({ success: false, error: '未授权，请先刷教师卡登入' }, { status: 401 })
-    }
-
-    const { student_id, amount, reason } = await request.json()
+    const { student_id, amount, reason, teacher_id } = await request.json()
 
     if (!student_id || amount === undefined) {
       return NextResponse.json({ success: false, error: '缺少 student_id 或 amount' }, { status: 400 })
@@ -64,21 +51,45 @@ export async function POST(request: NextRequest) {
     )
 
     // 3. Log the transaction
+    const logData: any = {
+      student: student_id,
+      amount: amount,
+      reason: reason || '',
+      points_before: currentPoints,
+      points_after: newPoints,
+    }
+    if (teacher_id) {
+      logData.teacher = teacher_id
+    }
+
     await fetch(
       `${PB_URL}/api/collections/point_logs/records`,
       {
         method: 'POST',
         headers: { Authorization: token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          student: student_id,
-          teacher: session.teacher_id,
-          amount: amount,
-          reason: reason || '',
-          points_before: currentPoints,
-          points_after: newPoints,
-        }),
+        body: JSON.stringify(logData),
       }
     )
+
+    // 4. Also update the points collection (total_points)
+    const pointsFilter = encodeURIComponent(`studentId="${student_id}"`)
+    const pointsRes = await fetch(
+      `${PB_URL}/api/collections/points/records?perPage=1&filter=${pointsFilter}`,
+      { headers: { Authorization: token } }
+    )
+    const pointsData = await pointsRes.json()
+    if (pointsData.items?.length > 0) {
+      const pointRecord = pointsData.items[0]
+      const oldTotal = pointRecord.total_points || 0
+      await fetch(
+        `${PB_URL}/api/collections/points/records/${pointRecord.id}`,
+        {
+          method: 'PATCH',
+          headers: { Authorization: token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ total_points: oldTotal + amount }),
+        }
+      )
+    }
 
     return NextResponse.json({
       success: true,

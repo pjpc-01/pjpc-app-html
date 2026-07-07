@@ -250,6 +250,7 @@ export function StudentCardDialog({
                   <SelectItem value="inactive">停用</SelectItem>
                   <SelectItem value="lost">丢失</SelectItem>
                   <SelectItem value="graduated">毕业</SelectItem>
+                  <SelectItem value="withdrawn">已停学</SelectItem>
                 </SelectContent>
               </Select>
             </div>

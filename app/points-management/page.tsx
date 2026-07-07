@@ -58,6 +58,12 @@ import { useCurrentTeacher } from '@/hooks/useCurrentTeacher'
 import { StudentPoints, PointTransaction, PointTransactionCreateData } from '@/types/points'
 import NFCPointsOperation from '@/app/components/management/nfc-points-operation'
 
+// Helper: PB returns expand.student_id as a list; extract the first element
+const getExpandStudent = (item: any) => {
+  const sid = item?.expand?.student_id
+  return Array.isArray(sid) ? sid[0] : sid
+}
+
 export default function PointsManagement() {
   const { teacher } = useCurrentTeacher()
   const { loading, error, getStudentPoints, getPointsLeaderboard, createPointTransaction } = usePoints()
@@ -545,7 +551,7 @@ export default function PointsManagement() {
                         <div key={item.id} className="space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium">
-                              {item.expand?.student_id?.student_name || '未知学生'}
+                              {getExpandStudent(item)?.name || '未知学生'}
                             </span>
                             <span className="text-sm text-gray-500">{item.current_points} 分</span>
                           </div>
@@ -572,7 +578,7 @@ export default function PointsManagement() {
                         {getTransactionTypeIcon(transaction.transaction_type)}
                         <div className="flex-1">
                           <p className="text-sm font-medium">
-                            {transaction.expand?.student_id?.student_name || '未知学生'}
+                            {getExpandStudent(transaction)?.name || '未知学生'}
                           </p>
                           <p className="text-xs text-gray-500">{transaction.reason}</p>
                         </div>
@@ -676,10 +682,10 @@ export default function PointsManagement() {
                         </div>
                         <div>
                           <h3 className="font-semibold text-lg">
-                            {item.expand?.student_id?.student_name || '未知学生'}
+                            {getExpandStudent(item)?.name || '未知学生'}
                           </h3>
                           <p className="text-gray-600">
-                            {item.expand?.student_id?.student_id} • {item.expand?.student_id?.standard}
+                            {getExpandStudent(item)?.student_id} • {getExpandStudent(item)?.grade}
                           </p>
                         </div>
                       </div>
@@ -717,10 +723,10 @@ export default function PointsManagement() {
                               </div>
                             </TableCell>
                             <TableCell className="font-medium">
-                              {item.expand?.student_id?.student_name || '未知'}
+                              {getExpandStudent(item)?.name || '未知'}
                             </TableCell>
-                            <TableCell>{item.expand?.student_id?.student_id || '未知'}</TableCell>
-                            <TableCell>{item.expand?.student_id?.standard || '未知'}</TableCell>
+                            <TableCell>{getExpandStudent(item)?.student_id || '未知'}</TableCell>
+                            <TableCell>{getExpandStudent(item)?.grade || '未知'}</TableCell>
                             <TableCell>
                               <Badge variant="default" className="bg-blue-100 text-blue-700">
                                 {item.current_points}

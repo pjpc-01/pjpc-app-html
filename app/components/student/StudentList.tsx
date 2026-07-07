@@ -200,10 +200,14 @@ export default function StudentList({
               <TableCell>
                 <Badge variant={student.status === 'active' ? 'default' : 'secondary'} className={
                   student.status === 'active' 
-                    ? "bg-green-100 text-green-700 border-green-200 text-[10px] uppercase tracking-wider" 
-                    : "bg-gray-100 text-gray-500 border-gray-200 text-[10px] uppercase tracking-wider"
+                    ? "bg-green-100 text-green-700 border-green-200 text-xs whitespace-nowrap" 
+                    : student.status === 'withdrawn'
+                    ? "bg-orange-100 text-orange-700 border-orange-200 text-xs whitespace-nowrap"
+                    : "bg-gray-100 text-gray-500 border-gray-200 text-xs whitespace-nowrap"
                 }>
-                  {student.status === 'active' ? '在读' : '离校'}
+                  {student.status === 'active' ? '在读' : 
+                   student.status === 'graduated' ? '毕业' : 
+                   student.status === 'withdrawn' ? '已停学' : '离校'}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">

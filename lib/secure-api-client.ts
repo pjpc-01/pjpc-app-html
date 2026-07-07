@@ -56,6 +56,7 @@ const buildApiUrl = (collection: string, options: any = {}) => {
   if (options.perPage) params.append('perPage', options.perPage.toString())
   if (options.filter) params.append('filter', options.filter)
   if (options.sort) params.append('sort', options.sort)
+  if (options.expand) params.append('expand', options.expand)
   
   const queryString = params.toString()
   return queryString ? `${url}?${queryString}` : url

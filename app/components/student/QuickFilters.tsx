@@ -11,7 +11,8 @@ import {
   Star,
   Clock,
   UserCheck,
-  UserX
+  UserX,
+  AlertCircle
 } from "lucide-react"
 
 interface QuickFilter {
@@ -83,6 +84,13 @@ const quickFilters: QuickFilter[] = [
     label: '活跃学生',
     icon: <UserCheck className="h-4 w-4" />,
     description: '最近有活动记录',
+    color: 'outline'
+  },
+  {
+    id: 'withdrawn',
+    label: '已停学',
+    icon: <AlertCircle className="h-4 w-4" />,
+    description: '中途停学',
     color: 'outline'
   },
   {
