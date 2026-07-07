@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import PageLayout from "@/components/layouts/PageLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,6 +19,18 @@ interface StudentPoints {
 }
 
 export default function PointsRecordsPage() {
+  return (
+    <Suspense fallback={
+      <PageLayout title="积分记录" description="加载中..." backUrl="/points" userRole="admin" background="from-amber-50 to-yellow-50">
+        <div className="text-center py-16"><Loader2 className="h-6 w-6 mx-auto animate-spin text-amber-500" /></div>
+      </PageLayout>
+    }>
+      <RecordsContent />
+    </Suspense>
+  )
+}
+
+function RecordsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const centerParam = searchParams.get("center") || ""
@@ -52,7 +64,6 @@ export default function PointsRecordsPage() {
     }
   }, [centerFilter, centerParam, page])
 
-  // Fetch centers
   useEffect(() => {
     fetch("/api/pocketbase-proxy/api/collections/centers/records")
       .then(r => r.json())
@@ -61,8 +72,6 @@ export default function PointsRecordsPage() {
   }, [])
 
   useEffect(() => { fetchStudents() }, [fetchStudents])
-
-  // ─── Filtering & Sorting ─────────────────────────
 
   const filtered = students
     .filter(s => {
@@ -96,7 +105,6 @@ export default function PointsRecordsPage() {
       background="from-amber-50 to-yellow-50"
     >
       <div className="space-y-4">
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
             { icon: GraduationCap, color: "text-blue-500", label: "学生数", val: filtered.length },
@@ -115,7 +123,6 @@ export default function PointsRecordsPage() {
           ))}
         </div>
 
-        {/* Filters */}
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -141,7 +148,6 @@ export default function PointsRecordsPage() {
           </Button>
         </div>
 
-        {/* Table */}
         <Card>
           <CardContent className="p-0">
             {loading ? (

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import PageLayout from "@/components/layouts/PageLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,6 +17,18 @@ interface RankingStudent {
 }
 
 export default function LeaderboardPage() {
+  return (
+    <Suspense fallback={
+      <PageLayout title="积分排行榜" description="加载中..." backUrl="/points" userRole="admin" background="from-yellow-50 to-amber-50">
+        <div className="text-center py-16"><Loader2 className="h-6 w-6 mx-auto animate-spin text-amber-500" /></div>
+      </PageLayout>
+    }>
+      <LeaderboardContent />
+    </Suspense>
+  )
+}
+
+function LeaderboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const centerParam = searchParams.get("center") || ""
@@ -38,7 +50,6 @@ export default function LeaderboardPage() {
 
   useEffect(() => { fetchRankings() }, [fetchRankings])
 
-  // Fetch centers
   useEffect(() => {
     fetch("/api/pocketbase-proxy/api/collections/centers/records")
       .then(r => r.json())
@@ -65,7 +76,6 @@ export default function LeaderboardPage() {
       background="from-yellow-50 to-amber-50"
     >
       <div className="space-y-4">
-        {/* Center filter */}
         <div className="flex items-center gap-2">
           <Building className="h-4 w-4 text-gray-400" />
           <select
@@ -83,7 +93,6 @@ export default function LeaderboardPage() {
           </Button>
         </div>
 
-        {/* Top 3 Podium */}
         {filtered.length > 0 && (
           <div className="grid grid-cols-3 gap-3 items-end">
             {[
@@ -108,7 +117,6 @@ export default function LeaderboardPage() {
           </div>
         )}
 
-        {/* Full Leaderboard */}
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2">
