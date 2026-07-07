@@ -73,7 +73,6 @@ export default function SettingsTab({ stats, statsLoading, setActiveTab }: Setti
             <div className="h-4 w-px bg-gray-300" />
             <h2 className="text-lg font-medium text-gray-900">
               {settingsSubTab === "enterprise-user-approval" && "AI智能审核"}
-              {settingsSubTab === "unified-attendance" && "考勤管理系统"}
               {settingsSubTab === "security-monitoring" && "安全监控"}
               {settingsSubTab === "communication-system" && "通信系统"}
               {settingsSubTab === "system-logs" && "系统日志"}
@@ -93,131 +92,6 @@ export default function SettingsTab({ stats, statsLoading, setActiveTab }: Setti
         {/* 子功能内容 */}
         <div className="min-h-[600px]">
           {settingsSubTab === "enterprise-user-approval" && <EnterpriseUserApproval />}
-          {settingsSubTab === "unified-attendance" && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">考勤管理系统</h3>
-                  <p className="text-sm text-gray-500">统一的考勤打卡系统，支持多种打卡方式和实时数据管理</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => window.open('/attendance', '_blank')}
-                    className="flex items-center gap-2"
-                  >
-                    <CreditCard className="h-4 w-4" />
-                    打开考勤系统
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => window.open('/attendance?center=wx01', '_blank')}
-                    className="flex items-center gap-2"
-                  >
-                    <MapPin className="h-4 w-4" />
-                    WX01中心
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* 左侧：功能特性 */}
-                <div className="lg:col-span-1 space-y-6">
-                  <div className="p-4 border rounded-lg bg-green-50">
-                    <h4 className="font-medium mb-3 text-green-800">打卡方式</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-sm text-green-700">NFC卡片打卡</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <span className="text-sm text-blue-700">URL识别打卡</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                        <span className="text-sm text-purple-700">手动输入打卡</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4 border rounded-lg bg-blue-50">
-                    <h4 className="font-medium mb-3 text-blue-800">系统特性</h4>
-                    <ul className="text-sm text-blue-700 space-y-1">
-                      <li>• 实时考勤记录</li>
-                      <li>• 多中心支持</li>
-                      <li>• 设备状态监控</li>
-                      <li>• 数据统计分析</li>
-                    </ul>
-                  </div>
-                </div>
-                
-                {/* 右侧：系统状态和快速操作 */}
-                <div className="lg:col-span-2 space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 border rounded-lg bg-gray-50">
-                      <h4 className="font-medium mb-2 text-gray-800">系统状态</h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">协议:</span>
-                          <Badge variant="outline" className="text-xs">HTTPS</Badge>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">NFC支持:</span>
-                          <Badge variant="outline" className="text-xs">已启用</Badge>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">数据同步:</span>
-                          <Badge variant="outline" className="text-xs">实时</Badge>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 border rounded-lg bg-orange-50">
-                      <h4 className="font-medium mb-2 text-orange-800">快速访问</h4>
-                      <div className="space-y-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open('/attendance?center=wx02', '_blank')}
-                          className="w-full text-xs"
-                        >
-                          WX02中心
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open('/attendance?center=wx03', '_blank')}
-                          className="w-full text-xs"
-                        >
-                          WX03中心
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open('/attendance?center=wx04', '_blank')}
-                          className="w-full text-xs"
-                        >
-                          WX04中心
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4 border rounded-lg bg-purple-50">
-                    <h4 className="font-medium mb-2 text-purple-800">使用说明</h4>
-                    <p className="text-sm text-purple-700 mb-3">
-                      考勤系统已整合所有功能到统一页面，支持多种打卡方式，提供实时数据同步和状态监控。
-                    </p>
-                    <div className="text-xs text-purple-600">
-                      <p>• 点击"打开考勤系统"进入主界面</p>
-                      <p>• 选择对应的中心进行快速访问</p>
-                      <p>• 系统自动检测设备兼容性和网络状态</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
           {settingsSubTab === "security-monitoring" && <SecurityMonitoring />}
           {settingsSubTab === "communication-system" && <CommunicationSystem />}
           {settingsSubTab === "system-logs" && (
@@ -410,7 +284,7 @@ export default function SettingsTab({ stats, statsLoading, setActiveTab }: Setti
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-green-100 rounded-full -translate-y-16 translate-x-16 opacity-20 group-hover:opacity-30 transition-opacity"></div>
-            <CardContent className="p-6 text-center relative" onClick={() => handleCardClick("unified-attendance")}>
+            <CardContent className="p-6 text-center relative cursor-pointer" onClick={() => window.open('/attendance', '_blank')}>
               <div className="p-3 bg-green-100 rounded-lg w-16 h-16 mx-auto mb-4 group-hover:bg-green-200 transition-colors">
                 <UserCheck className="h-10 w-10 text-green-600 group-hover:scale-110 transition-transform" />
               </div>
