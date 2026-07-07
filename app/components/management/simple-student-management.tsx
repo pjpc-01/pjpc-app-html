@@ -49,6 +49,7 @@ export default function SimpleStudentManagement({
   const emptyForm = {
     student_name: '',
     student_id: '',
+    dob: '',
     standard: '',
     father_name: '',
     mother_name: '',
@@ -57,6 +58,31 @@ export default function SimpleStudentManagement({
     status: 'active' as const,
   }
   const [newStudent, setNewStudent] = useState(emptyForm)
+
+  // 根据出生日期自动计算建议年级
+  const calculateGradeFromDob = (dob: string): string => {
+    if (!dob) return ''
+    const birthYear = new Date(dob).getFullYear()
+    const currentYear = new Date().getFullYear()
+    const age = currentYear - birthYear
+    
+    const gradeMap: Record<number, string> = {
+      7: '一年级', 8: '二年级', 9: '三年级',
+      10: '四年级', 11: '五年级', 12: '六年级',
+      13: '中一', 14: '中二', 15: '中三',
+      16: '中四', 17: '中五',
+    }
+    return gradeMap[age] || ''
+  }
+
+  const handleDobChange = (value: string) => {
+    const suggestedGrade = calculateGradeFromDob(value)
+    setNewStudent(prev => ({ 
+      ...prev, 
+      dob: value, 
+      standard: suggestedGrade || prev.standard 
+    }))
+  }
 
   // 筛选学生
   const filteredStudents = useMemo(() => {
@@ -224,13 +250,28 @@ export default function SimpleStudentManagement({
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">年级</Label>
+                    <Label className="text-right">出生日期</Label>
                     <Input
-                      value={newStudent.standard}
-                      onChange={(e) => setNewStudent({...newStudent, standard: e.target.value})}
+                      type="date"
+                      value={newStudent.dob}
+                      onChange={(e) => handleDobChange(e.target.value)}
                       className="col-span-3"
-                      placeholder="例: 一年级"
                     />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">年级</Label>
+                    <div className="col-span-3">
+                      <Input
+                        value={newStudent.standard}
+                        onChange={(e) => setNewStudent({...newStudent, standard: e.target.value})}
+                        placeholder="例: 一年级"
+                      />
+                      {newStudent.dob && calculateGradeFromDob(newStudent.dob) && (
+                        <p className="text-xs text-blue-600 mt-1">
+                          💡 根据出生日期建议: {calculateGradeFromDob(newStudent.dob)}（可手动修改）
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <div className="border-t pt-4">
                     <p className="text-sm font-medium text-gray-500 mb-3">家长信息</p>
@@ -459,12 +500,35 @@ export default function SimpleStudentManagement({
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">年级</Label>
+                <Label className="text-right">出生日期</Label>
                 <Input
-                  value={editingStudent.standard || ''}
-                  onChange={(e) => setEditingStudent({...editingStudent, standard: e.target.value})}
+                  type="date"
+                  value={editingStudent.dob || ''}
+                  onChange={(e) => {
+                    const dob = e.target.value
+                    const suggested = calculateGradeFromDob(dob)
+                    setEditingStudent({
+                      ...editingStudent, 
+                      dob, 
+                      standard: suggested || editingStudent.standard 
+                    })
+                  }}
                   className="col-span-3"
                 />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">年级</Label>
+                <div className="col-span-3">
+                  <Input
+                    value={editingStudent.standard || ''}
+                    onChange={(e) => setEditingStudent({...editingStudent, standard: e.target.value})}
+                  />
+                  {editingStudent.dob && calculateGradeFromDob(editingStudent.dob) && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      💡 根据出生日期建议: {calculateGradeFromDob(editingStudent.dob)}（可手动修改）
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="border-t pt-4">
                 <p className="text-sm font-medium text-gray-500 mb-3">家长信息</p>
