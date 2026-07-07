@@ -38,7 +38,6 @@ import {
   Package,
   Star,
   Truck,
-  Camera,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -72,12 +71,9 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
           { label: "学生列表", href: "/student-management", icon: Users },
           { label: "每日日志", href: "/daily-logs", icon: FileEdit },
           { label: "成绩管理", href: "/grades", icon: GraduationCap },
-          { label: "NFC积分系统", href: "/points", icon: Star },
-          { label: "积分管理", href: "/points-management", icon: BarChart3 },
+          { label: "积分系统", href: "/points", icon: Star },
           { label: "接送管理", href: "/pickup", icon: Truck },
-          { label: "随手拍", href: "/photo-moments", icon: Camera },
           { label: "家长管理", href: "/parent-management", icon: Users },
-          { label: "成绩单", href: "/report-cards", icon: GraduationCap },
           { label: "作业管理", href: "/homework", icon: FileEdit },
           { label: "资源库", href: "/resource-library", icon: BookOpen },
         ],
@@ -122,7 +118,6 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         icon: ClipboardCheck,
         children: [
           { label: "考勤中心", href: "/attendance", icon: ClipboardCheck },
-          { label: "统一考勤", href: "/unified-attendance", icon: UserCheck },
           { label: "卡片管理", href: "/card-management", icon: CreditCard },
         ],
       },
@@ -289,9 +284,9 @@ export default function AppShell({
   }
   const CHILD_PERM: Record<string, string> = {
     "/student-management": "students.list", "/daily-logs": "daily-logs",
-    "/grades": "grades", "/points": "points.nfc", "/points-management": "points",
-    "/pickup": "pickup", "/photo-moments": "photos", "/parent-management": "parents",
-    "/report-cards": "report-cards", "/homework": "homework", "/resource-library": "resource-library",
+    "/grades": "grades", "/points": "points",
+    "/pickup": "pickup", "/parent-management": "parents",
+    "/homework": "homework", "/resource-library": "resource-library",
     "/teacher-management": "teachers.list", "/schedule-management": "schedule",
     "/finance/overview": "finance.overview", "/finance/fees": "finance.fees",
     "/finance/payments": "finance.payments", "/finance/bank": "finance.bank",
@@ -300,7 +295,7 @@ export default function AppShell({
     "/inventory": "inventory",
     "/student-checkin": "attendance.checkin", "/teacher-checkin": "attendance.teacher",
     "/attendance-reports": "attendance.reports",
-    "/card-management": "attendance.cards", "/unified-attendance": "attendance.unified",
+    "/card-management": "attendance.cards",
     "/settings": "settings.general", "/user-management": "settings.users",
     "/center-management": "settings.centers",
   }
@@ -475,14 +470,12 @@ export default function AppShell({
     "/finance/reports": { label: "财务报表", parent: "财务管理" },
     "/inventory": { label: "库存管理", parent: "财务管理" },
     "/course-management": { label: "课程管理", parent: "课程管理" },
-    "/unified-attendance": { label: "考勤系统" },
     "/student-checkin": { label: "学生签到", parent: "考勤系统" },
     "/teacher-checkin": { label: "教师签到", parent: "考勤系统" },
     "/attendance-reports": { label: "考勤报表", parent: "考勤系统" },
     "/schedule-management": { label: "课表管理" },
     "/settings": { label: "系统设置" },
     "/teacher-workspace": { label: "我的工作台" },
-    "/points-management": { label: "积分管理" },
     "/card-management": { label: "卡片管理" },
     "/resource-library": { label: "资源库" },
     "/payroll-management": { label: "薪资管理" },

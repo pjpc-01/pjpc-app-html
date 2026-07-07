@@ -10,12 +10,10 @@ import { GraduationCap, Bell, LogOut } from "lucide-react"
 
 interface TeacherNavigationProps {
   title?: string
-  showUnifiedAttendance?: boolean
 }
 
 export default function TeacherNavigation({ 
   title = "教师工作台",
-  showUnifiedAttendance = false 
 }: TeacherNavigationProps) {
   const { user, userProfile, logout } = useAuth()
 

@@ -398,7 +398,7 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Link href="/unified-attendance">
+            <Link href="/attendance">
               <Button variant="outline" className="w-full h-20 flex flex-col items-center gap-2">
                 <CreditCard className="h-6 w-6" />
                 <span className="text-sm">统一考勤</span>
@@ -410,7 +410,7 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
                 <span className="text-sm">AI考勤系统</span>
               </Button>
             </Link>
-            <Link href="/unified-attendance">
+            <Link href="/attendance">
               <Button variant="outline" className="w-full h-20 flex flex-col items-center gap-2">
                 <UserCheck className="h-6 w-6" />
                 <span className="text-sm">点名</span>

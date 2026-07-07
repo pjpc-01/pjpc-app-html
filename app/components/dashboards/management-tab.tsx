@@ -403,7 +403,7 @@ export default function ManagementTab({ stats, statsLoading, setActiveTab }: Man
             </h3>
             <div className="space-y-3">
 
-              <Link href="/points-management">
+              <Link href="/points">
                 <Card className="hover:shadow-lg transition-all duration-200 hover:bg-yellow-50 hover:border-yellow-300">
                   <CardContent className="p-4">
                     <div className="flex items-center space-x-3">
