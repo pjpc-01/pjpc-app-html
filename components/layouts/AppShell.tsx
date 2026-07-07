@@ -71,11 +71,17 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
           { label: "学生列表", href: "/student-management", icon: Users },
           { label: "每日日志", href: "/daily-logs", icon: FileEdit },
           { label: "成绩管理", href: "/grades", icon: GraduationCap },
-          { label: "积分系统", href: "/points", icon: Star },
           { label: "接送管理", href: "/pickup", icon: Truck },
           { label: "家长管理", href: "/parent-management", icon: Users },
           { label: "作业管理", href: "/homework", icon: FileEdit },
           { label: "资源库", href: "/resource-library", icon: BookOpen },
+        ],
+      },
+      {
+        label: "积分系统",
+        icon: Star,
+        children: [
+          { label: "积分操作", href: "/points", icon: Star },
         ],
       },
       {
@@ -278,13 +284,13 @@ export default function AppShell({
   // Permission key mapping for nav items
   // Parents: check by label. Children: check by href path.
   const PARENT_PERM: Record<string, string> = {
-    "仪表板": "dashboard", "学生管理": "students", "教师管理": "teachers",
+    "仪表板": "dashboard", "学生管理": "students", "积分系统": "points", "教师管理": "teachers",
     "财务管理": "finance", "课程管理": "courses", "考勤系统": "attendance",
     "系统设置": "settings",
   }
   const CHILD_PERM: Record<string, string> = {
     "/student-management": "students.list", "/daily-logs": "daily-logs",
-    "/grades": "grades", "/points": "points",
+    "/grades": "grades", "/points": "points.operate",
     "/pickup": "pickup", "/parent-management": "parents",
     "/homework": "homework", "/resource-library": "resource-library",
     "/teacher-management": "teachers.list", "/schedule-management": "schedule",

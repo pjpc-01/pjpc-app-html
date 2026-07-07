@@ -14,7 +14,8 @@ import {
 // Sidebar nav structure (must match AppShell.tsx)
 const NAV_TREE: Record<string, { label: string; icon?: string; children?: string[] }> = {
   dashboard: { label: "仪表板" },
-  students: { label: "学生管理", children: ["students.list", "daily-logs", "grades", "points", "pickup", "parents", "homework"] },
+  students: { label: "学生管理", children: ["students.list", "daily-logs", "grades", "pickup", "parents", "homework"] },
+  points: { label: "积分系统", children: ["points.operate"] },
   teachers: { label: "教师管理", children: ["teachers.list", "schedule"] },
   finance: { label: "财务管理", children: ["finance.overview", "finance.fees", "finance.payments", "finance.bank", "finance.expenses", "finance.payroll", "finance.budget", "finance.reports", "inventory"] },
   courses: { label: "课程管理", children: ["courses.schedule", "courses.list", "courses.classes", "courses.analytics"] },
@@ -24,7 +25,7 @@ const NAV_TREE: Record<string, { label: string; icon?: string; children?: string
 
 const CHILD_LABELS: Record<string, string> = {
   "students.list": "学生列表", "daily-logs": "每日日志", "grades": "成绩管理",
-  "points": "积分系统", "pickup": "接送管理", "parents": "家长管理",
+  "points.operate": "积分操作", "pickup": "接送管理", "parents": "家长管理",
   "teachers.list": "教师列表", "schedule": "教师排班",
   "finance.overview": "财务概览", "finance.fees": "收费管理", "finance.payments": "发票付款",
   "finance.bank": "银行对账", "finance.expenses": "支出管理", "finance.payroll": "薪资管理",
