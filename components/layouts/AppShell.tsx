@@ -37,6 +37,9 @@ import {
   FileEdit,
   Package,
   Star,
+  Trophy,
+  Table2,
+  SmartphoneNfc,
   Truck,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -82,6 +85,8 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         icon: Star,
         children: [
           { label: "积分操作", href: "/points", icon: Star },
+          { label: "积分记录", href: "/points/records", icon: Table2 },
+          { label: "积分排行榜", href: "/points/leaderboard", icon: Trophy },
         ],
       },
       {
@@ -123,7 +128,9 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         label: "考勤系统",
         icon: ClipboardCheck,
         children: [
-          { label: "考勤中心", href: "/attendance", icon: ClipboardCheck },
+          { label: "打卡记录", href: "/attendance", icon: ClipboardCheck },
+          { label: "NFC打卡", href: "/attendance?tab=nfc", icon: SmartphoneNfc },
+          { label: "考勤报表", href: "/attendance?tab=reports", icon: BarChart3 },
           { label: "卡片管理", href: "/card-management", icon: CreditCard },
         ],
       },
@@ -291,6 +298,8 @@ export default function AppShell({
   const CHILD_PERM: Record<string, string> = {
     "/student-management": "students.list", "/daily-logs": "daily-logs",
     "/grades": "grades", "/points": "points.operate",
+    "/points/records": "points.records",
+    "/points/leaderboard": "points.leaderboard",
     "/pickup": "pickup", "/parent-management": "parents",
     "/homework": "homework", "/resource-library": "resource-library",
     "/teacher-management": "teachers.list", "/schedule-management": "schedule",
@@ -299,8 +308,7 @@ export default function AppShell({
     "/finance/expenses": "finance.expenses", "/finance/payroll": "finance.payroll",
     "/finance/budget": "finance.budget", "/finance/reports": "finance.reports",
     "/inventory": "inventory",
-    "/student-checkin": "attendance.checkin", "/teacher-checkin": "attendance.teacher",
-    "/attendance-reports": "attendance.reports",
+    "/attendance": "attendance.checkin",
     "/card-management": "attendance.cards",
     "/settings": "settings.general", "/user-management": "settings.users",
     "/center-management": "settings.centers",
