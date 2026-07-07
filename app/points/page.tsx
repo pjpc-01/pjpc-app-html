@@ -29,8 +29,9 @@ export default function PointsPage() {
   const studentNameParam = searchParams.get("name")
 
   // PJPC app auth
-  const { user, isAuthenticated } = useAuth()
+  const { user } = useAuth()
   const { teacher } = useCurrentTeacher()
+  const isAuthenticated = !!user
 
   // Student being adjusted
   const [currentStudent, setCurrentStudent] = useState<{
