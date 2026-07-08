@@ -91,10 +91,10 @@ export async function POST(request: NextRequest) {
       data: record,
       message: '请假申请提交成功'
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('创建请假申请失败:', error)
     return NextResponse.json(
-      { success: false, error: '创建请假申请失败' },
+      { success: false, error: `创建请假申请失败: ${error?.message || error}` },
       { status: 500 }
     )
   }

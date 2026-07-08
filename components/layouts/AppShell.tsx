@@ -37,9 +37,13 @@ import {
   FileEdit,
   Package,
   Star,
+  ScrollText,
   Trophy,
   Table2,
   Truck,
+  MonitorPlay,
+  GripVertical,
+  Edit3,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -84,9 +88,14 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         icon: Star,
         children: [
           { label: "积分操作", href: "/points", icon: Star },
-          { label: "积分记录", href: "/points/records", icon: Table2 },
+          { label: "积分规则", href: "/points/rules", icon: ScrollText },
           { label: "积分排行榜", href: "/points/leaderboard", icon: Trophy },
         ],
+      },
+      {
+        label: "幻灯片",
+        href: "/dashboard/slideshow",
+        icon: MonitorPlay,
       },
       {
         label: "教师管理",
@@ -260,6 +269,9 @@ export default function AppShell({
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set())
   const [centers, setCenters] = useState<{id:string;code:string;name:string}[]>([])
   const [rolePerms, setRolePerms] = useState<Record<string, boolean>>({})
+  const [navEditMode, setNavEditMode] = useState(false)
+  const [navOrder, setNavOrder] = useState<string[]>([])
+  const [dragOver, setDragOver] = useState<string | null>(null)
 
   // Fetch permissions for current user role
   useEffect(() => {
@@ -281,6 +293,69 @@ export default function AppShell({
       .then(d => setCenters(d?.items?.map((c:any) => ({ id: c.id, code: c.code, name: c.name })) || []))
       .catch(() => {})
   }, [])
+
+  // Load custom nav order from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`pjpc_nav_order_${userRole}`)
+      if (saved) setNavOrder(JSON.parse(saved))
+    } catch {}
+  }, [userRole])
+
+  // Save nav order to localStorage
+  const saveNavOrder = (order: string[]) => {
+    setNavOrder(order)
+    localStorage.setItem(`pjpc_nav_order_${userRole}`, JSON.stringify(order))
+  }
+
+  // Apply custom order to nav items
+  const applyNavOrder = (items: NavItem[]): NavItem[] => {
+    if (!navOrder.length) return items
+    const orderMap = new Map(navOrder.map((label, i) => [label, i]))
+    const sorted = [...items].sort((a, b) => {
+      const ai = orderMap.get(a.label) ?? 999
+      const bi = orderMap.get(b.label) ?? 999
+      return ai - bi
+    })
+    return sorted
+  }
+
+  // Drag handlers
+  const handleDragStart = (e: React.DragEvent, label: string) => {
+    e.dataTransfer.setData("text/plain", label)
+    e.dataTransfer.effectAllowed = "move"
+  }
+
+  const handleDragOver = (e: React.DragEvent, label: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "move"
+    setDragOver(label)
+  }
+
+  const handleDragLeave = () => setDragOver(null)
+
+  const handleDrop = (e: React.DragEvent, targetLabel: string) => {
+    e.preventDefault()
+    setDragOver(null)
+    const draggedLabel = e.dataTransfer.getData("text/plain")
+    if (draggedLabel === targetLabel) return
+
+    const items = applyNavOrder(filteredNavItems)
+    const labels = items.map(i => i.label)
+    const fromIdx = labels.indexOf(draggedLabel)
+    const toIdx = labels.indexOf(targetLabel)
+    if (fromIdx < 0 || toIdx < 0) return
+
+    const newLabels = [...labels]
+    newLabels.splice(fromIdx, 1)
+    newLabels.splice(toIdx, 0, draggedLabel)
+    saveNavOrder(newLabels)
+  }
+
+  const resetNavOrder = () => {
+    setNavOrder([])
+    localStorage.removeItem(`pjpc_nav_order_${userRole}`)
+  }
 
   const config = ROLE_CONFIGS[userRole] || ROLE_CONFIGS.admin
   const { logout, user, loading } = useAuth()
@@ -307,6 +382,7 @@ export default function AppShell({
     "/inventory": "inventory",
     "/attendance": "attendance.checkin",
     "/card-management": "attendance.cards",
+    "/dashboard/slideshow": "dashboard.slideshow",
     "/settings": "settings.general", "/user-management": "settings.users",
     "/center-management": "settings.centers",
   }
@@ -329,7 +405,7 @@ export default function AppShell({
     })
   }
 
-  const filteredNavItems = filterByPerms(config.navItems)
+  const filteredNavItems = applyNavOrder(filterByPerms(config.navItems))
 
   const handleLogout = async () => {
     try {
@@ -413,8 +489,26 @@ export default function AppShell({
     const hasChildren = item.children && item.children.length > 0
     const expanded = expandedMenus.has(item.label)
 
+    const dragProps = navEditMode && depth === 0 ? {
+      draggable: true,
+      onDragStart: (e: React.DragEvent) => handleDragStart(e, item.label),
+      onDragOver: (e: React.DragEvent) => handleDragOver(e, item.label),
+      onDragLeave: handleDragLeave,
+      onDrop: (e: React.DragEvent) => handleDrop(e, item.label),
+    } : {}
+
+    const isDragTarget = dragOver === item.label
+
     return (
-      <div key={item.label}>
+      <div key={item.label}
+        className={`transition-all ${isDragTarget ? "ring-2 ring-blue-300 rounded-lg bg-blue-50/30" : ""}`}
+        {...dragProps}
+      >
+        <div className="flex items-center gap-1">
+          {navEditMode && depth === 0 && (
+            <GripVertical className="h-3.5 w-3.5 text-gray-300 cursor-grab active:cursor-grabbing flex-shrink-0" />
+          )}
+          <div className="flex-1 min-w-0">
         {hasChildren ? (
           <>
             <button
@@ -455,6 +549,8 @@ export default function AppShell({
             )}
           </Link>
         )}
+          </div>
+        </div>
       </div>
     )
   }
@@ -488,6 +584,7 @@ export default function AppShell({
     "/settings": { label: "系统设置" },
     "/teacher-workspace": { label: "我的工作台" },
     "/card-management": { label: "卡片管理" },
+    "/dashboard/slideshow": { label: "幻灯片" },
     "/resource-library": { label: "资源库" },
     "/payroll-management": { label: "薪资管理" },
     "/user-management": { label: "用户管理" },
@@ -582,6 +679,29 @@ export default function AppShell({
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 scrollbar-thin scrollbar-thumb-gray-200/20 scrollbar-track-transparent">
           {filteredNavItems.map((item) => renderNavItem(item))}
         </nav>
+
+        {/* Nav edit toggle */}
+        <div className="px-3 pb-1">
+          {navEditMode ? (
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" className="h-6 text-[10px] text-gray-400 hover:text-gray-600 flex-1"
+                onClick={() => setNavEditMode(false)}>
+                完成排序
+              </Button>
+              {navOrder.length > 0 && (
+                <Button variant="ghost" size="sm" className="h-6 text-[10px] text-gray-300 hover:text-red-400"
+                  onClick={resetNavOrder}>
+                  恢复默认
+                </Button>
+              )}
+            </div>
+          ) : (
+            <Button variant="ghost" size="sm" className="h-6 text-[10px] text-gray-300 hover:text-gray-500 w-full"
+              onClick={() => setNavEditMode(true)}>
+              <Edit3 className="h-3 w-3 mr-1" />调整菜单顺序
+            </Button>
+          )}
+        </div>
 
         {/* Bottom section — 用户 + 分行 + 工具 */}
         <div className="flex-shrink-0 border-t border-gray-200/30">

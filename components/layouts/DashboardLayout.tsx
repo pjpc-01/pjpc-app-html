@@ -1,12 +1,34 @@
 "use client"
 
-import React from "react"
+import React, { Suspense } from "react"
 import { Toaster } from "sonner"
 import AppShell from "./AppShell"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
+}
+
+function LoadingShell() {
+  return (
+    <div className="flex h-screen items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <p className="text-sm text-muted-foreground">加载中...</p>
+      </div>
+    </div>
+  )
+}
+
+function AppShellWrapper({ children, role, name }: { children: React.ReactNode; role: string; name: string }) {
+  return (
+    <AppShell
+      userRole={role}
+      userName={name}
+    >
+      {children}
+    </AppShell>
+  )
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -20,12 +42,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <>
-      <AppShell
-        userRole={role}
-        userName={name}
-      >
-        {children}
-      </AppShell>
+      <Suspense fallback={<LoadingShell />}>
+        <AppShellWrapper role={role} name={name}>
+          {children}
+        </AppShellWrapper>
+      </Suspense>
       <Toaster
         position="top-right"
         richColors

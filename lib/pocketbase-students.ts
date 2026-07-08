@@ -386,25 +386,63 @@ export const updateStudent = async (id: string, studentData: StudentUpdateData):
   try {
     console.log('🔍 开始更新学生:', id, studentData)
     
-    // 映射到 PB 字段名
+    // 映射到 PB 字段名（兼容 camelCase + snake_case）
+    const get = (...keys: string[]) => {
+      for (const k of keys) {
+        const v = (studentData as any)[k]
+        if (v !== undefined) return v
+      }
+      return undefined
+    }
     const pbData: Record<string, any> = {}
-    if (studentData.student_name !== undefined) pbData.name = studentData.student_name
-    if (studentData.student_id !== undefined) pbData.student_id = studentData.student_id
-    if (studentData.standard !== undefined) pbData.grade = studentData.standard
-    if (studentData.father_name !== undefined) pbData.fatherName = studentData.father_name
-    if (studentData.mother_name !== undefined) pbData.motherName = studentData.mother_name
-    if (studentData.father_phone !== undefined) pbData.fatherPhone = studentData.father_phone
-    if (studentData.mother_phone !== undefined) pbData.motherPhone = studentData.mother_phone
-    if (studentData.status !== undefined) pbData.status = studentData.status
-    if (studentData.nric !== undefined) pbData.nric = studentData.nric
-    if (studentData.school !== undefined) pbData.school = studentData.school
-    if (studentData.center !== undefined) pbData.center = studentData.center
-    if (studentData.centerId !== undefined) pbData.centerId = studentData.centerId
-    if (studentData.home_address !== undefined) pbData.address = studentData.home_address
-    if (studentData.dob !== undefined) pbData.dob = studentData.dob
-    if (studentData.gender !== undefined) pbData.gender = studentData.gender
-    if (studentData.email !== undefined) pbData.email = studentData.email
-    if (studentData.phone !== undefined) pbData.phone = studentData.phone
+    
+    // Core fields with known PB mapping
+    if (get('student_name', 'name') !== undefined) pbData.name = get('student_name', 'name')
+    if (get('student_id') !== undefined) pbData.student_id = get('student_id')
+    if (get('standard', 'grade') !== undefined) pbData.grade = get('standard', 'grade')
+    
+    // Parent fields — form sends camelCase, but also support snake_case
+    if (get('fatherName', 'father_name') !== undefined) pbData.fatherName = get('fatherName', 'father_name')
+    if (get('motherName', 'mother_name') !== undefined) pbData.motherName = get('motherName', 'mother_name')
+    if (get('fatherPhone', 'father_phone') !== undefined) pbData.fatherPhone = get('fatherPhone', 'father_phone')
+    if (get('motherPhone', 'mother_phone') !== undefined) pbData.motherPhone = get('motherPhone', 'mother_phone')
+    
+    // Contact / personal
+    if (get('email') !== undefined) pbData.email = get('email')
+    if (get('phone') !== undefined) pbData.phone = get('phone')
+    if (get('nric') !== undefined) pbData.nric = get('nric')
+    if (get('school') !== undefined) pbData.school = get('school')
+    if (get('dob') !== undefined) pbData.dob = get('dob')
+    if (get('gender') !== undefined) pbData.gender = get('gender')
+    if (get('status') !== undefined) pbData.status = get('status')
+    
+    // Center / enrollment
+    if (get('center') !== undefined) pbData.center = get('center')
+    if (get('centerId') !== undefined) pbData.centerId = get('centerId')
+    if (get('serviceType') !== undefined) pbData.serviceType = get('serviceType')
+    if (get('registrationDate') !== undefined) pbData.registrationDate = get('registrationDate')
+    if (get('tuitionStatus') !== undefined) pbData.tuitionStatus = get('tuitionStatus')
+    
+    // Emergency / health
+    if (get('emergencyContact') !== undefined) pbData.emergencyContact = get('emergencyContact')
+    if (get('emergencyPhone') !== undefined) pbData.emergencyPhone = get('emergencyPhone')
+    if (get('healthInfo') !== undefined) pbData.healthInfo = get('healthInfo')
+    if (get('pickupMethod') !== undefined) pbData.pickupMethod = get('pickupMethod')
+    
+    // Address
+    if (get('address', 'home_address') !== undefined) pbData.address = get('address', 'home_address')
+    
+    // Avatar
+    if (get('avatar') !== undefined) pbData.avatar = get('avatar')
+    
+    // Authorized pickup persons (1-3)
+    for (const n of [1, 2, 3]) {
+      if (get(`authorizedPickup${n}Name`) !== undefined) pbData[`authorizedPickup${n}Name`] = get(`authorizedPickup${n}Name`)
+      if (get(`authorizedPickup${n}Phone`) !== undefined) pbData[`authorizedPickup${n}Phone`] = get(`authorizedPickup${n}Phone`)
+      if (get(`authorizedPickup${n}Relation`) !== undefined) pbData[`authorizedPickup${n}Relation`] = get(`authorizedPickup${n}Relation`)
+    }
+    
+    console.log('📤 映射后的 PB 数据:', pbData)
     
     const response = await fetch('/api/students', {
       method: 'PUT',

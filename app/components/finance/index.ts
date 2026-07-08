@@ -15,7 +15,6 @@ export { StudentFeeMatrix } from './student-fee-matrix'
 export { StudentCard } from './student-fee-matrix'
 export { SearchAndFilter } from './student-fee-matrix'
 export { StudentFeeMatrixHeader } from './student-fee-matrix'
-export { FeeCard } from './student-fee-matrix'
 
 // Shared Components
 export * from './shared'

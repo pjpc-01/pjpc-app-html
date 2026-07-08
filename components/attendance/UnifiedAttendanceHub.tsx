@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   SmartphoneNfc, Users, Clock, RefreshCw, Search, X,
-  Loader2, GraduationCap, User, LogIn, LogOut, BarChart3, ChevronLeft, ChevronRight, CalendarDays, AlertTriangle,
+  Loader2, GraduationCap, User, LogIn, LogOut, BarChart3, ChevronLeft, ChevronRight, CalendarDays,
 } from "lucide-react"
 import NfcTapReader from "./NfcTapReader"
 
@@ -38,7 +38,7 @@ export default function UnifiedAttendanceHub() {
   const [records, setRecords] = useState<ScanRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [showNfc, setShowNfc] = useState(false)
-  const [dateFilter, setDateFilter] = useState("")
+  const [dateFilter, setDateFilter] = useState(new Date().toISOString().slice(0, 10))
   const [typeFilter, setTypeFilter] = useState("all")
   const [report, setReport] = useState<ReportItem[]>([])
   const [reportStats, setReportStats] = useState<ReportStats>({ total: 0, checkedIn: 0, checkedOut: 0, notCheckedIn: 0, late: 0, early: 0, absent: 0 })
@@ -220,84 +220,88 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
   fmtTime: (iso: string | null) => string; calcDuration: (ci: string | null, co: string | null) => string
   absentStudents: AbsentStudent[]
 }) {
+  // Merge: present students first, then absent students at bottom
+  const allRows: { person_name: string; person_type: string; center: string; grade?: string; check_in_time: string | null; check_out_time: string | null; is_late: boolean; is_early: boolean; status: string; _isAbsent: boolean }[] = [
+    ...report.map(r => ({ ...r, _isAbsent: false })),
+    ...absentStudents.map(a => ({ person_name: a.person_name, person_type: a.person_type, center: a.center, grade: a.grade, check_in_time: null, check_out_time: null, is_late: false, is_early: false, status: "absent", _isAbsent: true })),
+  ]
+
+  const totalPeople = allRows.length
+  const checkedIn = allRows.filter(r => !r._isAbsent && r.check_in_time).length
+
   return (
     <>
-      <div className="grid grid-cols-5 gap-px bg-gray-100">
-        {[{ l: "总人数", v: reportStats.total, c: "text-blue-600" },
-          { l: "已签到", v: reportStats.checkedIn, c: "text-green-600" },
-          { l: "已签退", v: reportStats.checkedOut, c: "text-amber-600" },
-          { l: "迟到", v: reportStats.late, c: "text-orange-600" },
-          { l: "缺勤", v: reportStats.absent, c: "text-red-600" },
+      {/* Compact header bar */}
+      <div className="flex items-center gap-4 px-4 py-2.5 bg-white border-b">
+        {[
+          { label: "总人数", value: totalPeople, color: "text-blue-600" },
+          { label: "已签到", value: checkedIn, color: "text-green-600" },
+          { label: "迟到", value: reportStats.late, color: "text-orange-500" },
+          { label: "缺勤", value: absentStudents.length, color: "text-gray-400" },
         ].map((s, i) => (
-          <div key={i} className="bg-white px-3 py-2 text-center">
-            <p className="text-[10px] text-gray-400">{s.l}</p>
-            <p className={`text-lg font-bold ${s.c}`}>{s.v}</p>
+          <div key={i} className="flex items-center gap-1.5">
+            <span className="text-[11px] text-gray-400">{s.label}</span>
+            <span className={`text-sm font-bold ${s.color}`}>{s.value}</span>
+            {i < 3 && <span className="text-gray-200">|</span>}
           </div>
         ))}
       </div>
-      {reportLoading ? <div className="text-center py-8"><Loader2 className="h-5 w-5 mx-auto animate-spin text-blue-500" /></div>
-      : report.length === 0 && absentStudents.length === 0 ? <div className="text-center py-8 text-gray-400 text-sm">当日暂无考勤数据</div>
-      : <>
-          {/* Attendance table */}
-          {report.length > 0 && <div className="max-h-[300px] overflow-y-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="bg-gray-50 border-b sticky top-0">
-                {["姓名","身份","签到","签退","时长","状态"].map(h => (
-                  <th key={h} className="text-left px-3 py-2 text-xs font-semibold text-gray-500">{h}</th>
-                ))}
-              </tr></thead>
-              <tbody>
-                {report.map((item, idx) => (
-                  <tr key={idx} className="border-b border-gray-50 hover:bg-gray-50">
-                    <td className="px-3 py-2"><div className="flex items-center gap-2">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${item.person_type === "teacher" ? "bg-purple-100" : "bg-blue-100"}`}>
-                        {item.person_type === "teacher" ? <User className="h-3 w-3 text-purple-500" /> : <GraduationCap className="h-3 w-3 text-blue-500" />}
-                      </div>
-                      <span className="font-medium text-gray-900 text-xs truncate max-w-[100px]">{item.person_name}</span>
-                    </div></td>
-                    <td className="px-3 py-2"><Badge variant="outline" className="text-[10px]">{item.person_type === "teacher" ? "教师" : "学生"}</Badge></td>
-                    <td className="px-3 py-2">
-                      <span className={`font-mono text-xs ${item.check_in_time ? (item.is_late ? "text-orange-600" : "text-green-600") : "text-red-400"}`}>
-                        {item.check_in_time || "—"}
-                      </span>
-                      {item.is_late && <Badge className="ml-1 text-[9px] bg-orange-100 text-orange-600 px-1 py-0 h-4">迟到</Badge>}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className={`font-mono text-xs ${item.check_out_time ? (item.is_early ? "text-orange-600" : "text-amber-600") : "text-gray-400"}`}>
-                        {item.check_out_time || "—"}
-                      </span>
-                      {item.is_early && <Badge className="ml-1 text-[9px] bg-orange-100 text-orange-600 px-1 py-0 h-4">早退</Badge>}
-                    </td>
-                    <td className="px-3 py-2 font-mono text-xs text-gray-600">{calcDuration(item.check_in, item.check_out)}</td>
-                    <td className="px-3 py-2">
-                      {item.status === "late" ? <Badge className="text-[9px] bg-orange-100 text-orange-700">迟到</Badge> :
-                       item.status === "on_time" ? <Badge className="text-[9px] bg-green-100 text-green-700">准时</Badge> :
-                       item.status === "absent" ? <Badge className="text-[9px] bg-red-100 text-red-700">未到</Badge> :
-                       <Badge variant="secondary" className="text-[9px]">{item.total_scans}次</Badge>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>}
 
-          {/* Absent students */}
-          {absentStudents.length > 0 && (
-            <div className="border-t-2 border-red-200 mt-2">
-              <div className="px-4 py-2 bg-red-50 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-red-500" />
-                <span className="text-xs font-semibold text-red-700">今日缺勤 ({absentStudents.length}人)</span>
-              </div>
-              <div className="flex flex-wrap gap-2 p-3">
-                {absentStudents.map(s => (
-                  <Badge key={s.person_id} variant="outline" className="text-[10px] border-red-200 bg-red-50 text-red-600">
-                    {s.person_name} · {s.center}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
+      {reportLoading ? <div className="text-center py-8"><Loader2 className="h-5 w-5 mx-auto animate-spin text-blue-500" /></div>
+      : allRows.length === 0 ? <div className="text-center py-8 text-gray-400 text-sm">当日暂无考勤数据</div>
+      : <div className="max-h-[360px] overflow-y-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="bg-gray-50/80 border-b sticky top-0 backdrop-blur">
+              {["姓名","身份","签到","签退","时长","状态"].map(h => (
+                <th key={h} className="text-left px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {allRows.map((item, idx) => (
+                <tr key={idx} className={`border-b border-gray-50 transition-colors ${item._isAbsent ? "bg-gray-50/50 opacity-60" : "hover:bg-gray-50/50"}`}>
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${item._isAbsent ? "bg-gray-100" : item.person_type === "teacher" ? "bg-purple-50" : "bg-blue-50"}`}>
+                        {item.person_type === "teacher" ? <User className="h-3.5 w-3.5 text-purple-400" /> : <GraduationCap className={`h-3.5 w-3.5 ${item._isAbsent ? "text-gray-300" : "text-blue-400"}`} />}
+                      </div>
+                      <div>
+                        <span className={`font-medium text-xs ${item._isAbsent ? "text-gray-400 line-through" : "text-gray-800"}`}>{item.person_name}</span>
+                        {item.grade && <span className="text-[10px] text-gray-400 ml-1.5">{item.grade}</span>}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2.5"><Badge variant="outline" className={`text-[10px] ${item._isAbsent ? "text-gray-300 border-gray-200" : ""}`}>{item.person_type === "teacher" ? "教师" : "学生"}</Badge></td>
+                  <td className="px-4 py-2.5">
+                    {item._isAbsent ? <span className="text-[11px] text-gray-300">—</span> : (
+                      <>
+                        <span className={`font-mono text-xs ${item.is_late ? "text-orange-500" : "text-green-600"}`}>{item.check_in_time || "—"}</span>
+                        {item.is_late && <Badge className="ml-1.5 text-[9px] bg-orange-50 text-orange-500 px-1.5 py-0 h-4 font-normal">迟到</Badge>}
+                      </>
+                    )}
+                  </td>
+                  <td className="px-4 py-2.5">
+                    {item._isAbsent ? <span className="text-[11px] text-gray-300">—</span> : (
+                      <>
+                        <span className={`font-mono text-xs ${item.is_early ? "text-orange-500" : "text-amber-600"}`}>{item.check_out_time || "—"}</span>
+                        {item.is_early && <Badge className="ml-1.5 text-[9px] bg-orange-50 text-orange-500 px-1.5 py-0 h-4 font-normal">早退</Badge>}
+                      </>
+                    )}
+                  </td>
+                  <td className="px-4 py-2.5 font-mono text-[11px] text-gray-500">{item._isAbsent ? <span className="text-gray-300">—</span> : calcDuration(item.check_in_time as any, item.check_out_time as any)}</td>
+                  <td className="px-4 py-2.5">
+                    {item._isAbsent ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-gray-400">
+                        <span className="w-1 h-1 rounded-full bg-gray-300" /> 缺勤
+                      </span>
+                    ) : item.status === "late" ? <Badge className="text-[9px] bg-orange-50 text-orange-600 font-normal">迟到</Badge> :
+                       item.status === "on_time" ? <Badge className="text-[9px] bg-emerald-50 text-emerald-600 font-normal">准时</Badge> :
+                       <Badge variant="secondary" className="text-[9px] font-normal">{item.check_out_time ? "已签退" : "仅签到"}</Badge>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       }
     </>
   )
