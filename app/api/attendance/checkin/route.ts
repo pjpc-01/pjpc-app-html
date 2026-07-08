@@ -22,18 +22,15 @@ async function pbCreate(token: string, collection: string, data: any) {
   return res.json()
 }
 
-// POST — 统一考勤打卡
-// 每次刷卡 = 一条独立记录。自动判断签到/签退（基于今日上次操作）
+function nowStr() { return new Date().toISOString() }
+
+// POST — 统一考勤打卡 + 积分联动
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const {
-      person_id,
-      person_type = 'student',
-      person_name,
-      center,
-      method = 'nfc',
-      notes = '',
+      person_id, person_type = 'student', person_name,
+      center, method = 'nfc', notes = '',
     } = body
 
     if (!person_id) {
@@ -41,24 +38,21 @@ export async function POST(request: NextRequest) {
     }
     const resolvedCenter = center || 'BATU14'
 
-    // Auth
     let token: string
     try { token = await pbAuth() }
     catch { return NextResponse.json({ error: 'PocketBase 认证失败' }, { status: 401 }) }
 
-    // Determine collection + fields
     const isTeacher = person_type === 'teacher'
     const collectionName = isTeacher ? 'teacher_attendance' : 'student_attendance'
     const idField = isTeacher ? 'teacher_id' : 'student_id'
     const nameField = isTeacher ? 'teacher_name' : 'student_name'
 
-    // Resolve name
     let resolvedName = person_name || person_id
 
     const now = new Date()
     const today = now.toISOString().split('T')[0]
 
-    // Look up today's LAST record for this person to decide 签到 vs 签退
+    // ── Determine action ─────────────────────────
     const dateFilter = `${idField}="${person_id}" && created >= "${today} 00:00:00"`
     const prevRes = await fetch(
       `${PB_URL}/api/collections/${collectionName}/records?perPage=1&sort=-created&filter=${encodeURIComponent(dateFilter)}`,
@@ -67,23 +61,19 @@ export async function POST(request: NextRequest) {
 
     let action: 'check_in' | 'check_out'
     const prev = prevRes.items?.[0]
-
     if (!prev) {
-      // No record today → 签到
       action = 'check_in'
     } else {
-      // Check the last action from notes prefix
       const lastAction = (prev.notes || '').startsWith('[签退]') ? 'check_out' :
                          (prev.notes || '').startsWith('[签到]') ? 'check_in' :
                          prev.check_out ? 'check_out' : 'check_in'
-      // Toggle: 签到 → 签退, 签退 → 签到
       action = lastAction === 'check_in' ? 'check_out' : 'check_in'
     }
 
     const actionLabel = action === 'check_in' ? '签到' : '签退'
     const actionNotes = `[${actionLabel}] ${notes || `NFC打卡 - ${method}`}`
 
-    // ALWAYS create a NEW record
+    // ── Create record ────────────────────────────
     const recordData: any = {
       [idField]: person_id,
       [nameField]: resolvedName,
@@ -96,13 +86,20 @@ export async function POST(request: NextRequest) {
       notes: actionNotes,
       device_info: JSON.stringify({ method, action, source: 'nfc' }),
     }
-
     if (isTeacher) {
       recordData.branch_code = resolvedCenter
       recordData.branch_name = resolvedCenter
     }
 
     const record = await pbCreate(token, collectionName, recordData)
+
+    // ── Points integration ─────────────────────
+    let pointsResult: any = null
+    if (!isTeacher && action === 'check_in') {
+      try {
+        pointsResult = await handlePointsIntegration(token, person_id, resolvedCenter, record)
+      } catch { /* points failure shouldn't block attendance */ }
+    }
 
     return NextResponse.json({
       success: true,
@@ -112,9 +109,90 @@ export async function POST(request: NextRequest) {
       person_type,
       data: record,
       person: { id: person_id, name: resolvedName, type: person_type },
+      points: pointsResult,
     })
   } catch (error: any) {
     console.error('考勤打卡失败:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+// ─── Points Integration ──────────────────────────
+
+async function handlePointsIntegration(
+  token: string, studentId: string, center: string, record: any
+) {
+  // Load settings
+  let settings: any = {
+    checkin_deadline: "14:00",
+    checkout_minimum: "17:00",
+    points_full_attendance: 2,
+    points_late: -1,
+    points_early: -1,
+    enable_points: true,
+  }
+  try {
+    const settingsUrl = `${PB_URL}/api/collections/attendance_settings/records?perPage=1&filter=center="${encodeURIComponent(center)}"`
+    const settingsRes = await fetch(settingsUrl, { headers: { Authorization: token } }).then(r => r.json())
+    if (settingsRes.items?.[0]?.config) {
+      settings = { ...settings, ...settingsRes.items[0].config }
+    }
+  } catch { /* use defaults */ }
+
+  if (!settings.enable_points) return { skipped: true }
+
+  // Check if check-in is late
+  const checkinTime = record.check_in || record.created
+  const t = new Date(checkinTime)
+  const timeStr = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`
+
+  const isLate = timeStr > settings.checkin_deadline
+  const points = isLate ? settings.points_late : settings.points_full_attendance
+  const reason = isLate ? `考勤迟到 (打卡时间 ${timeStr}，迟到线 ${settings.checkin_deadline})` : '考勤全勤签到'
+
+  // Check if student already got points today (avoid duplicate)
+  const today = new Date().toISOString().split('T')[0]
+  const ptsFilter = `studentId="${studentId}" && created >= "${today} 00:00:00" && reason ~ "考勤"`
+  const existingPts = await fetch(
+    `${PB_URL}/api/collections/points/records?perPage=1&filter=${encodeURIComponent(ptsFilter)}`,
+    { headers: { Authorization: token } }
+  ).then(r => r.json())
+
+  if (existingPts.items?.length > 0) {
+    return { skipped: true, reason: '今日已发放考勤积分' }
+  }
+
+  // Get current student points
+  const student = await fetch(
+    `${PB_URL}/api/collections/students/records/${studentId}`,
+    { headers: { Authorization: token } }
+  ).then(r => r.json())
+
+  const currentPoints = student.points || 0
+  const newPoints = Math.max(0, currentPoints + points)
+
+  // Update student points
+  await fetch(`${PB_URL}/api/collections/students/records/${studentId}`, {
+    method: 'PATCH',
+    headers: { Authorization: token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ points: newPoints }),
+  })
+
+  // Create points log
+  await pbCreate(token, 'points', {
+    studentId,
+    points: points,
+    reason,
+    teacher_id: 'system',
+    created: nowStr(),
+  })
+
+  return {
+    granted: true,
+    points,
+    is_late: isLate,
+    reason,
+    points_before: currentPoints,
+    points_after: newPoints,
   }
 }
