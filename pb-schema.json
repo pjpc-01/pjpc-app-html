@@ -1,7 +1,7 @@
 {
   "page": 1,
   "perPage": 100,
-  "totalItems": 44,
+  "totalItems": 45,
   "totalPages": 1,
   "items": [
     {
@@ -6628,6 +6628,49 @@
       "createRule": "",
       "updateRule": "",
       "deleteRule": "",
+      "options": {}
+    },
+    {
+      "id": "1gp0u4y6szwxlxk",
+      "created": "2026-07-08 05:20:17.095Z",
+      "updated": "2026-07-08 05:20:17.095Z",
+      "name": "attendance_settings",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "mmwjerhq",
+          "name": "center",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "u6l2gusp",
+          "name": "config",
+          "type": "json",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "maxSize": 100000
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": null,
+      "viewRule": null,
+      "createRule": null,
+      "updateRule": null,
+      "deleteRule": null,
       "options": {}
     }
   ]

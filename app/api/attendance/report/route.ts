@@ -22,8 +22,7 @@ function timeStr(date: Date): string {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
-// GET — 增强考勤报告：含迟到/早退/缺勤
-// Query: ?date=2026-07-08&type=all|student|teacher&center=BATU14
+// GET — 增强考勤报告：含迟到/早退/缺勤（分年级/分老师阈值）
 export async function GET(request: NextRequest) {
   try {
     const token = await pbAuth()
@@ -36,10 +35,8 @@ export async function GET(request: NextRequest) {
     let settings: any = {
       checkin_deadline: "14:00",
       checkout_minimum: "17:00",
-      points_full_attendance: 2,
-      points_late: -1,
-      points_early: -1,
-      absent_alert_days: 3,
+      grade_overrides: [] as any[],
+      teacher_overrides: [] as any[],
       enable_points: true,
     }
     try {
@@ -52,10 +49,36 @@ export async function GET(request: NextRequest) {
       }
     } catch { /* use defaults */ }
 
-    const deadline = settings.checkin_deadline  // e.g. "14:00"
-    const minimum = settings.checkout_minimum   // e.g. "17:00"
-    const [dh, dm] = deadline.split(':').map(Number)
-    const [mh, mm] = minimum.split(':').map(Number)
+    const globalDeadline = settings.checkin_deadline
+    const globalMinimum = settings.checkout_minimum
+
+    // ── Pre-fetch student grades (for per-grade deadlines) ──
+    const studentGrades: Record<string, string> = {}
+    try {
+      const studentsUrl = `${PB_URL}/api/collections/students/records?perPage=500&fields=id,grade`
+      const studentsRes = await fetch(studentsUrl, { headers: { Authorization: token } }).then(r => r.json())
+      for (const s of (studentsRes.items || [])) {
+        studentGrades[s.id] = s.grade || ''
+      }
+    } catch { /* ignore */ }
+
+    // Helper: get deadline for a person
+    function getDeadlines(studentId?: string, teacherId?: string): { dl: string; min: string } {
+      // Teacher override
+      if (teacherId) {
+        const to = (settings.teacher_overrides || []).find((t: any) => t.teacher_id === teacherId)
+        if (to) return { dl: to.checkin_deadline, min: to.checkout_minimum }
+      }
+      // Grade override
+      if (studentId) {
+        const grade = studentGrades[studentId]
+        if (grade) {
+          const go = (settings.grade_overrides || []).find((g: any) => g.grade === grade)
+          if (go) return { dl: go.checkin_deadline, min: go.checkout_minimum }
+        }
+      }
+      return { dl: globalDeadline, min: globalMinimum }
+    }
 
     const logs: any[] = []
 
@@ -75,7 +98,7 @@ export async function GET(request: NextRequest) {
           center: r.center,
           action: isCheckOut ? 'check_out' : 'check_in',
           timestamp: r.check_in || r.created,
-          raw: r,
+          student_id: r.student_id,
         })
       }
     }
@@ -96,7 +119,7 @@ export async function GET(request: NextRequest) {
           center: r.center || r.branch_code,
           action: isCheckOut ? 'check_out' : 'check_in',
           timestamp: r.check_in || r.created,
-          raw: r,
+          teacher_id: r.teacher_id,
         })
       }
     }
@@ -111,6 +134,8 @@ export async function GET(request: NextRequest) {
           person_name: log.person_name,
           person_type: log.person_type,
           center: log.center,
+          student_id: log.student_id,
+          teacher_id: log.teacher_id,
           check_ins: [] as { time: string; iso: string }[],
           check_outs: [] as { time: string; iso: string }[],
         }
@@ -124,16 +149,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // ── Build report with late/early flags ──────
+    // ── Build report with per-person deadlines ──
     const report = Object.values(grouped).map(p => {
       const firstIn = p.check_ins[0] || null
       const lastOut = p.check_outs[p.check_outs.length - 1] || null
 
-      // Late: first check-in after deadline
-      const isLate = firstIn ? firstIn.time > deadline : false
+      const { dl, min } = getDeadlines(p.student_id, p.teacher_id)
 
-      // Early: last check-out before minimum
-      const isEarly = lastOut ? lastOut.time < minimum : false
+      const isLate = firstIn ? firstIn.time > dl : false
+      const isEarly = lastOut ? lastOut.time < min : false
 
       return {
         person_id: p.person_id,
@@ -148,6 +172,8 @@ export async function GET(request: NextRequest) {
         is_late: isLate,
         is_early: isEarly,
         status: !firstIn ? 'absent' : isLate ? 'late' : 'on_time',
+        deadline_used: dl,
+        minimum_used: min,
       }
     })
 
@@ -156,7 +182,7 @@ export async function GET(request: NextRequest) {
       return a.person_name.localeCompare(b.person_name, 'zh')
     })
 
-    // ── Absent students (active students not in report) ──
+    // ── Absent students ──────────────────────────
     let absentStudents: any[] = []
     try {
       let studentFilter = 'status="active"'
@@ -174,7 +200,7 @@ export async function GET(request: NextRequest) {
           center: s.center,
           grade: s.grade,
         }))
-    } catch { /* ignore absent fetch failures */ }
+    } catch { /* ignore */ }
 
     // ── Stats ────────────────────────────────────
     const checkedIn = report.filter(r => r.check_in).length
@@ -198,8 +224,10 @@ export async function GET(request: NextRequest) {
       absent_students: absentStudents,
       date,
       settings: {
-        deadline,
-        minimum,
+        deadline: globalDeadline,
+        minimum: globalMinimum,
+        grade_overrides: settings.grade_overrides,
+        teacher_overrides: settings.teacher_overrides,
         enable_points: settings.enable_points,
       },
     })
