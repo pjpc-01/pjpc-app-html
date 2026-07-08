@@ -5,8 +5,8 @@ import { getPocketBase } from './pocketbase'
  * 使用fetch直接调用PB admin API（绕过SDK版本兼容问题）
  */
 export async function authenticateAdmin(pb: any): Promise<void> {
-  const adminEmail = 'final_admin@test.com'
-  const adminPassword = 'final_pass'
+  const adminEmail = process.env.POCKETBASE_ADMIN_EMAIL || 'admin@pjpc.com'
+  const adminPassword = process.env.POCKETBASE_ADMIN_PASSWORD || '1234567890'
   
   console.log('🔐 使用fetch直接进行管理员认证')
   
