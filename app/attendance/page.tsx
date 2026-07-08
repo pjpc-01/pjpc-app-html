@@ -2,6 +2,7 @@
 
 import PageLayout from "@/components/layouts/PageLayout"
 import UnifiedAttendanceHub from "@/components/attendance/UnifiedAttendanceHub"
+import AttendanceSettingsPanel from "@/components/attendance/AttendanceSettingsPanel"
 
 export default function AttendancePage() {
   return (
@@ -12,6 +13,7 @@ export default function AttendancePage() {
       userRole="admin"
       background="from-slate-50 to-blue-50"
     >
+      <AttendanceSettingsPanel />
       <UnifiedAttendanceHub />
     </PageLayout>
   )

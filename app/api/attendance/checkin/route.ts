@@ -130,6 +130,8 @@ async function handlePointsIntegration(
     points_late: -1,
     points_early: -1,
     enable_points: true,
+    grade_overrides: [] as any[],
+    teacher_overrides: [] as any[],
   }
   try {
     const settingsUrl = `${PB_URL}/api/collections/attendance_settings/records?perPage=1&filter=center="${encodeURIComponent(center)}"`
@@ -141,14 +143,28 @@ async function handlePointsIntegration(
 
   if (!settings.enable_points) return { skipped: true }
 
+  // Get student grade for per-grade deadline
+  let deadline = settings.checkin_deadline
+  try {
+    const studentRes = await fetch(
+      `${PB_URL}/api/collections/students/records/${studentId}?fields=grade`,
+      { headers: { Authorization: token } }
+    ).then(r => r.json())
+    const grade = studentRes.grade
+    if (grade) {
+      const go = (settings.grade_overrides || []).find((g: any) => g.grade === grade)
+      if (go) deadline = go.checkin_deadline
+    }
+  } catch { /* use global deadline */ }
+
   // Check if check-in is late
   const checkinTime = record.check_in || record.created
   const t = new Date(checkinTime)
   const timeStr = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`
 
-  const isLate = timeStr > settings.checkin_deadline
+  const isLate = timeStr > deadline
   const points = isLate ? settings.points_late : settings.points_full_attendance
-  const reason = isLate ? `考勤迟到 (打卡时间 ${timeStr}，迟到线 ${settings.checkin_deadline})` : '考勤全勤签到'
+  const reason = isLate ? `考勤迟到 (打卡时间 ${timeStr}，迟到线 ${deadline})` : '考勤全勤签到'
 
   // Check if student already got points today (avoid duplicate)
   const today = new Date().toISOString().split('T')[0]
