@@ -26,10 +26,10 @@ interface ReportStats { total: number; checkedIn: number; checkedOut: number; no
 
 // ─── Main ──────────────────────────────────────────────
 
-export default function UnifiedAttendanceHub({ activeTab = "records" }: { activeTab?: string }) {
+export default function UnifiedAttendanceHub() {
   const [records, setRecords] = useState<ScanRecord[]>([])
   const [loading, setLoading] = useState(true)
-  const [showNfc, setShowNfc] = useState(activeTab === "nfc")
+  const [showNfc, setShowNfc] = useState(false)
   const [dateFilter, setDateFilter] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
   const [report, setReport] = useState<ReportItem[]>([])
@@ -104,70 +104,68 @@ export default function UnifiedAttendanceHub({ activeTab = "records" }: { active
         ))}
       </div>
 
-      {/* ===== Tab: records — 实时打卡记录 ===== */}
-      {activeTab === "records" && (
-        <Card>
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Clock className="h-4 w-4 text-gray-500" /> 实时打卡
-              <Badge variant="secondary" className="text-[10px]">{records.length}</Badge>
-            </CardTitle>
-            <div className="flex items-center gap-1">
-              <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="text-xs border rounded px-2 py-1 h-7 bg-white">
-                <option value="all">全部</option><option value="student">学生</option><option value="teacher">教师</option>
-              </select>
-              <Button variant="ghost" size="sm" onClick={() => { fetchRecords(); fetchReport() }} className="h-7 w-7 p-0"><RefreshCw className="h-3.5 w-3.5" /></Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {loading ? <div className="text-center py-12"><Loader2 className="h-6 w-6 mx-auto animate-spin text-blue-500" /></div>
-            : records.length === 0 ? <div className="text-center py-12 text-gray-400"><Clock className="h-8 w-8 mx-auto mb-2 opacity-30" /><p className="text-sm">刷卡后自动出现</p></div>
-            : <div className="max-h-[500px] overflow-y-auto">
-                {records.map(rec => (
-                  <div key={rec.id} className="flex items-center gap-3 px-4 py-2 border-b border-gray-50 hover:bg-gray-50">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${rec.person_type === "teacher" ? "bg-purple-100" : "bg-blue-100"}`}>
-                      {rec.person_type === "teacher" ? <User className="h-3.5 w-3.5 text-purple-500" /> : <GraduationCap className="h-3.5 w-3.5 text-blue-500" />}
-                    </div>
-                    <div className="flex-1 min-w-0"><div className="flex items-center gap-1.5">
-                      <span className="font-medium text-sm truncate">{rec.person_name}</span>
-                      <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">{rec.person_type === "teacher" ? "教师" : "学生"}</Badge>
-                    </div></div>
-                    <Badge className={`text-[10px] ${rec.action_key === "check_in" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>{rec.action}</Badge>
-                    <span className="text-xs text-gray-400 w-14 text-right tabular-nums">{fmtTimeSec(rec.timestamp)}</span>
-                  </div>
-                ))}
-              </div>
-            }
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ===== Tab: nfc — NFC 打卡 ===== */}
-      {activeTab === "nfc" && (
-        <div>
+      {/* NFC + Live Records */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="h-full">
           <div className="px-3 py-2 rounded-lg text-sm flex items-center gap-2 border bg-green-50 border-green-200 text-green-700 mb-3">
             <div className="w-2 h-2 rounded-full bg-green-500" />
             <span className="font-medium text-xs">💳 USB 读卡器全局启动 — 任何页面刷卡自动打卡</span>
           </div>
           {showNfc ? <NfcTapReader /> : (
-            <Card className="border-2 border-dashed border-blue-200 bg-gradient-to-br from-blue-50/50 to-white">
-              <CardContent className="p-8 text-center">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-100 mb-4">
-                  <SmartphoneNfc className="h-10 w-10 text-blue-500" />
+            <Card className="border-2 border-dashed border-blue-200 bg-gradient-to-br from-blue-50/50 to-white h-[calc(100%-2.5rem)]">
+              <CardContent className="p-4 text-center h-full flex flex-col items-center justify-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
+                  <SmartphoneNfc className="h-8 w-8 text-blue-500" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-700 mb-2">手机 NFC 打卡</h3>
-                <p className="text-sm text-gray-400 mb-4">Android Chrome 可用 — 将 NFC 标签靠近手机背面</p>
+                <h3 className="text-base font-bold text-gray-700 mb-2">手机 NFC 打卡</h3>
+                <p className="text-sm text-gray-400 mb-4">Android Chrome 可用</p>
                 <Button onClick={() => setShowNfc(true)} size="sm" variant="outline" className="text-blue-600 border-blue-300">
-                  <SmartphoneNfc className="h-4 w-4 mr-1" /> 打开 NFC 扫描
+                  <SmartphoneNfc className="h-4 w-4 mr-1" /> 打开
                 </Button>
               </CardContent>
             </Card>
           )}
         </div>
-      )}
 
-      {/* ===== Tab: reports — 考勤报告 ===== */}
-      {activeTab === "reports" && (
+        <div>
+          <Card>
+            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Clock className="h-4 w-4 text-gray-500" /> 实时打卡
+                <Badge variant="secondary" className="text-[10px]">{records.length}</Badge>
+              </CardTitle>
+              <div className="flex items-center gap-1">
+                <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="text-xs border rounded px-2 py-1 h-7 bg-white">
+                  <option value="all">全部</option><option value="student">学生</option><option value="teacher">教师</option>
+                </select>
+                <Button variant="ghost" size="sm" onClick={() => { fetchRecords(); fetchReport() }} className="h-7 w-7 p-0"><RefreshCw className="h-3.5 w-3.5" /></Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {loading ? <div className="text-center py-12"><Loader2 className="h-6 w-6 mx-auto animate-spin text-blue-500" /></div>
+              : records.length === 0 ? <div className="text-center py-12 text-gray-400"><Clock className="h-8 w-8 mx-auto mb-2 opacity-30" /><p className="text-sm">刷卡后自动出现</p></div>
+              : <div className="max-h-[320px] overflow-y-auto">
+                  {records.map(rec => (
+                    <div key={rec.id} className="flex items-center gap-3 px-4 py-2 border-b border-gray-50 hover:bg-gray-50">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${rec.person_type === "teacher" ? "bg-purple-100" : "bg-blue-100"}`}>
+                        {rec.person_type === "teacher" ? <User className="h-3.5 w-3.5 text-purple-500" /> : <GraduationCap className="h-3.5 w-3.5 text-blue-500" />}
+                      </div>
+                      <div className="flex-1 min-w-0"><div className="flex items-center gap-1.5">
+                        <span className="font-medium text-sm truncate">{rec.person_name}</span>
+                        <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">{rec.person_type === "teacher" ? "教师" : "学生"}</Badge>
+                      </div></div>
+                      <Badge className={`text-[10px] ${rec.action_key === "check_in" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>{rec.action}</Badge>
+                      <span className="text-xs text-gray-400 w-14 text-right tabular-nums">{fmtTimeSec(rec.timestamp)}</span>
+                    </div>
+                  ))}
+                </div>
+              }
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* ===== 考勤报告 (tabs: 今日 | 日历) ===== */}
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -202,7 +200,6 @@ export default function UnifiedAttendanceHub({ activeTab = "records" }: { active
             )}
           </CardContent>
         </Card>
-      )}
     </div>
   )
 }
