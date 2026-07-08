@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   SmartphoneNfc, Users, Clock, RefreshCw, Search, X,
-  Loader2, GraduationCap, User, LogIn, LogOut, BarChart3, ChevronLeft, ChevronRight, CalendarDays,
+  Loader2, GraduationCap, User, LogIn, LogOut, BarChart3, ChevronLeft, ChevronRight, CalendarDays, AlertTriangle,
 } from "lucide-react"
 import NfcTapReader from "./NfcTapReader"
 
@@ -19,10 +19,18 @@ interface ScanRecord {
 
 interface ReportItem {
   person_id: string; person_name: string; person_type: string; center: string
-  check_in: string | null; check_out: string | null; total_scans: number
+  check_in: string | null; check_in_time: string | null; check_out: string | null; check_out_time: string | null
+  total_scans: number; is_late: boolean; is_early: boolean; status: string
 }
 
-interface ReportStats { total: number; checkedIn: number; checkedOut: number; notCheckedIn: number }
+interface AbsentStudent {
+  person_id: string; person_name: string; person_type: string; center: string; grade: string
+}
+
+interface ReportStats {
+  total: number; checkedIn: number; checkedOut: number; notCheckedIn: number
+  late: number; early: number; absent: number
+}
 
 // ─── Main ──────────────────────────────────────────────
 
@@ -33,9 +41,10 @@ export default function UnifiedAttendanceHub() {
   const [dateFilter, setDateFilter] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
   const [report, setReport] = useState<ReportItem[]>([])
-  const [reportStats, setReportStats] = useState<ReportStats>({ total: 0, checkedIn: 0, checkedOut: 0, notCheckedIn: 0 })
+  const [reportStats, setReportStats] = useState<ReportStats>({ total: 0, checkedIn: 0, checkedOut: 0, notCheckedIn: 0, late: 0, early: 0, absent: 0 })
   const [reportLoading, setReportLoading] = useState(true)
   const [reportTab, setReportTab] = useState<"today" | "calendar">("today")
+  const [absentStudents, setAbsentStudents] = useState<AbsentStudent[]>([])
 
   const fetchRecords = useCallback(async () => {
     try {
@@ -54,7 +63,7 @@ export default function UnifiedAttendanceHub() {
       const params = new URLSearchParams({ date: dateFilter, type: typeFilter })
       const res = await fetch(`/api/attendance/report?${params}`)
       const data = await res.json()
-      if (data.success) { setReport(data.report || []); setReportStats(data.stats || { total: 0, checkedIn: 0, checkedOut: 0, notCheckedIn: 0 }) }
+      if (data.success) { setReport(data.report || []); setReportStats(data.stats || { total: 0, checkedIn: 0, checkedOut: 0, notCheckedIn: 0, late: 0, early: 0, absent: 0 }); setAbsentStudents(data.absent_students || []) }
     } catch (err) { console.error(err) }
     finally { setReportLoading(false) }
   }, [dateFilter, typeFilter])
@@ -194,7 +203,7 @@ export default function UnifiedAttendanceHub() {
           </CardHeader>
           <CardContent className="p-0">
             {reportTab === "today" ? (
-              <TodayReport report={report} reportStats={reportStats} reportLoading={reportLoading} fmtTime={fmtTime} calcDuration={calcDuration} />
+              <TodayReport report={report} reportStats={reportStats} reportLoading={reportLoading} fmtTime={fmtTime} calcDuration={calcDuration} absentStudents={absentStudents} />
             ) : (
               <CalendarReport />
             )}
@@ -206,17 +215,19 @@ export default function UnifiedAttendanceHub() {
 
 // ─── 今日考勤 ──────────────────────────────────────────
 
-function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration }: {
+function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration, absentStudents }: {
   report: ReportItem[]; reportStats: ReportStats; reportLoading: boolean
   fmtTime: (iso: string | null) => string; calcDuration: (ci: string | null, co: string | null) => string
+  absentStudents: AbsentStudent[]
 }) {
   return (
     <>
-      <div className="grid grid-cols-4 gap-px bg-gray-100">
+      <div className="grid grid-cols-5 gap-px bg-gray-100">
         {[{ l: "总人数", v: reportStats.total, c: "text-blue-600" },
           { l: "已签到", v: reportStats.checkedIn, c: "text-green-600" },
           { l: "已签退", v: reportStats.checkedOut, c: "text-amber-600" },
-          { l: "未签到", v: reportStats.notCheckedIn, c: "text-red-600" },
+          { l: "迟到", v: reportStats.late, c: "text-orange-600" },
+          { l: "缺勤", v: reportStats.absent, c: "text-red-600" },
         ].map((s, i) => (
           <div key={i} className="bg-white px-3 py-2 text-center">
             <p className="text-[10px] text-gray-400">{s.l}</p>
@@ -225,34 +236,68 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
         ))}
       </div>
       {reportLoading ? <div className="text-center py-8"><Loader2 className="h-5 w-5 mx-auto animate-spin text-blue-500" /></div>
-      : report.length === 0 ? <div className="text-center py-8 text-gray-400 text-sm">当日暂无考勤数据</div>
-      : <div className="max-h-[400px] overflow-y-auto">
-          <table className="w-full text-sm">
-            <thead><tr className="bg-gray-50 border-b sticky top-0">
-              {["姓名","身份","中心","签到","签退","时长","次数"].map(h => (
-                <th key={h} className="text-left px-4 py-2 text-xs font-semibold text-gray-500">{h}</th>
-              ))}
-            </tr></thead>
-            <tbody>
-              {report.map((item, idx) => (
-                <tr key={idx} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-4 py-2"><div className="flex items-center gap-2">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${item.person_type === "teacher" ? "bg-purple-100" : "bg-blue-100"}`}>
-                      {item.person_type === "teacher" ? <User className="h-3 w-3 text-purple-500" /> : <GraduationCap className="h-3 w-3 text-blue-500" />}
-                    </div>
-                    <span className="font-medium text-gray-900 text-xs">{item.person_name}</span>
-                  </div></td>
-                  <td className="px-4 py-2"><Badge variant="outline" className="text-[10px]">{item.person_type === "teacher" ? "教师" : "学生"}</Badge></td>
-                  <td className="px-4 py-2 text-gray-500 text-xs">{item.center || "—"}</td>
-                  <td className="px-4 py-2"><span className={`font-mono text-xs ${item.check_in ? "text-green-600" : "text-red-400"}`}>{fmtTime(item.check_in)}</span></td>
-                  <td className="px-4 py-2"><span className={`font-mono text-xs ${item.check_out ? "text-amber-600" : "text-gray-400"}`}>{fmtTime(item.check_out)}</span></td>
-                  <td className="px-4 py-2 font-mono text-xs text-gray-600">{calcDuration(item.check_in, item.check_out)}</td>
-                  <td className="px-4 py-2 text-center"><Badge variant="secondary" className="text-[10px]">{item.total_scans}</Badge></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      : report.length === 0 && absentStudents.length === 0 ? <div className="text-center py-8 text-gray-400 text-sm">当日暂无考勤数据</div>
+      : <>
+          {/* Attendance table */}
+          {report.length > 0 && <div className="max-h-[300px] overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead><tr className="bg-gray-50 border-b sticky top-0">
+                {["姓名","身份","签到","签退","时长","状态"].map(h => (
+                  <th key={h} className="text-left px-3 py-2 text-xs font-semibold text-gray-500">{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {report.map((item, idx) => (
+                  <tr key={idx} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="px-3 py-2"><div className="flex items-center gap-2">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center ${item.person_type === "teacher" ? "bg-purple-100" : "bg-blue-100"}`}>
+                        {item.person_type === "teacher" ? <User className="h-3 w-3 text-purple-500" /> : <GraduationCap className="h-3 w-3 text-blue-500" />}
+                      </div>
+                      <span className="font-medium text-gray-900 text-xs truncate max-w-[100px]">{item.person_name}</span>
+                    </div></td>
+                    <td className="px-3 py-2"><Badge variant="outline" className="text-[10px]">{item.person_type === "teacher" ? "教师" : "学生"}</Badge></td>
+                    <td className="px-3 py-2">
+                      <span className={`font-mono text-xs ${item.check_in_time ? (item.is_late ? "text-orange-600" : "text-green-600") : "text-red-400"}`}>
+                        {item.check_in_time || "—"}
+                      </span>
+                      {item.is_late && <Badge className="ml-1 text-[9px] bg-orange-100 text-orange-600 px-1 py-0 h-4">迟到</Badge>}
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className={`font-mono text-xs ${item.check_out_time ? (item.is_early ? "text-orange-600" : "text-amber-600") : "text-gray-400"}`}>
+                        {item.check_out_time || "—"}
+                      </span>
+                      {item.is_early && <Badge className="ml-1 text-[9px] bg-orange-100 text-orange-600 px-1 py-0 h-4">早退</Badge>}
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs text-gray-600">{calcDuration(item.check_in, item.check_out)}</td>
+                    <td className="px-3 py-2">
+                      {item.status === "late" ? <Badge className="text-[9px] bg-orange-100 text-orange-700">迟到</Badge> :
+                       item.status === "on_time" ? <Badge className="text-[9px] bg-green-100 text-green-700">准时</Badge> :
+                       item.status === "absent" ? <Badge className="text-[9px] bg-red-100 text-red-700">未到</Badge> :
+                       <Badge variant="secondary" className="text-[9px]">{item.total_scans}次</Badge>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>}
+
+          {/* Absent students */}
+          {absentStudents.length > 0 && (
+            <div className="border-t-2 border-red-200 mt-2">
+              <div className="px-4 py-2 bg-red-50 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-red-500" />
+                <span className="text-xs font-semibold text-red-700">今日缺勤 ({absentStudents.length}人)</span>
+              </div>
+              <div className="flex flex-wrap gap-2 p-3">
+                {absentStudents.map(s => (
+                  <Badge key={s.person_id} variant="outline" className="text-[10px] border-red-200 bg-red-50 text-red-600">
+                    {s.person_name} · {s.center}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       }
     </>
   )
