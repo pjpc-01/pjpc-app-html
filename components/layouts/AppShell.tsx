@@ -39,7 +39,6 @@ import {
   Star,
   Trophy,
   Table2,
-  SmartphoneNfc,
   Truck,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -128,9 +127,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         label: "考勤系统",
         icon: ClipboardCheck,
         children: [
-          { label: "打卡记录", href: "/attendance", icon: ClipboardCheck },
-          { label: "NFC打卡", href: "/attendance?tab=nfc", icon: SmartphoneNfc },
-          { label: "考勤报表", href: "/attendance?tab=reports", icon: BarChart3 },
+          { label: "考勤中心", href: "/attendance", icon: ClipboardCheck },
           { label: "卡片管理", href: "/card-management", icon: CreditCard },
         ],
       },
