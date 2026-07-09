@@ -149,7 +149,8 @@ export default function TeacherForm({
     bankName: '',
     bankAccountName: '',
     bankAccountNo: '',
-    centerId: ''
+    centerId: '',
+    status: 'active'
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -194,7 +195,8 @@ export default function TeacherForm({
         bankName: teacher.bankName || '',
         bankAccountName: teacher.bankAccountName || '',
         bankAccountNo: teacher.bankAccountNo || '',
-        centerId: teacher.centerId || ''
+        centerId: teacher.centerId || '',
+        status: teacher.status || 'active'
       })
     } else {
       setFormData({
@@ -219,7 +221,8 @@ export default function TeacherForm({
         bankName: '',
         bankAccountName: '',
         bankAccountNo: '',
-        centerId: ''
+        centerId: '',
+        status: 'active'
       })
     }
     setErrors({})
@@ -368,6 +371,20 @@ export default function TeacherForm({
               {errors.phone && (
                 <p className="text-sm text-red-500">{errors.phone}</p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">状态</Label>
+              <Select value={formData.status || 'active'} onValueChange={(value) => handleInputChange('status', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择状态" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">在职</SelectItem>
+                  <SelectItem value="on_leave">请假</SelectItem>
+                  <SelectItem value="inactive">离职</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

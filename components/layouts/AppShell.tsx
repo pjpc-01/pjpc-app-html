@@ -71,6 +71,11 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         icon: LayoutDashboard,
       },
       {
+        label: "幻灯片",
+        href: "/dashboard/slideshow",
+        icon: MonitorPlay,
+      },
+      {
         label: "学生管理",
         icon: Users,
         children: [
@@ -93,11 +98,6 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         ],
       },
       {
-        label: "幻灯片",
-        href: "/dashboard/slideshow",
-        icon: MonitorPlay,
-      },
-      {
         label: "教师管理",
         icon: UserCog,
         children: [
@@ -111,9 +111,11 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         label: "财务管理",
         icon: DollarSign,
         children: [
-          { label: "财务概览", href: "/finance/overview", icon: PiggyBank },
           { label: "收费管理", href: "/finance/fees", icon: Receipt },
-          { label: "发票付款", href: "/finance/payments", icon: ArrowLeftRight },
+          { label: "学生费用", href: "/finance/student-fees", icon: GraduationCap },
+          { label: "发票管理", href: "/finance/invoices", icon: FileText },
+          { label: "付款管理", href: "/finance/payments", icon: CreditCard },
+          { label: "财务概览", href: "/finance/overview", icon: PiggyBank },
           { label: "银行对账", href: "/finance/bank", icon: Building2 },
           { label: "支出管理", href: "/finance/expenses", icon: Wallet },
           { label: "薪资管理", href: "/finance/payroll", icon: DollarSign },
@@ -376,6 +378,8 @@ export default function AppShell({
     "/homework": "homework", "/resource-library": "resource-library",
     "/teacher-management": "teachers.list", "/schedule-management": "schedule",
     "/finance/overview": "finance.overview", "/finance/fees": "finance.fees",
+    "/finance/student-fees": "finance.student_fees",
+    "/finance/invoices": "finance.invoices",
     "/finance/payments": "finance.payments", "/finance/bank": "finance.bank",
     "/finance/expenses": "finance.expenses", "/finance/payroll": "finance.payroll",
     "/finance/budget": "finance.budget", "/finance/reports": "finance.reports",
@@ -572,6 +576,9 @@ export default function AppShell({
     "/teacher-management": { label: "教师管理" },
     "/finance-management": { label: "财务概览", parent: "财务管理" },
     "/finance/fees": { label: "收费管理", parent: "财务管理" },
+    "/finance/student-fees": { label: "学生费用", parent: "财务管理" },
+    "/finance/invoices": { label: "发票管理", parent: "财务管理" },
+    "/finance/payments": { label: "付款管理", parent: "财务管理" },
     "/finance/transactions": { label: "交易记录", parent: "财务管理" },
     "/finance/payroll": { label: "薪资管理", parent: "财务管理" },
     "/finance/reports": { label: "财务报表", parent: "财务管理" },

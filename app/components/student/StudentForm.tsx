@@ -217,7 +217,7 @@ export default function StudentForm({
     }
 
     if (!formData.standard?.trim()) {
-      newErrors.standard = '请选择出生日期以自动计算年级'
+      newErrors.standard = '请选择年级'
     }
 
     if (!formData.nric?.trim()) {
@@ -228,13 +228,7 @@ export default function StudentForm({
       newErrors.school = '学校是必填项'
     }
 
-    if (!formData.emergencyContact?.trim()) {
-      newErrors.emergencyContact = '紧急联络人是必填项'
-    }
-
-    if (!formData.emergencyPhone?.trim()) {
-      newErrors.emergencyPhone = '紧急联络电话是必填项'
-    }
+    // 紧急联络人改为可选，不再强制要求
 
     if (formData.email && !validateEmail(formData.email)) {
       newErrors.email = '邮箱格式不正确'
@@ -650,16 +644,29 @@ export default function StudentForm({
               </div>
 
               <div>
-                <Label htmlFor="standard">年级 *</Label>
-                <Input
-                  id="standard"
-                  value={formData.standard ? convertGradeToChinese(formData.standard) : ''}
-                  placeholder="请先选择出生日期"
-                  readOnly
-                  className={errors.standard ? 'border-red-500' : ''}
-                />
+                <Label htmlFor="standard">年级</Label>
+                <Select value={formData.standard} onValueChange={(value) => handleInputChange('standard', value)}>
+                  <SelectTrigger className={errors.standard ? 'border-red-500' : ''}>
+                    <SelectValue placeholder="选择年级" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Standard 1</SelectItem>
+                    <SelectItem value="2">Standard 2</SelectItem>
+                    <SelectItem value="3">Standard 3</SelectItem>
+                    <SelectItem value="4">Standard 4</SelectItem>
+                    <SelectItem value="5">Standard 5</SelectItem>
+                    <SelectItem value="6">Standard 6</SelectItem>
+                    <SelectItem value="remove">Peralihan / Remove</SelectItem>
+                    <SelectItem value="7">Form 1</SelectItem>
+                    <SelectItem value="8">Form 2</SelectItem>
+                    <SelectItem value="9">Form 3</SelectItem>
+                    <SelectItem value="10">Form 4</SelectItem>
+                    <SelectItem value="11">Form 5</SelectItem>
+                    <SelectItem value="12">Form 6</SelectItem>
+                  </SelectContent>
+                </Select>
                 {formData.dob && formData.standard && (
-                  <p className="text-xs text-green-600 mt-1">✓ 年级已根据出生日期自动计算</p>
+                  <p className="text-xs text-green-600 mt-1">✓ 年级已根据出生日期自动计算，也可手动选择</p>
                 )}
                 {errors.standard && <p className="text-red-500 text-sm mt-1">{errors.standard}</p>}
               </div>
@@ -785,7 +792,7 @@ export default function StudentForm({
             <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">紧急联络人</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="emergencyContact">紧急联络人 *</Label>
+                <Label htmlFor="emergencyContact">紧急联络人</Label>
                 <Input
                   id="emergencyContact"
                   value={formData.emergencyContact || ''}
@@ -797,7 +804,7 @@ export default function StudentForm({
               </div>
 
               <div>
-                <Label htmlFor="emergencyPhone">紧急联络电话 *</Label>
+                <Label htmlFor="emergencyPhone">紧急联络电话</Label>
                 <Input
                   id="emergencyPhone"
                   value={formData.emergencyPhone || ''}

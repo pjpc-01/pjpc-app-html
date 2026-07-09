@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Edit, Eye, Trash2, MoreHorizontal } from "lucide-react"
+import { Edit, Eye, Trash2, MoreHorizontal, FileText } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Student } from "@/hooks/useStudents"
 import { convertGradeToChinese } from "./utils"
@@ -21,6 +21,7 @@ interface StudentListProps {
   onEditStudent: (student: Student) => void
   onViewStudent: (student: Student) => void
   onDeleteStudent: (studentId: string) => void
+  onViewReport?: (student: Student) => void
   userRole?: UserRole
 }
 
@@ -33,6 +34,7 @@ export default function StudentList({
   onEditStudent,
   onViewStudent,
   onDeleteStudent,
+  onViewReport,
   userRole = 'admin'
 }: StudentListProps) {
   const [sortBy, setSortBy] = useState<string>('name')
@@ -212,6 +214,20 @@ export default function StudentList({
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {onViewReport && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-blue-400 hover:text-blue-600 hover:bg-blue-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onViewReport(student);
+                      }}
+                      title="学生报告"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                   <PermissionGate permission="students.edit" role={userRole} showDisabled>
                     <Button
                       variant="ghost"

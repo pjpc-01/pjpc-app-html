@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import PageLayout from "@/components/layouts/PageLayout"
 import TabbedPage from "@/components/layouts/TabbedPage"
 import StatsGrid from "@/components/ui/StatsGrid"
@@ -242,6 +242,7 @@ export default function StudentManagementPage() {
   
   const searchParams = useSearchParams()
   const urlCenterId = searchParams.get('center')
+  const router = useRouter()
   
   // 状态管理
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set())
@@ -387,6 +388,52 @@ export default function StudentManagementPage() {
     } catch (error) {
       console.error("Error deleting student:", error)
       alert("删除失败: " + (error instanceof Error ? error.message : "未知错误"))
+    }
+  }
+
+  // View/create student report
+  const handleViewReport = async (student: Student) => {
+    // Check if a report already exists for this student
+    try {
+      const res = await fetch(`/api/pocketbase-proxy/api/collections/student_reports/records?filter=(studentId="${student.id}")&sort=-year&perPage=1`)
+      const data = await res.json()
+      if (data.items && data.items.length > 0) {
+        router.push(`/student-report/${data.items[0].id}`)
+        return
+      }
+    } catch (e) {}
+
+    // Create new report with defaults
+    try {
+      const defaultSubjects = ["语文", "数学", "英语", "科学", "历史", "地理", "道德", "美术", "体育"].map(name => ({
+        name, midterm: null, final: null, evaluation: ""
+      }))
+      const now = new Date()
+      const reportData = {
+        studentId: student.id,
+        term: "Term 1",
+        year: now.getFullYear(),
+        report_date: now.toISOString().split('T')[0],
+        growth_message: `成长不在于做得最好，而在于愿意不断尝试、不断进步。${student.student_name || student.name}，继续加油！`,
+        subjects: defaultSubjects,
+        activities: [],
+        problems: ["在理科学习中，解题思路不够灵活，需加强思维训练。", "有时会因拖延导致作业完成质量不高。", "阅读量不足，知识面有待拓宽。"],
+        improvements: ["制定学习计划，提高学习效率，减少拖延。", "多做练习题，总结解题方法和技巧。", "每天阅读，拓宽知识面，做好读书笔记。", "遇到问题及时请教老师或同学，加强理解与应用。"],
+        future_goals_academic: "提高各科成绩，争取进入班级前列。",
+        future_goals_ability: "积极参与更多课外活动，提升自己的组织和沟通能力。",
+        future_goals_character: "培养良好的学习和生活习惯，做一个全面发展的学生。",
+        summary: "本学期，我在学习和生活中都取得了一定的进步，但也认识到自己的不足。在未来的日子里，我将以更高的标准要求自己，不断超越自我，实现自己的目标，成为更好的自己！",
+        status: "draft",
+      }
+      const createRes = await fetch("/api/pocketbase-proxy/api/collections/student_reports/records", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(reportData),
+      })
+      const created = await createRes.json()
+      router.push(`/student-report/${created.id}`)
+    } catch (e: any) {
+      alert("创建报告失败: " + (e.message || "未知错误"))
     }
   }
 
@@ -807,6 +854,7 @@ export default function StudentManagementPage() {
               onEditStudent={(s) => setEditingStudent(s)}
               onViewStudent={(s) => setViewingStudent(s)}
               onDeleteStudent={handleDeleteStudent}
+              onViewReport={handleViewReport}
             />
           </CardContent>
         </Card>

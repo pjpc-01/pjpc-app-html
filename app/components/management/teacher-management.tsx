@@ -573,8 +573,12 @@ export default function TeacherManagement() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={teacher.status === 'active' ? 'default' : 'secondary'}>
-                      {teacher.status === 'active' ? '在职' : teacher.status}
+                    <Badge variant={
+                      teacher.status === 'active' ? 'default' :
+                      teacher.status === 'on_leave' ? 'secondary' : 'destructive'
+                    }>
+                      {teacher.status === 'active' ? '在职' :
+                       teacher.status === 'on_leave' ? '请假' : '离职'}
                     </Badge>
                   </TableCell>
                   <TableCell>{teacher.hireDate || '-'}</TableCell>

@@ -17,6 +17,7 @@ import {
   FileSpreadsheet,
   UserPlus,
   DollarSign,
+  UserX,
 } from "lucide-react"
 import { useTeachers } from "@/hooks/useTeachers"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
@@ -209,8 +210,8 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
               <SelectContent>
                 <SelectItem value="all">所有状态</SelectItem>
                 <SelectItem value="active">在职</SelectItem>
-                <SelectItem value="inactive">离职</SelectItem>
                 <SelectItem value="on_leave">请假</SelectItem>
+                <SelectItem value="inactive">离职</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" onClick={() => refetchTeachers()}>
@@ -308,6 +309,23 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
                             onClick={() => setSalaryTeacher(teacher)}
                           >
                             <DollarSign className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                            title="离职"
+                            onClick={async () => {
+                              if (!confirm(`确定要将 ${teacher.teacher_name} 设为离职吗？`)) return
+                              try {
+                                await updateTeacher(teacher.id, { status: 'inactive' })
+                                refetchTeachers()
+                              } catch (e: any) {
+                                alert('操作失败: ' + (e.message || '未知错误'))
+                              }
+                            }}
+                          >
+                            <UserX className="h-4 w-4" />
                           </Button>
                           <Button 
                             variant="outline" 
