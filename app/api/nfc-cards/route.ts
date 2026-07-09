@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { normalizeCardUid, getCardUidSearchTerms } from '@/lib/utils'
 
 const PB_URL = 'http://127.0.0.1:8090'
 
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
   try {
     const token = await pbAuth()
     const url = new URL(request.url)
-    const cardUid = url.searchParams.get('card_uid')
+    const rawUid = url.searchParams.get('card_uid')
     const studentId = url.searchParams.get('studentId')
     const teacherId = url.searchParams.get('teacherId')
     const type = url.searchParams.get('type')
@@ -36,7 +37,12 @@ export async function GET(request: NextRequest) {
     const perPage = url.searchParams.get('perPage') || '100'
 
     const filters: string[] = []
-    if (cardUid) filters.push(`card_uid="${cardUid}"`)
+    if (rawUid) {
+      // Multi-format search: match phone & reader scans
+      const terms = getCardUidSearchTerms(rawUid)
+      const uidFilters = terms.map(t => `card_uid="${t}"`).join(' || ')
+      filters.push(`(${uidFilters})`)
+    }
     if (studentId) filters.push(`studentId="${studentId}"`)
     if (teacherId) filters.push(`teacherId="${teacherId}"`)
     if (type) filters.push(`type="${type}"`)
@@ -58,12 +64,14 @@ export async function POST(request: NextRequest) {
   try {
     const token = await pbAuth()
     const body = await request.json()
-    const { card_uid, studentId, teacherId, type, notes } = body
+    const { card_uid: rawUid, studentId, teacherId, type, notes } = body
 
-    if (!card_uid) {
+    if (!rawUid) {
       return NextResponse.json({ error: '缺少 card_uid' }, { status: 400 })
     }
 
+    // Normalize to canonical decimal format before storing
+    const card_uid = normalizeCardUid(rawUid)
     const personType = type || (teacherId ? 'teacher' : 'student')
 
     // Resolve student ID
@@ -92,9 +100,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if card already exists
+    // Check if card already exists (search all formats)
+    const checkTerms = getCardUidSearchTerms(rawUid)
+    const checkFilters = checkTerms.map(t => `card_uid="${t}"`).join(' || ')
     const checkRes = await fetch(
-      `${PB_URL}/api/collections/nfc_cards/records?perPage=1&filter=${encodeURIComponent(`card_uid="${card_uid}"`)}`,
+      `${PB_URL}/api/collections/nfc_cards/records?perPage=1&filter=${encodeURIComponent(checkFilters)}`,
       { headers: { Authorization: token } }
     )
     const checkData = await checkRes.json()

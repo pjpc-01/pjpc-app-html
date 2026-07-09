@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { normalizeCardUid, getCardUidSearchTerms } from '@/lib/utils'
 
 const PB_URL = 'http://127.0.0.1:8090'
 const PB_ADMIN = { email: 'admin@pjpc.com', password: '1234567890' }
@@ -17,14 +18,21 @@ async function pbAuth(): Promise<string> {
 export async function POST(request: NextRequest) {
   try {
     const token = await pbAuth()
-    const { card_uid } = await request.json()
+    const { card_uid: rawUid } = await request.json()
 
-    if (!card_uid) {
+    if (!rawUid) {
       return NextResponse.json({ error: '缺少 card_uid' }, { status: 400 })
     }
 
-    // 1. Look up NFC card — search both card_uid and nfc_uid
-    const filter = encodeURIComponent(`card_uid="${card_uid}" || nfc_uid="${card_uid}"`)
+    // Normalize & get all searchable formats (phone & reader both work)
+    const canonical = normalizeCardUid(rawUid)
+    const terms = getCardUidSearchTerms(rawUid)
+    // Build filter: card_uid IN (all variants) OR nfc_uid IN (all variants)
+    const cardFilters = terms.map(t => `card_uid="${t}"`).join(' || ')
+    const nfcFilters = terms.map(t => `nfc_uid="${t}"`).join(' || ')
+    const filter = encodeURIComponent(`(${cardFilters}) || (${nfcFilters})`)
+
+    // 1. Look up NFC card
     const cardRes = await fetch(
       `${PB_URL}/api/collections/nfc_cards/records?perPage=1&expand=studentId,teacherId&filter=${filter}`,
       { headers: { Authorization: token } }

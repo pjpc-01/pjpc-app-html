@@ -421,6 +421,108 @@ export class ArrayUtils {
   }
 }
 
+// ============================================================
+// NFC Card UID Normalization
+// ============================================================
+// Problem: Phone NFC reads a 7-byte UID like "04:9E:D4:A3:68:26:81"
+// while the dedicated card reader outputs the decimal of the first
+// 4 bytes reversed, e.g. 2748620292 = 0xA3D49E04.
+// This function normalizes any input to the decimal (card reader)
+// canonical format so the same physical card matches regardless of
+// which device scanned it.
+// ============================================================
+
+/**
+ * Normalize any NFC card UID to the canonical decimal format.
+ *
+ * Input examples:
+ *   - "04:9E:D4:A3:68:26:81"  (phone, 7-byte hex with colons)
+ *   - "04-9E-D4-A3-68-26-81"  (phone, hyphen separator)
+ *   - "049ED4A3682681"         (phone, raw hex)
+ *   - "2748620292"             (card reader decimal)
+ *   - "A3D49E04"               (card reader hex, first 4 bytes reversed)
+ *
+ * Output: canonical decimal string, e.g. "2748620292"
+ * Returns the input unchanged if it cannot be parsed.
+ */
+export function normalizeCardUid(raw: string): string {
+  if (!raw || typeof raw !== 'string') return raw
+
+  const cleaned = raw.trim().toUpperCase()
+
+  // Case 1: Already a plain decimal number (card reader format)
+  if (/^\d+$/.test(cleaned)) {
+    return cleaned
+  }
+
+  // Case 2: Colon or hyphen separated hex bytes (phone format)
+  // e.g. "04:9E:D4:A3:68:26:81" or "04-9E-D4-A3-68-26-81"
+  if (/^[0-9A-F]{2}([: -][0-9A-F]{2})+$/.test(cleaned)) {
+    const bytes = cleaned.split(/[: -]/)
+    // Take first 4 bytes, reverse, convert to decimal
+    const first4 = bytes.slice(0, 4)
+    const reversed = first4.reverse().join('')
+    return String(parseInt(reversed, 16))
+  }
+
+  // Case 3: Raw hex string without separators (could be 14-char phone or 8-char reader)
+  if (/^[0-9A-F]+$/.test(cleaned)) {
+    // If 8 hex chars → likely card reader hex (reversed first 4)
+    if (cleaned.length === 8) {
+      return String(parseInt(cleaned, 16))
+    }
+    // If 14 hex chars → phone raw hex → take first 8 chars (4 bytes), reverse
+    if (cleaned.length === 14) {
+      const first8 = cleaned.slice(0, 8)
+      const bytes: string[] = []
+      for (let i = 0; i < 8; i += 2) bytes.push(first8.slice(i, i + 2))
+      const reversed = bytes.reverse().join('')
+      return String(parseInt(reversed, 16))
+    }
+    // Unknown length → try direct parse
+    return String(parseInt(cleaned, 16))
+  }
+
+  // Unrecognized format → return as-is
+  return cleaned
+}
+
+/**
+ * Return ALL possible representations of a card UID to use in
+ * PocketBase filter queries. This handles the transition period
+ * where some cards may be stored in the old (phone) format.
+ *
+ * Returns an array of strings to match against card_uid / nfc_uid.
+ */
+export function getCardUidSearchTerms(raw: string): string[] {
+  const terms = new Set<string>()
+  const canonical = normalizeCardUid(raw)
+  terms.add(canonical)
+
+  // Also add the raw input (in case it's stored in original form)
+  if (raw !== canonical) terms.add(raw)
+
+  // If we normalized from phone format, also include the raw hex
+  // and the reversed-4-byte hex version
+  const cleaned = raw.trim().toUpperCase()
+  if (/^[0-9A-F]{2}([: -][0-9A-F]{2})+$/.test(cleaned)) {
+    const bytes = cleaned.split(/[: -]/)
+    // Raw hex without separators
+    terms.add(bytes.join(''))
+    // First 4 bytes reversed, as hex (what card reader sees)
+    const first4 = bytes.slice(0, 4)
+    terms.add(first4.reverse().join(''))
+  }
+
+  // Also include the canonical value as hex (8-char)
+  const canonicalNum = parseInt(canonical, 10)
+  if (!isNaN(canonicalNum) && canonicalNum > 0) {
+    terms.add(canonicalNum.toString(16).toUpperCase().padStart(8, '0'))
+  }
+
+  return [...terms]
+}
+
 // 导出单例实例
 export const performanceMonitor = PerformanceMonitor.getInstance()
 export const cacheManager = CacheManager.getInstance()

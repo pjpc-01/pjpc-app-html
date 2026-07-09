@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { NfcCard } from '@/types/points'
+import { normalizeCardUid, getCardUidSearchTerms } from '@/lib/utils'
 
 export const useNfcCards = () => {
   const [cards, setCards] = useState<NfcCard[]>([])
@@ -31,9 +32,10 @@ export const useNfcCards = () => {
     fetchCards()
   }, [fetchCards])
 
-  // 按 card_uid 查找卡片
-  const findByUid = useCallback((cardUid: string) => {
-    return cards.find(c => c.card_uid === cardUid) || null
+  // 按 card_uid 查找卡片 — now matches phone & reader formats
+  const findByUid = useCallback((rawUid: string) => {
+    const terms = getCardUidSearchTerms(rawUid)
+    return cards.find(c => terms.includes(c.card_uid)) || null
   }, [cards])
 
   // 按学生查找卡片
@@ -86,16 +88,18 @@ export const useNfcCards = () => {
     }
   }, [fetchCards])
 
-  // 根据 card_uid 获取学生信息（NFC 考勤用）
-  const getStudentByCardUid = useCallback(async (cardUid: string) => {
-    // 先在本地缓存中查找
-    const local = cards.find(c => c.card_uid === cardUid && c.status === 'active')
+  // 根据 card_uid 获取学生信息（NFC 考勤用）— normalized
+  const getStudentByCardUid = useCallback(async (rawUid: string) => {
+    const canonical = normalizeCardUid(rawUid)
+    // 先在本地缓存中查找 (check all variants)
+    const terms = getCardUidSearchTerms(rawUid)
+    const local = cards.find(c => terms.includes(c.card_uid) && c.status === 'active')
     if (local && local.expand?.studentId) {
       return local.expand.studentId
     }
     // 通过 API 查找
     try {
-      const res = await fetch(`/api/nfc-cards?card_uid=${encodeURIComponent(cardUid)}`)
+      const res = await fetch(`/api/nfc-cards?card_uid=${encodeURIComponent(canonical)}`)
       const json = await res.json()
       if (json.success && json.data?.items?.length > 0) {
         const card = json.data.items[0]

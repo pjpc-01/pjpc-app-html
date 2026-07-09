@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStudentCardByCardNumber, updateCardUsage } from '@/lib/pocketbase-students-card'
+import { normalizeCardUid } from '@/lib/utils'
 
 // 静态导出配置
 export const dynamic = 'force-static'
 
 export async function POST(request: NextRequest) {
   try {
-    const { cardNumber, deviceId, deviceName, location } = await request.json()
+    const { cardNumber: rawCard, deviceId, deviceName, location } = await request.json()
 
-    if (!cardNumber) {
+    if (!rawCard) {
       return NextResponse.json(
         { error: '卡号是必需的' },
         { status: 400 }
       )
     }
+
+    // Normalize card UID so phone & reader scans match same card
+    const cardNumber = normalizeCardUid(rawCard)
 
     // 根据卡号查找学生卡片
     const studentCard: any = await getStudentCardByCardNumber(cardNumber)
@@ -72,14 +76,17 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const cardNumber = searchParams.get('cardNumber')
+    const rawCard = searchParams.get('cardNumber')
 
-    if (!cardNumber) {
+    if (!rawCard) {
       return NextResponse.json(
         { error: '卡号是必需的' },
         { status: 400 }
       )
     }
+
+    // Normalize card UID
+    const cardNumber = normalizeCardUid(rawCard)
 
     // 根据卡号查找学生卡片
     const studentCard: any = await getStudentCardByCardNumber(cardNumber)

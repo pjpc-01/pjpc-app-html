@@ -1,14 +1,12 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react"
-import PocketBase from 'pocketbase'
 import { getPocketBase } from "@/lib/pocketbase"
 
-export interface NfcTeacher {
+export interface NfcUser {
   id: string
   name: string
-  position: string
-  center: string
+  role: string
 }
 
 interface PendingStudent {
@@ -20,15 +18,9 @@ interface PendingStudent {
 }
 
 interface NfcAuthState {
-  // Teacher auth
-  teacher: NfcTeacher | null
-  token: string | null
+  user: NfcUser | null
   isAuthenticated: boolean
-
-  // Pending student (scanned before login)
   pendingStudent: PendingStudent | null
-
-  // Actions
   loginWithCard: (cardUid: string) => Promise<{ success: boolean; error?: string }>
   logout: () => void
   setPendingStudent: (student: PendingStudent | null) => void
@@ -36,8 +28,7 @@ interface NfcAuthState {
 }
 
 const NfcAuthContext = createContext<NfcAuthState>({
-  teacher: null,
-  token: null,
+  user: null,
   isAuthenticated: false,
   pendingStudent: null,
   loginWithCard: async () => ({ success: false }),
@@ -50,37 +41,29 @@ export const useNfcAuth = () => useContext(NfcAuthContext)
 
 const STORAGE_KEY = "pjpc_nfc_auth"
 
-function loadFromStorage(): { teacher: NfcTeacher | null; token: string | null } {
-  if (typeof window === "undefined") return { teacher: null, token: null }
+function loadFromStorage(): NfcUser | null {
+  if (typeof window === "undefined") return null
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { teacher: null, token: null }
+    if (!raw) return null
     const data = JSON.parse(raw)
-
-    // Check if token is still valid (24h expiry)
     if (data.login_time && Date.now() - data.login_time > 24 * 60 * 60 * 1000) {
       localStorage.removeItem(STORAGE_KEY)
-      return { teacher: null, token: null }
+      return null
     }
-
-    return { teacher: data.teacher || null, token: data.token || null }
+    return data.user || null
   } catch {
-    return { teacher: null, token: null }
+    return null
   }
 }
 
 export function NfcAuthProvider({ children }: { children: React.ReactNode }) {
-  const [teacher, setTeacher] = useState<NfcTeacher | null>(null)
-  const [token, setToken] = useState<string | null>(null)
+  const [user, setUser] = useState<NfcUser | null>(null)
   const [pendingStudent, setPendingStudent] = useState<PendingStudent | null>(null)
 
-  // Load from storage on mount
   useEffect(() => {
     const stored = loadFromStorage()
-    if (stored.teacher && stored.token) {
-      setTeacher(stored.teacher)
-      setToken(stored.token)
-    }
+    if (stored) setUser(stored)
   }, [])
 
   const loginWithCard = useCallback(async (cardUid: string) => {
@@ -96,29 +79,24 @@ export function NfcAuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: data.error || "登入失败" }
       }
 
-      const teacherInfo: NfcTeacher = {
-        id: data.teacher.id,
-        name: data.teacher.name,
-        position: data.teacher.position,
-        center: data.teacher.center,
+      const userInfo: NfcUser = {
+        id: data.user.id,
+        name: data.user.name,
+        role: data.user.role || "teacher",
       }
 
-      // Save to state + localStorage
-      setTeacher(teacherInfo)
-      setToken(data.token)
+      setUser(userInfo)
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        teacher: teacherInfo,
-        token: data.token,
+        user: userInfo,
         login_time: Date.now(),
       }))
 
-      // 🔑 Also save PocketBase auth so the main app recognizes the login
+      // Also save PocketBase auth so the main app recognizes the login
       if (data.pb_token && data.pb_record) {
         try {
           const pb = await getPocketBase()
           pb.authStore.save(data.pb_token, data.pb_record)
-          console.log('✅ [NFC] PocketBase auth saved:', data.pb_record.email)
         } catch (pbErr) {
           console.warn('⚠️ [NFC] Failed to save PocketBase auth:', pbErr)
         }
@@ -131,16 +109,12 @@ export function NfcAuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const logout = useCallback(async () => {
-    setTeacher(null)
-    setToken(null)
+    setUser(null)
     setPendingStudent(null)
     localStorage.removeItem(STORAGE_KEY)
-
-    // Also clear PocketBase auth
     try {
       const pb = await getPocketBase()
       pb.authStore.clear()
-      console.log('✅ [NFC] PocketBase auth cleared')
     } catch {}
   }, [])
 
@@ -151,9 +125,8 @@ export function NfcAuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <NfcAuthContext.Provider
       value={{
-        teacher,
-        token,
-        isAuthenticated: !!teacher && !!token,
+        user,
+        isAuthenticated: !!user,
         pendingStudent,
         loginWithCard,
         logout,

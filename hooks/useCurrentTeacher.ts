@@ -31,36 +31,44 @@ export function useCurrentTeacher() {
 
     try {
       setLoading(true)
-      console.log('🔍 开始获取当前教师信息:', { userId: user.id, email: user.email })
+      console.log('🔍 开始获取当前教师信息:', { userId: user.id, email: user.email, teacher_id: user.teacher_id })
       
-      // 方法1: 直接通过用户ID查找教师记录（如果教师表中有user_id字段）
-      // 或者方法2: 通过用户邮箱查找（作为备选方案）
-      
-      // 首先尝试通过用户ID查找
-      console.log('🔍 尝试通过用户ID查找教师:', user.id)
-      let response = await fetch(`/api/teachers?user_id=${user.id}`)
-      let data = await response.json()
-      console.log('📋 通过用户ID查找结果:', data)
-      
-      // 如果通过用户ID找不到，则通过邮箱查找
-      if (!data.success || !data.data?.items || data.data.items.length === 0) {
-        console.log('🔍 通过用户ID未找到，尝试通过邮箱查找:', user.email)
-        response = await fetch(`/api/teachers?email=${encodeURIComponent(user.email)}`)
-        data = await response.json()
-        console.log('📋 通过邮箱查找结果:', data)
+      // NFC 登录的用户有 teacher_id 字段 — 直接按 ID 查
+      if (user.teacher_id) {
+        console.log('🔍 NFC 用户，直接按 teacher_id 查找:', user.teacher_id)
+        const response = await fetch(`/api/teachers?id=${encodeURIComponent(user.teacher_id)}`)
+        const data = await response.json()
+        console.log('📋 按 teacher_id 查找结果:', data)
+        
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          const teacherData = data.data[0]
+          console.log('✅ 找到教师信息:', teacherData)
+          setTeacher(teacherData)
+          setError(null)
+          setLoading(false)
+          return
+        }
       }
       
-      if (data.success && data.data?.items && data.data.items.length > 0) {
-        const teacherData = data.data.items[0]
-        console.log('✅ 找到教师信息:', teacherData)
-        setTeacher(teacherData)
-        setError(null)
-      } else {
-        console.log('❌ 未找到对应的教师记录')
-        console.log('💡 建议：需要在teachers表中创建对应的教师记录')
-        console.log('📋 用户信息:', { userId: user.id, email: user.email })
-        setError('未找到对应的教师记录，请联系管理员创建教师档案')
+      // Fallback: 按邮箱查找
+      if (user.email) {
+        console.log('🔍 按邮箱查找教师:', user.email)
+        const response = await fetch(`/api/teachers?email=${encodeURIComponent(user.email)}`)
+        const data = await response.json()
+        console.log('📋 按邮箱查找结果:', data)
+        
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          const teacherData = data.data[0]
+          console.log('✅ 找到教师信息:', teacherData)
+          setTeacher(teacherData)
+          setError(null)
+          setLoading(false)
+          return
+        }
       }
+      
+      console.log('❌ 未找到对应的教师记录')
+      setError('未找到对应的教师记录，请联系管理员创建教师档案')
     } catch (err) {
       console.error('❌ 获取教师信息失败:', err)
       setError(err instanceof Error ? err.message : '获取教师信息失败')

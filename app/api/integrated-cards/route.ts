@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase, authenticateAdmin } from '@/lib/pocketbase'
+import { normalizeCardUid } from '@/lib/utils'
 
 // 动态导出配置
 export const dynamic = 'force-dynamic'
@@ -163,14 +164,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { cardNumber, studentId, cardType = 'NFC', notes = '' } = body
+    const { cardNumber: rawCard, studentId, cardType = 'NFC', notes = '' } = body
 
-    if (!cardNumber || !studentId) {
+    if (!rawCard || !studentId) {
       return NextResponse.json({
         success: false,
         error: '卡片号和学生ID不能为空'
       }, { status: 400 })
     }
+
+    // Normalize card number
+    const cardNumber = normalizeCardUid(rawCard)
 
     // 查找学生 - 支持通过ID或student_id查找
     let students
@@ -293,7 +297,7 @@ export async function PUT(request: NextRequest) {
 
     // 更新NFC卡片记录 - 使用正确的字段名
     const updateData: any = {}
-    if (cardNumber) updateData.card_number = cardNumber
+    if (cardNumber) updateData.card_number = normalizeCardUid(cardNumber)
     // cardType 在nfc_cards表中没有对应字段，跳过
     if (status) {
       // 根据数据库字段配置，replacement_status支持: pending, approved, rejected, completed

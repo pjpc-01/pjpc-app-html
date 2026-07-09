@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { normalizeCardUid } from '@/lib/utils'
 
 const PB_URL = 'http://127.0.0.1:8090'
 const PB_ADMIN = { email: 'admin@pjpc.com', password: '1234567890' }
@@ -24,7 +25,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '缺少 card_uid 或 personId' }, { status: 400 })
     }
 
-    const payload: any = { card_uid, type: type || 'student', status: 'active', notes: notes || '手动发卡' }
+    // Normalize to canonical format
+    const normalizedUid = normalizeCardUid(card_uid)
+
+    const payload: any = { card_uid: normalizedUid, type: type || 'student', status: 'active', notes: notes || '手动发卡' }
     if (type === 'teacher') payload.teacherId = personId
     else payload.studentId = personId
 
@@ -35,12 +39,12 @@ export async function POST(request: NextRequest) {
     })
     const card = await res.json()
 
-    // Also update profile cardNumber
+    // Also update profile cardNumber (use normalized)
     const collection = type === 'teacher' ? 'teachers' : 'students'
     await fetch(`${PB_URL}/api/collections/${collection}/records/${personId}`, {
       method: 'PATCH',
       headers: { Authorization: token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cardNumber: card_uid }),
+      body: JSON.stringify({ cardNumber: normalizedUid }),
     })
 
     return NextResponse.json({ success: true, card })
