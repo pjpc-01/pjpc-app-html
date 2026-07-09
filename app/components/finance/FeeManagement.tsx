@@ -289,6 +289,7 @@ export default function FeeManagement() {
                                 <TableHead>金额</TableHead>
                                 <TableHead>费用类型</TableHead>
                                 <TableHead>状态</TableHead>
+                                {isFeeEditMode && <TableHead>启用</TableHead>}
                                 {isFeeEditMode && <TableHead>操作</TableHead>}
                               </TableRow>
                             </TableHeader>
@@ -317,14 +318,21 @@ export default function FeeManagement() {
                                     </Badge>
                                   </TableCell>
                                   <TableCell>
-                                    <Button
-                                      variant={item.status === "active" ? "default" : "outline"}
-                                      size="sm"
-                                      onClick={() => onToggleItemActive(item.id, item.status !== "active")}
-                                    >
+                                    <Badge variant={item.status === "active" ? "default" : "secondary"}>
                                       {item.status === "active" ? "启用" : "禁用"}
-                                    </Button>
+                                    </Badge>
                                   </TableCell>
+                                  {isFeeEditMode && (
+                                    <TableCell>
+                                      <Button
+                                        variant={item.status === "active" ? "outline" : "default"}
+                                        size="sm"
+                                        onClick={() => onToggleItemActive(item.id, item.status !== "active")}
+                                      >
+                                        {item.status === "active" ? "停用" : "启用"}
+                                      </Button>
+                                    </TableCell>
+                                  )}
                                   {isFeeEditMode && (
                                     <TableCell>
                                       <div className="flex gap-2">

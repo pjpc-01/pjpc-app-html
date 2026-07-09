@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const limit = parseInt(searchParams.get('limit') || '100')
+  const id = searchParams.get('id')
+  const email = searchParams.get('email')
   
   try {
     // Auth with local PocketBase
@@ -15,9 +17,18 @@ export async function GET(request: NextRequest) {
     const token = authData.token
     if (!token) throw new Error('Auth failed')
 
+    // Build filter
+    let filter = ''
+    if (id) {
+      filter = `id="${id}"`
+    } else if (email) {
+      filter = `email="${email}"`
+    }
+    const filterParam = filter ? `&filter=${encodeURIComponent(filter)}` : ''
+
     // Fetch teachers
     const teachersRes = await fetch(
-      `http://127.0.0.1:8090/api/collections/teachers/records?perPage=${limit}&sort=name`,
+      `http://127.0.0.1:8090/api/collections/teachers/records?perPage=${limit}&sort=name${filterParam}`,
       { headers: { Authorization: token } }
     )
     const teachersData = await teachersRes.json()

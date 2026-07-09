@@ -1,4 +1,5 @@
 import { getPocketBase, authenticateAdmin } from './pocketbase'
+import { normalizeCardUid, getCardUidSearchTerms } from './utils'
 
 // 学生卡接口定义
 export interface StudentCard {
@@ -249,9 +250,13 @@ export const updateCardUsage = async (cardNumber: string): Promise<boolean> => {
     const pb = await getPocketBase()
     await authenticateAdmin()
     
+    // Search all possible UID variants
+    const terms = getCardUidSearchTerms(cardNumber)
+    const filters = terms.map(t => `cardNumber="${t}"`).join(' || ')
+    
     // 查找卡片
     const result = await pb.collection('student_cards').getList(1, 1, {
-      filter: `cardNumber = "${cardNumber}"`
+      filter: filters
     })
     
     if (result.items.length === 0) {
@@ -280,8 +285,12 @@ export const getStudentCardByCardNumber = async (cardNumber: string): Promise<St
     const pb = await getPocketBase()
     await authenticateAdmin()
     
+    // Search all possible UID variants (phone & reader formats)
+    const terms = getCardUidSearchTerms(cardNumber)
+    const filters = terms.map(t => `cardNumber="${t}"`).join(' || ')
+    
     const result = await pb.collection('student_cards').getList(1, 1, {
-      filter: `cardNumber = "${cardNumber}"`
+      filter: filters
     })
     
     if (result.items.length === 0) {
