@@ -183,8 +183,8 @@ export default function ReceiptManagement() {
               <Input
                 id="student-filter"
                 placeholder="搜索学生姓名..."
-                value={receiptFilters.dateRange?.start || ''}
-                onChange={(e) => setReceiptFilters(prev => ({ ...prev, dateRange: { ...prev.dateRange, start: e.target.value } }))}
+                value={receiptFilters.studentName || ''}
+                onChange={(e) => setReceiptFilters(prev => ({ ...prev, studentName: e.target.value }))}
               />
             </div>
 
@@ -193,8 +193,8 @@ export default function ReceiptManagement() {
               <Input
                 id="invoice-filter"
                 placeholder="搜索发票号码..."
-                value={receiptFilters.dateRange?.end || ''}
-                onChange={(e) => setReceiptFilters(prev => ({ ...prev, dateRange: { ...prev.dateRange, end: e.target.value } }))}
+                value={receiptFilters.invoiceNumber || ''}
+                onChange={(e) => setReceiptFilters(prev => ({ ...prev, invoiceNumber: e.target.value }))}
               />
             </div>
           </div>

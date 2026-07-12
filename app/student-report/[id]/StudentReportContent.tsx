@@ -16,7 +16,7 @@ import {
   AlertTriangle, CheckCircle, ChevronRight, Loader2
 } from "lucide-react"
 
-const DEFAULT_SUBJECTS = ["语文", "数学", "英语", "科学", "历史", "地理", "道德", "美术", "体育"]
+const DEFAULT_SUBJECTS = ["华文", "国文", "英文", "数学", "科学"]
 
 // Convert numeric score to Chinese evaluation
 const scoreToEvaluation = (score: number | null): string => {
@@ -237,6 +237,11 @@ export default function StudentReportContent() {
                 <User className="h-4 w-4 text-gray-400" />
                 <span className="text-gray-500">姓名：</span>
                 <span className="font-semibold text-gray-800">{student?.name || "—"}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-500">编号：</span>
+                <span className="text-gray-700">{student?.student_id || student?.code || "—"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-gray-400" />

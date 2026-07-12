@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { AlertCircle, Bell, Send, Clock, Users, Phone, Mail, Plus, Edit, Trash2 } from "lucide-react"
+import { AlertCircle, Bell, Send, Clock, Users, Mail, Plus, Edit, Trash2 } from "lucide-react"
 import { useReminders } from "@/hooks/useReminders"
 import { useInvoices } from "@/hooks/useInvoices"
 
@@ -132,6 +132,15 @@ export default function ReminderManagement() {
     scheduleReminder(invoiceId, templateId, new Date().toISOString().split('T')[0])
   }
 
+  const handleSendReminderViaTemplate = (invoiceId: string, type: 'email' | 'sms') => {
+    const defaultTemplate = templates.find(t => t.type === type)
+    if (defaultTemplate) {
+      scheduleReminder(invoiceId, defaultTemplate.id as string, new Date().toISOString().split('T')[0])
+      const scheduled = getScheduledReminders().find(r => r.invoiceId === invoiceId)
+      if (scheduled) sendReminder(scheduled.id)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Reminder Statistics */}
@@ -191,55 +200,42 @@ export default function ReminderManagement() {
           <CardDescription>需要发送提醒的逾期发票</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="border rounded-lg p-4">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <div className="font-medium">李小红 - 1月学费</div>
-                  <div className="text-sm text-gray-500">应缴金额：RM 1,200</div>
-                </div>
-                <Badge variant="destructive">逾期3天</Badge>
+          {/* 逾期发票 - real data from hooks */}
+          {(() => {
+            const overdue = getOverdueInvoicesForReminders()
+            return overdue.length === 0 ? (
+              <div className="text-center py-4 text-gray-400 text-sm">暂无逾期发票 🎉</div>
+            ) : (
+              <div className="space-y-4">
+                {overdue.slice(0, 5).map(inv => {
+                  const daysOverdue = Math.floor((Date.now() - new Date(inv.dueDate).getTime()) / (1000 * 60 * 60 * 24))
+                  return (
+                    <div key={inv.id} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <div className="font-medium">{inv.studentName || '未知学生'}</div>
+                          <div className="text-sm text-gray-500">发票号: {inv.invoiceNumber} · 应缴金额：RM {(inv.totalAmount || 0).toLocaleString()}</div>
+                        </div>
+                        <Badge variant={daysOverdue > 7 ? "destructive" : "secondary"}>
+                          {daysOverdue > 0 ? `逾期${daysOverdue}天` : "今日到期"}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => handleSendReminderViaTemplate(inv.id, 'email')}>
+                          <Mail className="h-4 w-4 mr-2" />
+                          发送邮件提醒
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleSendReminderViaTemplate(inv.id, 'sms')}>
+                          <Bell className="h-4 w-4 mr-2" />
+                          短信提醒
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline">
-                  <Mail className="h-4 w-4 mr-2" />
-                  发送邮件提醒
-                </Button>
-                <Button size="sm" variant="outline">
-                  <Phone className="h-4 w-4 mr-2" />
-                  电话联系
-                </Button>
-                <Button size="sm" variant="outline">
-                  <Bell className="h-4 w-4 mr-2" />
-                  短信提醒
-                </Button>
-              </div>
-            </div>
-
-            <div className="border rounded-lg p-4">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <div className="font-medium">陈小军 - 餐费充值</div>
-                  <div className="text-sm text-gray-500">应缴金额：RM 300</div>
-                </div>
-                <Badge variant="secondary">即将到期</Badge>
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline">
-                  <Mail className="h-4 w-4 mr-2" />
-                  发送邮件提醒
-                </Button>
-                <Button size="sm" variant="outline">
-                  <Phone className="h-4 w-4 mr-2" />
-                  电话联系
-                </Button>
-                <Button size="sm" variant="outline">
-                  <Bell className="h-4 w-4 mr-2" />
-                  短信提醒
-                </Button>
-              </div>
-            </div>
-          </div>
+            )
+          })()}
         </CardContent>
       </Card>
 

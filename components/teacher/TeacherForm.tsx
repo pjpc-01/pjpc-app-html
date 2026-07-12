@@ -105,12 +105,17 @@ export default function TeacherForm({
       { 
         value: '行政人员', 
         label: '行政人员',
-        description: '处理日常行政事务、文件管理\n协助招生、收费、记录管理\n维护学校日常运作'
+        description: '处理日常行政事务、文件管理\\n协助招生、收费、记录管理\\n维护学校日常运作'
       },
       { 
         value: '家长沟通专员', 
         label: '家长沟通专员',
-        description: '定期与家长沟通学生表现\n处理家长咨询与投诉\n组织家长会与活动'
+        description: '定期与家长沟通学生表现\\n处理家长咨询与投诉\\n组织家长会与活动'
+      },
+      { 
+        value: '卫生管理员', 
+        label: '卫生管理员',
+        description: '负责学校环境卫生管理\\n监督清洁与消毒工作\\n确保学生健康与安全'
       }
     ],
     '财务与后勤部门': [
@@ -138,6 +143,7 @@ export default function TeacherForm({
     epfNo: '',
     socsoNo: '',
     joinDate: '',
+    resignationDate: '',
     address: '',
     emergencyContact: '',
     notes: '',
@@ -184,6 +190,7 @@ export default function TeacherForm({
         epfNo: teacher.epfNo || '',
         socsoNo: teacher.socsoNo || '',
         joinDate: teacher.joinDate || '',
+        resignationDate: (teacher as any).resignationDate || '',
         address: teacher.address || '',
         emergencyContact: teacher.emergencyContact || '',
         notes: teacher.notes || '',
@@ -250,9 +257,6 @@ export default function TeacherForm({
     const newErrors: Record<string, string> = {}
     if (!formData.teacher_name?.trim()) {
       newErrors.teacher_name = '教师姓名是必填项'
-    }
-    if (!formData.email?.trim()) {
-      newErrors.email = '邮箱是必填项'
     }
     if (!formData.phone?.trim()) {
       newErrors.phone = '电话是必填项'
@@ -345,18 +349,14 @@ export default function TeacherForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">邮箱 *</Label>
+              <Label htmlFor="email">邮箱</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 placeholder="请输入邮箱"
-                className={errors.email ? 'border-red-500' : ''}
               />
-              {errors.email && (
-                <p className="text-sm text-red-500">{errors.email}</p>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -448,6 +448,16 @@ export default function TeacherForm({
                  <CalendarIcon className="mr-2 h-4 w-4" />
                  {formData.joinDate ? format(new Date(formData.joinDate), "PPP") : <span>选择入职日期</span>}
                </Button>
+             </div>
+
+                         <div className="space-y-2">
+               <Label htmlFor="resignationDate">离职日期</Label>
+               <Input
+                 id="resignationDate"
+                 type="date"
+                 value={formData.resignationDate || ''}
+                 onChange={(e) => handleInputChange('resignationDate', e.target.value)}
+               />
              </div>
           </div>
 

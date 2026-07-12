@@ -1,8 +1,9 @@
 "use client"
 
 import PageLayout from "@/components/layouts/PageLayout"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScrollText } from "lucide-react"
+import ReceiptManagement from "@/app/components/finance/payment-management/ReceiptManagement"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft } from "lucide-react"
 
 export default function FinanceReceiptsPage() {
   return (
@@ -12,18 +13,9 @@ export default function FinanceReceiptsPage() {
       userRole="admin"
       status="系统正常"
       background="bg-gray-50"
+      actions={<Button variant="outline" onClick={() => window.history.back()} className="flex items-center gap-2"><ArrowLeft className="h-4 w-4" />返回</Button>}
     >
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ScrollText className="h-5 w-5" />
-            收据管理
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-500">收据管理功能开发中…</p>
-        </CardContent>
-      </Card>
+      <ReceiptManagement />
     </PageLayout>
   )
 }

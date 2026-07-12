@@ -24,16 +24,39 @@ async function getAdminToken() {
   return data.token
 }
 
+// Auth endpoints that must NOT be overridden with admin token
+const AUTH_ENDPOINTS = [
+  '/api/collections/users/auth-with-password',
+  '/api/collections/users/auth-refresh',
+  '/api/collections/users/request-password-reset',
+  '/api/collections/users/confirm-password-reset',
+  '/api/collections/users/request-verification',
+  '/api/collections/users/confirm-verification',
+  '/api/collections/users/request-email-change',
+  '/api/collections/users/confirm-email-change',
+  '/api/admins/auth-with-password',
+  '/api/admins/auth-refresh',
+]
+
+function isAuthEndpoint(path: string): boolean {
+  return AUTH_ENDPOINTS.some(ep => path.endsWith(ep) || path.includes(ep))
+}
+
 async function proxyRequest(method: string, request: NextRequest) {
-  const token = await getAdminToken()
-  if (!token) return NextResponse.json({ error: 'Auth failed' }, { status: 500 })
-
   const url = new URL(request.url)
-  const path = url.pathname.replace('/api/pocketbase-proxy', '')
-  const targetUrl = `${POCKETBASE_URL}${path}${method === 'GET' ? url.search : ''}`
+  const pbPath = url.pathname.replace('/api/pocketbase-proxy', '')
+  const targetUrl = `${POCKETBASE_URL}${pbPath}${method === 'GET' ? url.search : ''}`
 
-  const headers: Record<string, string> = { 'Authorization': `Bearer ${token}` }
+  const headers: Record<string, string> = {}
   let body: string | undefined
+
+  if (!isAuthEndpoint(pbPath)) {
+    // Non-auth endpoints: use admin token
+    const token = await getAdminToken()
+    if (!token) return NextResponse.json({ error: 'Auth failed' }, { status: 500 })
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  // Auth endpoints: pass through WITHOUT admin token — client credentials flow through
 
   if (method !== 'GET' && method !== 'DELETE') {
     headers['Content-Type'] = 'application/json'

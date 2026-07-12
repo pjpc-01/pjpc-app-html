@@ -40,6 +40,7 @@ import {
 
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { formatDate } from "@/lib/utils"
+import { toast } from "sonner"
 
 const formatCurrency = (amount: number) => {
   return `RM ${(amount || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -507,10 +508,13 @@ export default function TeacherSalaryManagement() {
           notes: ''
         })
         fetchSalaryRecords()
+        toast.success("薪资记录创建成功")
       } else {
+        toast.error("创建失败", { description: result.error })
         setError(result.error)
       }
     } catch (error) {
+      toast.error("创建薪资记录失败", { description: "网络错误" })
       setError('创建薪资记录失败')
     }
   }

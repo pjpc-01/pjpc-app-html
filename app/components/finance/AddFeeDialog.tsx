@@ -10,7 +10,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Plus, Tag, CreditCard, FileText, MapPin, GraduationCap, Activity, DollarSign, BookOpen, Package, CalendarDays, Utensils, Bus, FolderOpen, School, ClipboardList, Receipt, Banknote, ScrollText, Library } from "lucide-react"
 import { Fee } from "@/types/fees"
@@ -66,12 +65,6 @@ export const AddFeeDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button className="flex items-center gap-2 shadow-sm">
-          <Plus className="h-4 w-4" />
-          新增费用项
-        </Button>
-      </DialogTrigger>
       <DialogContent className="max-w-2xl overflow-hidden">
         <DialogHeader className="space-y-3">
           <div className="flex items-center gap-2">
