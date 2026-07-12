@@ -9,7 +9,7 @@ export default function FinanceBankPage() {
   return (
     <PageLayout
       title="银行对账"
-      description="管理银行账户和自动对账"
+      description="管理银行账户、导入流水、自动对账"
       userRole="admin"
       status="系统正常"
       background="bg-gray-50"

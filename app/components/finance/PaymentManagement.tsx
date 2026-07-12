@@ -293,6 +293,8 @@ export default function PaymentManagement() {
                       <SelectItem value="Bank Transfer">银行转账</SelectItem>
                       <SelectItem value="Cash">现金</SelectItem>
                       <SelectItem value="Online Banking">网银</SelectItem>
+                      <SelectItem value="TNG">Touch 'n Go eWallet</SelectItem>
+                      <SelectItem value="DuitNow">DuitNow</SelectItem>
                       <SelectItem value="Credit Card">信用卡</SelectItem>
                     </SelectContent>
                   </Select>

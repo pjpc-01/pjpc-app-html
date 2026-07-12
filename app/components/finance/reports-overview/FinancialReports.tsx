@@ -263,6 +263,24 @@ export default function FinancialReports() {
                 </div>
               </div>
 
+              {/* 图表区 */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                {monthlyReportData.length > 0 && (
+                  <RevenueChart data={monthlyReportData.map(d => ({ month: d.month.slice(5), amount: d.revenue }))} />
+                )}
+                {expenseBreakdown.length > 0 && (
+                  <ExpenseChart data={expenseBreakdown.map(e => ({ name: e.category, value: e.amount }))} />
+                )}
+              </div>
+              {monthlyReportData.length > 0 && (
+                <div className="mt-6">
+                  <ProfitChart data={monthlyReportData.map(d => {
+                    const monthlyExp = safeExpenses.filter(e => (e.date || "").startsWith(d.month)).reduce((s, e) => s + (Number(e.amount) || 0), 0)
+                    return { month: d.month.slice(5), profit: d.revenue - monthlyExp }
+                  })} />
+                </div>
+              )}
+
               {/* 支出明细 */}
               {expenseBreakdown.length > 0 && (
                 <div className="space-y-4">

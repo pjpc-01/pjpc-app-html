@@ -41,22 +41,31 @@ import {
   DollarSign,
   Paperclip,
   Eye,
-  X
+  X,
+  Briefcase,
+  Building,
+  Zap,
+  Megaphone,
+  Pen,
+  Wrench,
+  MoreHorizontal
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useExpenses } from "@/hooks/useExpenses"
 import { useSearchParams } from "next/navigation"
 import { useCenters } from "@/hooks/useCenters"
 import { formatDate } from "@/lib/utils"
+import UtilityBillsCard from "./UtilityBillsCard"
+
 
 const EXPENSE_CATEGORIES = [
-  { id: "salary", label: "教师薪资", color: "bg-blue-100 text-blue-800 border-blue-200" },
-  { id: "rent", label: "办公室租金", color: "bg-purple-100 text-purple-800 border-purple-200" },
-  { id: "utilities", label: "水电费", color: "bg-cyan-100 text-cyan-800 border-cyan-200" },
-  { id: "marketing", label: "市场推广", color: "bg-amber-100 text-amber-800 border-amber-200" },
-  { id: "stationery", label: "办公文具", color: "bg-green-100 text-green-800 border-green-200" },
-  { id: "maintenance", label: "设备维护", color: "bg-orange-100 text-orange-800 border-orange-200" },
-  { id: "misc", label: "其他杂项", color: "bg-gray-100 text-gray-800 border-gray-200" },
+  { id: "salary", label: "教师薪资", color: "bg-blue-100 text-blue-800 border-blue-200", icon: Briefcase },
+  { id: "rent", label: "办公室租金", color: "bg-purple-100 text-purple-800 border-purple-200", icon: Building },
+  { id: "utilities", label: "水电费", color: "bg-cyan-100 text-cyan-800 border-cyan-200", icon: Zap },
+  { id: "marketing", label: "市场推广", color: "bg-amber-100 text-amber-800 border-amber-200", icon: Megaphone },
+  { id: "stationery", label: "办公文具", color: "bg-green-100 text-green-800 border-green-200", icon: Pen },
+  { id: "maintenance", label: "设备维护", color: "bg-orange-100 text-orange-800 border-orange-200", icon: Wrench },
+  { id: "misc", label: "其他杂项", color: "bg-gray-100 text-gray-800 border-gray-200", icon: MoreHorizontal },
 ]
 
 const CATEGORY_COLORS: Record<string, string> = Object.fromEntries(
@@ -197,7 +206,19 @@ export default function ExpenseManagement() {
           </div>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button variant="outline" className="flex items-center gap-2" onClick={() => {
+            const csv = "日期,类别,描述,分行,方式,金额\n" + filteredExpenses.map(e => {
+              const cat = EXPENSE_CATEGORIES.find(c => c.id === e.category)?.label || e.category
+              const center = centers.find(c => c.id === e.centerId)
+              const centerName = center ? `${center.code}-${center.name}` : "-"
+              return `"${e.date}","${cat}","${e.description}","${centerName}","${e.method}","${e.amount}"`
+            }).join("\n")
+            const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement("a")
+            a.href = url; a.download = `expenses_${new Date().toISOString().slice(0, 10)}.csv`
+            a.click(); URL.revokeObjectURL(url)
+          }}>
             <Download className="h-4 w-4" /> 导出账单
           </Button>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -551,6 +572,8 @@ export default function ExpenseManagement() {
           )}
         </CardContent>
       </Card>
+
+      <UtilityBillsCard />
     </div>
   )
 }

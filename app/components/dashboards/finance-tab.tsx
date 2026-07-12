@@ -21,6 +21,9 @@ import ReminderManagement from "../finance/payment-management/ReminderManagement
 import FinancialReports from "../finance/reports-overview/FinancialReports"
 import { StudentFeeMatrix } from "../finance/student-fee-matrix/StudentFeeMatrix"
 import ReceiptManagement from "../finance/payment-management/ReceiptManagement"
+import { useExpenses, Expense } from "@/hooks/useExpenses"
+import { useCenters } from "@/hooks/useCenters"
+import { Droplets, Zap, Wifi, Building2 } from "lucide-react"
 
 interface FinanceTabProps {
   financialStats: any
@@ -32,6 +35,22 @@ export default function FinanceTab({ financialStats, financialLoading, setActive
   const [financeSubTab, setFinanceSubTab] = useState<string>('financial-overview')
   const [financialOverviewSubTab, setFinancialOverviewSubTab] = useState<string>('overview')
   const [studentFeesSubTab, setStudentFeesSubTab] = useState<string>('overview')
+
+  const { expenses, loading: expensesLoading } = useExpenses()
+  const { centers } = useCenters()
+
+  // Group utility expenses by center + category
+  const utilityBills = expenses.filter(
+    (e: Expense) => ['Air Selangor', 'TNB', 'TM Unifi', 'Indah Water'].includes(e.category)
+  )
+  const utilityByCenter = utilityBills.reduce((acc: Record<string, Record<string, Expense[]>>, e: Expense) => {
+    const centerName = e.expand?.centerId?.name || 'Other'
+    if (!acc[centerName]) acc[centerName] = {}
+    if (!acc[centerName][e.category]) acc[centerName][e.category] = []
+    acc[centerName][e.category].push(e)
+    return acc
+  }, {})
+  const utilityTotal = utilityBills.reduce((sum: number, e: Expense) => sum + e.amount, 0)
 
   const handleCardClick = (tab: string) => {
     console.log('Finance card clicked, setting financeSubTab to:', tab)
@@ -254,23 +273,55 @@ export default function FinanceTab({ financialStats, financialLoading, setActive
 
                     <Card>
                       <CardContent className="p-6">
-                        <h3 className="text-lg font-semibold mb-4">支出分析</h3>
-                        <div className="space-y-3">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">人员工资</span>
-                            <span className="font-medium">RM 8,000</span>
+                        <h3 className="text-lg font-semibold mb-4">公用事业</h3>
+                        {expensesLoading ? (
+                          <div className="space-y-2">{[1,2].map(i => <div key={i} className="h-8 bg-gray-100 animate-pulse rounded"/>)}</div>
+                        ) : Object.keys(utilityByCenter).length === 0 ? (
+                          <div className="text-center py-4 text-gray-400">
+                            <Droplets className="h-8 w-8 mx-auto mb-2 opacity-30"/>
+                            <p className="text-sm">暂无公用事业账单</p>
                           </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">运营费用</span>
-                            <span className="font-medium">RM 4,000</span>
-                          </div>
-                          <div className="border-t pt-2">
-                            <div className="flex justify-between font-semibold">
-                              <span>总支出</span>
-                              <span className="text-red-600">RM 12,000</span>
+                        ) : (
+                          <div className="space-y-5">
+                            {Object.entries(utilityByCenter).map(([center, cats]) => (
+                              <div key={center}>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Building2 className="h-3.5 w-3.5 text-gray-500" />
+                                  <span className="text-sm font-semibold text-gray-700">{center}</span>
+                                </div>
+                                {Object.entries(cats).map(([cat, items]) => {
+                                  const catTotal = items.reduce((s, e) => s + e.amount, 0)
+                                  const icons: Record<string, any> = { 'Air Selangor': Droplets, 'TNB': Zap, 'TM Unifi': Wifi }
+                                  const Icon = icons[cat] || Droplets
+                                  return (
+                                    <div key={cat} className="flex items-center justify-between py-1.5 pl-5 border-b border-gray-50 last:border-0">
+                                      <div className="flex items-center gap-2">
+                                        <Icon className="h-3.5 w-3.5 text-blue-500" />
+                                        <span className="text-sm text-gray-600">{cat}</span>
+                                        <span className="text-xs text-gray-400">({items.length})</span>
+                                      </div>
+                                      <div className="text-right">
+                                        <span className="font-medium text-sm">RM {catTotal.toFixed(2)}</span>
+                                        <div className="text-[10px] text-orange-500">
+                                          {items.map(e => {
+                                            const m = e.description?.match(/Due (\d{4}-\d{2}-\d{2})/)
+                                            return m ? `Due ${m[1].slice(5)}` : ''
+                                          }).filter(Boolean).join(', ')}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            ))}
+                            <div className="border-t pt-3 mt-2">
+                              <div className="flex justify-between font-semibold">
+                                <span>总计</span>
+                                <span className="text-orange-600">RM {utilityTotal.toFixed(2)}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        )}
                       </CardContent>
                     </Card>
                   </div>

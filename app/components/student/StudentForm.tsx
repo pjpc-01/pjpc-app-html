@@ -602,7 +602,21 @@ export default function StudentForm({
                 <Input
                   id="nric"
                   value={formData.nric || ''}
-                  onChange={(e) => handleInputChange('nric', e.target.value)}
+                  onChange={(e) => {
+                    const nricVal = e.target.value.replace(/[^0-9]/g, '')
+                    handleInputChange('nric', e.target.value)
+                    // Auto-fill birth date from NRIC (Malaysia format: YYMMDD-PB-###G)
+                    if (nricVal.length >= 6 && !formData.dob) {
+                      const yy = parseInt(nricVal.substring(0, 2))
+                      const mm = parseInt(nricVal.substring(2, 4))
+                      const dd = parseInt(nricVal.substring(4, 6))
+                      const year = yy >= 0 && yy <= 25 ? 2000 + yy : 1900 + yy
+                      if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+                        const dobStr = `${year}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`
+                        handleInputChange('dob', dobStr)
+                      }
+                    }
+                  }}
                   placeholder="NRIC号码或护照号码"
                   className={errors.nric ? 'border-red-500' : ''}
                 />
