@@ -150,8 +150,8 @@ export default function TeacherAttendanceReportsPage() {
       const data = await response.json()
       
       if (data.success) {
-        setTeachers(data.teachers || [])
-        console.log(`📊 获取到 ${data.teachers?.length || 0} 个教师`)
+        setTeachers(data.data || [])
+        console.log(`📊 获取到 ${data.data?.length || 0} 个教师`)
       }
     } catch (err) {
       console.error('获取教师数据失败:', err)

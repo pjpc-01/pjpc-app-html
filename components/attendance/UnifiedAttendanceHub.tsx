@@ -287,7 +287,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
                       </>
                     )}
                   </td>
-                  <td className="px-4 py-2.5 font-mono text-[11px] text-gray-500">{item._isAbsent ? <span className="text-gray-300">—</span> : calcDuration(item.check_in_time as any, item.check_out_time as any)}</td>
+                  <td className="px-4 py-2.5 font-mono text-[11px] text-gray-500">{item._isAbsent ? <span className="text-gray-300">—</span> : calcDuration(item.check_in as any, item.check_out as any)}</td>
                   <td className="px-4 py-2.5">
                     {item._isAbsent ? (
                       <span className="inline-flex items-center gap-1 text-[10px] text-gray-400">
