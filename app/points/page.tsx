@@ -227,11 +227,11 @@ export default function PointsPage() {
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setAmount(Math.max(1, amount - 1))}><Minus className="h-3 w-3" /></Button>
-                    <span className="text-2xl font-bold w-10 text-center tabular-nums">{amount}</span>
+                    <Input type="number" min={1} value={amount} onChange={e => setAmount(parseInt(e.target.value) || 1)} className="w-16 h-9 text-center text-lg font-bold tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                     <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setAmount(amount + 1)}><Plus className="h-3 w-3" /></Button>
                   </div>
                   <div className="flex gap-1 justify-center">
-                    {[1, 2, 3, 5].map(n => (
+                    {[1, 2, 3, 5, 10, 50, 100].map(n => (
                       <button key={n} onClick={() => setAmount(n)}
                         className={`px-2 py-0.5 rounded text-xs border ${amount === n ? "bg-amber-100 border-amber-300 text-amber-700" : "bg-white text-gray-400 hover:bg-gray-50"}`}>{n}</button>
                     ))}
