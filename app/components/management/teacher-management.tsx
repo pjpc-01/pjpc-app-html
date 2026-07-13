@@ -52,6 +52,8 @@ interface TeacherFormData {
   permissions: 'normal_teacher' | 'senior_teacher' | 'admin'
   nfc_card_issued_date: string
   nfc_card_expiry_date: string
+  hireDate: string
+  resignationDate: string
 }
 
 export default function TeacherManagement() {
@@ -75,7 +77,9 @@ export default function TeacherManagement() {
     nfc_card_number: "",
     permissions: "normal_teacher",
     nfc_card_issued_date: "",
-    nfc_card_expiry_date: ""
+    nfc_card_expiry_date: "",
+    hireDate: "",
+    resignationDate: ""
   })
   
   // Enterprise-level state
@@ -106,6 +110,26 @@ export default function TeacherManagement() {
     curriculumOptimization: { status: 'developing', progress: 55 },
     attendancePrediction: { status: 'developing', progress: 70 }
   })
+
+  // 教师表单提交
+  const handleTeacherSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const isEditing = !!editingTeacher
+    try {
+      const res = await fetch('/api/teachers' + (isEditing ? `?id=${editingTeacher!.id}` : ''), {
+        method: isEditing ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTeacher)
+      })
+      if (!res.ok) throw new Error((await res.json()).error || '操作失败')
+      alert(isEditing ? '教师信息已更新' : '教师已添加')
+      setDialogOpen(false)
+      setEditingTeacher(null)
+      window.location.reload()
+    } catch (err: any) {
+      alert(err.message || '操作失败')
+    }
+  }
 
   // 从 PB 获取真实教师数据
   useEffect(() => {
@@ -594,6 +618,20 @@ export default function TeacherManagement() {
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => {
                         setEditingTeacher(teacher)
+                        setNewTeacher({
+                          name: teacher.name || '',
+                          email: teacher.email || '',
+                          phone: teacher.phone || '',
+                          subject: '',
+                          department: teacher.department || '',
+                          experience: '',
+                          nfc_card_number: teacher.cardNumber || '',
+                          permissions: 'normal_teacher',
+                          nfc_card_issued_date: '',
+                          nfc_card_expiry_date: '',
+                          hireDate: teacher.hireDate || '',
+                          resignationDate: ''
+                        })
                         setDialogOpen(true)
                       }}>
                           <Edit className="h-4 w-4" />
@@ -635,6 +673,78 @@ export default function TeacherManagement() {
       {viewMode === 'list' && renderTeacherList()}
       {viewMode === 'analytics' && <TeacherAnalytics />}
       {viewMode === 'ai' && renderAIFeatures()}
+
+      {/* 添加/编辑教师对话框 */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditingTeacher(null) }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingTeacher ? '编辑教师' : '添加教师'}</DialogTitle>
+            <DialogDescription>{editingTeacher ? '修改教师信息' : '添加新教师到系统'}</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleTeacherSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="t-name">姓名 *</Label>
+                <Input id="t-name" required value={newTeacher.name} onChange={e => setNewTeacher(p => ({...p, name: e.target.value}))} />
+              </div>
+              <div>
+                <Label htmlFor="t-email">邮箱（可选）</Label>
+                <Input id="t-email" type="email" value={newTeacher.email} onChange={e => setNewTeacher(p => ({...p, email: e.target.value}))} placeholder="teacher@school.edu.my" />
+              </div>
+              <div>
+                <Label htmlFor="t-phone">电话</Label>
+                <Input id="t-phone" value={newTeacher.phone} onChange={e => setNewTeacher(p => ({...p, phone: e.target.value}))} />
+              </div>
+              <div>
+                <Label htmlFor="t-dept">部门</Label>
+                <Select value={newTeacher.department} onValueChange={v => setNewTeacher(p => ({...p, department: v}))}>
+                  <SelectTrigger><SelectValue placeholder="选择部门" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="学术部">学术部</SelectItem>
+                    <SelectItem value="行政部">行政部</SelectItem>
+                    <SelectItem value="财务部">财务部</SelectItem>
+                    <SelectItem value="卫生管理员">卫生管理员</SelectItem>
+                    <SelectItem value="后勤部">后勤部</SelectItem>
+                    <SelectItem value="安亲班">安亲班</SelectItem>
+                    <SelectItem value="补习部">补习部</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="t-subject">科目</Label>
+                <Input id="t-subject" value={newTeacher.subject} onChange={e => setNewTeacher(p => ({...p, subject: e.target.value}))} />
+              </div>
+              <div>
+                <Label htmlFor="t-perm">权限</Label>
+                <Select value={newTeacher.permissions} onValueChange={v => setNewTeacher(p => ({...p, permissions: v as any}))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="normal_teacher">普通教师</SelectItem>
+                    <SelectItem value="senior_teacher">高级教师</SelectItem>
+                    <SelectItem value="admin">管理员</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="t-nfc">NFC 卡号</Label>
+                <Input id="t-nfc" value={newTeacher.nfc_card_number} onChange={e => setNewTeacher(p => ({...p, nfc_card_number: e.target.value}))} />
+              </div>
+              <div>
+                <Label htmlFor="t-hire">入职日期</Label>
+                <Input id="t-hire" type="date" value={newTeacher.hireDate} onChange={e => setNewTeacher(p => ({...p, hireDate: e.target.value}))} />
+              </div>
+              <div>
+                <Label htmlFor="t-resign">离职日期</Label>
+                <Input id="t-resign" type="date" value={newTeacher.resignationDate} onChange={e => setNewTeacher(p => ({...p, resignationDate: e.target.value}))} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setEditingTeacher(null) }}>取消</Button>
+              <Button type="submit">{editingTeacher ? '保存修改' : '添加教师'}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

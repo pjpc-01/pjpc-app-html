@@ -309,14 +309,14 @@ export default function TeacherSalaryManagement() {
       
       const result = await response.json()
       if (result.success) {
-        alert(`薪资生成完成！\n成功: ${result.summary.success}\n跳过: ${result.summary.skipped}\n失败: ${result.summary.error}`)
+        toast.success(`薪资生成完成！成功: ${result.summary.success}, 跳过: ${result.summary.skipped}, 失败: ${result.summary.error}`)
         fetchSalaryRecords()
       } else {
-        alert('薪资生成失败: ' + result.error)
+        toast.error('薪资生成失败', { description: result.error })
       }
     } catch (error) {
       console.error('自动生成薪资失败:', error)
-      alert('自动生成薪资失败')
+      toast.error('自动生成薪资失败')
     } finally {
       setIsGenerating(false)
     }
@@ -348,14 +348,14 @@ export default function TeacherSalaryManagement() {
       
       const result = await response.json()
       if (result.success) {
-        alert(`薪资调整完成！\n教师: ${teacherId}\n绩效评分: ${result.data.performance_score}\n调整幅度: ${result.data.adjustment_percentage}%`)
+        toast.success(`薪资调整完成！教师: ${teacherId}, 绩效评分: ${result.data.performance_score}, 调整幅度: ${result.data.adjustment_percentage}%`)
         fetchSalaryStructures()
       } else {
-        alert('薪资调整失败: ' + result.error)
+        toast.error('薪资调整失败', { description: result.error })
       }
     } catch (error) {
       console.error('绩效薪资调整失败:', error)
-      alert('绩效薪资调整失败')
+      toast.error('绩效薪资调整失败')
     } finally {
       setIsAdjusting(false)
     }
@@ -398,10 +398,13 @@ export default function TeacherSalaryManagement() {
           notes: ''
         })
         fetchSalaryStructures()
+        toast.success(isEdit ? '薪资结构更新成功' : '薪资结构创建成功')
       } else {
+        toast.error('操作失败', { description: result.error })
         setError(result.error)
       }
     } catch (error) {
+      toast.error('创建薪资结构失败')
       setError('创建薪资结构失败')
     }
   }
@@ -464,11 +467,14 @@ export default function TeacherSalaryManagement() {
       })
       const result = await response.json()
       if (result.success) {
+        toast.success('薪资结构已删除')
         fetchSalaryStructures()
       } else {
+        toast.error('删除失败', { description: result.error })
         setError(result.error)
       }
     } catch (error) {
+      toast.error('删除薪资结构失败')
       setError('删除薪资结构失败')
     }
   }

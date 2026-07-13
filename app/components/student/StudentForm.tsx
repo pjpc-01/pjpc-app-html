@@ -292,6 +292,23 @@ export default function StudentForm({
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
     }
+    // NRIC 自动解析出生日期 (马来西亚 IC 格式: YYMMDD-XX-XXXX)
+    if (field === 'nric' && value.length >= 6) {
+      const match = value.match(/^(\d{2})(\d{2})(\d{2})/)
+      if (match) {
+        const yy = parseInt(match[1])
+        const mm = parseInt(match[2])
+        const dd = parseInt(match[3])
+        if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+          const year = yy >= 50 ? 1900 + yy : 2000 + yy
+          const dob = `${year}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`
+          setFormData(prev => {
+            if (prev.dob) return prev // don't override manually set DOB
+            return { ...prev, dob }
+          })
+        }
+      }
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
