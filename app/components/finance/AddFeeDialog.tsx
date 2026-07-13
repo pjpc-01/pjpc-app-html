@@ -117,12 +117,12 @@ export const AddFeeDialog = ({
                 <Package className="h-3.5 w-3.5 text-muted-foreground" />
                 分类图标
               </Label>
-              <Select value={newFeeItem.icon || ""} onValueChange={(v) => onFeeItemInputChange("icon", v || undefined)}>
+              <Select value={newFeeItem.icon || "__none__"} onValueChange={(v) => onFeeItemInputChange("icon", v === "__none__" ? undefined : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="选择分类图标" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">无图标</SelectItem>
+                  <SelectItem value="__none__">无图标</SelectItem>
                   {ICON_OPTIONS.map(opt => (
                     <SelectItem key={opt.value} value={opt.value}>
                       <span className="flex items-center gap-2">{opt.icon}{opt.label}</span>

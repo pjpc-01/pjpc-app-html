@@ -66,6 +66,7 @@ import {
   CheckCircle,
   XCircle
 } from "lucide-react"
+import { toast } from "sonner"
 import { useStudents } from "@/hooks/useStudents"
 import { Student } from "@/hooks/useStudents"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -373,9 +374,11 @@ export default function StudentManagementPage() {
     if (!editingStudent) return
     try {
       await updateStudent(editingStudent.id, studentData)
+      toast.success("学生信息已更新")
       setEditingStudent(null)
       refetch()
-    } catch (error) {
+    } catch (error: any) {
+      toast.error("更新失败", { description: error.message || "请重试" })
       console.error("Error updating student:", error)
     }
   }
