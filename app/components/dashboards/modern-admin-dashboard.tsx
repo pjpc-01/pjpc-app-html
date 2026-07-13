@@ -41,6 +41,7 @@ import {
   School,
   Layers,
   Activity,
+  Cake,
 } from "lucide-react"
 import ChartCard from "@/components/dashboard/ChartCard"
 
@@ -61,6 +62,7 @@ interface StudentRecord {
   gender: string
   status: string
   created: string
+  date_of_birth?: string
 }
 
 interface TeacherRecord {
@@ -274,6 +276,22 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
   const filteredExpenses = useMemo(() => filterByCenter(expenses), [expenses, filterByCenter])
   const filteredInvoices = useMemo(() => filterByCenter(invoices), [invoices, filterByCenter])
   const filteredRefunds = useMemo(() => filterByCenter(refunds), [refunds, filterByCenter])
+
+  // ─── Birthday students this month ────────────────────────────────────────
+
+  const birthdayStudents = useMemo(() => {
+    const now = new Date()
+    const thisMonth = now.getMonth()
+    return filteredStudents.filter(s => {
+      if (!s.date_of_birth) return false
+      const d = new Date(s.date_of_birth)
+      return d.getMonth() === thisMonth
+    }).sort((a, b) => {
+      const da = new Date(a.date_of_birth!).getDate()
+      const db = new Date(b.date_of_birth!).getDate()
+      return da - db
+    })
+  }, [filteredStudents])
 
   // ─── KPI calculations ────────────────────────────────────────────────────
 
@@ -544,6 +562,30 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
           </CardContent>
         </Card>
       </div>
+
+      {/* Birthday Card */}
+      {birthdayStudents.length > 0 && (
+        <Card className="border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50">
+          <CardContent className="p-4">
+            <h3 className="text-sm font-semibold text-amber-700 mb-3 flex items-center gap-2">
+              <Cake className="h-4 w-4" /> 🎂 本月寿星 ({birthdayStudents.length}人)
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {birthdayStudents.map(s => {
+                const day = new Date(s.date_of_birth!).getDate()
+                return (
+                  <a key={s.id} href={`/student-management?id=${s.id}`}
+                    className="inline-flex items-center gap-2 bg-white rounded-full px-3 py-1.5 border border-amber-200 hover:border-amber-400 hover:shadow-sm transition-all text-sm">
+                    <span className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-xs font-bold text-amber-700">{day}</span>
+                    <span className="text-gray-700 font-medium">{s.name}</span>
+                    <span className="text-xs text-gray-400">{s.grade || ""}</span>
+                  </a>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Student Dimension Charts */}
       <div>

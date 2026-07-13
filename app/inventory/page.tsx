@@ -28,12 +28,14 @@ import {
 
 export default function InventoryPage() {
   const { items, loading, error, refetch } = useInventoryItems()
-  const { categories } = useInventoryCategories()
+  const { categories, create: createCategory, remove: removeCategory } = useInventoryCategories()
   const { items: lowStockItems } = useLowStockItems()
 
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [newCat, setNewCat] = useState("")
+  const [addingCat, setAddingCat] = useState(false)
 
   // Filter items
   const filtered = items.filter(item => {
@@ -112,6 +114,35 @@ export default function InventoryPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Category Manager */}
+      {categories.length === 0 ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+          <p className="text-sm text-amber-700 mb-2 font-medium">⚠️ 还没有库存分类，创建分类后才能添加商品</p>
+          <form onSubmit={async e => { e.preventDefault(); if (!newCat.trim()) return; setAddingCat(true); await createCategory({ name: newCat.trim(), status: "active" }); setNewCat(""); setAddingCat(false) }}
+            className="flex gap-2">
+            <Input placeholder="输入分类名称（如：教材、文具、零食）" value={newCat} onChange={e => setNewCat(e.target.value)} className="flex-1" />
+            <Button type="submit" disabled={addingCat || !newCat.trim()} size="sm">
+              <Plus className="h-4 w-4 mr-1" /> 添加分类
+            </Button>
+          </form>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <span className="text-xs text-gray-400">分类：</span>
+          {categories.map(c => (
+            <Badge key={c.id} variant="secondary" className="gap-1 cursor-default">
+              {c.name}
+              <button onClick={() => removeCategory(c.id)} className="ml-1 hover:text-red-500" title="删除分类">&times;</button>
+            </Badge>
+          ))}
+          <form onSubmit={async e => { e.preventDefault(); if (!newCat.trim()) return; setAddingCat(true); await createCategory({ name: newCat.trim(), status: "active" }); setNewCat(""); setAddingCat(false) }}
+            className="flex gap-1">
+            <Input placeholder="新分类" value={newCat} onChange={e => setNewCat(e.target.value)} className="w-24 h-7 text-xs" />
+            <Button type="submit" disabled={addingCat || !newCat.trim()} size="sm" className="h-7 text-xs"><Plus className="h-3 w-3" /></Button>
+          </form>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-4">
