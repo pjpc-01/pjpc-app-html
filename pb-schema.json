@@ -1,7 +1,7 @@
 {
   "page": 1,
   "perPage": 100,
-  "totalItems": 47,
+  "totalItems": 48,
   "totalPages": 1,
   "items": [
     {
@@ -439,7 +439,7 @@
     {
       "id": "h2n4glagecz5xps",
       "created": "2026-06-11 03:20:45.595Z",
-      "updated": "2026-06-25 08:42:38.440Z",
+      "updated": "2026-07-14 03:41:21.201Z",
       "name": "fee_items",
       "type": "base",
       "system": false,
@@ -552,7 +552,7 @@
     {
       "id": "4r9rf2vugqehbg6",
       "created": "2026-06-12 06:33:20.106Z",
-      "updated": "2026-06-18 12:05:34.587Z",
+      "updated": "2026-07-14 06:10:51.501Z",
       "name": "student_fees",
       "type": "base",
       "system": false,
@@ -668,6 +668,60 @@
             "max": null,
             "noDecimal": false
           }
+        },
+        {
+          "system": false,
+          "id": "new04",
+          "name": "discount",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "new05",
+          "name": "six_month_pay",
+          "type": "bool",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {}
+        },
+        {
+          "system": false,
+          "id": "new06",
+          "name": "six_month_pay_rate",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": 1,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "discount_type_field",
+          "name": "discount_type",
+          "type": "select",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "maxSelect": 1,
+            "values": [
+              "amount",
+              "percent"
+            ]
+          }
         }
       ],
       "indexes": [],
@@ -681,7 +735,7 @@
     {
       "id": "ez1iq2paxliaj2b",
       "created": "2026-06-12 07:35:08.988Z",
-      "updated": "2026-07-03 10:05:51.682Z",
+      "updated": "2026-07-14 06:10:51.522Z",
       "name": "invoices",
       "type": "base",
       "system": false,
@@ -850,6 +904,50 @@
             "min": null,
             "max": null,
             "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "inv_discount_field",
+          "name": "discount",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "inv_discount_type_field",
+          "name": "discountType",
+          "type": "select",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "maxSelect": 1,
+            "values": [
+              "amount",
+              "percent"
+            ]
+          }
+        },
+        {
+          "system": false,
+          "id": "inv_late_payment_rule_field",
+          "name": "latePaymentRule",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
           }
         }
       ],
@@ -6101,14 +6199,14 @@
     {
       "id": "iilekdq2fbkdoyg",
       "created": "2026-07-02 11:23:44.665Z",
-      "updated": "2026-07-02 11:23:44.665Z",
+      "updated": "2026-07-14 03:40:25.722Z",
       "name": "invoice_settings",
       "type": "base",
       "system": false,
       "schema": [
         {
           "system": false,
-          "id": "uqzp3gne",
+          "id": "12d21f6a",
           "name": "name",
           "type": "text",
           "required": true,
@@ -6122,7 +6220,7 @@
         },
         {
           "system": false,
-          "id": "p7ykrag5",
+          "id": "ba0a6e12",
           "name": "schoolName",
           "type": "text",
           "required": false,
@@ -6136,7 +6234,7 @@
         },
         {
           "system": false,
-          "id": "msz3iwvl",
+          "id": "151497a2",
           "name": "schoolNameEn",
           "type": "text",
           "required": false,
@@ -6150,7 +6248,7 @@
         },
         {
           "system": false,
-          "id": "laodjtcb",
+          "id": "e77661f3",
           "name": "schoolLogo",
           "type": "text",
           "required": false,
@@ -6164,7 +6262,7 @@
         },
         {
           "system": false,
-          "id": "eox5lsjg",
+          "id": "614175a1",
           "name": "schoolAddress",
           "type": "text",
           "required": false,
@@ -6178,7 +6276,7 @@
         },
         {
           "system": false,
-          "id": "turrvonw",
+          "id": "2c53b60b",
           "name": "schoolPhone",
           "type": "text",
           "required": false,
@@ -6192,7 +6290,7 @@
         },
         {
           "system": false,
-          "id": "quwapnfo",
+          "id": "8e9ce2dc",
           "name": "schoolEmail",
           "type": "text",
           "required": false,
@@ -6206,7 +6304,7 @@
         },
         {
           "system": false,
-          "id": "xkiylipj",
+          "id": "aae8a3c3",
           "name": "schoolWebsite",
           "type": "text",
           "required": false,
@@ -6220,7 +6318,7 @@
         },
         {
           "system": false,
-          "id": "j1gaxcd9",
+          "id": "d0fa0428",
           "name": "taxNumber",
           "type": "text",
           "required": false,
@@ -6234,7 +6332,7 @@
         },
         {
           "system": false,
-          "id": "fszn303x",
+          "id": "4b324fe5",
           "name": "bankName",
           "type": "text",
           "required": false,
@@ -6248,7 +6346,7 @@
         },
         {
           "system": false,
-          "id": "swni6mvm",
+          "id": "ed1dc6dc",
           "name": "bankAccount",
           "type": "text",
           "required": false,
@@ -6262,7 +6360,7 @@
         },
         {
           "system": false,
-          "id": "0jpls96i",
+          "id": "c6cbfd2e",
           "name": "bankHolder",
           "type": "text",
           "required": false,
@@ -6276,7 +6374,7 @@
         },
         {
           "system": false,
-          "id": "dekxctg4",
+          "id": "1a150fc7",
           "name": "primaryColor",
           "type": "text",
           "required": false,
@@ -6290,7 +6388,7 @@
         },
         {
           "system": false,
-          "id": "2n8ilygt",
+          "id": "28e0782f",
           "name": "secondaryColor",
           "type": "text",
           "required": false,
@@ -6304,7 +6402,7 @@
         },
         {
           "system": false,
-          "id": "4ozhb18x",
+          "id": "181f2fba",
           "name": "accentColor",
           "type": "text",
           "required": false,
@@ -6318,7 +6416,7 @@
         },
         {
           "system": false,
-          "id": "mxotdifv",
+          "id": "5f746692",
           "name": "footerText",
           "type": "text",
           "required": false,
@@ -6332,7 +6430,7 @@
         },
         {
           "system": false,
-          "id": "t9dxfmxy",
+          "id": "4c542d6a",
           "name": "paymentTerms",
           "type": "text",
           "required": false,
@@ -6346,7 +6444,7 @@
         },
         {
           "system": false,
-          "id": "prtlpgof",
+          "id": "f783d60a",
           "name": "receiptNote",
           "type": "text",
           "required": false,
@@ -6360,13 +6458,97 @@
         },
         {
           "system": false,
-          "id": "iwtbacue",
+          "id": "abf0bdfd",
           "name": "isDefault",
           "type": "bool",
           "required": false,
           "presentable": false,
           "unique": false,
           "options": {}
+        },
+        {
+          "system": false,
+          "id": "9e746657",
+          "name": "latePaymentRule",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "5d34deba",
+          "name": "daycareContact",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "4972a68b",
+          "name": "daycarePhone",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "0223602e",
+          "name": "thanksGreeting",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "new07",
+          "name": "late_payment_fee",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "new08",
+          "name": "late_payment_grace_days",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": null,
+            "noDecimal": false
+          }
         }
       ],
       "indexes": [],
@@ -7229,6 +7411,174 @@
       "createRule": "@request.auth.role = 'admin' || @request.auth.role = 'teacher'",
       "updateRule": "@request.auth.role = 'admin' || @request.auth.role = 'teacher'",
       "deleteRule": "@request.auth.role = 'admin'",
+      "options": {}
+    },
+    {
+      "id": "utilbills001",
+      "created": "2026-07-10 06:37:16.876Z",
+      "updated": "2026-07-10 06:37:16.876Z",
+      "name": "utility_bills",
+      "type": "base",
+      "system": false,
+      "schema": [
+        {
+          "system": false,
+          "id": "fld001",
+          "name": "provider",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "fld002",
+          "name": "account_name",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "fld003",
+          "name": "account_number",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "fld004",
+          "name": "branch",
+          "type": "text",
+          "required": true,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "fld005",
+          "name": "amount",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "fld006",
+          "name": "bill_date",
+          "type": "date",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "fld007",
+          "name": "due_date",
+          "type": "date",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "fld008",
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": null,
+            "max": null,
+            "pattern": ""
+          }
+        },
+        {
+          "system": false,
+          "id": "fld009",
+          "name": "previous_balance",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "fld010",
+          "name": "last_payment",
+          "type": "number",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": 0,
+            "max": null,
+            "noDecimal": false
+          }
+        },
+        {
+          "system": false,
+          "id": "fld011",
+          "name": "last_payment_date",
+          "type": "date",
+          "required": false,
+          "presentable": false,
+          "unique": false,
+          "options": {
+            "min": "",
+            "max": ""
+          }
+        }
+      ],
+      "indexes": [],
+      "listRule": "",
+      "viewRule": "",
+      "createRule": "",
+      "updateRule": "",
+      "deleteRule": "",
       "options": {}
     }
   ]

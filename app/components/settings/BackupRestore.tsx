@@ -224,7 +224,8 @@ export default function BackupRestore() {
                       <p className="text-xs text-gray-500">
                         {formatDate(backup.created)} · {backup.sizeFormatted}
                       </p>
-                  </div>
+                      </div>
+                    </div>
                   <Button
                     variant="ghost"
                     size="sm"

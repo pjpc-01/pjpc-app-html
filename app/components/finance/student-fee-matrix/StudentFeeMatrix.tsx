@@ -5,12 +5,14 @@ import { useStudentFees } from "@/hooks/useStudentFees"
 import { useInvoices } from "@/hooks/useInvoices"
 import { StudentFeeMatrixHeader } from "./StudentFeeMatrixHeader"
 import { SearchAndFilter } from "./SearchAndFilter"
-import { StudentCard } from "./StudentCard"
+import { FeeCard } from "./FeeCard"
 
 export const StudentFeeMatrix = () => {
   const { fees } = useFees()
   const { students } = useStudents()
-  const { isAssigned, getStudentAmount, assignFeeToStudent, removeFeeFromStudent, enterEditMode, exitEditMode, loading: studentFeesLoading, error: studentFeesError } = useStudentFees()
+  const { isAssigned, getStudentAmount, assignFeeToStudent, removeFeeFromStudent, enterEditMode, exitEditMode,
+    loading: studentFeesLoading, error: studentFeesError,
+    setLocalDiscount, setLocalSixMonthPay, setLocalSixMonthPayRate, getLocalAdjustment, isEditMode: hookEditMode } = useStudentFees()
   const { createInvoice: createInvoiceFromHook, invoices } = useInvoices()
 
   const [studentInvoices, setStudentInvoices] = useState<Map<string, boolean>>(new Map())
@@ -19,7 +21,6 @@ export const StudentFeeMatrix = () => {
   const [selectedGradeFilter, setSelectedGradeFilter] = useState<string>("all")
   const [batchMode, setBatchMode] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [expandedStudents, setExpandedStudents] = useState<string[]>([])
 
   const allFees = fees
 
@@ -51,17 +52,50 @@ export const StudentFeeMatrix = () => {
   if (studentFeesLoading) return <div className="py-12 text-center text-muted-foreground">加载中...</div>
   if (studentFeesError) return <div className="py-12 text-center text-red-600">加载失败: {studentFeesError}</div>
 
-  const createInvoice = (studentId: string) => {
+  const createInvoice = async (studentId: string) => {
     const student = students.find(s => s.id === studentId)
     if (!student) return
-    const total = getStudentAmount(studentId, allFees)
+    const adj = getLocalAdjustment(studentId)
     const items = allFees.filter(f => isAssigned(studentId, f.id)).map(f => ({ name: f.name, amount: f.amount }))
+
+    // Include discount as a line item — calculate the actual RM amount
+    const discount = adj.discount || 0
+    const discountType = adj.discount_type || 'amount'
+    if (discount > 0) {
+      const baseAmount = items.reduce((sum, it) => sum + it.amount, 0)
+      const actualDiscount = discountType === 'percent'
+        ? Math.round(baseAmount * (discount / 100) * 100) / 100
+        : discount
+      const discountLabel = discountType === 'percent'
+        ? `学生折扣 (${discount}%)`
+        : '学生折扣'
+      items.push({ name: discountLabel, amount: -actualDiscount })
+    }
+
+    // Compute total from items (guarantees subtotal = total even with discount line)
+    const total = Math.round(items.reduce((sum, it) => sum + it.amount, 0) * 100) / 100
+
+    // Get late payment rule from invoice_settings
+    let latePaymentRule = ''
+    try {
+      const res = await fetch('/api/pocketbase-proxy/api/collections/invoice_settings/records?filter=(isDefault=true)&perPage=1')
+      if (res.ok) {
+        const data = await res.json()
+        if (data.items?.length > 0) {
+          latePaymentRule = data.items[0].latePaymentRule || ''
+        }
+      }
+    } catch {}
+
     createInvoiceFromHook({
       studentId, studentName: student.student_name || '', studentGrade: student.standard || '',
       totalAmount: total, items, status: 'issued',
       issueDate: new Date().toISOString().split('T')[0],
       dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
-      notes: `${new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}学费`
+      notes: `${new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}学费`,
+      discount: discount || undefined,
+      discountType: discount > 0 ? discountType : undefined,
+      latePaymentRule: latePaymentRule || undefined,
     })
     setStudentInvoices(prev => { const m = new Map(prev); m.set(studentId, true); return m })
   }
@@ -84,28 +118,27 @@ export const StudentFeeMatrix = () => {
     }
   }
 
-  const toggleStudent = (id: string) => {
-    setExpandedStudents(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-  }
-
   return (
     <div className="space-y-6">
-      <StudentFeeMatrixHeader editMode={editMode} onToggleEditMode={toggleEditMode} batchMode={batchMode} onToggleBatchMode={() => setBatchMode(!batchMode)} isSaving={isSaving} />
+      <StudentFeeMatrixHeader
+        editMode={editMode} onToggleEditMode={toggleEditMode}
+        batchMode={batchMode} onToggleBatchMode={() => setBatchMode(!batchMode)}
+        isSaving={isSaving}
+      />
       <SearchAndFilter
         searchTerm={searchTerm} onSearchChange={setSearchTerm} onClearSearch={() => setSearchTerm("")}
         selectedGradeFilter={selectedGradeFilter} onGradeFilterChange={setSelectedGradeFilter}
         availableGrades={availableGrades} filteredStudentsCount={filteredStudents.length} totalStudentsCount={students.length}
       />
-      <div className="space-y-3">
-        {filteredStudents.length === 0 ? (
-          <div className="py-12 text-center text-muted-foreground">没有匹配的学生</div>
-        ) : (
-          filteredStudents.map(student => (
-            <StudentCard
+
+      {filteredStudents.length === 0 ? (
+        <div className="py-12 text-center text-muted-foreground">没有匹配的学生</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredStudents.map(student => (
+            <FeeCard
               key={student.id}
               student={student}
-              isExpanded={expandedStudents.includes(student.id)}
-              onToggleExpansion={() => toggleStudent(student.id)}
               activeFees={allFees}
               groupedFees={groupedFees}
               studentTotal={getStudentAmount(student.id, allFees)}
@@ -115,10 +148,14 @@ export const StudentFeeMatrix = () => {
               assignFeeToStudent={assignFeeToStudent}
               removeFeeFromStudent={removeFeeFromStudent}
               hasInvoiceThisMonth={hasInvoiceThisMonth}
+              getLocalAdjustment={getLocalAdjustment}
+              setLocalDiscount={setLocalDiscount}
+              setLocalSixMonthPay={setLocalSixMonthPay}
+              setLocalSixMonthPayRate={setLocalSixMonthPayRate}
             />
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

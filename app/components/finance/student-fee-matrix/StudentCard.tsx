@@ -3,6 +3,9 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { ChevronDown, ChevronRight, FileText, CheckCircle, Pencil, GraduationCap, Package, CalendarDays, Utensils, Bus, FolderOpen, BookOpen, School, ClipboardList, Receipt, Banknote, ScrollText, Library } from "lucide-react"
 import { createElement, type ComponentType } from "react"
 
@@ -24,6 +27,7 @@ import {
 import { useState } from "react"
 import { Fee } from "@/types/fees"
 import { Student } from "@/hooks/useStudents"
+import type { StudentAdjustment } from "@/hooks/useStudentFees"
 
 interface StudentCardProps {
   student: Student
@@ -38,6 +42,11 @@ interface StudentCardProps {
   assignFeeToStudent: (studentId: string, feeId: string) => void
   removeFeeFromStudent: (studentId: string, feeId: string) => void
   hasInvoiceThisMonth: (studentId: string) => boolean
+  // Per-student adjustments
+  getLocalAdjustment: (studentId: string) => StudentAdjustment
+  setLocalDiscount: (studentId: string, discount: number, discount_type?: 'amount' | 'percent') => void
+  setLocalSixMonthPay: (studentId: string, val: boolean) => void
+  setLocalSixMonthPayRate: (studentId: string, rate: number) => void
 }
 
 export const StudentCard = ({
@@ -45,12 +54,16 @@ export const StudentCard = ({
   activeFees, groupedFees, studentTotal,
   onCreateInvoice, editMode, isAssigned,
   assignFeeToStudent, removeFeeFromStudent,
-  hasInvoiceThisMonth
+  hasInvoiceThisMonth,
+  getLocalAdjustment, setLocalDiscount,
+  setLocalSixMonthPay, setLocalSixMonthPayRate,
 }: StudentCardProps) => {
   const studentId = student.id
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set(Object.keys(groupedFees)))
   const [localEditMode, setLocalEditMode] = useState(false)
+
+  const adjustment = getLocalAdjustment ? getLocalAdjustment(studentId) : { discount: 0, six_month_pay: false, six_month_pay_rate: 0 }
 
   const toggleFeeAssignment = (feeId: string) => {
     if (!editMode && !localEditMode) return
@@ -102,9 +115,58 @@ export const StudentCard = ({
           </div>
         </div>
 
-        {/* ── Expanded: flat fee list ── */}
+        {/* ── Expanded: flat fee list + adjustments ── */}
         {isExpanded && (
           <CardContent className="p-0">
+            {/* ── Discount / Six-Month Pay Panel (visible when editing) ── */}
+            {(localEditMode) && (
+              <div className="px-5 py-3 bg-blue-50/50 border-b space-y-3">
+                <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">费用调整</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {/* Discount */}
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">月折扣 (RM)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={adjustment.discount || 0}
+                      onChange={(e) => setLocalDiscount?.(studentId, parseFloat(e.target.value) || 0)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  {/* Six Month Pay Toggle */}
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">六月一次付</Label>
+                    <div className="flex items-center gap-2 pt-1">
+                      <Switch
+                        checked={adjustment.six_month_pay || false}
+                        onCheckedChange={(v) => setLocalSixMonthPay?.(studentId, v)}
+                      />
+                      <span className="text-xs text-muted-foreground">{adjustment.six_month_pay ? '是' : '否'}</span>
+                    </div>
+                  </div>
+                  {/* Six Month Pay Rate */}
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">六月付折扣率 (%)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={((adjustment.six_month_pay_rate || 0) * 100).toFixed(0)}
+                      onChange={(e) => {
+                        const pct = parseFloat(e.target.value) || 0;
+                        setLocalSixMonthPayRate?.(studentId, Math.min(100, Math.max(0, pct)) / 100);
+                      }}
+                      disabled={!adjustment.six_month_pay}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="divide-y">
               {Object.entries(groupedFees).map(([category, categoryFees]) => {
                 const isCollapsed = collapsedCategories.has(category)
@@ -112,7 +174,6 @@ export const StudentCard = ({
                 const assignedAmount = categoryFees.filter(f => isAssigned(studentId, f.id)).reduce((s, f) => s + f.amount, 0)
                 return (
                   <div key={category} className="px-5 py-3">
-                    {/* Category title — clickable to collapse */}
                     <button
                       className="flex items-center justify-between w-full mb-2 cursor-pointer hover:text-foreground transition-colors"
                       onClick={() => toggleCategory(category)}
@@ -135,7 +196,6 @@ export const StudentCard = ({
                       </div>
                     </button>
 
-                    {/* Fee items — collapsible */}
                     {!isCollapsed && (
                       <div className="space-y-1">
                         {categoryFees.map(fee => {

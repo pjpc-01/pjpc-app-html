@@ -255,6 +255,12 @@ export const generateInvoiceHTML = (invoice: Invoice, settings: InvoiceSettingsP
         </div>
       </div>
 
+      ${(invoice as any).latePaymentRule ? `
+      <div style="margin-top:16px;padding:12px 16px;background:#fef2f2;border-radius:8px;border-left:4px solid #dc2626;font-size:12px;color:#991b1b;position:relative;z-index:1;">
+        <strong>⚠️ 迟付款须知</strong><br/>
+        ${(invoice as any).latePaymentRule}
+      </div>` : ''}
+
       ${(settings.bankName || settings.bankAccount || settings.paymentTerms) ? `
       <div class="payment-info">
         ${(settings.bankName || settings.bankAccount) ? `

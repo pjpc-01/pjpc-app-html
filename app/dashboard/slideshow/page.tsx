@@ -60,8 +60,9 @@ export default function DashboardPage() {
 }
 
 // ─── Leaderboard Widget ─────────────────────────────────────────────
-function LeaderboardWidget({ students, limit, router }: { students: Student[]; limit: number; router: ReturnType<typeof useRouter> }) {
+function LeaderboardWidget({ students, limit, router, large }: { students: Student[]; limit: number; router: ReturnType<typeof useRouter>; large?: boolean }) {
   const top = [...students].sort((a, b) => b.points - a.points).slice(0, limit)
+  const bg = large ? "lg" : ""
   if (top.length === 0) return <p className="text-gray-400 text-sm text-center py-8">暂无数据</p>
 
   // Top 3 podium
@@ -71,38 +72,38 @@ function LeaderboardWidget({ students, limit, router }: { students: Student[]; l
   return (
     <div>
       {podium.length >= 3 && (
-        <div className="flex items-end justify-center gap-2 mb-4 pt-2" style={{ minHeight: 100 }}>
+        <div className="flex items-end justify-center gap-2 mb-4 pt-2" style={{ minHeight: large ? 140 : 100 }}>
           {/* 2nd */}
-          <div className="text-center w-16 cursor-pointer hover:opacity-80"
+          <div className={`text-center ${large ? "w-24" : "w-16"} cursor-pointer hover:opacity-80`}
             onClick={() => router.push(`/points?studentId=${podium[1]?.id}&name=${encodeURIComponent(podium[1]?.name || "")}`)}>
-            <p className="text-[10px] font-medium text-gray-500 mb-1 truncate">{podium[1]?.name}</p>
-            <div className="h-12 bg-gray-100 rounded-t-lg flex items-end justify-center pb-1"><span className="text-lg">🥈</span></div>
-            <div className="bg-gray-200 rounded-b-lg py-1 text-[11px] font-bold text-gray-600">{podium[1]?.points || 0}分</div>
+            <p className={`${large ? "text-sm" : "text-[10px]"} font-medium text-gray-500 mb-1 truncate`}>{podium[1]?.name}</p>
+            <div className={`${large ? "h-20" : "h-12"} bg-gray-100 rounded-t-lg flex items-end justify-center pb-1`}><span className={large ? "text-3xl" : "text-lg"}>🥈</span></div>
+            <div className={`bg-gray-200 rounded-b-lg ${large ? "py-2 text-base" : "py-1 text-[11px]"} font-bold text-gray-600`}>{podium[1]?.points || 0}分</div>
           </div>
           {/* 1st */}
-          <div className="text-center w-20 cursor-pointer hover:opacity-80 -mt-1"
+          <div className={`text-center ${large ? "w-32" : "w-20"} cursor-pointer hover:opacity-80 -mt-1`}
             onClick={() => router.push(`/points?studentId=${podium[0]?.id}&name=${encodeURIComponent(podium[0]?.name || "")}`)}>
-            <p className="text-[11px] font-bold text-amber-600 mb-1 truncate">👑 {podium[0]?.name}</p>
-            <div className="h-20 bg-amber-100 rounded-t-lg flex items-end justify-center pb-2"><span className="text-2xl">🏆</span></div>
-            <div className="bg-amber-200 rounded-b-lg py-1.5 text-sm font-bold text-amber-700">{podium[0]?.points || 0}分</div>
+            <p className={`${large ? "text-base" : "text-[11px]"} font-bold text-amber-600 mb-1 truncate`}>👑 {podium[0]?.name}</p>
+            <div className={`${large ? "h-32" : "h-20"} bg-amber-100 rounded-t-lg flex items-end justify-center pb-2`}><span className={large ? "text-4xl" : "text-2xl"}>🏆</span></div>
+            <div className={`bg-amber-200 rounded-b-lg ${large ? "py-2.5 text-xl" : "py-1.5 text-sm"} font-bold text-amber-700`}>{podium[0]?.points || 0}分</div>
           </div>
           {/* 3rd */}
-          <div className="text-center w-16 cursor-pointer hover:opacity-80"
+          <div className={`text-center ${large ? "w-24" : "w-16"} cursor-pointer hover:opacity-80`}
             onClick={() => router.push(`/points?studentId=${podium[2]?.id}&name=${encodeURIComponent(podium[2]?.name || "")}`)}>
-            <p className="text-[10px] font-medium text-gray-500 mb-1 truncate">{podium[2]?.name}</p>
-            <div className="h-10 bg-orange-50 rounded-t-lg flex items-end justify-center pb-1"><span className="text-base">🥉</span></div>
-            <div className="bg-orange-100 rounded-b-lg py-1 text-[11px] font-bold text-orange-600">{podium[2]?.points || 0}分</div>
+            <p className={`${large ? "text-sm" : "text-[10px]"} font-medium text-gray-500 mb-1 truncate`}>{podium[2]?.name}</p>
+            <div className={`${large ? "h-16" : "h-10"} bg-orange-50 rounded-t-lg flex items-end justify-center pb-1`}><span className={large ? "text-2xl" : "text-base"}>🥉</span></div>
+            <div className={`bg-orange-100 rounded-b-lg ${large ? "py-2 text-base" : "py-1 text-[11px]"} font-bold text-orange-600`}>{podium[2]?.points || 0}分</div>
           </div>
         </div>
       )}
       {/* Rest of list */}
       {rest.map((s, i) => (
-        <div key={s.id} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer text-sm"
+        <div key={s.id} className={`flex items-center gap-2 px-2 ${large ? "py-2.5" : "py-1.5"} hover:bg-gray-50 rounded cursor-pointer ${large ? "text-base" : "text-sm"}`}
           onClick={() => router.push(`/points?studentId=${s.id}&name=${encodeURIComponent(s.name)}`)}>
-          <span className="text-gray-300 w-5 text-right tabular-nums text-xs">{i + 4}</span>
+          <span className={`text-gray-300 ${large ? "w-8" : "w-5"} text-right tabular-nums ${large ? "text-sm" : "text-xs"}`}>{i + 4}</span>
           <span className="flex-1 truncate font-medium text-gray-700">{s.name}</span>
-          <span className="text-xs text-gray-400">{s.grade}</span>
-          <span className="text-sm font-semibold text-amber-600 w-14 text-right tabular-nums">{s.points}分</span>
+          <span className={`${large ? "text-sm" : "text-xs"} text-gray-400`}>{s.grade}</span>
+          <span className={`${large ? "text-lg" : "text-sm"} font-semibold text-amber-600 ${large ? "w-20" : "w-14"} text-right tabular-nums`}>{s.points}分</span>
         </div>
       ))}
     </div>
@@ -110,21 +111,26 @@ function LeaderboardWidget({ students, limit, router }: { students: Student[]; l
 }
 
 // ─── Birthday Widget ────────────────────────────────────────────────
-function BirthdayWidget({ students }: { students: Student[] }) {
+function BirthdayWidget({ students, large }: { students: Student[]; large?: boolean }) {
   const now = new Date()
   const currentMonth = now.getMonth() // 0-indexed
+  const s = large ? "md" : ""
 
   const birthdays = students
     .filter(s => {
-      if (!s.dob) return false
+      const dob = s.dob || (s as any).date_of_birth
+      if (!dob) return false
       try {
-        const d = new Date(s.dob)
+        const d = new Date(dob)
         return d.getMonth() === currentMonth
       } catch { return false }
     })
     .sort((a, b) => {
-      try { return new Date(a.dob!).getDate() - new Date(b.dob!).getDate() }
-      catch { return 0 }
+      try {
+        const da = a.dob || (a as any).date_of_birth
+        const db = b.dob || (b as any).date_of_birth
+        return new Date(da!).getDate() - new Date(db!).getDate()
+      } catch { return 0 }
     })
 
   if (birthdays.length === 0) {
@@ -135,22 +141,23 @@ function BirthdayWidget({ students }: { students: Student[] }) {
 
   return (
     <div>
-      <p className="text-xs text-gray-400 mb-3">{monthLabel} · {birthdays.length} 位寿星</p>
-      <div className="space-y-1">
+      <p className={`text-xs text-gray-400 mb-3 ${large ? "text-base mb-4" : ""}`}>{monthLabel} · {birthdays.length} 位寿星</p>
+      <div className={`space-y-${large ? "2" : "1"}`}>
         {birthdays.map(s => {
-          const day = s.dob ? new Date(s.dob).getDate() : "?"
+          const dob = s.dob || (s as any).date_of_birth
+          const day = dob ? new Date(dob).getDate() : "?"
           return (
-            <div key={s.id} className="flex items-center gap-3 px-2 py-2 hover:bg-pink-50 rounded transition-colors">
-              <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center flex-shrink-0">
-                <span className="text-lg">🎂</span>
+            <div key={s.id} className={`flex items-center gap-3 px-2 ${large ? "py-3" : "py-2"} hover:bg-pink-50 rounded transition-colors`}>
+              <div className={`${large ? "w-14 h-14" : "w-10 h-10"} rounded-full bg-pink-100 flex items-center justify-center flex-shrink-0`}>
+                <span className={large ? "text-2xl" : "text-lg"}>🎂</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-800 truncate">{s.name}</p>
-                <p className="text-[11px] text-gray-400">{s.grade}</p>
+                <p className={`${large ? "text-lg" : "text-sm"} font-semibold text-gray-800 truncate`}>{s.name}</p>
+                <p className={`${large ? "text-sm" : "text-[11px]"} text-gray-400`}>{s.grade}</p>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-pink-500">{day}</p>
-                <p className="text-[10px] text-gray-400">日</p>
+                <p className={`${large ? "text-3xl" : "text-lg"} font-bold text-pink-500`}>{day}</p>
+                <p className={`${large ? "text-xs" : "text-[10px]"} text-gray-400`}>日</p>
               </div>
             </div>
           )
@@ -341,9 +348,9 @@ function SlideshowOverlay({
   const renderWidget = (w: WidgetConfig) => {
     switch (w.type) {
       case "leaderboard":
-        return <LeaderboardWidget students={centerStudents} limit={w.settings.limit || 10} router={router} />
+        return <LeaderboardWidget students={centerStudents} limit={w.settings.limit || 10} router={router} large />
       case "birthdays":
-        return <BirthdayWidget students={centerStudents} />
+        return <BirthdayWidget students={centerStudents} large />
       case "events":
         return <EventsWidget events={eventsByWidget[w.id] || w.settings.events || []} />
       case "announcement":
@@ -375,11 +382,11 @@ function SlideshowOverlay({
       </div>
 
       {/* Main slide area */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-3xl">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8">
+        <div className="w-full max-w-6xl">
           {/* Slide title */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-1">{current.title}</h1>
+          <div className="text-center mb-6 md:mb-8">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-1">{current.title}</h1>
             <div className="flex justify-center">
               <div className="flex gap-1.5 mt-3">
                 {enabledWidgets.map((_, i) => (
@@ -391,7 +398,7 @@ function SlideshowOverlay({
 
           {/* Widget content in a card */}
           <Card className="shadow-2xl border-0 overflow-hidden">
-            <CardContent className="p-6 max-h-[60vh] overflow-y-auto">
+            <CardContent className="p-6 md:p-10 max-h-[70vh] overflow-y-auto text-base md:text-lg">
               {renderWidget(current)}
             </CardContent>
           </Card>
@@ -477,29 +484,45 @@ function DashboardContent() {
   const fetchStudents = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch("/api/points/records?limit=500")
-      const data = await res.json()
-      if (data.success) {
-        const all = (data.students || []).filter((s: Student) => s.status === "active")
-        // Also fetch detailed student list for birthdays
-        const detailRes = await fetch("/api/students/list?limit=500")
-        const detailData = await detailRes.json()
-        if (detailData.success && detailData.students) {
-          // Merge dob into points data
-          const dobMap: Record<string, string> = {}
-          for (const ds of detailData.students) {
-            if (ds.student_name && ds.dob) {
-              // Find matching student by name
-              const match = all.find((s: Student) =>
-                s.name === ds.student_name || s.name.toLowerCase() === ds.student_name?.toLowerCase()
-              )
-              if (match) dobMap[match.id] = ds.dob
-            }
-          }
-          setStudents(all.map((s: Student) => ({ ...s, dob: dobMap[s.id] || (s as any).dob })))
+      // Fetch points + student details in parallel
+      const [pointsRes, studentsRes] = await Promise.all([
+        fetch("/api/points/records?limit=500"),
+        fetch("/api/pocketbase-proxy/api/collections/students/records?perPage=500&fields=id,name,dob,grade,center,status"),
+      ])
+      const pointsData = await pointsRes.json()
+      const studentsData = await studentsRes.json()
+
+      // Build dob map from PocketBase students (id → dob)
+      const dobMap: Record<string, string> = {}
+      const pbStudents = studentsData?.items || []
+      for (const s of pbStudents) {
+        if (s.id && s.dob) dobMap[s.id] = s.dob
+      }
+
+      if (pointsData.success) {
+        const all = (pointsData.students || []).filter((s: Student) => s.status === "active")
+        // Also pull in non-points students from PB that might not be in points
+        if (pbStudents.length > 0 && all.length === 0) {
+          // Fallback: no points data, use PB students directly
+          setStudents(pbStudents
+            .filter((s: any) => s.status === "active")
+            .map((s: any) => ({
+              id: s.id, name: s.name, points: 0, grade: s.grade || "", center: s.center || "",
+              status: s.status, dob: s.dob,
+            }))
+          )
         } else {
-          setStudents(all)
+          setStudents(all.map((s: Student) => ({ ...s, dob: dobMap[s.id] || (s as any).dob })))
         }
+      } else if (pbStudents.length > 0) {
+        // Points API failed, use PB students with 0 points
+        setStudents(pbStudents
+          .filter((s: any) => s.status === "active")
+          .map((s: any) => ({
+            id: s.id, name: s.name, points: 0, grade: s.grade || "", center: s.center || "",
+            status: s.status, dob: s.dob,
+          }))
+        )
       }
     } catch (err) { console.error(err) }
     finally { setLoading(false) }

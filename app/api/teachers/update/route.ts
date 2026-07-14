@@ -45,10 +45,11 @@ export async function POST(request: NextRequest) {
     
     // 入职/身份 — 兼容表单字段名
     if (get('joinDate', 'hireDate') !== undefined) mappedUpdateData.hireDate = get('joinDate', 'hireDate')
+    if (get('resignationDate') !== undefined) mappedUpdateData.resignationDate = get('resignationDate')
     if (get('idNumber') !== undefined) mappedUpdateData.idNumber = get('idNumber')
     if (get('isCitizen') !== undefined) mappedUpdateData.isCitizen = get('isCitizen')
-    if (get('marriedStatus', 'maritalStatus') !== undefined) mappedUpdateData.maritalStatus = get('marriedStatus', 'maritalStatus')
-    if (get('totalChild', 'childrenCount') !== undefined) mappedUpdateData.childrenCount = get('totalChild', 'childrenCount')
+    if (get('marriedStatus', 'maritalStatus') !== undefined) mappedUpdateData.marriedStatus = get('marriedStatus', 'maritalStatus')
+    if (get('totalChild', 'childrenCount') !== undefined) mappedUpdateData.totalChild = get('totalChild', 'childrenCount')
     
     // 地址/紧急联络/备注/税务/户口
     if (get('address') !== undefined) mappedUpdateData.address = get('address')

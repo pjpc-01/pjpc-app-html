@@ -31,6 +31,10 @@ const CATEGORY_MAP: Record<string, string> = {
   'Administrative': '行政费',
   'Materials': '教材费',
   'Miscellaneous': '杂项',
+  'Activity': '活动费',
+  'Daycare': '安亲班',
+  'Transport': '交通费',
+  'Meals': '膳食费',
 }
 
 const ITEM_NAME_MAP: Record<string, string> = {

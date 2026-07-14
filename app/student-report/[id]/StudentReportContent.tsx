@@ -8,15 +8,32 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useStudentReports, StudentReport, ReportSubject } from "@/hooks/useStudentReports"
 import { useStudents } from "@/hooks/useStudents"
 import {
   ArrowLeft, Printer, Download, Save, Edit3, FileText,
   User, Calendar, Clock, BookOpen, Star, Flag, Heart,
-  AlertTriangle, CheckCircle, ChevronRight, Loader2
+  AlertTriangle, CheckCircle, ChevronRight, Loader2,
+  Settings, X, PlusCircle
 } from "lucide-react"
 
-const DEFAULT_SUBJECTS = ["华文", "国文", "英文", "数学", "科学"]
+const DEFAULT_SUBJECTS = ["华文", "国文", "英文", "数学", "科学", "地理", "历史"]
+const SETTINGS_KEY = "student_report_default_subjects"
+
+const loadDefaultSubjects = (): string[] => {
+  if (typeof window === "undefined") return DEFAULT_SUBJECTS
+  try {
+    const saved = localStorage.getItem(SETTINGS_KEY)
+    if (saved) return JSON.parse(saved)
+  } catch {}
+  return DEFAULT_SUBJECTS
+}
+
+const saveDefaultSubjects = (subjects: string[]) => {
+  if (typeof window === "undefined") return
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(subjects))
+}
 
 // Convert numeric score to Chinese evaluation
 const scoreToEvaluation = (score: number | null): string => {
@@ -64,6 +81,11 @@ export default function StudentReportContent() {
   const [editMode, setEditMode] = useState(false)
   const [saving, setSaving] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
+
+  // Subject settings dialog
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [defaultSubjects, setDefaultSubjects] = useState<string[]>(loadDefaultSubjects)
+  const [newSubjectName, setNewSubjectName] = useState("")
 
   // Load report
   useEffect(() => {
@@ -136,6 +158,53 @@ export default function StudentReportContent() {
     } finally {
       setSaving(false)
     }
+  }
+
+  // ─── Subject helpers ───
+  const addSubject = (name: string = "新科目") => {
+    if (!report) return
+    setReport({ ...report, subjects: [...report.subjects, { name, midterm: null, final: null, evaluation: "" }] })
+  }
+
+  const removeSubject = (idx: number) => {
+    if (!report) return
+    const subs = [...report.subjects]
+    subs.splice(idx, 1)
+    setReport({ ...report, subjects: subs })
+  }
+
+  const renameSubject = (idx: number, name: string) => {
+    updateSubject(idx, 'name', name)
+  }
+
+  const applyDefaultSubjects = () => {
+    if (!report) return
+    const currentNames = new Set(report.subjects.map(s => s.name))
+    const newSubs = defaultSubjects
+      .filter(name => !currentNames.has(name))
+      .map(name => ({ name, midterm: null, final: null, evaluation: "" } as ReportSubject))
+    setReport({ ...report, subjects: [...report.subjects, ...newSubs] })
+  }
+
+  // Subject settings handlers
+  const handleAddDefaultSubject = () => {
+    const name = newSubjectName.trim()
+    if (!name || defaultSubjects.includes(name)) return
+    const updated = [...defaultSubjects, name]
+    setDefaultSubjects(updated)
+    saveDefaultSubjects(updated)
+    setNewSubjectName("")
+  }
+
+  const handleRemoveDefaultSubject = (name: string) => {
+    const updated = defaultSubjects.filter(s => s !== name)
+    setDefaultSubjects(updated)
+    saveDefaultSubjects(updated)
+  }
+
+  const handleResetDefaultSubjects = () => {
+    setDefaultSubjects([...DEFAULT_SUBJECTS])
+    saveDefaultSubjects([...DEFAULT_SUBJECTS])
   }
 
   // Print
@@ -297,19 +366,41 @@ export default function StudentReportContent() {
 
           {/* Subjects Table */}
           <div className="overflow-x-auto mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-gray-400">{sortedSubjects.length} 个科目</span>
+              <div className="flex gap-1">
+                <Button size="sm" variant="ghost" className="text-xs text-gray-500 h-7" onClick={() => setSettingsOpen(true)}>
+                  <Settings className="h-3.5 w-3.5 mr-1" />科目设置
+                </Button>
+                {editMode && (
+                  <Button size="sm" variant="ghost" className="text-xs text-blue-500 h-7" onClick={applyDefaultSubjects}>
+                    <PlusCircle className="h-3.5 w-3.5 mr-1" />应用默认科目
+                  </Button>
+                )}
+              </div>
+            </div>
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-blue-500 text-white">
                   <th className="px-4 py-2.5 text-left rounded-tl-lg font-medium">学科</th>
                   <th className="px-4 py-2.5 text-center font-medium">期中成绩</th>
                   <th className="px-4 py-2.5 text-center font-medium">期末成绩</th>
-                  <th className="px-4 py-2.5 text-center rounded-tr-lg font-medium">学期总体评价</th>
+                  <th className={`px-4 py-2.5 text-center font-medium ${!editMode ? 'rounded-tr-lg' : ''}`}>学期总体评价</th>
+                  {editMode && <th className="px-2 py-2.5 text-center rounded-tr-lg font-medium w-10"></th>}
                 </tr>
               </thead>
               <tbody>
                 {sortedSubjects.map((subj, idx) => (
                   <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50/50">
-                    <td className="px-4 py-2.5 font-medium text-gray-700">{subj.name}</td>
+                    <td className="px-4 py-2.5 font-medium text-gray-700">
+                      {editMode ? (
+                        <Input
+                          value={subj.name}
+                          onChange={e => renameSubject(idx, e.target.value)}
+                          className="h-8 text-sm max-w-[120px]"
+                        />
+                      ) : subj.name}
+                    </td>
                     <td className="px-4 py-2.5 text-center">
                       {editMode ? (
                         <Input 
@@ -352,15 +443,22 @@ export default function StudentReportContent() {
                         </Badge>
                       )}
                     </td>
+                    {editMode && (
+                      <td className="px-2 py-2.5 text-center">
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-400 hover:text-red-600" onClick={() => removeSubject(idx)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 ))}
                 {/* Add subject row */}
                 {editMode && (
                   <tr>
-                    <td colSpan={4} className="px-4 py-2 text-center">
+                    <td colSpan={editMode ? 5 : 4} className="px-4 py-2 text-center">
                       <Button 
                         size="sm" variant="ghost" 
-                        onClick={() => setReport({...report, subjects: [...report.subjects, {name: "新科目", midterm: null, final: null, evaluation: ""}]})}
+                        onClick={() => addSubject()}
                         className="text-gray-400 hover:text-gray-600 text-xs"
                       >
                         + 添加科目
@@ -661,6 +759,58 @@ export default function StudentReportContent() {
         </div>
 
       </div>
+
+      {/* ═══ Subject Settings Dialog ═══ */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />学生报告科目设置
+            </DialogTitle>
+            <DialogDescription>
+              设置默认科目列表，新建报告时可快速应用
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                value={newSubjectName}
+                onChange={e => setNewSubjectName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleAddDefaultSubject()}
+                placeholder="输入新科目名称..."
+                className="h-9 text-sm flex-1"
+              />
+              <Button size="sm" onClick={handleAddDefaultSubject} className="h-9">
+                <PlusCircle className="h-4 w-4 mr-1" />添加
+              </Button>
+            </div>
+            <div className="space-y-1.5 max-h-60 overflow-y-auto">
+              {defaultSubjects.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">暂无默认科目</p>
+              ) : (
+                defaultSubjects.map((name, i) => (
+                  <div key={i} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium">{name}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0 text-red-400 hover:text-red-600"
+                      onClick={() => handleRemoveDefaultSubject(name)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="pt-2 border-t">
+              <Button size="sm" variant="outline" onClick={handleResetDefaultSubjects} className="w-full text-xs">
+                恢复默认科目（{DEFAULT_SUBJECTS.join("、")}）
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Print Styles */}
       <style jsx global>{`

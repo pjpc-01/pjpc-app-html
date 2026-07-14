@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FileText, Download, Printer, Send, CheckCircle, AlertCircle, Loader2, Eye, Trash2 } from "lucide-react"
+import { FileText, Download, Printer, Send, CheckCircle, AlertCircle, Loader2, Eye, Trash2, XCircle, CheckSquare } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -43,6 +44,54 @@ export function InvoiceList({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [invoiceToDelete, setInvoiceToDelete] = useState<any>(null)
 
+  // ── Batch delete state ──
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [isBatchDeleteOpen, setIsBatchDeleteOpen] = useState(false)
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false)
+
+  const allIds = invoices.map(inv => inv.id)
+  const allSelected = allIds.length > 0 && selectedIds.size === allIds.length
+  const someSelected = selectedIds.size > 0
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(allIds))
+    }
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const handleBatchDelete = async () => {
+    setIsBatchDeleting(true)
+    const ids = [...selectedIds]
+    // Delete sequentially to avoid overwhelming the API
+    for (const id of ids) {
+      const invoice = invoices.find(inv => inv.id === id)
+      if (invoice) {
+        try {
+          await onDelete(invoice)
+        } catch {
+          // continue on error for remaining items
+        }
+      }
+    }
+    setIsBatchDeleting(false)
+    setIsBatchDeleteOpen(false)
+    setSelectedIds(new Set())
+  }
+
   const handleDeleteClick = (invoice: any) => {
     setInvoiceToDelete(invoice)
     setIsDeleteDialogOpen(true)
@@ -60,6 +109,7 @@ export function InvoiceList({
     setIsDeleteDialogOpen(false)
     setInvoiceToDelete(null)
   }
+
   const getPaymentStatusBadge = (invoiceId: string) => {
     const invoicePayments = payments.filter(payment => payment.invoiceId === invoiceId)
     
@@ -153,11 +203,45 @@ export function InvoiceList({
             </div>
           </div>
 
+          {/* ── Batch action bar ── */}
+          {someSelected && (
+            <div className="flex items-center justify-between mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+              <span className="text-sm text-red-700 font-medium">
+                已选择 <span className="font-bold">{selectedIds.size}</span> 张发票
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedIds(new Set())}
+                >
+                  <XCircle className="h-4 w-4 mr-1" />
+                  取消选择
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setIsBatchDeleteOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  删除选中 ({selectedIds.size})
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Invoice Table */}
           <div className="border rounded-lg">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
+                      aria-label="全选"
+                    />
+                  </TableHead>
                   <TableHead>发票号码</TableHead>
                   <TableHead>收据号码</TableHead>
                   <TableHead>学生姓名</TableHead>
@@ -171,7 +255,14 @@ export function InvoiceList({
               </TableHeader>
               <TableBody>
                 {invoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
+                  <TableRow key={invoice.id} className={selectedIds.has(invoice.id) ? "bg-red-50/50" : ""}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(invoice.id)}
+                        onCheckedChange={() => toggleSelect(invoice.id)}
+                        aria-label={`选择 ${invoice.invoiceNumber}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                     <TableCell className="text-blue-600 font-medium">
                       {invoice.receiptNumber || '待生成'}
@@ -298,13 +389,13 @@ export function InvoiceList({
         </CardContent>
       </Card>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Single Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>确认删除</DialogTitle>
             <DialogDescription>
-              确定要删除这张发票吗？
+              确定要删除发票 <span className="font-semibold">{invoiceToDelete?.invoiceNumber}</span> 吗？
             </DialogDescription>
           </DialogHeader>
           
@@ -320,6 +411,65 @@ export function InvoiceList({
               onClick={handleConfirmDelete}
             >
               删除
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch Delete Confirmation Dialog */}
+      <Dialog open={isBatchDeleteOpen} onOpenChange={setIsBatchDeleteOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              批量删除发票
+            </DialogTitle>
+            <DialogDescription>
+              <div className="space-y-2 mt-2">
+                <p className="text-sm">
+                  确定要删除选中的 <span className="font-bold text-red-600">{selectedIds.size}</span> 张发票吗？
+                </p>
+                <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-40 overflow-y-auto">
+                  <ul className="text-xs space-y-0.5">
+                    {[...selectedIds].map(id => {
+                      const inv = invoices.find(i => i.id === id)
+                      return inv ? (
+                        <li key={id} className="text-red-700">
+                          • {inv.invoiceNumber} — {inv.studentName} (RM {inv.totalAmount?.toLocaleString()})
+                        </li>
+                      ) : null
+                    })}
+                  </ul>
+                </div>
+                <p className="text-xs text-red-500 mt-2">⚠️ 此操作不可撤销！</p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex justify-end gap-2 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsBatchDeleteOpen(false)}
+              disabled={isBatchDeleting}
+            >
+              取消
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleBatchDelete}
+              disabled={isBatchDeleting}
+            >
+              {isBatchDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  删除中...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  删除 {selectedIds.size} 张发票
+                </>
+              )}
             </Button>
           </div>
         </DialogContent>
