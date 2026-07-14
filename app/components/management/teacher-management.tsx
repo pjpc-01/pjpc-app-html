@@ -116,10 +116,14 @@ export default function TeacherManagement() {
     e.preventDefault()
     const isEditing = !!editingTeacher
     try {
-      const res = await fetch('/api/teachers' + (isEditing ? `?id=${editingTeacher!.id}` : ''), {
-        method: isEditing ? 'PUT' : 'POST',
+      const url = isEditing ? '/api/teachers/update' : '/api/teachers'
+      const body = isEditing
+        ? { id: editingTeacher!.id, ...newTeacher }
+        : newTeacher
+      const res = await fetch(url, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTeacher)
+        body: JSON.stringify(body)
       })
       if (!res.ok) throw new Error((await res.json()).error || '操作失败')
       alert(isEditing ? '教师信息已更新' : '教师已添加')

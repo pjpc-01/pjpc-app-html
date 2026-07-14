@@ -62,15 +62,30 @@ export async function POST(request: NextRequest) {
     if (get('centerId') !== undefined) mappedUpdateData.centerId = get('centerId')
     
     // 其他字段
-    if (get('cardNumber') !== undefined) mappedUpdateData.cardNumber = get('cardNumber')
+    if (get('cardNumber', 'nfc_card_number') !== undefined) mappedUpdateData.cardNumber = get('cardNumber', 'nfc_card_number')
     if (get('teacherUrl') !== undefined) mappedUpdateData.teacherUrl = get('teacherUrl')
-    if (get('permissions') !== undefined) mappedUpdateData.permissions = get('permissions')
     if (get('status') !== undefined) mappedUpdateData.status = get('status')
     
-    // 移除 undefined 和 null 值
+    // 移除 undefined 和 null 值，并清理无效数据
     Object.keys(mappedUpdateData).forEach(key => {
-      if (mappedUpdateData[key] === undefined || mappedUpdateData[key] === null) {
+      const val = mappedUpdateData[key]
+      if (val === undefined || val === null) {
         delete mappedUpdateData[key]
+        return
+      }
+      // Skip empty strings for date fields (PB rejects "" for date types)
+      if (['hireDate', 'resignationDate'].includes(key) && val === '') {
+        delete mappedUpdateData[key]
+        return
+      }
+      // Convert numeric strings to numbers for number-type fields
+      if (['epfNo', 'socsoNo', 'bankAccountNo', 'idNumber', 'totalChild', 'taxNo', 'accountNo'].includes(key)) {
+        if (typeof val === 'string' && val.trim() !== '') {
+          mappedUpdateData[key] = Number(val)
+        } else if (val === '' || val === null) {
+          delete mappedUpdateData[key]
+          return
+        }
       }
     })
 
