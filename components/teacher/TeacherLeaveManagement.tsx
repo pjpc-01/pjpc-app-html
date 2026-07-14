@@ -505,8 +505,16 @@ export default function TeacherLeaveManagement() {
                 <TableRow key={record.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{record.expand?.teacher_id?.name}</p>
-                      <p className="text-sm text-gray-500">{record.expand?.teacher_id?.email}</p>
+                      <p className="font-medium">
+                        {Array.isArray(record.expand?.teacher_id)
+                          ? record.expand?.teacher_id[0]?.name
+                          : record.expand?.teacher_id?.name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {Array.isArray(record.expand?.teacher_id)
+                          ? record.expand?.teacher_id[0]?.email
+                          : record.expand?.teacher_id?.email}
+                      </p>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -712,7 +720,9 @@ export default function TeacherLeaveManagement() {
           <DialogHeader>
             <DialogTitle>审批请假申请</DialogTitle>
             <DialogDescription>
-              审批 {editingLeave?.expand?.teacher_id?.name} 的请假申请
+              审批 {Array.isArray(editingLeave?.expand?.teacher_id)
+   ? editingLeave?.expand?.teacher_id[0]?.name
+   : editingLeave?.expand?.teacher_id?.name} 的请假申请
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleApprovalSubmit} className="space-y-4">

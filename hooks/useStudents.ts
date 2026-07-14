@@ -64,7 +64,7 @@ export const useStudents = () => {
   const updateStudent = useCallback(async (studentId: string, studentData: Partial<Student>) => {
     try {
       console.log('useStudents: 更新学生', studentId, studentData)
-      const updatedStudent = await updateStudentInPb({ id: studentId, ...studentData } as any)
+      const updatedStudent = await updateStudentInPb(studentId, studentData as any)
       console.log('学生更新成功:', updatedStudent)
       await fetchStudents() // 刷新数据
       return updatedStudent

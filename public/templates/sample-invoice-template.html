@@ -173,6 +173,10 @@
                     <span class="info-value">{{studentName}}</span>
                 </div>
                 <div class="info-row">
+                    <span class="info-label">学生编号:</span>
+                    <span class="info-value">{{studentCode}}</span>
+                </div>
+                <div class="info-row">
                     <span class="info-label">年级:</span>
                     <span class="info-value">{{studentGrade}}</span>
                 </div>
@@ -232,6 +236,41 @@
         </div>
         {{/if}}
 
+        <!-- 银行信息 -->
+        {{#if bankName}}
+        <div class="payment-info" style="background:#e0f2fe;border-left-color:#0284c7;">
+            <div class="section-title">银行转账信息</div>
+            <div class="info-row">
+                <span class="info-label">银行:</span>
+                <span class="info-value">{{bankName}}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">账户号码:</span>
+                <span class="info-value">{{bankAccount}}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">账户持有人:</span>
+                <span class="info-value">{{bankHolder}}</span>
+            </div>
+        </div>
+        {{/if}}
+
+        <!-- 迟付款规则 -->
+        {{#if latePaymentRule}}
+        <div class="notes" style="background:#fef2f2;border-left-color:#dc2626;">
+            <div class="section-title">⚠️ 迟付款须知</div>
+            <div>{{latePaymentRule}}</div>
+        </div>
+        {{/if}}
+
+        <!-- 安亲班联系方式 -->
+        {{#if daycareContact}}
+        <div class="notes" style="background:#f0fdf4;border-left-color:#22c55e;">
+            <div class="section-title">安亲班联系方式</div>
+            <div>{{daycareContact}}</div>
+        </div>
+        {{/if}}
+
         <!-- 备注 -->
         {{#if notes}}
         <div class="notes">
@@ -242,8 +281,8 @@
 
         <!-- 页脚 -->
         <div class="footer">
-            <p>感谢您选择我们的教育服务</p>
-            <p>如有疑问，请联系学校财务部门</p>
+            <p>{{thanksGreeting}}</p>
+            <p>如有疑问，请联系学校财务部门 | {{daycarePhone}}</p>
         </div>
     </div>
 </body>

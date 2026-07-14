@@ -479,19 +479,46 @@ export default function TeacherSalaryManagement() {
     }
   }
 
+  // 删除薪资记录
+  const handleDeleteRecord = async (id: string) => {
+    if (!confirm('确定要删除这条薪资记录吗？此操作不可恢复。')) return
+    try {
+      const response = await fetch(`/api/teacher-salary?type=record&id=${id}`, {
+        method: 'DELETE',
+      })
+      const result = await response.json()
+      if (result.success) {
+        toast.success('薪资记录已删除')
+        fetchSalaryRecords()
+      } else {
+        toast.error('删除失败', { description: result.error })
+        setError(result.error)
+      }
+    } catch (error) {
+      toast.error('删除薪资记录失败')
+      setError('删除薪资记录失败')
+    }
+  }
+
   // 处理薪资记录表单
   const handleRecordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      const isEdit = !!editingRecord
       const response = await fetch('/api/teacher-salary', {
-        method: 'POST',
+        method: isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'record', data: recordForm })
+        body: JSON.stringify({
+          type: 'record',
+          id: editingRecord?.id,
+          data: { ...recordForm, created_by: userProfile?.id || 'system' }
+        })
       })
       
       const result = await response.json()
       if (result.success) {
         setRecordDialogOpen(false)
+        setEditingRecord(null)
         setRecordForm({
           teacher_id: '',
           salary_period: '',
@@ -514,14 +541,14 @@ export default function TeacherSalaryManagement() {
           notes: ''
         })
         fetchSalaryRecords()
-        toast.success("薪资记录创建成功")
+        toast.success(isEdit ? "薪资记录更新成功" : "薪资记录创建成功")
       } else {
-        toast.error("创建失败", { description: result.error })
+        toast.error(isEdit ? "更新失败" : "创建失败", { description: result.error })
         setError(result.error)
       }
     } catch (error) {
-      toast.error("创建薪资记录失败", { description: "网络错误" })
-      setError('创建薪资记录失败')
+      toast.error("操作失败", { description: "网络错误" })
+      setError('操作失败')
     }
   }
 
@@ -877,6 +904,9 @@ export default function TeacherSalaryManagement() {
                             setRecordDialogOpen(true)
                           }}>
                             <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleDeleteRecord(record.id)}>
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => {
                             const csv = [

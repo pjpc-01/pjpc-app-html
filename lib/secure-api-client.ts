@@ -25,6 +25,9 @@ const fetchFromAPI = async (endpoint: string, options: RequestInit = {}) => {
       throw new Error(`API请求失败: ${response.status} ${response.statusText}`)
     }
 
+    // 204 No Content — successful but no body (DELETE returns this)
+    if (response.status === 204) return null
+
     return await response.json()
   } catch (error) {
     console.error(`API请求失败 [${endpoint}]:`, error)

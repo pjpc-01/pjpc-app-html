@@ -13,6 +13,9 @@ export interface Invoice {
   totalAmount: number
   notes: string
   invoiceNumber: string
+  discount?: number
+  discountType?: 'amount' | 'percent'
+  latePaymentRule?: string
 }
 
 export interface InvoiceFilters {

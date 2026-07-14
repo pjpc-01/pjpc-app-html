@@ -104,10 +104,14 @@ export const EditFeeDialog = ({
                   <SelectValue placeholder="选择分类" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="education">教育/学费</SelectItem>
-                  <SelectItem value="material">教材/材料费</SelectItem>
-                  <SelectItem value="admin">行政/注册费</SelectItem>
-                  <SelectItem value="misc">其他杂项</SelectItem>
+                  <SelectItem value="Tuition">学费</SelectItem>
+                  <SelectItem value="Administrative">行政费</SelectItem>
+                  <SelectItem value="Materials">教材费</SelectItem>
+                  <SelectItem value="Activity">活动费</SelectItem>
+                  <SelectItem value="Daycare">安亲班</SelectItem>
+                  <SelectItem value="Transport">交通费</SelectItem>
+                  <SelectItem value="Meals">膳食费</SelectItem>
+                  <SelectItem value="Miscellaneous">杂项</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -145,6 +149,7 @@ export const EditFeeDialog = ({
                   <SelectItem value="monthly">月费 (Monthly)</SelectItem>
                   <SelectItem value="one-time">一次性费用 (One-time)</SelectItem>
                   <SelectItem value="annual">年费 (Annual)</SelectItem>
+                  <SelectItem value="six-month">六月一次付 (6-Month)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -162,6 +167,48 @@ export const EditFeeDialog = ({
                 onChange={(e) => onFeeItemInputChange("amount", Number(e.target.value))}
                 placeholder="0.00"
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-discount" className="text-sm font-semibold flex items-center gap-2">
+                  <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                  优惠折扣 (RM)
+                </Label>
+                <Input
+                  id="edit-discount"
+                  type="number"
+                  value={newFeeItem.discount || 0}
+                  onChange={(e) => onFeeItemInputChange("discount", Number(e.target.value))}
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-latePaymentFee" className="text-sm font-semibold flex items-center gap-2">
+                  <DollarSign className="h-3.5 w-3.5 text-red-400" />
+                  迟付款收费 (RM)
+                </Label>
+                <Input
+                  id="edit-latePaymentFee"
+                  type="number"
+                  value={newFeeItem.latePaymentFee || 0}
+                  onChange={(e) => onFeeItemInputChange("latePaymentFee", Number(e.target.value))}
+                  placeholder="8.00"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2 pt-2">
+                <Checkbox
+                  id="edit-sixMonthPay"
+                  checked={newFeeItem.sixMonthPay || false}
+                  onCheckedChange={(checked) => onFeeItemInputChange("sixMonthPay", !!checked)}
+                />
+                <Label htmlFor="edit-sixMonthPay" className="text-sm cursor-pointer">
+                  支持六个月一次付清
+                </Label>
+              </div>
             </div>
           </div>
 

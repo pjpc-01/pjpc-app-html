@@ -64,6 +64,7 @@ export interface InvoiceSettingsPreset {
   footerText: string
   paymentTerms: string
   receiptNote: string
+  latePaymentRule: string
   // Defaults
   isDefault: boolean
   createdAt: string
@@ -91,6 +92,7 @@ const createDefaultPreset = (overrides?: Partial<InvoiceSettingsPreset>): Invoic
   footerText: "",
   paymentTerms: "",
   receiptNote: "",
+  latePaymentRule: "",
   isDefault: true,
   createdAt: new Date().toISOString().split('T')[0],
   updatedAt: new Date().toISOString().split('T')[0],
@@ -349,6 +351,12 @@ export const generateInvoicePreviewHTML = (settings: InvoiceSettingsPreset): str
         📌 ${settings.receiptNote}
       </div>` : ''}
 
+      ${settings.latePaymentRule ? `
+      <div style="margin-top:12px;padding:12px 16px;background:#fef2f2;border-radius:8px;border-left:4px solid #dc2626;font-size:12px;color:#991b1b;">
+        <strong>⚠️ 迟付款须知</strong><br/>
+        ${settings.latePaymentRule}
+      </div>` : ''}
+
       <div class="footer">
         <p>${settings.schoolName} | ${settings.schoolAddress}</p>
         <p>${settings.schoolPhone} | ${settings.schoolEmail}</p>
@@ -410,6 +418,7 @@ export default function InvoiceSettingsManager({ onSettingsChange, activePresetI
             footerText: r.footerText || '',
             paymentTerms: r.paymentTerms || '',
             receiptNote: r.receiptNote || '',
+            latePaymentRule: r.latePaymentRule || '',
             isDefault: r.isDefault || false,
             createdAt: r.created || '',
             updatedAt: r.updated || '',
@@ -804,6 +813,10 @@ export default function InvoiceSettingsManager({ onSettingsChange, activePresetI
                   <div>
                     <Label>收据备注</Label>
                     <Textarea value={settings.receiptNote} onChange={e => updateSettings({ receiptNote: e.target.value })} rows={2} placeholder="此收据仅作为付款凭证..." />
+                  </div>
+                  <div>
+                    <Label>迟付款规则</Label>
+                    <Textarea value={settings.latePaymentRule} onChange={e => updateSettings({ latePaymentRule: e.target.value })} rows={3} placeholder="例如：逾期付款将征收额外 RM8 延迟费用。请在到期日期前完成付款以避免额外费用。" />
                   </div>
                   <div>
                     <Label>页脚文字</Label>

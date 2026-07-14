@@ -9,12 +9,23 @@ export interface FeeItem {
   active: boolean;
 }
 
+export interface StudentAdjustment {
+  discount: number;           // discount value (RM or % depending on discount_type)
+  discount_type: 'amount' | 'percent'; // how to interpret discount
+  six_month_pay: boolean;     // 6-month prepay flag
+  six_month_pay_rate: number; // discount rate (e.g. 0.10 = 10%)
+}
+
 export interface StudentFee {
   id: string;
   students: string;      // student id (relation)
   fee_items: FeeItem[];  // fee items as parsed array
   totalAmount: number;
   status: string;        // 'pending' | 'paid' | 'overdue' | ...
+  discount: number;
+  discount_type?: 'amount' | 'percent';
+  six_month_pay: boolean;
+  six_month_pay_rate: number;
   expand?: {
     students?: {
       id: string;
@@ -30,6 +41,8 @@ export function useStudentFees() {
 
   // Local state for editing - saved to PocketBase when edit mode is exited
   const [localFeeAssignments, setLocalFeeAssignments] = useState<Map<string, Set<string>>>(new Map());
+  // Per-student adjustments: discount / six_month_pay / six_month_pay_rate
+  const [localAdjustments, setLocalAdjustments] = useState<Map<string, StudentAdjustment>>(new Map());
   const [isEditMode, setIsEditMode] = useState(false);
 
   // Map: studentId → StudentFee record (for quick lookup)
@@ -99,6 +112,10 @@ export function useStudentFees() {
         fee_items: safeParse(record.fee_items),
         totalAmount: record.totalAmount || 0,
         status: record.status || 'pending',
+        discount: record.discount || 0,
+        discount_type: record.discount_type || 'amount',
+        six_month_pay: record.six_month_pay || false,
+        six_month_pay_rate: record.six_month_pay_rate || 0,
         expand: record.expand
       }));
 
@@ -141,23 +158,38 @@ export function useStudentFees() {
     }
   }, [feeByStudentId, localFeeAssignments, isEditMode]);
 
-  // Get total amount of active fee items for a student
+  // Get total amount of active fee items for a student (after discount)
   const getStudentAmount = useCallback((studentId: string, allFees?: any[]): number => {
+    let baseAmount = 0;
+    let discount = 0;
+    let discountType: 'amount' | 'percent' = 'amount';
     if (isEditMode) {
-      // During edit mode, calculate from local assignments
       const studentAssignments = localFeeAssignments.get(studentId);
       if (!studentAssignments || !allFees) return 0;
-      return allFees
+      baseAmount = allFees
         .filter(fee => studentAssignments.has(fee.id))
         .reduce((total, fee) => total + (fee.amount || 0), 0);
+      const adj = localAdjustments.get(studentId);
+      discount = adj?.discount || 0;
+      discountType = adj?.discount_type || 'amount';
     } else {
-      // View mode: calculate from PocketBase data by student ID
       const assignment = feeByStudentId.get(studentId);
       if (!assignment) return 0;
       const activeItems = assignment.fee_items.filter((item: FeeItem) => item.active === true);
-      return activeItems.reduce((total, item: FeeItem) => total + (item.amount || 0), 0);
+      baseAmount = activeItems.reduce((total, item: FeeItem) => total + (item.amount || 0), 0);
+      // Prefer local adjustments (user may have set discount in FeeCard without entering global edit mode)
+      const localAdj = localAdjustments.get(studentId);
+      if (localAdj && (localAdj.discount > 0 || localAdj.discount_type !== 'amount')) {
+        discount = localAdj.discount;
+        discountType = localAdj.discount_type || 'amount';
+      } else {
+        discount = assignment.discount || 0;
+        discountType = assignment.discount_type || 'amount';
+      }
     }
-  }, [feeByStudentId, isEditMode, localFeeAssignments]);
+    const discountAmount = discountType === 'percent' ? baseAmount * (discount / 100) : discount;
+    return Math.max(0, baseAmount - discountAmount);
+  }, [feeByStudentId, isEditMode, localFeeAssignments, localAdjustments]);
 
   // Assign a fee to a student (local state only during edit mode)
   const assignFeeToStudent = useCallback(async (studentId: string, feeId: string) => {
@@ -181,11 +213,47 @@ export function useStudentFees() {
     });
   }, []);
 
+  // Update local discount for a student
+  const setLocalDiscount = useCallback((studentId: string, discount: number, discount_type?: 'amount' | 'percent') => {
+    setLocalAdjustments(prev => {
+      const newMap = new Map(prev);
+      const existing = newMap.get(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_pay: false, six_month_pay_rate: 0 };
+      newMap.set(studentId, { ...existing, discount, discount_type: discount_type ?? existing.discount_type });
+      return newMap;
+    });
+  }, []);
+
+  // Update local six_month_pay flag for a student
+  const setLocalSixMonthPay = useCallback((studentId: string, six_month_pay: boolean) => {
+    setLocalAdjustments(prev => {
+      const newMap = new Map(prev);
+      const existing = newMap.get(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_pay: false, six_month_pay_rate: 0 };
+      newMap.set(studentId, { ...existing, six_month_pay });
+      return newMap;
+    });
+  }, []);
+
+  // Update local six_month_pay_rate for a student
+  const setLocalSixMonthPayRate = useCallback((studentId: string, six_month_pay_rate: number) => {
+    setLocalAdjustments(prev => {
+      const newMap = new Map(prev);
+      const existing = newMap.get(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_pay: false, six_month_pay_rate: 0 };
+      newMap.set(studentId, { ...existing, six_month_pay_rate });
+      return newMap;
+    });
+  }, []);
+
+  // Get local adjustment for a student (used by UI)
+  const getLocalAdjustment = useCallback((studentId: string): StudentAdjustment => {
+    return localAdjustments.get(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_pay: false, six_month_pay_rate: 0 };
+  }, [localAdjustments]);
+
   // Enter edit mode — initialize local assignments from PocketBase data
   const enterEditMode = useCallback(() => {
     debugLog('🔄 Entering edit mode');
 
     const initialAssignments = new Map<string, Set<string>>();
+    const initialAdjustments = new Map<string, StudentAdjustment>();
 
     // Initialize from existing PocketBase records
     feeByStudentId.forEach((studentFee, studentId) => {
@@ -199,9 +267,16 @@ export function useStudentFees() {
       }
       // Always set the entry (even if empty) so we know this student was loaded
       initialAssignments.set(studentId, feeIds);
+      initialAdjustments.set(studentId, {
+        discount: studentFee.discount || 0,
+        discount_type: (studentFee.discount_type as 'amount' | 'percent') || 'amount',
+        six_month_pay: studentFee.six_month_pay || false,
+        six_month_pay_rate: studentFee.six_month_pay_rate || 0,
+      });
     });
 
     setLocalFeeAssignments(initialAssignments);
+    setLocalAdjustments(initialAdjustments);
     setIsEditMode(true);
     debugLog(`🔄 Entered edit mode with ${initialAssignments.size} students initialized`);
   }, [feeByStudentId, debugLog]);
@@ -280,10 +355,14 @@ export function useStudentFees() {
     // does not abort the rest of the batch.
     for (const [studentId, feeIds] of localFeeAssignments) {
       try {
-        // Calculate total amount from assigned fees
-        const totalAmount = allFees
+        // Calculate total amount from assigned fees (after discount)
+        const baseAmount = allFees
           .filter((fee: any) => feeIds.has(fee.id))
           .reduce((total: number, fee: any) => total + (fee.amount || 0), 0);
+        const adj = localAdjustments.get(studentId);
+        const discount = adj?.discount || 0;
+        const discountType = adj?.discount_type || 'amount';
+        const totalAmount = Math.max(0, baseAmount - (discountType === 'percent' ? baseAmount * (discount / 100) : discount));
 
         // Create fee items array
         const feeItems = allFees
@@ -308,12 +387,18 @@ export function useStudentFees() {
           const newStatus =
             feeItems.length > 0 && previousStatus === 'paid' ? 'pending' : previousStatus;
 
-          await pbInstance.collection("student_fees").update(existingRecord.id, {
+          const savePayload = {
             fee_items: JSON.stringify(feeItems),
             totalAmount: totalAmount,
             status: newStatus,
-          });
-          debugLog(`✅ Updated record for student: ${studentId} (status: ${previousStatus} → ${newStatus})`);
+            discount: adj?.discount ?? 0,
+            discount_type: adj?.discount_type ?? 'amount',
+            six_month_pay: adj?.six_month_pay ?? false,
+            six_month_pay_rate: adj?.six_month_pay_rate ?? 0,
+          };
+
+          await pbInstance.collection("student_fees").update(existingRecord.id, savePayload);
+          debugLog(`✅ Updated record for student: ${studentId} (status: ${previousStatus} → ${newStatus}, discount: ${savePayload.discount})`);
         } else {
           // Create new record — use student ID directly for the relation field
           await pbInstance.collection("student_fees").create({
@@ -322,7 +407,11 @@ export function useStudentFees() {
             fee_items: JSON.stringify(feeItems),
             totalAmount: totalAmount,
             status: 'pending',
-            assigned_at: new Date().toISOString()
+            assigned_at: new Date().toISOString(),
+            discount: adj?.discount ?? 0,
+            discount_type: adj?.discount_type ?? 'amount',
+            six_month_pay: adj?.six_month_pay ?? false,
+            six_month_pay_rate: adj?.six_month_pay_rate ?? 0,
           });
           debugLog(`✅ Created new record for student: ${studentId}`);
         }
@@ -393,6 +482,7 @@ export function useStudentFees() {
       // Everything saved and refreshed — safe to discard local edits.
       setIsEditMode(false);
       setLocalFeeAssignments(new Map());
+      setLocalAdjustments(new Map());
       debugLog('✅ Successfully exited edit mode');
       return { savedCount: result?.savedCount ?? 0, failures: [] };
     }
@@ -462,6 +552,10 @@ export function useStudentFees() {
           students: record.students,
           fee_items: safeParse(record.fee_items),
           totalAmount: record.totalAmount || 0,
+          status: record.status || 'pending',
+          discount: record.discount || 0,
+          six_month_pay: record.six_month_pay || false,
+          six_month_pay_rate: record.six_month_pay_rate || 0,
           expand: record.expand
         }));
 
@@ -525,5 +619,10 @@ export function useStudentFees() {
     isEditMode,
     enterEditMode,
     exitEditMode,
+    // Per-student adjustments
+    setLocalDiscount,
+    setLocalSixMonthPay,
+    setLocalSixMonthPayRate,
+    getLocalAdjustment,
   };
 }

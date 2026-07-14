@@ -109,13 +109,39 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { id, status, approved_by, rejection_reason, notes } = body
 
-    const updateData: Partial<TeacherLeaveRecord> = {
+    const updateData: any = {
       status,
-      approved_by,
       approved_date: status === 'approved' || status === 'rejected' ? new Date().toISOString() : undefined,
-      rejection_reason: status === 'rejected' ? rejection_reason : undefined,
       notes
     }
+    
+    // approved_by is a relation to teachers. The frontend sends userProfile.id (users table),
+    // but we need a valid teacher ID. Try resolving: look up teacher by current admin email.
+    let teacherId: string | null = null
+    if (approved_by) {
+      try {
+        // Get current admin info to find their email
+        const adminEmail = pb.authStore?.model?.email
+        if (adminEmail) {
+          const teacherRecords = await pb.collection('teachers').getList(1, 1, {
+            filter: `email = "${adminEmail}"`
+          })
+          if (teacherRecords.items.length > 0) {
+            teacherId = teacherRecords.items[0].id
+          }
+        }
+      } catch (e) {
+        console.warn('Could not resolve teacher from admin email:', e)
+      }
+    }
+
+    // Only set approved_by if we found a valid teacher ID
+    if (teacherId) {
+      updateData.approved_by = [teacherId]
+    }
+
+    // rejection_reason — empty string for approved, actual reason for rejected
+    updateData.rejection_reason = status === 'rejected' ? (rejection_reason || '') : ''
 
     const record = await pb.collection('teacher_leave_record').update(id, updateData)
 
@@ -124,10 +150,10 @@ export async function PUT(request: NextRequest) {
       data: record,
       message: status === 'approved' ? '请假申请已批准' : status === 'rejected' ? '请假申请已拒绝' : '请假记录已更新'
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('更新请假记录失败:', error)
     return NextResponse.json(
-      { success: false, error: '更新请假记录失败' },
+      { success: false, error: `更新失败: ${error?.message || error}` },
       { status: 500 }
     )
   }

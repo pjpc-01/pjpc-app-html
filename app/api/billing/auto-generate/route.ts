@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 // 定期账单自动生成 API
 // 为所有有活跃学生费用的学生生成当月账单
 // 自动检测上期未付清/多付的 invoice，结转差额到本期
+// 应用 per-student discount / six_month_pay / late_payment_fee
 
 const PB_URL = process.env.NEXT_PUBLIC_POCKETBASE_URL || "http://127.0.0.1:8090"
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@pjpc.com"
@@ -22,12 +23,34 @@ async function getAdminToken() {
 export async function POST(request: NextRequest) {
   try {
     const token = await getAdminToken()
-    const headers = { Authorization: `${token}`, "Content-Type": "application/json" }
+    const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
 
     const now = new Date()
     const year = now.getFullYear()
     const month = now.getMonth() + 1
     const period = `${year}-${String(month).padStart(2, "0")}`
+
+    // 0. 获取全局 invoice_settings（迟付费规则）
+    let latePaymentFee = 0
+    let latePaymentGraceDays = 0
+    let latePaymentRule = ""
+    try {
+      const settingsRes = await fetch(
+        `${PB_URL}/api/collections/invoice_settings/records?perPage=1&filter=(isDefault=true)`,
+        { headers }
+      )
+      if (settingsRes.ok) {
+        const settingsData = await settingsRes.json()
+        if (settingsData.items?.length > 0) {
+          const s = settingsData.items[0]
+          latePaymentFee = s.late_payment_fee || 0
+          latePaymentGraceDays = s.late_payment_grace_days || 0
+          latePaymentRule = s.latePaymentRule || ""
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load invoice_settings, late fee defaults to 0")
+    }
 
     // 1. 获取学生的费用分配
     const studentFeesRes = await fetch(
@@ -38,12 +61,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Failed to fetch student fees" }, { status: 500 })
     }
     const studentFees = await studentFeesRes.json()
-    // student_fees uses: students (student ID), fee_items (array), status
     const activeAssignments = studentFees.items.filter((sf: any) =>
       sf.status === "active" || sf.status === "pending"
     )
 
-    // 2. 获取所有学生
+    // 2.5 获取所有 fee_items（需要 type 字段区分 recurring vs one-time）
+    const allFeeItemsRes = await fetch(
+      `${PB_URL}/api/collections/fee_items/records?perPage=500`,
+      { headers }
+    )
+    const allFeeItems = allFeeItemsRes.ok ? (await allFeeItemsRes.json()).items : []
+    const feeItemMap = new Map<string, any>(allFeeItems.map((f: any) => [f.id, f]))
+
+    // 3. 获取所有学生
     const studentsRes = await fetch(
       `${PB_URL}/api/collections/students/records?perPage=500`,
       { headers }
@@ -72,7 +102,7 @@ export async function POST(request: NextRequest) {
       paymentSumByInvoice.set(invId, (paymentSumByInvoice.get(invId) || 0) + (p.amount || 0))
     }
 
-    // 计算每个学生的上期结转
+    // 计算每个学生的上期结转 + 迟付罚金
     const studentCarryForward = new Map<string, number>()
     const studentCarryDetail = new Map<string, string[]>()
 
@@ -83,18 +113,33 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 从未付清 invoice 计算差额
+    // 从未付清 invoice 计算差额 + 迟付罚金
     for (const inv of prevInvoices) {
       const sid = inv.studentId
       if (!sid) continue
       const invoiceAmount = inv.totalAmount || inv.amount || 0
       const paidAmount = paymentSumByInvoice.get(inv.id) || 0
       const diff = paidAmount - invoiceAmount
+      
+      // 上期差额结转
       if (diff !== 0) {
         studentCarryForward.set(sid, (studentCarryForward.get(sid) || 0) + diff)
         const detail = studentCarryDetail.get(sid) || []
         detail.push(`${inv.period || "往期"} 差额:${diff > 0 ? "+" : ""}${diff.toFixed(2)}`)
         studentCarryDetail.set(sid, detail)
+      }
+
+      // 迟付检查：如果逾期未付清，加迟付罚金
+      if (latePaymentFee > 0 && diff < 0 && inv.dueDate) {
+        const dueDate = new Date(inv.dueDate)
+        const graceDate = new Date(dueDate)
+        graceDate.setDate(graceDate.getDate() + latePaymentGraceDays)
+        if (now > graceDate && paidAmount < invoiceAmount) {
+          studentCarryForward.set(sid, (studentCarryForward.get(sid) || 0) - latePaymentFee)
+          const detail = studentCarryDetail.get(sid) || []
+          detail.push(`${inv.period || "往期"} 迟付罚金: -${latePaymentFee.toFixed(2)}`)
+          studentCarryDetail.set(sid, detail)
+        }
       }
     }
 
@@ -114,7 +159,7 @@ export async function POST(request: NextRequest) {
     const markedSettled: string[] = []
 
     for (const assignment of activeAssignments) {
-      const sid = assignment.students  // student_fees uses "students" field
+      const sid = assignment.students
       if (!sid) {
         skipped.push({ reason: "无学生ID" })
         continue
@@ -134,15 +179,103 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      // Build invoice items from fee_items array
+      // Build invoice items, applying per-student discount and six-month logic
       const items: { name: string; amount: number }[] = []
-      let totalAmount = 0
+      let recurringBase = 0    // monthly-type fees (multiply by 6 for 六月付)
+      let oneTimeBase = 0      // one-time/annual-type fees (not multiplied)
 
       for (const fi of feeItemsArr) {
-        if (fi.active !== false) {
-          items.push({ name: fi.name || "费用", amount: fi.amount || 0 })
-          totalAmount += fi.amount || 0
+        if (fi.active === false) continue
+        const feeDef = feeItemMap.get(fi.id)
+        const isRecurring = feeDef?.type === 'monthly' || !feeDef?.type
+        const isOneTime = feeDef?.type === 'one-time' || feeDef?.type === 'annual'
+
+        if (isOneTime) {
+          oneTimeBase += fi.amount || 0
+        } else {
+          recurringBase += fi.amount || 0
         }
+      }
+
+      // Add line items
+      for (const fi of feeItemsArr) {
+        if (fi.active === false) continue
+        const feeDef = feeItemMap.get(fi.id)
+        const isRecurring = feeDef?.type === 'monthly' || !feeDef?.type
+        const isOneTime = feeDef?.type === 'one-time' || feeDef?.type === 'annual'
+        const labelSuffix = isOneTime ? ' (一次性)' : ''
+        items.push({ name: (fi.name || "费用") + labelSuffix, amount: fi.amount || 0 })
+      }
+
+      let totalBeforeDiscount = recurringBase + oneTimeBase
+
+      // Apply per-student discount
+      const studentDiscount = assignment.discount || 0
+      const discountType = assignment.discount_type || 'amount'
+      let discountValue = 0
+      if (studentDiscount > 0) {
+        discountValue = discountType === 'percent'
+          ? Math.round(totalBeforeDiscount * (studentDiscount / 100) * 100) / 100
+          : studentDiscount
+        const discountLabel = discountType === 'percent'
+          ? `学生折扣 (${studentDiscount}%)`
+          : '学生折扣'
+        items.push({ name: discountLabel, amount: -discountValue })
+      }
+
+      let totalAmount = totalBeforeDiscount - discountValue
+
+      // 六月一次付：recurring 项目 ×6，一次性项目保持原样，应用折扣率
+      if (assignment.six_month_pay) {
+        const sixMonthRate = assignment.six_month_pay_rate || 0
+        // Rebuild items for six-month view
+        const sixMonthItems: { name: string; amount: number }[] = []
+
+        for (const fi of feeItemsArr) {
+          if (fi.active === false) continue
+          const feeDef = feeItemMap.get(fi.id)
+          const isRecurring = feeDef?.type === 'monthly' || !feeDef?.type
+
+          if (isRecurring) {
+            sixMonthItems.push({
+              name: (fi.name || "费用") + ` (×6个月)`,
+              amount: (fi.amount || 0) * 6,
+            })
+          } else {
+            sixMonthItems.push({
+              name: (fi.name || "费用") + ' (一次性)',
+              amount: fi.amount || 0,
+            })
+          }
+        }
+
+        let sixMonthTotal = recurringBase * 6 + oneTimeBase
+
+        // Apply per-student discount on the 6-month total
+        if (studentDiscount > 0) {
+          const sv = discountType === 'percent'
+            ? Math.round(sixMonthTotal * (studentDiscount / 100) * 100) / 100
+            : studentDiscount
+          sixMonthItems.push({ name: discountType === 'percent' ? `学生折扣 (${studentDiscount}%)` : '学生折扣', amount: -sv })
+          sixMonthTotal -= sv
+        }
+
+        // Apply 六月付折扣率
+        if (sixMonthRate > 0) {
+          const prepayDiscount = Math.round(sixMonthTotal * sixMonthRate * 100) / 100
+          sixMonthItems.push({ name: `预付6个月折扣 (${(sixMonthRate * 100).toFixed(0)}%)`, amount: -prepayDiscount })
+          sixMonthTotal -= prepayDiscount
+        }
+
+        // Replace items list with six-month version
+        items.length = 0
+        items.push(...sixMonthItems)
+        totalAmount = sixMonthTotal
+        discountValue = studentDiscount > 0
+          ? (discountType === 'percent'
+              ? Math.round(sixMonthTotal * (studentDiscount / 100) * 100) / 100
+              : studentDiscount)
+          : 0
       }
 
       // 上期结转
@@ -151,10 +284,12 @@ export async function POST(request: NextRequest) {
         if (carryForward > 0) {
           items.push({ name: "上期余额抵扣", amount: -carryForward })
         } else {
-          items.push({ name: "上期未清欠款", amount: -carryForward })
+          items.push({ name: "上期未清欠款/迟付罚金", amount: -carryForward })
         }
         totalAmount -= carryForward
       }
+
+      totalAmount = Math.max(0, Math.round(totalAmount * 100) / 100)
 
       const invoiceData = {
         studentId: sid,
@@ -169,6 +304,9 @@ export async function POST(request: NextRequest) {
         issueDate: new Date().toISOString().split("T")[0],
         dueDate: new Date(year, month, 15).toISOString().split("T")[0],
         notes: "Auto-generated invoice",
+        discount: discountValue,
+        discountType: discountType,
+        latePaymentRule: latePaymentRule || undefined,
       }
 
       const createRes = await fetch(`${PB_URL}/api/collections/invoices/records`, {
@@ -185,6 +323,8 @@ export async function POST(request: NextRequest) {
           studentName: invoiceData.studentName,
           amount: totalAmount,
           carryForward,
+          discount: studentDiscount,
+          sixMonthPay: assignment.six_month_pay || false,
           items,
         })
 
@@ -227,6 +367,7 @@ export async function POST(request: NextRequest) {
       created: created.length,
       skipped: skipped.length,
       markedSettled: markedSettled.length,
+      latePaymentFeeApplied: latePaymentFee,
       details: { created, skipped },
     })
   } catch (error: any) {
