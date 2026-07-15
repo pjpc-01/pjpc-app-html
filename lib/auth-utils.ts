@@ -13,7 +13,7 @@ export async function authenticateAdmin(pb: any): Promise<void> {
   try {
     // 直接使用fetch调用admin auth API，避免SDK版本兼容问题
     const baseUrl = pb.baseUrl || 'http://127.0.0.1:8090'
-    const response = await fetch(`${baseUrl}/api/admins/auth-with-password`, {
+    const response = await fetch(`${baseUrl}/api/collections/_superusers/auth-with-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identity: adminEmail, password: adminPassword })

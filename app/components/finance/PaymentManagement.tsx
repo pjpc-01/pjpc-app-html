@@ -135,10 +135,11 @@ export default function PaymentManagement() {
       // 2. Automatically generate the Receipt
       await createReceipt({
         paymentId: payment.id,
-        studentName: selectedInvoice.studentName,
-        amount: amount,
-        date: new Date().toISOString(),
-        receiptNumber: `REC-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+        studentId: selectedInvoice.studentId,
+        totalAmount: amount,
+        receipt_date: new Date().toISOString().split('T')[0],
+        status: 'issued',
+        notes: `收据 - ${selectedInvoice.invoiceNumber}`
       })
 
       setIsPaymentDialogOpen(false)

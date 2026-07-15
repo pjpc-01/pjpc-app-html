@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -16,24 +16,37 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { FileText, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Link } from "lucide-react"
+import { FileText, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Link, Receipt, Trash2, XCircle, Loader2, CheckSquare } from "lucide-react"
 import { useReceipts } from "@/hooks/useReceipts"
 import { useInvoices } from "@/hooks/useInvoices"
 import { useStudents } from "@/hooks/useStudents"
+import { usePayments } from "@/hooks/usePayments"
 
 
 
 // Utility functions
 const getReceiptStatusBadge = (status: string) => {
-  const statusMap = {
+  const statusMap: Record<string, { variant: "outline" | "default" | "secondary" | "destructive"; text: string }> = {
+    draft: { variant: "outline" as const, text: "草稿" },
     pending: { variant: "outline" as const, text: "待处理" },
     issued: { variant: "default" as const, text: "已开具" },
     sent: { variant: "secondary" as const, text: "已发送" },
     cancelled: { variant: "destructive" as const, text: "已取消" }
   }
   
-  const statusInfo = statusMap[status as keyof typeof statusMap] || { variant: "outline" as const, text: status }
+  const statusInfo = statusMap[status] || { variant: "outline" as const, text: status }
   return <Badge variant={statusInfo.variant}>{statusInfo.text}</Badge>
+}
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "-"
+  try {
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return dateStr
+    return d.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" })
+  } catch {
+    return dateStr
+  }
 }
 
 export default function ReceiptManagement() {
@@ -41,18 +54,18 @@ export default function ReceiptManagement() {
     receipts,
     filters: receiptFilters,
     setFilters: setReceiptFilters,
-    createReceipt,
-    updateReceipt,
-    deleteReceipt,
-    getReceiptByPayment,
     getFilteredReceipts,
     getReceiptStatistics,
-    generateReceiptNumber
+    deleteReceipt,
   } = useReceipts()
 
   const {
     invoices
   } = useInvoices()
+
+  const {
+    payments
+  } = usePayments()
 
   const { students } = useStudents()
 
@@ -60,13 +73,68 @@ export default function ReceiptManagement() {
   const [isReceiptDetailDialogOpen, setIsReceiptDetailDialogOpen] = useState(false)
   const [selectedReceipt, setSelectedReceipt] = useState<any>(null)
 
-
+  // ── Batch delete state ──
+  const [selectedReceiptIds, setSelectedReceiptIds] = useState<Set<string>>(new Set())
+  const [isBatchDeleteOpen, setIsBatchDeleteOpen] = useState(false)
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false)
 
   // Get filtered receipts
   const filteredReceipts = getFilteredReceipts()
   const receiptStats = getReceiptStatistics()
 
+  // ── Batch delete computed values & handlers ──
+  const allReceiptIds = filteredReceipts.map(r => r.id)
+  const allSelected = allReceiptIds.length > 0 && selectedReceiptIds.size === allReceiptIds.length
+  const someSelected = selectedReceiptIds.size > 0
 
+  const toggleSelectAllReceipts = () => {
+    if (allSelected) {
+      setSelectedReceiptIds(new Set())
+    } else {
+      setSelectedReceiptIds(new Set(allReceiptIds))
+    }
+  }
+
+  const toggleSelectReceipt = (id: string) => {
+    setSelectedReceiptIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const handleBatchDeleteReceipts = async () => {
+    setIsBatchDeleting(true)
+    const ids = [...selectedReceiptIds]
+    for (const id of ids) {
+      try {
+        await deleteReceipt(id)
+      } catch {
+        // continue on error for remaining items
+      }
+    }
+    setIsBatchDeleting(false)
+    setIsBatchDeleteOpen(false)
+    setSelectedReceiptIds(new Set())
+  }
+
+  // Helper: look up student name by studentId
+  const getStudentName = (studentId: string) => {
+    const student = students.find(s => s.id === studentId)
+    return student?.student_name || studentId
+  }
+
+  // Helper: resolve actual invoice number from receipt.paymentId
+  const getInvoiceNumber = (paymentId: string) => {
+    const payment = payments.find(p => p.id === paymentId)
+    if (!payment) return paymentId // fallback to paymentId if payment not found
+    const invoice = invoices.find(inv => inv.id === payment.invoiceId)
+    return invoice?.invoiceNumber || paymentId
+  }
 
   const handleViewReceipt = (receipt: any) => {
     setSelectedReceipt(receipt)
@@ -74,32 +142,106 @@ export default function ReceiptManagement() {
   }
 
   const handleDownloadReceipt = (receipt: any) => {
-    // TODO: Implement receipt PDF download
-    console.log('Downloading receipt:', receipt.receiptNumber)
+    const studentName = getStudentName(receipt.studentId)
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>收据 - ${receipt.receiptNumber}</title>
+        <style>
+          body { font-family: 'SimSun', 'Microsoft YaHei', serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+          h1 { text-align: center; font-size: 24px; margin-bottom: 5px; }
+          .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+          .info-row { display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px dashed #ddd; padding-bottom: 8px; }
+          .info-label { color: #555; font-weight: bold; min-width: 120px; }
+          .info-value { flex: 1; text-align: right; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th, td { border: 1px solid #333; padding: 8px 12px; text-align: left; }
+          th { background: #f5f5f5; }
+          .total-row { font-size: 18px; font-weight: bold; text-align: right; margin-top: 15px; }
+          .footer { text-align: center; color: #999; margin-top: 40px; font-size: 12px; border-top: 1px solid #ddd; padding-top: 15px; }
+          .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; background: #e8f5e9; color: #2e7d32; }
+          .no-print { margin-bottom: 20px; }
+          .no-print button { padding: 8px 20px; cursor: pointer; background: #1976d2; color: white; border: none; border-radius: 4px; }
+          @media print { .no-print { display: none; } }
+        </style>
+      </head>
+      <body>
+        <div class="no-print">
+          <button onclick="window.print()">打印此收据</button>
+        </div>
+        <h1>收 据</h1>
+        <div class="subtitle">RECEIPT</div>
+        <div class="info-row">
+          <span class="info-label">收据号码</span>
+          <span class="info-value">${receipt.receiptNumber}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">状态</span>
+          <span class="info-value"><span class="status-badge">${receipt.status === 'issued' ? '已开具' : receipt.status}</span></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">学生姓名</span>
+          <span class="info-value">${studentName}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">付款ID</span>
+          <span class="info-value">${receipt.paymentId}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">付款日期</span>
+          <span class="info-value">${formatDate(receipt.receipt_date)}</span>
+        </div>
+        <table>
+          <tr><th>项目</th><th>金额</th></tr>
+          <tr><td>学费付款</td><td>RM ${receipt.totalAmount?.toLocaleString() || '0.00'}</td></tr>
+        </table>
+        <div class="total-row">合计: RM ${receipt.totalAmount?.toLocaleString() || '0.00'}</div>
+        ${receipt.notes ? `<p style="margin-top:15px;color:#666;">备注: ${receipt.notes}</p>` : ''}
+        <div class="footer">此收据由 PJPC 系统自动生成</div>
+        <script>window.onload = function() { setTimeout(function() { window.print(); }, 500); }</script>
+      </body>
+      </html>
+    `)
+    printWindow.document.close()
   }
 
   const handlePrintReceipt = (receipt: any) => {
-    // TODO: Implement receipt printing
-    console.log('Printing receipt:', receipt.receiptNumber)
+    // Open the same HTML view in a new window and trigger print
+    handleDownloadReceipt(receipt)
   }
 
   const handleSendReceipt = (receipt: any) => {
-    // TODO: Implement receipt sending
-    console.log('Sending receipt:', receipt.receiptNumber)
+    const studentName = getStudentName(receipt.studentId)
+    const message = encodeURIComponent(
+      `PJPC 收据通知\n\n` +
+      `收据号码: ${receipt.receiptNumber}\n` +
+      `学生: ${studentName}\n` +
+      `金额: RM ${receipt.totalAmount?.toLocaleString() || '0.00'}\n` +
+      `日期: ${formatDate(receipt.receipt_date)}\n` +
+      `状态: ${receipt.status === 'issued' ? '已开具' : receipt.status}\n\n` +
+      `感谢您的付款！`
+    )
+    // Try WhatsApp first, fall back to email
+    const whatsappUrl = `https://wa.me/?text=${message}`
+    window.open(whatsappUrl, '_blank')
   }
 
   return (
     <div className="space-y-6">
              {/* Header */}
-       <div className="flex justify-between items-center">
-         <div>
-           <h3 className="text-2xl font-bold">收据管理</h3>
-           <p className="text-gray-600">自动生成的学生缴费收据和凭证</p>
-           <p className="text-sm text-green-600 mt-1">
-             💡 收据会在缴费状态更改为&quot;已缴费&quot;且发票全额付款时自动生成
-           </p>
-         </div>
-       </div>
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-2xl font-bold">收据管理</h3>
+          <p className="text-gray-600">自动生成的学生缴费收据和凭证</p>
+          <p className="text-sm text-green-600 mt-1">
+            💡 收据会在缴费状态更改为&quot;已缴费&quot;且发票全额付款时自动生成
+          </p>
+        </div>
+      </div>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -189,12 +331,12 @@ export default function ReceiptManagement() {
             </div>
 
             <div>
-              <Label htmlFor="invoice-filter">发票号码</Label>
+              <Label htmlFor="invoice-filter">收据号码</Label>
               <Input
                 id="invoice-filter"
-                placeholder="搜索发票号码..."
-                value={receiptFilters.invoiceNumber || ''}
-                onChange={(e) => setReceiptFilters(prev => ({ ...prev, invoiceNumber: e.target.value }))}
+                placeholder="搜索收据号码..."
+                value={receiptFilters.receiptNumber || ''}
+                onChange={(e) => setReceiptFilters(prev => ({ ...prev, receiptNumber: e.target.value }))}
               />
             </div>
           </div>
@@ -207,55 +349,108 @@ export default function ReceiptManagement() {
       <Card>
         <CardHeader>
           <CardTitle>收据列表</CardTitle>
-                   <CardDescription>
+          <CardDescription>
            自动生成的收据列表，包含发票链接信息
          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>收据号码</TableHead>
-                <TableHead>发票号码</TableHead>
-                <TableHead>学生姓名</TableHead>
-                <TableHead>金额</TableHead>
-                <TableHead>付款日期</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredReceipts.map((receipt) => (
-                <TableRow key={receipt.id}>
-                  <TableCell className="font-medium">{receipt.receiptNumber}</TableCell>
-                  <TableCell className="flex items-center gap-1">
-                    <Link className="h-3 w-3 text-blue-600" />
-                    {receipt.paymentId}
-                  </TableCell>
-                  <TableCell>{receipt.recipientName}</TableCell>
-                  <TableCell>RM {receipt.totalPaid.toLocaleString()}</TableCell>
-                  <TableCell>{receipt.dateIssued}</TableCell>
-                  <TableCell>{getReceiptStatusBadge(receipt.status)}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => handleViewReceipt(receipt)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleDownloadReceipt(receipt)}>
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => handlePrintReceipt(receipt)}>
-                        <Printer className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleSendReceipt(receipt)}>
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          {filteredReceipts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <Receipt className="h-16 w-16 text-gray-300" />
+              <p className="text-lg font-medium text-gray-500">暂无收据记录</p>
+              <p className="text-sm text-gray-400">完成付款后收据会自动生成</p>
+            </div>
+          ) : (
+            <>
+              {/* ── Batch action bar ── */}
+              {someSelected && (
+                <div className="flex items-center justify-between mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+                  <span className="text-sm text-red-700 font-medium">
+                    已选择 <span className="font-bold">{selectedReceiptIds.size}</span> 张收据
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedReceiptIds(new Set())}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      取消选择
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setIsBatchDeleteOpen(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      删除选中 ({selectedReceiptIds.size})
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={allSelected}
+                          onCheckedChange={toggleSelectAllReceipts}
+                          aria-label="全选"
+                        />
+                      </TableHead>
+                      <TableHead>收据号码</TableHead>
+                      <TableHead>发票号码</TableHead>
+                      <TableHead>学生姓名</TableHead>
+                      <TableHead>金额</TableHead>
+                      <TableHead>付款日期</TableHead>
+                      <TableHead>状态</TableHead>
+                      <TableHead>操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredReceipts.map((receipt) => (
+                    <TableRow key={receipt.id} className={selectedReceiptIds.has(receipt.id) ? "bg-red-50/50" : ""}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedReceiptIds.has(receipt.id)}
+                          onCheckedChange={() => toggleSelectReceipt(receipt.id)}
+                          aria-label={`选择 ${receipt.receiptNumber}`}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{receipt.receiptNumber}</TableCell>
+                      <TableCell className="flex items-center gap-1">
+                        <Link className="h-3 w-3 text-blue-600" />
+                        {getInvoiceNumber(receipt.paymentId)}
+                      </TableCell>
+                      <TableCell>{getStudentName(receipt.studentId)}</TableCell>
+                      <TableCell>RM {receipt.totalAmount?.toLocaleString() || '0.00'}</TableCell>
+                      <TableCell>{formatDate(receipt.receipt_date)}</TableCell>
+                      <TableCell>{getReceiptStatusBadge(receipt.status)}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => handleViewReceipt(receipt)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleDownloadReceipt(receipt)}>
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handlePrintReceipt(receipt)}>
+                            <Printer className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleSendReceipt(receipt)}>
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -279,36 +474,24 @@ export default function ReceiptManagement() {
                   <p className="text-lg font-semibold">{selectedReceipt.receiptNumber}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-600">付款ID</Label>
-                  <p className="text-lg font-semibold text-blue-600">{selectedReceipt.paymentId}</p>
+                  <Label className="text-sm font-medium text-gray-600">发票号码</Label>
+                  <p className="text-lg font-semibold text-blue-600">{getInvoiceNumber(selectedReceipt.paymentId)}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-600">收款人</Label>
-                  <p className="text-lg">{selectedReceipt.recipientName}</p>
+                  <Label className="text-sm font-medium text-gray-600">学生姓名</Label>
+                  <p className="text-lg">{getStudentName(selectedReceipt.studentId)}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">总金额</Label>
-                  <p className="text-lg font-semibold text-green-600">RM {selectedReceipt.totalPaid.toLocaleString()}</p>
+                  <p className="text-lg font-semibold text-green-600">RM {selectedReceipt.totalAmount?.toLocaleString() || '0.00'}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">开具日期</Label>
-                  <p className="text-lg">{selectedReceipt.dateIssued}</p>
+                  <p className="text-lg">{formatDate(selectedReceipt.receipt_date)}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600">状态</Label>
                   <div className="mt-1">{getReceiptStatusBadge(selectedReceipt.status)}</div>
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium text-gray-600">收费项目</Label>
-                <div className="mt-2 space-y-2">
-                  {selectedReceipt.items.map((item: any, index: number) => (
-                    <div key={index} className="flex justify-between p-2 bg-gray-50 rounded">
-                      <span>{item.name}</span>
-                      <span className="font-medium">RM {item.amount.toLocaleString()}</span>
-                    </div>
-                  ))}
                 </div>
               </div>
 
@@ -335,6 +518,65 @@ export default function ReceiptManagement() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch Delete Confirmation Dialog */}
+      <Dialog open={isBatchDeleteOpen} onOpenChange={setIsBatchDeleteOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              批量删除收据
+            </DialogTitle>
+            <DialogDescription>
+              <div className="space-y-2 mt-2">
+                <p className="text-sm">
+                  确定要删除选中的 <span className="font-bold text-red-600">{selectedReceiptIds.size}</span> 张收据吗？
+                </p>
+                <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-40 overflow-y-auto">
+                  <ul className="text-xs space-y-0.5">
+                    {[...selectedReceiptIds].map(id => {
+                      const rec = filteredReceipts.find(r => r.id === id)
+                      return rec ? (
+                        <li key={id} className="text-red-700">
+                          • {rec.receiptNumber} — {getStudentName(rec.studentId)} (RM {rec.totalAmount?.toLocaleString()})
+                        </li>
+                      ) : null
+                    })}
+                  </ul>
+                </div>
+                <p className="text-xs text-red-500 mt-2">⚠️ 此操作不可撤销！</p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex justify-end gap-2 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsBatchDeleteOpen(false)}
+              disabled={isBatchDeleting}
+            >
+              取消
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleBatchDeleteReceipts}
+              disabled={isBatchDeleting}
+            >
+              {isBatchDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  删除中...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  删除 {selectedReceiptIds.size} 张收据
+                </>
+              )}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

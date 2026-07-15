@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,8 +14,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Tag, CreditCard, FileText, MapPin, GraduationCap, Activity, Edit3, DollarSign, BookOpen, Package, CalendarDays, Utensils, Bus, FolderOpen, School, ClipboardList, Receipt, Banknote, ScrollText, Library } from "lucide-react"
+import { Tag, CreditCard, FileText, MapPin, GraduationCap, Activity, Edit3, DollarSign, BookOpen, Package, CalendarDays, Utensils, Bus, FolderOpen, School, ClipboardList, Receipt, Banknote, ScrollText, Library, Loader2 } from "lucide-react"
 import { Fee } from "@/types/fees"
+
+interface CenterInfo { id: string; name: string }
 
 const ICON_OPTIONS: { value: string; label: string; icon: React.ReactNode }[] = [
   { value: "GraduationCap", label: "教育/学费", icon: <GraduationCap className="h-4 w-4" /> },
@@ -45,7 +50,16 @@ export const EditFeeDialog = ({
   onFeeItemInputChange,
   onUpdateFeeItem,
 }: EditFeeDialogProps) => {
+  const [centers, setCenters] = useState<CenterInfo[]>([])
+  const [centersLoading, setCentersLoading] = useState(true)
   const isFormValid = newFeeItem.name.trim() !== "" && newFeeItem.amount > 0
+
+  useEffect(() => {
+    fetch("/api/pocketbase-proxy/api/collections/centers/records?perPage=20&sort=name")
+      .then(r => r.json())
+      .then(d => { setCenters(d.items || []); setCentersLoading(false) })
+      .catch(() => setCentersLoading(false))
+  }, [])
 
   const handleCenterToggle = (center: string) => {
     const currentCenters = newFeeItem.applicableCenters || []
@@ -219,15 +233,19 @@ export const EditFeeDialog = ({
                 适用中心
               </Label>
               <div className="grid grid-cols-2 gap-3 p-3 border rounded-md bg-slate-50/50">
-                {["WX 01", "WX 02", "WX 03", "WX 04"].map((center) => (
-                  <div key={center} className="flex items-center space-x-2">
+                {centersLoading ? (
+                  <div className="col-span-2 flex items-center justify-center py-2 text-xs text-gray-400">
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />加载中心...
+                  </div>
+                ) : centers.map((c) => (
+                  <div key={c.id} className="flex items-center space-x-2">
                     <Checkbox
-                      id={`edit-center-${center}`}
-                      checked={(newFeeItem.applicableCenters || []).includes(center)}
-                      onCheckedChange={() => handleCenterToggle(center)}
+                      id={`edit-center-${c.id}`}
+                      checked={(newFeeItem.applicableCenters || []).includes(c.name)}
+                      onCheckedChange={() => handleCenterToggle(c.name)}
                     />
-                    <Label htmlFor={`edit-center-${center}`} className="text-xs font-normal cursor-pointer">
-                      {center}
+                    <Label htmlFor={`edit-center-${c.id}`} className="text-xs font-normal cursor-pointer">
+                      {c.name}
                     </Label>
                   </div>
                 ))}

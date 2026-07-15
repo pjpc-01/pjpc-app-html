@@ -36,7 +36,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
   // 状态管理
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDepartment, setSelectedDepartment] = useState('all')
-  const [selectedStatus, setSelectedStatus] = useState('all')
+  const [selectedStatus, setSelectedStatus] = useState('active')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(10)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -129,6 +129,8 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
       refetchTeachers()
     } catch (error) {
       console.error("Error updating teacher:", error)
+      alert('保存失败: ' + (error instanceof Error ? error.message : '未知错误'))
+      throw error // re-throw so the dialog stays open
     }
   }
 

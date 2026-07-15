@@ -8,7 +8,7 @@ export interface Invoice {
   studentGrade: string
   issueDate: string
   dueDate: string
-  status: 'issued' | 'paid' | 'overdue' | 'cancelled'
+  status: 'issued' | 'paid' | 'overdue' | 'cancelled' | 'draft' | 'sent' | 'pending'
   items: { name: string; amount: number }[]
   totalAmount: number
   notes: string
@@ -16,11 +16,14 @@ export interface Invoice {
   discount?: number
   discountType?: 'amount' | 'percent'
   latePaymentRule?: string
+  [key: string]: any // Allow additional fields like student, grade, receiptNumber
 }
 
 export interface InvoiceFilters {
   status: string
   studentName: string
+  search?: string
+  grade?: string
 }
 
 export const useInvoices = () => {
@@ -87,10 +90,30 @@ export const useInvoices = () => {
 
   const getFilteredInvoices = useCallback(() => {
     return invoices.filter(invoice => {
-      const matchesStatus = !filters.status || invoice.status === filters.status
+      // Status filter: "all" = no filter, "paid" = status === 'paid', "unpaid" = issued/overdue
+      const matchesStatus = !filters.status || filters.status === 'all' || (
+        filters.status === 'paid' ? invoice.status === 'paid'
+        : filters.status === 'unpaid' ? (invoice.status === 'issued' || invoice.status === 'overdue' || invoice.status === 'draft' || invoice.status === 'pending')
+        : invoice.status === filters.status
+      )
+
+      // Search filter: match invoiceNumber or studentName
+      const query = (filters.search || '').toLowerCase()
+      const matchesSearch = !query || 
+        (invoice.invoiceNumber && invoice.invoiceNumber.toLowerCase().includes(query)) ||
+        (invoice.studentName && invoice.studentName.toLowerCase().includes(query)) ||
+        (invoice.student && invoice.student.toLowerCase().includes(query))
+
+      // Grade filter
+      const matchesGrade = !filters.grade || filters.grade === 'all' ||
+        invoice.studentGrade === filters.grade ||
+        invoice.grade === filters.grade
+
+      // Legacy studentName filter (fallback)
       const matchesStudent = !filters.studentName || 
         invoice.studentName.toLowerCase().includes(filters.studentName.toLowerCase())
-      return matchesStatus && matchesStudent
+
+      return matchesStatus && matchesSearch && matchesGrade && matchesStudent
     })
   }, [invoices, filters])
 

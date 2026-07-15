@@ -370,6 +370,16 @@ export const updateTeacher = async (teacherData: TeacherUpdateData): Promise<Tea
     // 中心关联
     if (updateData.centerId) mappedUpdateData.centerId = updateData.centerId
     
+    // 状态字段
+    if (updateData.status) mappedUpdateData.status = updateData.status
+    
+    // NFC/URL相关字段
+    if (updateData.cardNumber) mappedUpdateData.cardNumber = updateData.cardNumber
+    if (updateData.teacherUrl) mappedUpdateData.teacherUrl = updateData.teacherUrl
+    
+    // hireDate 直接传入的情况（已有 joinDate→hireDate 映射）
+    if (updateData.hireDate) mappedUpdateData.hireDate = updateData.hireDate
+    
     // 将其他信息存储到 notes 字段
     const additionalInfo = []
     if (updateData.isCitizen !== undefined) {
@@ -383,7 +393,11 @@ export const updateTeacher = async (teacherData: TeacherUpdateData): Promise<Tea
     }
     
     if (additionalInfo.length > 0) {
-      mappedUpdateData.notes = additionalInfo.join(', ')
+      if (mappedUpdateData.notes) {
+        mappedUpdateData.notes = mappedUpdateData.notes + ' | ' + additionalInfo.join(', ')
+      } else {
+        mappedUpdateData.notes = additionalInfo.join(', ')
+      }
     }
     
     // 移除 undefined 和 null 值

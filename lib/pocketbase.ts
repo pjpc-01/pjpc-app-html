@@ -87,6 +87,11 @@ let isAuthenticated = false
 let authLock = false
 
 export const getPocketBase = async (): Promise<PocketBase> => {
+  // On the server, use the module-level pb so authenticateAdmin() works on the same instance
+  if (typeof window === 'undefined') {
+    return pb
+  }
+  
   if (!pbInstance) {
     const url = await getPocketBaseUrl()
     pbInstance = new PocketBase(url)
@@ -295,7 +300,7 @@ export const authenticateAdmin = async (): Promise<void> => {
   authLock = true
   try {
     await pb.admins.authWithPassword(
-      process.env.POCKETBASE_ADMIN_EMAIL || 'admin@pjpc.com',
+      process.env.POCKETBASE_ADMIN_EMAIL || '***REMOVED***',
       process.env.POCKETBASE_ADMIN_PASSWORD || '***REMOVED***'
     )
     isAuthenticated = true

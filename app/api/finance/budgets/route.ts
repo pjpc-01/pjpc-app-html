@@ -17,7 +17,7 @@ const VALID_CATEGORIES = [
 ]
 
 async function getAdminToken(): Promise<string> {
-  const res = await fetch(`${PB_URL}/api/admins/auth-with-password`, {
+  const res = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ identity: ADMIN_EMAIL, password: ADMIN_PASSWORD }),

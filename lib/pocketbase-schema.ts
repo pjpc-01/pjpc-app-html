@@ -326,11 +326,13 @@ export interface Payment {
  */
 export interface Receipt {
   id: string
-  receiptNumber: string // 映射自 receipt_id
-  invoiceId: string // 映射自 invoice_id
-  amount: number
-  receiptDate: string // 映射自 receipt_date
-  studentName?: string
+  receiptNumber: string
+  paymentId: string
+  totalAmount: number
+  receipt_date: string
+  studentId: string
+  status: string
+  notes?: string
   created: string
   updated: string
 }
@@ -455,14 +457,12 @@ export interface TeacherSalaryStructure {
   base_salary: number
   hourly_rate?: number
   overtime_rate?: number
-  allowance_fixed: number
-  allowance_transport?: number
-  allowance_meal?: number
-  allowance_other?: number
+  allowances: number
   epf_rate: number
   socso_rate: number
   eis_rate: number
   tax_rate: number
+  epf_employer_rate?: number
   salary_type: 'monthly' | 'hourly' | 'commission'
   effective_date: string
   end_date?: string
@@ -488,6 +488,7 @@ export interface TeacherSalaryRecord {
   allowances: number
   gross_salary: number
   epf_deduction: number
+  epf_employer?: number
   socso_deduction: number
   eis_deduction: number
   tax_deduction: number

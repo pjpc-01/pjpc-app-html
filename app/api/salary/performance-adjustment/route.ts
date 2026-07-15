@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 获取当前薪资结构
-    const currentStructure = await pb.collection('teacher_salary_structure').getList(1, 1, {
+    const currentStructure = await pb.collection('teacher_salary_structures').getList(1, 1, {
       filter: `teacher_id = "${teacher_id}" && status = "active"`,
       sort: '-effective_date'
     })
@@ -57,11 +57,9 @@ export async function POST(request: NextRequest) {
       base_salary: Math.round(structure.base_salary * (1 + adjustment.baseAdjustment)),
       hourly_rate: structure.hourly_rate ? Math.round(structure.hourly_rate * (1 + adjustment.hourlyAdjustment) * 100) / 100 : null,
       overtime_rate: structure.overtime_rate ? Math.round(structure.overtime_rate * (1 + adjustment.overtimeAdjustment) * 100) / 100 : null,
-      allowance_fixed: Math.round(structure.allowance_fixed * (1 + adjustment.allowanceAdjustment)),
-      allowance_transport: structure.allowance_transport ? Math.round(structure.allowance_transport * (1 + adjustment.allowanceAdjustment)) : null,
-      allowance_meal: structure.allowance_meal ? Math.round(structure.allowance_meal * (1 + adjustment.allowanceAdjustment)) : null,
-      allowance_other: structure.allowance_other ? Math.round(structure.allowance_other * (1 + adjustment.allowanceAdjustment)) : null,
+      allowances: Math.round(structure.allowances * (1 + adjustment.allowanceAdjustment)),
       epf_rate: structure.epf_rate,
+      epf_employer_rate: structure.epf_employer_rate,
       socso_rate: structure.socso_rate,
       eis_rate: structure.eis_rate,
       tax_rate: structure.tax_rate,
@@ -73,13 +71,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 停用旧结构
-    await pb.collection('teacher_salary_structure').update(structure.id, {
+    await pb.collection('teacher_salary_structures').update(structure.id, {
       status: 'inactive',
       end_date: new Date().toISOString().split('T')[0]
     })
 
     // 创建新结构
-    const newRecord = await pb.collection('teacher_salary_structure').create(newStructure)
+    const newRecord = await pb.collection('teacher_salary_structures').create(newStructure)
 
     // 记录调整历史
     const adjustmentRecord = {

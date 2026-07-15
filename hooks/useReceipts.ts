@@ -5,6 +5,8 @@ import { Receipt } from '@/lib/pocketbase-schema'
 export interface ReceiptFilters {
   status: string
   dateRange: { start: string; end: string }
+  studentName: string
+  receiptNumber: string
 }
 
 export const useReceipts = () => {
@@ -14,7 +16,9 @@ export const useReceipts = () => {
   const [isMockMode, setIsMockMode] = useState(false)
   const [filters, setFilters] = useState<ReceiptFilters>({
     status: '',
-    dateRange: { start: '', end: '' }
+    dateRange: { start: '', end: '' },
+    studentName: '',
+    receiptNumber: ''
   })
 
   const fetchReceipts = useCallback(async () => {
@@ -49,10 +53,22 @@ export const useReceipts = () => {
         fullList: true,
         filter: `receiptNumber begins with '${prefix}'`
       })
-      const nextNumber = allReceipts.length + 1
+      
+      // Use max number instead of length to handle gaps from deleted receipts
+      let maxNumber = 0
+      for (const r of allReceipts) {
+        const numPart = r.receiptNumber.replace(prefix, '')
+        const num = parseInt(numPart, 10)
+        if (!isNaN(num) && num > maxNumber) {
+          maxNumber = num
+        }
+      }
+      const nextNumber = maxNumber + 1
       return `${prefix}${nextNumber.toString().padStart(3, '0')}`
     } catch (err) {
-      return `${prefix}MOCK-001`
+      // In mock mode, generate unique number using timestamp to avoid duplicates
+      const timestamp = Date.now().toString().slice(-6)
+      return `${prefix}MOCK-${timestamp}`
     }
   }, [])
 
@@ -102,8 +118,14 @@ export const useReceipts = () => {
         const endDate = new Date(filters.dateRange.end)
         matchesDateRange = receiptDate >= startDate && receiptDate <= endDate
       }
+
+      const matchesStudentName = !filters.studentName ||
+        receipt.studentId.toLowerCase().includes(filters.studentName.toLowerCase())
       
-      return matchesStatus && matchesDateRange
+      const matchesReceiptNumber = !filters.receiptNumber ||
+        receipt.receiptNumber.toLowerCase().includes(filters.receiptNumber.toLowerCase())
+      
+      return matchesStatus && matchesDateRange && matchesStudentName && matchesReceiptNumber
     })
   }, [receipts, filters])
 
@@ -111,7 +133,7 @@ export const useReceipts = () => {
     return receipts.find(receipt => receipt.paymentId === paymentId)
   }, [receipts])
 
-  const generateReceiptFromPayment = useCallback(async (paymentId: string, paymentData: any, invoiceData: any): Promise<Receipt> => {
+  const generateReceiptFromPayment = useCallback(async (paymentId: string, paymentData: { amount: number }, invoiceData: { studentId: string; invoiceNumber: string }): Promise<Receipt> => {
     const currentDate = new Date().toISOString().split('T')[0]
     
     return createReceipt({
@@ -127,11 +149,13 @@ export const useReceipts = () => {
   const getReceiptStatistics = useCallback(() => {
     const total = receipts.length
     const issued = receipts.filter(r => r.status === 'issued').length
+    const draft = receipts.filter(r => r.status === 'draft').length
     const totalAmount = receipts.reduce((sum, r) => sum + r.totalAmount, 0)
     
     return {
       total,
       issued,
+      draft,
       totalAmount
     }
   }, [receipts])
