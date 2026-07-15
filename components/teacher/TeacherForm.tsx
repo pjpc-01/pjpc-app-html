@@ -11,6 +11,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 import { Teacher } from '@/types/teacher'
 
 interface TeacherFormProps {
@@ -253,19 +254,10 @@ export default function TeacherForm({
     e.preventDefault()
     setIsSubmitting(true)
     
-    // 验证必填字段
+    // 验证必填字段（仅姓名必填）
     const newErrors: Record<string, string> = {}
     if (!formData.teacher_name?.trim()) {
       newErrors.teacher_name = '教师姓名是必填项'
-    }
-    if (!formData.phone?.trim()) {
-      newErrors.phone = '电话是必填项'
-    }
-    if (!formData.department) {
-      newErrors.department = '部门是必填项'
-    }
-    if (!formData.position) {
-      newErrors.position = '职位是必填项'
     }
     
     if (Object.keys(newErrors).length > 0) {
@@ -279,6 +271,7 @@ export default function TeacherForm({
       onOpenChange(false)
     } catch (error) {
       console.error('提交失败:', error)
+      toast.error('保存失败: ' + (error instanceof Error ? error.message : '请重试'))
     } finally {
       setIsSubmitting(false)
     }
@@ -360,17 +353,13 @@ export default function TeacherForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">电话 *</Label>
+              <Label htmlFor="phone">电话</Label>
               <Input
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
                 placeholder="请输入电话"
-                className={errors.phone ? 'border-red-500' : ''}
               />
-              {errors.phone && (
-                <p className="text-sm text-red-500">{errors.phone}</p>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -388,9 +377,9 @@ export default function TeacherForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="department">部门 *</Label>
+              <Label htmlFor="department">部门</Label>
               <Select value={formData.department} onValueChange={(value) => handleInputChange('department', value)}>
-                <SelectTrigger className={errors.department ? 'border-red-500' : ''}>
+                <SelectTrigger>
                   <SelectValue placeholder="选择部门" />
                 </SelectTrigger>
                 <SelectContent>
@@ -401,19 +390,16 @@ export default function TeacherForm({
                   <SelectItem value="财务与后勤部门">财务与后勤部门（Finance & Operations）</SelectItem>
                 </SelectContent>
               </Select>
-              {errors.department && (
-                <p className="text-sm text-red-500">{errors.department}</p>
-              )}
             </div>
 
                          <div className="space-y-2">
-               <Label htmlFor="position">职位 *</Label>
+               <Label htmlFor="position">职位</Label>
                <Select 
                  value={formData.position}
                  onValueChange={(value) => handleInputChange('position', value)}
                  disabled={!formData.department}
                >
-                <SelectTrigger className={errors.position ? 'border-red-500' : ''}>
+                <SelectTrigger>
                   <SelectValue placeholder={formData.department ? "选择职位" : "请先选择部门"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -429,9 +415,6 @@ export default function TeacherForm({
                   ))}
                 </SelectContent>
               </Select>
-              {errors.position && (
-                <p className="text-sm text-red-500">{errors.position}</p>
-              )}
             </div>
 
                          <div className="space-y-2">
@@ -511,7 +494,7 @@ export default function TeacherForm({
             <h3 className="text-lg font-semibold text-gray-900">银行信息</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="bankName">银行名称 *</Label>
+                <Label htmlFor="bankName">银行名称</Label>
                 <Select value={formData.bankName} onValueChange={(value) => handleInputChange('bankName', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="选择银行" />
@@ -527,7 +510,7 @@ export default function TeacherForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="bankAccountName">账户持有人姓名 *</Label>
+                <Label htmlFor="bankAccountName">账户持有人姓名</Label>
                 <Input
                   id="bankAccountName"
                   value={formData.bankAccountName}
@@ -537,7 +520,7 @@ export default function TeacherForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="bankAccountNo">银行账号 *</Label>
+                <Label htmlFor="bankAccountNo">银行账号</Label>
                 <Input
                   id="bankAccountNo"
                   value={formData.bankAccountNo}

@@ -141,7 +141,7 @@ export default function AdvancedTeacherFilters({
       searchTerm: "",
       selectedSubject: "",
       selectedDepartment: "",
-      selectedStatus: "",
+      selectedStatus: "active",
       selectedExperience: "",
       experienceRange: [0, 30],
       hasPhone: false,

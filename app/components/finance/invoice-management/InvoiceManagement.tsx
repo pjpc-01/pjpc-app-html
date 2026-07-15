@@ -541,7 +541,7 @@ Prospek Cemerlang`,
 
       {/* Invoice List */}
       <InvoiceList
-        invoices={invoices}
+        invoices={getFilteredInvoices()}
         filters={invoiceFilters}
         setFilters={setInvoiceFilters}
         onDownload={handleDownloadInvoice}

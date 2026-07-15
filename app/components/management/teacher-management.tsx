@@ -88,7 +88,7 @@ export default function TeacherManagement() {
     searchTerm: "",
     selectedSubject: "",
     selectedDepartment: "",
-    selectedStatus: "",
+    selectedStatus: "active",
     selectedExperience: "",
     experienceRange: [0, 30],
     hasPhone: false,
@@ -157,6 +157,32 @@ export default function TeacherManagement() {
       setLoading(false)
     }
   }, [pbTeachers, teachersLoading])
+
+  // 过滤后的教师列表（默认只显示在职教师）
+  const displayTeachers = useMemo(() => {
+    let filtered = teachers
+
+    if (filters.searchTerm) {
+      const term = filters.searchTerm.toLowerCase()
+      filtered = filtered.filter(t =>
+        t.name?.toLowerCase().includes(term) ||
+        t.email?.toLowerCase().includes(term) ||
+        t.phone?.toLowerCase().includes(term) ||
+        t.department?.toLowerCase().includes(term) ||
+        t.position?.toLowerCase().includes(term)
+      )
+    }
+
+    if (filters.selectedDepartment) {
+      filtered = filtered.filter(t => t.department === filters.selectedDepartment)
+    }
+
+    if (filters.selectedStatus) {
+      filtered = filtered.filter(t => t.status === filters.selectedStatus)
+    }
+
+    return filtered
+  }, [teachers, filters])
 
   // 渲染AI功能展示
   const renderAIFeatures = () => (
@@ -578,7 +604,7 @@ export default function TeacherManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-              {teachers.map((teacher) => (
+              {displayTeachers.map((teacher) => (
                   <TableRow key={teacher.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">

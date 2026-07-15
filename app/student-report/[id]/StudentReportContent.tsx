@@ -17,6 +17,7 @@ import {
   AlertTriangle, CheckCircle, ChevronRight, Loader2,
   Settings, X, PlusCircle
 } from "lucide-react"
+import ReportSettingsManager, { type ReportSettingsPreset } from "@/app/components/report/ReportSettingsManager"
 
 const DEFAULT_SUBJECTS = ["华文", "国文", "英文", "数学", "科学", "地理", "历史"]
 const SETTINGS_KEY = "student_report_default_subjects"
@@ -86,6 +87,43 @@ export default function StudentReportContent() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [defaultSubjects, setDefaultSubjects] = useState<string[]>(loadDefaultSubjects)
   const [newSubjectName, setNewSubjectName] = useState("")
+
+  // ─── Report settings (customizable PDF format) ───
+  const [reportSettings, setReportSettings] = useState<ReportSettingsPreset>({
+    id: "default", name: "默认", schoolName: "", schoolNameEn: "", schoolLogo: "",
+    schoolAddress: "", schoolPhone: "", schoolEmail: "", primaryColor: "#3b82f6",
+    headerTitle: "学生报告", headerSubtitle: "— 全面发展 · 健康成长 · 追求卓越 —",
+    footerText: "自信自强 | 勤学善思 | 合作共进 | 全面发展",
+    isDefault: true, createdAt: "", updatedAt: "",
+  })
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
+
+  // Load report settings from PB
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/api/pocketbase-proxy/api/collections/report_settings/records?filter=(isDefault=true)&perPage=1')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.items?.length > 0) {
+            const r = data.items[0]
+            setReportSettings({
+              id: r.id, name: r.name || "默认",
+              schoolName: r.schoolName || "", schoolNameEn: r.schoolNameEn || "",
+              schoolLogo: r.schoolLogo || "", schoolAddress: r.schoolAddress || "",
+              schoolPhone: r.schoolPhone || "", schoolEmail: r.schoolEmail || "",
+              primaryColor: r.primaryColor || "#3b82f6",
+              headerTitle: r.headerTitle || "学生报告",
+              headerSubtitle: r.headerSubtitle || "— 全面发展 · 健康成长 · 追求卓越 —",
+              footerText: r.footerText || "自信自强 | 勤学善思 | 合作共进 | 全面发展",
+              isDefault: true, createdAt: r.created || "", updatedAt: r.updated || "",
+            })
+          }
+        }
+      } catch {}
+    }
+    load()
+  }, [])
 
   // Load report
   useEffect(() => {
@@ -262,6 +300,9 @@ export default function StudentReportContent() {
             </>
           ) : (
             <>
+              <Button size="sm" variant="outline" onClick={() => setSettingsDialogOpen(true)}>
+                <Settings className="h-4 w-4 mr-1" />格式
+              </Button>
               <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>
                 <Edit3 className="h-4 w-4 mr-1" />编辑
               </Button>
@@ -277,13 +318,23 @@ export default function StudentReportContent() {
       <div ref={printRef} className="report-container" id="student-report-print">
         
         {/* ═══ Header ═══ */}
-        <div className="text-center mb-6 print:mb-4">
-          <div className="inline-flex items-center gap-3">
-            <span className="text-gray-300 text-lg">✦</span>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-700">学生报告</h1>
-            <span className="text-gray-300 text-lg">✦</span>
+        <div className="text-center mb-6 print:mb-4" style={{ background: `linear-gradient(135deg, ${reportSettings.primaryColor}, ${reportSettings.primaryColor}dd)`, color: '#fff', padding: '20px 24px', borderRadius: '12px' }}>
+          {reportSettings.schoolLogo && (
+            <div className="flex justify-center mb-2">
+              <div className="w-14 h-14 rounded-xl overflow-hidden bg-white/20 flex items-center justify-center">
+                <img src={reportSettings.schoolLogo} alt="logo" className="w-full h-full object-contain p-1" />
+              </div>
+            </div>
+          )}
+          {reportSettings.schoolName && (
+            <p className="text-sm font-semibold opacity-90">{reportSettings.schoolName}</p>
+          )}
+          <div className="inline-flex items-center gap-3 mt-1">
+            <span className="opacity-40 text-lg">✦</span>
+            <h1 className="text-2xl sm:text-3xl font-bold">{reportSettings.headerTitle}</h1>
+            <span className="opacity-40 text-lg">✦</span>
           </div>
-          <p className="text-gray-400 text-sm mt-1">— 全面发展 · 健康成长 · 追求卓越 —</p>
+          <p className="opacity-75 text-sm mt-1">{reportSettings.headerSubtitle}</p>
         </div>
 
         {/* ═══ Student Info + Photo + Growth Message ═══ */}
@@ -754,8 +805,8 @@ export default function StudentReportContent() {
         </div>
 
         {/* ═══ Footer Banner ═══ */}
-        <div className="bg-gray-700 text-white text-center py-3 rounded-xl text-sm font-medium">
-          自信自强 | 勤学善思 | 合作共进 | 全面发展
+        <div className="text-white text-center py-3 rounded-xl text-sm font-medium" style={{ backgroundColor: '#374151' }}>
+          {reportSettings.footerText}
         </div>
 
       </div>
@@ -812,6 +863,22 @@ export default function StudentReportContent() {
         </DialogContent>
       </Dialog>
 
+      {/* ═══ Report Format Settings Dialog ═══ */}
+      <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />报告格式设置
+            </DialogTitle>
+            <DialogDescription>自定义学生报告的打印/PDF样式</DialogDescription>
+          </DialogHeader>
+          <ReportSettingsManager
+            onSettingsChange={(s) => setReportSettings(s)}
+            activePresetId={reportSettings.id}
+          />
+        </DialogContent>
+      </Dialog>
+
       {/* Print Styles */}
       <style jsx global>{`
         @media print {
@@ -832,6 +899,11 @@ export default function StudentReportContent() {
             border: 1px solid #e2e8f0 !important;
             box-shadow: none !important;
             background: #fff !important;
+          }
+          /* Preserve header gradient colors on print */
+          #student-report-print > div:first-child {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
         }
       `}</style>

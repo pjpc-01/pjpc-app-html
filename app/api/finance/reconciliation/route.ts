@@ -10,7 +10,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "final_pass"
 const AMOUNT_TOLERANCE = 0.02 // allow ±$0.02 difference
 
 async function getAdminToken(): Promise<string> {
-  const res = await fetch(`${PB_URL}/api/admins/auth-with-password`, {
+  const res = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ identity: ADMIN_EMAIL, password: ADMIN_PASSWORD }),

@@ -14,6 +14,12 @@ export async function POST(request: NextRequest) {
 
     const pb = await getPocketBase()
     
+    // Authenticate as admin before updating
+    await pb.admins.authWithPassword(
+      process.env.POCKETBASE_ADMIN_EMAIL || 'final_admin@test.com',
+      process.env.POCKETBASE_ADMIN_PASSWORD || 'final_pass'
+    )
+    
     console.log('🔧 使用API路由更新教师，绕过权限检查')
 
     // 数据映射 - 将表单字段映射到PocketBase字段

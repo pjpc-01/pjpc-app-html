@@ -12,7 +12,7 @@ async function getAdminToken() {
   const now = Date.now()
   if (cachedToken && now < tokenExpiry) return cachedToken
 
-  const response = await fetch(`${POCKETBASE_URL}/api/admins/auth-with-password`, {
+  const response = await fetch(`${POCKETBASE_URL}/api/collections/_superusers/auth-with-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ identity: ADMIN_EMAIL, password: ADMIN_PASSWORD }),
@@ -34,8 +34,8 @@ const AUTH_ENDPOINTS = [
   '/api/collections/users/confirm-verification',
   '/api/collections/users/request-email-change',
   '/api/collections/users/confirm-email-change',
-  '/api/admins/auth-with-password',
-  '/api/admins/auth-refresh',
+  '/api/collections/_superusers/auth-with-password',
+  '/api/collections/_superusers/auth-refresh',
 ]
 
 function isAuthEndpoint(path: string): boolean {

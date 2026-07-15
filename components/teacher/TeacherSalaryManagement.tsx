@@ -53,14 +53,12 @@ interface TeacherSalaryStructure {
   base_salary: number
   hourly_rate?: number
   overtime_rate?: number
-  allowance_fixed: number
-  allowance_transport?: number
-  allowance_meal?: number
-  allowance_other?: number
+  allowances: number
   epf_rate: number
   socso_rate: number
   eis_rate: number
   tax_rate: number
+  epf_employer_rate?: number
   salary_type: 'monthly' | 'hourly' | 'commission'
   effective_date: string
   end_date?: string
@@ -87,6 +85,7 @@ interface TeacherSalaryRecord {
   allowances: number
   gross_salary: number
   epf_deduction: number
+  epf_employer?: number
   socso_deduction: number
   eis_deduction: number
   tax_deduction: number
@@ -129,18 +128,50 @@ export default function TeacherSalaryManagement() {
   
   // Global salary settings (EPF/SOCSO/EIS/TAX rates)
   const [globalRates, setGlobalRates] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('salary_global_rates')
-      if (saved) return JSON.parse(saved)
-    }
-    return { epf: 0.11, socso: 0.005, eis: 0.002, tax: 0 }
+    return { epf: 0.11, socso: 0.005, eis: 0.002, tax: 0, epf_employer: 0.13 }
   })
   
-  // Persist global rates to localStorage
-  const updateGlobalRates = (updates: Partial<typeof globalRates>) => {
+  // Fetch global rates from PocketBase
+  useEffect(() => {
+    const fetchGlobalRates = async () => {
+      try {
+        const response = await fetch('/api/salary-settings')
+        const result = await response.json()
+        if (result.success && result.data) {
+          setGlobalRates({
+            epf: result.data.epf_rate ?? 0.11,
+            socso: result.data.socso_rate ?? 0.005,
+            eis: result.data.eis_rate ?? 0.002,
+            tax: result.data.tax_rate ?? 0,
+            epf_employer: result.data.epf_employer_rate ?? 0.13,
+          })
+        }
+      } catch (error) {
+        console.error('获取薪资参数设置失败:', error)
+      }
+    }
+    fetchGlobalRates()
+  }, [])
+  
+  // Persist global rates to PocketBase
+  const updateGlobalRates = async (updates: Partial<typeof globalRates>) => {
     const next = { ...globalRates, ...updates }
     setGlobalRates(next)
-    localStorage.setItem('salary_global_rates', JSON.stringify(next))
+    try {
+      await fetch('/api/salary-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          epf_rate: next.epf,
+          socso_rate: next.socso,
+          eis_rate: next.eis,
+          tax_rate: next.tax,
+          epf_employer_rate: next.epf_employer
+        })
+      })
+    } catch (error) {
+      console.error('保存薪资参数设置失败:', error)
+    }
   }
   
   // Dialog states
@@ -155,15 +186,13 @@ export default function TeacherSalaryManagement() {
     base_salary: 0,
     hourly_rate: 0,
     overtime_rate: 0,
-    allowance_fixed: 0,
-    allowance_transport: 0,
-    allowance_meal: 0,
-    allowance_other: 0,
+    allowances: 0,
     epf_rate: 0.11,
     socso_rate: 0.005,
     eis_rate: 0.002,
     tax_rate: 0,
-    salary_type: 'monthly' as const,
+    epf_employer_rate: 0.13,
+    salary_type: 'monthly' as 'monthly' | 'hourly' | 'commission',
     effective_date: '',
     end_date: '',
     notes: ''
@@ -268,7 +297,7 @@ export default function TeacherSalaryManagement() {
   // 计算薪资
   const calculateSalary = useCallback((form: typeof structureForm) => {
     const baseSalary = form.base_salary
-    const allowances = form.allowance_fixed + (form.allowance_transport || 0) + (form.allowance_meal || 0) + (form.allowance_other || 0)
+    const allowances = form.allowances
     const grossSalary = baseSalary + allowances
     
     const epfDeduction = grossSalary * form.epf_rate
@@ -384,14 +413,12 @@ export default function TeacherSalaryManagement() {
           base_salary: 0,
           hourly_rate: 0,
           overtime_rate: 0,
-          allowance_fixed: 0,
-          allowance_transport: 0,
-          allowance_meal: 0,
-          allowance_other: 0,
+          allowances: 0,
           epf_rate: globalRates.epf,
           socso_rate: globalRates.socso,
           eis_rate: globalRates.eis,
           tax_rate: globalRates.tax,
+          epf_employer_rate: globalRates.epf_employer || 0.13,
           salary_type: 'monthly',
           effective_date: '',
           end_date: '',
@@ -419,14 +446,12 @@ export default function TeacherSalaryManagement() {
       base_salary: 0,
       hourly_rate: 0,
       overtime_rate: 0,
-      allowance_fixed: 0,
-      allowance_transport: 0,
-      allowance_meal: 0,
-      allowance_other: 0,
+      allowances: 0,
       epf_rate: globalRates.epf,
       socso_rate: globalRates.socso,
       eis_rate: globalRates.eis,
       tax_rate: globalRates.tax,
+      epf_employer_rate: globalRates.epf_employer || 0.13,
       salary_type: 'monthly',
       effective_date: '',
       end_date: '',
@@ -442,15 +467,13 @@ export default function TeacherSalaryManagement() {
       base_salary: structure.base_salary,
       hourly_rate: structure.hourly_rate || 0,
       overtime_rate: structure.overtime_rate || 0,
-      allowance_fixed: structure.allowance_fixed,
-      allowance_transport: structure.allowance_transport || 0,
-      allowance_meal: structure.allowance_meal || 0,
-      allowance_other: structure.allowance_other || 0,
+      allowances: structure.allowances || 0,
       epf_rate: structure.epf_rate ?? globalRates.epf,
       socso_rate: structure.socso_rate ?? globalRates.socso,
       eis_rate: structure.eis_rate ?? globalRates.eis,
       tax_rate: structure.tax_rate ?? globalRates.tax,
-      salary_type: structure.salary_type,
+      epf_employer_rate: (structure.epf_employer_rate ?? globalRates.epf_employer) || 0.13,
+      salary_type: structure.salary_type as 'monthly' | 'hourly' | 'commission',
       effective_date: structure.effective_date?.split(' ')[0] || '',
       end_date: structure.end_date?.split(' ')[0] || '',
       notes: structure.notes || ''
@@ -656,7 +679,7 @@ export default function TeacherSalaryManagement() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <Label htmlFor="global_epf">EPF 比率 (%)</Label>
+              <Label htmlFor="global_epf">EPF 雇员比率 (%)</Label>
               <Input
                 id="global_epf"
                 type="number"
@@ -710,6 +733,20 @@ export default function TeacherSalaryManagement() {
                 className="bg-white"
               />
               <p className="text-xs text-gray-500 mt-1">每月预扣税（0=不扣）</p>
+            </div>
+            <div>
+              <Label htmlFor="global_epf_employer">EPF 雇主比率 (%)</Label>
+              <Input
+                id="global_epf_employer"
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                value={(globalRates.epf_employer * 100).toFixed(1)}
+                onChange={(e) => updateGlobalRates({ epf_employer: (parseFloat(e.target.value) || 0) / 100 })}
+                className="bg-white"
+              />
+              <p className="text-xs text-gray-500 mt-1">雇主公积金</p>
             </div>
           </div>
         </CardContent>
@@ -779,6 +816,9 @@ export default function TeacherSalaryManagement() {
                     <TableHead>薪资类型</TableHead>
                     <TableHead>基本薪资</TableHead>
                     <TableHead>津贴</TableHead>
+                    <TableHead>EPF %</TableHead>
+                    <TableHead>SOCSO %</TableHead>
+                    <TableHead>EIS %</TableHead>
                     <TableHead>状态</TableHead>
                     <TableHead>生效日期</TableHead>
                     <TableHead>操作</TableHead>
@@ -800,7 +840,10 @@ export default function TeacherSalaryManagement() {
                         </Badge>
                       </TableCell>
                       <TableCell>{formatCurrency(structure.base_salary)}</TableCell>
-                      <TableCell>{formatCurrency(structure.allowance_fixed)}</TableCell>
+                      <TableCell>{formatCurrency(structure.allowances)}</TableCell>
+                      <TableCell>{(structure.epf_rate * 100).toFixed(1)}%</TableCell>
+                      <TableCell>{(structure.socso_rate * 100).toFixed(2)}%</TableCell>
+                      <TableCell>{(structure.eis_rate * 100).toFixed(2)}%</TableCell>
                       <TableCell>
                         <Badge variant={structure.status === 'active' ? 'default' : 'secondary'}>
                           {structure.status === 'active' ? '生效' : '失效'}
@@ -1122,58 +1165,102 @@ export default function TeacherSalaryManagement() {
               </div>
               
               <div>
-                <Label htmlFor="allowance_fixed">固定津贴</Label>
+                <Label htmlFor="allowances">每月补贴总额</Label>
                 <Input
-                  id="allowance_fixed"
+                  id="allowances"
                   type="number"
-                  value={structureForm.allowance_fixed}
+                  value={structureForm.allowances}
                   onChange={(e) => setStructureForm(prev => ({ 
                     ...prev, 
-                    allowance_fixed: parseFloat(e.target.value) || 0 
+                    allowances: parseFloat(e.target.value) || 0 
                   }))}
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="allowance_transport">交通津贴</Label>
+                <Label htmlFor="epf_rate">EPF 雇员比率 (%)</Label>
                 <Input
-                  id="allowance_transport"
+                  id="epf_rate"
                   type="number"
-                  value={structureForm.allowance_transport}
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={(structureForm.epf_rate * 100).toFixed(1)}
                   onChange={(e) => setStructureForm(prev => ({ 
                     ...prev, 
-                    allowance_transport: parseFloat(e.target.value) || 0 
+                    epf_rate: (parseFloat(e.target.value) || 0) / 100 
                   }))}
                 />
               </div>
-              
               <div>
-                <Label htmlFor="allowance_meal">餐费津贴</Label>
+                <Label htmlFor="socso_rate">SOCSO 比率 (%)</Label>
                 <Input
-                  id="allowance_meal"
+                  id="socso_rate"
                   type="number"
-                  value={structureForm.allowance_meal}
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={(structureForm.socso_rate * 100).toFixed(2)}
                   onChange={(e) => setStructureForm(prev => ({ 
                     ...prev, 
-                    allowance_meal: parseFloat(e.target.value) || 0 
+                    socso_rate: (parseFloat(e.target.value) || 0) / 100 
                   }))}
                 />
               </div>
-              
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="allowance_other">其他津贴</Label>
+                <Label htmlFor="eis_rate">EIS 比率 (%)</Label>
                 <Input
-                  id="allowance_other"
+                  id="eis_rate"
                   type="number"
-                  value={structureForm.allowance_other}
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={(structureForm.eis_rate * 100).toFixed(2)}
                   onChange={(e) => setStructureForm(prev => ({ 
                     ...prev, 
-                    allowance_other: parseFloat(e.target.value) || 0 
+                    eis_rate: (parseFloat(e.target.value) || 0) / 100 
                   }))}
                 />
               </div>
+              <div>
+                <Label htmlFor="tax_rate">PCB 税率 (%)</Label>
+                <Input
+                  id="tax_rate"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={(structureForm.tax_rate * 100).toFixed(1)}
+                  onChange={(e) => setStructureForm(prev => ({ 
+                    ...prev, 
+                    tax_rate: (parseFloat(e.target.value) || 0) / 100 
+                  }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="epf_employer_rate">EPF 雇主比率 (%)</Label>
+                <Input
+                  id="epf_employer_rate"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={(structureForm.epf_employer_rate * 100).toFixed(1)}
+                  onChange={(e) => setStructureForm(prev => ({ 
+                    ...prev, 
+                    epf_employer_rate: (parseFloat(e.target.value) || 0) / 100 
+                  }))}
+                />
+              </div>
+              <div></div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

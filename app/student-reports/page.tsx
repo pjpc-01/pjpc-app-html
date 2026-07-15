@@ -6,12 +6,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Eye } from "lucide-react"
+import {
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog"
+import { FileText, Eye, Settings } from "lucide-react"
 import Link from "next/link"
+import ReportSettingsManager, { type ReportSettingsPreset } from "@/app/components/report/ReportSettingsManager"
 
 export default function StudentReportsPage() {
   const [reports, setReports] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [reportSettings, setReportSettings] = useState<ReportSettingsPreset>({
+    id: "default", name: "默认", schoolName: "", schoolNameEn: "", schoolLogo: "",
+    schoolAddress: "", schoolPhone: "", schoolEmail: "", primaryColor: "#3b82f6",
+    headerTitle: "学生报告", headerSubtitle: "— 全面发展 · 健康成长 · 追求卓越 —",
+    footerText: "自信自强 | 勤学善思 | 合作共进 | 全面发展",
+    isDefault: true, createdAt: "", updatedAt: "",
+  })
 
   useEffect(() => {
     fetch("/api/pocketbase-proxy/api/collections/student_reports/records?sort=-created&perPage=50")
@@ -37,6 +49,13 @@ export default function StudentReportsPage() {
       status="系统正常"
       background="bg-gray-50"
     >
+      <div className="flex items-center justify-end mb-4">
+        <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
+          <Settings className="h-4 w-4 mr-2" />
+          报告格式设置
+        </Button>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -85,6 +104,22 @@ export default function StudentReportsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Report Format Settings Dialog */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />报告格式设置
+            </DialogTitle>
+            <DialogDescription>自定义学生报告的打印/PDF样式，所有报告统一应用</DialogDescription>
+          </DialogHeader>
+          <ReportSettingsManager
+            onSettingsChange={(s) => setReportSettings(s)}
+            activePresetId={reportSettings.id}
+          />
+        </DialogContent>
+      </Dialog>
     </PageLayout>
   )
 }

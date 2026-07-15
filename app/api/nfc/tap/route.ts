@@ -5,7 +5,7 @@ const PB_URL = 'http://127.0.0.1:8090'
 const PB_ADMIN = { email: 'admin@pjpc.com', password: '1234567890' }
 
 async function pbAuth(): Promise<string> {
-  const res = await fetch(`${PB_URL}/api/admins/auth-with-password`, {
+  const res = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ identity: PB_ADMIN.email, password: PB_ADMIN.password }),

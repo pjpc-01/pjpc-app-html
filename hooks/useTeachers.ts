@@ -83,29 +83,16 @@ export const useTeachers = () => {
     }
   }, [fetchTeachers])
 
-  // 更新教师
+  // 更新教师 - 使用 updateTeacherInPb（带认证重试逻辑）
   const updateTeacher = useCallback(async (teacherId: string, teacherData: Partial<Teacher>) => {
     try {
       console.log('useTeachers: 更新教师', teacherId, teacherData)
       
-      // 使用新的API路由
-      const response = await fetch('/api/teachers/update', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id: teacherId, ...teacherData })
-      })
+      const result = await updateTeacherInPb({ id: teacherId, ...teacherData })
       
-      const result = await response.json()
-      
-      if (!result.success) {
-        throw new Error(result.message || '更新教师失败')
-      }
-      
-      console.log('教师更新成功:', result.data)
+      console.log('教师更新成功:', result)
       await fetchTeachers() // 刷新数据
-      return result.data
+      return result
     } catch (err: any) {
       console.error('更新教师失败:', err)
       throw new Error(err.message || '更新教师失败')

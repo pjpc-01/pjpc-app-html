@@ -50,9 +50,6 @@ const nextConfig = {
   // Proxy handled by app/api/pocketbase-proxy/[...path]/route.ts with admin auth
 
   serverExternalPackages: ['googleapis'],
-  experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-  },
 }
 
 export default nextConfig

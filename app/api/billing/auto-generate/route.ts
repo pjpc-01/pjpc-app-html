@@ -10,7 +10,7 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@pjpc.com"
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "1234567890"
 
 async function getAdminToken() {
-  const res = await fetch(`${PB_URL}/api/admins/auth-with-password`, {
+  const res = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ identity: ADMIN_EMAIL, password: ADMIN_PASSWORD }),

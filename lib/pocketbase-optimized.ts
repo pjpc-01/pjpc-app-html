@@ -14,7 +14,7 @@ let pb: PocketBase | null = null
  */
 async function authenticateAdminViaFetch(pbInstance: PocketBase, email: string, password: string): Promise<void> {
   const baseUrl = pbInstance.baseUrl || 'http://127.0.0.1:8090'
-  const response = await fetch(`${baseUrl}/api/admins/auth-with-password`, {
+  const response = await fetch(`${baseUrl}/api/collections/_superusers/auth-with-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ identity: email, password })

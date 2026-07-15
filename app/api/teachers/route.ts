@@ -8,10 +8,10 @@ export async function GET(request: NextRequest) {
   
   try {
     // Auth with local PocketBase
-    const authRes = await fetch('http://127.0.0.1:8090/api/admins/auth-with-password', {
+    const authRes = await fetch('http://127.0.0.1:8090/api/collections/_superusers/auth-with-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identity: 'admin@pjpc.com', password: '1234567890' }),
+      body: JSON.stringify({ identity: process.env.POCKETBASE_ADMIN_EMAIL || 'final_admin@test.com', password: process.env.POCKETBASE_ADMIN_PASSWORD || 'final_pass' }),
     })
     const authData = await authRes.json()
     const token = authData.token
@@ -70,10 +70,10 @@ export async function POST(request: NextRequest) {
     console.log('🔧 API: creating teacher from form data:', body)
 
     // Auth
-    const authRes = await fetch('http://127.0.0.1:8090/api/admins/auth-with-password', {
+    const authRes = await fetch('http://127.0.0.1:8090/api/collections/_superusers/auth-with-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identity: 'admin@pjpc.com', password: '1234567890' }),
+      body: JSON.stringify({ identity: process.env.POCKETBASE_ADMIN_EMAIL || 'final_admin@test.com', password: process.env.POCKETBASE_ADMIN_PASSWORD || 'final_pass' }),
     })
     const authData = await authRes.json()
     const token = authData.token
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: token,
+        Authorization: token
       },
       body: JSON.stringify(data),
     })

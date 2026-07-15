@@ -4,7 +4,7 @@ import { normalizeCardUid, getCardUidSearchTerms } from '@/lib/utils'
 const PB_URL = 'http://127.0.0.1:8090'
 
 async function pbAuth(): Promise<string> {
-  const res = await fetch(`${PB_URL}/api/admins/auth-with-password`, {
+  const res = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ identity: 'admin@pjpc.com', password: '1234567890' }),
