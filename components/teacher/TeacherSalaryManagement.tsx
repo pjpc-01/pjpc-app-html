@@ -25,6 +25,7 @@ import {
   Edit, 
   Trash2, 
   Download, 
+  FileDown,
   Upload,
   Search,
   Filter,
@@ -38,6 +39,7 @@ import {
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { formatDate } from "@/lib/utils"
 import { toast } from "sonner"
+import { downloadPayslipPDF } from "@/lib/pdf-generator"
 
 const formatCurrency = (amount: number) => {
   return `RM ${(amount || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -943,6 +945,13 @@ export default function TeacherSalaryManagement() {
                           }}>
                             <Download className="w-4 h-4" />
                           </Button>
+                          {(record.status === 'approved' || record.status === 'paid') && (
+                            <Button size="sm" variant="outline" onClick={() => {
+                              downloadPayslipPDF(record, record.expand?.teacher_id?.name || '教师')
+                            }}>
+                              <FileDown className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
