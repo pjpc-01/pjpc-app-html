@@ -257,6 +257,7 @@ Prospek Cemerlang`,
       const templateData = {
         invoiceNumber: invoice.invoiceNumber,
         studentName: invoice.studentName || invoice.student || '',
+        studentNumber: invoice.studentNumber || '',
         totalAmount: invoice.totalAmount?.toLocaleString(),
         dueDate: new Date(invoice.dueDate).toLocaleDateString('zh-CN'),
         customMessage: messageContent || '请及时处理付款，如有疑问请联系我们。'
@@ -358,6 +359,7 @@ Prospek Cemerlang`,
       const templateData = {
         invoiceNumber: invoice.invoiceNumber,
         studentName: invoice.studentName || invoice.student || '',
+        studentNumber: invoice.studentNumber || '',
         studentGrade: invoice.studentGrade || invoice.grade || '未指定',
         totalAmount: invoice.totalAmount?.toLocaleString(),
         issueDate: new Date(invoice.issueDate).toLocaleDateString('zh-CN'),
@@ -438,6 +440,7 @@ Prospek Cemerlang`,
       studentName: student.name || student.student_name,
       studentId: student.id,
       studentGrade: student.grade || student.standard,
+      studentNumber: student.student_id, // 学号
       items: invoiceItems.length > 0 ? invoiceItems : [{ name: "学生费用", amount: student.amount || totalAmount || 0 }],
       status: "issued" as const,
       issueDate: new Date().toISOString().split('T')[0],

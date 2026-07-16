@@ -43,13 +43,14 @@ interface FeeCardProps {
   setLocalDiscount: (studentId: string, discount: number, discount_type?: 'amount' | 'percent') => void
   setLocalSixMonthPay: (studentId: string, val: boolean) => void
   setLocalSixMonthPayRate: (studentId: string, rate: number) => void
+  setLocalSixMonthPayRateType: (studentId: string, rateType: 'amount' | 'percent') => void
 }
 
 export const FeeCard = ({
   student, activeFees, groupedFees, studentTotal,
   onCreateInvoice, editMode, isAssigned,
   assignFeeToStudent, removeFeeFromStudent, hasInvoiceThisMonth,
-  getLocalAdjustment, setLocalDiscount, setLocalSixMonthPay, setLocalSixMonthPayRate,
+  getLocalAdjustment, setLocalDiscount, setLocalSixMonthPay, setLocalSixMonthPayRate, setLocalSixMonthPayRateType,
 }: FeeCardProps) => {
   const studentId = student.id
   const [expanded, setExpanded] = useState(false)
@@ -57,7 +58,7 @@ export const FeeCard = ({
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set(Object.keys(groupedFees)))
   const [showInvoiceConfirm, setShowInvoiceConfirm] = useState(false)
 
-  const adjustment = getLocalAdjustment?.(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_pay: false, six_month_pay_rate: 0 }
+  const adjustment = getLocalAdjustment?.(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_pay: false, six_month_pay_rate: 0, six_month_pay_rate_type: 'percent' as const }
   const initial = (student.student_name || "?")[0]
   const guardian = student.father_name || student.mother_name || student.parentName || "-"
   const guardianPhone = student.father_phone || student.mother_phone || student.parentPhone || "-"
@@ -194,17 +195,42 @@ export const FeeCard = ({
                   </div>
                 </div>
                 <div>
-                  <Label className="text-[10px] text-slate-500">折扣率(%)</Label>
-                  <Input
-                    type="number" min="0" max="100" step="1"
-                    value={((adjustment.six_month_pay_rate || 0) * 100).toFixed(0)}
-                    onChange={(e) => {
-                      const pct = parseFloat(e.target.value) || 0
-                      setLocalSixMonthPayRate?.(studentId, Math.min(100, Math.max(0, pct)) / 100)
-                    }}
-                    disabled={!adjustment.six_month_pay}
-                    className="h-7 text-xs"
-                  />
+                  <Label className="text-[10px] text-slate-500">
+                    预付折扣({adjustment.six_month_pay_rate_type === 'percent' ? '%' : 'RM'})
+                  </Label>
+                  <div className="flex gap-1">
+                    <Input
+                      type="number" min="0" max={adjustment.six_month_pay_rate_type === 'percent' ? "100" : undefined} step="1"
+                      value={adjustment.six_month_pay_rate_type === 'percent' ? ((adjustment.six_month_pay_rate || 0) * 100).toFixed(0) : (adjustment.six_month_pay_rate || 0).toFixed(0)}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0
+                        if (adjustment.six_month_pay_rate_type === 'percent') {
+                          setLocalSixMonthPayRate?.(studentId, Math.min(100, Math.max(0, val)) / 100)
+                        } else {
+                          setLocalSixMonthPayRate?.(studentId, Math.max(0, val))
+                        }
+                      }}
+                      disabled={!adjustment.six_month_pay}
+                      className="h-7 text-xs flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newType = adjustment.six_month_pay_rate_type === 'percent' ? 'amount' : 'percent'
+                        setLocalSixMonthPayRateType?.(studentId, newType)
+                        // If switching from percent to amount, convert: 10% of total → RM value
+                        // If switching from amount to percent, convert: RM value → percentage
+                        // For simplicity, we just toggle the type without auto-converting the value
+                      }}
+                      className={`h-7 w-7 rounded text-[10px] font-bold shrink-0 border ${
+                        adjustment.six_month_pay_rate_type === 'percent'
+                          ? 'bg-purple-100 text-purple-700 border-purple-300'
+                          : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      {adjustment.six_month_pay_rate_type === 'percent' ? '%' : 'RM'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

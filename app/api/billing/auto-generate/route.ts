@@ -261,11 +261,17 @@ export async function POST(request: NextRequest) {
         }
 
         // Apply 六月付折扣率
-        if (sixMonthRate > 0) {
-          const prepayDiscount = Math.round(sixMonthTotal * sixMonthRate * 100) / 100
-          sixMonthItems.push({ name: `预付6个月折扣 (${(sixMonthRate * 100).toFixed(0)}%)`, amount: -prepayDiscount })
-          sixMonthTotal -= prepayDiscount
-        }
+      if (sixMonthRate > 0) {
+        const sixMonthRateType = assignment.six_month_pay_rate_type || 'percent'
+        const prepayDiscount = sixMonthRateType === 'amount'
+          ? Math.round(sixMonthRate * 100) / 100  // use value directly as RM
+          : Math.round(sixMonthTotal * sixMonthRate * 100) / 100  // percentage
+        const prepayLabel = sixMonthRateType === 'amount'
+          ? `预付6个月折扣 (RM${prepayDiscount.toFixed(2)})`
+          : `预付6个月折扣 (${(sixMonthRate * 100).toFixed(0)}%)`
+        sixMonthItems.push({ name: prepayLabel, amount: -prepayDiscount })
+        sixMonthTotal -= prepayDiscount
+      }
 
         // Replace items list with six-month version
         items.length = 0
@@ -295,6 +301,7 @@ export async function POST(request: NextRequest) {
         studentId: sid,
         studentName: student?.name || "",
         studentGrade: student?.grade || "",
+        studentNumber: student?.student_id || "",
         invoiceNumber: `INV-${period.replace("-", "")}-${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`,
         amount: totalAmount,
         totalAmount: totalAmount,

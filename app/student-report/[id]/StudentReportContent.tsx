@@ -6,18 +6,19 @@ import PageLayout from "@/components/layouts/PageLayout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useStudentReports, StudentReport, ReportSubject } from "@/hooks/useStudentReports"
 import { useStudents } from "@/hooks/useStudents"
 import {
   ArrowLeft, Printer, Download, Save, Edit3, FileText,
-  User, Calendar, Clock, BookOpen, Star, Flag, Heart,
-  AlertTriangle, CheckCircle, ChevronRight, Loader2,
-  Settings, X, PlusCircle
+  Loader2, Settings, X, PlusCircle
 } from "lucide-react"
 import ReportSettingsManager, { type ReportSettingsPreset } from "@/app/components/report/ReportSettingsManager"
+import { downloadReportPDF, generateReportHTML } from "@/lib/pdf-generator"
 
 const DEFAULT_SUBJECTS = ["华文", "国文", "英文", "数学", "科学", "地理", "历史"]
 const SETTINGS_KEY = "student_report_default_subjects"
@@ -36,42 +37,6 @@ const saveDefaultSubjects = (subjects: string[]) => {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(subjects))
 }
 
-// Convert numeric score to Chinese evaluation
-const scoreToEvaluation = (score: number | null): string => {
-  if (score === null || score === undefined) return "-"
-  if (score >= 90) return "优秀"
-  if (score >= 80) return "良好"
-  if (score >= 60) return "及格"
-  return "待加强"
-}
-
-// Color for evaluation badge
-const evalColor = (evaluation: string) => {
-  switch (evaluation) {
-    case "优秀": return "bg-emerald-100 text-emerald-700"
-    case "良好": return "bg-blue-100 text-blue-700"
-    case "及格": return "bg-amber-100 text-amber-700"
-    case "待加强": return "bg-red-100 text-red-700"
-    default: return "bg-gray-100 text-gray-600"
-  }
-}
-
-const formatDate = (d: string) => {
-  if (!d) return ""
-  const date = new Date(d)
-  return date.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })
-}
-
-const calculateAge = (dob: string) => {
-  if (!dob) return ""
-  const birth = new Date(dob)
-  const today = new Date()
-  let age = today.getFullYear() - birth.getFullYear()
-  const m = today.getMonth() - birth.getMonth()
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
-  return age
-}
-
 export default function StudentReportContent() {
   const params = useParams()
   const router = useRouter()
@@ -81,7 +46,7 @@ export default function StudentReportContent() {
   const [report, setReport] = useState<StudentReport | null>(null)
   const [editMode, setEditMode] = useState(false)
   const [saving, setSaving] = useState(false)
-  const printRef = useRef<HTMLDivElement>(null)
+  const printRef = useRef<any>(null)
 
   // Subject settings dialog
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -94,6 +59,22 @@ export default function StudentReportContent() {
     schoolAddress: "", schoolPhone: "", schoolEmail: "", primaryColor: "#3b82f6",
     headerTitle: "学生报告", headerSubtitle: "— 全面发展 · 健康成长 · 追求卓越 —",
     footerText: "自信自强 | 勤学善思 | 合作共进 | 全面发展",
+    defaultSubjects: ["华文","国文","英文","数学","科学","地理","历史","道德","美术","体育"],
+    growthMessage: "成长不在于做得最好，而在于愿意不断尝试、不断进步。{studentName}，继续加油！",
+    problems: ["在理科学习中，解题思路不够灵活，需加强思维训练。","有时会因拖延导致作业完成质量不高。","阅读量不足，知识面有待拓宽。"],
+    improvements: ["制定学习计划，提高学习效率，减少拖延。","多做练习题，总结解题方法和技巧。","每天阅读，拓宽知识面，做好读书笔记。","遇到问题及时请教老师或同学，加强理解与应用。"],
+    futureGoalAcademic: "提高各科成绩，争取进入班级前列。",
+    futureGoalAbility: "积极参与更多课外活动，提升自己的组织和沟通能力。",
+    futureGoalCharacter: "培养良好的学习和生活习惯，做一个全面发展的学生。",
+    summary: "本学期，我在学习和生活中都取得了一定的进步，但也认识到自己的不足。在未来的日子里，我将以更高的标准要求自己，不断超越自我，实现自己的目标，成为更好的自己！",
+    sections: [
+      { id: "growth", type: "growth", title: "成长寄语", enabled: true },
+      { id: "academic", type: "subjects", title: "一、学业表现", enabled: true },
+      { id: "problems", type: "problems", title: "二、存在问题", enabled: true },
+      { id: "improvements", type: "improvements", title: "三、改进措施与建议", enabled: true },
+      { id: "goals", type: "goals", title: "四、未来目标", enabled: true },
+      { id: "summary", type: "summary", title: "五、总结", enabled: true },
+    ],
     isDefault: true, createdAt: "", updatedAt: "",
   })
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
@@ -116,6 +97,22 @@ export default function StudentReportContent() {
               headerTitle: r.headerTitle || "学生报告",
               headerSubtitle: r.headerSubtitle || "— 全面发展 · 健康成长 · 追求卓越 —",
               footerText: r.footerText || "自信自强 | 勤学善思 | 合作共进 | 全面发展",
+              defaultSubjects: r.defaultSubjects || ["华文","国文","英文","数学","科学","地理","历史","道德","美术","体育"],
+              growthMessage: r.growthMessage || "成长不在于做得最好，而在于愿意不断尝试、不断进步。{studentName}，继续加油！",
+              problems: r.problems || ["在理科学习中，解题思路不够灵活，需加强思维训练。","有时会因拖延导致作业完成质量不高。","阅读量不足，知识面有待拓宽。"],
+              improvements: r.improvements || ["制定学习计划，提高学习效率，减少拖延。","多做练习题，总结解题方法和技巧。","每天阅读，拓宽知识面，做好读书笔记。","遇到问题及时请教老师或同学，加强理解与应用。"],
+              futureGoalAcademic: r.futureGoalAcademic || "提高各科成绩，争取进入班级前列。",
+              futureGoalAbility: r.futureGoalAbility || "积极参与更多课外活动，提升自己的组织和沟通能力。",
+              futureGoalCharacter: r.futureGoalCharacter || "培养良好的学习和生活习惯，做一个全面发展的学生。",
+              summary: r.summary || "本学期，我在学习和生活中都取得了一定的进步，但也认识到自己的不足。在未来的日子里，我将以更高的标准要求自己，不断超越自我，实现自己的目标，成为更好的自己！",
+              sections: r.sections || [
+                { id: "growth", type: "growth", title: "成长寄语", enabled: true },
+                { id: "academic", type: "subjects", title: "一、学业表现", enabled: true },
+                { id: "problems", type: "problems", title: "二、存在问题", enabled: true },
+                { id: "improvements", type: "improvements", title: "三、改进措施与建议", enabled: true },
+                { id: "goals", type: "goals", title: "四、未来目标", enabled: true },
+                { id: "summary", type: "summary", title: "五、总结", enabled: true },
+              ],
               isDefault: true, createdAt: r.created || "", updatedAt: r.updated || "",
             })
           }
@@ -154,36 +151,6 @@ export default function StudentReportContent() {
   // Find student by report's studentId
   const student = report?.expand?.studentId || students.find(s => s.id === report?.studentId)
 
-  // Sort subjects for consistent display
-  const sortedSubjects = (report?.subjects || []).sort((a, b) => {
-    const idxA = DEFAULT_SUBJECTS.indexOf(a.name)
-    const idxB = DEFAULT_SUBJECTS.indexOf(b.name)
-    if (idxA >= 0 && idxB >= 0) return idxA - idxB
-    if (idxA >= 0) return -1
-    if (idxB >= 0) return 1
-    return a.name.localeCompare(b.name)
-  })
-
-  // Compute averages
-  const computeAvg = (subjects: ReportSubject[], key: 'midterm' | 'final') => {
-    const scores = subjects.map(s => s[key]).filter(s => s !== null) as number[]
-    if (scores.length === 0) return null
-    return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length * 10) / 10
-  }
-
-  const midtermAvg = computeAvg(sortedSubjects, 'midterm')
-  const finalAvg = computeAvg(sortedSubjects, 'final')
-  const overallAvg = report?.overall_avg ?? 
-    (midtermAvg !== null && finalAvg !== null ? Math.round((midtermAvg + finalAvg) / 2 * 10) / 10 : null)
-
-  // Update subject field
-  const updateSubject = (idx: number, field: keyof ReportSubject, value: any) => {
-    if (!report) return
-    const newSubjects = [...report.subjects]
-    newSubjects[idx] = { ...newSubjects[idx], [field]: value }
-    setReport({ ...report, subjects: newSubjects })
-  }
-
   // Handle save
   const handleSave = async () => {
     if (!report) return
@@ -196,32 +163,6 @@ export default function StudentReportContent() {
     } finally {
       setSaving(false)
     }
-  }
-
-  // ─── Subject helpers ───
-  const addSubject = (name: string = "新科目") => {
-    if (!report) return
-    setReport({ ...report, subjects: [...report.subjects, { name, midterm: null, final: null, evaluation: "" }] })
-  }
-
-  const removeSubject = (idx: number) => {
-    if (!report) return
-    const subs = [...report.subjects]
-    subs.splice(idx, 1)
-    setReport({ ...report, subjects: subs })
-  }
-
-  const renameSubject = (idx: number, name: string) => {
-    updateSubject(idx, 'name', name)
-  }
-
-  const applyDefaultSubjects = () => {
-    if (!report) return
-    const currentNames = new Set(report.subjects.map(s => s.name))
-    const newSubs = defaultSubjects
-      .filter(name => !currentNames.has(name))
-      .map(name => ({ name, midterm: null, final: null, evaluation: "" } as ReportSubject))
-    setReport({ ...report, subjects: [...report.subjects, ...newSubs] })
   }
 
   // Subject settings handlers
@@ -245,15 +186,33 @@ export default function StudentReportContent() {
     saveDefaultSubjects([...DEFAULT_SUBJECTS])
   }
 
-  // Print
+  // Print the iframe content
   const handlePrint = () => {
-    window.print()
+    const iframe = printRef.current as HTMLIFrameElement | null
+    if (iframe?.contentWindow) {
+      iframe.contentWindow.print()
+    } else {
+      window.print()
+    }
   }
 
-  // Convert to PDF (simple: print to PDF)
-  const handleDownloadPDF = () => {
-    // For now, use browser print dialog which can Save as PDF
-    window.print()
+  // Convert to PDF using generateReportHTML → jsPDF + html2canvas
+  const handleDownloadPDF = async () => {
+    if (!report || !student) return
+    try {
+      setSaving(true)
+      await downloadReportPDF(report, reportSettings, {
+        name: student.name,
+        student_id: student.student_id || student.code,
+        dob: student.dob,
+        grade: student.grade,
+        avatar: student.avatar,
+      })
+    } catch (e: any) {
+      alert("PDF下载失败: " + (e.message || "未知错误"))
+    } finally {
+      setSaving(false)
+    }
   }
 
   // ─── Loading ─────────────────────────────────
@@ -309,507 +268,178 @@ export default function StudentReportContent() {
               <Button size="sm" variant="outline" onClick={handlePrint}>
                 <Printer className="h-4 w-4 mr-1" />打印
               </Button>
+              <Button size="sm" variant="outline" onClick={handleDownloadPDF} disabled={saving}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Download className="h-4 w-4 mr-1" />}
+                下载PDF
+              </Button>
             </>
           )}
         </div>
       }
     >
-      {/* ─── Printable Report Container ─── */}
-      <div ref={printRef} className="report-container" id="student-report-print">
-        
-        {/* ═══ Header ═══ */}
-        <div className="text-center mb-6 print:mb-4" style={{ background: `linear-gradient(135deg, ${reportSettings.primaryColor}, ${reportSettings.primaryColor}dd)`, color: '#fff', padding: '20px 24px', borderRadius: '12px' }}>
-          {reportSettings.schoolLogo && (
-            <div className="flex justify-center mb-2">
-              <div className="w-14 h-14 rounded-xl overflow-hidden bg-white/20 flex items-center justify-center">
-                <img src={reportSettings.schoolLogo} alt="logo" className="w-full h-full object-contain p-1" />
-              </div>
-            </div>
-          )}
-          {reportSettings.schoolName && (
-            <p className="text-sm font-semibold opacity-90">{reportSettings.schoolName}</p>
-          )}
-          <div className="inline-flex items-center gap-3 mt-1">
-            <span className="opacity-40 text-lg">✦</span>
-            <h1 className="text-2xl sm:text-3xl font-bold">{reportSettings.headerTitle}</h1>
-            <span className="opacity-40 text-lg">✦</span>
-          </div>
-          <p className="opacity-75 text-sm mt-1">{reportSettings.headerSubtitle}</p>
-        </div>
-
-        {/* ═══ Student Info + Photo + Growth Message ═══ */}
-        <div className="glass-card p-5 mb-5">
-          <div className="flex flex-col sm:flex-row gap-5">
-            {/* Photo */}
-            <div className="flex-shrink-0 mx-auto sm:mx-0">
-              <div className="w-28 h-28 rounded-xl overflow-hidden bg-gray-100 border-2 border-gray-200 flex items-center justify-center">
-                {student?.avatar ? (
-                  <img src={student.avatar} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <User className="h-12 w-12 text-gray-300" />
-                )}
-              </div>
-            </div>
-            
-            {/* Info */}
-            <div className="flex-1 space-y-1.5 text-sm">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-500">姓名：</span>
-                <span className="font-semibold text-gray-800">{student?.name || "—"}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-500">编号：</span>
-                <span className="text-gray-700">{student?.student_id || student?.code || "—"}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-500">出生日期：</span>
-                <span className="text-gray-700">{student?.dob ? formatDate(student.dob) : "—"}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-500">年龄：</span>
-                <span className="text-gray-700">{student?.dob ? `${calculateAge(student.dob)}岁` : "—"}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-500">报告日期：</span>
-                <span className="text-gray-700">{report.report_date ? formatDate(report.report_date) : "—"}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-500">年级：</span>
-                <span className="text-gray-700">{student?.grade || "—"}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Growth Message */}
-          <div className="mt-4 p-4 bg-blue-50/50 rounded-xl border border-blue-100 flex gap-3">
-            <span className="text-blue-400 text-xl flex-shrink-0">❝</span>
-            {editMode ? (
-              <Textarea 
-                value={report.growth_message} 
-                onChange={e => setReport({...report, growth_message: e.target.value})}
-                className="border-0 bg-transparent shadow-none resize-none p-0 text-gray-600 text-sm min-h-[60px]"
-                placeholder="成长寄语..."
-              />
-            ) : (
-              <p className="text-gray-600 text-sm">{report.growth_message || "成长不在于做得最好，而在于愿意不断尝试、不断进步。"}</p>
-            )}
-            <span className="text-blue-400 text-xl flex-shrink-0 self-end">❞</span>
-          </div>
-        </div>
-
-        {/* ═══ Section 1: Academic Performance ═══ */}
-        <div className="glass-card p-5 mb-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5">
-              <BookOpen className="h-4 w-4" />一、学业表现
-            </div>
-          </div>
-
-          <p className="text-gray-500 text-sm mb-4">
-            在本学期中，我在各学科的学习中总体表现良好，能够按时完成作业，积极参与课堂讨论，成绩稳中有进。
-          </p>
-
-          {/* Subjects Table */}
-          <div className="overflow-x-auto mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-400">{sortedSubjects.length} 个科目</span>
-              <div className="flex gap-1">
-                <Button size="sm" variant="ghost" className="text-xs text-gray-500 h-7" onClick={() => setSettingsOpen(true)}>
-                  <Settings className="h-3.5 w-3.5 mr-1" />科目设置
-                </Button>
-                {editMode && (
-                  <Button size="sm" variant="ghost" className="text-xs text-blue-500 h-7" onClick={applyDefaultSubjects}>
-                    <PlusCircle className="h-3.5 w-3.5 mr-1" />应用默认科目
-                  </Button>
-                )}
-              </div>
-            </div>
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-blue-500 text-white">
-                  <th className="px-4 py-2.5 text-left rounded-tl-lg font-medium">学科</th>
-                  <th className="px-4 py-2.5 text-center font-medium">期中成绩</th>
-                  <th className="px-4 py-2.5 text-center font-medium">期末成绩</th>
-                  <th className={`px-4 py-2.5 text-center font-medium ${!editMode ? 'rounded-tr-lg' : ''}`}>学期总体评价</th>
-                  {editMode && <th className="px-2 py-2.5 text-center rounded-tr-lg font-medium w-10"></th>}
-                </tr>
-              </thead>
-              <tbody>
-                {sortedSubjects.map((subj, idx) => (
-                  <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50/50">
-                    <td className="px-4 py-2.5 font-medium text-gray-700">
-                      {editMode ? (
-                        <Input
-                          value={subj.name}
-                          onChange={e => renameSubject(idx, e.target.value)}
-                          className="h-8 text-sm max-w-[120px]"
-                        />
-                      ) : subj.name}
-                    </td>
-                    <td className="px-4 py-2.5 text-center">
-                      {editMode ? (
-                        <Input 
-                          type="number" min={0} max={100}
-                          value={subj.midterm ?? ""} 
-                          onChange={e => updateSubject(idx, 'midterm', e.target.value ? parseInt(e.target.value) : null)}
-                          className="w-16 h-8 text-sm text-center mx-auto"
-                        />
-                      ) : (
-                        <span className={subj.midterm && subj.midterm >= 80 ? "text-emerald-600 font-semibold" : "text-gray-700"}>
-                          {subj.midterm ?? "—"}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5 text-center">
-                      {editMode ? (
-                        <Input 
-                          type="number" min={0} max={100}
-                          value={subj.final ?? ""} 
-                          onChange={e => updateSubject(idx, 'final', e.target.value ? parseInt(e.target.value) : null)}
-                          className="w-16 h-8 text-sm text-center mx-auto"
-                        />
-                      ) : (
-                        <span className={subj.final && subj.final >= 80 ? "text-emerald-600 font-semibold" : "text-gray-700"}>
-                          {subj.final ?? "—"}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5 text-center">
-                      {editMode ? (
-                        <Input 
-                          value={subj.evaluation} 
-                          onChange={e => updateSubject(idx, 'evaluation', e.target.value)}
-                          className="h-8 text-sm text-center mx-auto max-w-[100px]"
-                          placeholder="良好/优秀"
-                        />
-                      ) : (
-                        <Badge className={evalColor(subj.evaluation || scoreToEvaluation(subj.final))}>
-                          {subj.evaluation || scoreToEvaluation(subj.final)}
-                        </Badge>
-                      )}
-                    </td>
-                    {editMode && (
-                      <td className="px-2 py-2.5 text-center">
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-400 hover:text-red-600" onClick={() => removeSubject(idx)}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-                {/* Add subject row */}
-                {editMode && (
-                  <tr>
-                    <td colSpan={editMode ? 5 : 4} className="px-4 py-2 text-center">
-                      <Button 
-                        size="sm" variant="ghost" 
-                        onClick={() => addSubject()}
-                        className="text-gray-400 hover:text-gray-600 text-xs"
-                      >
-                        + 添加科目
-                      </Button>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Academic Analysis */}
-          <div className="p-3 bg-blue-50/50 rounded-lg border border-blue-100 mb-4">
-            <p className="text-sm text-gray-600">
-              本学期整体成绩良好，英语和科学科目表现优秀，学习态度认真，能积极吸收课堂知识。建议继续保持良好的学习习惯，进一步加强语文和数学的理解与应用能力。
-            </p>
-          </div>
-
-          {/* Summary Stats */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-blue-500 text-white rounded-xl p-4 text-center">
-              <p className="text-xs opacity-80">平均分</p>
-              <p className="text-2xl font-bold mt-1">{overallAvg ?? "—"}</p>
-            </div>
-            <div className="bg-blue-500 text-white rounded-xl p-4 text-center">
-              <p className="text-xs opacity-80">班级排名</p>
-              {editMode ? (
-                <Input value={report.class_rank} onChange={e => setReport({...report, class_rank: e.target.value})}
-                  className="h-8 w-16 mx-auto text-sm bg-white/20 border-white/20 text-white placeholder-white/50 text-center mt-1" />
-              ) : (
-                <p className="text-2xl font-bold mt-1">{report.class_rank || "—"}</p>
-              )}
-            </div>
-            <div className="bg-blue-500 text-white rounded-xl p-4 text-center">
-              <p className="text-xs opacity-80">进步幅度</p>
-              {editMode ? (
-                <Input value={report.improvement} onChange={e => setReport({...report, improvement: e.target.value})}
-                  className="h-8 w-16 mx-auto text-sm bg-white/20 border-white/20 text-white placeholder-white/50 text-center mt-1" />
-              ) : (
-                <p className="text-2xl font-bold mt-1">{report.improvement || "—"}</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ═══ Section 2: Comprehensive Qualities ═══ */}
-        <div className="glass-card p-5 mb-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5">
-              <Star className="h-4 w-4" />二、综合素质
-            </div>
-          </div>
-
-          <p className="text-gray-500 text-sm mb-4">
-            在学习之外，我积极参加学校组织的各项活动，注重全面发展，提升自己的综合素质。
-          </p>
-
-          {/* Activities */}
-          <div className="mb-4">
-            <p className="text-sm font-semibold text-gray-600 mb-2">活动参与：</p>
-            {(report.activities || []).length === 0 && !editMode ? (
-              <p className="text-gray-400 text-sm">暂无记录</p>
-            ) : (
-              <ul className="space-y-1.5">
-                {(report.activities || []).map((act, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                    <CheckCircle className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                    {editMode ? (
-                      <Input value={act} onChange={e => {
-                        const newActs = [...(report.activities || [])]
-                        newActs[i] = e.target.value
-                        setReport({...report, activities: newActs})
-                      }} className="h-7 text-sm flex-1" />
-                    ) : act}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {editMode && (
-              <Button size="sm" variant="ghost" className="text-xs text-gray-400 mt-1"
-                onClick={() => setReport({...report, activities: [...(report.activities || []), ""]})}>
-                + 添加活动
-              </Button>
-            )}
-          </div>
-
-          {/* Self-Evaluation */}
-          <div className="mb-4">
-            <p className="text-sm font-semibold text-gray-600 mb-1">自我评价：</p>
-            {editMode ? (
-              <Textarea value={report.self_evaluation} onChange={e => setReport({...report, self_evaluation: e.target.value})}
-                className="text-sm min-h-[60px]" placeholder="自我评价..." />
-            ) : (
-              <div className="p-3 bg-blue-50/50 rounded-lg border border-blue-100">
-                <p className="text-sm text-gray-600">{report.self_evaluation || "—"}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Teacher Comment */}
-          <div>
-            <p className="text-sm font-semibold text-gray-600 mb-1">老师评语：</p>
-            {editMode ? (
-              <Textarea value={report.teacher_comment} onChange={e => setReport({...report, teacher_comment: e.target.value})}
-                className="text-sm min-h-[60px]" placeholder="老师评语..." />
-            ) : (
-              <div className="p-3 bg-blue-50/50 rounded-lg border border-blue-100">
-                <p className="text-sm text-gray-600">{report.teacher_comment || "—"}</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ═══ Section 3 & 4: Problems + Improvements ═══ */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-          {/* Problems */}
-          <div className="glass-card p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5">
-                <AlertTriangle className="h-4 w-4" />三、存在问题
-              </div>
-            </div>
-            {(report.problems || []).length === 0 && !editMode ? (
-              <p className="text-gray-400 text-sm">暂无记录</p>
-            ) : (
-              <ul className="space-y-2">
-                {(report.problems || []).map((p, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                    <AlertTriangle className="h-4 w-4 text-orange-500 flex-shrink-0 mt-0.5" />
-                    {editMode ? (
-                      <Input value={p} onChange={e => {
-                        const arr = [...(report.problems || [])]
-                        arr[i] = e.target.value
-                        setReport({...report, problems: arr})
-                      }} className="h-7 text-sm flex-1" />
-                    ) : p}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {editMode && (
-              <Button size="sm" variant="ghost" className="text-xs text-gray-400 mt-1"
-                onClick={() => setReport({...report, problems: [...(report.problems || []), ""]})}>
-                + 添加问题
-              </Button>
-            )}
-          </div>
-
-          {/* Improvements */}
-          <div className="glass-card p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5">
-                <CheckCircle className="h-4 w-4" />改进措施与建议
-              </div>
-            </div>
-            {(report.improvements || []).length === 0 && !editMode ? (
-              <p className="text-gray-400 text-sm">暂无记录</p>
-            ) : (
-              <ul className="space-y-2">
-                {(report.improvements || []).map((imp, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
-                    {editMode ? (
-                      <Input value={imp} onChange={e => {
-                        const arr = [...(report.improvements || [])]
-                        arr[i] = e.target.value
-                        setReport({...report, improvements: arr})
-                      }} className="h-7 text-sm flex-1" />
-                    ) : imp}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {editMode && (
-              <Button size="sm" variant="ghost" className="text-xs text-gray-400 mt-1"
-                onClick={() => setReport({...report, improvements: [...(report.improvements || []), ""]})}>
-                + 添加建议
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* ═══ Section 5: Future Goals ═══ */}
-        <div className="glass-card p-5 mb-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5">
-              <Flag className="h-4 w-4" />四、未来目标
-            </div>
-          </div>
-          <p className="text-gray-500 text-sm mb-4">
-            在今后的学习和生活中，我将继续努力，争取在各方面取得更大的进步。
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100">
-              <div className="flex items-center gap-2 mb-2">
-                <ChevronRight className="h-5 w-5 text-blue-500" />
-                <span className="text-sm font-semibold text-gray-700">学业提升</span>
-              </div>
-              {editMode ? (
-                <Textarea value={report.future_goals_academic} onChange={e => setReport({...report, future_goals_academic: e.target.value})}
-                  className="text-sm min-h-[60px] resize-none" placeholder="学业目标..." />
-              ) : (
-                <p className="text-sm text-gray-600">{report.future_goals_academic || "提高各科成绩，争取进入班级前列。"}</p>
-              )}
-            </div>
-            <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100">
-              <div className="flex items-center gap-2 mb-2">
-                <User className="h-5 w-5 text-blue-500" />
-                <span className="text-sm font-semibold text-gray-700">综合能力</span>
-              </div>
-              {editMode ? (
-                <Textarea value={report.future_goals_ability} onChange={e => setReport({...report, future_goals_ability: e.target.value})}
-                  className="text-sm min-h-[60px] resize-none" placeholder="能力目标..." />
-              ) : (
-                <p className="text-sm text-gray-600">{report.future_goals_ability || "积极参与更多课外活动，提升自己的组织和沟通能力。"}</p>
-              )}
-            </div>
-            <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100">
-              <div className="flex items-center gap-2 mb-2">
-                <Heart className="h-5 w-5 text-blue-500" />
-                <span className="text-sm font-semibold text-gray-700">品格发展</span>
-              </div>
-              {editMode ? (
-                <Textarea value={report.future_goals_character} onChange={e => setReport({...report, future_goals_character: e.target.value})}
-                  className="text-sm min-h-[60px] resize-none" placeholder="品格目标..." />
-              ) : (
-                <p className="text-sm text-gray-600">{report.future_goals_character || "培养良好的学习和生活习惯，做一个全面发展的学生。"}</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ═══ Section 6: Summary + Parent Feedback ═══ */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-          {/* Summary */}
-          <div className="glass-card p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5">
-                <FileText className="h-4 w-4" />五、总结
-              </div>
-            </div>
-            {editMode ? (
-              <Textarea value={report.summary} onChange={e => setReport({...report, summary: e.target.value})}
-                className="text-sm min-h-[100px]" placeholder="学期总结..." />
-            ) : (
-              <p className="text-sm text-gray-600">{report.summary || "—"}</p>
-            )}
-          </div>
-
-          {/* Parent Feedback */}
-          <div className="glass-card p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5">
-                <Heart className="h-4 w-4" />家长反馈
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs text-gray-400 mb-1">家长意见/建议：</p>
-                {editMode ? (
-                  <Textarea value={report.parent_feedback} onChange={e => setReport({...report, parent_feedback: e.target.value})}
-                    className="text-sm min-h-[50px]" placeholder="家长反馈..." />
-                ) : (
-                  <div className="min-h-[50px] border-b border-gray-200 text-sm text-gray-600 py-1">
-                    {report.parent_feedback || "________________________"}
-                  </div>
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">家长签名：</p>
-                {editMode ? (
-                  <Input value={report.parent_signature} onChange={e => setReport({...report, parent_signature: e.target.value})}
-                    className="text-sm h-8" placeholder="签名" />
-                ) : (
-                  <div className="min-h-[24px] border-b border-gray-200 text-sm text-gray-600 py-1">
-                    {report.parent_signature || "________________________"}
-                  </div>
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-1">日期：</p>
-                {editMode ? (
-                  <Input type="date" value={report.parent_date?.split('T')[0] || ""} onChange={e => setReport({...report, parent_date: e.target.value})}
-                    className="text-sm h-8" />
-                ) : (
-                  <div className="min-h-[24px] border-b border-gray-200 text-sm text-gray-600 py-1">
-                    {report.parent_date ? formatDate(report.parent_date) : "________________________"}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ═══ Footer Banner ═══ */}
-        <div className="text-white text-center py-3 rounded-xl text-sm font-medium" style={{ backgroundColor: '#374151' }}>
-          {reportSettings.footerText}
-        </div>
-
+      {/* ─── Report Preview (iframe from generateReportHTML) ─── */}
+      <div className="report-container" id="student-report-print">
+        <iframe
+          ref={printRef as any}
+          srcDoc={report ? generateReportHTML(report, reportSettings, {
+            name: student?.name || '',
+            student_id: student?.student_id || student?.code || '',
+            dob: student?.dob || '',
+            grade: student?.grade || '',
+            avatar: student?.avatar || '',
+          }) : ''}
+          className="w-full border-0 rounded-lg bg-white"
+          style={{ minHeight: '900px', height: 'auto' }}
+          title="学生报告"
+          sandbox="allow-same-origin"
+        />
       </div>
+
+      {/* ─── Edit Panel (shown only in edit mode) ─── */}
+      {editMode && report && (
+        <div className="mt-6 space-y-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base">编辑报告内容</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              {/* Growth Message */}
+              <div>
+                <Label className="text-xs font-semibold">成长寄语</Label>
+                <Textarea 
+                  value={report.growth_message || ''} 
+                  onChange={e => setReport({...report, growth_message: e.target.value})}
+                  className="text-sm mt-1" rows={3}
+                />
+              </div>
+
+              {/* Subjects */}
+              <div>
+                <Label className="text-xs font-semibold">科目成绩</Label>
+                <div className="border rounded-lg mt-1 overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-1/3">学科</TableHead>
+                        <TableHead className="text-center">期中</TableHead>
+                        <TableHead className="text-center">期末</TableHead>
+                        <TableHead className="text-center">评价</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(report.subjects || []).map((subj: any, idx: number) => (
+                        <TableRow key={idx}>
+                          <TableCell>
+                            <Input value={subj.name} onChange={e => {
+                              const subs = [...report.subjects]; subs[idx] = {...subs[idx], name: e.target.value}; 
+                              setReport({...report, subjects: subs});
+                            }} className="h-8 text-sm" />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Input type="number" min={0} max={100} value={subj.midterm ?? ''} onChange={e => {
+                              const subs = [...report.subjects]; subs[idx] = {...subs[idx], midterm: e.target.value ? parseInt(e.target.value) : null};
+                              setReport({...report, subjects: subs});
+                            }} className="w-16 h-8 text-sm text-center mx-auto" />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Input type="number" min={0} max={100} value={subj.final ?? ''} onChange={e => {
+                              const subs = [...report.subjects]; subs[idx] = {...subs[idx], final: e.target.value ? parseInt(e.target.value) : null};
+                              setReport({...report, subjects: subs});
+                            }} className="w-16 h-8 text-sm text-center mx-auto" />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Input value={subj.evaluation || ''} onChange={e => {
+                              const subs = [...report.subjects]; subs[idx] = {...subs[idx], evaluation: e.target.value};
+                              setReport({...report, subjects: subs});
+                            }} className="w-20 h-8 text-sm text-center mx-auto" />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              {/* Problems */}
+              <div>
+                <Label className="text-xs font-semibold">存在问题</Label>
+                {(report.problems || []).map((p: string, i: number) => (
+                  <div key={i} className="flex gap-2 mt-1">
+                    <Textarea value={p} onChange={e => {
+                      const probs = [...report.problems]; probs[i] = e.target.value;
+                      setReport({...report, problems: probs});
+                    }} className="text-sm" rows={2} />
+                    <Button variant="ghost" size="sm" className="text-red-500 h-8 mt-1" onClick={() => {
+                      setReport({...report, problems: report.problems.filter((_: any, j: number) => j !== i)});
+                    }}>×</Button>
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" className="mt-1" onClick={() => {
+                  setReport({...report, problems: [...(report.problems || []), '']});
+                }}>+ 添加问题</Button>
+              </div>
+
+              {/* Improvements */}
+              <div>
+                <Label className="text-xs font-semibold">改进建议</Label>
+                {(report.improvements || []).map((imp: string, i: number) => (
+                  <div key={i} className="flex gap-2 mt-1">
+                    <Textarea value={imp} onChange={e => {
+                      const imps = [...report.improvements]; imps[i] = e.target.value;
+                      setReport({...report, improvements: imps});
+                    }} className="text-sm" rows={2} />
+                    <Button variant="ghost" size="sm" className="text-red-500 h-8 mt-1" onClick={() => {
+                      setReport({...report, improvements: report.improvements.filter((_: any, j: number) => j !== i)});
+                    }}>×</Button>
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" className="mt-1" onClick={() => {
+                  setReport({...report, improvements: [...(report.improvements || []), '']});
+                }}>+ 添加建议</Button>
+              </div>
+
+              {/* Goals */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label className="text-xs font-semibold">学业目标</Label>
+                  <Textarea value={report.future_goals_academic || ''} onChange={e => setReport({...report, future_goals_academic: e.target.value})} className="text-sm mt-1" rows={3} />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold">能力目标</Label>
+                  <Textarea value={report.future_goals_ability || ''} onChange={e => setReport({...report, future_goals_ability: e.target.value})} className="text-sm mt-1" rows={3} />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold">品格目标</Label>
+                  <Textarea value={report.future_goals_character || ''} onChange={e => setReport({...report, future_goals_character: e.target.value})} className="text-sm mt-1" rows={3} />
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div>
+                <Label className="text-xs font-semibold">学期总结</Label>
+                <Textarea value={report.summary || ''} onChange={e => setReport({...report, summary: e.target.value})} className="text-sm mt-1" rows={4} />
+              </div>
+
+              {/* Activities */}
+              <div>
+                <Label className="text-xs font-semibold">活动参与</Label>
+                {(report.activities || []).map((a: string, i: number) => (
+                  <div key={i} className="flex gap-2 mt-1">
+                    <Input value={a} onChange={e => {
+                      const acts = [...report.activities]; acts[i] = e.target.value;
+                      setReport({...report, activities: acts});
+                    }} className="text-sm h-8" />
+                    <Button variant="ghost" size="sm" className="text-red-500 h-8" onClick={() => {
+                      setReport({...report, activities: report.activities.filter((_: any, j: number) => j !== i)});
+                    }}>×</Button>
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" className="mt-1" onClick={() => {
+                  setReport({...report, activities: [...(report.activities || []), '']});
+                }}>+ 添加活动</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* ═══ Subject Settings Dialog ═══ */}
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
@@ -865,7 +495,7 @@ export default function StudentReportContent() {
 
       {/* ═══ Report Format Settings Dialog ═══ */}
       <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />报告格式设置

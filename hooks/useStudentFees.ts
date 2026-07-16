@@ -13,7 +13,8 @@ export interface StudentAdjustment {
   discount: number;           // discount value (RM or % depending on discount_type)
   discount_type: 'amount' | 'percent'; // how to interpret discount
   six_month_pay: boolean;     // 6-month prepay flag
-  six_month_pay_rate: number; // discount rate (e.g. 0.10 = 10%)
+  six_month_pay_rate: number; // discount value (RM or % depending on six_month_pay_rate_type)
+  six_month_pay_rate_type: 'amount' | 'percent'; // how to interpret six_month_pay_rate
 }
 
 export interface StudentFee {
@@ -26,6 +27,7 @@ export interface StudentFee {
   discount_type?: 'amount' | 'percent';
   six_month_pay: boolean;
   six_month_pay_rate: number;
+  six_month_pay_rate_type?: 'amount' | 'percent';
   expand?: {
     students?: {
       id: string;
@@ -116,6 +118,7 @@ export function useStudentFees() {
         discount_type: record.discount_type || 'amount',
         six_month_pay: record.six_month_pay || false,
         six_month_pay_rate: record.six_month_pay_rate || 0,
+        six_month_pay_rate_type: record.six_month_pay_rate_type || 'percent',
         expand: record.expand
       }));
 
@@ -217,8 +220,10 @@ export function useStudentFees() {
   const setLocalDiscount = useCallback((studentId: string, discount: number, discount_type?: 'amount' | 'percent') => {
     setLocalAdjustments(prev => {
       const newMap = new Map(prev);
-      const existing = newMap.get(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_pay: false, six_month_pay_rate: 0 };
-      newMap.set(studentId, { ...existing, discount, discount_type: discount_type ?? existing.discount_type });
+      const adj: StudentAdjustment = newMap.get(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_pay: false, six_month_pay_rate: 0, six_month_pay_rate_type: 'percent' as const };
+      adj.discount = discount;
+      if (discount_type !== undefined) adj.discount_type = discount_type;
+      newMap.set(studentId, adj);
       return newMap;
     });
   }, []);
@@ -227,8 +232,9 @@ export function useStudentFees() {
   const setLocalSixMonthPay = useCallback((studentId: string, six_month_pay: boolean) => {
     setLocalAdjustments(prev => {
       const newMap = new Map(prev);
-      const existing = newMap.get(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_pay: false, six_month_pay_rate: 0 };
-      newMap.set(studentId, { ...existing, six_month_pay });
+      const adj: StudentAdjustment = newMap.get(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_pay: false, six_month_pay_rate: 0, six_month_pay_rate_type: 'percent' as const };
+      adj.six_month_pay = six_month_pay;
+      newMap.set(studentId, adj);
       return newMap;
     });
   }, []);
@@ -237,15 +243,27 @@ export function useStudentFees() {
   const setLocalSixMonthPayRate = useCallback((studentId: string, six_month_pay_rate: number) => {
     setLocalAdjustments(prev => {
       const newMap = new Map(prev);
-      const existing = newMap.get(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_pay: false, six_month_pay_rate: 0 };
-      newMap.set(studentId, { ...existing, six_month_pay_rate });
+      const adj: StudentAdjustment = newMap.get(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_pay: false, six_month_pay_rate: 0, six_month_pay_rate_type: 'percent' as const };
+      adj.six_month_pay_rate = six_month_pay_rate;
+      newMap.set(studentId, adj);
+      return newMap;
+    });
+  }, []);
+
+  // Update local six_month_pay_rate_type for a student ('amount' | 'percent')
+  const setLocalSixMonthPayRateType = useCallback((studentId: string, six_month_pay_rate_type: 'amount' | 'percent') => {
+    setLocalAdjustments(prev => {
+      const newMap = new Map(prev);
+      const adj: StudentAdjustment = newMap.get(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_pay: false, six_month_pay_rate: 0, six_month_pay_rate_type: 'percent' as const };
+      adj.six_month_pay_rate_type = six_month_pay_rate_type;
+      newMap.set(studentId, adj);
       return newMap;
     });
   }, []);
 
   // Get local adjustment for a student (used by UI)
   const getLocalAdjustment = useCallback((studentId: string): StudentAdjustment => {
-    return localAdjustments.get(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_pay: false, six_month_pay_rate: 0 };
+    return localAdjustments.get(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_pay: false, six_month_pay_rate: 0, six_month_pay_rate_type: 'percent' as const };
   }, [localAdjustments]);
 
   // Enter edit mode — initialize local assignments from PocketBase data
@@ -272,6 +290,7 @@ export function useStudentFees() {
         discount_type: (studentFee.discount_type as 'amount' | 'percent') || 'amount',
         six_month_pay: studentFee.six_month_pay || false,
         six_month_pay_rate: studentFee.six_month_pay_rate || 0,
+        six_month_pay_rate_type: (studentFee.six_month_pay_rate_type as 'amount' | 'percent') || 'percent',
       });
     });
 
@@ -395,6 +414,7 @@ export function useStudentFees() {
             discount_type: adj?.discount_type ?? 'amount',
             six_month_pay: adj?.six_month_pay ?? false,
             six_month_pay_rate: adj?.six_month_pay_rate ?? 0,
+            six_month_pay_rate_type: adj?.six_month_pay_rate_type ?? 'percent',
           };
 
           await pbInstance.collection("student_fees").update(existingRecord.id, savePayload);
@@ -412,6 +432,7 @@ export function useStudentFees() {
             discount_type: adj?.discount_type ?? 'amount',
             six_month_pay: adj?.six_month_pay ?? false,
             six_month_pay_rate: adj?.six_month_pay_rate ?? 0,
+            six_month_pay_rate_type: adj?.six_month_pay_rate_type ?? 'percent',
           });
           debugLog(`✅ Created new record for student: ${studentId}`);
         }
@@ -554,8 +575,10 @@ export function useStudentFees() {
           totalAmount: record.totalAmount || 0,
           status: record.status || 'pending',
           discount: record.discount || 0,
+          discount_type: record.discount_type || 'amount',
           six_month_pay: record.six_month_pay || false,
           six_month_pay_rate: record.six_month_pay_rate || 0,
+          six_month_pay_rate_type: record.six_month_pay_rate_type || 'percent',
           expand: record.expand
         }));
 
@@ -623,6 +646,7 @@ export function useStudentFees() {
     setLocalDiscount,
     setLocalSixMonthPay,
     setLocalSixMonthPayRate,
+    setLocalSixMonthPayRateType,
     getLocalAdjustment,
   };
 }

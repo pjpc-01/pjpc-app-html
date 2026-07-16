@@ -359,15 +359,17 @@ export interface StudentFeeMatrix {
 export interface Schedule {
   id: string
   teacher_id: string
+  course_id?: string         // 关联课程 (from PB courses collection)
+  class_id?: string          // 关联班级 (原字段, 也可用于课程排课)
   date: string
+  day_of_week?: string       // Mon/Tue/Wed/Thu/Fri — 仅为课程排课使用
   start_time: string
   end_time: string
   total_hours: number
   hourly_rate: number
   center: string
-  class_id?: string
   room?: string
-  schedule_type: string
+  schedule_type: string      // "course_schedule" 为课程排课类型
   status: string
   is_overtime: boolean
   notes?: string

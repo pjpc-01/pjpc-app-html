@@ -16,6 +16,7 @@ export interface Invoice {
   discount?: number
   discountType?: 'amount' | 'percent'
   latePaymentRule?: string
+  studentNumber?: string // 学号 (human-readable student ID like "B1", "T2")
   [key: string]: any // Allow additional fields like student, grade, receiptNumber
 }
 
@@ -122,7 +123,8 @@ export const useInvoices = () => {
     studentName: string, 
     studentGrade: string, 
     items: { name: string; amount: number }[],
-    month?: string
+    month?: string,
+    studentNumber?: string
   ) => {
     const currentDate = new Date()
     const issueDate = currentDate.toISOString().split('T')[0]
@@ -134,6 +136,7 @@ export const useInvoices = () => {
       studentId,
       studentName,
       studentGrade,
+      studentNumber,
       totalAmount,
       items: items.length > 0 ? items : [{ name: '学生费用', amount: totalAmount }],
       status: 'issued',
