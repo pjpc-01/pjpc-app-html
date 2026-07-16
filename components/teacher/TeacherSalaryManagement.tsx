@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
@@ -792,16 +791,10 @@ export default function TeacherSalaryManagement() {
         </Button>
       </div>
 
-      {/* 主要内容 */}
-      <Tabs defaultValue="structures" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="structures">薪资结构</TabsTrigger>
-          <TabsTrigger value="records">薪资记录</TabsTrigger>
-          <TabsTrigger value="automation">自动化</TabsTrigger>
-        </TabsList>
-
-        {/* 薪资结构标签页 */}
-        <TabsContent value="structures" className="space-y-4">
+      {/* 薪资结构 */}
+      <section id="structures">
+        <h2 className="text-lg font-semibold mb-3">薪资结构</h2>
+        <div className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>薪资结构列表</CardTitle>
@@ -867,10 +860,16 @@ export default function TeacherSalaryManagement() {
             </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+      </section>
 
-        {/* 薪资记录标签页 */}
-        <TabsContent value="records" className="space-y-4">
+      {/* 分割线 */}
+      <div className="border-t border-gray-200 my-6" />
+
+      {/* 薪资记录 */}
+      <section id="records">
+        <h2 className="text-lg font-semibold mb-3">薪资记录</h2>
+        <div className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>薪资记录列表</CardTitle>
@@ -981,10 +980,16 @@ export default function TeacherSalaryManagement() {
             </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+      </section>
 
-        {/* 自动化标签页 */}
-        <TabsContent value="automation" className="space-y-4">
+      {/* 分割线 */}
+      <div className="border-t border-gray-200 my-6" />
+
+      {/* 自动化 */}
+      <section id="automation">
+        <h2 className="text-lg font-semibold mb-3">自动化</h2>
+        <div className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>薪资自动化</CardTitle>
@@ -1100,8 +1105,8 @@ export default function TeacherSalaryManagement() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </section>
 
       {/* 薪资结构对话框 */}
       <Dialog open={structureDialogOpen} onOpenChange={(open) => {
