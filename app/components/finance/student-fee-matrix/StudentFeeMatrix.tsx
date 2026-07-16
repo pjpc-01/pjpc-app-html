@@ -12,7 +12,7 @@ export const StudentFeeMatrix = () => {
   const { students } = useStudents()
   const { isAssigned, getStudentAmount, assignFeeToStudent, removeFeeFromStudent, enterEditMode, exitEditMode,
     loading: studentFeesLoading, error: studentFeesError,
-    setLocalDiscount, setLocalSixMonthPay, setLocalSixMonthPayRate, getLocalAdjustment, isEditMode: hookEditMode } = useStudentFees()
+    setLocalDiscount, setLocalSixMonthPay, setLocalSixMonthPayRate, setLocalSixMonthPayRateType, getLocalAdjustment, isEditMode: hookEditMode } = useStudentFees()
   const { createInvoice: createInvoiceFromHook, invoices } = useInvoices()
 
   const [studentInvoices, setStudentInvoices] = useState<Map<string, boolean>>(new Map())
@@ -56,7 +56,45 @@ export const StudentFeeMatrix = () => {
     const student = students.find(s => s.id === studentId)
     if (!student) return
     const adj = getLocalAdjustment(studentId)
-    const items = allFees.filter(f => isAssigned(studentId, f.id)).map(f => ({ name: f.name, amount: f.amount }))
+    const assignedFees = allFees.filter(f => isAssigned(studentId, f.id))
+
+    let items = assignedFees.map(f => ({ name: f.name, amount: f.amount }))
+
+    // Apply six_month_pay logic if enabled
+    let sixMonthPayRate = adj.six_month_pay_rate || 0
+    const sixMonthPayRateType = adj.six_month_pay_rate_type || 'percent'
+    if (adj.six_month_pay && sixMonthPayRate > 0) {
+      // Rebuild items: recurring ×6, one-time/annual stay as-is
+      const sixMonthItems: { name: string; amount: number }[] = []
+      let sixMonthTotal = 0
+
+      for (const fee of assignedFees) {
+        const isRecurring = fee.type === 'monthly' || !fee.type
+        if (isRecurring) {
+          const amount = (fee.amount || 0) * 6
+          sixMonthItems.push({ name: `${fee.name} (×6个月)`, amount })
+          sixMonthTotal += amount
+        } else {
+          sixMonthItems.push({ name: fee.name, amount: fee.amount || 0 })
+          sixMonthTotal += fee.amount || 0
+        }
+      }
+
+      // Apply six_month_pay discount
+      const prepayDiscount = sixMonthPayRateType === 'amount'
+        ? Math.round(sixMonthPayRate * 100) / 100
+        : Math.round(sixMonthTotal * sixMonthPayRate * 100) / 100
+
+      if (prepayDiscount > 0) {
+        const prepayLabel = sixMonthPayRateType === 'amount'
+          ? `预付折扣 (RM${prepayDiscount.toFixed(2)})`
+          : `预付折扣 (${(sixMonthPayRate * 100).toFixed(0)}%)`
+        sixMonthItems.push({ name: prepayLabel, amount: -prepayDiscount })
+        sixMonthTotal -= prepayDiscount
+      }
+
+      items = sixMonthItems
+    }
 
     // Include discount as a line item — calculate the actual RM amount
     const discount = adj.discount || 0
@@ -152,6 +190,7 @@ export const StudentFeeMatrix = () => {
               setLocalDiscount={setLocalDiscount}
               setLocalSixMonthPay={setLocalSixMonthPay}
               setLocalSixMonthPayRate={setLocalSixMonthPayRate}
+              setLocalSixMonthPayRateType={setLocalSixMonthPayRateType}
             />
           ))}
         </div>

@@ -244,6 +244,7 @@ export function InvoiceList({
                   </TableHead>
                   <TableHead>发票号码</TableHead>
                   <TableHead>收据号码</TableHead>
+                  <TableHead>学号</TableHead>
                   <TableHead>学生姓名</TableHead>
                   <TableHead>年级</TableHead>
                   <TableHead>金额</TableHead>
@@ -267,6 +268,7 @@ export function InvoiceList({
                     <TableCell className="text-blue-600 font-medium">
                       {invoice.receiptNumber || '待生成'}
                     </TableCell>
+                    <TableCell>{invoice.studentNumber || '-'}</TableCell>
                     <TableCell>{invoice.studentName}</TableCell>
                     <TableCell>{invoice.grade}</TableCell>
                     <TableCell className="font-semibold text-green-600">
@@ -435,7 +437,7 @@ export function InvoiceList({
                       const inv = invoices.find(i => i.id === id)
                       return inv ? (
                         <li key={id} className="text-red-700">
-                          • {inv.invoiceNumber} — {inv.studentName} (RM {inv.totalAmount?.toLocaleString()})
+                          • {inv.invoiceNumber} — {inv.studentName} ({inv.studentNumber || '无'}) — RM {inv.totalAmount?.toLocaleString()}
                         </li>
                       ) : null
                     })}

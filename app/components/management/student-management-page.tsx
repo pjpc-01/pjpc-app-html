@@ -406,26 +406,57 @@ export default function StudentManagementPage() {
       }
     } catch (e) {}
 
-    // Create new report with defaults
+    // Fetch default report settings from PB
+    let settings: any = null
     try {
-      const defaultSubjects = ["语文", "数学", "英语", "科学", "历史", "地理", "道德", "美术", "体育"].map(name => ({
-        name, midterm: null, final: null, evaluation: ""
-      }))
+      const settingsRes = await fetch('/api/pocketbase-proxy/api/collections/report_settings/records?filter=(isDefault=true)&perPage=1')
+      if (settingsRes.ok) {
+        const settingsData = await settingsRes.json()
+        if (settingsData.items?.length > 0) {
+          settings = settingsData.items[0]
+        }
+      }
+    } catch (e) {}
+
+    const studentName = student.student_name || student.name || "学生"
+
+    // Build subjects from settings or fallback
+    const subjectNames = settings?.defaultSubjects?.length > 0
+      ? settings.defaultSubjects
+      : ["华文", "国文", "英文", "数学", "科学", "地理", "历史", "道德", "美术", "体育"]
+    const subjects = subjectNames.map((name: string) => ({
+      name, midterm: null, final: null, evaluation: ""
+    }))
+
+    const growthMessage = settings?.growthMessage
+      ? settings.growthMessage.replace('{studentName}', studentName)
+      : `成长不在于做得最好，而在于愿意不断尝试、不断进步。${studentName}，继续加油！`
+
+    const problems = settings?.problems?.length > 0
+      ? settings.problems
+      : ["在理科学习中，解题思路不够灵活，需加强思维训练。", "有时会因拖延导致作业完成质量不高。", "阅读量不足，知识面有待拓宽。"]
+
+    const improvements = settings?.improvements?.length > 0
+      ? settings.improvements
+      : ["制定学习计划，提高学习效率，减少拖延。", "多做练习题，总结解题方法和技巧。", "每天阅读，拓宽知识面，做好读书笔记。", "遇到问题及时请教老师或同学，加强理解与应用。"]
+
+    // Create new report with defaults from settings
+    try {
       const now = new Date()
       const reportData = {
         studentId: student.id,
         term: "Term 1",
         year: now.getFullYear(),
         report_date: now.toISOString().split('T')[0],
-        growth_message: `成长不在于做得最好，而在于愿意不断尝试、不断进步。${student.student_name || student.name}，继续加油！`,
-        subjects: defaultSubjects,
+        growth_message: growthMessage,
+        subjects,
         activities: [],
-        problems: ["在理科学习中，解题思路不够灵活，需加强思维训练。", "有时会因拖延导致作业完成质量不高。", "阅读量不足，知识面有待拓宽。"],
-        improvements: ["制定学习计划，提高学习效率，减少拖延。", "多做练习题，总结解题方法和技巧。", "每天阅读，拓宽知识面，做好读书笔记。", "遇到问题及时请教老师或同学，加强理解与应用。"],
-        future_goals_academic: "提高各科成绩，争取进入班级前列。",
-        future_goals_ability: "积极参与更多课外活动，提升自己的组织和沟通能力。",
-        future_goals_character: "培养良好的学习和生活习惯，做一个全面发展的学生。",
-        summary: "本学期，我在学习和生活中都取得了一定的进步，但也认识到自己的不足。在未来的日子里，我将以更高的标准要求自己，不断超越自我，实现自己的目标，成为更好的自己！",
+        problems,
+        improvements,
+        future_goals_academic: settings?.futureGoalAcademic || "提高各科成绩，争取进入班级前列。",
+        future_goals_ability: settings?.futureGoalAbility || "积极参与更多课外活动，提升自己的组织和沟通能力。",
+        future_goals_character: settings?.futureGoalCharacter || "培养良好的学习和生活习惯，做一个全面发展的学生。",
+        summary: settings?.summary || "本学期，我在学习和生活中都取得了一定的进步，但也认识到自己的不足。在未来的日子里，我将以更高的标准要求自己，不断超越自我，实现自己的目标，成为更好的自己！",
         status: "draft",
       }
       const createRes = await fetch("/api/pocketbase-proxy/api/collections/student_reports/records", {

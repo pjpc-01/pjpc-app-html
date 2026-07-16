@@ -18,19 +18,15 @@ import {
   Menu,
   X,
   ChevronDown,
-  ChevronRight,
   PiggyBank,
   Receipt,
-  ArrowLeftRight,
   Wallet,
   BarChart3,
   School,
-  Calendar,
   CalendarCheck,
   FileText,
   UserCheck,
   CreditCard,
-  ChevronUp,
   Building,
   Building2,
   PieChart,
@@ -39,12 +35,10 @@ import {
   Star,
   ScrollText,
   Trophy,
-  Table2,
   Truck,
   MonitorPlay,
   GripVertical,
   Edit3,
-  TrendingUp,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -66,123 +60,68 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
   admin: {
     title: "管理后台",
     navItems: [
-      // ── OVERVIEW ──
       {
-        label: "Overview",
+        label: "概览",
+        href: "/",
         icon: LayoutDashboard,
         children: [
           { label: "仪表板", href: "/", icon: LayoutDashboard },
           { label: "幻灯片", href: "/dashboard/slideshow", icon: MonitorPlay },
+          { label: "TV看板", href: "/tv-board", icon: MonitorPlay },
         ],
       },
-      // ── EDUCATION ──
       {
-        label: "Education",
+        label: "教务",
+        href: "/education",
         icon: GraduationCap,
         children: [
           { label: "教育概览", href: "/education", icon: GraduationCap },
-          {
-            label: "学生管理",
-            icon: Users,
-            children: [
-              { label: "学生列表", href: "/student-management", icon: Users },
-              { label: "家长管理", href: "/parent-management", icon: Users },
-              { label: "作业管理", href: "/homework", icon: FileEdit },
-              { label: "成绩管理", href: "/grades", icon: GraduationCap },
-              { label: "接送管理", href: "/pickup", icon: Truck },
-              { label: "每日日志", href: "/daily-logs", icon: FileEdit },
-              { label: "学生报告", href: "/student-reports", icon: FileText },
-            ],
-          },
-          {
-            label: "教师管理",
-            icon: UserCog,
-            children: [
-              { label: "教师列表", href: "/teacher-management", icon: UserCog },
-              { label: "教师排班", href: "/schedule-management", icon: Calendar },
-              { label: "请假管理", href: "/teacher-management?tab=leave", icon: CalendarCheck },
-              { label: "绩效管理", href: "/teacher-management?tab=performance", icon: BarChart3 },
-            ],
-          },
-          {
-            label: "课程管理",
-            icon: BookOpen,
-            children: [
-              { label: "课程表", href: "/course-management?tab=schedule", icon: Calendar },
-              { label: "课程管理", href: "/course-management?tab=courses", icon: BookOpen },
-              { label: "班级管理", href: "/course-management?tab=classes", icon: Users },
-              { label: "课程分析", href: "/course-management?tab=analytics", icon: BarChart3 },
-            ],
-          },
+          { label: "学生列表", href: "/student-management", icon: Users },
+          { label: "学生报告", href: "/student-reports", icon: FileText },
+          { label: "家长管理", href: "/parent-management", icon: Users },
+          { label: "作业管理", href: "/homework", icon: FileEdit },
+          { label: "成绩管理", href: "/grades", icon: GraduationCap },
+          { label: "接送管理", href: "/pickup", icon: Truck },
+          { label: "每日日志", href: "/daily-logs", icon: FileEdit },
+          { label: "资源库", href: "/resource-library", icon: BookOpen },
+          { label: "教师列表", href: "/teacher-management", icon: UserCog },
+          { label: "教师考勤", href: "/teacher-attendance-reports", icon: CalendarCheck },
+          { label: "课程管理", href: "/course-management", icon: BookOpen },
         ],
       },
-      // ── FINANCE ──
       {
-        label: "Finance",
+        label: "财务",
+        href: "/finance/overview",
         icon: DollarSign,
         children: [
           { label: "财务概览", href: "/finance/overview", icon: PiggyBank },
-          {
-            label: "Inventory",
-            icon: Package,
-            children: [
-              { label: "收费管理", href: "/finance/fees", icon: Receipt },
-              { label: "库存管理", href: "/inventory", icon: Package },
-            ],
-          },
-          {
-            label: "Income",
-            icon: TrendingUp,
-            children: [
-              { label: "学生费用", href: "/finance/student-fees", icon: GraduationCap },
-              { label: "发票管理", href: "/finance/invoices", icon: FileText },
-              { label: "付款管理", href: "/finance/payments", icon: CreditCard },
-              { label: "收据管理", href: "/finance/receipts", icon: ScrollText },
-            ],
-          },
-          {
-            label: "Expense",
-            icon: Wallet,
-            children: [
-              { label: "薪资管理", href: "/finance/payroll", icon: DollarSign },
-              { label: "支出管理", href: "/finance/expenses", icon: Wallet },
-            ],
-          },
-          {
-            label: "Report",
-            icon: BarChart3,
-            children: [
-              { label: "银行对账", href: "/finance/bank", icon: Building2 },
-              { label: "预算管理", href: "/finance/budget", icon: PieChart },
-              { label: "财务报表", href: "/finance/reports", icon: BarChart3 },
-            ],
-          },
+          { label: "收费管理", href: "/finance/fees", icon: Receipt },
+          { label: "学生费用", href: "/finance/student-fees", icon: GraduationCap },
+          { label: "发票管理", href: "/finance/invoices", icon: FileText },
+          { label: "付款管理", href: "/finance/payments", icon: CreditCard },
+          { label: "收据管理", href: "/finance/receipts", icon: ScrollText },
+          { label: "薪资管理", href: "/finance/payroll", icon: DollarSign },
+          { label: "支出管理", href: "/finance/expenses", icon: Wallet },
+          { label: "银行对账", href: "/finance/bank", icon: Building2 },
+          { label: "预算管理", href: "/finance/budget", icon: PieChart },
+          { label: "财务报表", href: "/finance/reports", icon: BarChart3 },
+          { label: "库存管理", href: "/inventory", icon: Package },
         ],
       },
-      // ── SETTINGS ──
       {
-        label: "Settings",
+        label: "系统",
+        href: "/settings",
         icon: Settings,
         children: [
-          {
-            label: "考勤系统",
-            icon: ClipboardCheck,
-            children: [
-              { label: "考勤中心", href: "/attendance", icon: ClipboardCheck },
-              { label: "卡片管理", href: "/card-management", icon: CreditCard },
-            ],
-          },
-          {
-            label: "积分系统",
-            icon: Star,
-            children: [
-              { label: "积分操作", href: "/points", icon: Star },
-              { label: "积分规则", href: "/points/rules", icon: ScrollText },
-              { label: "积分排行榜", href: "/points/leaderboard", icon: Trophy },
-            ],
-          },
+          { label: "考勤中心", href: "/attendance", icon: ClipboardCheck },
+          { label: "卡片管理", href: "/card-management", icon: CreditCard },
+          { label: "积分操作", href: "/points", icon: Star },
+          { label: "积分规则", href: "/points/rules", icon: ScrollText },
+          { label: "积分排行", href: "/points/leaderboard", icon: Trophy },
           { label: "用户管理", href: "/user-management", icon: Users },
           { label: "分行管理", href: "/center-management", icon: Building },
+          { label: "系统设置", href: "/settings", icon: Settings },
+          { label: "管理面板", href: "/admin", icon: Settings },
         ],
       },
     ],
@@ -190,31 +129,10 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
   teacher: {
     title: "教师工作台",
     navItems: [
-      {
-        label: "我的工作台",
-        href: "/teacher-workspace",
-        icon: LayoutDashboard,
-      },
-      {
-        label: "我的课表",
-        href: "/schedule-management",
-        icon: Calendar,
-      },
-      {
-        label: "学生签到",
-        href: "/student-checkin",
-        icon: UserCheck,
-      },
-      {
-        label: "每日日志",
-        href: "/daily-logs",
-        icon: FileEdit,
-      },
-      {
-        label: "我的学生",
-        href: "/student-management",
-        icon: Users,
-      },
+      { label: "我的工作台", href: "/teacher-workspace", icon: LayoutDashboard },
+      { label: "学生签到", href: "/attendance", icon: UserCheck },
+      { label: "每日日志", href: "/daily-logs", icon: FileEdit },
+      { label: "我的学生", href: "/student-management", icon: Users },
     ],
   },
   parent: {
@@ -255,31 +173,15 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
   accountant: {
     title: "财务工作台",
     navItems: [
-      {
-        label: "财务概览",
-        href: "/finance-management",
-        icon: LayoutDashboard,
-      },
-      {
-        label: "收费管理",
-        href: "/finance-management",
-        icon: Receipt,
-      },
-      {
-        label: "交易记录",
-        href: "/finance-management",
-        icon: ArrowLeftRight,
-      },
-      {
-        label: "薪资管理",
-        href: "/finance-management",
-        icon: Wallet,
-      },
-      {
-        label: "财务报表",
-        href: "/finance-management",
-        icon: BarChart3,
-      },
+      { label: "财务概览", href: "/finance/overview", icon: LayoutDashboard },
+      { label: "收费管理", href: "/finance/fees", icon: Receipt },
+      { label: "学生费用", href: "/finance/student-fees", icon: GraduationCap },
+      { label: "发票管理", href: "/finance/invoices", icon: FileText },
+      { label: "付款管理", href: "/finance/payments", icon: CreditCard },
+      { label: "收据管理", href: "/finance/receipts", icon: ScrollText },
+      { label: "薪资管理", href: "/finance/payroll", icon: Wallet },
+      { label: "支出管理", href: "/finance/expenses", icon: Wallet },
+      { label: "财务报表", href: "/finance/reports", icon: BarChart3 },
     ],
   },
 }
@@ -397,33 +299,28 @@ export default function AppShell({
   const { logout, user, loading } = useAuth()
 
   // Permission key mapping for nav items
-  // Parents: check by label. Children: check by href path.
   const PARENT_PERM: Record<string, string> = {
-    "Overview": "dashboard", "Education": "education", "Finance": "finance", "Settings": "settings",
-    "学生管理": "students", "教师管理": "teachers", "课程管理": "courses",
-    "考勤系统": "attendance", "积分系统": "points",
+    "概览": "overview", "教务": "education", "财务": "finance", "系统": "system",
   }
   const CHILD_PERM: Record<string, string> = {
-    "/": "dashboard.home", "/dashboard/slideshow": "dashboard.slideshow",
-    "/education": "education.overview",
-    "/student-management": "students.list", "/daily-logs": "daily-logs",
-    "/grades": "grades", "/pickup": "pickup", "/parent-management": "parents",
-    "/homework": "homework", "/resource-library": "resource-library",
-    "/teacher-management": "teachers.list", "/schedule-management": "schedule",
-    "/points": "points.operate", "/points/rules": "points.rules",
-    "/points/leaderboard": "points.leaderboard",
+    "/": "overview.dashboard", "/dashboard/slideshow": "overview.slideshow",
+    "/education": "education.overview", "/student-management": "education.students",
+    "/student-reports": "education.reports", "/parent-management": "education.parents",
+    "/homework": "education.homework", "/grades": "education.grades",
+    "/pickup": "education.pickup", "/daily-logs": "education.logs",
+    "/teacher-management": "education.teachers", "/teacher-attendance-reports": "education.teacher_attendance",
+    "/course-management": "education.courses",
     "/finance/overview": "finance.overview", "/finance/fees": "finance.fees",
-    "/finance/student-fees": "finance.student_fees",
-    "/finance/invoices": "finance.invoices",
-    "/finance/payments": "finance.payments", "/finance/bank": "finance.bank",
-    "/finance/expenses": "finance.expenses", "/finance/payroll": "finance.payroll",
-    "/finance/budget": "finance.budget", "/finance/reports": "finance.reports",
-    "/inventory": "inventory",
-    "/attendance": "attendance.checkin",
-    "/card-management": "attendance.cards",
-    "/dashboard/slideshow": "dashboard.slideshow",
-    "/settings": "settings.general", "/user-management": "settings.users",
-    "/center-management": "settings.centers",
+    "/finance/student-fees": "finance.student_fees", "/finance/invoices": "finance.invoices",
+    "/finance/payments": "finance.payments", "/finance/receipts": "finance.receipts",
+    "/finance/payroll": "finance.payroll", "/finance/expenses": "finance.expenses",
+    "/finance/bank": "finance.bank", "/finance/budget": "finance.budget",
+    "/finance/reports": "finance.reports", "/inventory": "finance.inventory",
+    "/attendance": "system.attendance", "/card-management": "system.cards",
+    "/points": "system.points", "/points/rules": "system.points_rules",
+    "/points/leaderboard": "system.points_leaderboard",
+    "/user-management": "system.users", "/center-management": "system.centers",
+    "/settings": "system.settings",
   }
 
   // Filter nav items based on permissions
@@ -550,22 +447,44 @@ export default function AppShell({
           <div className="flex-1 min-w-0">
         {hasChildren ? (
           <>
-            <button
-              onClick={() => toggleMenu(item.label)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                expanded
-                  ? "bg-gray-200/30 text-gray-800"
-                  : "text-gray-600/60 hover:bg-gray-100/30 hover:text-gray-800"
-              }`}
-            >
-              <item.icon className="w-4 h-4 flex-shrink-0" />
-              <span className="flex-1 text-left truncate">{item.label}</span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                  expanded ? "rotate-180" : ""
-                }`}
-              />
-            </button>
+            <div className="flex items-center gap-0.5 w-full">
+              {item.href ? (
+                <Link
+                  href={addCenterParam(item.href) || "#"}
+                  className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    expanded
+                      ? "bg-gray-200/30 text-gray-800"
+                      : "text-gray-600/60 hover:bg-gray-100/30 hover:text-gray-800"
+                  }`}
+                >
+                  <item.icon className="w-4 h-4 flex-shrink-0" />
+                  <span className="flex-1 text-left truncate">{item.label}</span>
+                </Link>
+              ) : (
+                <button
+                  onClick={() => toggleMenu(item.label)}
+                  className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    expanded
+                      ? "bg-gray-200/30 text-gray-800"
+                      : "text-gray-600/60 hover:bg-gray-100/30 hover:text-gray-800"
+                  }`}
+                >
+                  <item.icon className="w-4 h-4 flex-shrink-0" />
+                  <span className="flex-1 text-left truncate">{item.label}</span>
+                </button>
+              )}
+              <button
+                onClick={(e) => { e.stopPropagation(); e.preventDefault(); toggleMenu(item.label) }}
+                className="flex-shrink-0 px-1.5 py-2.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100/30 transition-all duration-200"
+                title={expanded ? "收起" : "展开"}
+              >
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    expanded ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+            </div>
             {expanded && (
             <div className="ml-4 mt-1 space-y-1 border-l border-gray-200/30 pl-3">
                 {item.children.map((child) => renderNavItem(child, depth + 1))}
@@ -606,57 +525,52 @@ export default function AppShell({
 
   // Breadcrumb: map path to display label
   const BREADCRUMB_LABELS: Record<string, { label: string; parent?: string }> = {
-    "/": { label: "仪表板", parent: "Overview" },
-    "/dashboard/slideshow": { label: "幻灯片", parent: "Overview" },
-    "/education": { label: "教育概览", parent: "Education" },
-    "/student-management": { label: "学生管理", parent: "Education" },
-    "/daily-logs": { label: "每日日志", parent: "Education" },
-    "/grades": { label: "成绩管理", parent: "Education" },
-    "/pickup": { label: "接送管理", parent: "Education" },
-    "/parent-management": { label: "家长管理", parent: "Education" },
-    "/homework": { label: "作业管理", parent: "Education" },
-    "/resource-library": { label: "资源库", parent: "Education" },
-    "/teacher-management": { label: "教师管理", parent: "Education" },
-    "/schedule-management": { label: "教师排班", parent: "Education" },
-    "/course-management": { label: "课程管理", parent: "Education" },
-    "/points": { label: "积分操作", parent: "Settings" },
-    "/points/rules": { label: "积分规则", parent: "Settings" },
-    "/points/leaderboard": { label: "积分排行榜", parent: "Settings" },
-    "/attendance": { label: "考勤中心", parent: "Settings" },
-    "/card-management": { label: "卡片管理", parent: "Settings" },
-    "/user-management": { label: "用户管理", parent: "Settings" },
-    "/center-management": { label: "分行管理", parent: "Settings" },
-    "/finance/fees": { label: "收费管理", parent: "Finance" },
-    "/finance/student-fees": { label: "学生费用", parent: "Finance" },
-    "/finance/invoices": { label: "发票管理", parent: "Finance" },
-    "/finance/payments": { label: "付款管理", parent: "Finance" },
-    "/finance/overview": { label: "财务概览", parent: "Finance" },
-    "/finance/bank": { label: "银行对账", parent: "Finance" },
-    "/finance/expenses": { label: "支出管理", parent: "Finance" },
-    "/finance/payroll": { label: "薪资管理", parent: "Finance" },
-    "/finance/budget": { label: "预算管理", parent: "Finance" },
-    "/finance/reports": { label: "财务报表", parent: "Finance" },
-    "/inventory": { label: "库存管理", parent: "Finance" },
-    "/settings": { label: "系统设置" },
-    "/admin": { label: "系统设置" },
+    "/": { label: "仪表板", parent: "概览" },
+    "/dashboard/slideshow": { label: "幻灯片", parent: "概览" },
+    "/education": { label: "教育概览", parent: "教务" },
+    "/student-management": { label: "学生列表", parent: "教务" },
+    "/student-reports": { label: "学生报告", parent: "教务" },
+    "/student-report": { label: "报告详情", parent: "教务" },
+    "/daily-logs": { label: "每日日志", parent: "教务" },
+    "/grades": { label: "成绩管理", parent: "教务" },
+    "/pickup": { label: "接送管理", parent: "教务" },
+    "/parent-management": { label: "家长管理", parent: "教务" },
+    "/homework": { label: "作业管理", parent: "教务" },
+    "/teacher-management": { label: "教师列表", parent: "教务" },
+    "/teacher-attendance-reports": { label: "教师考勤", parent: "教务" },
+    "/course-management": { label: "课程管理", parent: "教务" },
+    "/finance/overview": { label: "财务概览", parent: "财务" },
+    "/finance/fees": { label: "收费管理", parent: "财务" },
+    "/finance/student-fees": { label: "学生费用", parent: "财务" },
+    "/finance/invoices": { label: "发票管理", parent: "财务" },
+    "/finance/payments": { label: "付款管理", parent: "财务" },
+    "/finance/receipts": { label: "收据管理", parent: "财务" },
+    "/finance/payroll": { label: "薪资管理", parent: "财务" },
+    "/finance/expenses": { label: "支出管理", parent: "财务" },
+    "/finance/bank": { label: "银行对账", parent: "财务" },
+    "/finance/budget": { label: "预算管理", parent: "财务" },
+    "/finance/reports": { label: "财务报表", parent: "财务" },
+    "/inventory": { label: "库存管理", parent: "财务" },
+    "/attendance": { label: "考勤中心", parent: "系统" },
+    "/card-management": { label: "卡片管理", parent: "系统" },
+    "/points": { label: "积分操作", parent: "系统" },
+    "/points/rules": { label: "积分规则", parent: "系统" },
+    "/points/leaderboard": { label: "积分排行", parent: "系统" },
+    "/user-management": { label: "用户管理", parent: "系统" },
+    "/center-management": { label: "分行管理", parent: "系统" },
+    "/settings": { label: "系统设置", parent: "系统" },
   }
 
   const getBreadcrumbs = () => {
     const crumbs: { label: string; href?: string }[] = []
-    // For course-management with tabs, show the sub-page as breadcrumb
-    if (pathname === "/course-management") {
-      const tab = searchParams?.get("tab") || "schedule"
-      const tabLabels: Record<string, string> = {
-        schedule: "课程表",
-        courses: "课程管理",
-        classes: "班级管理",
-        analytics: "课程分析",
-      }
-      crumbs.push({ label: "课程管理" })
-      crumbs.push({ label: tabLabels[tab] || "课程表" })
+    const info = BREADCRUMB_LABELS[pathname]
+    // Also match /student-report/xxx → /student-report
+    if (!info && pathname.startsWith("/student-report/")) {
+      const baseInfo = BREADCRUMB_LABELS["/student-report"]
+      if (baseInfo?.parent) crumbs.push({ label: baseInfo.parent })
+      crumbs.push({ label: baseInfo?.label || "报告详情" })
       return crumbs
     }
-    const info = BREADCRUMB_LABELS[pathname]
     if (info?.parent) {
       crumbs.push({ label: info.parent })
     }
