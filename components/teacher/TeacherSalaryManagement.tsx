@@ -30,11 +30,7 @@ import {
   Filter,
   Calendar,
   User,
-  TrendingUp,
-  PieChart,
-  BarChart3,
   Loader2,
-  Settings
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/pocketbase-auth-context"
@@ -868,7 +864,21 @@ export default function TeacherSalaryManagement() {
 
       {/* 薪资记录 */}
       <section id="records">
-        <h2 className="text-lg font-semibold mb-3">薪资记录</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold">薪资记录</h2>
+          <Button 
+            size="sm"
+            onClick={handleAutoGenerateSalary}
+            disabled={isGenerating}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            {isGenerating ? (
+              <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />生成中...</>
+            ) : (
+              <><Calculator className="mr-1 h-3.5 w-3.5" />生成本月薪资</>
+            )}
+          </Button>
+        </div>
         <div className="space-y-4">
           <Card>
             <CardHeader>
@@ -978,131 +988,6 @@ export default function TeacherSalaryManagement() {
                 </TableBody>
               </Table>
             </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* 分割线 */}
-      <div className="border-t border-gray-200 my-6" />
-
-      {/* 自动化 */}
-      <section id="automation">
-        <h2 className="text-lg font-semibold mb-3">自动化</h2>
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>薪资自动化</CardTitle>
-              <CardDescription>自动生成薪资记录和基于绩效的薪资调整</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* 自动生成薪资 */}
-              <div className="border rounded-lg p-4">
-                <h3 className="text-lg font-semibold mb-2">自动生成薪资</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  基于排班记录和考勤数据自动计算并生成月度薪资记录
-                </p>
-                <div className="flex gap-4">
-                  <Button 
-                    onClick={handleAutoGenerateSalary}
-                    disabled={isGenerating}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        生成中...
-                      </>
-                    ) : (
-                      <>
-                        <Calculator className="mr-2 h-4 w-4" />
-                        生成本月薪资
-                      </>
-                    )}
-                  </Button>
-                  <Button variant="outline" onClick={() => {
-                    const btn = document.getElementById('automation-config')
-                    if (btn) btn.scrollIntoView({ behavior: 'smooth' })
-                  }}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    配置规则
-                  </Button>
-                </div>
-              </div>
-
-              {/* 绩效薪资调整 */}
-              <div className="border rounded-lg p-4">
-                <h3 className="text-lg font-semibold mb-2">绩效薪资调整</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  根据绩效评估结果自动调整教师薪资结构
-                </p>
-                <div className="flex gap-4">
-                  <Button 
-                    onClick={handlePerformanceAdjustment}
-                    disabled={isAdjusting}
-                    variant="outline"
-                    className="border-purple-600 text-purple-600 hover:bg-purple-50"
-                  >
-                    {isAdjusting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        调整中...
-                      </>
-                    ) : (
-                      <>
-                        <TrendingUp className="mr-2 h-4 w-4" />
-                        绩效调整
-                      </>
-                    )}
-                  </Button>
-                  <Button variant="outline" onClick={() => {
-                    // Navigate to teacher performance management
-                    const goToPerformance = confirm('前往教师绩效管理页面？')
-                    if (goToPerformance) {
-                      window.location.href = '/teacher-management'
-                    }
-                  }}>
-                    <BarChart3 className="mr-2 h-4 w-4" />
-                    查看绩效
-                  </Button>
-                </div>
-              </div>
-
-              {/* 自动化设置 */}
-              <div className="border rounded-lg p-4">
-                <h3 className="text-lg font-semibold mb-2">自动化设置</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  配置薪资自动化的规则和参数
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>自动生成频率</Label>
-                    <Select defaultValue="monthly">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="weekly">每周</SelectItem>
-                        <SelectItem value="monthly">每月</SelectItem>
-                        <SelectItem value="quarterly">每季度</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>绩效调整阈值</Label>
-                    <Select defaultValue="8">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="7">7分以上</SelectItem>
-                        <SelectItem value="8">8分以上</SelectItem>
-                        <SelectItem value="9">9分以上</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
             </CardContent>
           </Card>
         </div>
