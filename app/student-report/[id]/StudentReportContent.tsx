@@ -32,9 +32,23 @@ const loadDefaultSubjects = (): string[] => {
   return DEFAULT_SUBJECTS
 }
 
-const saveDefaultSubjects = (subjects: string[]) => {
+const saveDefaultSubjects = async (subjects: string[]) => {
   if (typeof window === "undefined") return
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(subjects))
+  // Also persist to PB report_settings
+  try {
+    const res = await fetch('/api/pocketbase-proxy/api/collections/report_settings/records?filter=(isDefault=true)&perPage=1')
+    if (res.ok) {
+      const data = await res.json()
+      if (data.items?.length > 0) {
+        await fetch(`/api/pocketbase-proxy/api/collections/report_settings/records/${data.items[0].id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ defaultSubjects: subjects }),
+        })
+      }
+    }
+  } catch (e) { console.error('Save defaultSubjects failed:', e) }
 }
 
 export default function StudentReportContent() {
@@ -115,6 +129,11 @@ export default function StudentReportContent() {
               ],
               isDefault: true, createdAt: r.created || "", updatedAt: r.updated || "",
             })
+            // Also sync defaultSubjects to the editable state
+            if (r.defaultSubjects?.length) {
+              setDefaultSubjects(r.defaultSubjects)
+              saveDefaultSubjects(r.defaultSubjects)
+            }
           }
         }
       } catch {}
@@ -171,6 +190,7 @@ export default function StudentReportContent() {
     if (!name || defaultSubjects.includes(name)) return
     const updated = [...defaultSubjects, name]
     setDefaultSubjects(updated)
+    setReportSettings(prev => ({ ...prev, defaultSubjects: updated }))
     saveDefaultSubjects(updated)
     setNewSubjectName("")
   }
@@ -178,11 +198,13 @@ export default function StudentReportContent() {
   const handleRemoveDefaultSubject = (name: string) => {
     const updated = defaultSubjects.filter(s => s !== name)
     setDefaultSubjects(updated)
+    setReportSettings(prev => ({ ...prev, defaultSubjects: updated }))
     saveDefaultSubjects(updated)
   }
 
   const handleResetDefaultSubjects = () => {
     setDefaultSubjects([...DEFAULT_SUBJECTS])
+    setReportSettings(prev => ({ ...prev, defaultSubjects: [...DEFAULT_SUBJECTS] }))
     saveDefaultSubjects([...DEFAULT_SUBJECTS])
   }
 
@@ -503,7 +525,13 @@ export default function StudentReportContent() {
             <DialogDescription>自定义学生报告的打印/PDF样式</DialogDescription>
           </DialogHeader>
           <ReportSettingsManager
-            onSettingsChange={(s) => setReportSettings(s)}
+            onSettingsChange={(s) => {
+              setReportSettings(s)
+              if (s.defaultSubjects?.length) {
+                setDefaultSubjects(s.defaultSubjects)
+                saveDefaultSubjects(s.defaultSubjects)
+              }
+            }}
             activePresetId={reportSettings.id}
           />
         </DialogContent>
