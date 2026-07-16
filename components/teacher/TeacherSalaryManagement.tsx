@@ -31,6 +31,8 @@ import {
   Calendar,
   User,
   Loader2,
+  Settings,
+  TrendingUp,
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/pocketbase-auth-context"
@@ -746,46 +748,6 @@ export default function TeacherSalaryManagement() {
           </div>
         </CardContent>
       </Card>
-
-      {/* 自动操作按钮 */}
-      <div className="flex gap-4 mb-6">
-        <Button 
-          onClick={handleAutoGenerateSalary}
-          disabled={isGenerating}
-          className="bg-green-600 hover:bg-green-700"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              生成中...
-            </>
-          ) : (
-            <>
-              <Calculator className="mr-2 h-4 w-4" />
-              自动生成薪资
-            </>
-          )}
-        </Button>
-        
-        <Button 
-          onClick={handlePerformanceAdjustment}
-          disabled={isAdjusting}
-          variant="outline"
-          className="border-purple-600 text-purple-600 hover:bg-purple-50"
-        >
-          {isAdjusting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              调整中...
-            </>
-          ) : (
-            <>
-              <TrendingUp className="mr-2 h-4 w-4" />
-              绩效调整薪资
-            </>
-          )}
-        </Button>
-      </div>
 
       {/* 薪资结构 */}
       <section id="structures">
