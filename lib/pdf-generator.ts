@@ -398,6 +398,310 @@ export const downloadInvoicePDF = async (invoice: Invoice, settings: InvoiceSett
   }
 }
 
+// ── Receipt HTML Generation ──
+export const generateReceiptHTML = (receipt: any, settings: InvoiceSettingsPreset, studentName: string): string => {
+  const primaryColor = settings.primaryColor || '#1e40af'
+  const secondaryColor = settings.secondaryColor || '#3b82f6'
+  const accentColor = settings.accentColor || '#f59e0b'
+  const schoolName = settings.schoolName || '智慧教育学校'
+  const total = receipt.totalAmount || 0
+  const statusText = receipt.status === 'issued' ? '已开具' : receipt.status === 'draft' ? '草稿' : receipt.status === 'cancelled' ? '已取消' : receipt.status
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '-'
+    try {
+      const d = new Date(dateStr)
+      return d.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    } catch { return dateStr }
+  }
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>收据 ${receipt.receiptNumber}</title>
+  <style>
+    @page { margin: 0; size: A4; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', Arial, sans-serif;
+      color: #1f2937;
+      background: #fff;
+      width: 794px;
+      margin: 0 auto;
+    }
+    .receipt-wrapper {
+      width: 100%;
+      background: #fff;
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, ${primaryColor}, ${secondaryColor});
+      color: #fff;
+      padding: 32px 36px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .header-left { display: flex; align-items: center; gap: 20px; }
+    .header-logo {
+      width: 64px; height: 64px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; font-weight: bold; color: #fff;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .header-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .header-title h1 { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+    .header-title p { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+    .header-badge {
+      background: rgba(255,255,255,0.2);
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.3);
+      white-space: nowrap;
+    }
+    .body { padding: 28px 36px; }
+    h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: ${primaryColor};
+      padding-bottom: 8px;
+      border-bottom: 2px solid ${primaryColor}20;
+      margin-top: 24px;
+      margin-bottom: 16px;
+    }
+    h2:first-of-type { margin-top: 0; }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 24px;
+    }
+    .info-block { flex: 1; }
+    .info-block h3 {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #6b7280;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .info-block p { font-size: 14px; line-height: 1.6; color: #374151; }
+    .info-block .highlight { font-size: 18px; font-weight: 700; color: ${primaryColor}; }
+    .items-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    .items-table th {
+      background: ${primaryColor}15;
+      color: ${primaryColor};
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid ${primaryColor}30;
+    }
+    .items-table th:last-child { text-align: right; }
+    .items-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 14px;
+    }
+    .items-table td:last-child { text-align: right; font-weight: 600; }
+    .items-table tr:last-child td { border-bottom: none; }
+    .grand-total {
+      display: flex; justify-content: flex-end; align-items: center;
+      padding: 12px 0;
+      font-size: 20px; font-weight: 700;
+      color: ${primaryColor};
+      border-top: 2px solid ${primaryColor};
+      margin-top: 8px;
+    }
+    .grand-total span:first-child { width: 120px; text-align: right; margin-right: 20px; }
+    .grand-total span:last-child { width: 120px; text-align: right; }
+    .footer {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+      text-align: center;
+      font-size: 12px;
+      color: #9ca3af;
+      line-height: 1.8;
+    }
+    .notes {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: #fef3c7;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #92400e;
+    }
+  </style>
+</head>
+<body>
+  <div class="receipt-wrapper">
+    <div class="header">
+      <div class="header-left">
+        <div class="header-logo">
+          ${settings.schoolLogo ? `<img src="${settings.schoolLogo}" alt="logo" crossorigin="anonymous" />` : schoolName.charAt(0)}
+        </div>
+        <div class="header-title">
+          <h1>${schoolName}</h1>
+          <p>${settings.schoolNameEn || ''}</p>
+        </div>
+      </div>
+      <div class="header-badge">收据 RECEIPT</div>
+    </div>
+
+    <div class="body">
+      <h2>收据信息 Receipt Info</h2>
+
+      <div class="info-row">
+        <div class="info-block">
+          <h3>收据号码 Receipt No</h3>
+          <p class="highlight">${receipt.receiptNumber}</p>
+        </div>
+        <div class="info-block" style="text-align:right;">
+          <h3>日期 Date</h3>
+          <p class="highlight">${formatDate(receipt.receipt_date)}</p>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-block">
+          <h3>学生 Student</h3>
+          <p><strong>${studentName}</strong></p>
+        </div>
+        <div class="info-block" style="text-align:right;">
+          <h3>状态 Status</h3>
+          <p>${statusText}</p>
+        </div>
+      </div>
+
+      <h2>付款明细 Payment Details</h2>
+
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>项目 Item</th>
+            <th>金额 Amount (RM)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>学费付款 Tuition Payment</td>
+            <td>${total.toFixed(2)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="grand-total">
+        <span>合计 Total</span>
+        <span>RM ${total.toFixed(2)}</span>
+      </div>
+
+      ${receipt.notes ? `<div class="notes">📌 ${receipt.notes}</div>` : ''}
+
+      <div class="footer">
+        <p>${schoolName} ${settings.schoolAddress ? '| ' + settings.schoolAddress : ''}</p>
+        ${settings.schoolPhone || settings.schoolEmail ? `<p>${settings.schoolPhone || ''} ${settings.schoolPhone && settings.schoolEmail ? '|' : ''} ${settings.schoolEmail || ''}</p>` : ''}
+        ${settings.footerText ? `<p style="margin-top:6px;">${settings.footerText}</p>` : ''}
+        <p style="margin-top:6px;">此收据由 PJPC 系统自动生成</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`
+}
+
+// ── Receipt PDF Generation: HTML → html2canvas → jsPDF ──
+export const generateReceiptPDF = async (receipt: any, settings: InvoiceSettingsPreset, studentName: string): Promise<Blob> => {
+  const html = generateReceiptHTML(receipt, settings, studentName)
+
+  const iframe = document.createElement('iframe')
+  iframe.style.position = 'fixed'
+  iframe.style.left = '-9999px'
+  iframe.style.top = '0'
+  iframe.style.width = (RENDER_WIDTH_PX + 40) + 'px'
+  iframe.style.height = '2000px'
+  iframe.style.zIndex = '-1'
+  document.body.appendChild(iframe)
+
+  try {
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow!.document
+    iframeDoc.open()
+    iframeDoc.write(html)
+    iframeDoc.close()
+
+    await new Promise((r) => setTimeout(r, 600))
+
+    const wrapper = iframeDoc.querySelector('.receipt-wrapper') as HTMLElement
+    const canvas = await html2canvas(wrapper, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+    })
+
+    const imgWidth = A4_WIDTH_MM
+    const imgHeight = (canvas.height * imgWidth) / canvas.width
+    const pageHeight = A4_HEIGHT_MM
+
+    const pdf = new jsPDF('p', 'mm', 'a4')
+
+    if (imgHeight <= pageHeight + 5) {
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight)
+    } else {
+      let remainingHeight = canvas.height
+      let srcY = 0
+      let pageNum = 0
+      while (remainingHeight > 0) {
+        if (pageNum > 0) pdf.addPage()
+        const srcH = Math.min(remainingHeight, Math.floor((pageHeight / imgHeight) * canvas.height))
+        const pageCanvas = document.createElement('canvas')
+        pageCanvas.width = canvas.width
+        pageCanvas.height = srcH
+        const ctx = pageCanvas.getContext('2d')!
+        ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH)
+        const pageImgData = pageCanvas.toDataURL('image/png')
+        const pageImgH = (pageCanvas.height * imgWidth) / pageCanvas.width
+        pdf.addImage(pageImgData, 'PNG', 0, 0, imgWidth, pageImgH)
+        srcY += srcH
+        remainingHeight -= srcH
+        pageNum++
+      }
+    }
+
+    const blob = pdf.output('blob')
+    return blob
+  } finally {
+    if (iframe.parentNode) {
+      document.body.removeChild(iframe)
+    }
+  }
+}
+
+export const downloadReceiptPDF = async (receipt: any, settings: InvoiceSettingsPreset, studentName: string): Promise<void> => {
+  try {
+    const blob = await generateReceiptPDF(receipt, settings, studentName)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'Receipt_' + receipt.receiptNumber + '.pdf'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 3000)
+  } catch (e) {
+    console.error('Receipt PDF download failed:', e)
+    throw new Error('Receipt PDF download failed')
+  }
+}
+
 // ── Report Card HTML Generation ──
 const scoreToEval = (score: number | null): string => {
   if (score === null || score === undefined) return "-"
@@ -798,6 +1102,384 @@ export const downloadReportPDF = async (report: StudentReport, settings: ReportS
   } catch (e) {
     console.error('Report PDF download failed:', e)
     throw new Error('Report PDF download failed')
+  }
+}
+
+// ── Payslip / Salary PDF Generation ──
+
+interface PayslipRecord {
+  id?: string
+  teacher_id?: string
+  salary_period?: string
+  year: number
+  month: number
+  base_salary: number
+  overtime_pay: number
+  allowances: number
+  gross_salary: number
+  epf_deduction: number
+  socso_deduction: number
+  eis_deduction: number
+  tax_deduction: number
+  other_deductions: number
+  net_salary: number
+  bonus?: number
+  commission?: number
+  status?: string
+  payment_date?: string
+  payment_method?: string
+  bank_reference?: string
+  notes?: string
+}
+
+const MONTH_NAMES = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
+
+export const generatePayslipHTML = (
+  record: PayslipRecord,
+  teacherName: string,
+  schoolName: string = '智慧教育学校'
+): string => {
+  const primaryColor = '#1e40af'
+  const secondaryColor = '#3b82f6'
+  const accentColor = '#f59e0b'
+
+  const monthName = MONTH_NAMES[(record.month || 1) - 1] || `${record.month}月`
+  const totalDeductions = (record.epf_deduction || 0) + (record.socso_deduction || 0) + (record.eis_deduction || 0) + (record.tax_deduction || 0) + (record.other_deductions || 0)
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>薪资单 ${teacherName} ${record.year}年${monthName}</title>
+  <style>
+    @page { margin: 0; size: A4; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', Arial, sans-serif;
+      color: #1f2937;
+      background: #fff;
+      width: 794px;
+      margin: 0 auto;
+    }
+    .payslip-wrapper { width: 100%; background: #fff; overflow: hidden; }
+    .header {
+      background: linear-gradient(135deg, ${primaryColor}, ${secondaryColor});
+      color: #fff;
+      padding: 32px 36px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .header-title h1 { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+    .header-title p { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+    .header-badge {
+      background: rgba(255,255,255,0.2);
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.3);
+      white-space: nowrap;
+    }
+    .body { padding: 28px 36px; position: relative; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 20px; gap: 24px; }
+    .info-block { flex: 1; }
+    .info-block h3 {
+      font-size: 12px; text-transform: uppercase; color: #6b7280;
+      letter-spacing: 1px; margin-bottom: 8px;
+    }
+    .info-block p { font-size: 14px; line-height: 1.6; color: #374151; }
+    .info-block .highlight { font-size: 18px; font-weight: 700; color: ${primaryColor}; }
+    .divider { border: none; border-top: 2px dashed #e5e7eb; margin: 16px 0; }
+    .section-title {
+      font-size: 15px; font-weight: 700; color: ${primaryColor};
+      padding: 8px 0; margin-bottom: 12px;
+      border-bottom: 2px solid ${primaryColor}30;
+    }
+    .items-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    .items-table th {
+      background: ${primaryColor}15; color: ${primaryColor};
+      font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+      padding: 10px 16px; text-align: left;
+      border-bottom: 2px solid ${primaryColor}30;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .items-table th:last-child { text-align: right; }
+    .items-table td { padding: 12px 16px; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+    .items-table td:last-child { text-align: right; font-weight: 600; }
+    .items-table tr:last-child td { border-bottom: none; }
+    .total-row td {
+      border-top: 2px solid ${primaryColor};
+      font-weight: 700; font-size: 15px; color: ${primaryColor};
+      padding: 12px 16px;
+    }
+    .net-salary-row td {
+      border-top: 2px solid ${primaryColor};
+      background: ${primaryColor}10;
+      font-weight: 800; font-size: 18px; color: ${primaryColor};
+      padding: 14px 16px;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .net-salary-row td:last-child { color: ${primaryColor}; font-size: 20px; }
+    .deductions-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    .deductions-table th {
+      background: #dc262615; color: #dc2626;
+      font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+      padding: 10px 16px; text-align: left;
+      border-bottom: 2px solid #dc262630;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .deductions-table th:last-child { text-align: right; }
+    .deductions-table td { padding: 12px 16px; border-bottom: 1px solid #f3f4f6; font-size: 14px; }
+    .deductions-table td:last-child { text-align: right; font-weight: 600; }
+    .deductions-table tr:last-child td { border-bottom: none; }
+    .deductions-total td {
+      border-top: 2px solid #dc2626;
+      font-weight: 700; font-size: 15px; color: #dc2626;
+      padding: 12px 16px;
+    }
+    .payment-info {
+      margin-top: 24px; padding: 16px 20px;
+      background: #f9fafb; border-radius: 8px;
+      border-left: 4px solid ${accentColor};
+      display: flex; gap: 40px; flex-wrap: wrap;
+    }
+    .payment-info h4 { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+    .payment-info p { font-size: 14px; font-weight: 600; color: #374151; }
+    .footer {
+      margin-top: 24px; padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+      text-align: center; font-size: 12px; color: #9ca3af; line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="payslip-wrapper">
+    <div class="header">
+      <div class="header-title">
+        <h1>${schoolName}</h1>
+        <p>智慧教育 · 卓越未来</p>
+      </div>
+      <div class="header-badge">PAYSLIP / 薪资单</div>
+    </div>
+
+    <div class="body">
+      <div class="info-row">
+        <div class="info-block">
+          <h3>教师信息 Teacher</h3>
+          <p class="highlight">${teacherName}</p>
+        </div>
+        <div class="info-block" style="text-align:right;">
+          <h3>薪资期间 Period</h3>
+          <p class="highlight">${record.year}年 ${monthName}</p>
+          <p style="font-size:12px;color:#9ca3af;margin-top:2px;">${record.salary_period || ''}</p>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <div class="section-title">💰 薪资构成 Salary Breakdown</div>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>项目 Item</th>
+            <th>金额 Amount (RM)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>基本薪资 Base Salary</td>
+            <td>${(record.base_salary || 0).toFixed(2)}</td>
+          </tr>
+          ${record.allowances ? `<tr>
+            <td>津贴 Allowances</td>
+            <td>${(record.allowances || 0).toFixed(2)}</td>
+          </tr>` : ''}
+          ${record.overtime_pay ? `<tr>
+            <td>加班费 Overtime Pay</td>
+            <td>${(record.overtime_pay || 0).toFixed(2)}</td>
+          </tr>` : ''}
+          ${record.bonus ? `<tr>
+            <td>奖金 Bonus</td>
+            <td>${(record.bonus || 0).toFixed(2)}</td>
+          </tr>` : ''}
+          ${record.commission ? `<tr>
+            <td>佣金 Commission</td>
+            <td>${(record.commission || 0).toFixed(2)}</td>
+          </tr>` : ''}
+          <tr class="total-row">
+            <td>总薪资 Gross Salary</td>
+            <td>${(record.gross_salary || 0).toFixed(2)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr class="divider" />
+
+      <div class="section-title" style="color:#dc2626;border-bottom-color:#dc262630;">📋 扣款明细 Deductions</div>
+      <table class="deductions-table">
+        <thead>
+          <tr>
+            <th>项目 Item</th>
+            <th>金额 Amount (RM)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>EPF 雇员公积金 (Employee)</td>
+            <td>${(record.epf_deduction || 0).toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td>SOCSO 社会保险</td>
+            <td>${(record.socso_deduction || 0).toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td>EIS 就业保险</td>
+            <td>${(record.eis_deduction || 0).toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td>PCB 预扣税 Tax</td>
+            <td>${(record.tax_deduction || 0).toFixed(2)}</td>
+          </tr>
+          ${record.other_deductions ? `<tr>
+            <td>其他扣款 Other Deductions</td>
+            <td>${(record.other_deductions || 0).toFixed(2)}</td>
+          </tr>` : ''}
+          <tr class="deductions-total">
+            <td>扣款总计 Total Deductions</td>
+            <td>${totalDeductions.toFixed(2)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr class="divider" />
+
+      <table class="items-table">
+        <tbody>
+          <tr class="net-salary-row">
+            <td>🏆 净薪资 Net Salary / 净薪资</td>
+            <td>RM ${(record.net_salary || 0).toFixed(2)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      ${(record.payment_date || record.payment_method || record.bank_reference) ? `
+      <div class="payment-info">
+        ${record.payment_date ? `
+        <div>
+          <h4>📅 发放日期 Payment Date</h4>
+          <p>${record.payment_date}</p>
+        </div>` : ''}
+        ${record.payment_method ? `
+        <div>
+          <h4>🏦 发放方式 Payment Method</h4>
+          <p>${record.payment_method}</p>
+        </div>` : ''}
+        ${record.bank_reference ? `
+        <div>
+          <h4>🔖 银行参考 Bank Reference</h4>
+          <p>${record.bank_reference}</p>
+        </div>` : ''}
+      </div>` : ''}
+
+      ${record.notes ? `
+      <div style="margin-top:12px;padding:8px 12px;background:#fef3c7;border-radius:6px;font-size:12px;color:#92400e;">
+        📌 备注: ${record.notes}
+      </div>` : ''}
+
+      <div class="footer">
+        <p>${schoolName} | 薪资单 Payslip</p>
+        <p style="margin-top:6px;">本薪资单为内部文件，请妥善保管 · This payslip is an internal document</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`
+}
+
+export const downloadPayslipPDF = async (
+  record: PayslipRecord,
+  teacherName: string,
+  schoolName: string = '智慧教育学校'
+): Promise<void> => {
+  try {
+    const html = generatePayslipHTML(record, teacherName, schoolName)
+
+    const iframe = document.createElement('iframe')
+    iframe.style.position = 'fixed'
+    iframe.style.left = '-9999px'
+    iframe.style.top = '0'
+    iframe.style.width = '834px'
+    iframe.style.height = '2000px'
+    iframe.style.zIndex = '-1'
+    document.body.appendChild(iframe)
+
+    try {
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow!.document
+      iframeDoc.open()
+      iframeDoc.write(html)
+      iframeDoc.close()
+
+      await new Promise((r) => setTimeout(r, 600))
+
+      const wrapper = iframeDoc.querySelector('.payslip-wrapper') as HTMLElement
+      const canvas = await html2canvas(wrapper, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+      })
+
+      const A4_WIDTH_MM = 210
+      const A4_HEIGHT_MM = 297
+      const imgWidth = A4_WIDTH_MM
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      const pageHeight = A4_HEIGHT_MM
+
+      const pdf = new jsPDF('p', 'mm', 'a4')
+
+      if (imgHeight <= pageHeight + 5) {
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight)
+      } else {
+        let remainingHeight = canvas.height
+        let srcY = 0
+        let pageNum = 0
+        while (remainingHeight > 0) {
+          if (pageNum > 0) pdf.addPage()
+          const srcH = Math.min(remainingHeight, Math.floor((pageHeight / imgHeight) * canvas.height))
+          const pageCanvas = document.createElement('canvas')
+          pageCanvas.width = canvas.width
+          pageCanvas.height = srcH
+          const ctx = pageCanvas.getContext('2d')!
+          ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH)
+          const pageImgData = pageCanvas.toDataURL('image/png')
+          const pageImgH = (pageCanvas.height * imgWidth) / pageCanvas.width
+          pdf.addImage(pageImgData, 'PNG', 0, 0, imgWidth, pageImgH)
+          srcY += srcH
+          remainingHeight -= srcH
+          pageNum++
+        }
+      }
+
+      const blob = pdf.output('blob')
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Payslip_${teacherName.replace(/\\s+/g, '_')}_${record.year}_${record.month}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 3000)
+    } finally {
+      if (iframe.parentNode) {
+        document.body.removeChild(iframe)
+      }
+    }
+  } catch (e) {
+    console.error('Payslip PDF download failed:', e)
+    throw new Error('Payslip PDF download failed')
   }
 }
 

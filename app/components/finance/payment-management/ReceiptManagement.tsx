@@ -21,6 +21,8 @@ import { useReceipts } from "@/hooks/useReceipts"
 import { useInvoices } from "@/hooks/useInvoices"
 import { useStudents } from "@/hooks/useStudents"
 import { usePayments } from "@/hooks/usePayments"
+import { downloadReceiptPDF } from "@/lib/pdf-generator"
+import { type InvoiceSettingsPreset } from "@/app/components/finance/invoice-management/InvoiceSettingsManager"
 
 
 
@@ -72,6 +74,48 @@ export default function ReceiptManagement() {
   // State
   const [isReceiptDetailDialogOpen, setIsReceiptDetailDialogOpen] = useState(false)
   const [selectedReceipt, setSelectedReceipt] = useState<any>(null)
+
+  // PDF settings for receipt generation
+  const [pdfSettings, setPdfSettings] = useState<InvoiceSettingsPreset>({
+    id: "default", name: "默认设置", schoolName: "智慧教育学校", schoolNameEn: "",
+    schoolLogo: "", schoolAddress: "", schoolPhone: "", schoolEmail: "", schoolWebsite: "",
+    taxNumber: "", bankName: "", bankAccount: "", bankHolder: "",
+    primaryColor: "#1e40af", secondaryColor: "#3b82f6", accentColor: "#f59e0b",
+    footerText: "", paymentTerms: "", receiptNote: "",
+    isDefault: true, createdAt: "", updatedAt: ""
+  })
+
+  // Load school settings for PDF header
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const res = await fetch('/api/pocketbase-proxy/api/collections/invoice_settings/records?perPage=1&sort=-created')
+        if (!res.ok) return
+        const data = await res.json()
+        const items = data.items || []
+        if (items.length > 0) {
+          const s = items[0]
+          setPdfSettings(prev => ({
+            ...prev,
+            schoolLogo: s.schoolLogo || '',
+            schoolName: s.schoolName || '智慧教育学校',
+            schoolNameEn: s.schoolNameEn || '',
+            schoolAddress: s.schoolAddress || '',
+            schoolPhone: s.schoolPhone || '',
+            schoolEmail: s.schoolEmail || '',
+            primaryColor: s.primaryColor || '#1e40af',
+            secondaryColor: s.secondaryColor || '#3b82f6',
+            accentColor: s.accentColor || '#f59e0b',
+            footerText: s.footerText || '',
+            bankName: s.bankName || '',
+            bankAccount: s.bankAccount || '',
+            bankHolder: s.bankHolder || '',
+          }))
+        }
+      } catch { /* use defaults */ }
+    }
+    loadSettings()
+  }, [])
 
   // ── Batch delete state ──
   const [selectedReceiptIds, setSelectedReceiptIds] = useState<Set<string>>(new Set())
@@ -141,7 +185,16 @@ export default function ReceiptManagement() {
     setIsReceiptDetailDialogOpen(true)
   }
 
-  const handleDownloadReceipt = (receipt: any) => {
+  const handleDownloadReceipt = async (receipt: any) => {
+    try {
+      const studentName = getStudentName(receipt.studentId)
+      await downloadReceiptPDF(receipt, pdfSettings, studentName)
+    } catch (error) {
+      console.error('Failed to download receipt PDF:', error)
+    }
+  }
+
+  const handlePrintReceipt = (receipt: any) => {
     const studentName = getStudentName(receipt.studentId)
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
@@ -202,16 +255,10 @@ export default function ReceiptManagement() {
         <div class="total-row">合计: RM ${receipt.totalAmount?.toLocaleString() || '0.00'}</div>
         ${receipt.notes ? `<p style="margin-top:15px;color:#666;">备注: ${receipt.notes}</p>` : ''}
         <div class="footer">此收据由 PJPC 系统自动生成</div>
-        <script>window.onload = function() { setTimeout(function() { window.print(); }, 500); }</script>
       </body>
       </html>
     `)
     printWindow.document.close()
-  }
-
-  const handlePrintReceipt = (receipt: any) => {
-    // Open the same HTML view in a new window and trigger print
-    handleDownloadReceipt(receipt)
   }
 
   const handleSendReceipt = (receipt: any) => {
