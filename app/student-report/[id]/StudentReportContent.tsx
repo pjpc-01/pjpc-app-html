@@ -309,7 +309,7 @@ export default function StudentReportContent() {
             dob: student?.dob || '',
             grade: student?.grade || '',
             avatar: student?.avatar || '',
-          }) : ''}
+          }, { hideGrowth: editMode }) : ''}
           className="w-full border-0 rounded-lg bg-white"
           style={{ minHeight: '900px', height: 'auto' }}
           title="学生报告"

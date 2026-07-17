@@ -269,12 +269,11 @@ export const generateReportPreviewHTML = (settings: ReportSettingsPreset): strin
     : ''
 
   // Build sections HTML dynamically from sections config
+  // NOTE: growth/subjects/comprehensive are rendered inline above, NOT in this loop
   const sectionsHTML = sections
     .filter(s => s.enabled)
     .map(section => {
       switch(section.type) {
-        case 'growth':
-          return `<div class="card">${renderPreviewGrowth(section, growthMsg, color)}</div>`
         case 'subjects':
           return `<div class="card">${renderPreviewSubjects(section, rows, overallAvg, color)}</div>`
         case 'problems':

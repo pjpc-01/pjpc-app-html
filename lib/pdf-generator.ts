@@ -719,7 +719,7 @@ const formatDate = (d: string) => {
   } catch { return d }
 }
 
-export const generateReportHTML = (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }): string => {
+export const generateReportHTML = (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }, options?: { hideGrowth?: boolean }): string => {
   const color = settings.primaryColor || "#3b82f6"
 
   // Use preset subjects as template, match scores from report
@@ -902,6 +902,8 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
       </div>
     </div>
     ${(() => {
+      // Hide growth message in iframe preview when editing (passed via options.hideGrowth)
+      if (options?.hideGrowth) return ''
       // Show growth message only if growth section is enabled (or no sections config for backward compat)
       const secs = (settings.sections && settings.sections.length > 0) ? settings.sections : [{ id: "growth", type: "growth", enabled: true }]
       const growthSec = secs.find((s: any) => s.type === 'growth')
