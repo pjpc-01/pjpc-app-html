@@ -34,12 +34,13 @@ import {
   Loader2,
   Settings,
   TrendingUp,
+  Eye,
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { formatDate } from "@/lib/utils"
 import { toast } from "sonner"
-import { downloadPayslipPDF } from "@/lib/pdf-generator"
+import { downloadPayslipPDF, generatePayslipHTML } from "@/lib/pdf-generator"
 import PayslipSettingsManager, { type PayslipSettingsPreset } from "@/app/components/report/PayslipSettingsManager"
 
 const formatCurrency = (amount: number) => {
@@ -179,6 +180,8 @@ export default function TeacherSalaryManagement() {
   const [recordDialogOpen, setRecordDialogOpen] = useState(false)
   const [editingStructure, setEditingStructure] = useState<TeacherSalaryStructure | null>(null)
   const [editingRecord, setEditingRecord] = useState<TeacherSalaryRecord | null>(null)
+  const [isPayslipDetailOpen, setIsPayslipDetailOpen] = useState(false)
+  const [selectedPayslipRecord, setSelectedPayslipRecord] = useState<TeacherSalaryRecord | null>(null)
 
   // Payslip PDF settings
   const [payslipSettings, setPayslipSettings] = useState<PayslipSettingsPreset>({
@@ -942,6 +945,12 @@ export default function TeacherSalaryManagement() {
                       <TableCell>
                         <div className="flex gap-2">
                           <Button size="sm" variant="outline" onClick={() => {
+                            setSelectedPayslipRecord(record)
+                            setIsPayslipDetailOpen(true)
+                          }}>
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => {
                             setEditingRecord(record)
                             setRecordForm({
                               teacher_id: record.teacher_id,
@@ -1391,6 +1400,49 @@ export default function TeacherSalaryManagement() {
               <Button type="submit">{editingRecord ? '更新薪资记录' : '创建薪资记录'}</Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payslip Detail Dialog */}
+      <Dialog open={isPayslipDetailOpen} onOpenChange={setIsPayslipDetailOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              薪资单详情 - {selectedPayslipRecord?.year}年{selectedPayslipRecord?.month}月
+            </DialogTitle>
+            <DialogDescription>查看薪资单的详细信息</DialogDescription>
+          </DialogHeader>
+          
+          {selectedPayslipRecord && (
+            <div className="space-y-4">
+              {/* PDF Preview iframe */}
+              <div className="w-full border rounded-lg overflow-hidden bg-white">
+                <iframe
+                  srcDoc={generatePayslipHTML(selectedPayslipRecord, payslipSettings, selectedPayslipRecord.expand?.teacher_id?.name || '教师')}
+                  className="w-full border-0"
+                  style={{ height: '70vh', minHeight: '500px' }}
+                  title="薪资单预览"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    downloadPayslipPDF(selectedPayslipRecord, payslipSettings, selectedPayslipRecord.expand?.teacher_id?.name || '教师')
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  下载PDF
+                </Button>
+                <Button onClick={() => setIsPayslipDetailOpen(false)}>
+                  关闭
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

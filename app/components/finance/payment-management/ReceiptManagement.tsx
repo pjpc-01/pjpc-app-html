@@ -21,7 +21,7 @@ import { useReceipts } from "@/hooks/useReceipts"
 import { useInvoices } from "@/hooks/useInvoices"
 import { useStudents } from "@/hooks/useStudents"
 import { usePayments } from "@/hooks/usePayments"
-import { downloadReceiptPDF } from "@/lib/pdf-generator"
+import { downloadReceiptPDF, generateReceiptHTML } from "@/lib/pdf-generator"
 import ReceiptSettingsManager, { type ReceiptSettingsPreset } from "@/app/components/finance/payment-management/ReceiptSettingsManager"
 
 
@@ -512,62 +512,45 @@ export default function ReceiptManagement() {
 
       {/* Receipt Detail Dialog */}
       <Dialog open={isReceiptDetailDialogOpen} onOpenChange={setIsReceiptDetailDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>收据详情</DialogTitle>
-            <DialogDescription>
-              查看收据的详细信息
-            </DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" />
+              收据详情 - {selectedReceipt?.receiptNumber}
+            </DialogTitle>
+            <DialogDescription>查看收据的详细信息</DialogDescription>
           </DialogHeader>
           
           {selectedReceipt && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">收据号码</Label>
-                  <p className="text-lg font-semibold">{selectedReceipt.receiptNumber}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">发票号码</Label>
-                  <p className="text-lg font-semibold text-blue-600">{getInvoiceNumber(selectedReceipt.paymentId)}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">学生姓名</Label>
-                  <p className="text-lg">{getStudentName(selectedReceipt.studentId)}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">总金额</Label>
-                  <p className="text-lg font-semibold text-green-600">RM {selectedReceipt.totalAmount?.toLocaleString() || '0.00'}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">开具日期</Label>
-                  <p className="text-lg">{formatDate(selectedReceipt.receipt_date)}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">状态</Label>
-                  <div className="mt-1">{getReceiptStatusBadge(selectedReceipt.status)}</div>
-                </div>
+            <div className="space-y-4">
+              {/* PDF Preview iframe */}
+              <div className="w-full border rounded-lg overflow-hidden bg-white">
+                <iframe
+                  srcDoc={generateReceiptHTML(selectedReceipt, pdfSettings, getStudentName(selectedReceipt.studentId))}
+                  className="w-full border-0"
+                  style={{ height: '70vh', minHeight: '500px' }}
+                  title="收据预览"
+                />
               </div>
 
-              {selectedReceipt.notes && (
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">备注</Label>
-                  <p className="mt-1 p-3 bg-gray-50 rounded">{selectedReceipt.notes}</p>
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-4">
-                <Button onClick={() => handleDownloadReceipt(selectedReceipt)}>
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => handleDownloadReceipt(selectedReceipt)}
+                >
                   <Download className="h-4 w-4 mr-2" />
-                  下载收据
+                  下载PDF
                 </Button>
-                <Button variant="outline" onClick={() => handlePrintReceipt(selectedReceipt)}>
+                <Button
+                  variant="outline"
+                  onClick={() => handlePrintReceipt(selectedReceipt)}
+                >
                   <Printer className="h-4 w-4 mr-2" />
-                  打印收据
+                  打印
                 </Button>
-                <Button variant="outline" onClick={() => handleSendReceipt(selectedReceipt)}>
-                  <Send className="h-4 w-4 mr-2" />
-                  发送收据
+                <Button onClick={() => setIsReceiptDetailDialogOpen(false)}>
+                  关闭
                 </Button>
               </div>
             </div>
