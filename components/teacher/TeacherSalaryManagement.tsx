@@ -603,15 +603,11 @@ export default function TeacherSalaryManagement() {
 
   return (
     <div className="space-y-6">
-      {/* 操作按钮 */}
+      {/* 操作按钮 - only structure creation at top level */}
       <div className="flex justify-end gap-2">
         <Button onClick={handleCreateStructure}>
           <Plus className="w-4 h-4 mr-2" />
           新建薪资结构
-        </Button>
-        <Button onClick={() => setRecordDialogOpen(true)} variant="outline">
-          <Plus className="w-4 h-4 mr-2" />
-          新建薪资记录
         </Button>
       </div>
 
@@ -830,18 +826,28 @@ export default function TeacherSalaryManagement() {
       <section id="records">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">薪资记录</h2>
-          <Button 
-            size="sm"
-            onClick={handleAutoGenerateSalary}
-            disabled={isGenerating}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            {isGenerating ? (
-              <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />生成中...</>
-            ) : (
-              <><Calculator className="mr-1 h-3.5 w-3.5" />生成本月薪资</>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setRecordDialogOpen(true)}
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              新建薪资记录
+            </Button>
+            <Button 
+              size="sm"
+              onClick={handleAutoGenerateSalary}
+              disabled={isGenerating}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isGenerating ? (
+                <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />生成中...</>
+              ) : (
+                <><Calculator className="mr-1 h-3.5 w-3.5" />生成本月薪资</>
+              )}
+            </Button>
+          </div>
         </div>
         <div className="space-y-4">
           <Card>
@@ -945,13 +951,19 @@ export default function TeacherSalaryManagement() {
                           }}>
                             <Download className="w-4 h-4" />
                           </Button>
-                          {(record.status === 'approved' || record.status === 'paid') && (
-                            <Button size="sm" variant="outline" onClick={() => {
-                              downloadPayslipPDF(record, record.expand?.teacher_id?.name || '教师')
-                            }}>
-                              <FileDown className="w-4 h-4" />
-                            </Button>
-                          )}
+                          <Button
+                            size="sm"
+                            variant={record.status === 'approved' || record.status === 'paid' ? 'outline' : 'ghost'}
+                            disabled={record.status !== 'approved' && record.status !== 'paid'}
+                            title={record.status === 'approved' || record.status === 'paid' ? '下载薪资单PDF' : '仅已批准/已支付的记录可下载PDF'}
+                            onClick={() => {
+                              if (record.status === 'approved' || record.status === 'paid') {
+                                downloadPayslipPDF(record, record.expand?.teacher_id?.name || '教师')
+                              }
+                            }}
+                          >
+                            <FileDown className={`w-4 h-4 ${record.status === 'approved' || record.status === 'paid' ? 'text-blue-600' : 'text-gray-300'}`} />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1169,7 +1181,7 @@ export default function TeacherSalaryManagement() {
               <Button type="button" variant="outline" onClick={() => setStructureDialogOpen(false)}>
                 取消
               </Button>
-              <Button type="submit">创建薪资结构</Button>
+              <Button type="submit">{editingStructure ? '更新薪资结构' : '创建薪资结构'}</Button>
             </div>
           </form>
         </DialogContent>
@@ -1335,7 +1347,7 @@ export default function TeacherSalaryManagement() {
               <Button type="button" variant="outline" onClick={() => setRecordDialogOpen(false)}>
                 取消
               </Button>
-              <Button type="submit">创建薪资记录</Button>
+              <Button type="submit">{editingRecord ? '更新薪资记录' : '创建薪资记录'}</Button>
             </div>
           </form>
         </DialogContent>
