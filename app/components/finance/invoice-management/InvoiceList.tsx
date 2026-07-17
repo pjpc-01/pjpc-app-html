@@ -132,6 +132,21 @@ export function InvoiceList({
     }
   }
 
+  // ── Invoice status badge (Chinese labels per task spec) ──
+  const getInvoiceStatusBadge = (status: string) => {
+    const statusMap: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; text: string }> = {
+      draft: { variant: "outline", text: "草稿" },
+      issued: { variant: "default", text: "已发出" },
+      sent: { variant: "secondary", text: "已发送" },
+      pending: { variant: "secondary", text: "待处理" },
+      overdue: { variant: "destructive", text: "逾期" },
+      paid: { variant: "default", text: "已缴费" },
+      cancelled: { variant: "destructive", text: "已取消" }
+    }
+    const statusInfo = statusMap[status] || { variant: "outline" as const, text: status }
+    return <Badge variant={statusInfo.variant}>{statusInfo.text}</Badge>
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-CN')
   }
@@ -243,7 +258,7 @@ export function InvoiceList({
                     />
                   </TableHead>
                   <TableHead>发票号码</TableHead>
-                  <TableHead>收据号码</TableHead>
+                  <TableHead>发票状态</TableHead>
                   <TableHead>学号</TableHead>
                   <TableHead>学生姓名</TableHead>
                   <TableHead>年级</TableHead>
@@ -265,8 +280,8 @@ export function InvoiceList({
                       />
                     </TableCell>
                     <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                    <TableCell className="text-blue-600 font-medium">
-                      {invoice.receiptNumber || '待生成'}
+                    <TableCell>
+                      {getInvoiceStatusBadge(invoice.status)}
                     </TableCell>
                     <TableCell>{invoice.studentNumber || '-'}</TableCell>
                     <TableCell>{invoice.studentName}</TableCell>
