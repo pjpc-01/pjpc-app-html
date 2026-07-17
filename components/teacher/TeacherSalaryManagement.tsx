@@ -183,6 +183,12 @@ export default function TeacherSalaryManagement() {
   const [isPayslipDetailOpen, setIsPayslipDetailOpen] = useState(false)
   const [selectedPayslipRecord, setSelectedPayslipRecord] = useState<TeacherSalaryRecord | null>(null)
 
+  // Delete confirmation state
+  const [isStructureDeleteDialogOpen, setIsStructureDeleteDialogOpen] = useState(false)
+  const [structureToDelete, setStructureToDelete] = useState<string | null>(null)
+  const [isRecordDeleteDialogOpen, setIsRecordDeleteDialogOpen] = useState(false)
+  const [recordToDelete, setRecordToDelete] = useState<string | null>(null)
+
   // Payslip PDF settings
   const [payslipSettings, setPayslipSettings] = useState<PayslipSettingsPreset>({
     id: "default", name: "默认设置", schoolName: "智慧教育学校", schoolNameEn: "",
@@ -520,11 +526,23 @@ export default function TeacherSalaryManagement() {
     setStructureDialogOpen(true)
   }
 
-  // 删除薪资结构
-  const handleDeleteStructure = async (id: string) => {
-    if (!confirm('确定要删除这个薪资结构吗？')) return
+  // 删除薪资结构（打开确认对话框）
+  const handleDeleteStructure = (id: string) => {
+    setStructureToDelete(id)
+    setIsStructureDeleteDialogOpen(true)
+  }
+
+  // 删除薪资记录（打开确认对话框）
+  const handleDeleteRecord = (id: string) => {
+    setRecordToDelete(id)
+    setIsRecordDeleteDialogOpen(true)
+  }
+
+  // 确认删除薪资结构
+  const handleConfirmDeleteStructure = async () => {
+    if (!structureToDelete) return
     try {
-      const response = await fetch(`/api/teacher-salary?type=structure&id=${id}`, {
+      const response = await fetch(`/api/teacher-salary?type=structure&id=${structureToDelete}`, {
         method: 'DELETE',
       })
       const result = await response.json()
@@ -538,14 +556,23 @@ export default function TeacherSalaryManagement() {
     } catch (error) {
       toast.error('删除薪资结构失败')
       setError('删除薪资结构失败')
+    } finally {
+      setIsStructureDeleteDialogOpen(false)
+      setStructureToDelete(null)
     }
   }
 
-  // 删除薪资记录
-  const handleDeleteRecord = async (id: string) => {
-    if (!confirm('确定要删除这条薪资记录吗？此操作不可恢复。')) return
+  // 取消删除薪资结构
+  const handleCancelDeleteStructure = () => {
+    setIsStructureDeleteDialogOpen(false)
+    setStructureToDelete(null)
+  }
+
+  // 确认删除薪资记录
+  const handleConfirmDeleteRecord = async () => {
+    if (!recordToDelete) return
     try {
-      const response = await fetch(`/api/teacher-salary?type=record&id=${id}`, {
+      const response = await fetch(`/api/teacher-salary?type=record&id=${recordToDelete}`, {
         method: 'DELETE',
       })
       const result = await response.json()
@@ -559,7 +586,16 @@ export default function TeacherSalaryManagement() {
     } catch (error) {
       toast.error('删除薪资记录失败')
       setError('删除薪资记录失败')
+    } finally {
+      setIsRecordDeleteDialogOpen(false)
+      setRecordToDelete(null)
     }
+  }
+
+  // 取消删除薪资记录
+  const handleCancelDeleteRecord = () => {
+    setIsRecordDeleteDialogOpen(false)
+    setRecordToDelete(null)
   }
 
   // 处理薪资记录表单
@@ -1461,6 +1497,64 @@ export default function TeacherSalaryManagement() {
             }}
             activePresetId={payslipSettings.id}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* 删除薪资结构确认对话框 */}
+      <Dialog open={isStructureDeleteDialogOpen} onOpenChange={(open) => {
+        if (!open) handleCancelDeleteStructure()
+      }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              确认删除薪资结构
+            </DialogTitle>
+            <DialogDescription>
+              <div className="space-y-2 mt-2">
+                <p>确定要删除这个薪资结构吗？此操作不可撤销。</p>
+                <p className="text-xs text-red-500">⚠️ 相关教师的薪资计算将受到此操作影响。</p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={handleCancelDeleteStructure}>
+              取消
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDeleteStructure}>
+              删除
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 删除薪资记录确认对话框 */}
+      <Dialog open={isRecordDeleteDialogOpen} onOpenChange={(open) => {
+        if (!open) handleCancelDeleteRecord()
+      }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              确认删除薪资记录
+            </DialogTitle>
+            <DialogDescription>
+              <div className="space-y-2 mt-2">
+                <p>确定要删除这条薪资记录吗？此操作不可撤销。</p>
+                <p className="text-xs text-red-500">⚠️ 已删除的薪资记录将无法恢复。</p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={handleCancelDeleteRecord}>
+              取消
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDeleteRecord}>
+              删除
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
