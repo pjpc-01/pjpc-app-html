@@ -16,13 +16,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { FileText, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Link, Receipt, Trash2, XCircle, Loader2, CheckSquare } from "lucide-react"
+import { FileText, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Link, Receipt, Trash2, XCircle, Loader2, CheckSquare, Settings } from "lucide-react"
 import { useReceipts } from "@/hooks/useReceipts"
 import { useInvoices } from "@/hooks/useInvoices"
 import { useStudents } from "@/hooks/useStudents"
 import { usePayments } from "@/hooks/usePayments"
 import { downloadReceiptPDF } from "@/lib/pdf-generator"
-import { type InvoiceSettingsPreset } from "@/app/components/finance/invoice-management/InvoiceSettingsManager"
+import ReceiptSettingsManager, { type ReceiptSettingsPreset } from "@/app/components/finance/payment-management/ReceiptSettingsManager"
 
 
 
@@ -76,20 +76,23 @@ export default function ReceiptManagement() {
   const [selectedReceipt, setSelectedReceipt] = useState<any>(null)
 
   // PDF settings for receipt generation
-  const [pdfSettings, setPdfSettings] = useState<InvoiceSettingsPreset>({
+  const [pdfSettings, setPdfSettings] = useState<ReceiptSettingsPreset>({
     id: "default", name: "默认设置", schoolName: "智慧教育学校", schoolNameEn: "",
-    schoolLogo: "", schoolAddress: "", schoolPhone: "", schoolEmail: "", schoolWebsite: "",
-    taxNumber: "", bankName: "", bankAccount: "", bankHolder: "",
+    schoolLogo: "", schoolAddress: "", schoolPhone: "", schoolEmail: "",
     primaryColor: "#1e40af", secondaryColor: "#3b82f6", accentColor: "#f59e0b",
-    footerText: "", paymentTerms: "", receiptNote: "",
+    footerText: "", receiptNote: "",
     isDefault: true, createdAt: "", updatedAt: ""
   })
+
+  // Settings dialog state
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
+  const [activePresetId, setActivePresetId] = useState<string>()
 
   // Load school settings for PDF header
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const res = await fetch('/api/pocketbase-proxy/api/collections/invoice_settings/records?perPage=1&sort=-created')
+        const res = await fetch('/api/pocketbase-proxy/api/collections/receipt_settings/records?perPage=1&sort=-created')
         if (!res.ok) return
         const data = await res.json()
         const items = data.items || []
@@ -107,9 +110,7 @@ export default function ReceiptManagement() {
             secondaryColor: s.secondaryColor || '#3b82f6',
             accentColor: s.accentColor || '#f59e0b',
             footerText: s.footerText || '',
-            bankName: s.bankName || '',
-            bankAccount: s.bankAccount || '',
-            bankHolder: s.bankHolder || '',
+            receiptNote: s.receiptNote || '',
           }))
         }
       } catch { /* use defaults */ }
@@ -287,6 +288,12 @@ export default function ReceiptManagement() {
           <p className="text-sm text-green-600 mt-1">
             💡 收据会在缴费状态更改为&quot;已缴费&quot;且发票全额付款时自动生成
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setIsSettingsDialogOpen(true)}>
+            <Settings className="h-4 w-4 mr-2" />
+            设置
+          </Button>
         </div>
       </div>
 
@@ -623,6 +630,27 @@ export default function ReceiptManagement() {
                 </>
               )}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Receipt Settings Dialog */}
+      <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
+        <DialogContent className="max-w-6xl max-h-[95vh]">
+          <DialogHeader>
+            <DialogTitle>收据 PDF 设置</DialogTitle>
+            <DialogDescription>
+              自定义收据 PDF 的学校信息、品牌样式和内容
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-auto max-h-[80vh] -mx-6 px-6">
+            <ReceiptSettingsManager
+              onSettingsChange={(settings) => {
+                setPdfSettings(settings)
+                setActivePresetId(settings.id)
+              }}
+              activePresetId={activePresetId}
+            />
           </div>
         </DialogContent>
       </Dialog>

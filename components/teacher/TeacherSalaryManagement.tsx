@@ -40,6 +40,7 @@ import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { formatDate } from "@/lib/utils"
 import { toast } from "sonner"
 import { downloadPayslipPDF } from "@/lib/pdf-generator"
+import PayslipSettingsManager, { type PayslipSettingsPreset } from "@/app/components/report/PayslipSettingsManager"
 
 const formatCurrency = (amount: number) => {
   return `RM ${(amount || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -178,6 +179,42 @@ export default function TeacherSalaryManagement() {
   const [recordDialogOpen, setRecordDialogOpen] = useState(false)
   const [editingStructure, setEditingStructure] = useState<TeacherSalaryStructure | null>(null)
   const [editingRecord, setEditingRecord] = useState<TeacherSalaryRecord | null>(null)
+
+  // Payslip PDF settings
+  const [payslipSettings, setPayslipSettings] = useState<PayslipSettingsPreset>({
+    id: "default", name: "默认设置", schoolName: "智慧教育学校", schoolNameEn: "",
+    schoolLogo: "", schoolAddress: "", schoolPhone: "", schoolEmail: "",
+    primaryColor: "#1e40af", secondaryColor: "#3b82f6", accentColor: "#f59e0b",
+    footerText: "", showEmployerEPF: true,
+    isDefault: true, createdAt: "", updatedAt: ""
+  })
+  const [isPayslipSettingsOpen, setIsPayslipSettingsOpen] = useState(false)
+  const [payslipActivePresetId, setPayslipActivePresetId] = useState<string>()
+
+  // Load payslip settings from PB
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/api/pocketbase-proxy/api/collections/salary_settings/records?perPage=1&sort=-created')
+        if (!res.ok) return
+        const data = await res.json()
+        if (data.items?.length > 0) {
+          const s = data.items[0]
+          setPayslipSettings({
+            id: s.id, name: s.name || "默认",
+            schoolName: s.schoolName || "", schoolNameEn: s.schoolNameEn || "",
+            schoolLogo: s.schoolLogo || "", schoolAddress: s.schoolAddress || "",
+            schoolPhone: s.schoolPhone || "", schoolEmail: s.schoolEmail || "",
+            primaryColor: s.primaryColor || "#1e40af", secondaryColor: s.secondaryColor || "#3b82f6",
+            accentColor: s.accentColor || "#f59e0b", footerText: s.footerText || "",
+            showEmployerEPF: s.showEmployerEPF !== false,
+            isDefault: true, createdAt: s.created || "", updatedAt: s.updated || "",
+          })
+        }
+      } catch {}
+    }
+    load()
+  }, [])
   
   // Form states
   const [structureForm, setStructureForm] = useState({
@@ -605,6 +642,10 @@ export default function TeacherSalaryManagement() {
     <div className="space-y-6">
       {/* 操作按钮 - only structure creation at top level */}
       <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={() => setIsPayslipSettingsOpen(true)}>
+          <Settings className="h-4 h-4 mr-2" />
+          设置
+        </Button>
         <Button onClick={handleCreateStructure}>
           <Plus className="w-4 h-4 mr-2" />
           新建薪资结构
@@ -958,7 +999,7 @@ export default function TeacherSalaryManagement() {
                             title={record.status === 'approved' || record.status === 'paid' ? '下载薪资单PDF' : '仅已批准/已支付的记录可下载PDF'}
                             onClick={() => {
                               if (record.status === 'approved' || record.status === 'paid') {
-                                downloadPayslipPDF(record, record.expand?.teacher_id?.name || '教师')
+                                downloadPayslipPDF(record, payslipSettings, record.expand?.teacher_id?.name || '教师')
                               }
                             }}
                           >
@@ -1350,6 +1391,24 @@ export default function TeacherSalaryManagement() {
               <Button type="submit">{editingRecord ? '更新薪资记录' : '创建薪资记录'}</Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payslip Settings Dialog */}
+      <Dialog open={isPayslipSettingsOpen} onOpenChange={setIsPayslipSettingsOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />薪资单格式设置
+            </DialogTitle>
+            <DialogDescription>自定义薪资单 PDF 样式</DialogDescription>
+          </DialogHeader>
+          <PayslipSettingsManager
+            onSettingsChange={(s) => {
+              setPayslipSettings(s)
+            }}
+            activePresetId={payslipSettings.id}
+          />
         </DialogContent>
       </Dialog>
     </div>

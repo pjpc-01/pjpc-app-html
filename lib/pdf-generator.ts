@@ -3,9 +3,13 @@ import html2canvas from "html2canvas"
 import { Invoice } from '@/hooks/useInvoices'
 import { type InvoiceSettingsPreset } from '@/app/components/finance/invoice-management/InvoiceSettingsManager'
 import { type ReportSettingsPreset } from '@/app/components/report/ReportSettingsManager'
+import { type ReceiptSettingsPreset } from '@/app/components/finance/payment-management/ReceiptSettingsManager'
+import { type PayslipSettingsPreset } from '@/app/components/report/PayslipSettingsManager'
 import { StudentReport, ReportSubject } from '@/hooks/useStudentReports'
 
 export type { InvoiceSettingsPreset } from '@/app/components/finance/invoice-management/InvoiceSettingsManager'
+export type { ReceiptSettingsPreset } from '@/app/components/finance/payment-management/ReceiptSettingsManager'
+export type { PayslipSettingsPreset } from '@/app/components/report/PayslipSettingsManager'
 
 const getStatusText = (status: string): string => {
   const m: Record<string, string> = {
@@ -399,7 +403,7 @@ export const downloadInvoicePDF = async (invoice: Invoice, settings: InvoiceSett
 }
 
 // ── Receipt HTML Generation ──
-export const generateReceiptHTML = (receipt: any, settings: InvoiceSettingsPreset, studentName: string): string => {
+export const generateReceiptHTML = (receipt: any, settings: ReceiptSettingsPreset, studentName: string): string => {
   const primaryColor = settings.primaryColor || '#1e40af'
   const secondaryColor = settings.secondaryColor || '#3b82f6'
   const accentColor = settings.accentColor || '#f59e0b'
@@ -619,7 +623,7 @@ export const generateReceiptHTML = (receipt: any, settings: InvoiceSettingsPrese
 }
 
 // ── Receipt PDF Generation: HTML → html2canvas → jsPDF ──
-export const generateReceiptPDF = async (receipt: any, settings: InvoiceSettingsPreset, studentName: string): Promise<Blob> => {
+export const generateReceiptPDF = async (receipt: any, settings: ReceiptSettingsPreset, studentName: string): Promise<Blob> => {
   const html = generateReceiptHTML(receipt, settings, studentName)
 
   const iframe = document.createElement('iframe')
@@ -685,7 +689,7 @@ export const generateReceiptPDF = async (receipt: any, settings: InvoiceSettings
   }
 }
 
-export const downloadReceiptPDF = async (receipt: any, settings: InvoiceSettingsPreset, studentName: string): Promise<void> => {
+export const downloadReceiptPDF = async (receipt: any, settings: ReceiptSettingsPreset, studentName: string): Promise<void> => {
   try {
     const blob = await generateReceiptPDF(receipt, settings, studentName)
     const url = URL.createObjectURL(blob)
@@ -1138,12 +1142,13 @@ const MONTH_NAMES = ['一月', '二月', '三月', '四月', '五月', '六月',
 
 export const generatePayslipHTML = (
   record: PayslipRecord,
-  teacherName: string,
-  schoolName: string = '智慧教育学校'
+  settings: PayslipSettingsPreset,
+  teacherName: string
 ): string => {
-  const primaryColor = '#1e40af'
-  const secondaryColor = '#3b82f6'
-  const accentColor = '#f59e0b'
+  const primaryColor = settings.primaryColor || '#1e40af'
+  const secondaryColor = settings.secondaryColor || '#3b82f6'
+  const accentColor = settings.accentColor || '#f59e0b'
+  const schoolName = settings.schoolName || '智慧教育学校'
 
   const monthName = MONTH_NAMES[(record.month || 1) - 1] || `${record.month}月`
   const totalDeductions = (record.epf_deduction || 0) + (record.socso_deduction || 0) + (record.eis_deduction || 0) + (record.tax_deduction || 0) + (record.other_deductions || 0)
@@ -1260,11 +1265,16 @@ export const generatePayslipHTML = (
 <body>
   <div class="payslip-wrapper">
     <div class="header">
-      <div class="header-title">
-        <h1>${schoolName}</h1>
-        <p>智慧教育 · 卓越未来</p>
+      <div style="display:flex;align-items:center;gap:20px;">
+        <div style="width:64px;height:64px;background:rgba(255,255,255,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#fff;overflow:hidden;flex-shrink:0;">
+          ${settings.schoolLogo ? `<img src="${settings.schoolLogo}" alt="logo" style="width:100%;height:100%;object-fit:contain;" crossorigin="anonymous" />` : schoolName.charAt(0)}
+        </div>
+        <div>
+          <h1 style="font-size:22px;font-weight:700;letter-spacing:1px;">${schoolName}</h1>
+          <p style="font-size:12px;opacity:0.85;margin-top:2px;">${settings.schoolNameEn || '智慧教育 · 卓越未来'}</p>
+        </div>
       </div>
-      <div class="header-badge">PAYSLIP / 薪资单</div>
+      <div style="background:rgba(255,255,255,0.2);padding:8px 20px;border-radius:20px;font-size:14px;font-weight:600;border:1px solid rgba(255,255,255,0.3);white-space:nowrap;">PAYSLIP / 薪资单</div>
     </div>
 
     <div class="body">
@@ -1358,6 +1368,20 @@ export const generatePayslipHTML = (
 
       <hr class="divider" />
 
+      ${settings.showEmployerEPF && record.epf_employer ? `
+      <div class="section-title" style="color:#059669;border-bottom-color:#05966930;">🏢 雇主缴纳 Employer Contributions</div>
+      <table class="items-table">
+        <thead>
+          <tr><th>项目 Item</th><th>金额 Amount (RM)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>EPF 雇主缴纳 (Employer)</td><td>${(record.epf_employer || 0).toFixed(2)}</td></tr>
+        </tbody>
+      </table>
+
+      <hr class="divider" />
+      ` : ''}
+
       <table class="items-table">
         <tbody>
           <tr class="net-salary-row">
@@ -1393,7 +1417,9 @@ export const generatePayslipHTML = (
 
       <div class="footer">
         <p>${schoolName} | 薪资单 Payslip</p>
-        <p style="margin-top:6px;">本薪资单为内部文件，请妥善保管 · This payslip is an internal document</p>
+        ${settings.schoolAddress ? `<p>${settings.schoolAddress} | ${settings.schoolPhone || ''}</p>` : ''}
+        ${settings.footerText ? `<p style="margin-top:6px;">${settings.footerText}</p>` : ''}
+        <p style="margin-top:4px;font-size:10px;color:#d1d5db;">本薪资单为内部文件，请妥善保管 · This payslip is an internal document</p>
       </div>
     </div>
   </div>
@@ -1403,11 +1429,11 @@ export const generatePayslipHTML = (
 
 export const downloadPayslipPDF = async (
   record: PayslipRecord,
-  teacherName: string,
-  schoolName: string = '智慧教育学校'
+  settings: PayslipSettingsPreset,
+  teacherName: string
 ): Promise<void> => {
   try {
-    const html = generatePayslipHTML(record, teacherName, schoolName)
+    const html = generatePayslipHTML(record, settings, teacherName)
 
     const iframe = document.createElement('iframe')
     iframe.style.position = 'fixed'
