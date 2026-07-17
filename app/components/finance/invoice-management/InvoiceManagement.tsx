@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Edit, Settings, Loader2 } from "lucide-react"
+import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Edit, Settings, Loader2, Zap } from "lucide-react"
 import { useInvoices } from "@/hooks/useInvoices"
 import { downloadInvoicePDF, printInvoicePDF, generateInvoiceHTML, generateInvoicePDF } from "@/lib/pdf-generator"
 import { useStudents } from "@/hooks/useStudents"
@@ -62,7 +62,8 @@ export default function InvoiceManagement() {
     generateMonthlyInvoices,
     checkOverdueInvoices,
     getInvoiceStatistics,
-    generateInvoiceNumber
+    generateInvoiceNumber,
+    refetch: fetchInvoices
   } = useInvoices()
 
   // Data hooks
@@ -83,6 +84,7 @@ export default function InvoiceManagement() {
   const [sendMethod, setSendMethod] = useState<'whatsapp' | 'email'>('whatsapp')
   const [messageContent, setMessageContent] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [isAutoGenerating, setIsAutoGenerating] = useState(false)
 
   // Settings state - load from PB on mount
   const [pdfOptions, setPdfOptions] = useState<InvoiceSettingsPreset>({
@@ -450,6 +452,26 @@ Prospek Cemerlang`,
     } as any)
   }
 
+  // ── Auto-generate invoices for students with unpaid fees ──
+  const handleAutoGenerate = async () => {
+    setIsAutoGenerating(true)
+    try {
+      const res = await fetch('/api/billing/auto-generate', { method: 'POST' })
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null)
+        throw new Error(errData?.error || `请求失败 (${res.status})`)
+      }
+      const result = await res.json()
+      alert(`✅ 成功自动生成 ${result.count || 0} 张发票`)
+      await fetchInvoices()
+    } catch (error) {
+      console.error('Auto-generate failed:', error)
+      alert('自动生成发票失败: ' + (error as Error).message)
+    } finally {
+      setIsAutoGenerating(false)
+    }
+  }
+
   // Load saved message formats from localStorage on mount
   useEffect(() => {
     const savedMessageFormats = localStorage.getItem('invoiceMessageFormats')
@@ -476,7 +498,18 @@ Prospek Cemerlang`,
             设置
           </Button>
           
-
+          <Button
+            variant="secondary"
+            onClick={handleAutoGenerate}
+            disabled={isAutoGenerating}
+          >
+            {isAutoGenerating ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Zap className="h-4 w-4 mr-2" />
+            )}
+            自动生成
+          </Button>
           
           <Button onClick={() => setIsCreateInvoiceDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
