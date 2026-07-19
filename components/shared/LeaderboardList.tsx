@@ -76,7 +76,18 @@ export function LeaderboardList({
     )
   }
 
-  const perCol = 10
+  const count = students.length
+
+  // For multi-column: split students into balanced groups for each column
+  // This ensures no empty rows at the bottom
+  const colCount = multiColumn ? Math.ceil(count / 10) : 1
+  const perCol = Math.ceil(count / colCount)
+  const columns: LeaderboardStudent[][] = []
+  if (multiColumn) {
+    for (let i = 0; i < count; i += perCol) {
+      columns.push(students.slice(i, i + perCol))
+    }
+  }
 
   const rankBadge = (rank: number) => {
     const size =
@@ -129,13 +140,49 @@ export function LeaderboardList({
 
   const pointsColor = variant === "dark" ? "text-amber-400" : "text-amber-600"
 
-  return (
-    <div
-      className={multiColumn ? "grid gap-x-4 gap-y-0" : ""}
-      style={multiColumn ? { gridAutoFlow: "column", gridTemplateRows: `repeat(${perCol}, auto)` } : undefined}
-    >
+  return multiColumn ? (
+    <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
+      {columns.map((col, ci) => (
+        <div key={ci} className="flex flex-col">
+          {col.map((s, idx) => {
+            const globalIdx = ci * perCol + idx
+            const rank = globalIdx + 1
+            return (
+              <div
+                key={s.id}
+                className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors border-b border-white/5 ${rowPad(rank)} hover:bg-white/5`}
+                onClick={() => onStudentClick?.(s)}
+              >
+                <span className={rankBadge(rank)}>{rank}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`${nameSize(rank)} font-medium truncate ${nameColor}`}>
+                      {s.name}
+                    </span>
+                    {s.student_id && (
+                      <span className={`${metaSize(rank)} px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>
+                        {s.student_id}
+                      </span>
+                    )}
+                  </div>
+                  <p className={`${metaSize(rank)} leading-tight ${gradeColor}`}>
+                    {s.grade}
+                  </p>
+                </div>
+                <span className={`${ptsSize(rank)} font-bold tabular-nums shrink-0 ${pointsColor}`}>
+                  {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">分</span>
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div>
       {students.map((s, idx) => {
         const rank = idx + 1
+        // Prevent break inside a row (keep whole row in one column)
         return (
           <div
             key={s.id}
