@@ -67,18 +67,6 @@ export function LeaderboardList({
     return `${common} ${col[r] || (variant === "dark" ? "bg-white/10 text-white/50" : "bg-gray-100 text-gray-400")}`
   }
 
-  const rowColor = (r: number): string | undefined => {
-    if (variant === "dark") {
-      if (r === 1) return "rgba(251,191,36,0.35)"    // gold
-      if (r === 2) return "rgba(209,213,219,0.35)"   // silver
-      if (r === 3) return "rgba(180,112,48,0.4)"     // bronze
-      return undefined
-    }
-    if (r === 1) return "#FDE68A"   // gold
-    if (r === 2) return "#D1D5DB"   // silver
-    if (r === 3) return "#C6824A"   // bronze
-    return undefined
-  }
   const nameCol = variant === "dark" ? "text-white/90" : "text-gray-800"
   const gradeCol = variant === "dark" ? "text-white/30" : "text-gray-400"
   const idCol = variant === "dark" ? "bg-blue-500/20 text-blue-300" : "bg-blue-50 text-blue-500"
@@ -89,12 +77,13 @@ export function LeaderboardList({
     <div
       key={s.id}
       className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${borderCls}`}
-      style={{ backgroundColor: rowColor(r) }}
       onClick={() => onStudentClick?.(s)}
     >
       <span className={badgeCls(r)}>{r}</span>
       <div className="flex-1 min-w-0">
-        <span className={`text-sm font-medium truncate ${nameCol}`}>{s.name}</span>
+        <span className={`text-sm font-medium truncate ${r === 1 ? "text-[#B8860B]" : r === 2 ? "text-[#71717A]" : r === 3 ? "text-[#8B5E3C]" : nameCol}`}>
+          {s.name}
+        </span>
         {s.student_id && (
           <span className={`text-[10px] ml-1.5 px-1.5 py-0.5 rounded shrink-0 ${idCol}`}>{s.student_id}</span>
         )}
