@@ -62,7 +62,7 @@ export function LeaderboardList({
     const col: Record<number, string> = {
       1: variant === "dark" ? "bg-yellow-500 text-white" : "bg-yellow-400 text-white",
       2: variant === "dark" ? "bg-gray-400 text-white" : "bg-gray-300 text-white",
-      3: variant === "dark" ? "bg-amber-600 text-white" : "bg-amber-500 text-white",
+      3: variant === "dark" ? "bg-[#8B5E3C] text-white" : "bg-[#CD7F32] text-white",
     }
     return `${common} ${col[r] || (variant === "dark" ? "bg-white/10 text-white/50" : "bg-gray-100 text-gray-400")}`
   }
