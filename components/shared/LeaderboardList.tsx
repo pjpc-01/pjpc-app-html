@@ -78,14 +78,10 @@ export function LeaderboardList({
 
   const count = students.length
 
-  // Multi-column:
-  // ┌──────────────────┬──────────────────────┐
-  // │ Col 1: 1-10      │ Col 2: 11-20         │
-  // │ (big font)       │ (medium font)        │
-  // │                  ├──────────────────────┤
-  // │                  │ Col 3: 21+ (small)   │
-  // │                  │ split into 2 sub-cols│
-  // └──────────────────┴──────────────────────┘
+  // 3-column layout for multi-column mode:
+  // Col 1: ranks 1-10 (big font)
+  // Col 2: ranks 11-20 (medium font)
+  // Col 3: ranks 21+ (small font)
   const group1: LeaderboardStudent[] = []
   const group2: LeaderboardStudent[] = []
   const group3: LeaderboardStudent[] = []
@@ -143,22 +139,10 @@ export function LeaderboardList({
 
   const pointsColor = variant === "dark" ? "text-amber-400" : "text-amber-600"
 
-  // Sub-columns for group 3 (21+): only split if >15 items
-  const g3cols: LeaderboardStudent[][] = []
-  if (multiColumn && group3.length > 0) {
-    if (group3.length > 15) {
-      const half = Math.ceil(group3.length / 2)
-      g3cols.push(group3.slice(0, half))
-      g3cols.push(group3.slice(half))
-    } else {
-      g3cols.push(group3)
-    }
-  }
-
   const renderRow = (s: LeaderboardStudent, rank: number) => (
     <div
       key={s.id}
-      className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors border-b border-white/5 ${rowPad(rank)} hover:bg-white/5`}
+      className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors ${multiColumn ? "border-b border-white/5" : variant === "dark" ? "border-b border-white/5" : "border-b border-gray-50"} ${rowPad(rank)} ${multiColumn ? "hover:bg-white/5" : rowBg}`}
       onClick={() => onStudentClick?.(s)}
     >
       <span className={rankBadge(rank)}>{rank}</span>
@@ -184,35 +168,15 @@ export function LeaderboardList({
   )
 
   return multiColumn ? (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-0">
-      {/* Left: ranks 1-10 */}
-      <div className="flex flex-col">
-        {group1.map((s, i) => renderRow(s, i + 1))}
-      </div>
-      {/* Right: ranks 11-20 on top, 21+ below (split into sub-cols) */}
-      <div className="flex flex-col gap-0">
-        <div className="flex flex-col">
-          {group2.map((s, i) => renderRow(s, i + 11))}
-        </div>
-        {group3.length > 0 && (
-          <div className={`grid gap-x-4 border-t border-white/10 pt-2 ${g3cols.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
-            {g3cols.map((col, ci) => (
-              <div key={ci} className="flex flex-col">
-                {col.map((s, i) => {
-                  const rank = 20 + g3cols.slice(0, ci).reduce((s, c) => s + c.length, 0) + i + 1
-                  return renderRow(s, rank)
-                })}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+    <div className="grid grid-cols-3 gap-x-4 gap-y-0">
+      <div className="flex flex-col">{group1.map((s, i) => renderRow(s, i + 1))}</div>
+      <div className="flex flex-col">{group2.map((s, i) => renderRow(s, i + 11))}</div>
+      <div className="flex flex-col">{group3.map((s, i) => renderRow(s, i + 21))}</div>
     </div>
   ) : (
     <div>
       {students.map((s, idx) => {
         const rank = idx + 1
-        // Prevent break inside a row (keep whole row in one column)
         return (
           <div
             key={s.id}
