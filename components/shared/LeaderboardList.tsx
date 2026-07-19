@@ -75,8 +75,8 @@ export function LeaderboardList({
       return "hover:bg-white/5"
     }
     if (r === 1) return "bg-yellow-100 hover:bg-yellow-200"
-    if (r === 2) return "bg-gray-100 hover:bg-gray-200"
-    if (r === 3) return "bg-orange-100 hover:bg-orange-200"
+    if (r === 2) return "bg-gray-200 hover:bg-gray-300"
+    if (r === 3) return "bg-orange-200 hover:bg-orange-300"
     return "hover:bg-amber-50/50"
   }
   const nameCol = variant === "dark" ? "text-white/90" : "text-gray-800"
