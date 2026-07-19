@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
-  ChevronDown, ChevronRight, FileText, CheckCircle, Pencil,
+  ChevronDown, ChevronRight, FileText, CheckCircle,
   GraduationCap, MapPin, Phone, Mail, CreditCard,
   Package, CalendarDays, Utensils, Bus, FolderOpen, BookOpen, School,
   ClipboardList, Receipt, Banknote, ScrollText, Library, User
@@ -126,13 +126,6 @@ export const FeeCard = ({
           )}
         </div>
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost" size="sm" className="h-7 text-xs"
-            onClick={(e) => { e.stopPropagation(); setLocalEditMode(!localEditMode) }}
-          >
-            <Pencil className="h-3 w-3 mr-1" />
-            {localEditMode ? '完成' : '调整'}
-          </Button>
           <Button
             variant="outline" size="sm" className="h-7 text-xs"
             disabled={studentTotal === 0 || hasInvoice}
