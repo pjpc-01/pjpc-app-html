@@ -71,12 +71,12 @@ export function LeaderboardList({
     r === 1 ? "text-[#B8860B]" :
     r === 2 ? "text-[#71717A]" :
     r === 3 ? "text-[#8B5E3C]" :
-    variant === "dark" ? "text-gray-200" : "text-gray-800"
+    variant === "dark" ? "text-gray-200" : "text-black"
   const gradeCol = (r: number) =>
     r === 1 ? "text-[#D4A017]/80" :
     r === 2 ? "text-[#71717A]/80" :
     r === 3 ? "text-[#8B5E3C]/80" :
-    variant === "dark" ? "text-gray-400" : "text-gray-500"
+    variant === "dark" ? "text-gray-400" : "text-gray-600"
   const idCol = variant === "dark" ? "bg-blue-500/20 text-blue-300" : "bg-blue-50 text-blue-500"
   const ptsCol = variant === "dark" ? "text-amber-400" : "text-amber-600"
   const borderCls = variant === "dark" ? "border-b border-white/5" : "border-b border-gray-50"
