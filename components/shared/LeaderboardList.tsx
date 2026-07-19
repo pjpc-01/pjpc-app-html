@@ -143,12 +143,16 @@ export function LeaderboardList({
 
   const pointsColor = variant === "dark" ? "text-amber-400" : "text-amber-600"
 
-  // Sub-columns for group 3 (21+): split into 2 if >10 items
+  // Sub-columns for group 3 (21+): only split if >15 items
   const g3cols: LeaderboardStudent[][] = []
   if (multiColumn && group3.length > 0) {
-    const half = Math.ceil(group3.length / 2)
-    g3cols.push(group3.slice(0, half))
-    if (group3.length > half) g3cols.push(group3.slice(half))
+    if (group3.length > 15) {
+      const half = Math.ceil(group3.length / 2)
+      g3cols.push(group3.slice(0, half))
+      g3cols.push(group3.slice(half))
+    } else {
+      g3cols.push(group3)
+    }
   }
 
   const renderRow = (s: LeaderboardStudent, rank: number) => (
@@ -191,7 +195,7 @@ export function LeaderboardList({
           {group2.map((s, i) => renderRow(s, i + 11))}
         </div>
         {group3.length > 0 && (
-          <div className="grid grid-cols-2 gap-x-4 border-t border-white/10 pt-2">
+          <div className={`grid gap-x-4 border-t border-white/10 pt-2 ${g3cols.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
             {g3cols.map((col, ci) => (
               <div key={ci} className="flex flex-col">
                 {col.map((s, i) => {
