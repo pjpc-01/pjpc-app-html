@@ -94,10 +94,11 @@ export function LeaderboardList({
   }
 
   const rankBadge = (rank: number) => {
-    const size =
+    const size = multiColumn ? (
       rank <= 3 ? "w-16 h-16 text-2xl" :
       rank <= 10 ? "w-10 h-10 text-base" :
       "w-7 h-7 text-xs"
+    ) : "w-7 h-7 text-xs"
     const common = `${size} rounded-full flex items-center justify-center font-bold shrink-0`
     if (variant === "dark") {
       if (rank === 1) return `${common} bg-yellow-500 text-white`
@@ -111,22 +112,22 @@ export function LeaderboardList({
     return `${common} bg-gray-100 text-gray-400`
   }
 
-  const rowPad = (rank: number) =>
-    rank <= 3 ? "py-4" :
-    rank <= 10 ? "py-2.5" :
-    "py-1"
+  const rowPad = (_rank: number) =>
+    multiColumn && _rank <= 3 ? "py-4" :
+    multiColumn && _rank <= 10 ? "py-2.5" :
+    "py-2"
 
-  const nameSize = (rank: number) =>
-    rank <= 3 ? "text-2xl" :
-    rank <= 10 ? "text-base" :
-    "text-xs"
-
-  const ptsSize = (rank: number) =>
-    rank <= 3 ? "text-xl" :
+  const nameSize = (_rank: number) =>
+    multiColumn && _rank <= 3 ? "text-2xl" :
+    multiColumn && _rank <= 10 ? "text-base" :
     "text-sm"
 
-  const metaSize = (rank: number) =>
-    rank <= 3 ? "text-xs" :
+  const ptsSize = (_rank: number) =>
+    multiColumn && _rank <= 3 ? "text-xl" :
+    "text-sm"
+
+  const metaSize = (_rank: number) =>
+    multiColumn && _rank <= 3 ? "text-xs" :
     "text-[10px]"
 
   const rowBg = variant === "dark" ? "hover:bg-white/5" : "hover:bg-amber-50/50 border-b border-gray-50"
