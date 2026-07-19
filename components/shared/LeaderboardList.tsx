@@ -158,7 +158,7 @@ export function LeaderboardList({
       className="grid gap-x-4 gap-y-0"
       style={{
         gridAutoFlow: "column",
-        gridTemplateRows: `repeat(${Math.ceil(count / (count <= 20 ? 3 : count <= 40 ? 4 : 5))}, auto)`,
+        gridTemplateRows: `repeat(12, auto)`,
       }}
     >
       {students.map((s, i) => renderRow(s, i + 1))}
