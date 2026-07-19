@@ -74,23 +74,8 @@ export function LeaderboardList({
     )
   }
 
-  // Column-major: 15 per column, fill down first then across
-  // Interleave in chunks of 30 (15×2) so CSS grid-cols-2 renders:
-  // [1] [16]   [2] [17]   ...   [15] [30]
-  // [31] [46]  [32] [47]  ...   [45] [58]
+  // Multi-column grid: 15 rows per column, items fill down then across
   const perCol = 15
-  const chunk = perCol * 2
-  interface GridItem { student: LeaderboardStudent; rank: number }
-  const grid: GridItem[] = []
-  for (let i = 0; i < students.length; i += chunk) {
-    const group = students.slice(i, i + chunk)
-    const half = Math.ceil(group.length / 2)
-    for (let j = 0; j < half; j++) {
-      if (j < group.length) grid.push({ student: group[j], rank: i + j + 1 })
-      const rightIdx = j + half
-      if (rightIdx < group.length) grid.push({ student: group[rightIdx], rank: i + rightIdx + 1 })
-    }
-  }
 
   const medal = (rank: number) => rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : ""
 
@@ -117,20 +102,22 @@ export function LeaderboardList({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-0">
-      {grid.map((item, idx) => {
-        const s = item.student
-        const r = item.rank
+    <div
+      className="grid gap-x-4 gap-y-0"
+      style={{ gridAutoFlow: "column", gridTemplateRows: `repeat(${perCol}, auto)` }}
+    >
+      {students.map((s, idx) => {
+        const rank = idx + 1
         return (
           <div
             key={s.id}
-            className={`flex items-center gap-2.5 px-2 py-1.5 rounded cursor-pointer transition-colors border-b ${rowClass(r)} ${variant === "dark" ? "border-white/5" : "border-gray-50"}`}
+            className={`flex items-center gap-2.5 px-2 py-1.5 rounded cursor-pointer transition-colors border-b ${rowClass(rank)} ${variant === "dark" ? "border-white/5" : "border-gray-50"}`}
             onClick={() => onStudentClick?.(s)}
           >
-            {medal(r) ? (
-              <span className="shrink-0 text-base w-7 text-center">{medal(r)}</span>
+            {medal(rank) ? (
+              <span className="shrink-0 text-base w-7 text-center">{medal(rank)}</span>
             ) : (
-              <span className={rankBadge(r)}>{r}</span>
+              <span className={rankBadge(rank)}>{rank}</span>
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1">
