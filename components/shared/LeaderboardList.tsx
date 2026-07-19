@@ -79,7 +79,11 @@ export function LeaderboardList({
   const perCol = 10
 
   const rankBadge = (rank: number) => {
-    const common = "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+    const size =
+      rank <= 3 ? "w-10 h-10 text-base" :
+      rank <= 10 ? "w-8 h-8 text-sm" :
+      "w-7 h-7 text-xs"
+    const common = `${size} rounded-full flex items-center justify-center font-bold shrink-0`
     if (variant === "dark") {
       if (rank === 1) return `${common} bg-yellow-500 text-white`
       if (rank === 2) return `${common} bg-gray-400 text-white`
@@ -91,6 +95,19 @@ export function LeaderboardList({
     if (rank === 3) return `${common} bg-amber-500 text-white`
     return `${common} bg-gray-100 text-gray-400`
   }
+
+  const rowPad = (rank: number) =>
+    rank <= 3 ? "py-3" :
+    rank <= 10 ? "py-2.5" :
+    "py-2"
+
+  const nameSize = (rank: number) =>
+    rank <= 3 ? "text-base" :
+    "text-sm"
+
+  const ptsSize = (rank: number) =>
+    rank <= 3 ? "text-sm" :
+    "text-sm"
 
   const rowBg = variant === "dark" ? "hover:bg-white/5" : "hover:bg-amber-50/50 border-b border-gray-50"
 
@@ -112,26 +129,26 @@ export function LeaderboardList({
         return (
           <div
             key={s.id}
-            className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${variant === "dark" ? "border-b border-white/5" : "border-b border-gray-50"} ${rowBg}`}
+            className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors ${rowPad(rank)} ${variant === "dark" ? "border-b border-white/5" : "border-b border-gray-50"} ${rowBg}`}
             onClick={() => onStudentClick?.(s)}
           >
             <span className={rankBadge(rank)}>{rank}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className={`text-sm font-medium truncate ${nameColor}`}>
+                <span className={`${nameSize(rank)} font-medium truncate ${nameColor}`}>
                   {s.name}
                 </span>
                 {s.student_id && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>
+                  <span className={`${rank <= 3 ? "text-[11px]" : "text-[10px]"} px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>
                     {s.student_id}
                   </span>
                 )}
               </div>
-              <p className={`text-[10px] leading-tight ${gradeColor}`}>
+              <p className={`${rank <= 3 ? "text-[11px]" : "text-[10px]"} leading-tight ${gradeColor}`}>
                 {s.grade}
               </p>
             </div>
-            <span className={`text-sm font-bold tabular-nums shrink-0 ${pointsColor}`}>
+            <span className={`${ptsSize(rank)} font-bold tabular-nums shrink-0 ${pointsColor}`}>
               {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">分</span>
             </span>
           </div>
