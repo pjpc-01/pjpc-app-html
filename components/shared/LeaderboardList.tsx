@@ -78,19 +78,23 @@ export function LeaderboardList({
 
   const count = students.length
 
-  // Multi-column: group by font-size tiers, each group = one column
-  // Col 1: ranks 1-10 (big), Col 2: 11-20 (medium), Col 3+: 21+ (small)
-  const columns: LeaderboardStudent[][] = []
+  // Multi-column:
+  // ┌──────────────────┬──────────────────────┐
+  // │ Col 1: 1-10      │ Col 2: 11-20         │
+  // │ (big font)       │ (medium font)        │
+  // │                  ├──────────────────────┤
+  // │                  │ Col 3: 21+ (small)   │
+  // │                  │ split into 2 sub-cols│
+  // └──────────────────┴──────────────────────┘
+  const group1: LeaderboardStudent[] = []
+  const group2: LeaderboardStudent[] = []
+  const group3: LeaderboardStudent[] = []
   if (multiColumn) {
-    const groups = [
-      { start: 0, end: 10 },          // ranks 1-10
-      { start: 10, end: 20 },         // ranks 11-20
-      { start: 20, end: Infinity },   // ranks 21+
-    ]
-    for (const g of groups) {
-      if (g.start >= count) break
-      columns.push(students.slice(g.start, Math.min(g.end, count)))
-    }
+    students.forEach((s, i) => {
+      if (i < 10) group1.push(s)
+      else if (i < 20) group2.push(s)
+      else group3.push(s)
+    })
   }
 
   const rankBadge = (rank: number) => {
@@ -139,45 +143,66 @@ export function LeaderboardList({
 
   const pointsColor = variant === "dark" ? "text-amber-400" : "text-amber-600"
 
+  // Sub-columns for group 3 (21+): split into 2 if >10 items
+  const g3cols: LeaderboardStudent[][] = []
+  if (multiColumn && group3.length > 0) {
+    const half = Math.ceil(group3.length / 2)
+    g3cols.push(group3.slice(0, half))
+    if (group3.length > half) g3cols.push(group3.slice(half))
+  }
+
+  const renderRow = (s: LeaderboardStudent, rank: number) => (
+    <div
+      key={s.id}
+      className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors border-b border-white/5 ${rowPad(rank)} hover:bg-white/5`}
+      onClick={() => onStudentClick?.(s)}
+    >
+      <span className={rankBadge(rank)}>{rank}</span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <span className={`${nameSize(rank)} font-medium truncate ${nameColor}`}>
+            {s.name}
+          </span>
+          {s.student_id && (
+            <span className={`${metaSize(rank)} px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>
+              {s.student_id}
+            </span>
+          )}
+        </div>
+        <p className={`${metaSize(rank)} leading-tight ${gradeColor}`}>
+          {s.grade}
+        </p>
+      </div>
+      <span className={`${ptsSize(rank)} font-bold tabular-nums shrink-0 ${pointsColor}`}>
+        {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">分</span>
+      </span>
+    </div>
+  )
+
   return multiColumn ? (
-    <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr)` }}>
-      {columns.map((col, ci) => {
-        const baseRank = columns.slice(0, ci).reduce((sum, c) => sum + c.length, 0)
-        return (
-          <div key={ci} className="flex flex-col">
-            {col.map((s, idx) => {
-              const rank = baseRank + idx + 1
-              return (
-                <div
-                  key={s.id}
-                  className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors border-b border-white/5 ${rowPad(rank)} hover:bg-white/5`}
-                  onClick={() => onStudentClick?.(s)}
-                >
-                  <span className={rankBadge(rank)}>{rank}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`${nameSize(rank)} font-medium truncate ${nameColor}`}>
-                        {s.name}
-                      </span>
-                      {s.student_id && (
-                        <span className={`${metaSize(rank)} px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>
-                          {s.student_id}
-                        </span>
-                      )}
-                    </div>
-                    <p className={`${metaSize(rank)} leading-tight ${gradeColor}`}>
-                      {s.grade}
-                    </p>
-                  </div>
-                  <span className={`${ptsSize(rank)} font-bold tabular-nums shrink-0 ${pointsColor}`}>
-                    {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">分</span>
-                  </span>
-                </div>
-              )
-            })}
+    <div className="grid grid-cols-2 gap-x-4 gap-y-0">
+      {/* Left: ranks 1-10 */}
+      <div className="flex flex-col">
+        {group1.map((s, i) => renderRow(s, i + 1))}
+      </div>
+      {/* Right: ranks 11-20 on top, 21+ below (split into sub-cols) */}
+      <div className="flex flex-col gap-0">
+        <div className="flex flex-col">
+          {group2.map((s, i) => renderRow(s, i + 11))}
+        </div>
+        {group3.length > 0 && (
+          <div className="grid grid-cols-2 gap-x-4 border-t border-white/10 pt-2">
+            {g3cols.map((col, ci) => (
+              <div key={ci} className="flex flex-col">
+                {col.map((s, i) => {
+                  const rank = 20 + g3cols.slice(0, ci).reduce((s, c) => s + c.length, 0) + i + 1
+                  return renderRow(s, rank)
+                })}
+              </div>
+            ))}
           </div>
-        )
-      })}
+        )}
+      </div>
     </div>
   ) : (
     <div>
