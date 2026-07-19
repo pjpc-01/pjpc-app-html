@@ -95,11 +95,11 @@ export function LeaderboardList({
 
   const rankBadge = (rank: number) => {
     const size =
-      rank === 1 ? "w-14 h-14 text-2xl" :
-      rank === 2 ? "w-12 h-12 text-xl" :
-      rank === 3 ? "w-10 h-10 text-lg" :
-      rank <= 10 ? "w-8 h-8 text-sm" :
-      "w-6 h-6 text-xs"
+      rank === 1 ? "w-16 h-16 text-2xl" :
+      rank === 2 ? "w-14 h-14 text-xl" :
+      rank === 3 ? "w-12 h-12 text-lg" :
+      rank <= 10 ? "w-10 h-10 text-base" :
+      "w-7 h-7 text-xs"
     const common = `${size} rounded-full flex items-center justify-center font-bold shrink-0`
     if (variant === "dark") {
       if (rank === 1) return `${common} bg-yellow-500 text-white`
@@ -114,14 +114,17 @@ export function LeaderboardList({
   }
 
   const rowPad = (rank: number) =>
-    rank <= 3 ? "py-1.5" :
+    rank === 1 ? "py-4" :
+    rank === 2 ? "py-3.5" :
+    rank === 3 ? "py-3" :
+    rank <= 10 ? "py-2.5" :
     "py-1"
 
   const nameSize = (rank: number) =>
     rank === 1 ? "text-2xl" :
     rank === 2 ? "text-xl" :
     rank === 3 ? "text-lg" :
-    rank <= 10 ? "text-sm" :
+    rank <= 10 ? "text-base" :
     "text-xs"
 
   const ptsSize = (rank: number) =>
@@ -132,6 +135,7 @@ export function LeaderboardList({
 
   const metaSize = (rank: number) =>
     rank <= 3 ? "text-xs" :
+    rank <= 10 ? "text-[10px]" :
     "text-[10px]"
 
   const rowBg = variant === "dark" ? "hover:bg-white/5" : "hover:bg-amber-50/50 border-b border-gray-50"
