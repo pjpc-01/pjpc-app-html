@@ -32,7 +32,7 @@ function FullscreenOverlay({ students, centerName, onClose }: { students: Rankin
         </button>
       </div>
       <div className="flex-1 p-4 overflow-auto">
-        <LeaderboardList students={students} variant="dark" />
+        <LeaderboardList students={students} variant="dark" multiColumn={true} />
       </div>
     </div>
   )
