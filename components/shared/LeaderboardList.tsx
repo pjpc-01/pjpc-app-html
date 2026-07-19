@@ -78,14 +78,18 @@ export function LeaderboardList({
 
   const count = students.length
 
-  // For multi-column: split students into balanced groups for each column
-  // This ensures no empty rows at the bottom
+  // For multi-column: split students evenly across columns
+  // e.g. 28 ÷ 3 = 10 + 9 + 9, no empty rows anywhere
   const colCount = multiColumn ? Math.ceil(count / 10) : 1
-  const perCol = Math.ceil(count / colCount)
   const columns: LeaderboardStudent[][] = []
   if (multiColumn) {
-    for (let i = 0; i < count; i += perCol) {
-      columns.push(students.slice(i, i + perCol))
+    const base = Math.floor(count / colCount)
+    const remainder = count % colCount
+    let start = 0
+    for (let i = 0; i < colCount; i++) {
+      const size = base + (i < remainder ? 1 : 0)
+      columns.push(students.slice(start, start + size))
+      start += size
     }
   }
 
@@ -142,41 +146,43 @@ export function LeaderboardList({
 
   return multiColumn ? (
     <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
-      {columns.map((col, ci) => (
-        <div key={ci} className="flex flex-col">
-          {col.map((s, idx) => {
-            const globalIdx = ci * perCol + idx
-            const rank = globalIdx + 1
-            return (
-              <div
-                key={s.id}
-                className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors border-b border-white/5 ${rowPad(rank)} hover:bg-white/5`}
-                onClick={() => onStudentClick?.(s)}
-              >
-                <span className={rankBadge(rank)}>{rank}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`${nameSize(rank)} font-medium truncate ${nameColor}`}>
-                      {s.name}
-                    </span>
-                    {s.student_id && (
-                      <span className={`${metaSize(rank)} px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>
-                        {s.student_id}
+      {columns.map((col, ci) => {
+        const baseRank = columns.slice(0, ci).reduce((sum, c) => sum + c.length, 0)
+        return (
+          <div key={ci} className="flex flex-col">
+            {col.map((s, idx) => {
+              const rank = baseRank + idx + 1
+              return (
+                <div
+                  key={s.id}
+                  className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors border-b border-white/5 ${rowPad(rank)} hover:bg-white/5`}
+                  onClick={() => onStudentClick?.(s)}
+                >
+                  <span className={rankBadge(rank)}>{rank}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`${nameSize(rank)} font-medium truncate ${nameColor}`}>
+                        {s.name}
                       </span>
-                    )}
+                      {s.student_id && (
+                        <span className={`${metaSize(rank)} px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>
+                          {s.student_id}
+                        </span>
+                      )}
+                    </div>
+                    <p className={`${metaSize(rank)} leading-tight ${gradeColor}`}>
+                      {s.grade}
+                    </p>
                   </div>
-                  <p className={`${metaSize(rank)} leading-tight ${gradeColor}`}>
-                    {s.grade}
-                  </p>
+                  <span className={`${ptsSize(rank)} font-bold tabular-nums shrink-0 ${pointsColor}`}>
+                    {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">分</span>
+                  </span>
                 </div>
-                <span className={`${ptsSize(rank)} font-bold tabular-nums shrink-0 ${pointsColor}`}>
-                  {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">分</span>
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      ))}
+              )
+            })}
+          </div>
+        )
+      })}
     </div>
   ) : (
     <div>
