@@ -78,56 +78,68 @@ export function LeaderboardList({
 
   const count = students.length
 
-  // 3-column layout for multi-column mode:
-  // Col 1: ranks 1-10 (big font)
-  // Col 2: ranks 11-20 (medium font)
-  // Col 3: ranks 21+ (small font)
-  const group1: LeaderboardStudent[] = []
-  const group2: LeaderboardStudent[] = []
-  const group3: LeaderboardStudent[] = []
+  // ─── Stepped multi-column layout ──────────────────────────────────
+  // Higher rank → bigger font, fewer columns (more prominent)
+  // Lower rank → smaller font, more columns (fits all on one page)
+  const tiers = [
+    { start: 0, end: 3, cols: 3, name: "text-2xl", badge: "w-16 h-16 text-2xl", pts: "text-xl", pad: "py-4" },
+    { start: 3, end: 10, cols: 3, name: "text-lg", badge: "w-11 h-11 text-base", pts: "text-base", pad: "py-3" },
+    { start: 10, end: 20, cols: 4, name: "text-sm", badge: "w-8 h-8 text-sm", pts: "text-sm", pad: "py-2" },
+    { start: 20, end: 35, cols: 5, name: "text-xs", badge: "w-7 h-7 text-xs", pts: "text-xs", pad: "py-1.5" },
+    { start: 35, end: Infinity, cols: 6, name: "text-[10px]", badge: "w-6 h-6 text-[9px]", pts: "text-[10px]", pad: "py-1" },
+  ]
+
+  // Build tier groups
+  interface TierGroup { tier: typeof tiers[0]; items: { student: LeaderboardStudent; rank: number }[] }
+  const tierGroups: TierGroup[] = []
   if (multiColumn) {
-    students.forEach((s, i) => {
-      if (i < 10) group1.push(s)
-      else if (i < 20) group2.push(s)
-      else group3.push(s)
-    })
+    for (const t of tiers) {
+      if (t.start >= count) break
+      const slice = students.slice(t.start, Math.min(t.end, count))
+      if (slice.length === 0) break
+      tierGroups.push({
+        tier: t,
+        items: slice.map((s, i) => ({ student: s, rank: t.start + i + 1 })),
+      })
+    }
   }
 
   const rankBadge = (rank: number) => {
-    const size =
-      rank <= 3 ? "w-16 h-16 text-2xl" :
-      rank <= 10 ? "w-10 h-10 text-base" :
-      "w-7 h-7 text-xs"
-    const common = `${size} rounded-full flex items-center justify-center font-bold shrink-0`
-    if (variant === "dark") {
-      if (rank === 1) return `${common} bg-yellow-500 text-white`
-      if (rank === 2) return `${common} bg-gray-400 text-white`
-      if (rank === 3) return `${common} bg-amber-600 text-white`
-      return `${common} bg-white/10 text-white/50`
+    for (const t of tiers) {
+      if (rank > t.start && rank <= t.end) {
+        const common = `${t.badge} rounded-full flex items-center justify-center font-bold shrink-0`
+        if (variant === "dark") {
+          if (rank === 1) return `${common} bg-yellow-500 text-white`
+          if (rank === 2) return `${common} bg-gray-400 text-white`
+          if (rank === 3) return `${common} bg-amber-600 text-white`
+          return `${common} bg-white/10 text-white/50`
+        }
+        if (rank === 1) return `${common} bg-yellow-400 text-white`
+        if (rank === 2) return `${common} bg-gray-300 text-white`
+        if (rank === 3) return `${common} bg-amber-500 text-white`
+        return `${common} bg-gray-100 text-gray-400`
+      }
     }
-    if (rank === 1) return `${common} bg-yellow-400 text-white`
-    if (rank === 2) return `${common} bg-gray-300 text-white`
-    if (rank === 3) return `${common} bg-amber-500 text-white`
-    return `${common} bg-gray-100 text-gray-400`
+    return ""
   }
 
-  const rowPad = (rank: number) =>
-    rank <= 3 ? "py-4" :
-    rank <= 10 ? "py-2.5" :
-    "py-1"
+  const rowPad = (rank: number) => {
+    for (const t of tiers) { if (rank > t.start && rank <= t.end) return t.pad }
+    return "py-1"
+  }
 
-  const nameSize = (rank: number) =>
-    rank <= 3 ? "text-2xl" :
-    rank <= 10 ? "text-base" :
-    "text-xs"
+  const nameSize = (rank: number) => {
+    for (const t of tiers) { if (rank > t.start && rank <= t.end) return t.name }
+    return "text-xs"
+  }
 
-  const ptsSize = (rank: number) =>
-    rank <= 3 ? "text-xl" :
-    "text-sm"
+  const ptsSize = (rank: number) => {
+    for (const t of tiers) { if (rank > t.start && rank <= t.end) return t.pts }
+    return "text-sm"
+  }
 
   const metaSize = (rank: number) =>
-    rank <= 3 ? "text-xs" :
-    "text-[10px]"
+    rank <= 3 ? "text-xs" : "text-[10px]"
 
   const rowBg = variant === "dark" ? "hover:bg-white/5" : "hover:bg-amber-50/50 border-b border-gray-50"
 
@@ -139,27 +151,21 @@ export function LeaderboardList({
 
   const pointsColor = variant === "dark" ? "text-amber-400" : "text-amber-600"
 
-  const renderRow = (s: LeaderboardStudent, rank: number) => (
+  const renderRow = (s: LeaderboardStudent, rank: number, overridePad?: string) => (
     <div
       key={s.id}
-      className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors ${multiColumn ? "border-b border-white/5" : variant === "dark" ? "border-b border-white/5" : "border-b border-gray-50"} ${rowPad(rank)} ${multiColumn ? "hover:bg-white/5" : rowBg}`}
+      className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors ${multiColumn ? "border-b border-white/5" : variant === "dark" ? "border-b border-white/5" : "border-b border-gray-50"} ${overridePad || rowPad(rank)} ${multiColumn ? "hover:bg-white/5" : rowBg}`}
       onClick={() => onStudentClick?.(s)}
     >
       <span className={rankBadge(rank)}>{rank}</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className={`${nameSize(rank)} font-medium truncate ${nameColor}`}>
-            {s.name}
-          </span>
+          <span className={`${nameSize(rank)} font-medium truncate ${nameColor}`}>{s.name}</span>
           {s.student_id && (
-            <span className={`${metaSize(rank)} px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>
-              {s.student_id}
-            </span>
+            <span className={`${metaSize(rank)} px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>{s.student_id}</span>
           )}
         </div>
-        <p className={`${metaSize(rank)} leading-tight ${gradeColor}`}>
-          {s.grade}
-        </p>
+        <p className={`${metaSize(rank)} leading-tight ${gradeColor}`}>{s.grade}</p>
       </div>
       <span className={`${ptsSize(rank)} font-bold tabular-nums shrink-0 ${pointsColor}`}>
         {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">分</span>
@@ -168,10 +174,17 @@ export function LeaderboardList({
   )
 
   return multiColumn ? (
-    <div className="grid grid-cols-3 gap-x-4 gap-y-0">
-      <div className="flex flex-col">{group1.map((s, i) => renderRow(s, i + 1))}</div>
-      <div className="flex flex-col">{group2.map((s, i) => renderRow(s, i + 11))}</div>
-      <div className="flex flex-col">{group3.map((s, i) => renderRow(s, i + 21))}</div>
+    <div className="flex flex-col gap-3">
+      {tierGroups.map((g, ti) => (
+        <div key={ti}>
+          <div
+            className="grid gap-x-3 gap-y-0"
+            style={{ gridTemplateColumns: `repeat(${g.tier.cols}, 1fr)` }}
+          >
+            {g.items.map(item => renderRow(item.student, item.rank, g.tier.pad))}
+          </div>
+        </div>
+      ))}
     </div>
   ) : (
     <div>
