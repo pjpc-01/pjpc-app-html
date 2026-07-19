@@ -1,19 +1,10 @@
 // ═══ Shared Leaderboard ════════════════════════════════════════════
-// SINGLE source of truth for ALL leaderboard displays:
-//   - /points/leaderboard (page + fullscreen overlay)
-//   - /dashboard/slideshow (widget + slideshow overlay)
-//
-// Change ONE file → everything updates.
-// ═══════════════════════════════════════════════════════════════════
-
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Trophy, Star, Building, RefreshCw, Maximize2, Loader2 } from "lucide-react"
-
-// ─── Types ──────────────────────────────────────────────────────────
 
 export interface LeaderboardStudent {
   id: string
@@ -30,32 +21,42 @@ export interface CenterInfo {
   name: string
 }
 
-// ─── Props ─────────────────────────────────────────────────────────
-
 export interface LeaderboardPageProps {
-  /** Raw student list (will be filtered & sorted internally) */
   rankings: LeaderboardStudent[]
-  /** Loading state */
   loading?: boolean
-  /** Called when a student row is clicked */
   onStudentClick?: (s: LeaderboardStudent) => void
-  /** Compact mode: hide filter (for dashboard widgets) */
   compact?: boolean
-  /** Centers list for the filter dropdown */
   centers: CenterInfo[]
-  /** Current center filter value */
   centerFilter: string
-  /** Called when center filter changes */
   onCenterChange: (center: string) => void
-  /** Called when refresh button is clicked */
   onRefresh?: () => void
-  /** Called when fullscreen button is clicked */
   onFullscreen?: () => void
-  /** Fullscreen button disabled? */
   fullscreenDisabled?: boolean
 }
 
-// ─── Single-column student list ───────────────────────────────────
+// ─── Sizes ─────────────────────────────────────────────────────────
+// Single column (normal) vs multi-column (stepped for fitting)
+
+const mBadge = (r: number) =>
+  r <= 3 ? "w-20 h-20 text-3xl" :
+  r <= 10 ? "w-9 h-9 text-sm" :
+  "w-6 h-6 text-[9px]"
+
+const mPad = (r: number) =>
+  r <= 3 ? "py-5" :
+  r <= 10 ? "py-2" :
+  "py-1"
+
+const mName = (r: number) =>
+  r <= 3 ? "text-3xl" :
+  r <= 10 ? "text-sm" :
+  "text-xs"
+
+const mPts = (r: number) =>
+  r <= 3 ? "text-2xl" :
+  "text-sm"
+
+// ─── Component ────────────────────────────────────────────────────
 
 export function LeaderboardList({
   students,
@@ -78,128 +79,73 @@ export function LeaderboardList({
 
   const count = students.length
 
-  const rankBadge = (rank: number) => {
-    const size = multiColumn ? (
-      rank <= 3 ? "w-16 h-16 text-2xl" :
-      rank <= 10 ? "w-10 h-10 text-base" :
-      "w-7 h-7 text-xs"
-    ) : "w-7 h-7 text-xs"
-    const common = `${size} rounded-full flex items-center justify-center font-bold shrink-0`
-    if (variant === "dark") {
-      if (rank === 1) return `${common} bg-yellow-500 text-white`
-      if (rank === 2) return `${common} bg-gray-400 text-white`
-      if (rank === 3) return `${common} bg-amber-600 text-white`
-      return `${common} bg-white/10 text-white/50`
+  const badgeCls = (r: number) => {
+    const sz = multiColumn ? mBadge(r) : "w-7 h-7 text-xs"
+    const common = `${sz} rounded-full flex items-center justify-center font-bold shrink-0`
+    const map: Record<number, string> = {
+      1: variant === "dark" ? "bg-yellow-500 text-white" : "bg-yellow-400 text-white",
+      2: variant === "dark" ? "bg-gray-400 text-white" : "bg-gray-300 text-white",
+      3: variant === "dark" ? "bg-amber-600 text-white" : "bg-amber-500 text-white",
     }
-    if (rank === 1) return `${common} bg-yellow-400 text-white`
-    if (rank === 2) return `${common} bg-gray-300 text-white`
-    if (rank === 3) return `${common} bg-amber-500 text-white`
-    return `${common} bg-gray-100 text-gray-400`
+    const fallback = variant === "dark" ? "bg-white/10 text-white/50" : "bg-gray-100 text-gray-400"
+    return `${common} ${map[r] || fallback}`
   }
 
-  const rowPad = (_rank: number) =>
-    multiColumn && _rank <= 3 ? "py-4" :
-    multiColumn && _rank <= 10 ? "py-2.5" :
-    "py-2"
+  const padCls = multiColumn ? mPad : () => "py-2"
+  const nameCls = multiColumn ? mName : () => "text-sm"
+  const ptsCls = multiColumn ? mPts : () => "text-sm"
+  const metaCls = (r: number) =>
+    multiColumn && r <= 3 ? "text-xs" : "text-[10px]"
+  const rowColor = variant === "dark" ? "hover:bg-white/5" : "hover:bg-amber-50/50"
+  const nameCol = variant === "dark" ? "text-white/90" : "text-gray-800"
+  const gradeCol = variant === "dark" ? "text-white/30" : "text-gray-400"
+  const idCol = variant === "dark" ? "bg-blue-500/20 text-blue-300" : "bg-blue-50 text-blue-500"
+  const ptsCol = variant === "dark" ? "text-amber-400" : "text-amber-600"
+  const borderCls = variant === "dark" ? "border-b border-white/5" : "border-b border-gray-50"
 
-  const nameSize = (_rank: number) =>
-    multiColumn && _rank <= 3 ? "text-2xl" :
-    multiColumn && _rank <= 10 ? "text-base" :
-    "text-sm"
-
-  const ptsSize = (_rank: number) =>
-    multiColumn && _rank <= 3 ? "text-xl" :
-    "text-sm"
-
-  const metaSize = (_rank: number) =>
-    multiColumn && _rank <= 3 ? "text-xs" :
-    "text-[10px]"
-
-  const rowBg = variant === "dark" ? "hover:bg-white/5" : "hover:bg-amber-50/50 border-b border-gray-50"
-
-  const nameColor = variant === "dark" ? "text-white/90" : "text-gray-800"
-
-  const gradeColor = variant === "dark" ? "text-white/30" : "text-gray-400"
-
-  const idColor = variant === "dark" ? "bg-blue-500/20 text-blue-300" : "bg-blue-50 text-blue-500"
-
-  const pointsColor = variant === "dark" ? "text-amber-400" : "text-amber-600"
-
-  const renderRow = (s: LeaderboardStudent, rank: number) => (
+  const row = (s: LeaderboardStudent, r: number) => (
     <div
       key={s.id}
-      className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors ${multiColumn ? "border-b border-white/5" : variant === "dark" ? "border-b border-white/5" : "border-b border-gray-50"} ${rowPad(rank)} ${multiColumn ? "hover:bg-white/5" : rowBg}`}
+      className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors ${padCls(r)} ${borderCls} ${rowColor}`}
       onClick={() => onStudentClick?.(s)}
     >
-      <span className={rankBadge(rank)}>{rank}</span>
+      <span className={badgeCls(r)}>{r}</span>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className={`${nameSize(rank)} font-medium truncate ${nameColor}`}>
-            {s.name}
-          </span>
-          {s.student_id && (
-            <span className={`${metaSize(rank)} px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>
-              {s.student_id}
-            </span>
-          )}
-        </div>
-        <p className={`${metaSize(rank)} leading-tight ${gradeColor}`}>
-          {s.grade}
-        </p>
+        <span className={`${nameCls(r)} font-medium truncate ${nameCol}`}>{s.name}</span>
+        {s.student_id && (
+          <span className={`${metaCls(r)} ml-1.5 px-1.5 py-0.5 rounded shrink-0 ${idCol}`}>{s.student_id}</span>
+        )}
+        <p className={`${metaCls(r)} leading-tight ${gradeCol}`}>{s.grade}</p>
       </div>
-      <span className={`${ptsSize(rank)} font-bold tabular-nums shrink-0 ${pointsColor}`}>
+      <span className={`${ptsCls(r)} font-bold tabular-nums shrink-0 ${ptsCol}`}>
         {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">分</span>
       </span>
     </div>
   )
 
-  return multiColumn ? (
-    <div
-      className="grid gap-x-4 gap-y-0"
-      style={{
-        gridAutoFlow: "column",
-        gridTemplateRows: `repeat(12, auto)`,
-      }}
-    >
-      {students.map((s, i) => renderRow(s, i + 1))}
-    </div>
-  ) : (
+  if (multiColumn) {
+    // One unified grid: fill top→bottom, then auto-create next column
+    return (
+      <div
+        className="grid gap-x-4 gap-y-0"
+        style={{
+          gridAutoFlow: "column",
+          gridTemplateRows: `repeat(12, auto)`,
+        }}
+      >
+        {students.map((s, i) => row(s, i + 1))}
+      </div>
+    )
+  }
+
+  return (
     <div>
-      {students.map((s, idx) => {
-        const rank = idx + 1
-        return (
-          <div
-            key={s.id}
-            className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors ${rowPad(rank)} ${variant === "dark" ? "border-b border-white/5" : "border-b border-gray-50"} ${rowBg}`}
-            onClick={() => onStudentClick?.(s)}
-          >
-            <span className={rankBadge(rank)}>{rank}</span>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className={`${nameSize(rank)} font-medium truncate ${nameColor}`}>
-                  {s.name}
-                </span>
-                {s.student_id && (
-                  <span className={`${metaSize(rank)} px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>
-                    {s.student_id}
-                  </span>
-                )}
-              </div>
-              <p className={`${metaSize(rank)} leading-tight ${gradeColor}`}>
-                {s.grade}
-              </p>
-            </div>
-            <span className={`${ptsSize(rank)} font-bold tabular-nums shrink-0 ${pointsColor}`}>
-              {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">分</span>
-            </span>
-          </div>
-        )
-      })}
+      {students.map((s, i) => row(s, i + 1))}
     </div>
   )
 }
 
-// ─── Full leaderboard view (filter + list) ────────────────────────
+// ─── Full leaderboard view ────────────────────────────────────────
 
 export function LeaderboardView({
   rankings,
@@ -223,7 +169,6 @@ export function LeaderboardView({
 
   return (
     <div className="space-y-4">
-      {/* Center filter — hidden in compact mode */}
       {!compact && (
         <div className="flex items-center gap-2">
           <Building className="h-4 w-4 text-gray-400" />
@@ -250,7 +195,6 @@ export function LeaderboardView({
         </div>
       )}
 
-      {/* Full Leaderboard */}
       <Card className={compact ? "border-0 shadow-none" : ""}>
         {!compact && (
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
