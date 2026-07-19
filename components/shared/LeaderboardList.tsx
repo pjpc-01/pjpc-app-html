@@ -69,14 +69,14 @@ export function LeaderboardList({
 
   const rowColor = (r: number): string | undefined => {
     if (variant === "dark") {
-      if (r === 1) return "rgba(250,204,21,0.35)"
-      if (r === 2) return "rgba(148,163,184,0.35)"
-      if (r === 3) return "rgba(234,88,12,0.35)"
+      if (r === 1) return "rgba(251,191,36,0.35)"    // gold
+      if (r === 2) return "rgba(209,213,219,0.35)"   // silver
+      if (r === 3) return "rgba(180,112,48,0.4)"     // bronze
       return undefined
     }
-    if (r === 1) return "#fef9c3"
-    if (r === 2) return "#e5e7eb"
-    if (r === 3) return "#fed7aa"
+    if (r === 1) return "#FDE68A"   // gold
+    if (r === 2) return "#D1D5DB"   // silver
+    if (r === 3) return "#C6824A"   // bronze
     return undefined
   }
   const nameCol = variant === "dark" ? "text-white/90" : "text-gray-800"
