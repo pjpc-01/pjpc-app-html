@@ -74,52 +74,92 @@ export function LeaderboardList({
     )
   }
 
-  const rowBg = (idx: number) => {
-    if (variant === "dark") return ""
-    return idx === 0 ? "bg-yellow-50/60" : idx === 1 ? "bg-gray-50/40" : idx === 2 ? "bg-amber-50/40" : ""
+  // Two columns, 10 rows each = 20 per block
+  // Interleave: [0,10, 1,11, 2,12, ...] so CSS grid displays as:
+  // [1]  [11]   [2]  [12]   ...   [10] [20]
+  // then gap, then [21][31] ...
+  const chunk = 20
+  interface GridItem { student: LeaderboardStudent; rank: number }
+  const grid: GridItem[] = []
+  for (let i = 0; i < students.length; i += chunk) {
+    const group = students.slice(i, i + chunk)
+    const half = Math.ceil(group.length / 2)
+    for (let j = 0; j < half; j++) {
+      if (j < group.length) grid.push({ student: group[j], rank: i + j + 1 })
+      const rightIdx = j + half
+      if (rightIdx < group.length) grid.push({ student: group[rightIdx], rank: i + rightIdx + 1 })
+    }
+    // Add gap marker between chunks (except after last)
+    if (i + chunk < students.length) grid.push({ student: null as any, rank: -1 })
+  }
+
+  const medal = (rank: number) => rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : ""
+
+  const rowClass = (rank: number) => {
+    if (rank < 0) return "" // gap
+    if (variant === "dark") return "hover:bg-white/5"
+    if (rank === 1) return "bg-yellow-50/60 hover:bg-amber-50/50"
+    if (rank === 2) return "bg-gray-50/40 hover:bg-amber-50/50"
+    if (rank === 3) return "bg-amber-50/40 hover:bg-amber-50/50"
+    return "hover:bg-amber-50/50"
+  }
+
+  const rankBadge = (rank: number) => {
+    const common = "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+    if (variant === "dark") {
+      if (rank === 1) return `${common} bg-yellow-500 text-white`
+      if (rank === 2) return `${common} bg-gray-400 text-white`
+      if (rank === 3) return `${common} bg-amber-600 text-white`
+      return `${common} bg-white/10 text-white/50`
+    }
+    if (rank === 1) return `${common} bg-yellow-400 text-white`
+    if (rank === 2) return `${common} bg-gray-300 text-white`
+    if (rank === 3) return `${common} bg-amber-500 text-white`
+    return `${common} bg-gray-100 text-gray-400`
   }
 
   return (
-    <div>
-      {students.map((s, idx) => (
-        <div
-          key={s.id}
-          className={`flex items-center gap-3 px-4 py-2.5 border-b border-gray-50 cursor-pointer transition-colors ${rowBg(idx)} hover:bg-amber-50/50`}
-          onClick={() => onStudentClick?.(s)}
-        >
-          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-            idx === 0 ? "bg-yellow-400 text-white" :
-            idx === 1 ? "bg-gray-300 text-white" :
-            idx === 2 ? "bg-amber-500 text-white" :
-            variant === "dark" ? "bg-white/10 text-white/50" : "bg-gray-100 text-gray-400"
-          }`}>
-            {idx < 3 ? ["🥇","🥈","🥉"][idx] : idx + 1}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className={`font-medium text-sm truncate ${variant === "dark" ? "text-white/90" : "text-gray-800"}`}>
-                {s.name}
-              </span>
-              {s.student_id && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${
-                  variant === "dark" ? "bg-blue-500/20 text-blue-300" : "bg-blue-50 text-blue-500"
-                }`}>
-                  {s.student_id}
+    <div className="grid grid-cols-2 gap-x-4 gap-y-0">
+      {grid.map((item, idx) => {
+        if (item.rank < 0) {
+          return <div key={`gap-${idx}`} className="col-span-2 h-3" />
+        }
+        const s = item.student
+        const r = item.rank
+        return (
+          <div
+            key={s.id}
+            className={`flex items-center gap-2.5 px-2 py-1.5 rounded cursor-pointer transition-colors border-b ${rowClass(r)} ${variant === "dark" ? "border-white/5" : "border-gray-50"}`}
+            onClick={() => onStudentClick?.(s)}
+          >
+            {medal(r) ? (
+              <span className="shrink-0 text-base w-7 text-center">{medal(r)}</span>
+            ) : (
+              <span className={rankBadge(r)}>{r}</span>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1">
+                <span className={`text-xs font-medium truncate ${variant === "dark" ? "text-white/90" : "text-gray-800"}`}>
+                  {s.name}
                 </span>
-              )}
+                {s.student_id && (
+                  <span className={`text-[8px] px-1 py-0.5 rounded shrink-0 ${
+                    variant === "dark" ? "bg-blue-500/20 text-blue-300" : "bg-blue-50 text-blue-500"
+                  }`}>
+                    {s.student_id}
+                  </span>
+                )}
+              </div>
+              <p className={`text-[9px] leading-tight ${variant === "dark" ? "text-white/30" : "text-gray-400"}`}>
+                {s.grade}
+              </p>
             </div>
-            <p className={`text-[10px] ${variant === "dark" ? "text-white/30" : "text-gray-400"}`}>
-              {s.grade}
-            </p>
+            <span className={`text-xs font-bold tabular-nums shrink-0 ${variant === "dark" ? "text-amber-400" : "text-amber-600"}`}>
+              {s.points}<span className="text-[8px] font-normal opacity-60 ml-0.5">分</span>
+            </span>
           </div>
-          <div className="text-right shrink-0">
-            <p className={`font-bold ${variant === "dark" ? "text-amber-400" : "text-amber-600"}`}>
-              {s.points}
-            </p>
-            <p className={`text-[10px] ${variant === "dark" ? "text-white/30" : "text-gray-400"}`}>分</p>
-          </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
