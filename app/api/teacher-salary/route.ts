@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
         net_salary: data.net_salary,
         bonus: data.bonus || 0,
         commission: data.commission || 0,
-        status: 'draft',
+        status: 'paid',
         notes: data.notes,
         created_by: data.created_by
       }

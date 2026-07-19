@@ -17,6 +17,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import { 
   DollarSign, 
   Calculator, 
@@ -32,6 +33,7 @@ import {
   Calendar,
   User,
   Loader2,
+  XCircle,
   Settings,
   TrendingUp,
   Eye,
@@ -113,6 +115,7 @@ interface Teacher {
   email: string
   department?: string
   position?: string
+  status?: string
 }
 
 export default function TeacherSalaryManagement() {
@@ -272,6 +275,16 @@ export default function TeacherSalaryManagement() {
     month: '',
     status: ''
   })
+
+  // 创建薪资结构时，过滤掉已有薪资结构的教师（编辑时保留当前教师），且只显示在职教师
+  const availableTeachers = useMemo(() => {
+    const existingTeacherIds = new Set(
+      salaryStructures
+        .filter(s => s.status === 'active' && s.teacher_id !== editingStructure?.teacher_id)
+        .map(s => s.teacher_id)
+    )
+    return teachers.filter(t => t.status !== 'inactive' && !existingTeacherIds.has(t.id))
+  }, [teachers, salaryStructures, editingStructure])
 
   // 数据获取
   const fetchTeachers = useCallback(async () => {
@@ -598,6 +611,110 @@ export default function TeacherSalaryManagement() {
     setRecordToDelete(null)
   }
 
+  // ── Batch delete state for salary structures ──
+  const [structureSelectedIds, setStructureSelectedIds] = useState<Set<string>>(new Set())
+  const [isStructureBatchDeleteOpen, setIsStructureBatchDeleteOpen] = useState(false)
+  const [isStructureBatchDeleting, setIsStructureBatchDeleting] = useState(false)
+
+  const allStructureIds = salaryStructures.map(s => s.id)
+  const allStructuresSelected = allStructureIds.length > 0 && structureSelectedIds.size === allStructureIds.length
+  const someStructuresSelected = structureSelectedIds.size > 0
+
+  const toggleSelectAllStructures = () => {
+    if (allStructuresSelected) {
+      setStructureSelectedIds(new Set())
+    } else {
+      setStructureSelectedIds(new Set(allStructureIds))
+    }
+  }
+
+  const toggleSelectStructure = (id: string) => {
+    setStructureSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const handleBatchDeleteStructures = async () => {
+    setIsStructureBatchDeleting(true)
+    const ids = [...structureSelectedIds]
+    for (const id of ids) {
+      try {
+        const response = await fetch(`/api/teacher-salary?type=structure&id=${id}`, {
+          method: 'DELETE',
+        })
+        const result = await response.json()
+        if (!result.success) {
+          console.error(`删除薪资结构 ${id} 失败:`, result.error)
+        }
+      } catch (err) {
+        console.error(`删除薪资结构 ${id} 失败:`, err)
+      }
+    }
+    setIsStructureBatchDeleting(false)
+    setIsStructureBatchDeleteOpen(false)
+    setStructureSelectedIds(new Set())
+    fetchSalaryStructures()
+    toast.success(`已删除 ${ids.length} 个薪资结构`)
+  }
+
+  // ── Batch delete state for salary records ──
+  const [recordSelectedIds, setRecordSelectedIds] = useState<Set<string>>(new Set())
+  const [isRecordBatchDeleteOpen, setIsRecordBatchDeleteOpen] = useState(false)
+  const [isRecordBatchDeleting, setIsRecordBatchDeleting] = useState(false)
+
+  const allRecordIds = salaryRecords.map(r => r.id)
+  const allRecordsSelected = allRecordIds.length > 0 && recordSelectedIds.size === allRecordIds.length
+  const someRecordsSelected = recordSelectedIds.size > 0
+
+  const toggleSelectAllRecords = () => {
+    if (allRecordsSelected) {
+      setRecordSelectedIds(new Set())
+    } else {
+      setRecordSelectedIds(new Set(allRecordIds))
+    }
+  }
+
+  const toggleSelectRecord = (id: string) => {
+    setRecordSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const handleBatchDeleteRecords = async () => {
+    setIsRecordBatchDeleting(true)
+    const ids = [...recordSelectedIds]
+    for (const id of ids) {
+      try {
+        const response = await fetch(`/api/teacher-salary?type=record&id=${id}`, {
+          method: 'DELETE',
+        })
+        const result = await response.json()
+        if (!result.success) {
+          console.error(`删除薪资记录 ${id} 失败:`, result.error)
+        }
+      } catch (err) {
+        console.error(`删除薪资记录 ${id} 失败:`, err)
+      }
+    }
+    setIsRecordBatchDeleting(false)
+    setIsRecordBatchDeleteOpen(false)
+    setRecordSelectedIds(new Set())
+    fetchSalaryRecords()
+    toast.success(`已删除 ${ids.length} 条薪资记录`)
+  }
+
   // 处理薪资记录表单
   const handleRecordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -837,10 +954,43 @@ export default function TeacherSalaryManagement() {
               <CardDescription>管理教师的薪资结构和福利设置</CardDescription>
             </CardHeader>
             <CardContent>
+              {/* ── Batch action bar for structures ── */}
+              {someStructuresSelected && (
+                <div className="flex items-center justify-between mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+                  <span className="text-sm text-red-700 font-medium">
+                    已选择 <span className="font-bold">{structureSelectedIds.size}</span> 条薪资结构
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setStructureSelectedIds(new Set())}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      取消选择
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setIsStructureBatchDeleteOpen(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      删除选中 ({structureSelectedIds.size})
+                    </Button>
+                  </div>
+                </div>
+              )}
               <div className="overflow-x-auto rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={allStructuresSelected}
+                        onCheckedChange={toggleSelectAllStructures}
+                        aria-label="全选"
+                      />
+                    </TableHead>
                     <TableHead>教师</TableHead>
                     <TableHead>薪资类型</TableHead>
                     <TableHead>基本薪资</TableHead>
@@ -855,7 +1005,14 @@ export default function TeacherSalaryManagement() {
                 </TableHeader>
                 <TableBody>
                   {salaryStructures.map((structure) => (
-                    <TableRow key={structure.id}>
+                    <TableRow key={structure.id} className={structureSelectedIds.has(structure.id) ? "bg-red-50/50" : ""}>
+                      <TableCell>
+                        <Checkbox
+                          checked={structureSelectedIds.has(structure.id)}
+                          onCheckedChange={() => toggleSelectStructure(structure.id)}
+                          aria-label={`选择 ${structure.expand?.teacher_id?.name || structure.id}`}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">{structure.expand?.teacher_id?.name}</p>
@@ -936,10 +1093,43 @@ export default function TeacherSalaryManagement() {
               <CardDescription>查看和管理教师的薪资发放记录</CardDescription>
             </CardHeader>
             <CardContent>
+              {/* ── Batch action bar for records ── */}
+              {someRecordsSelected && (
+                <div className="flex items-center justify-between mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+                  <span className="text-sm text-red-700 font-medium">
+                    已选择 <span className="font-bold">{recordSelectedIds.size}</span> 条薪资记录
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setRecordSelectedIds(new Set())}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      取消选择
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setIsRecordBatchDeleteOpen(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      删除选中 ({recordSelectedIds.size})
+                    </Button>
+                  </div>
+                </div>
+              )}
               <div className="overflow-x-auto rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={allRecordsSelected}
+                        onCheckedChange={toggleSelectAllRecords}
+                        aria-label="全选"
+                      />
+                    </TableHead>
                     <TableHead>教师</TableHead>
                     <TableHead>薪资期间</TableHead>
                     <TableHead>基本薪资</TableHead>
@@ -952,7 +1142,14 @@ export default function TeacherSalaryManagement() {
                 </TableHeader>
                 <TableBody>
                   {salaryRecords.map((record) => (
-                    <TableRow key={record.id}>
+                    <TableRow key={record.id} className={recordSelectedIds.has(record.id) ? "bg-red-50/50" : ""}>
+                      <TableCell>
+                        <Checkbox
+                          checked={recordSelectedIds.has(record.id)}
+                          onCheckedChange={() => toggleSelectRecord(record.id)}
+                          aria-label={`选择 ${record.expand?.teacher_id?.name || record.id}`}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">{record.expand?.teacher_id?.name}</p>
@@ -970,13 +1167,7 @@ export default function TeacherSalaryManagement() {
                       <TableCell>{formatCurrency(record.gross_salary)}</TableCell>
                       <TableCell>{formatCurrency(record.net_salary)}</TableCell>
                       <TableCell>
-                        <Badge variant={
-                          record.status === 'paid' ? 'default' : 
-                          record.status === 'approved' ? 'secondary' : 'outline'
-                        }>
-                          {record.status === 'draft' ? '草稿' : 
-                           record.status === 'approved' ? '已批准' : '已支付'}
-                        </Badge>
+                        <Badge variant="default">已支付</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
@@ -1016,39 +1207,14 @@ export default function TeacherSalaryManagement() {
                           <Button size="sm" variant="outline" onClick={() => handleDeleteRecord(record.id)}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => {
-                            const csv = [
-                              ['教师', '年份', '月份', '基本薪资', '津贴', '加班费', '总薪资', '扣款', '净薪资', '奖金', '状态'],
-                              [
-                                record.expand?.teacher_id?.name || '',
-                                record.year, record.month,
-                                record.base_salary, record.allowances,
-                                record.overtime_pay, record.gross_salary,
-                                record.epf_deduction + record.eis_deduction + record.socso_deduction + record.tax_deduction + record.other_deductions,
-                                record.net_salary, record.bonus || 0,
-                                record.status
-                              ]
-                            ].map(r => r.join(',')).join('\n')
-                            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
-                            const url = URL.createObjectURL(blob)
-                            const a = document.createElement('a')
-                            a.href = url; a.download = `salary_${record.year}_${record.month}.csv`
-                            a.click(); URL.revokeObjectURL(url)
-                          }}>
-                            <Download className="w-4 h-4" />
-                          </Button>
                           <Button
                             size="sm"
-                            variant={record.status === 'approved' || record.status === 'paid' ? 'outline' : 'ghost'}
-                            disabled={record.status !== 'approved' && record.status !== 'paid'}
-                            title={record.status === 'approved' || record.status === 'paid' ? '下载薪资单PDF' : '仅已批准/已支付的记录可下载PDF'}
+                            variant="outline"
                             onClick={() => {
-                              if (record.status === 'approved' || record.status === 'paid') {
-                                downloadPayslipPDF(record, payslipSettings, record.expand?.teacher_id?.name || '教师')
-                              }
+                              downloadPayslipPDF(record, payslipSettings, record.expand?.teacher_id?.name || '教师')
                             }}
                           >
-                            <FileDown className={`w-4 h-4 ${record.status === 'approved' || record.status === 'paid' ? 'text-blue-600' : 'text-gray-300'}`} />
+                            <FileDown className="w-4 h-4 text-blue-600" />
                           </Button>
                         </div>
                       </TableCell>
@@ -1083,11 +1249,14 @@ export default function TeacherSalaryManagement() {
                     <SelectValue placeholder="选择教师" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.isArray(teachers) && teachers.map((teacher) => (
+                    {Array.isArray(availableTeachers) && availableTeachers.map((teacher) => (
                       <SelectItem key={teacher.id} value={teacher.id}>
                         {teacher.name} - {teacher.email}
                       </SelectItem>
                     ))}
+                    {availableTeachers.length === 0 && !editingStructure && (
+                      <div className="px-2 py-4 text-sm text-slate-500 text-center">所有教师已有薪资结构</div>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -1553,6 +1722,124 @@ export default function TeacherSalaryManagement() {
             </Button>
             <Button variant="destructive" onClick={handleConfirmDeleteRecord}>
               删除
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch Delete Structures Dialog */}
+      <Dialog open={isStructureBatchDeleteOpen} onOpenChange={setIsStructureBatchDeleteOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              批量删除薪资结构
+            </DialogTitle>
+            <DialogDescription>
+              <div className="space-y-2 mt-2">
+                <p className="text-sm">
+                  确定要删除选中的 <span className="font-bold text-red-600">{structureSelectedIds.size}</span> 条薪资结构吗？
+                </p>
+                <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-40 overflow-y-auto">
+                  <ul className="text-xs space-y-0.5">
+                    {[...structureSelectedIds].map(id => {
+                      const s = salaryStructures.find(st => st.id === id)
+                      return s ? (
+                        <li key={id} className="text-red-700">
+                          • {s.expand?.teacher_id?.name || s.teacher_id} — {formatCurrency(s.base_salary)} ({s.salary_type === 'monthly' ? '月薪' : s.salary_type === 'hourly' ? '时薪' : '佣金'})
+                        </li>
+                      ) : null
+                    })}
+                  </ul>
+                </div>
+                <p className="text-xs text-red-500 mt-2">⚠️ 此操作不可撤销！</p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex justify-end gap-2 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsStructureBatchDeleteOpen(false)}
+              disabled={isStructureBatchDeleting}
+            >
+              取消
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleBatchDeleteStructures}
+              disabled={isStructureBatchDeleting}
+            >
+              {isStructureBatchDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  删除中...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  删除 {structureSelectedIds.size} 条薪资结构
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch Delete Records Dialog */}
+      <Dialog open={isRecordBatchDeleteOpen} onOpenChange={setIsRecordBatchDeleteOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              批量删除薪资记录
+            </DialogTitle>
+            <DialogDescription>
+              <div className="space-y-2 mt-2">
+                <p className="text-sm">
+                  确定要删除选中的 <span className="font-bold text-red-600">{recordSelectedIds.size}</span> 条薪资记录吗？
+                </p>
+                <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-40 overflow-y-auto">
+                  <ul className="text-xs space-y-0.5">
+                    {[...recordSelectedIds].map(id => {
+                      const r = salaryRecords.find(rec => rec.id === id)
+                      return r ? (
+                        <li key={id} className="text-red-700">
+                          • {r.expand?.teacher_id?.name || r.teacher_id} — {r.year}年{r.month}月 ({formatCurrency(r.net_salary)})
+                        </li>
+                      ) : null
+                    })}
+                  </ul>
+                </div>
+                <p className="text-xs text-red-500 mt-2">⚠️ 此操作不可撤销！</p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex justify-end gap-2 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsRecordBatchDeleteOpen(false)}
+              disabled={isRecordBatchDeleting}
+            >
+              取消
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleBatchDeleteRecords}
+              disabled={isRecordBatchDeleting}
+            >
+              {isRecordBatchDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  删除中...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  删除 {recordSelectedIds.size} 条薪资记录
+                </>
+              )}
             </Button>
           </div>
         </DialogContent>

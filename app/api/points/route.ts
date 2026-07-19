@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
 
     const res = await fetch(
-      `${PB_URL}/api/collections/students/records?perPage=${limit}&sort=-points&fields=id,name,points,center&filter=points>0`,
+      `${PB_URL}/api/collections/students/records?perPage=${limit}&sort=-points&fields=id,name,points,center,grade,student_id&filter=points>0`,
       { headers: { Authorization: token } }
     ).then(r => r.json())
 
@@ -91,6 +91,8 @@ export async function GET(request: NextRequest) {
         name: s.name,
         points: s.points || 0,
         center: s.center || '',
+        grade: s.grade || '',
+        student_id: s.student_id || '',
       })),
     })
   } catch (error: any) {

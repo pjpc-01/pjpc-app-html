@@ -12,7 +12,7 @@ export const StudentFeeMatrix = () => {
   const { students } = useStudents()
   const { isAssigned, getStudentAmount, assignFeeToStudent, removeFeeFromStudent, enterEditMode, exitEditMode,
     loading: studentFeesLoading, error: studentFeesError,
-    setLocalDiscount, setLocalSixMonthPay, setLocalSixMonthPayRate, setLocalSixMonthPayRateType, getLocalAdjustment, isEditMode: hookEditMode } = useStudentFees()
+    setLocalDiscount, toggleLocalSixMonthFeeId, setLocalSixMonthPayRate, setLocalSixMonthPayRateType, getLocalAdjustment, isEditMode: hookEditMode } = useStudentFees()
   const { createInvoice: createInvoiceFromHook, invoices } = useInvoices()
 
   const [studentInvoices, setStudentInvoices] = useState<Map<string, boolean>>(new Map())
@@ -60,17 +60,17 @@ export const StudentFeeMatrix = () => {
 
     let items = assignedFees.map(f => ({ name: f.name, amount: f.amount }))
 
-    // Apply six_month_pay logic if enabled
+    // Apply per-item six-month prepay logic
+    const sixMonthFeeIds = adj.six_month_fee_ids || []
     let sixMonthPayRate = adj.six_month_pay_rate || 0
     const sixMonthPayRateType = adj.six_month_pay_rate_type || 'percent'
-    if (adj.six_month_pay && sixMonthPayRate > 0) {
-      // Rebuild items: recurring ×6, one-time/annual stay as-is
+    if (sixMonthFeeIds.length > 0) {
+      // Rebuild items: only fees in sixMonthFeeIds get ×6
       const sixMonthItems: { name: string; amount: number }[] = []
       let sixMonthTotal = 0
 
       for (const fee of assignedFees) {
-        const isRecurring = fee.type === 'monthly' || !fee.type
-        if (isRecurring) {
+        if (sixMonthFeeIds.includes(fee.id)) {
           const amount = (fee.amount || 0) * 6
           sixMonthItems.push({ name: `${fee.name} (×6个月)`, amount })
           sixMonthTotal += amount
@@ -80,17 +80,19 @@ export const StudentFeeMatrix = () => {
         }
       }
 
-      // Apply six_month_pay discount
-      const prepayDiscount = sixMonthPayRateType === 'amount'
-        ? Math.round(sixMonthPayRate * 100) / 100
-        : Math.round(sixMonthTotal * sixMonthPayRate * 100) / 100
+      // Apply six_month_pay discount if rate is set
+      if (sixMonthPayRate > 0) {
+        const prepayDiscount = sixMonthPayRateType === 'amount'
+          ? Math.round(sixMonthPayRate * 100) / 100
+          : Math.round(sixMonthTotal * sixMonthPayRate * 100) / 100
 
-      if (prepayDiscount > 0) {
-        const prepayLabel = sixMonthPayRateType === 'amount'
-          ? `预付折扣 (RM${prepayDiscount.toFixed(2)})`
-          : `预付折扣 (${(sixMonthPayRate * 100).toFixed(0)}%)`
-        sixMonthItems.push({ name: prepayLabel, amount: -prepayDiscount })
-        sixMonthTotal -= prepayDiscount
+        if (prepayDiscount > 0) {
+          const prepayLabel = sixMonthPayRateType === 'amount'
+            ? `预付折扣 (RM${prepayDiscount.toFixed(2)})`
+            : `预付折扣 (${(sixMonthPayRate * 100).toFixed(0)}%)`
+          sixMonthItems.push({ name: prepayLabel, amount: -prepayDiscount })
+          sixMonthTotal -= prepayDiscount
+        }
       }
 
       items = sixMonthItems
@@ -127,6 +129,7 @@ export const StudentFeeMatrix = () => {
 
     createInvoiceFromHook({
       studentId, studentName: student.student_name || '', studentGrade: student.standard || '',
+      studentNumber: student.student_id || '',
       totalAmount: total, items, status: 'issued',
       issueDate: new Date().toISOString().split('T')[0],
       dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
@@ -172,7 +175,7 @@ export const StudentFeeMatrix = () => {
       {filteredStudents.length === 0 ? (
         <div className="py-12 text-center text-muted-foreground">没有匹配的学生</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
           {filteredStudents.map(student => (
             <FeeCard
               key={student.id}
@@ -188,7 +191,7 @@ export const StudentFeeMatrix = () => {
               hasInvoiceThisMonth={hasInvoiceThisMonth}
               getLocalAdjustment={getLocalAdjustment}
               setLocalDiscount={setLocalDiscount}
-              setLocalSixMonthPay={setLocalSixMonthPay}
+              toggleLocalSixMonthFeeId={toggleLocalSixMonthFeeId}
               setLocalSixMonthPayRate={setLocalSixMonthPayRate}
               setLocalSixMonthPayRateType={setLocalSixMonthPayRateType}
             />

@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
           tax_deduction: taxDeduction,
           other_deductions: 0,
           net_salary: netSalary,
-          status: 'draft',
+          status: 'paid',
           created_by,
           notes: `自动生成 - 基于${schedules.items.length}个排班记录`
         }

@@ -41,7 +41,7 @@ interface FeeCardProps {
   hasInvoiceThisMonth: (studentId: string) => boolean
   getLocalAdjustment: (studentId: string) => StudentAdjustment
   setLocalDiscount: (studentId: string, discount: number, discount_type?: 'amount' | 'percent') => void
-  setLocalSixMonthPay: (studentId: string, val: boolean) => void
+  toggleLocalSixMonthFeeId: (studentId: string, feeId: string) => void
   setLocalSixMonthPayRate: (studentId: string, rate: number) => void
   setLocalSixMonthPayRateType: (studentId: string, rateType: 'amount' | 'percent') => void
 }
@@ -50,7 +50,7 @@ export const FeeCard = ({
   student, activeFees, groupedFees, studentTotal,
   onCreateInvoice, editMode, isAssigned,
   assignFeeToStudent, removeFeeFromStudent, hasInvoiceThisMonth,
-  getLocalAdjustment, setLocalDiscount, setLocalSixMonthPay, setLocalSixMonthPayRate, setLocalSixMonthPayRateType,
+  getLocalAdjustment, setLocalDiscount, toggleLocalSixMonthFeeId, setLocalSixMonthPayRate, setLocalSixMonthPayRateType,
 }: FeeCardProps) => {
   const studentId = student.id
   const [expanded, setExpanded] = useState(false)
@@ -58,7 +58,7 @@ export const FeeCard = ({
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set(Object.keys(groupedFees)))
   const [showInvoiceConfirm, setShowInvoiceConfirm] = useState(false)
 
-  const adjustment = getLocalAdjustment?.(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_pay: false, six_month_pay_rate: 0, six_month_pay_rate_type: 'percent' as const }
+  const adjustment = getLocalAdjustment?.(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_fee_ids: [] as string[], six_month_pay_rate: 0, six_month_pay_rate_type: 'percent' as const }
   const initial = (student.student_name || "?")[0]
   const guardian = student.father_name || student.mother_name || student.parentName || "-"
   const guardianPhone = student.father_phone || student.mother_phone || student.parentPhone || "-"
@@ -157,7 +157,7 @@ export const FeeCard = ({
           {(localEditMode) && (
             <div className="px-4 py-3 bg-blue-50/50 border-b space-y-2">
               <p className="text-xs font-semibold text-blue-700">费用调整</p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label className="text-[10px] text-slate-500">
                     月折扣({adjustment.discount_type === 'percent' ? '%' : 'RM'})
@@ -185,15 +185,6 @@ export const FeeCard = ({
                     </button>
                   </div>
                 </div>
-                <div className="flex items-end gap-1 pb-0.5">
-                  <div className="flex items-center gap-1">
-                    <Switch
-                      checked={adjustment.six_month_pay || false}
-                      onCheckedChange={(v) => setLocalSixMonthPay?.(studentId, v)}
-                    />
-                    <Label className="text-[10px] text-slate-500">六月付</Label>
-                  </div>
-                </div>
                 <div>
                   <Label className="text-[10px] text-slate-500">
                     预付折扣({adjustment.six_month_pay_rate_type === 'percent' ? '%' : 'RM'})
@@ -210,7 +201,7 @@ export const FeeCard = ({
                           setLocalSixMonthPayRate?.(studentId, Math.max(0, val))
                         }
                       }}
-                      disabled={!adjustment.six_month_pay}
+                      disabled={!adjustment.six_month_fee_ids?.length}
                       className="h-7 text-xs flex-1"
                     />
                     <button
@@ -218,9 +209,6 @@ export const FeeCard = ({
                       onClick={() => {
                         const newType = adjustment.six_month_pay_rate_type === 'percent' ? 'amount' : 'percent'
                         setLocalSixMonthPayRateType?.(studentId, newType)
-                        // If switching from percent to amount, convert: 10% of total → RM value
-                        // If switching from amount to percent, convert: RM value → percentage
-                        // For simplicity, we just toggle the type without auto-converting the value
                       }}
                       className={`h-7 w-7 rounded text-[10px] font-bold shrink-0 border ${
                         adjustment.six_month_pay_rate_type === 'percent'
@@ -275,6 +263,16 @@ export const FeeCard = ({
                           >
                             <span className="truncate">{fee.name}</span>
                             <div className="flex items-center gap-2 shrink-0">
+                              {(editMode || localEditMode) && assigned && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); toggleLocalSixMonthFeeId?.(studentId, fee.id) }}
+                                  className={`text-[10px] px-1 py-0.5 rounded border ${
+                                    adjustment.six_month_fee_ids?.includes(fee.id)
+                                      ? 'bg-amber-100 border-amber-400 text-amber-700'
+                                      : 'border-slate-200 text-slate-400'
+                                  }`}
+                                >6月</button>
+                              )}
                               <span className="text-slate-400">RM{fee.amount}</span>
                               <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
                                 assigned ? "bg-amber-500 border-amber-500 text-white" : "border-slate-300"

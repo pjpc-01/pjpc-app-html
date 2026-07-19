@@ -73,9 +73,9 @@ export async function POST(request: NextRequest) {
     const allFeeItems = allFeeItemsRes.ok ? (await allFeeItemsRes.json()).items : []
     const feeItemMap = new Map<string, any>(allFeeItems.map((f: any) => [f.id, f]))
 
-    // 3. 获取所有学生
+    // 3. 获取在读学生（排除离校/休学）
     const studentsRes = await fetch(
-      `${PB_URL}/api/collections/students/records?perPage=500`,
+      `${PB_URL}/api/collections/students/records?perPage=500&filter=(status!="inactive"%26%26status!="left"%26%26status!="suspended")`,
       { headers }
     )
     const students = studentsRes.ok ? (await studentsRes.json()).items : []
@@ -172,6 +172,10 @@ export async function POST(request: NextRequest) {
       }
 
       const student = studentMap.get(sid)
+      if (!student) {
+        skipped.push({ student: sid, reason: "学生已离校或不存在" })
+        continue
+      }
       const feeItemsArr = assignment.fee_items || []
 
       if (feeItemsArr.length === 0) {
@@ -225,31 +229,33 @@ export async function POST(request: NextRequest) {
 
       let totalAmount = totalBeforeDiscount - discountValue
 
-      // 六月一次付：recurring 项目 ×6，一次性项目保持原样，应用折扣率
-      if (assignment.six_month_pay) {
+      // Per-item six-month prepay: individual fee items marked ×6
+      const sixMonthFeeIds = assignment.six_month_fee_ids || []
+      if (Array.isArray(sixMonthFeeIds) && sixMonthFeeIds.length > 0) {
         const sixMonthRate = assignment.six_month_pay_rate || 0
         // Rebuild items for six-month view
         const sixMonthItems: { name: string; amount: number }[] = []
 
         for (const fi of feeItemsArr) {
           if (fi.active === false) continue
-          const feeDef = feeItemMap.get(fi.id)
-          const isRecurring = feeDef?.type === 'monthly' || !feeDef?.type
+          const isPrepaid = sixMonthFeeIds.includes(fi.id)
 
-          if (isRecurring) {
+          if (isPrepaid) {
             sixMonthItems.push({
               name: (fi.name || "费用") + ` (×6个月)`,
               amount: (fi.amount || 0) * 6,
             })
           } else {
+            const feeDef = feeItemMap.get(fi.id)
+            const isOneTime = feeDef?.type === 'one-time' || feeDef?.type === 'annual'
             sixMonthItems.push({
-              name: (fi.name || "费用") + ' (一次性)',
+              name: (fi.name || "费用") + (isOneTime ? ' (一次性)' : ''),
               amount: fi.amount || 0,
             })
           }
         }
 
-        let sixMonthTotal = recurringBase * 6 + oneTimeBase
+        let sixMonthTotal = sixMonthItems.reduce((sum, item) => sum + item.amount, 0)
 
         // Apply per-student discount on the 6-month total
         if (studentDiscount > 0) {
@@ -331,7 +337,8 @@ export async function POST(request: NextRequest) {
           amount: totalAmount,
           carryForward,
           discount: studentDiscount,
-          sixMonthPay: assignment.six_month_pay || false,
+          sixMonthFeeIds: sixMonthFeeIds,
+          sixMonthPay: Array.isArray(sixMonthFeeIds) && sixMonthFeeIds.length > 0,
           items,
         })
 

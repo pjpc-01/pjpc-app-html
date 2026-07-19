@@ -40,9 +40,12 @@ import {
   Wallet,
   DollarSign,
   Undo2,
-  TrendingUp
+  TrendingUp,
+  Trash2,
+  XCircle
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useSearchParams } from "next/navigation"
 import { usePayments } from "@/hooks/usePayments"
 import { useInvoices } from "@/hooks/useInvoices"
@@ -53,9 +56,20 @@ import type { Refund } from "@/hooks/useRefunds"
 import type { Payment } from "@/hooks/usePayments"
 import { toast } from "sonner"
 
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "-"
+  try {
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return dateStr
+    return d.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" })
+  } catch {
+    return dateStr
+  }
+}
+
 export default function PaymentManagement() {
   const { invoices, loading: invoicesLoading } = useInvoices()
-  const { payments, loading: paymentsLoading, createPayment } = usePayments()
+  const { payments, loading: paymentsLoading, createPayment, deletePayment, refetch } = usePayments()
   const { createReceipt } = useReceipts()
   const { refunds, createRefund, getTotalRefundedAmount } = useRefunds()
   
@@ -79,6 +93,11 @@ export default function PaymentManagement() {
   const [refundNotes, setRefundNotes] = useState("")
   const [isRefunding, setIsRefunding] = useState(false)
 
+  // ── Batch delete state ──
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [isBatchDeleteOpen, setIsBatchDeleteOpen] = useState(false)
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false)
+
   // Apply center filter to invoices (for the new payment dialog dropdown)
   const filteredInvoices = invoices.filter(inv => {
     if (centerFilter && centerFilter !== "all") {
@@ -100,6 +119,47 @@ export default function PaymentManagement() {
         return student?.centerId === centerFilter
       })
     : payments
+
+  // ── Batch delete computed values ──
+  const allPaymentIds = filteredPayments.map(p => p.id)
+  const allSelected = allPaymentIds.length > 0 && selectedIds.size === allPaymentIds.length
+  const someSelected = selectedIds.size > 0
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(allPaymentIds))
+    }
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const clearSelection = () => setSelectedIds(new Set())
+
+  const handleBatchDelete = async () => {
+    setIsBatchDeleting(true)
+    const ids = [...selectedIds]
+    for (const id of ids) {
+      try {
+        await deletePayment(id)
+      } catch {
+        // continue on error
+      }
+    }
+    setIsBatchDeleting(false)
+    setIsBatchDeleteOpen(false)
+    setSelectedIds(new Set())
+    refetch()
+    toast.success(`成功删除 ${ids.length} 条付款记录`)
+  }
   
   const selectedInvoice = invoices.find(inv => inv.id === selectedInvoiceId)
   
@@ -412,6 +472,15 @@ export default function PaymentManagement() {
           </div>
         </CardHeader>
         <CardContent>
+          {selectedIds.size > 0 && (
+            <div className="flex items-center justify-between mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+              <span className="text-sm text-red-700">已选择 <strong>{selectedIds.size}</strong> 条付款记录</span>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={clearSelection}><XCircle className="h-4 w-4 mr-1" />取消选择</Button>
+                <Button variant="destructive" size="sm" onClick={() => setIsBatchDeleteOpen(true)}><Trash2 className="h-4 w-4 mr-1" />删除选中({selectedIds.size})</Button>
+              </div>
+            </div>
+          )}
           {paymentsLoading ? (
             <div className="text-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-4" />
@@ -426,6 +495,13 @@ export default function PaymentManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
+                      aria-label="全选"
+                    />
+                  </TableHead>
                   <TableHead>日期</TableHead>
                   <TableHead>学生</TableHead>
                   <TableHead>发票编号</TableHead>
@@ -440,8 +516,15 @@ export default function PaymentManagement() {
                   const inv = invoices.find(i => i.id === payment.invoiceId)
                   const partial = isPaymentPartial(payment)
                   return (
-                    <TableRow key={payment.id} className="group">
-                      <TableCell className="text-slate-600">{payment.date.split('T')[0]}</TableCell>
+                    <TableRow key={payment.id} className={selectedIds.has(payment.id) ? "bg-red-50/50" : "group"}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(payment.id)}
+                          onCheckedChange={() => toggleSelect(payment.id)}
+                          aria-label={`选择付款记录 ${inv?.studentName || ''}`}
+                        />
+                      </TableCell>
+                      <TableCell className="text-slate-600">{formatDate(payment.date)}</TableCell>
                       <TableCell className="font-medium">{inv?.studentName || "未知学生"}</TableCell>
                       <TableCell className="text-slate-500 font-mono text-xs">{inv?.invoiceNumber || "N/A"}</TableCell>
                       <TableCell>
@@ -477,6 +560,66 @@ export default function PaymentManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Batch Delete Confirmation Dialog */}
+      <Dialog open={isBatchDeleteOpen} onOpenChange={setIsBatchDeleteOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              批量删除付款记录
+            </DialogTitle>
+            <DialogDescription>
+              <div className="space-y-2 mt-2">
+                <p className="text-sm">
+                  确定要删除选中的 <span className="font-bold text-red-600">{selectedIds.size}</span> 条付款记录吗？
+                </p>
+                <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-40 overflow-y-auto">
+                  <ul className="text-xs space-y-0.5">
+                    {[...selectedIds].map(id => {
+                      const payment = filteredPayments.find(p => p.id === id)
+                      const inv = payment ? invoices.find(i => i.id === payment.invoiceId) : null
+                      return payment ? (
+                        <li key={id} className="text-red-700">
+                          • {inv?.studentName || "未知学生"} — {payment.date.split('T')[0]} — RM {payment.amount.toLocaleString()}
+                        </li>
+                      ) : null
+                    })}
+                  </ul>
+                </div>
+                <p className="text-xs text-red-500 mt-2">⚠️ 此操作不可撤销！</p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setIsBatchDeleteOpen(false)}
+              disabled={isBatchDeleting}
+            >
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleBatchDelete}
+              disabled={isBatchDeleting}
+            >
+              {isBatchDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  删除中...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  删除 {selectedIds.size} 条记录
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Refund Dialog */}
       <Dialog open={isRefundDialogOpen} onOpenChange={setIsRefundDialogOpen}>
