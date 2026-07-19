@@ -154,7 +154,7 @@ export const FeeCard = ({
       {expanded && (
         <CardContent className="p-0">
           {/* Discount panel */}
-          {(localEditMode) && (
+          {(editMode || localEditMode) && (
             <div className="px-4 py-3 bg-blue-50/50 border-b space-y-2">
               <p className="text-xs font-semibold text-blue-700">费用调整</p>
               <div className="grid grid-cols-2 gap-2">
