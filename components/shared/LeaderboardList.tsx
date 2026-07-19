@@ -60,10 +60,12 @@ export interface LeaderboardPageProps {
 export function LeaderboardList({
   students,
   variant = "dark",
+  multiColumn = false,
   onStudentClick,
 }: {
   students: LeaderboardStudent[]
   variant?: "dark" | "light"
+  multiColumn?: boolean
   onStudentClick?: (s: LeaderboardStudent) => void
 }) {
   if (students.length === 0) {
@@ -74,8 +76,7 @@ export function LeaderboardList({
     )
   }
 
-  // Multi-column grid: 15 rows per column, items fill down then across
-  const perCol = 15
+  const perCol = 10
 
   const medal = (rank: number) => rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : ""
 
@@ -103,8 +104,8 @@ export function LeaderboardList({
 
   return (
     <div
-      className="grid gap-x-4 gap-y-0"
-      style={{ gridAutoFlow: "column", gridTemplateRows: `repeat(${perCol}, auto)` }}
+      className={multiColumn ? "grid gap-x-4 gap-y-0" : ""}
+      style={multiColumn ? { gridAutoFlow: "column", gridTemplateRows: `repeat(${perCol}, auto)` } : undefined}
     >
       {students.map((s, idx) => {
         const rank = idx + 1
