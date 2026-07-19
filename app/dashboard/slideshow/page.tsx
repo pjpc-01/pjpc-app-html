@@ -345,7 +345,7 @@ function SlideshowOverlay({
               </div>
             </div>
           </div>
-          <Card className="shadow-2xl border-0 overflow-hidden flex-1 flex flex-col min-h-0">
+          <Card className="shadow-2xl border-0 overflow-hidden flex-1 flex flex-col min-h-0 bg-gray-800/80">
             <CardContent className="p-6 flex-1 overflow-hidden min-h-0">
               {renderWidget(current)}
             </CardContent>
