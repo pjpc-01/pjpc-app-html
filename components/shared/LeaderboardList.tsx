@@ -34,28 +34,6 @@ export interface LeaderboardPageProps {
   fullscreenDisabled?: boolean
 }
 
-// ─── Sizes ─────────────────────────────────────────────────────────
-// Single column (normal) vs multi-column (stepped for fitting)
-
-const mBadge = (r: number) =>
-  r <= 3 ? "w-20 h-20 text-3xl" :
-  r <= 10 ? "w-9 h-9 text-sm" :
-  "w-6 h-6 text-[9px]"
-
-const mPad = (r: number) =>
-  r <= 3 ? "py-5" :
-  r <= 10 ? "py-2" :
-  "py-1"
-
-const mName = (r: number) =>
-  r <= 3 ? "text-3xl" :
-  r <= 10 ? "text-sm" :
-  "text-xs"
-
-const mPts = (r: number) =>
-  r <= 3 ? "text-2xl" :
-  "text-sm"
-
 // ─── Component ────────────────────────────────────────────────────
 
 export function LeaderboardList({
@@ -80,22 +58,15 @@ export function LeaderboardList({
   const count = students.length
 
   const badgeCls = (r: number) => {
-    const sz = multiColumn ? mBadge(r) : "w-7 h-7 text-xs"
-    const common = `${sz} rounded-full flex items-center justify-center font-bold shrink-0`
-    const map: Record<number, string> = {
+    const common = "w-7 h-7 text-xs rounded-full flex items-center justify-center font-bold shrink-0"
+    const col: Record<number, string> = {
       1: variant === "dark" ? "bg-yellow-500 text-white" : "bg-yellow-400 text-white",
       2: variant === "dark" ? "bg-gray-400 text-white" : "bg-gray-300 text-white",
       3: variant === "dark" ? "bg-amber-600 text-white" : "bg-amber-500 text-white",
     }
-    const fallback = variant === "dark" ? "bg-white/10 text-white/50" : "bg-gray-100 text-gray-400"
-    return `${common} ${map[r] || fallback}`
+    return `${common} ${col[r] || (variant === "dark" ? "bg-white/10 text-white/50" : "bg-gray-100 text-gray-400")}`
   }
 
-  const padCls = multiColumn ? mPad : () => "py-2"
-  const nameCls = multiColumn ? mName : () => "text-sm"
-  const ptsCls = multiColumn ? mPts : () => "text-sm"
-  const metaCls = (r: number) =>
-    multiColumn && r <= 3 ? "text-xs" : "text-[10px]"
   const rowColor = variant === "dark" ? "hover:bg-white/5" : "hover:bg-amber-50/50"
   const nameCol = variant === "dark" ? "text-white/90" : "text-gray-800"
   const gradeCol = variant === "dark" ? "text-white/30" : "text-gray-400"
@@ -106,25 +77,25 @@ export function LeaderboardList({
   const row = (s: LeaderboardStudent, r: number) => (
     <div
       key={s.id}
-      className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors ${padCls(r)} ${borderCls} ${rowColor}`}
+      className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${borderCls} ${rowColor}`}
       onClick={() => onStudentClick?.(s)}
     >
       <span className={badgeCls(r)}>{r}</span>
       <div className="flex-1 min-w-0">
-        <span className={`${nameCls(r)} font-medium truncate ${nameCol}`}>{s.name}</span>
+        <span className={`text-sm font-medium truncate ${nameCol}`}>{s.name}</span>
         {s.student_id && (
-          <span className={`${metaCls(r)} ml-1.5 px-1.5 py-0.5 rounded shrink-0 ${idCol}`}>{s.student_id}</span>
+          <span className={`text-[10px] ml-1.5 px-1.5 py-0.5 rounded shrink-0 ${idCol}`}>{s.student_id}</span>
         )}
-        <p className={`${metaCls(r)} leading-tight ${gradeCol}`}>{s.grade}</p>
+        <p className={`text-[10px] leading-tight ${gradeCol}`}>{s.grade}</p>
       </div>
-      <span className={`${ptsCls(r)} font-bold tabular-nums shrink-0 ${ptsCol}`}>
+      <span className={`text-sm font-bold tabular-nums shrink-0 ${ptsCol}`}>
         {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">分</span>
       </span>
     </div>
   )
 
   if (multiColumn) {
-    // One unified grid: fill top→bottom, then auto-create next column
+    // Column-major grid: fill top→bottom, auto-create next column
     return (
       <div
         className="grid gap-x-4 gap-y-0"
