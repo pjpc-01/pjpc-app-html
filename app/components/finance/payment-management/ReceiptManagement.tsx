@@ -566,26 +566,25 @@ export default function ReceiptManagement() {
               <Trash2 className="h-5 w-5" />
               批量删除收据
             </DialogTitle>
-            <DialogDescription>
-              <div className="space-y-2 mt-2">
-                <p className="text-sm">
-                  确定要删除选中的 <span className="font-bold text-red-600">{selectedReceiptIds.size}</span> 张收据吗？
-                </p>
-                <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-40 overflow-y-auto">
-                  <ul className="text-xs space-y-0.5">
-                    {[...selectedReceiptIds].map(id => {
-                      const rec = filteredReceipts.find(r => r.id === id)
-                      return rec ? (
-                        <li key={id} className="text-red-700">
-                          • {rec.receiptNumber} — {getStudentName(rec.studentId)} (RM {rec.totalAmount?.toLocaleString()})
-                        </li>
-                      ) : null
-                    })}
-                  </ul>
-                </div>
-                <p className="text-xs text-red-500 mt-2">⚠️ 此操作不可撤销！</p>
+            <DialogDescription />
+            <div className="space-y-2 mt-2">
+              <p className="text-sm">
+                确定要删除选中的 <span className="font-bold text-red-600">{selectedReceiptIds.size}</span> 张收据吗？
+              </p>
+              <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-40 overflow-y-auto">
+                <ul className="text-xs space-y-0.5">
+                  {[...selectedReceiptIds].map(id => {
+                    const rec = filteredReceipts.find(r => r.id === id)
+                    return rec ? (
+                      <li key={id} className="text-red-700">
+                        • {rec.receiptNumber} — {getStudentName(rec.studentId)} (RM {rec.totalAmount?.toLocaleString()})
+                      </li>
+                    ) : null
+                  })}
+                </ul>
               </div>
-            </DialogDescription>
+              <p className="text-xs text-red-500 mt-2">⚠️ 此操作不可撤销！</p>
+            </div>
           </DialogHeader>
           
           <div className="flex justify-end gap-2 pt-4">
