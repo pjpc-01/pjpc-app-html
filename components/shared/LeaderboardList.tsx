@@ -78,18 +78,18 @@ export function LeaderboardList({
 
   const count = students.length
 
-  // For multi-column: split students evenly across columns
-  // e.g. 28 ÷ 3 = 10 + 9 + 9, no empty rows anywhere
-  const colCount = multiColumn ? Math.ceil(count / 10) : 1
+  // Multi-column: group by font-size tiers, each group = one column
+  // Col 1: ranks 1-10 (big), Col 2: 11-20 (medium), Col 3+: 21+ (small)
   const columns: LeaderboardStudent[][] = []
   if (multiColumn) {
-    const base = Math.floor(count / colCount)
-    const remainder = count % colCount
-    let start = 0
-    for (let i = 0; i < colCount; i++) {
-      const size = base + (i < remainder ? 1 : 0)
-      columns.push(students.slice(start, start + size))
-      start += size
+    const groups = [
+      { start: 0, end: 10 },          // ranks 1-10
+      { start: 10, end: 20 },         // ranks 11-20
+      { start: 20, end: Infinity },   // ranks 21+
+    ]
+    for (const g of groups) {
+      if (g.start >= count) break
+      columns.push(students.slice(g.start, Math.min(g.end, count)))
     }
   }
 
@@ -140,7 +140,7 @@ export function LeaderboardList({
   const pointsColor = variant === "dark" ? "text-amber-400" : "text-amber-600"
 
   return multiColumn ? (
-    <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
+    <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr)` }}>
       {columns.map((col, ci) => {
         const baseRank = columns.slice(0, ci).reduce((sum, c) => sum + c.length, 0)
         return (
