@@ -569,27 +569,26 @@ export default function PaymentManagement() {
               <Trash2 className="h-5 w-5" />
               批量删除付款记录
             </DialogTitle>
-            <DialogDescription>
-              <div className="space-y-2 mt-2">
-                <p className="text-sm">
-                  确定要删除选中的 <span className="font-bold text-red-600">{selectedIds.size}</span> 条付款记录吗？
-                </p>
-                <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-40 overflow-y-auto">
-                  <ul className="text-xs space-y-0.5">
-                    {[...selectedIds].map(id => {
-                      const payment = filteredPayments.find(p => p.id === id)
-                      const inv = payment ? invoices.find(i => i.id === payment.invoiceId) : null
-                      return payment ? (
-                        <li key={id} className="text-red-700">
-                          • {inv?.studentName || "未知学生"} — {payment.date.split('T')[0]} — RM {payment.amount.toLocaleString()}
-                        </li>
-                      ) : null
-                    })}
-                  </ul>
-                </div>
-                <p className="text-xs text-red-500 mt-2">⚠️ 此操作不可撤销！</p>
+            <DialogDescription />
+            <div className="space-y-2 mt-2">
+              <p className="text-sm">
+                确定要删除选中的 <span className="font-bold text-red-600">{selectedIds.size}</span> 条付款记录吗？
+              </p>
+              <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-40 overflow-y-auto">
+                <ul className="text-xs space-y-0.5">
+                  {[...selectedIds].map(id => {
+                    const payment = filteredPayments.find(p => p.id === id)
+                    const inv = payment ? invoices.find(i => i.id === payment.invoiceId) : null
+                    return payment ? (
+                      <li key={id} className="text-red-700">
+                        • {inv?.studentName || "未知学生"} — {payment.date.split('T')[0]} — RM {payment.amount.toLocaleString()}
+                      </li>
+                    ) : null
+                  })}
+                </ul>
               </div>
-            </DialogDescription>
+              <p className="text-xs text-red-500 mt-2">⚠️ 此操作不可撤销！</p>
+            </div>
           </DialogHeader>
 
           <div className="flex justify-end gap-2 pt-4">

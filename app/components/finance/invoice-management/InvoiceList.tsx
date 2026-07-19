@@ -441,26 +441,25 @@ export function InvoiceList({
               <Trash2 className="h-5 w-5" />
               批量删除发票
             </DialogTitle>
-            <DialogDescription>
-              <div className="space-y-2 mt-2">
-                <p className="text-sm">
-                  确定要删除选中的 <span className="font-bold text-red-600">{selectedIds.size}</span> 张发票吗？
-                </p>
-                <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-40 overflow-y-auto">
-                  <ul className="text-xs space-y-0.5">
-                    {[...selectedIds].map(id => {
-                      const inv = invoices.find(i => i.id === id)
-                      return inv ? (
-                        <li key={id} className="text-red-700">
-                          • {inv.invoiceNumber} — {inv.studentName} ({inv.studentNumber || '无'}) — RM {inv.totalAmount?.toLocaleString()}
-                        </li>
-                      ) : null
-                    })}
-                  </ul>
-                </div>
-                <p className="text-xs text-red-500 mt-2">⚠️ 此操作不可撤销！</p>
+            <DialogDescription />
+            <div className="space-y-2 mt-2">
+              <p className="text-sm">
+                确定要删除选中的 <span className="font-bold text-red-600">{selectedIds.size}</span> 张发票吗？
+              </p>
+              <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-40 overflow-y-auto">
+                <ul className="text-xs space-y-0.5">
+                  {[...selectedIds].map(id => {
+                    const inv = invoices.find(i => i.id === id)
+                    return inv ? (
+                      <li key={id} className="text-red-700">
+                        • {inv.invoiceNumber} — {inv.studentName} ({inv.studentNumber || '无'}) — RM {inv.totalAmount?.toLocaleString()}
+                      </li>
+                    ) : null
+                  })}
+                </ul>
               </div>
-            </DialogDescription>
+              <p className="text-xs text-red-500 mt-2">⚠️ 此操作不可撤销！</p>
+            </div>
           </DialogHeader>
           
           <div className="flex justify-end gap-2 pt-4">
