@@ -89,7 +89,13 @@ export function LeaderboardList({
   }
 
   const rankBadge = (rank: number) => {
-    const common = "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+    const size =
+      rank <= 3 ? "w-9 h-9 text-base" :
+      rank <= 10 ? "w-8 h-8 text-sm" :
+      rank <= 20 ? "w-7 h-7 text-xs" :
+      rank <= 30 ? "w-6 h-6 text-[10px]" :
+      "w-5 h-5 text-[9px]"
+    const common = `${size} rounded-full flex items-center justify-center font-bold shrink-0`
     if (variant === "dark") {
       if (rank === 1) return `${common} bg-yellow-500 text-white`
       if (rank === 2) return `${common} bg-gray-400 text-white`
@@ -102,6 +108,34 @@ export function LeaderboardList({
     return `${common} bg-gray-100 text-gray-400`
   }
 
+  const textSize = (rank: number) => {
+    if (rank <= 3) return { name: "text-sm", points: "text-sm" }
+    if (rank <= 10) return { name: "text-xs", points: "text-xs" }
+    if (rank <= 20) return { name: "text-[11px]", points: "text-[11px]" }
+    if (rank <= 30) return { name: "text-[10px]", points: "text-[10px]" }
+    return { name: "text-[9px]", points: "text-[9px]" }
+  }
+
+  const idBadgeSize = (rank: number) => {
+    if (rank <= 3) return "text-[10px]"
+    if (rank <= 10) return "text-[9px]"
+    return "text-[8px]"
+  }
+
+  const gradeSize = (rank: number) => {
+    if (rank <= 3) return "text-[10px]"
+    if (rank <= 10) return "text-[9px]"
+    return "text-[8px]"
+  }
+
+  // Medal sizes: bigger for top ranks
+  const medalSize = (rank: number) => {
+    if (rank === 1) return "text-2xl w-9 text-center"
+    if (rank === 2) return "text-xl w-9 text-center"
+    if (rank === 3) return "text-lg w-9 text-center"
+    return ""
+  }
+
   return (
     <div
       className={multiColumn ? "grid gap-x-4 gap-y-0" : ""}
@@ -112,33 +146,33 @@ export function LeaderboardList({
         return (
           <div
             key={s.id}
-            className={`flex items-center gap-2.5 px-2 py-1.5 rounded cursor-pointer transition-colors border-b ${rowClass(rank)} ${variant === "dark" ? "border-white/5" : "border-gray-50"}`}
+            className={`flex items-center gap-2 px-2 py-1 rounded cursor-pointer transition-colors border-b ${rowClass(rank)} ${variant === "dark" ? "border-white/5" : "border-gray-50"}`}
             onClick={() => onStudentClick?.(s)}
           >
             {medal(rank) ? (
-              <span className="shrink-0 text-base w-7 text-center">{medal(rank)}</span>
+              <span className={`shrink-0 ${medalSize(rank)}`}>{medal(rank)}</span>
             ) : (
               <span className={rankBadge(rank)}>{rank}</span>
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1">
-                <span className={`text-xs font-medium truncate ${variant === "dark" ? "text-white/90" : "text-gray-800"}`}>
+                <span className={`${textSize(rank).name} font-medium truncate ${variant === "dark" ? "text-white/90" : "text-gray-800"}`}>
                   {s.name}
                 </span>
                 {s.student_id && (
-                  <span className={`text-[8px] px-1 py-0.5 rounded shrink-0 ${
+                  <span className={`${idBadgeSize(rank)} px-1 py-0.5 rounded shrink-0 ${
                     variant === "dark" ? "bg-blue-500/20 text-blue-300" : "bg-blue-50 text-blue-500"
                   }`}>
                     {s.student_id}
                   </span>
                 )}
               </div>
-              <p className={`text-[9px] leading-tight ${variant === "dark" ? "text-white/30" : "text-gray-400"}`}>
+              <p className={`${gradeSize(rank)} leading-tight ${variant === "dark" ? "text-white/30" : "text-gray-400"}`}>
                 {s.grade}
               </p>
             </div>
-            <span className={`text-xs font-bold tabular-nums shrink-0 ${variant === "dark" ? "text-amber-400" : "text-amber-600"}`}>
-              {s.points}<span className="text-[8px] font-normal opacity-60 ml-0.5">分</span>
+            <span className={`${textSize(rank).points} font-bold tabular-nums shrink-0 ${variant === "dark" ? "text-amber-400" : "text-amber-600"}`}>
+              {s.points}<span className={`${gradeSize(rank)} font-normal opacity-60 ml-0.5`}>分</span>
             </span>
           </div>
         )
