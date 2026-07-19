@@ -67,7 +67,18 @@ export function LeaderboardList({
     return `${common} ${col[r] || (variant === "dark" ? "bg-white/10 text-white/50" : "bg-gray-100 text-gray-400")}`
   }
 
-  const rowColor = variant === "dark" ? "hover:bg-white/5" : "hover:bg-amber-50/50"
+  const rowColor = (r: number) => {
+    if (variant === "dark") {
+      if (r === 1) return "bg-yellow-500/20 hover:bg-yellow-500/30"
+      if (r === 2) return "bg-gray-300/20 hover:bg-gray-300/30"
+      if (r === 3) return "bg-amber-600/20 hover:bg-amber-600/30"
+      return "hover:bg-white/5"
+    }
+    if (r === 1) return "bg-yellow-400/20 hover:bg-yellow-400/30"
+    if (r === 2) return "bg-gray-300/30 hover:bg-gray-300/40"
+    if (r === 3) return "bg-amber-500/20 hover:bg-amber-500/30"
+    return "hover:bg-amber-50/50"
+  }
   const nameCol = variant === "dark" ? "text-white/90" : "text-gray-800"
   const gradeCol = variant === "dark" ? "text-white/30" : "text-gray-400"
   const idCol = variant === "dark" ? "bg-blue-500/20 text-blue-300" : "bg-blue-50 text-blue-500"
@@ -77,7 +88,7 @@ export function LeaderboardList({
   const row = (s: LeaderboardStudent, r: number) => (
     <div
       key={s.id}
-      className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${borderCls} ${rowColor}`}
+      className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${borderCls} ${rowColor(r)}`}
       onClick={() => onStudentClick?.(s)}
     >
       <span className={badgeCls(r)}>{r}</span>
