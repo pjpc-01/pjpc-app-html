@@ -179,7 +179,10 @@ export function LeaderboardList({
         <div key={ti}>
           <div
             className="grid gap-x-3 gap-y-0"
-            style={{ gridTemplateColumns: `repeat(${g.tier.cols}, 1fr)` }}
+            style={{
+              gridAutoFlow: "column",
+              gridTemplateRows: `repeat(${Math.ceil(g.items.length / g.tier.cols)}, auto)`,
+            }}
           >
             {g.items.map(item => renderRow(item.student, item.rank, g.tier.pad))}
           </div>
