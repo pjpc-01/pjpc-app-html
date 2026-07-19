@@ -140,11 +140,11 @@ export function LeaderboardList({
   const pointsColor = variant === "dark" ? "text-amber-400" : "text-amber-600"
 
   return multiColumn ? (
-    <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: `repeat(${columns.length}, 1fr)` }}>
+    <div className="flex flex-wrap gap-4">
       {columns.map((col, ci) => {
         const baseRank = columns.slice(0, ci).reduce((sum, c) => sum + c.length, 0)
         return (
-          <div key={ci} className="flex flex-col">
+          <div key={ci} className="w-[calc(50%-0.5rem)] flex flex-col">
             {col.map((s, idx) => {
               const rank = baseRank + idx + 1
               return (
