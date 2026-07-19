@@ -80,9 +80,11 @@ export function LeaderboardList({
 
   const rankBadge = (rank: number) => {
     const size =
-      rank <= 3 ? "w-12 h-12 text-lg" :
-      rank <= 10 ? "w-9 h-9 text-sm" :
-      "w-7 h-7 text-xs"
+      rank === 1 ? "w-14 h-14 text-2xl" :
+      rank === 2 ? "w-12 h-12 text-xl" :
+      rank === 3 ? "w-10 h-10 text-lg" :
+      rank <= 10 ? "w-8 h-8 text-sm" :
+      "w-6 h-6 text-xs"
     const common = `${size} rounded-full flex items-center justify-center font-bold shrink-0`
     if (variant === "dark") {
       if (rank === 1) return `${common} bg-yellow-500 text-white`
@@ -97,17 +99,20 @@ export function LeaderboardList({
   }
 
   const rowPad = (rank: number) =>
-    rank <= 3 ? "py-4" :
-    rank <= 10 ? "py-3" :
-    "py-2"
+    rank <= 3 ? "py-1.5" :
+    "py-1"
 
   const nameSize = (rank: number) =>
-    rank <= 3 ? "text-lg" :
+    rank === 1 ? "text-2xl" :
+    rank === 2 ? "text-xl" :
+    rank === 3 ? "text-lg" :
     rank <= 10 ? "text-sm" :
     "text-xs"
 
   const ptsSize = (rank: number) =>
-    rank <= 3 ? "text-base" :
+    rank === 1 ? "text-xl" :
+    rank === 2 ? "text-lg" :
+    rank === 3 ? "text-base" :
     "text-sm"
 
   const metaSize = (rank: number) =>
@@ -127,7 +132,7 @@ export function LeaderboardList({
   return (
     <div
       className={multiColumn ? "grid gap-x-4 gap-y-0" : ""}
-      style={multiColumn ? { gridAutoFlow: "column", gridTemplateRows: `repeat(${perCol}, minmax(auto, 1fr))` } : undefined}
+      style={multiColumn ? { gridAutoFlow: "column", gridTemplateRows: `repeat(${perCol}, auto)` } : undefined}
     >
       {students.map((s, idx) => {
         const rank = idx + 1
