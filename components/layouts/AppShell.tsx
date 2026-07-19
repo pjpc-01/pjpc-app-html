@@ -448,38 +448,18 @@ export default function AppShell({
         {hasChildren ? (
           <>
             <div className="flex items-center gap-0.5 w-full">
-              {item.href ? (
-                <Link
-                  href={addCenterParam(item.href) || "#"}
-                  className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    expanded
-                      ? "bg-gray-200/30 text-gray-800"
-                      : "text-gray-600/60 hover:bg-gray-100/30 hover:text-gray-800"
-                  }`}
-                >
-                  <item.icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="flex-1 text-left truncate">{item.label}</span>
-                </Link>
-              ) : (
-                <button
-                  onClick={() => toggleMenu(item.label)}
-                  className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    expanded
-                      ? "bg-gray-200/30 text-gray-800"
-                      : "text-gray-600/60 hover:bg-gray-100/30 hover:text-gray-800"
-                  }`}
-                >
-                  <item.icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="flex-1 text-left truncate">{item.label}</span>
-                </button>
-              )}
               <button
-                onClick={(e) => { e.stopPropagation(); e.preventDefault(); toggleMenu(item.label) }}
-                className="flex-shrink-0 px-1.5 py-2.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100/30 transition-all duration-200"
-                title={expanded ? "收起" : "展开"}
+                onClick={() => toggleMenu(item.label)}
+                className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  expanded
+                    ? "bg-gray-200/30 text-gray-800"
+                    : "text-gray-600/60 hover:bg-gray-100/30 hover:text-gray-800"
+                }`}
               >
+                <item.icon className="w-4 h-4 flex-shrink-0" />
+                <span className="flex-1 text-left truncate">{item.label}</span>
                 <ChevronDown
-                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                  className={`w-3.5 h-3.5 transition-transform duration-200 flex-shrink-0 ${
                     expanded ? "rotate-180" : ""
                   }`}
                 />

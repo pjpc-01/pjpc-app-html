@@ -43,7 +43,7 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any | null>(null)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false) // 改：默认不阻塞UI
   const [error, setError] = useState<string | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking')
   const manualLogoutRef = useRef(false)
@@ -112,6 +112,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
+    // 安全超时：最多8秒后强制结束loading
+    const safetyTimer = setTimeout(() => {
+      console.warn('⚠️ Auth loading safety timeout — forcing loading=false')
+      setLoading(false)
+    }, 8000)
+
     // 检查连接
     checkConnection()
 
@@ -203,20 +209,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setLoading(false)
               return
             }
-            console.log('🔧 [DEV] 尝试自动登录开发者账号')
+            console.log('🔧 [DEV] 尝试自动登录...')
             try {
-              const devEmail = 'dev@pjpc.com'
-              const devPassword = 'DevAdmin123!'
+              // 使用真实用户账号自动登录 (users 表)
+              const devEmail = 'adrian.sacrafix@gmail.com'
+              const devPassword = '1234567890'
               
               const authData = await pbInstance.collection('users').authWithPassword(devEmail, devPassword)
-              console.log('✅ 自动登录开发者账号成功:', authData.record.email)
+              console.log('✅ 自动登录成功:', authData.record.email)
               
-              // 设置用户和用户资料
               setUser(authData.record)
               const profile = await fetchUserProfile(authData.record)
               console.log('✅ 自动获取资料成功:', profile)
             } catch (autoLoginError) {
-              console.log('⚠️ 自动开发者账号登录失败:', autoLoginError)
+              console.log('⚠️ 自动登录失败:', autoLoginError)
               setLoading(false)
             }
           }
@@ -239,6 +245,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     return () => {
+      clearTimeout(safetyTimer)
       if (unsubscribe) {
         unsubscribe()
       }

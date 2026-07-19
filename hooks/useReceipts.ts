@@ -48,28 +48,22 @@ export const useReceipts = () => {
     const year = new Date().getFullYear()
     const prefix = `RCP-${year}-`
     
-    try {
-      const allReceipts = await fetchSecureData<Receipt[]>('receipts', {
-        fullList: true,
-        filter: `receiptNumber begins with '${prefix}'`
-      })
-      
-      // Use max number instead of length to handle gaps from deleted receipts
-      let maxNumber = 0
-      for (const r of allReceipts) {
-        const numPart = r.receiptNumber.replace(prefix, '')
-        const num = parseInt(numPart, 10)
-        if (!isNaN(num) && num > maxNumber) {
-          maxNumber = num
-        }
+    const allReceipts = await fetchSecureData<Receipt[]>('receipts', {
+      fullList: true,
+      filter: `receiptNumber begins with '${prefix}'`
+    })
+    
+    // Use max number instead of length to handle gaps from deleted receipts
+    let maxNumber = 0
+    for (const r of allReceipts) {
+      const numPart = r.receiptNumber.replace(prefix, '')
+      const num = parseInt(numPart, 10)
+      if (!isNaN(num) && num > maxNumber) {
+        maxNumber = num
       }
-      const nextNumber = maxNumber + 1
-      return `${prefix}${nextNumber.toString().padStart(3, '0')}`
-    } catch (err) {
-      // In mock mode, generate unique number using timestamp to avoid duplicates
-      const timestamp = Date.now().toString().slice(-6)
-      return `${prefix}MOCK-${timestamp}`
     }
+    const nextNumber = maxNumber + 1
+    return `${prefix}${nextNumber.toString().padStart(3, '0')}`
   }, [])
 
   const createReceipt = useCallback(async (receiptData: Omit<Receipt, 'id' | 'receiptNumber'>) => {
