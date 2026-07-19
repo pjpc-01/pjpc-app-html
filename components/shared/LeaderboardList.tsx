@@ -69,14 +69,14 @@ export function LeaderboardList({
 
   const rowColor = (r: number) => {
     if (variant === "dark") {
-      if (r === 1) return "bg-yellow-500/15 hover:bg-yellow-500/25"
-      if (r === 2) return "bg-gray-400/15 hover:bg-gray-400/25"
-      if (r === 3) return "bg-amber-600/15 hover:bg-amber-600/25"
+      if (r === 1) return "bg-yellow-500/30 hover:bg-yellow-500/40"
+      if (r === 2) return "bg-gray-400/30 hover:bg-gray-400/40"
+      if (r === 3) return "bg-orange-600/30 hover:bg-orange-600/40"
       return "hover:bg-white/5"
     }
     if (r === 1) return "bg-yellow-100 hover:bg-yellow-200"
     if (r === 2) return "bg-gray-100 hover:bg-gray-200"
-    if (r === 3) return "bg-amber-100 hover:bg-amber-200"
+    if (r === 3) return "bg-orange-100 hover:bg-orange-200"
     return "hover:bg-amber-50/50"
   }
   const nameCol = variant === "dark" ? "text-white/90" : "text-gray-800"
