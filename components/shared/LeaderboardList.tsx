@@ -79,12 +79,14 @@ export function LeaderboardList({
   const perCol = 10
 
   const rankBadge = (rank: number) => {
-    const common = "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+    const isTop = rank <= 3
+    const sz = isTop ? "w-9 h-9 text-sm" : "w-7 h-7 text-xs"
+    const common = `${sz} rounded-full flex items-center justify-center font-bold shrink-0`
     if (variant === "dark") {
-      if (rank === 1) return `${common} bg-yellow-500 text-white ring-2 ring-yellow-300/50`
-      if (rank === 2) return `${common} bg-gray-400 text-white ring-2 ring-gray-300/50`
-      if (rank === 3) return `${common} bg-amber-600 text-white ring-2 ring-amber-500/50`
-      return `${common} bg-white/15 text-white/60`
+      if (rank === 1) return `${common} bg-yellow-500 text-white shadow-lg shadow-yellow-500/30`
+      if (rank === 2) return `${common} bg-gray-400 text-white shadow-lg shadow-gray-400/30`
+      if (rank === 3) return `${common} bg-amber-600 text-white shadow-lg shadow-amber-600/30`
+      return `${common} bg-white/20 text-white/80`
     }
     if (rank === 1) return `${common} bg-yellow-400 text-white`
     if (rank === 2) return `${common} bg-gray-300 text-white`
@@ -96,9 +98,11 @@ export function LeaderboardList({
 
   const nameColor = variant === "dark" ? "text-white" : "text-gray-800"
 
-  const gradeColor = variant === "dark" ? "text-white/40" : "text-gray-400"
+  const gradeColor = variant === "dark" ? "text-white/50" : "text-gray-400"
 
-  const pointsColor = variant === "dark" ? "text-amber-400" : "text-amber-600"
+  const idColor = variant === "dark" ? "bg-blue-500/30 text-blue-200" : "bg-blue-50 text-blue-500"
+
+  const pointsColor = variant === "dark" ? "text-amber-400 font-semibold" : "text-amber-600 font-bold"
 
   return (
     <div
@@ -113,18 +117,14 @@ export function LeaderboardList({
             className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${variant === "dark" ? "border-b border-white/5" : "border-b border-gray-50"} ${rowBg}`}
             onClick={() => onStudentClick?.(s)}
           >
-            <span className={rankBadge(rank)}>
-              {rank <= 3 ? ["🥇","🥈","🥉"][rank-1] : rank}
-            </span>
+            <span className={rankBadge(rank)}>{rank}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <span className={`text-sm font-medium truncate ${nameColor}`}>
                   {s.name}
                 </span>
                 {s.student_id && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${
-                    variant === "dark" ? "bg-blue-500/20 text-blue-300" : "bg-blue-50 text-blue-500"
-                  }`}>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>
                     {s.student_id}
                   </span>
                 )}
