@@ -87,7 +87,7 @@ export function LeaderboardList({
         {s.student_id && (
           <span className={`text-[10px] ml-1.5 px-1.5 py-0.5 rounded shrink-0 ${idCol}`}>{s.student_id}</span>
         )}
-        <p className={`text-[10px] leading-tight ${gradeCol}`}>{s.grade}</p>
+        <p className={`text-[10px] leading-tight ${r === 1 ? "text-[#D4A017]/80" : r === 2 ? "text-[#71717A]/80" : r === 3 ? "text-[#8B5E3C]/80" : gradeCol}`}>{s.grade}</p>
       </div>
       <span className={`text-sm font-bold tabular-nums shrink-0 ${ptsCol}`}>
         {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">分</span>
