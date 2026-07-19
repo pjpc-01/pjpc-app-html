@@ -75,7 +75,9 @@ export function LeaderboardList({
             </span>
           )}
         </div>
-        <p className={`text-[10px] ${gradeClass}`}>{s.grade}</p>
+        <p className={`text-[10px] ${gradeClass}`}>
+          {variant === "light" && s.center ? `${s.center} · ` : ""}{s.grade}
+        </p>
       </div>
       <span className={`text-sm font-bold w-16 text-right tabular-nums shrink-0 ${pointsClass}`}>
         {s.points}<span className={`text-[10px] font-normal ml-0.5 ${pointsLabelClass}`}>分</span>

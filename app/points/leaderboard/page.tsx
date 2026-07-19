@@ -167,32 +167,9 @@ export default function LeaderboardPage() {
               </div>
             ) : (
               <div className="max-h-[500px] overflow-y-auto">
-                {filtered.map((s, idx) => (
-                  <div
-                    key={s.id}
-                    className={`flex items-center gap-3 px-4 py-2.5 border-b border-gray-50 hover:bg-amber-50/50 cursor-pointer transition-colors ${
-                      idx < 3 ? (idx === 0 ? "bg-yellow-50/60" : idx === 1 ? "bg-gray-50/40" : "bg-amber-50/40") : ""
-                    }`}
-                    onClick={() => router.push(`/points?studentId=${s.id}&name=${encodeURIComponent(s.name)}`)}
-                  >
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                      idx === 0 ? "bg-yellow-400 text-white" :
-                      idx === 1 ? "bg-gray-300 text-white" :
-                      idx === 2 ? "bg-amber-500 text-white" :
-                      "bg-gray-100 text-gray-400"
-                    }`}>
-                      {idx < 3 ? ["🥇","🥈","🥉"][idx] : idx + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{s.name}</p>
-                      <p className="text-[10px] text-gray-400">{s.center} · {s.grade}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-amber-600">{s.points}</p>
-                      <p className="text-[10px] text-gray-400">分</p>
-                    </div>
-                  </div>
-                ))}
+                <LeaderboardList students={filtered} variant="light"
+                  onStudentClick={(s) => router.push(`/points?studentId=${s.id}&name=${encodeURIComponent(s.name)}`)}
+                />
               </div>
             )}
           </CardContent>
