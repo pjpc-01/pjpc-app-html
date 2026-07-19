@@ -74,11 +74,12 @@ export function LeaderboardList({
     )
   }
 
-  // Two columns, 10 rows each = 20 per block
-  // Interleave: [0,10, 1,11, 2,12, ...] so CSS grid displays as:
-  // [1]  [11]   [2]  [12]   ...   [10] [20]
-  // then gap, then [21][31] ...
-  const chunk = 20
+  // Column-major: 15 per column, fill down first then across
+  // Interleave in chunks of 30 (15×2) so CSS grid-cols-2 renders:
+  // [1] [16]   [2] [17]   ...   [15] [30]
+  // [31] [46]  [32] [47]  ...   [45] [58]
+  const perCol = 15
+  const chunk = perCol * 2
   interface GridItem { student: LeaderboardStudent; rank: number }
   const grid: GridItem[] = []
   for (let i = 0; i < students.length; i += chunk) {
@@ -89,14 +90,11 @@ export function LeaderboardList({
       const rightIdx = j + half
       if (rightIdx < group.length) grid.push({ student: group[rightIdx], rank: i + rightIdx + 1 })
     }
-    // Add gap marker between chunks (except after last)
-    if (i + chunk < students.length) grid.push({ student: null as any, rank: -1 })
   }
 
   const medal = (rank: number) => rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : ""
 
   const rowClass = (rank: number) => {
-    if (rank < 0) return "" // gap
     if (variant === "dark") return "hover:bg-white/5"
     if (rank === 1) return "bg-yellow-50/60 hover:bg-amber-50/50"
     if (rank === 2) return "bg-gray-50/40 hover:bg-amber-50/50"
@@ -121,9 +119,6 @@ export function LeaderboardList({
   return (
     <div className="grid grid-cols-2 gap-x-4 gap-y-0">
       {grid.map((item, idx) => {
-        if (item.rank < 0) {
-          return <div key={`gap-${idx}`} className="col-span-2 h-3" />
-        }
         const s = item.student
         const r = item.rank
         return (
