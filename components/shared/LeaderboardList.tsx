@@ -80,8 +80,8 @@ export function LeaderboardList({
 
   const rankBadge = (rank: number) => {
     const size =
-      rank <= 3 ? "w-10 h-10 text-base" :
-      rank <= 10 ? "w-8 h-8 text-sm" :
+      rank <= 3 ? "w-12 h-12 text-lg" :
+      rank <= 10 ? "w-9 h-9 text-sm" :
       "w-7 h-7 text-xs"
     const common = `${size} rounded-full flex items-center justify-center font-bold shrink-0`
     if (variant === "dark") {
@@ -97,17 +97,22 @@ export function LeaderboardList({
   }
 
   const rowPad = (rank: number) =>
-    rank <= 3 ? "py-3" :
-    rank <= 10 ? "py-2.5" :
+    rank <= 3 ? "py-4" :
+    rank <= 10 ? "py-3" :
     "py-2"
 
   const nameSize = (rank: number) =>
+    rank <= 3 ? "text-lg" :
+    rank <= 10 ? "text-sm" :
+    "text-xs"
+
+  const ptsSize = (rank: number) =>
     rank <= 3 ? "text-base" :
     "text-sm"
 
-  const ptsSize = (rank: number) =>
-    rank <= 3 ? "text-sm" :
-    "text-sm"
+  const metaSize = (rank: number) =>
+    rank <= 3 ? "text-xs" :
+    "text-[10px]"
 
   const rowBg = variant === "dark" ? "hover:bg-white/5" : "hover:bg-amber-50/50 border-b border-gray-50"
 
@@ -122,7 +127,7 @@ export function LeaderboardList({
   return (
     <div
       className={multiColumn ? "grid gap-x-4 gap-y-0" : ""}
-      style={multiColumn ? { gridAutoFlow: "column", gridTemplateRows: `repeat(${perCol}, auto)` } : undefined}
+      style={multiColumn ? { gridAutoFlow: "column", gridTemplateRows: `repeat(${perCol}, minmax(auto, 1fr))` } : undefined}
     >
       {students.map((s, idx) => {
         const rank = idx + 1
@@ -139,12 +144,12 @@ export function LeaderboardList({
                   {s.name}
                 </span>
                 {s.student_id && (
-                  <span className={`${rank <= 3 ? "text-[11px]" : "text-[10px]"} px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>
+                  <span className={`${metaSize(rank)} px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>
                     {s.student_id}
                   </span>
                 )}
               </div>
-              <p className={`${rank <= 3 ? "text-[11px]" : "text-[10px]"} leading-tight ${gradeColor}`}>
+              <p className={`${metaSize(rank)} leading-tight ${gradeColor}`}>
                 {s.grade}
               </p>
             </div>
