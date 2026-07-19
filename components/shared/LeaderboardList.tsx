@@ -57,14 +57,14 @@ export function LeaderboardList({
 
   const count = students.length
 
-  const badgeCls = (r: number) => {
-    const common = "w-7 h-7 text-xs rounded-full flex items-center justify-center font-bold shrink-0"
-    const col: Record<number, string> = {
-      1: variant === "dark" ? "bg-yellow-500 text-white" : "bg-yellow-400 text-white",
-      2: variant === "dark" ? "bg-gray-400 text-white" : "bg-gray-300 text-white",
-      3: variant === "dark" ? "bg-[#8B5E3C] text-white" : "bg-[#CD7F32] text-white",
+  const badgeStyle = (r: number): React.CSSProperties => {
+    if (r === 1) return { backgroundColor: variant === "dark" ? "#EAB308" : "#FACC15", color: "white" }
+    if (r === 2) return { backgroundColor: variant === "dark" ? "#9CA3AF" : "#D1D5DB", color: "white" }
+    if (r === 3) return { backgroundColor: variant === "dark" ? "#8B5E3C" : "#CD7F32", color: "white" }
+    return {
+      backgroundColor: variant === "dark" ? "rgba(255,255,255,0.1)" : "#F3F4F6",
+      color: variant === "dark" ? "rgba(255,255,255,0.5)" : "#9CA3AF",
     }
-    return `${common} ${col[r] || (variant === "dark" ? "bg-white/10 text-white/50" : "bg-gray-100 text-gray-400")}`
   }
 
   const nameCol = (r: number) => 
@@ -87,7 +87,7 @@ export function LeaderboardList({
       className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${borderCls}`}
       onClick={() => onStudentClick?.(s)}
     >
-      <span className={badgeCls(r)}>{r}</span>
+      <span className="w-7 h-7 text-xs rounded-full flex items-center justify-center font-bold shrink-0" style={badgeStyle(r)}>{r}</span>
       <div className="flex-1 min-w-0">
         <span className={`text-sm font-medium truncate ${nameCol(r)}`}>
           {s.name}
