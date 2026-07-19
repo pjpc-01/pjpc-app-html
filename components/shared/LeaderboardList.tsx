@@ -55,38 +55,6 @@ export interface LeaderboardPageProps {
   fullscreenDisabled?: boolean
 }
 
-// ─── Size helpers ─────────────────────────────────────────────────
-
-const badgeSize = (rank: number) =>
-  rank <= 3 ? "w-16 h-16 text-2xl" :
-  rank <= 10 ? "w-11 h-11 text-base" :
-  rank <= 20 ? "w-8 h-8 text-sm" :
-  rank <= 35 ? "w-7 h-7 text-xs" :
-  "w-6 h-6 text-[9px]"
-
-const rowPad = (rank: number) =>
-  rank <= 3 ? "py-4" :
-  rank <= 10 ? "py-3" :
-  rank <= 20 ? "py-2" :
-  rank <= 35 ? "py-1.5" :
-  "py-1"
-
-const nameSize = (rank: number) =>
-  rank <= 3 ? "text-2xl" :
-  rank <= 10 ? "text-lg" :
-  rank <= 20 ? "text-sm" :
-  "text-xs"
-
-const ptsSize = (rank: number) =>
-  rank <= 3 ? "text-xl" :
-  rank <= 10 ? "text-base" :
-  "text-sm"
-
-const metaSize = (rank: number) =>
-  rank <= 3 ? "text-xs" :
-  rank <= 10 ? "text-[11px]" :
-  "text-[10px]"
-
 // ─── Single-column student list ───────────────────────────────────
 
 export function LeaderboardList({
@@ -110,10 +78,27 @@ export function LeaderboardList({
 
   const count = students.length
 
-  // rank → style mappers
-  const rBadge = (rank: number) => {
-    const sz = badgeSize(rank)
-    const common = `${sz} rounded-full flex items-center justify-center font-bold shrink-0`
+  // 3-column layout for multi-column mode:
+  // Col 1: ranks 1-10 (big font)
+  // Col 2: ranks 11-20 (medium font)
+  // Col 3: ranks 21+ (small font)
+  const col1: LeaderboardStudent[] = []
+  const col2: LeaderboardStudent[] = []
+  const col3: LeaderboardStudent[] = []
+  if (multiColumn) {
+    students.forEach((s, i) => {
+      if (i < 10) col1.push(s)
+      else if (i < 20) col2.push(s)
+      else col3.push(s)
+    })
+  }
+
+  const rankBadge = (rank: number) => {
+    const size =
+      rank <= 3 ? "w-16 h-16 text-2xl" :
+      rank <= 10 ? "w-10 h-10 text-base" :
+      "w-7 h-7 text-xs"
+    const common = `${size} rounded-full flex items-center justify-center font-bold shrink-0`
     if (variant === "dark") {
       if (rank === 1) return `${common} bg-yellow-500 text-white`
       if (rank === 2) return `${common} bg-gray-400 text-white`
@@ -126,27 +111,55 @@ export function LeaderboardList({
     return `${common} bg-gray-100 text-gray-400`
   }
 
-  const rowBg = variant === "dark" ? "hover:bg-white/5" : "hover:bg-amber-50/50"
+  const rowPad = (rank: number) =>
+    rank <= 3 ? "py-4" :
+    rank <= 10 ? "py-2.5" :
+    "py-1"
+
+  const nameSize = (rank: number) =>
+    rank <= 3 ? "text-2xl" :
+    rank <= 10 ? "text-base" :
+    "text-xs"
+
+  const ptsSize = (rank: number) =>
+    rank <= 3 ? "text-xl" :
+    "text-sm"
+
+  const metaSize = (rank: number) =>
+    rank <= 3 ? "text-xs" :
+    "text-[10px]"
+
+  const rowBg = variant === "dark" ? "hover:bg-white/5" : "hover:bg-amber-50/50 border-b border-gray-50"
+
   const nameColor = variant === "dark" ? "text-white/90" : "text-gray-800"
+
   const gradeColor = variant === "dark" ? "text-white/30" : "text-gray-400"
+
   const idColor = variant === "dark" ? "bg-blue-500/20 text-blue-300" : "bg-blue-50 text-blue-500"
+
   const pointsColor = variant === "dark" ? "text-amber-400" : "text-amber-600"
 
-  const row = (s: LeaderboardStudent, rank: number) => (
+  const renderRow = (s: LeaderboardStudent, rank: number) => (
     <div
       key={s.id}
-      className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors ${rowPad(rank)} ${multiColumn ? "border-b border-white/5 hover:bg-white/5" : `${variant === "dark" ? "border-b border-white/5" : "border-b border-gray-50"} ${rowBg}`}`}
+      className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors ${multiColumn ? "border-b border-white/5" : variant === "dark" ? "border-b border-white/5" : "border-b border-gray-50"} ${rowPad(rank)} ${multiColumn ? "hover:bg-white/5" : rowBg}`}
       onClick={() => onStudentClick?.(s)}
     >
-      <span className={rBadge(rank)}>{rank}</span>
+      <span className={rankBadge(rank)}>{rank}</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className={`${nameSize(rank)} font-medium truncate ${nameColor}`}>{s.name}</span>
+          <span className={`${nameSize(rank)} font-medium truncate ${nameColor}`}>
+            {s.name}
+          </span>
           {s.student_id && (
-            <span className={`${metaSize(rank)} px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>{s.student_id}</span>
+            <span className={`${metaSize(rank)} px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>
+              {s.student_id}
+            </span>
           )}
         </div>
-        <p className={`${metaSize(rank)} leading-tight ${gradeColor}`}>{s.grade}</p>
+        <p className={`${metaSize(rank)} leading-tight ${gradeColor}`}>
+          {s.grade}
+        </p>
       </div>
       <span className={`${ptsSize(rank)} font-bold tabular-nums shrink-0 ${pointsColor}`}>
         {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">分</span>
@@ -154,28 +167,44 @@ export function LeaderboardList({
     </div>
   )
 
-  if (multiColumn) {
-    // Column-major grid: fill down first, then next column
-    // ~5 columns so 58 students → ~12 per column → fits one screen
-    const cols = count <= 20 ? 3 : count <= 40 ? 4 : 5
-    const rows = Math.ceil(count / cols)
-    return (
-      <div
-        className="grid gap-x-3 gap-y-0"
-        style={{
-          gridAutoFlow: "column",
-          gridTemplateRows: `repeat(${rows}, auto)`,
-        }}
-      >
-        {students.map((s, i) => row(s, i + 1))}
-      </div>
-    )
-  }
-
-  // Single column (points page, dashboard widget)
-  return (
+  return multiColumn ? (
+    <div className="grid grid-cols-3 gap-x-4 gap-y-0">
+      <div className="flex flex-col">{col1.map((s, i) => renderRow(s, i + 1))}</div>
+      <div className="flex flex-col">{col2.map((s, i) => renderRow(s, i + 11))}</div>
+      <div className="flex flex-col">{col3.map((s, i) => renderRow(s, i + 21))}</div>
+    </div>
+  ) : (
     <div>
-      {students.map((s, i) => row(s, i + 1))}
+      {students.map((s, idx) => {
+        const rank = idx + 1
+        return (
+          <div
+            key={s.id}
+            className={`flex items-center gap-2.5 px-3 cursor-pointer transition-colors ${rowPad(rank)} ${variant === "dark" ? "border-b border-white/5" : "border-b border-gray-50"} ${rowBg}`}
+            onClick={() => onStudentClick?.(s)}
+          >
+            <span className={rankBadge(rank)}>{rank}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className={`${nameSize(rank)} font-medium truncate ${nameColor}`}>
+                  {s.name}
+                </span>
+                {s.student_id && (
+                  <span className={`${metaSize(rank)} px-1.5 py-0.5 rounded shrink-0 ${idColor}`}>
+                    {s.student_id}
+                  </span>
+                )}
+              </div>
+              <p className={`${metaSize(rank)} leading-tight ${gradeColor}`}>
+                {s.grade}
+              </p>
+            </div>
+            <span className={`${ptsSize(rank)} font-bold tabular-nums shrink-0 ${pointsColor}`}>
+              {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">分</span>
+            </span>
+          </div>
+        )
+      })}
     </div>
   )
 }
