@@ -78,21 +78,6 @@ export function LeaderboardList({
 
   const count = students.length
 
-  // 3-column layout for multi-column mode:
-  // Col 1: ranks 1-10 (big font)
-  // Col 2: ranks 11-20 (medium font)
-  // Col 3: ranks 21+ (small font)
-  const col1: LeaderboardStudent[] = []
-  const col2: LeaderboardStudent[] = []
-  const col3: LeaderboardStudent[] = []
-  if (multiColumn) {
-    students.forEach((s, i) => {
-      if (i < 10) col1.push(s)
-      else if (i < 20) col2.push(s)
-      else col3.push(s)
-    })
-  }
-
   const rankBadge = (rank: number) => {
     const size = multiColumn ? (
       rank <= 3 ? "w-16 h-16 text-2xl" :
@@ -169,10 +154,14 @@ export function LeaderboardList({
   )
 
   return multiColumn ? (
-    <div className="grid grid-cols-3 gap-x-4 gap-y-0">
-      <div className="flex flex-col">{col1.map((s, i) => renderRow(s, i + 1))}</div>
-      <div className="flex flex-col">{col2.map((s, i) => renderRow(s, i + 11))}</div>
-      <div className="flex flex-col">{col3.map((s, i) => renderRow(s, i + 21))}</div>
+    <div
+      className="grid gap-x-4 gap-y-0"
+      style={{
+        gridAutoFlow: "column",
+        gridTemplateRows: `repeat(${Math.ceil(count / (count <= 20 ? 3 : count <= 40 ? 4 : 5))}, auto)`,
+      }}
+    >
+      {students.map((s, i) => renderRow(s, i + 1))}
     </div>
   ) : (
     <div>
