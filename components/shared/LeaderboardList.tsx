@@ -67,17 +67,17 @@ export function LeaderboardList({
     return `${common} ${col[r] || (variant === "dark" ? "bg-white/10 text-white/50" : "bg-gray-100 text-gray-400")}`
   }
 
-  const rowColor = (r: number) => {
+  const rowColor = (r: number): string | undefined => {
     if (variant === "dark") {
-      if (r === 1) return "bg-yellow-500/30 hover:bg-yellow-500/40"
-      if (r === 2) return "bg-gray-400/30 hover:bg-gray-400/40"
-      if (r === 3) return "bg-orange-600/30 hover:bg-orange-600/40"
-      return "hover:bg-white/5"
+      if (r === 1) return "rgba(250,204,21,0.35)"
+      if (r === 2) return "rgba(148,163,184,0.35)"
+      if (r === 3) return "rgba(234,88,12,0.35)"
+      return undefined
     }
-    if (r === 1) return "bg-yellow-100 hover:bg-yellow-200"
-    if (r === 2) return "bg-gray-200 hover:bg-gray-300"
-    if (r === 3) return "bg-orange-200 hover:bg-orange-300"
-    return "hover:bg-amber-50/50"
+    if (r === 1) return "#fef9c3"
+    if (r === 2) return "#e5e7eb"
+    if (r === 3) return "#fed7aa"
+    return undefined
   }
   const nameCol = variant === "dark" ? "text-white/90" : "text-gray-800"
   const gradeCol = variant === "dark" ? "text-white/30" : "text-gray-400"
@@ -88,7 +88,8 @@ export function LeaderboardList({
   const row = (s: LeaderboardStudent, r: number) => (
     <div
       key={s.id}
-      className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${borderCls} ${rowColor(r)}`}
+      className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${borderCls}`}
+      style={{ backgroundColor: rowColor(r) }}
       onClick={() => onStudentClick?.(s)}
     >
       <span className={badgeCls(r)}>{r}</span>
