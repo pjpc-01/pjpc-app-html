@@ -67,8 +67,16 @@ export function LeaderboardList({
     return `${common} ${col[r] || (variant === "dark" ? "bg-white/10 text-white/50" : "bg-gray-100 text-gray-400")}`
   }
 
-  const nameCol = variant === "dark" ? "text-white/90" : "text-gray-800"
-  const gradeCol = variant === "dark" ? "text-white/30" : "text-gray-400"
+  const nameCol = (r: number) => 
+    r === 1 ? "text-[#B8860B]" :
+    r === 2 ? "text-[#71717A]" :
+    r === 3 ? "text-[#8B5E3C]" :
+    variant === "dark" ? "text-gray-200" : "text-gray-800"
+  const gradeCol = (r: number) =>
+    r === 1 ? "text-[#D4A017]/80" :
+    r === 2 ? "text-[#71717A]/80" :
+    r === 3 ? "text-[#8B5E3C]/80" :
+    variant === "dark" ? "text-gray-400" : "text-gray-500"
   const idCol = variant === "dark" ? "bg-blue-500/20 text-blue-300" : "bg-blue-50 text-blue-500"
   const ptsCol = variant === "dark" ? "text-amber-400" : "text-amber-600"
   const borderCls = variant === "dark" ? "border-b border-white/5" : "border-b border-gray-50"
@@ -81,13 +89,13 @@ export function LeaderboardList({
     >
       <span className={badgeCls(r)}>{r}</span>
       <div className="flex-1 min-w-0">
-        <span className={`text-sm font-medium truncate ${r === 1 ? "text-[#B8860B]" : r === 2 ? "text-[#71717A]" : r === 3 ? "text-[#8B5E3C]" : nameCol}`}>
+        <span className={`text-sm font-medium truncate ${nameCol(r)}`}>
           {s.name}
         </span>
         {s.student_id && (
           <span className={`text-[10px] ml-1.5 px-1.5 py-0.5 rounded shrink-0 ${idCol}`}>{s.student_id}</span>
         )}
-        <p className={`text-[10px] leading-tight ${r === 1 ? "text-[#D4A017]/80" : r === 2 ? "text-[#71717A]/80" : r === 3 ? "text-[#8B5E3C]/80" : gradeCol}`}>{s.grade}</p>
+        <p className={`text-[10px] leading-tight ${gradeCol(r)}`}>{s.grade}</p>
       </div>
       <span className={`text-sm font-bold tabular-nums shrink-0 ${ptsCol}`}>
         {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">分</span>
