@@ -111,21 +111,21 @@ export function LeaderboardList({
   const textSize = (rank: number) => {
     if (rank <= 3) return { name: "text-sm", points: "text-sm" }
     if (rank <= 10) return { name: "text-xs", points: "text-xs" }
-    if (rank <= 20) return { name: "text-[11px]", points: "text-[11px]" }
-    if (rank <= 30) return { name: "text-[10px]", points: "text-[10px]" }
-    return { name: "text-[9px]", points: "text-[9px]" }
+    if (rank <= 20) return { name: "text-xs", points: "text-[11px]" }
+    if (rank <= 30) return { name: "text-[11px]", points: "text-[10px]" }
+    return { name: "text-[10px]", points: "text-[9px]" }
   }
 
   const idBadgeSize = (rank: number) => {
-    if (rank <= 3) return "text-[10px]"
-    if (rank <= 10) return "text-[9px]"
-    return "text-[8px]"
+    if (rank <= 3) return "text-[9px]"
+    if (rank <= 10) return "text-[8px]"
+    return "text-[7px]"
   }
 
   const gradeSize = (rank: number) => {
-    if (rank <= 3) return "text-[10px]"
-    if (rank <= 10) return "text-[9px]"
-    return "text-[8px]"
+    if (rank <= 3) return "text-[9px]"
+    if (rank <= 10) return "text-[8px]"
+    return "text-[7px]"
   }
 
   // Medal sizes: bigger for top ranks
