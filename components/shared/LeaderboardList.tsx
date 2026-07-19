@@ -8,6 +8,7 @@
 
 "use client"
 
+import { Fragment } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -108,39 +109,72 @@ export function LeaderboardList({
   const renderRow = (s: LeaderboardStudent, rank: number) => (
     <div
       key={s.id}
-      className={`flex items-center gap-3 py-1.5 px-1 rounded ${rowClass}`}
+      className={`flex items-center gap-2.5 px-2 py-1.5 rounded ${rowClass}`}
       onClick={() => onStudentClick?.(s)}
     >
-      <span className={`w-8 text-right text-sm font-bold tabular-nums shrink-0 ${rankClass}`}>
+      <span className={`w-6 text-right text-xs font-bold tabular-nums shrink-0 ${rankClass}`}>
         {rank}
       </span>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-sm truncate">{s.name}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-medium truncate">{s.name}</span>
           {s.student_id && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${idBadge}`}>
+            <span className={`text-[9px] px-1 py-0.5 rounded shrink-0 ${idBadge}`}>
               {s.student_id}
             </span>
           )}
         </div>
-        <p className={`text-[10px] ${gradeClass}`}>
-          {variant === "light" && s.center ? `${s.center} · ` : ""}{s.grade}
-        </p>
+        <p className={`text-[9px] leading-tight ${gradeClass}`}>{s.grade}</p>
       </div>
-      <span className={`text-sm font-bold w-16 text-right tabular-nums shrink-0 ${pointsClass}`}>
-        {s.points}<span className={`text-[10px] font-normal ml-0.5 ${pointsLabelClass}`}>分</span>
+      <span className={`text-xs font-bold tabular-nums shrink-0 ${pointsClass}`}>
+        {s.points}<span className={`text-[9px] font-normal ml-0.5 ${pointsLabelClass}`}>分</span>
       </span>
     </div>
   )
 
+  // Reorder the array so each group of 10 fills left->right in the 2-column grid
+  // Track original index for correct rank display
+  const groupSize = 10
+  interface OrderedItem { student: LeaderboardStudent; originalIndex: number }
+  const reordered: OrderedItem[] = []
+  for (let i = 0; i < students.length; i += groupSize) {
+    const group = students.slice(i, i + groupSize)
+    const mid = Math.ceil(group.length / 2)
+    const left = group.slice(0, mid)
+    const right = group.slice(mid)
+    for (let j = 0; j < Math.max(left.length, right.length); j++) {
+      if (j < left.length) {
+        const origIdx = i + j
+        reordered.push({ student: left[j], originalIndex: origIdx })
+      }
+      if (j < right.length) {
+        const origIdx = i + mid + j
+        reordered.push({ student: right[j], originalIndex: origIdx })
+      }
+    }
+  }
+
+  // Track where groups change so we can insert spacing
+  const groupBoundaries = new Set<number>()
+  let idx = 0
+  for (let i = 0; i < students.length; i += groupSize) {
+    idx += i + groupSize <= students.length ? groupSize : students.length - i
+    if (idx < students.length) groupBoundaries.add(idx)
+  }
+
   return (
-    <div className="grid grid-cols-2 gap-x-8 gap-y-1">
-      <div className="space-y-0">
-        {leftCol.map((s, i) => renderRow(s, i + 1))}
-      </div>
-      <div className="space-y-0">
-        {rightCol.map((s, i) => renderRow(s, half + i + 1))}
-      </div>
+    <div className="grid grid-cols-2 gap-x-6 gap-y-0">
+      {reordered.map((item, gridIdx) => {
+        const rank = item.originalIndex + 1
+        return (
+          <Fragment key={item.student.id}>
+            {groupBoundaries.has(gridIdx) && (
+              <div className="col-span-2 h-2" />
+            )}
+            {renderRow(item.student, rank)}
+          </Fragment>
+        )
+      })}
     </div>
   )
 }
