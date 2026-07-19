@@ -3,11 +3,9 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import PageLayout from "@/components/layouts/PageLayout"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Trophy, Star, RefreshCw, Medal, Building, GraduationCap, Maximize2, X } from "lucide-react"
-import { LeaderboardList, type LeaderboardStudent } from "@/components/shared/LeaderboardList"
+import { Trophy, X } from "lucide-react"
+import { LeaderboardView, LeaderboardList, type LeaderboardStudent, type CenterInfo } from "@/components/shared/LeaderboardList"
 
 interface RankingStudent {
   id: string
@@ -22,7 +20,6 @@ interface RankingStudent {
 function FullscreenOverlay({ students, centerName, onClose }: { students: RankingStudent[]; centerName: string; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 bg-gray-900 flex flex-col">
-      {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-2 bg-gray-800/80 text-white shrink-0">
         <div className="flex items-center gap-3">
           <Trophy className="h-4 w-4 text-amber-400" />
@@ -34,7 +31,6 @@ function FullscreenOverlay({ students, centerName, onClose }: { students: Rankin
           <X className="h-4 w-4 pointer-events-none" />
         </button>
       </div>
-      {/* List */}
       <div className="flex-1 p-4 overflow-auto">
         <LeaderboardList students={students} variant="dark" />
       </div>
@@ -50,7 +46,7 @@ export default function LeaderboardPage() {
   const [rankings, setRankings] = useState<RankingStudent[]>([])
   const [loading, setLoading] = useState(true)
   const [centerFilter, setCenterFilter] = useState(centerParam)
-  const [centers, setCenters] = useState<{ id: string; code: string; name: string }[]>([])
+  const [centers, setCenters] = useState<CenterInfo[]>([])
   const [fullscreen, setFullscreen] = useState(false)
 
   const fetchRankings = useCallback(async () => {
@@ -81,100 +77,36 @@ export default function LeaderboardPage() {
     })
     .sort((a, b) => b.points - a.points)
 
-  const top3 = filtered.slice(0, 3)
+  const centerName = centers.find(c => c.code === centerFilter)?.name || centerFilter || "全部"
 
   return (
     <PageLayout
       title="积分排行榜"
-      description={`共 ${filtered.filter(s => s.points > 0).length} 名学生有积分`}
+      description={`共 ${filtered.length} 名学生有积分`}
       backUrl="/points"
       userRole="admin"
       background="from-yellow-50 to-amber-50"
     >
-      <div className="space-y-4">
-        {/* Center filter */}
-        <div className="flex items-center gap-2">
-          <Building className="h-4 w-4 text-gray-400" />
-          <select
-            value={centerFilter}
-            onChange={e => setCenterFilter(e.target.value)}
-            className="text-xs border rounded-lg px-3 py-2 h-9 bg-white"
-          >
-            <option value="">全部分行</option>
-            {centers.map(c => (
-              <option key={c.id} value={c.code}>{c.name || c.code}</option>
-            ))}
-          </select>
-          <Button variant="ghost" size="sm" onClick={fetchRankings} className="h-9">
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setFullscreen(true)} className="h-9" disabled={filtered.length === 0}>
-            <Maximize2 className="h-4 w-4" />
-          </Button>
-        </div>
+      {/* Fullscreen overlay */}
+      {fullscreen && (
+        <FullscreenOverlay
+          students={filtered}
+          centerName={centerName}
+          onClose={() => setFullscreen(false)}
+        />
+      )}
 
-        {/* Fullscreen overlay */}
-        {fullscreen && (
-          <FullscreenOverlay
-            students={filtered}
-            centerName={centers.find(c => c.code === centerFilter)?.name || centerFilter || "全部"}
-            onClose={() => setFullscreen(false)}
-          />
-        )}
-
-        {/* Top 3 Podium */}
-        {filtered.length > 0 && (
-          <div className="grid grid-cols-3 gap-3 items-end">
-            {[
-              { rank: 2, student: top3[1], color: "bg-gray-100 border-gray-300", medal: "🥈", h: "h-28", label: "第2名" },
-              { rank: 1, student: top3[0], color: "bg-yellow-50 border-yellow-300", medal: "🥇", h: "h-36", label: "第1名" },
-              { rank: 3, student: top3[2], color: "bg-amber-50 border-amber-300", medal: "🥉", h: "h-24", label: "第3名" },
-            ].map((p, i) => (
-              <Card
-                key={p.rank}
-                className={`border-2 ${p.color} cursor-pointer hover:shadow-md transition-shadow ${p.h}`}
-                onClick={() => router.push(`/points?studentId=${p.student?.id}&name=${encodeURIComponent(p.student?.name || "")}`)}
-              >
-                <CardContent className="p-4 text-center h-full flex flex-col items-center justify-center">
-                  <span className="text-3xl mb-1">{p.medal}</span>
-                  <p className="font-bold text-gray-900 text-sm truncate w-full">{p.student?.name || "—"}</p>
-                  <p className="text-[10px] text-gray-400">{p.student?.center}</p>
-                  <p className="text-2xl font-bold text-amber-600 mt-1">{p.student?.points || 0}</p>
-                  <p className="text-[10px] text-gray-400">分</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Full Leaderboard */}
-        <Card>
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Trophy className="h-4 w-4 text-amber-500" /> 全部排行
-              <Badge variant="secondary" className="text-[10px]">{filtered.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="text-center py-12">
-                <Loader2 className="h-6 w-6 mx-auto animate-spin text-amber-500" />
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
-                <Star className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                <p className="text-sm">暂无积分排行</p>
-              </div>
-            ) : (
-              <div className="max-h-[500px] overflow-y-auto">
-                <LeaderboardList students={filtered} variant="light"
-                  onStudentClick={(s) => router.push(`/points?studentId=${s.id}&name=${encodeURIComponent(s.name)}`)}
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Shared leaderboard view */}
+      <LeaderboardView
+        rankings={rankings}
+        centers={centers}
+        centerFilter={centerFilter}
+        loading={loading}
+        onCenterChange={setCenterFilter}
+        onRefresh={fetchRankings}
+        onFullscreen={() => setFullscreen(true)}
+        onStudentClick={(s) => router.push(`/points?studentId=${s.id}&name=${encodeURIComponent(s.name)}`)}
+      />
     </PageLayout>
   )
 }
