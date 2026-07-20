@@ -58,7 +58,7 @@ export function LeaderboardList({
 
   const count = students.length
 
-  // Auto-rows for multiColumn mode
+  // Auto-rows and auto-columns for multiColumn mode
   const [rowCount, setRowCount] = useState(12)
   const gridRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -67,7 +67,11 @@ export function LeaderboardList({
     if (!el) return
     const calc = () => {
       const h = el.clientHeight
-      setRowCount(Math.max(6, Math.floor(h / 40)))
+      const w = el.clientWidth
+      const maxCols = Math.max(1, Math.floor(w / 270))
+      const maxRows = Math.max(6, Math.floor(h / 42))
+      const neededRows = Math.ceil(students.length / maxCols)
+      setRowCount(Math.min(maxRows, neededRows))
     }
     calc()
     const ro = new ResizeObserver(calc)
@@ -126,7 +130,7 @@ export function LeaderboardList({
     return (
       <div
         ref={gridRef}
-        className="grid gap-x-4 gap-y-0"
+        className="grid gap-x-4 gap-y-0 w-full h-full overflow-auto"
         style={{
           gridAutoFlow: "column",
           gridTemplateRows: `repeat(${rowCount}, auto)`,
