@@ -252,6 +252,8 @@ function SlideshowOverlay({
 }) {
   const [idx, setIdx] = useState(0)
   const [paused, setPaused] = useState(false)
+  const [headerVisible, setHeaderVisible] = useState(true)
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const interval = 8000
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -264,7 +266,25 @@ function SlideshowOverlay({
     setIdx(i => (i + dir + list.length) % list.length)
   }
 
+  // Header auto-hide after 3s inactivity
+  useEffect(() => {
+    const resetTimer = () => {
+      setHeaderVisible(true)
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+      hideTimerRef.current = setTimeout(() => setHeaderVisible(false), 3000)
+    }
+    resetTimer()
+    window.addEventListener('mousemove', resetTimer)
+    window.addEventListener('touchstart', resetTimer)
+    return () => {
+      window.removeEventListener('mousemove', resetTimer)
+      window.removeEventListener('touchstart', resetTimer)
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+    }
+  }, [])
+
   // Auto-advance
+
   useEffect(() => {
     if (paused || list.length <= 1) return
     intervalRef.current = setInterval(() => setIdx(i => (i + 1) % list.length), interval)
@@ -313,6 +333,7 @@ function SlideshowOverlay({
   return (
     <div className="fixed inset-0 z-50 bg-gray-900 flex flex-col">
       {/* Top bar */}
+      {headerVisible && (
       <div className="flex items-center justify-between px-4 py-2 bg-gray-800/80 text-white shrink-0">
         <div className="flex items-center gap-3">
           <MonitorPlay className="h-4 w-4 text-blue-400" />
@@ -331,6 +352,7 @@ function SlideshowOverlay({
           </Button>
         </div>
       </div>
+      )}
 
       {/* Slide content */}
       <div className="flex-1 flex p-6 min-h-0">
