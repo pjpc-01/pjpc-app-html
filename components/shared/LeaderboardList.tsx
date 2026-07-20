@@ -1,7 +1,5 @@
-// ═══ Shared Leaderboard ════════════════════════════════════════════
 "use client"
 
-import { useState, useRef, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -35,8 +33,6 @@ export interface LeaderboardPageProps {
   fullscreenDisabled?: boolean
 }
 
-// ─── Component ────────────────────────────────────────────────────
-
 export function LeaderboardList({
   students,
   variant = "dark",
@@ -56,25 +52,6 @@ export function LeaderboardList({
     )
   }
 
-  const count = students.length
-
-  // Auto-rows and auto-columns for multiColumn mode
-  const [rowCount, setRowCount] = useState(12)
-  const gridRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!multiColumn) return
-    const el = gridRef.current?.parentElement
-    if (!el) return
-    const calc = () => {
-      const h = el.clientHeight
-      setRowCount(Math.max(6, Math.floor(h / 42)))
-    }
-    calc()
-    const ro = new ResizeObserver(calc)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [multiColumn, students.length])
-
   const badgeStyle = (r: number): React.CSSProperties => {
     if (r === 1) return { backgroundColor: variant === "dark" ? "#EAB308" : "#FACC15", color: "white" }
     if (r === 2) return { backgroundColor: variant === "dark" ? "#9CA3AF" : "#D1D5DB", color: "white" }
@@ -85,7 +62,7 @@ export function LeaderboardList({
     }
   }
 
-  const nameCol = (r: number) => 
+  const nameCol = (r: number) =>
     r === 1 ? "text-[#B8860B]" :
     r === 2 ? "text-[#71717A]" :
     r === 3 ? "text-[#8B5E3C]" :
@@ -122,17 +99,13 @@ export function LeaderboardList({
   )
 
   if (multiColumn) {
-    // Column-major grid: auto-rows based on container height
     return (
-      <div
-        ref={gridRef}
-        className="grid gap-x-4 gap-y-0 w-full h-full overflow-auto"
-        style={{
-          gridAutoFlow: "column",
-          gridTemplateRows: `repeat(${rowCount}, auto)`,
-        }}
-      >
-        {students.map((s, i) => row(s, i + 1))}
+      <div style={{ columnWidth: "250px", columnGap: "1rem" }}>
+        {students.map((s, i) => (
+          <div key={s.id} style={{ breakInside: "avoid" }}>
+            {row(s, i + 1)}
+          </div>
+        ))}
       </div>
     )
   }
@@ -143,8 +116,6 @@ export function LeaderboardList({
     </div>
   )
 }
-
-// ─── Full leaderboard view ────────────────────────────────────────
 
 export function LeaderboardView({
   rankings,
