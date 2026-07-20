@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useRef, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -44,6 +45,29 @@ export function LeaderboardList({
   multiColumn?: boolean
   onStudentClick?: (s: LeaderboardStudent) => void
 }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [cols, setCols] = useState(1)
+  const [rows, setRows] = useState(students.length)
+
+  useEffect(() => {
+    if (!multiColumn) return
+    const el = containerRef.current?.parentElement
+    if (!el) return
+    const calc = () => {
+      const w = el.clientWidth - 8 // safety margin
+      const h = el.clientHeight - 8
+      const maxCols = Math.max(1, Math.floor(w / 240))
+      const maxRows = Math.floor(h / 42)
+      const needed = Math.ceil(students.length / maxCols)
+      setCols(maxCols)
+      setRows(Math.max(1, Math.min(maxRows, needed)))
+    }
+    calc()
+    const ro = new ResizeObserver(calc)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [multiColumn, students.length])
+
   if (students.length === 0) {
     return (
       <div className="text-center py-12">
@@ -100,12 +124,16 @@ export function LeaderboardList({
 
   if (multiColumn) {
     return (
-      <div style={{ columns: "220px", columnGap: "1rem" }}>
-        {students.map((s, i) => (
-          <div key={s.id} style={{ breakInside: "avoid", paddingBottom: 2 }}>
-            {row(s, i + 1)}
-          </div>
-        ))}
+      <div
+        ref={containerRef}
+        className="grid gap-x-4 gap-y-0 h-full"
+        style={{
+          gridAutoFlow: "column",
+          gridTemplateColumns: `repeat(${cols}, 1fr)`,
+          gridTemplateRows: `repeat(${rows}, auto)`,
+        }}
+      >
+        {students.map((s, i) => row(s, i + 1))}
       </div>
     )
   }
