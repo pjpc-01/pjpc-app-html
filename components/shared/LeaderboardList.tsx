@@ -100,9 +100,9 @@ export function LeaderboardList({
 
   if (multiColumn) {
     return (
-      <div style={{ columnWidth: "250px", columnGap: "1rem" }}>
+      <div style={{ columns: "220px", columnGap: "1rem" }}>
         {students.map((s, i) => (
-          <div key={s.id} style={{ breakInside: "avoid" }}>
+          <div key={s.id} style={{ breakInside: "avoid", paddingBottom: 2 }}>
             {row(s, i + 1)}
           </div>
         ))}
