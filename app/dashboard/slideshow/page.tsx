@@ -530,7 +530,7 @@ function DashboardContent() {
           grade: s.grade,
           student_id: (s as any).student_id || undefined,
         }))
-        return <LeaderboardList students={mapped} variant="light" multiColumn={true} />
+        return <LeaderboardList students={mapped} variant="light" />
       }
       case "birthdays":
         return <BirthdayWidget students={centerStudents} />
