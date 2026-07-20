@@ -110,7 +110,7 @@ export function LeaderboardList({
         className="grid gap-x-4 gap-y-0"
         style={{
           gridAutoFlow: "column",
-          gridTemplateRows: `repeat(12, auto)`,
+          gridTemplateRows: `repeat(10, auto)`,
         }}
       >
         {students.map((s, i) => row(s, i + 1))}
