@@ -1,6 +1,7 @@
 // ═══ Shared Leaderboard ════════════════════════════════════════════
 "use client"
 
+import { useState, useRef, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -57,6 +58,23 @@ export function LeaderboardList({
 
   const count = students.length
 
+  // Auto-rows for multiColumn mode
+  const [rowCount, setRowCount] = useState(12)
+  const gridRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!multiColumn) return
+    const el = gridRef.current?.parentElement
+    if (!el) return
+    const calc = () => {
+      const h = el.clientHeight
+      setRowCount(Math.max(6, Math.floor(h / 40)))
+    }
+    calc()
+    const ro = new ResizeObserver(calc)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [multiColumn, students.length])
+
   const badgeStyle = (r: number): React.CSSProperties => {
     if (r === 1) return { backgroundColor: variant === "dark" ? "#EAB308" : "#FACC15", color: "white" }
     if (r === 2) return { backgroundColor: variant === "dark" ? "#9CA3AF" : "#D1D5DB", color: "white" }
@@ -79,7 +97,7 @@ export function LeaderboardList({
     variant === "dark" ? "text-gray-400" : "text-gray-600"
   const idCol = variant === "dark" ? "bg-blue-500/20 text-blue-300" : "bg-blue-50 text-blue-500"
   const ptsCol = variant === "dark" ? "text-amber-400" : "text-amber-600"
-  const borderCls = variant === "dark" ? "border-b border-white/5" : "border-b border-gray-50"
+  const borderCls = variant === "dark" ? "border-b border-white/10" : "border-b border-gray-50"
 
   const row = (s: LeaderboardStudent, r: number) => (
     <div
@@ -104,13 +122,14 @@ export function LeaderboardList({
   )
 
   if (multiColumn) {
-    // Column-major grid: fill top→bottom, auto-create next column
+    // Column-major grid: auto-rows based on container height
     return (
       <div
+        ref={gridRef}
         className="grid gap-x-4 gap-y-0"
         style={{
           gridAutoFlow: "column",
-          gridTemplateRows: `repeat(12, auto)`,
+          gridTemplateRows: `repeat(${rowCount}, auto)`,
         }}
       >
         {students.map((s, i) => row(s, i + 1))}
@@ -157,42 +176,36 @@ export function LeaderboardView({
             onChange={e => onCenterChange(e.target.value)}
             className="text-xs border rounded-lg px-3 py-2 h-9 bg-white"
           >
-            <option value="">全部分行</option>
-            {centers.map(c => (
-              <option key={c.id} value={c.code}>{c.name || c.code}</option>
+            <option value="all">全部分行</option>
+            {centers.filter(c => c.code !== "all").map(c => (
+              <option key={c.id} value={c.code}>{c.name}</option>
             ))}
           </select>
           {onRefresh && (
             <Button variant="ghost" size="sm" onClick={onRefresh} className="h-9">
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw className="h-3.5 w-3.5 mr-1" />刷新
             </Button>
           )}
           {onFullscreen && (
-            <Button variant="ghost" size="sm" onClick={onFullscreen} className="h-9" disabled={fullscreenDisabled || filtered.length === 0}>
-              <Maximize2 className="h-4 w-4" />
+            <Button variant="ghost" size="sm" onClick={onFullscreen} className="h-9 ml-auto" disabled={fullscreenDisabled}>
+              <Maximize2 className="h-3.5 w-3.5 mr-1" />全屏
             </Button>
           )}
         </div>
       )}
-
       <Card className={compact ? "border-0 shadow-none" : ""}>
-        {!compact && (
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Trophy className="h-4 w-4 text-amber-500" /> 全部排行
-              <Badge variant="secondary" className="text-[10px]">{filtered.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-        )}
+        <CardHeader className={compact ? "p-2" : ""}>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Trophy className="h-5 w-5 text-amber-500" />
+            积分排行榜
+            <Badge variant="secondary" className="text-[10px] ml-1">积分排行</Badge>
+          </CardTitle>
+        </CardHeader>
         <CardContent className={compact ? "p-0" : "p-0"}>
           {loading ? (
-            <div className="text-center py-12">
-              <Loader2 className="h-6 w-6 mx-auto animate-spin text-amber-500" />
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">
-              <Star className="h-8 w-8 mx-auto mb-2 opacity-20" />
-              <p className="text-sm">暂无积分排行</p>
+            <div className="text-center py-8">
+              <Loader2 className="h-5 w-5 mx-auto animate-spin text-gray-400" />
+              <p className="text-xs text-gray-400 mt-2">加载中...</p>
             </div>
           ) : (
             <div className="max-h-[500px] overflow-y-auto">
