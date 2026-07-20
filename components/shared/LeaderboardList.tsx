@@ -67,11 +67,7 @@ export function LeaderboardList({
     if (!el) return
     const calc = () => {
       const h = el.clientHeight
-      const w = el.clientWidth
-      const maxCols = Math.max(1, Math.floor(w / 270))
-      const maxRows = Math.max(6, Math.floor(h / 42))
-      const neededRows = Math.ceil(students.length / maxCols)
-      setRowCount(Math.min(maxRows, neededRows))
+      setRowCount(Math.max(6, Math.floor(h / 42)))
     }
     calc()
     const ro = new ResizeObserver(calc)
