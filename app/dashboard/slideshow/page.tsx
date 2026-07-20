@@ -301,7 +301,7 @@ function SlideshowOverlay({
           grade: s.grade,
           student_id: (s as any).student_id || undefined,
         }))
-        return <LeaderboardList students={mapped} variant="light" />
+        return <LeaderboardList students={mapped} variant="light" multiColumn={true} />
       }
       case "birthdays": return <BirthdayWidget students={centerStudents} />
       case "events": return <EventsWidget events={eventsByWidget[w.id] || w.settings.events || []} />
@@ -530,7 +530,7 @@ function DashboardContent() {
           grade: s.grade,
           student_id: (s as any).student_id || undefined,
         }))
-        return <LeaderboardList students={mapped} variant="light" />
+        return <LeaderboardList students={mapped} variant="light" multiColumn={true} />
       }
       case "birthdays":
         return <BirthdayWidget students={centerStudents} />
