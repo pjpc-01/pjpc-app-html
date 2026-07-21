@@ -73,8 +73,15 @@ export default function UnifiedAttendanceHub() {
 
   useEffect(() => { fetchRecords(); fetchReport() }, [fetchRecords, fetchReport])
 
+  // Auto-refresh on checkin event
   useEffect(() => {
-    const interval = setInterval(() => { fetchRecords(); fetchReport() }, 30000)
+    const handler = () => { fetchRecords(); fetchReport() }
+    window.addEventListener("pjpc:attendance-updated", handler)
+    return () => window.removeEventListener("pjpc:attendance-updated", handler)
+  }, [fetchRecords, fetchReport])
+
+  useEffect(() => {
+    const interval = setInterval(() => { fetchRecords(); fetchReport() }, 10000)
     return () => clearInterval(interval)
   }, [fetchRecords, fetchReport])
 

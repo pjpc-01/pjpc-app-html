@@ -112,6 +112,7 @@ export default function GlobalCardScanner() {
 
       show("success", `🎉 ${chkData.action}成功`, person.name)
       console.log(`💳 [考勤] ${chkData.action}成功: ${person.name}`)
+      window.dispatchEvent(new CustomEvent("pjpc:attendance-updated"))
     } catch (err: any) {
       show("error", `网络错误: ${err.message}`)
     }
