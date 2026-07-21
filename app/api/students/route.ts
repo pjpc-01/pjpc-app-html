@@ -6,7 +6,10 @@ export async function GET(request: NextRequest) {
     const searchParams = url.searchParams.toString()
     
     const origin = new URL(request.url).origin.replace('https://', 'http://')
-    const proxyUrl = `/api/pocketbase-proxy/api/collections/students/records?perPage=500&expand=centerId${searchParams ? `&${searchParams}` : ''}`
+    // Always exclude soft-deleted students
+    let pbUrl = `/api/pocketbase-proxy/api/collections/students/records?perPage=500&expand=centerId&filter=(status!='deleted')`
+    if (searchParams) pbUrl += `&${searchParams}`
+    const proxyUrl = pbUrl
     
     const response = await fetch(`${origin}${proxyUrl}`)
     
