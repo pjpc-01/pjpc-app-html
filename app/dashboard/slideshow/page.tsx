@@ -13,7 +13,7 @@ import { LeaderboardList, type LeaderboardStudent } from "@/components/shared/Le
 // ─── Types ──────────────────────────────────────────────────────────
 interface Student {
   id: string; name: string; points: number; grade: string; center: string; status: string
-  dob?: string; student_name?: string; standard?: string
+  dob?: string; student_name?: string; standard?: string; avatar?: string; student_id?: string
 }
 
 interface WidgetConfig {
@@ -319,7 +319,8 @@ function SlideshowOverlay({
           points: s.points,
           center: s.center,
           grade: s.grade,
-          student_id: (s as any).student_id || undefined,
+          student_id: s.student_id || undefined,
+          avatar: s.avatar || undefined,
         }))
         return <LeaderboardList students={mapped} variant="light" multiColumn={true} />
       }
