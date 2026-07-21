@@ -155,6 +155,7 @@ export default function CardManagementPage() {
 
   const handleIssueCard = async () => {
     if (!newCard.card_uid || !newCard.personId) return
+    if (cardUidExists) return  // 已存在，不发
     try {
       await fetch("/api/cards/actions", {
         method: "POST",
@@ -490,7 +491,7 @@ export default function CardManagementPage() {
                   onChange={e => setNewCard({ ...newCard, notes: e.target.value })}
                 />
               </div>
-              <Button onClick={handleIssueCard} disabled={!newCard.card_uid || !newCard.personId} className="w-full">
+              <Button onClick={handleIssueCard} disabled={!newCard.card_uid || !newCard.personId || !!cardUidExists} className="w-full">
                 <Plus className="h-4 w-4 mr-1" />确认发卡
               </Button>
             </div>
