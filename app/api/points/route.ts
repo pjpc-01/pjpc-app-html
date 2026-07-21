@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { generateIdentifierVariants } from '@/lib/uid-normalizer'
 
 const PB_URL = 'http://127.0.0.1:8090'
 const PB_ADMIN = { email: 'admin@pjpc.com', password: '1234567890' }
@@ -34,14 +35,21 @@ export async function POST(request: NextRequest) {
       if (!sRes.id) return NextResponse.json({ error: '学生不存在' }, { status: 404 })
       student = sRes
     } else if (card_uid) {
-      // 查卡找人
-      const cardRes = await fetch(
-        `${PB_URL}/api/collections/nfc_cards/records?perPage=1&expand=studentId&filter=card_uid="${card_uid}"`,
-        { headers: { Authorization: token } }
-      ).then(r => r.json())
+      // 生成所有变体，逐个匹配（支持手机NFC hex UID和十进制卡号）
+      const variants = generateIdentifierVariants(card_uid)
+      let card: any = null
+      for (const v of variants.all) {
+        const cardRes = await fetch(
+          `${PB_URL}/api/collections/nfc_cards/records?perPage=1&expand=studentId&filter=card_uid="${v}"`,
+          { headers: { Authorization: token } }
+        ).then(r => r.json())
+        if (cardRes.items?.length) {
+          card = cardRes.items[0]
+          break
+        }
+      }
 
-      if (!cardRes.items?.length) return NextResponse.json({ error: '未注册的卡片' }, { status: 404 })
-      const card = cardRes.items[0]
+      if (!card) return NextResponse.json({ error: '未注册的卡片' }, { status: 404 })
       if (card.type !== 'student' || !card.studentId) return NextResponse.json({ error: '仅支持学生卡' }, { status: 400 })
       student = card.expand?.studentId
       if (!student) return NextResponse.json({ error: '卡片未绑定学生' }, { status: 404 })
