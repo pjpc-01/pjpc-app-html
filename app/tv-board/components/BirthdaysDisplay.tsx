@@ -95,6 +95,18 @@ export default function BirthdaysDisplay({
                       
                       {/* 学生姓名 */}
                       <div className="text-center mb-4">
+                        {s.avatar ? (
+                          <img
+                            src={`/api/pocketbase-proxy/api/files/students/${s.id}/${s.avatar}`}
+                            alt={s.student_name}
+                            className="w-16 h-16 rounded-full mx-auto mb-2 object-cover border-2 border-white/30"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                          />
+                        ) : (
+                          <div className={`w-16 h-16 rounded-full mx-auto mb-2 flex items-center justify-center text-xl font-bold ${isBright ? 'bg-yellow-100 text-yellow-600' : 'bg-yellow-500/20 text-yellow-200'}`}>
+                            {s.student_name?.charAt(0)}
+                          </div>
+                        )}
                         <h4 className={`text-xl font-black ${isBright ? 'text-slate-900' : 'text-white'} leading-tight`}>
                           {s.student_name}
                         </h4>
@@ -249,6 +261,18 @@ export default function BirthdaysDisplay({
                       
                       {/* 学生姓名 - 更清晰的层次 */}
                       <div className="text-center mb-4">
+                        {s.avatar ? (
+                          <img
+                            src={`/api/pocketbase-proxy/api/files/students/${s.id}/${s.avatar}`}
+                            alt={s.student_name}
+                            className="w-14 h-14 rounded-full mx-auto mb-2 object-cover border-2 border-white/30"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                          />
+                        ) : (
+                          <div className={`w-14 h-14 rounded-full mx-auto mb-2 flex items-center justify-center text-lg font-bold ${isBright ? 'bg-pink-100 text-pink-600' : 'bg-pink-500/20 text-pink-200'}`}>
+                            {s.student_name?.charAt(0)}
+                          </div>
+                        )}
                         <h3 className={`text-xl font-black ${isBright ? 'text-slate-900' : 'text-white'} leading-tight`}>
                           {s.student_name}
                         </h3>

@@ -10,7 +10,8 @@ export type Student = {
   student_id: string; 
   student_name: string; 
   center?: string; 
-  dob?: string 
+  dob?: string;
+  avatar?: string;
 }
 
 export type StudentPoints = { 
