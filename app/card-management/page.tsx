@@ -62,6 +62,14 @@ export default function CardManagementPage() {
   const [newCard, setNewCard] = useState({ card_uid: "", personType: "student", personId: "", notes: "" })
   const [unlinkedPeople, setUnlinkedPeople] = useState<{students: PersonInfo[], teachers: PersonInfo[]}>({ students: [], teachers: [] })
 
+  // 检测卡号是否已存在
+  const cardUidExists = useMemo(() => {
+    if (!newCard.card_uid.trim()) return null
+    const uid = newCard.card_uid.trim()
+    const found = cards.find(c => c.card_uid === uid)
+    return found || null
+  }, [newCard.card_uid, cards])
+
   const fetchData = async () => {
     setLoading(true)
     try {
@@ -438,7 +446,17 @@ export default function CardManagementPage() {
                   placeholder="刷卡自动填入或手动输入"
                   value={newCard.card_uid}
                   onChange={e => setNewCard({ ...newCard, card_uid: e.target.value })}
+                  className={cardUidExists ? "border-red-400 focus-visible:ring-red-400" : ""}
                 />
+                {cardUidExists && (
+                  <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <XCircle className="h-3 w-3" />
+                    已存在 — {cardUidExists.type === "student" 
+                      ? `学生: ${students[cardUidExists.studentId || ""]?.name || "未知"}` 
+                      : `教师: ${teachers[cardUidExists.teacherId || ""]?.name || "未知"}`}
+                    （状态: {cardUidExists.status === "active" ? "正常" : cardUidExists.status}）
+                  </p>
+                )}
               </div>
               <div>
                 <Label>人员类型</Label>
