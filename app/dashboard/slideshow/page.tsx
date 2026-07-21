@@ -377,13 +377,13 @@ function SlideshowOverlay({
 
       {/* Left/right nav — pointer-events-none so they don't block header buttons */}
       <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-        <Button variant="ghost" size="icon" className="text-white/70 hover:text-white h-10 w-10 rounded-full hover:bg-white/10 pointer-events-auto"
+        <Button variant="ghost" size="icon" className="text-black hover:text-gray-700 h-10 w-10 rounded-full hover:bg-black/10 pointer-events-auto"
           onClick={() => go(-1)}>
           <ChevronLeft className="h-6 w-6" />
         </Button>
       </div>
       <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-        <Button variant="ghost" size="icon" className="text-white/70 hover:text-white h-10 w-10 rounded-full hover:bg-white/10 pointer-events-auto"
+        <Button variant="ghost" size="icon" className="text-black hover:text-gray-700 h-10 w-10 rounded-full hover:bg-black/10 pointer-events-auto"
           onClick={() => go(1)}>
           <ChevronRight className="h-6 w-6" />
         </Button>
