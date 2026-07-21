@@ -451,8 +451,8 @@ export const updateStudent = async (id: string, studentData: StudentUpdateData):
         if (av.includes('/api/files/')) {
           av = av.split('/').pop() || ''
         }
-        // Only accept if looks like PB stored filename (pattern: number_hash.ext)
-        if (/^\d+_[a-z0-9]+\.[a-z]+$/i.test(av)) {
+        // Only accept if looks like PB stored filename (pattern: prefix_hash.ext like 333195832626_sbm9efliz7.jpeg or valid_28c37ethcw.jpg)
+        if (/^[a-z0-9]+_[a-z0-9]+\.[a-z]+$/i.test(av)) {
           pbData.avatar = av
         }
         // Otherwise skip — user hasn't properly uploaded a new avatar
