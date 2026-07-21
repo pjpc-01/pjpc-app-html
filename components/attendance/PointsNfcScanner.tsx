@@ -50,7 +50,7 @@ export default function PointsNfcScanner() {
         setScanning(false)
       }, 30000)
 
-      ndef.onreading = (event: any) => {
+      ndef.onreading = async (event: any) => {
         clearTimeout(timer)
         console.log('[NFC] ✅ onreading 触发!')
         console.log('[NFC] event keys:', Object.keys(event))
