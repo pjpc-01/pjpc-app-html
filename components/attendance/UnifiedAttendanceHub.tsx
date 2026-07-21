@@ -38,7 +38,10 @@ export default function UnifiedAttendanceHub() {
   const [records, setRecords] = useState<ScanRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [showNfc, setShowNfc] = useState(false)
-  const [dateFilter, setDateFilter] = useState(new Date().toISOString().slice(0, 10))
+  const [dateFilter, setDateFilter] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  })
   const [typeFilter, setTypeFilter] = useState("all")
   const [report, setReport] = useState<ReportItem[]>([])
   const [reportStats, setReportStats] = useState<ReportStats>({ total: 0, checkedIn: 0, checkedOut: 0, notCheckedIn: 0, late: 0, early: 0, absent: 0 })
@@ -343,7 +346,8 @@ function CalendarReport() {
   const [y, mn] = month.split("-").map(Number)
   const daysInMonth = new Date(y, mn, 0).getDate()
   const firstDow = new Date(y, mn - 1, 1).getDay() // 0=Sun
-  const todayStr = new Date().toISOString().slice(0, 10)
+  const d = new Date()
+  const todayStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 
   const prevMonth = () => { const d = new Date(y, mn - 2, 1); setMonth(d.toISOString().slice(0, 7)) }
   const nextMonth = () => { const d = new Date(y, mn, 1); setMonth(d.toISOString().slice(0, 7)) }
