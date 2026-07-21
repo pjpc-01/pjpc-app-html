@@ -61,10 +61,10 @@ export default function GlobalCardScanner() {
   const dismiss = useCallback(() => { setStatus(null); setMsg(""); setPersonName("") }, [])
 
   const handleCard = useCallback(async (cardId: string) => {
-    // 未登录不处理
     if (!user) return
 
-    console.log(`💳 [考勤] 检测到卡号: ${cardId}`)
+    const isPointsPage = pathname === "/points"
+    console.log(`💳 [读卡器] 检测到卡号: ${cardId} ${isPointsPage ? "(积分模式)" : "(考勤模式)"}`)
     show("loading", `读取卡号: ${cardId}`)
 
     try {
@@ -80,6 +80,17 @@ export default function GlobalCardScanner() {
       }
 
       const person = tapData.person
+
+      // 积分页：派出学生信息，不打卡
+      if (isPointsPage && tapData.person_type === "student") {
+        show("success", `🎯 ${person.name}`)
+        window.dispatchEvent(new CustomEvent("pjpc:student-scanned", {
+          detail: { studentId: person.id, studentName: person.name }
+        }))
+        return
+      }
+
+      // 其他页面：正常考勤打卡
       show("loading", "打卡中...", person.name)
 
       const chkRes = await fetch("/api/attendance/checkin", {
@@ -104,15 +115,11 @@ export default function GlobalCardScanner() {
     } catch (err: any) {
       show("error", `网络错误: ${err.message}`)
     }
-  }, [show, user])
+  }, [show, user, pathname])
 
   useEffect(() => {
-    // 未登录不启动读卡器 / 积分页面禁用(避免与手机NFC冲突)
+    // 未登录不启动读卡器
     if (!user) return
-    if (pathname === "/points") {
-      console.log("💳 [全局考勤读卡器] ⏸️  积分页已禁用")
-      return
-    }
 
     let buffer = ""; let lastTime = 0
 
