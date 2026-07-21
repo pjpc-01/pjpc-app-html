@@ -4,15 +4,13 @@ import { getPocketBase } from './pocketbase'
 // 获取智能PocketBase实例
 const getPb = async () => await getPocketBase()
 
-// Helper: convert avatar filename to full PB file URL
-const PB_URL = 'http://127.0.0.1:8090'
+// Helper: convert avatar filename to full PB file URL (via proxy)
 const getAvatarUrl = (record: any): string | undefined => {
   const avatar = record.photo || record.avatar
   if (!avatar) return undefined
-  // If already a full URL, return as-is
   if (avatar.startsWith('http')) return avatar
-  // Construct PB file URL
-  return `${PB_URL}/api/files/${record.collectionName || record.collectionId || 'students'}/${record.id}/${avatar}`
+  // Use Next.js proxy to avoid CORS + localhost exposure
+  return `/api/pocketbase-proxy/api/files/${record.collectionName || record.collectionId || 'students'}/${record.id}/${avatar}`
 }
 
 // 统一的学生数据接口 - 所有数据来自 students 集合

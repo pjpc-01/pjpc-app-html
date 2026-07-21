@@ -69,6 +69,21 @@ async function proxyRequest(method: string, request: NextRequest) {
     return new NextResponse(null, { status: 204 })
   }
 
+  // File/binary responses: pass through with correct content-type
+  const contentType = response.headers.get('Content-Type') || 'application/octet-stream'
+  const isFile = pbPath.includes('/api/files/')
+  
+  if (isFile || contentType.startsWith('image/') || contentType.startsWith('application/octet-stream')) {
+    const blob = await response.arrayBuffer()
+    return new NextResponse(blob, {
+      status: response.status,
+      headers: {
+        'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=31536000, immutable',
+      }
+    })
+  }
+
   const data = await response.text()
   return new NextResponse(data, {
     status: response.status,
