@@ -24,6 +24,12 @@ async function pbCreate(token: string, collection: string, data: any) {
 
 function nowStr() { return new Date().toISOString() }
 
+// 本地日期 YYYY-MM-DD (不用UTC)
+function todayLocal(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+}
+
 // POST — 统一考勤打卡 + 积分联动
 export async function POST(request: NextRequest) {
   try {
@@ -50,7 +56,7 @@ export async function POST(request: NextRequest) {
     let resolvedName = person_name || person_id
 
     const now = new Date()
-    const today = now.toISOString().split('T')[0]
+    const today = todayLocal()
 
     // ── Determine action ─────────────────────────
     const dateFilter = `${idField}="${person_id}" && created >= "${today} 00:00:00"`
@@ -167,7 +173,7 @@ async function handlePointsIntegration(
   const reason = isLate ? `考勤迟到 (打卡时间 ${timeStr}，迟到线 ${deadline})` : '考勤全勤签到'
 
   // Check if student already got points today (avoid duplicate)
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayLocal()
   const ptsFilter = `studentId="${studentId}" && created >= "${today} 00:00:00" && reason ~ "考勤"`
   const existingPts = await fetch(
     `${PB_URL}/api/collections/points/records?perPage=1&filter=${encodeURIComponent(ptsFilter)}`,
