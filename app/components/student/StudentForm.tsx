@@ -273,7 +273,7 @@ export default function StudentForm({
         pickupMethod: formData.pickupMethod || 'parent',
         registrationDate: formData.registrationDate || new Date().toISOString().split('T')[0],
         tuitionStatus: formData.tuitionStatus || 'pending',
-        avatar: formData.avatar || null
+        // avatar handled separately via file upload, don't pass to update
       }
       
       console.log('StudentForm 提交的数据:', cleanData)
