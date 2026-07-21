@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       perPage: String(limit),
       page: String(page),
       sort: '-points,name',
-      fields: 'id,name,points,grade,center,status,student_id',
+      fields: 'id,name,points,grade,center,status,student_id,avatar',
     })
     if (filter) params.set('filter', filter)
 
@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
         center: s.center || '',
         status: s.status || 'active',
         student_id: s.student_id || '',
+        avatar: s.avatar || '',
       })),
       total: countRes.totalItems || 0,
       page,
