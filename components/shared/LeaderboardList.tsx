@@ -13,6 +13,7 @@ export interface LeaderboardStudent {
   center: string
   grade: string
   student_id?: string
+  avatar?: string
 }
 
 export interface CenterInfo {
@@ -81,6 +82,32 @@ export function LeaderboardList({
   const ptsCol = variant === "dark" ? "text-amber-400" : "text-amber-600"
   const borderCls = variant === "dark" ? "border-b border-white/5" : "border-b border-gray-50"
 
+  const getAvatarUrl = (s: LeaderboardStudent) => {
+    if (!s.avatar) return null
+    if (s.avatar.startsWith("http")) return s.avatar
+    return `/api/pocketbase-proxy/api/files/students/${s.id}/${s.avatar}`
+  }
+
+  const avatarEl = (s: LeaderboardStudent, r: number) => {
+    const url = getAvatarUrl(s)
+    if (url) {
+      return (
+        <img
+          src={url}
+          alt={s.name}
+          className="w-7 h-7 rounded-full shrink-0 object-cover border border-white/20"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+        />
+      )
+    }
+    return (
+      <span className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold ${nameCol(r)}`}
+        style={{backgroundColor: variant === "dark" ? "rgba(255,255,255,0.15)" : "#E5E7EB"}}>
+        {s.name.charAt(0)}
+      </span>
+    )
+  }
+
   const row = (s: LeaderboardStudent, r: number) => (
     <div
       key={s.id}
@@ -88,6 +115,7 @@ export function LeaderboardList({
       onClick={() => onStudentClick?.(s)}
     >
       <span className="w-7 h-7 text-xs rounded-full flex items-center justify-center font-bold shrink-0" style={badgeStyle(r)}>{r}</span>
+      {avatarEl(s, r)}
       <div className="flex-1 min-w-0">
         <span className={`text-sm font-medium truncate ${nameCol(r)}`}>
           {s.name}

@@ -14,6 +14,7 @@ interface RankingStudent {
   center: string
   grade: string
   student_id?: string
+  avatar?: string
 }
 
 // ─── Full-screen overlay ────────────────────────────────
