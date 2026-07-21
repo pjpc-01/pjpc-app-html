@@ -22,7 +22,7 @@ export async function GET() {
       fetch(`${PB_URL}/api/collections/nfc_cards/records?perPage=500&sort=-created`, {
         headers: { Authorization: token },
       }).then(r => r.json()),
-      fetch(`${PB_URL}/api/collections/students/records?perPage=200&fields=id,name,cardNumber`, {
+      fetch(`${PB_URL}/api/collections/students/records?perPage=200&fields=id,name,cardNumber,center,status,student_name`, {
         headers: { Authorization: token },
       }).then(r => r.json()),
       fetch(`${PB_URL}/api/collections/teachers/records?perPage=200&fields=id,name,cardNumber`, {
@@ -30,9 +30,9 @@ export async function GET() {
       }).then(r => r.json()),
     ])
 
-    const sMap: Record<string, { id: string; name: string; cardNumber?: string }> = {}
+    const sMap: Record<string, { id: string; name: string; cardNumber?: string; center?: string; status?: string }> = {}
     for (const s of (studentsRes.items || [])) {
-      sMap[s.id] = { id: s.id, name: s.name, cardNumber: s.cardNumber }
+      sMap[s.id] = { id: s.id, name: s.student_name || s.name, cardNumber: s.cardNumber, center: s.center, status: s.status }
     }
 
     const tMap: Record<string, { id: string; name: string; cardNumber?: string }> = {}
