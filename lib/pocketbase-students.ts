@@ -392,9 +392,25 @@ export const addStudent = async (studentData: StudentCreateData): Promise<Studen
 }
 
 // 更新学生
-export const updateStudent = async (id: string, studentData: StudentUpdateData): Promise<Student> => {
+export const updateStudent = async (id: string, studentData: any): Promise<Student> => {
   try {
-    console.log('🔍 开始更新学生:', id, studentData)
+    console.log('🔍 开始更新学生:', id)
+
+    // If a new avatar file was attached, upload it directly via multipart PATCH
+    if (studentData._avatarFile instanceof File) {
+      const fd = new FormData()
+      fd.append('avatar', studentData._avatarFile)
+      const avatarRes = await fetch(`/api/pocketbase-proxy/api/collections/students/records/${id}`, {
+        method: 'PATCH', body: fd,
+      })
+      if (!avatarRes.ok) {
+        const err = await avatarRes.json().catch(() => ({}))
+        throw new Error(err?.message || '头像上传失败')
+      }
+      delete studentData._avatarFile
+    }
+    // Don't pass avatar as string — only upload via file
+    delete studentData.avatar
     
     // 映射到 PB 字段名（兼容 camelCase + snake_case）
     const get = (...keys: string[]) => {
@@ -441,23 +457,6 @@ export const updateStudent = async (id: string, studentData: StudentUpdateData):
     
     // Address
     if (get('address', 'home_address') !== undefined) pbData.address = get('address', 'home_address')
-    
-    // Avatar — strip proxy URL back to filename for PB
-    if (get('avatar') !== undefined) {
-      let av = get('avatar')
-      // Only update avatar if it looks like a valid PB reference
-      if (av) {
-        // Strip proxy URL
-        if (av.includes('/api/files/')) {
-          av = av.split('/').pop() || ''
-        }
-        // Only accept if looks like PB stored filename (pattern: prefix_hash.ext like 333195832626_sbm9efliz7.jpeg or valid_28c37ethcw.jpg)
-        if (/^[a-z0-9]+_[a-z0-9]+\.[a-z]+$/i.test(av)) {
-          pbData.avatar = av
-        }
-        // Otherwise skip — user hasn't properly uploaded a new avatar
-      }
-    }
     
     // Authorized pickup persons (1-3)
     for (const n of [1, 2, 3]) {

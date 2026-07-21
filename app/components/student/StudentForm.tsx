@@ -246,28 +246,9 @@ export default function StudentForm({
     setIsSubmitting(true)
     setSubmitError('')
     try {
-      // Upload new avatar if selected
-      let avatarFilename: string | null = null
-      if (avatarFile) {
-        try {
-          const fd = new FormData()
-          fd.append('avatar', avatarFile)
-          const uploadRes = await fetch('/api/pocketbase-proxy/api/collections/students/records', {
-            method: 'POST', body: fd,
-          })
-          if (uploadRes.ok) {
-            const created = await uploadRes.json()
-            avatarFilename = created.avatar
-            // Clean up temp record
-            fetch(`/api/pocketbase-proxy/api/collections/students/records/${created.id}`, { method: 'DELETE' }).catch(()=>{})
-          }
-        } catch (err) { console.error('Upload failed:', err) }
-      }
-
       // 清理和验证数据
       const cleanData: any = {
         ...formData,
-        // 确保字符串字段不为undefined并清理输入
         student_name: sanitizeText(formData.student_name || '', 50),
         student_id: sanitizeText(formData.student_id || '', 20).toUpperCase(),
         standard: formData.standard || '',
@@ -282,7 +263,6 @@ export default function StudentForm({
         motherPhone: formData.motherPhone || '',
         email: formData.email || '',
         status: formData.status || 'active',
-        // 新增字段
         nric: formData.nric || '',
         school: formData.school || '',
         emergencyContact: formData.emergencyContact || '',
@@ -292,7 +272,8 @@ export default function StudentForm({
         registrationDate: formData.registrationDate || new Date().toISOString().split('T')[0],
         tuitionStatus: formData.tuitionStatus || 'pending',
       }
-      if (avatarFilename) cleanData.avatar = avatarFilename
+      // Pass the actual File object if a new avatar was selected
+      if (avatarFile) cleanData._avatarFile = avatarFile
       
       console.log('StudentForm 提交的数据:', cleanData)
       await onSubmit(cleanData)
