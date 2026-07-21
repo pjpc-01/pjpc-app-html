@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import {
-  CreditCard, Search, Plus, Trash2, RefreshCw,
+  CreditCard, Search, Plus, Trash2, RefreshCw, ArrowRightLeft,
   User, Users, BarChart3, Shield, XCircle, CheckCircle,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -49,6 +49,10 @@ export default function CardManagementPage() {
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showIssueDialog, setShowIssueDialog] = useState(false)
   const [selectedCard, setSelectedCard] = useState<NfcCard | null>(null)
+  const [showTransferDialog, setShowTransferDialog] = useState(false)
+  const [transferPersonId, setTransferPersonId] = useState("")
+  const [transferPersonType, setTransferPersonType] = useState("student")
+  const [allPeople, setAllPeople] = useState<{students: PersonInfo[], teachers: PersonInfo[]}>({ students: [], teachers: [] })
 
   // New card form
   const [newCard, setNewCard] = useState({ card_uid: "", personType: "student", personId: "", notes: "" })
@@ -159,6 +163,45 @@ export default function CardManagementPage() {
       fetchData()
     } catch (e) {
       console.error("删除失败:", e)
+    }
+  }
+
+  const openTransferDialog = async (card: NfcCard) => {
+    setSelectedCard(card)
+    // Fetch ALL people (not just unlinked) for transfer
+    try {
+      const [sRes, tRes] = await Promise.all([
+        fetch("/api/pocketbase-proxy/api/collections/students/records?perPage=500"),
+        fetch("/api/pocketbase-proxy/api/collections/teachers/records?perPage=500"),
+      ])
+      const [sData, tData] = await Promise.all([sRes.json(), tRes.json()])
+      setAllPeople({
+        students: (sData.items || []).map((s: any) => ({ id: s.id, name: s.student_name || s.name, cardNumber: s.cardNumber })),
+        teachers: (tData.items || []).map((t: any) => ({ id: t.id, name: t.name || t.teacher_name, cardNumber: t.cardNumber })),
+      })
+    } catch {}
+    setTransferPersonType(card.type)
+    setTransferPersonId("")
+    setShowTransferDialog(true)
+  }
+
+  const handleTransferCard = async () => {
+    if (!selectedCard || !transferPersonId) return
+    try {
+      await fetch("/api/cards/actions", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cardId: selectedCard.id,
+          action: "transfer",
+          newPersonId: transferPersonId,
+          newType: transferPersonType,
+        }),
+      })
+      setShowTransferDialog(false)
+      fetchData()
+    } catch (e) {
+      console.error("转绑失败:", e)
     }
   }
 
@@ -289,6 +332,9 @@ export default function CardManagementPage() {
                               <XCircle className="h-4 w-4 text-orange-500" />
                             </Button>
                           )}
+                          <Button variant="ghost" size="sm" onClick={() => openTransferDialog(card)} title="转绑">
+                            <ArrowRightLeft className="h-4 w-4 text-blue-500" />
+                          </Button>
                           <Button variant="ghost" size="sm" onClick={() => handleDeleteCard(card)} title="删除">
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
@@ -359,6 +405,56 @@ export default function CardManagementPage() {
               </div>
               <Button onClick={handleIssueCard} disabled={!newCard.card_uid || !newCard.personId} className="w-full">
                 <Plus className="h-4 w-4 mr-1" />确认发卡
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Transfer Card Dialog */}
+        <Dialog open={showTransferDialog} onOpenChange={setShowTransferDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ArrowRightLeft className="h-5 w-5 text-blue-500" />
+                转绑卡片
+              </DialogTitle>
+              <DialogDescription>
+                将卡片 <span className="font-mono text-blue-600">{selectedCard?.card_uid}</span> 转绑给其他人
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="bg-slate-50 rounded-lg p-3 text-sm">
+                <p>当前持卡人：<span className="font-semibold">{selectedCard ? getPersonName(selectedCard) : ""}</span></p>
+                <p className="text-xs text-gray-500">转绑后原持卡人将失去此卡</p>
+              </div>
+              <div>
+                <Label>新持卡人类型</Label>
+                <Select value={transferPersonType} onValueChange={v => { setTransferPersonType(v); setTransferPersonId("") }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="student">学生</SelectItem>
+                    <SelectItem value="teacher">教师</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>
+                  {transferPersonType === "student" ? "学生" : "教师"}
+                  <span className="text-xs text-gray-400 ml-2">（已有卡的人会标注）</span>
+                </Label>
+                <Select value={transferPersonId} onValueChange={setTransferPersonId}>
+                  <SelectTrigger><SelectValue placeholder="选择人员..." /></SelectTrigger>
+                  <SelectContent>
+                    {(transferPersonType === "student" ? allPeople.students : allPeople.teachers).map(p => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}{p.cardNumber ? " [有卡]" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleTransferCard} disabled={!transferPersonId} className="w-full">
+                <ArrowRightLeft className="h-4 w-4 mr-1" />确认转绑
               </Button>
             </div>
           </DialogContent>

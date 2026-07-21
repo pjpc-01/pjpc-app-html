@@ -53,13 +53,67 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH — 停用/恢复卡片
+// PATCH — 停用/恢复卡片 或 转绑
 export async function PATCH(request: NextRequest) {
   try {
     const token = await pbAuth()
     const body = await request.json()
-    const { cardId, status } = body
+    const { cardId, status, action } = body
     if (!cardId) return NextResponse.json({ error: '缺少 cardId' }, { status: 400 })
+
+    // Transfer card to new person
+    if (action === 'transfer') {
+      const { newPersonId, newType, newPersonType } = body
+      if (!newPersonId) return NextResponse.json({ error: '缺少 newPersonId' }, { status: 400 })
+
+      // Get current card to find old person
+      const getRes = await fetch(`${PB_URL}/api/collections/nfc_cards/records/${cardId}`, {
+        headers: { Authorization: token },
+      })
+      const currentCard = await getRes.json()
+
+      // Clear old person's cardNumber
+      if (currentCard.studentId) {
+        await fetch(`${PB_URL}/api/collections/students/records/${currentCard.studentId}`, {
+          method: 'PATCH',
+          headers: { Authorization: token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cardNumber: '' }),
+        })
+      }
+      if (currentCard.teacherId) {
+        await fetch(`${PB_URL}/api/collections/teachers/records/${currentCard.teacherId}`, {
+          method: 'PATCH',
+          headers: { Authorization: token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cardNumber: '' }),
+        })
+      }
+
+      const type = newType || currentCard.type
+      const payload: any = { type }
+      if (type === 'teacher') payload.teacherId = newPersonId
+      else payload.studentId = newPersonId
+      // Clear the other field
+      if (type === 'teacher') payload.studentId = ''
+      else payload.teacherId = ''
+
+      const updateRes = await fetch(`${PB_URL}/api/collections/nfc_cards/records/${cardId}`, {
+        method: 'PATCH',
+        headers: { Authorization: token, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const updatedCard = await updateRes.json()
+
+      // Set new person's cardNumber
+      const collection = type === 'teacher' ? 'teachers' : 'students'
+      const normUid = currentCard.card_uid || ''
+      await fetch(`${PB_URL}/api/collections/${collection}/records/${newPersonId}`, {
+        method: 'PATCH',
+        headers: { Authorization: token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cardNumber: normUid }),
+      })
+
+      return NextResponse.json({ success: true, card: updatedCard })
+    }
 
     const res = await fetch(`${PB_URL}/api/collections/nfc_cards/records/${cardId}`, {
       method: 'PATCH',
