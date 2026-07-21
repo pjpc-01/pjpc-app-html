@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from "react"
+import { usePathname } from "next/navigation"
 import { CheckCircle, XCircle, Loader2 } from "lucide-react"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 
@@ -46,6 +47,7 @@ function Toast({ status, message, personName, onClose }: {
 
 export default function GlobalCardScanner() {
   const { user, loading } = useAuth()
+  const pathname = usePathname()
   const [status, setStatus] = useState<"success" | "error" | "loading" | null>(null)
   const [msg, setMsg] = useState("")
   const [personName, setPersonName] = useState("")
@@ -107,7 +109,7 @@ export default function GlobalCardScanner() {
   useEffect(() => {
     // 未登录不启动读卡器 / 积分页面禁用(避免与手机NFC冲突)
     if (!user) return
-    if (window.location.pathname === "/points") {
+    if (pathname === "/points") {
       console.log("💳 [全局考勤读卡器] ⏸️  积分页已禁用")
       return
     }
@@ -133,7 +135,7 @@ export default function GlobalCardScanner() {
     document.addEventListener("keydown", onKey)
     console.log("💳 [全局考勤读卡器] ✅ 已启动 (USB 刷卡=打卡)")
     return () => document.removeEventListener("keydown", onKey)
-  }, [handleCard, user])
+  }, [handleCard, user, pathname])
 
   return <Toast status={status} message={msg} personName={personName || undefined} onClose={dismiss} />
 }
