@@ -9,8 +9,9 @@ const getAvatarUrl = (record: any): string | undefined => {
   const avatar = record.photo || record.avatar
   if (!avatar) return undefined
   if (avatar.startsWith('http')) return avatar
-  // Use Next.js proxy to avoid CORS + localhost exposure
-  return `/api/pocketbase-proxy/api/files/${record.collectionName || record.collectionId || 'students'}/${record.id}/${avatar}`
+  const url = `/api/pocketbase-proxy/api/files/${record.collectionName || record.collectionId || 'students'}/${record.id}/${avatar}`
+  console.log(`[getAvatarUrl] ${record.id?.slice(0,10)}... => ${url}`)
+  return url
 }
 
 // 统一的学生数据接口 - 所有数据来自 students 集合
@@ -441,8 +442,16 @@ export const updateStudent = async (id: string, studentData: StudentUpdateData):
     // Address
     if (get('address', 'home_address') !== undefined) pbData.address = get('address', 'home_address')
     
-    // Avatar
-    if (get('avatar') !== undefined) pbData.avatar = get('avatar')
+    // Avatar — strip proxy URL back to filename for PB
+    if (get('avatar') !== undefined) {
+      let av = get('avatar')
+      // If it's a proxy URL, extract just the filename
+      if (av && av.includes('/api/files/')) {
+        const parts = av.split('/')
+        av = parts[parts.length - 1]
+      }
+      pbData.avatar = av
+    }
     
     // Authorized pickup persons (1-3)
     for (const n of [1, 2, 3]) {
