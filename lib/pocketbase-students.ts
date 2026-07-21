@@ -445,12 +445,18 @@ export const updateStudent = async (id: string, studentData: StudentUpdateData):
     // Avatar — strip proxy URL back to filename for PB
     if (get('avatar') !== undefined) {
       let av = get('avatar')
-      // If it's a proxy URL, extract just the filename
-      if (av && av.includes('/api/files/')) {
-        const parts = av.split('/')
-        av = parts[parts.length - 1]
+      // Only update avatar if it looks like a valid PB reference
+      if (av) {
+        // Strip proxy URL
+        if (av.includes('/api/files/')) {
+          av = av.split('/').pop() || ''
+        }
+        // Only accept if looks like PB stored filename (pattern: number_hash.ext)
+        if (/^\d+_[a-z0-9]+\.[a-z]+$/i.test(av)) {
+          pbData.avatar = av
+        }
+        // Otherwise skip — user hasn't properly uploaded a new avatar
       }
-      pbData.avatar = av
     }
     
     // Authorized pickup persons (1-3)
