@@ -239,9 +239,18 @@ export default function CardManagementPage() {
   }
 
   const openIssueDialog = () => {
-    // Find people without cards
-    const unlinkedStudents = Object.values(students).filter(s => !s.cardNumber)
-    const unlinkedTeachers = Object.values(teachers).filter(t => !t.cardNumber)
+    // Find people without cards (exclude graduated, check against nfc_cards not student.cardNumber)
+    const activeCardStudentIds = new Set(
+      cards.filter(c => c.type === "student" && c.status === "active").map(c => c.studentId)
+    )
+    const unlinkedStudents = Object.values(students).filter(s => {
+      if (s.status === "graduated" || s.status === "deleted") return false
+      return !activeCardStudentIds.has(s.id)
+    })
+    const activeCardTeacherIds = new Set(
+      cards.filter(c => c.type === "teacher" && c.status === "active").map(c => c.teacherId)
+    )
+    const unlinkedTeachers = Object.values(teachers).filter(t => !activeCardTeacherIds.has(t.id))
     setUnlinkedPeople({ students: unlinkedStudents, teachers: unlinkedTeachers })
     setShowIssueDialog(true)
   }
