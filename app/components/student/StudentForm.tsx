@@ -246,8 +246,26 @@ export default function StudentForm({
     setIsSubmitting(true)
     setSubmitError('')
     try {
+      // Upload new avatar if selected
+      let avatarFilename: string | null = null
+      if (avatarFile) {
+        try {
+          const fd = new FormData()
+          fd.append('avatar', avatarFile)
+          const uploadRes = await fetch('/api/pocketbase-proxy/api/collections/students/records', {
+            method: 'POST', body: fd,
+          })
+          if (uploadRes.ok) {
+            const created = await uploadRes.json()
+            avatarFilename = created.avatar
+            // Clean up temp record
+            fetch(`/api/pocketbase-proxy/api/collections/students/records/${created.id}`, { method: 'DELETE' }).catch(()=>{})
+          }
+        } catch (err) { console.error('Upload failed:', err) }
+      }
+
       // 清理和验证数据
-      const cleanData = {
+      const cleanData: any = {
         ...formData,
         // 确保字符串字段不为undefined并清理输入
         student_name: sanitizeText(formData.student_name || '', 50),
@@ -273,8 +291,8 @@ export default function StudentForm({
         pickupMethod: formData.pickupMethod || 'parent',
         registrationDate: formData.registrationDate || new Date().toISOString().split('T')[0],
         tuitionStatus: formData.tuitionStatus || 'pending',
-        // avatar handled separately via file upload, don't pass to update
       }
+      if (avatarFilename) cleanData.avatar = avatarFilename
       
       console.log('StudentForm 提交的数据:', cleanData)
       await onSubmit(cleanData)
@@ -319,32 +337,18 @@ export default function StudentForm({
     }
   }
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      // 验证文件类型
-      if (!file.type.startsWith('image/')) {
-        alert('请选择图片文件')
-        return
-      }
-      
-      // 验证文件大小 (最大 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        alert('图片文件大小不能超过 2MB')
-        return
-      }
+    if (!file) return
+    if (!file.type.startsWith('image/')) { alert('请选择图片文件'); return }
+    if (file.size > 2 * 1024 * 1024) { alert('图片不能超过2MB'); return }
 
-      setAvatarFile(file)
-      
-      // 创建预览URL
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setAvatarPreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
-      
-      setFormData(prev => ({ ...prev, avatar: file.name }))
-    }
+    // Preview
+    const reader = new FileReader()
+    reader.onload = (e) => setAvatarPreview(e.target?.result as string)
+    reader.readAsDataURL(file)
+
+    setAvatarFile(file)
   }
 
   const removeAvatar = () => {

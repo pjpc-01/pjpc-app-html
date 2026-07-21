@@ -59,8 +59,15 @@ async function proxyRequest(method: string, request: NextRequest) {
   // Auth endpoints: pass through WITHOUT admin token — client credentials flow through
 
   if (method !== 'GET' && method !== 'DELETE') {
-    headers['Content-Type'] = 'application/json'
-    body = await request.text()
+    const ct = request.headers.get('Content-Type') || ''
+    if (ct.includes('multipart/form-data')) {
+      // Pass through multipart as-is (for file uploads)
+      body = await request.arrayBuffer()
+      headers['Content-Type'] = ct
+    } else {
+      headers['Content-Type'] = 'application/json'
+      body = await request.text()
+    }
   }
 
   const response = await fetch(targetUrl, { method, headers, body })
