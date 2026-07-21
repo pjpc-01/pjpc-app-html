@@ -4,6 +4,17 @@ import { getPocketBase } from './pocketbase'
 // 获取智能PocketBase实例
 const getPb = async () => await getPocketBase()
 
+// Helper: convert avatar filename to full PB file URL
+const PB_URL = 'http://127.0.0.1:8090'
+const getAvatarUrl = (record: any): string | undefined => {
+  const avatar = record.photo || record.avatar
+  if (!avatar) return undefined
+  // If already a full URL, return as-is
+  if (avatar.startsWith('http')) return avatar
+  // Construct PB file URL
+  return `${PB_URL}/api/files/${record.collectionName || record.collectionId || 'students'}/${record.id}/${avatar}`
+}
+
 // 统一的学生数据接口 - 所有数据来自 students 集合
 export interface Student {
   id: string
@@ -231,7 +242,7 @@ export const getAllStudents = async (): Promise<Student[]> => {
       registrationDate: student.registrationDate,
       tuitionStatus: student.tuitionStatus,
       birthCertificate: student.birthCert || student.birthCertificate,
-      avatar: student.photo || student.avatar,
+      avatar: getAvatarUrl(student),
       
       // 考勤相关字段
       cardNumber: student.cardNumber,
@@ -566,7 +577,7 @@ export const getStudentById = async (id: string): Promise<Student | null> => {
       registrationDate: student.registrationDate,
       tuitionStatus: student.tuitionStatus,
       birthCertificate: student.birthCert || student.birthCertificate,
-      avatar: student.photo || student.avatar,
+      avatar: getAvatarUrl(student),
       
       // 考勤相关字段
       cardNumber: student.cardNumber,
@@ -668,7 +679,7 @@ export const searchStudents = async (query: string): Promise<Student[]> => {
       registrationDate: record.registrationDate,
       tuitionStatus: record.tuitionStatus,
       birthCertificate: record.birthCert || record.birthCertificate,
-      avatar: record.photo || record.avatar,
+      avatar: getAvatarUrl(record),
       
       // 考勤相关字段
       cardNumber: record.cardNumber,
@@ -769,7 +780,7 @@ export const getStudentsByCenter = async (center: string): Promise<Student[]> =>
       registrationDate: record.registrationDate,
       tuitionStatus: record.tuitionStatus,
       birthCertificate: record.birthCert || record.birthCertificate,
-      avatar: record.photo || record.avatar,
+      avatar: getAvatarUrl(record),
       
       // 考勤相关字段
       cardNumber: record.cardNumber,
@@ -870,7 +881,7 @@ export const getStudentsByStatus = async (status: string): Promise<Student[]> =>
       registrationDate: record.registrationDate,
       tuitionStatus: record.tuitionStatus,
       birthCertificate: record.birthCert || record.birthCertificate,
-      avatar: record.photo || record.avatar,
+      avatar: getAvatarUrl(record),
       
       // 考勤相关字段
       cardNumber: record.cardNumber,
