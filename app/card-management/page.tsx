@@ -35,6 +35,8 @@ interface PersonInfo {
   id: string
   name: string
   cardNumber?: string
+  center?: string
+  status?: string
 }
 
 export default function CardManagementPage() {
@@ -46,6 +48,8 @@ export default function CardManagementPage() {
   const [search, setSearch] = useState("")
   const [filterType, setFilterType] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")
+  const [page, setPage] = useState(1)
+  const pageSize = 15
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showIssueDialog, setShowIssueDialog] = useState(false)
   const [selectedCard, setSelectedCard] = useState<NfcCard | null>(null)
@@ -84,6 +88,7 @@ export default function CardManagementPage() {
   }
 
   useEffect(() => { fetchData() }, [])
+  useEffect(() => { setPage(1) }, [filterType, filterStatus, search])
 
   // Filtered cards
   const filteredCards = useMemo(() => {
@@ -98,6 +103,25 @@ export default function CardManagementPage() {
       return true
     })
   }, [cards, filterType, filterStatus, search, students, teachers])
+
+  // Paginated + reset on filter change
+  const totalPages = Math.max(1, Math.ceil(filteredCards.length / pageSize))
+  const paginatedCards = filteredCards.slice((page - 1) * pageSize, page * pageSize)
+
+  // Students without cards, split by center
+  const noCardBreakdown = useMemo(() => {
+    const pu1: PersonInfo[] = []
+    const batu14: PersonInfo[] = []
+    for (const s of Object.values(students)) {
+      if (s.status === "graduated") continue
+      if (s.cardNumber && s.cardNumber !== "-") continue
+      const c = (s.center || "").toUpperCase()
+      if (c === "PU1") pu1.push(s)
+      else if (c === "BATU14") batu14.push(s)
+      else pu1.push(s) // default to PU1
+    }
+    return { pu1, batu14 }
+  }, [students])
 
   // Stats
   const stats = {
@@ -295,7 +319,7 @@ export default function CardManagementPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle>卡片列表</CardTitle>
-            <CardDescription>共 {filteredCards.length} 张卡片</CardDescription>
+            <CardDescription>共 {filteredCards.length} 张卡片 · 第{page}/{totalPages}页</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -313,7 +337,7 @@ export default function CardManagementPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCards.map(card => (
+                  {paginatedCards.map(card => (
                     <TableRow key={card.id}>
                       <TableCell className="font-mono text-sm">{card.card_uid}</TableCell>
                       <TableCell>
@@ -342,7 +366,7 @@ export default function CardManagementPage() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {filteredCards.length === 0 && (
+                  {paginatedCards.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                         没有符合条件的卡片
@@ -352,6 +376,51 @@ export default function CardManagementPage() {
                 </TableBody>
               </Table>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2">
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p-1))}>上一页</Button>
+            <span className="text-sm text-gray-500">{page} / {totalPages}</span>
+            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p+1))}>下一页</Button>
+          </div>
+        )}
+
+        {/* No-card breakdown */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">无卡人员</CardTitle>
+            <CardDescription>在校学生中未绑定卡片的人员</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-semibold text-sm mb-2 text-blue-700">🏫 PU1 ({noCardBreakdown.pu1.length}人)</h4>
+                {noCardBreakdown.pu1.length === 0 ? (
+                  <p className="text-sm text-gray-400">全部有卡 ✅</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {noCardBreakdown.pu1.map(p => (
+                      <span key={p.id} className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">{p.name}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <h4 className="font-semibold text-sm mb-2 text-green-700">🏫 BATU14 ({noCardBreakdown.batu14.length}人)</h4>
+                {noCardBreakdown.batu14.length === 0 ? (
+                  <p className="text-sm text-gray-400">全部有卡 ✅</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {noCardBreakdown.batu14.map(p => (
+                      <span key={p.id} className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded">{p.name}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
