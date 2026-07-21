@@ -58,19 +58,25 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Student ID is required for update' }, { status: 400 })
     }
     
-    const response = await fetch(`${new URL(request.url).origin}/api/pocketbase-proxy/api/collections/students/records/${id}`, {
-      method: 'PATCH', // PocketBase uses PATCH for updates
+    const proxyUrl = `http://127.0.0.1:3001/api/pocketbase-proxy/api/collections/students/records/${id}`
+    console.log('PUT student:', id, 'keys:', Object.keys(studentData))
+    
+    const response = await fetch(proxyUrl, {
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(studentData)
     })
     
+    const respText = await response.text()
+    console.log('PB response:', response.status, respText.substring(0, 200))
+    
     if (!response.ok) {
-      return NextResponse.json({ success: false, error: 'Proxy update error' }, { status: response.status })
+      return NextResponse.json({ success: false, error: `PB: ${respText}` }, { status: response.status })
     }
     
-    const data = await response.json()
-    return NextResponse.json({ success: true, student: data })
+    return NextResponse.json({ success: true, student: JSON.parse(respText) })
   } catch (error: any) {
+    console.error('PUT /api/students ERROR:', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }
