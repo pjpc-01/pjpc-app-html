@@ -105,8 +105,12 @@ export default function GlobalCardScanner() {
   }, [show, user])
 
   useEffect(() => {
-    // 未登录不启动读卡器
+    // 未登录不启动读卡器 / 积分页面禁用(避免与手机NFC冲突)
     if (!user) return
+    if (window.location.pathname === "/points") {
+      console.log("💳 [全局考勤读卡器] ⏸️  积分页已禁用")
+      return
+    }
 
     let buffer = ""; let lastTime = 0
 
