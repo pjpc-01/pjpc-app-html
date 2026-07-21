@@ -27,7 +27,9 @@ export async function GET(request: NextRequest) {
   try {
     const token = await pbAuth()
     const { searchParams } = new URL(request.url)
-    const date = searchParams.get('date') || new Date().toISOString().split('T')[0]
+    const d = new Date()
+    const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+    const date = searchParams.get('date') || today
     const type = searchParams.get('type') || 'all'
     const center = searchParams.get('center') || ''
 
