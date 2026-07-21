@@ -14,7 +14,10 @@ export default function PointsNfcScanner() {
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null)
 
   const handleNfcTap = useCallback(async () => {
+    console.log('[NFC] 按钮点击，开始NFC扫描...')
+    
     if (typeof window === "undefined" || !("NDEFReader" in window)) {
+      console.log('[NFC] NDEFReader 不可用')
       setStatus({ ok: false, msg: "此设备不支持 NFC（仅 Android Chrome）" })
       return
     }
@@ -24,11 +27,15 @@ export default function PointsNfcScanner() {
 
     try {
       const ndef = new window.NDEFReader()
+      console.log('[NFC] NDEFReader 已创建，开始 scan()...')
       await ndef.scan()
+      console.log('[NFC] scan() 成功，等待卡片...')
 
       ndef.onreading = async (event: any) => {
+        console.log('[NFC] onreading 触发!', event)
         try {
           const { message, serialNumber } = event
+          console.log('[NFC] serialNumber:', serialNumber)
 
           // Extract UID: try NDEF text record first, fall back to serialNumber
           let cardId: string | null = null
@@ -106,10 +113,12 @@ export default function PointsNfcScanner() {
       }
 
       ndef.onreadingerror = () => {
+        console.log('[NFC] onreadingerror 触发')
         setStatus({ ok: false, msg: "读取失败，请重试" })
         setScanning(false)
       }
     } catch (err: any) {
+      console.log('[NFC] catch 错误:', err.message, err)
       setStatus({ ok: false, msg: `NFC 错误: ${err.message}` })
       setScanning(false)
     }
