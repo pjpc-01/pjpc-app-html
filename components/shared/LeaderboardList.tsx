@@ -168,7 +168,6 @@ export function LeaderboardView({
   fullscreenDisabled,
 }: LeaderboardPageProps) {
   const filtered = rankings
-    .filter(s => s.points > 0)
     .filter(s => {
       if (!centerFilter || centerFilter === "all" || centerFilter === "") return true
       return s.center === centerFilter

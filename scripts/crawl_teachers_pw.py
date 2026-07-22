@@ -6,7 +6,7 @@ import re
 from playwright.async_api import async_playwright
 
 BASE = "https://pjpc2479.tuitionsys.synorex.work"
-OUTPUT = "/home/pjpc/pjpc-app-html/scripts/synorex_teachers.json"
+OUTPUT = "/home/pjpc/pjpc-app-prod/scripts/synorex_teachers.json"
 
 async def main():
     async with async_playwright() as p:

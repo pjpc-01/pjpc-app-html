@@ -71,7 +71,6 @@ export default function LeaderboardPage() {
   }, [])
 
   const filtered = rankings
-    .filter(s => s.points > 0)
     .filter(s => {
       if (!centerFilter || centerFilter === "all") return true
       return s.center === centerFilter
