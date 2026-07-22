@@ -50,16 +50,22 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      students: (res.items || []).map((s: any) => ({
-        id: s.id,
-        name: s.name,
-        points: s.points || 0,
-        grade: s.grade || '',
-        center: s.center || '',
-        status: s.status || 'active',
-        student_id: s.student_id || '',
-        avatar: s.avatar || '',
-      })),
+      students: (res.items || []).map((s: any) => {
+        const gm: Record<string, string> = {
+          '1': '一年级', '2': '二年级', '3': '三年级', '4': '四年级', '5': '五年级', '6': '六年级',
+          '7': '中一', '8': '中二', '9': '中三', '10': '中四', '11': '中五',
+        }
+        return {
+          id: s.id,
+          name: s.name,
+          points: s.points || 0,
+          grade: gm[s.grade] || s.grade || '',
+          center: s.center || '',
+          status: s.status || 'active',
+          student_id: s.student_id || '',
+          avatar: s.avatar || '',
+        }
+      }),
       total: countRes.totalItems || 0,
       page,
       perPage: limit,
