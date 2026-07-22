@@ -1102,25 +1102,10 @@ export default function TeacherSalaryManagement() {
                       <TableCell>{formatCurrency(structure.base_salary)}</TableCell>
                       <TableCell>{formatCurrency(structure.allowances)}</TableCell>
                       <TableCell className="text-green-700 font-medium">
-                        {(() => {
-                          const gross = (structure.base_salary || 0) + (structure.allowances || 0)
-                          const epf = gross * (structure.epf_rate ?? 0.11)
-                          // SOCSO employee contribution (First Schedule, simplified brackets)
-                          const socso = gross <= 30 ? 0.00 :
-                                        gross <= 50 ? 0.05 :
-                                        gross <= 100 ? 0.10 :
-                                        gross <= 200 ? 0.15 :
-                                        gross <= 500 ? 0.25 :
-                                        gross <= 1000 ? 0.35 :
-                                        gross <= 2000 ? 0.45 :
-                                        gross <= 3000 ? 0.55 :
-                                        gross <= 4000 ? 0.65 :
-                                        gross <= 5000 ? 0.75 : 0.85
-                          const eis = Math.min(gross * (structure.eis_rate ?? 0.002), 2.45)
-                          const tax = gross * (structure.tax_rate ?? 0)
-                          const net = gross - epf - socso - eis - tax
-                          return `≈ RM ${net.toFixed(2)}`
-                        })()}
+                        {formatCurrency(
+                          ((structure.base_salary || 0) + (structure.allowances || 0))
+                          * (1 - (structure.epf_rate ?? 0.11) - (structure.socso_rate ?? 0.005) - (structure.eis_rate ?? 0.002) - (structure.tax_rate ?? 0))
+                        )}
                       </TableCell>
                       <TableCell>{(structure.epf_rate * 100).toFixed(1)}%</TableCell>
                       <TableCell>{(structure.socso_rate * 100).toFixed(2)}%</TableCell>
