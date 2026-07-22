@@ -1055,6 +1055,7 @@ export default function TeacherSalaryManagement() {
                     <TableHead>薪资类型</TableHead>
                     <TableHead>基本薪资</TableHead>
                     <TableHead>津贴</TableHead>
+                    <TableHead>预估净薪</TableHead>
                     <TableHead>EPF %</TableHead>
                     <TableHead>SOCSO %</TableHead>
                     <TableHead>EIS %</TableHead>
@@ -1087,6 +1088,12 @@ export default function TeacherSalaryManagement() {
                       </TableCell>
                       <TableCell>{formatCurrency(structure.base_salary)}</TableCell>
                       <TableCell>{formatCurrency(structure.allowances)}</TableCell>
+                      <TableCell>
+                        {formatCurrency(
+                          (structure.base_salary || 0) + (structure.allowances || 0)
+                          - ((structure.base_salary || 0) + (structure.allowances || 0)) * ((structure.epf_rate || 0.11) + (structure.socso_rate || 0.005) + (structure.eis_rate || 0.002) + (structure.tax_rate || 0))
+                        )}
+                      </TableCell>
                       <TableCell>{(structure.epf_rate * 100).toFixed(1)}%</TableCell>
                       <TableCell>{(structure.socso_rate * 100).toFixed(2)}%</TableCell>
                       <TableCell>{(structure.eis_rate * 100).toFixed(2)}%</TableCell>
@@ -1534,98 +1541,9 @@ export default function TeacherSalaryManagement() {
                   placeholder="例如：2024年1月"
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="year">年份</Label>
-                <Input
-                  id="year"
-                  type="number"
-                  value={recordForm.year}
-                  onChange={(e) => setRecordForm(prev => ({ 
-                    ...prev, 
-                    year: parseInt(e.target.value) || new Date().getFullYear() 
-                  }))}
-                />
-              </div>
               
               <div>
-                <Label htmlFor="month">月份</Label>
-                <Select value={recordForm.month.toString()} onValueChange={(value) => 
-                  setRecordForm(prev => ({ ...prev, month: parseInt(value) }))
-                }>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 12 }, (_, i) => (
-                      <SelectItem key={i + 1} value={(i + 1).toString()}>
-                        {i + 1}月
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="base_salary">基本薪资</Label>
-                <Input
-                  id="base_salary"
-                  type="number"
-                  value={recordForm.base_salary}
-                  onChange={(e) => setRecordForm(prev => ({ 
-                    ...prev, 
-                    base_salary: parseFloat(e.target.value) || 0 
-                  }))}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="allowances">津贴总额</Label>
-                <Input
-                  id="allowances"
-                  type="number"
-                  value={recordForm.allowances}
-                  onChange={(e) => setRecordForm(prev => ({ 
-                    ...prev, 
-                    allowances: parseFloat(e.target.value) || 0 
-                  }))}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="gross_salary">总薪资</Label>
-                <Input
-                  id="gross_salary"
-                  type="number"
-                  value={recordForm.gross_salary}
-                  onChange={(e) => setRecordForm(prev => ({ 
-                    ...prev, 
-                    gross_salary: parseFloat(e.target.value) || 0 
-                  }))}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="net_salary">净薪资</Label>
-                <Input
-                  id="net_salary"
-                  type="number"
-                  value={recordForm.net_salary}
-                  onChange={(e) => setRecordForm(prev => ({ 
-                    ...prev, 
-                    net_salary: parseFloat(e.target.value) || 0 
-                  }))}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="bonus">奖金</Label>
+                <Label htmlFor="bonus">奖金 (RM)</Label>
                 <Input
                   id="bonus"
                   type="number"
@@ -1635,6 +1553,23 @@ export default function TeacherSalaryManagement() {
                     bonus: parseFloat(e.target.value) || 0 
                   }))}
                 />
+              </div>
+            </div>
+
+            {/* Auto-calculated summary */}
+            <div className="p-3 bg-green-50 rounded-lg border border-green-200 text-sm space-y-1">
+              <p className="font-medium text-green-800">自动计算（来自薪资结构）</p>
+              <div className="grid grid-cols-2 gap-x-4 text-green-700">
+                <span>基本薪资: <strong>RM {recordForm.base_salary.toFixed(2)}</strong></span>
+                <span>津贴: <strong>RM {recordForm.allowances.toFixed(2)}</strong></span>
+                <span>总薪资: <strong>RM {recordForm.gross_salary.toFixed(2)}</strong></span>
+                <span>EPF: <strong>RM {recordForm.epf_deduction.toFixed(2)}</strong></span>
+                <span>SOCSO: <strong>RM {recordForm.socso_deduction.toFixed(2)}</strong></span>
+                <span>EIS: <strong>RM {recordForm.eis_deduction.toFixed(2)}</strong></span>
+                <span>PCB: <strong>RM {recordForm.tax_deduction.toFixed(2)}</strong></span>
+                <span className="col-span-2 text-base font-bold text-green-900 pt-1 border-t border-green-300">
+                  净薪资: <strong>RM {recordForm.net_salary.toFixed(2)}</strong>
+                </span>
               </div>
             </div>
 
