@@ -1376,7 +1376,7 @@ export const generatePayslipHTML = (
 
       ${((): string => {
         if (!settings.showEmployerEPF) return ''
-        const empEPF = record.epf_employer || 0
+        const empEPF = record.epf_employer || (record.gross_salary || 0) * 0.13
         const empSOCSO = (record as any).socso_employer || (record.gross_salary || 0) * 0.0175
         const empEIS = (record as any).eis_employer || Math.min((record.gross_salary || 0) * 0.002, 2.45)
         const empTotal = empEPF + empSOCSO + empEIS

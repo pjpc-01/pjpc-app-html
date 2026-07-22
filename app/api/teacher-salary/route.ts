@@ -150,6 +150,7 @@ export async function POST(request: NextRequest) {
       const payslipNo = `PS-${year}${String(month).padStart(2, '0')}-${seq}`
 
       // 创建薪资记录
+      const grossSalary = data.gross_salary || 0
       const salaryRecord: Partial<TeacherSalaryRecord> = {
         teacher_id: data.teacher_id,
         salary_period: data.salary_period,
@@ -161,7 +162,7 @@ export async function POST(request: NextRequest) {
         overtime_hours: data.overtime_hours || 0,
         overtime_pay: data.overtime_pay || 0,
         allowances: data.allowances || 0,
-        gross_salary: data.gross_salary,
+        gross_salary: grossSalary,
         epf_deduction: data.epf_deduction || 0,
         socso_deduction: data.socso_deduction || 0,
         eis_deduction: data.eis_deduction || 0,
@@ -170,6 +171,9 @@ export async function POST(request: NextRequest) {
         net_salary: data.net_salary,
         bonus: data.bonus || 0,
         commission: data.commission || 0,
+        epf_employer: grossSalary * (data.epf_employer_rate || 0.13),
+        socso_employer: grossSalary * (data.socso_rate || 0.0175),
+        eis_employer: Math.min(grossSalary * (data.eis_rate || 0.002), 2.45),
         status: 'paid',
         notes: data.notes,
         created_by: data.created_by
