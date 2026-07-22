@@ -1115,6 +1115,7 @@ export const downloadReportPDF = async (report: StudentReport, settings: ReportS
 
 interface PayslipRecord {
   id?: string
+  payslip_no?: string
   teacher_id?: string
   salary_period?: string
   year: number
@@ -1124,6 +1125,9 @@ interface PayslipRecord {
   allowances: number
   gross_salary: number
   epf_deduction: number
+  epf_employer?: number
+  socso_employer?: number
+  eis_employer?: number
   socso_deduction: number
   eis_deduction: number
   tax_deduction: number
@@ -1370,19 +1374,20 @@ export const generatePayslipHTML = (
 
       <hr class="divider" />
 
-      ${settings.showEmployerEPF && record.epf_employer ? `
-      <div class="section-title" style="color:#059669;border-bottom-color:#05966930;">🏢 雇主缴纳 Employer Contributions</div>
-      <table class="items-table">
-        <thead>
-          <tr><th>项目 Item</th><th>金额 Amount (RM)</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>EPF 雇主缴纳 (Employer)</td><td>${(record.epf_employer || 0).toFixed(2)}</td></tr>
-        </tbody>
-      </table>
-
-      <hr class="divider" />
-      ` : ''}
+      ${((): string => {
+        if (!settings.showEmployerEPF) return ''
+        const empEPF = record.epf_employer || 0
+        const empSOCSO = (record as any).socso_employer || (record.gross_salary || 0) * 0.0175
+        const empEIS = (record as any).eis_employer || Math.min((record.gross_salary || 0) * 0.002, 2.45)
+        const empTotal = empEPF + empSOCSO + empEIS
+        return '<div class="section-title" style="color:#059669;border-bottom-color:#05966930;">🏢 雇主缴纳 Employer Contributions</div>' +
+          '<table class="items-table"><thead><tr><th>项目 Item</th><th>金额 Amount (RM)</th></tr></thead><tbody>' +
+          '<tr><td>EPF 雇主公积 (Employer)</td><td>' + empEPF.toFixed(2) + '</td></tr>' +
+          '<tr><td>SOCSO 雇主社保 (Employer)</td><td>' + empSOCSO.toFixed(2) + '</td></tr>' +
+          '<tr><td>EIS 雇主就业险 (Employer)</td><td>' + empEIS.toFixed(2) + '</td></tr>' +
+          '<tr class="total-row"><td>雇主缴纳总计 Total Employer</td><td>' + empTotal.toFixed(2) + '</td></tr>' +
+          '</tbody></table><hr class="divider" />'
+      })()}
 
       <table class="items-table">
         <tbody>
