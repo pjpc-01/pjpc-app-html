@@ -140,12 +140,22 @@ export async function POST(request: NextRequest) {
         message: '薪资结构创建成功'
       })
     } else if (type === 'record') {
+      // 生成 payslip serial number
+      const year = data.year
+      const month = data.month
+      const count = await pb.collection('teacher_salary_records').getList(1, 1, {
+        filter: `year = ${year} && month = ${month}`
+      })
+      const seq = String((count.totalItems || 0) + 1).padStart(3, '0')
+      const payslipNo = `PS-${year}${String(month).padStart(2, '0')}-${seq}`
+
       // 创建薪资记录
       const salaryRecord: Partial<TeacherSalaryRecord> = {
         teacher_id: data.teacher_id,
         salary_period: data.salary_period,
         year: data.year,
         month: data.month,
+        payslip_no: payslipNo,
         base_salary: data.base_salary,
         hours_worked: data.hours_worked || 0,
         overtime_hours: data.overtime_hours || 0,
