@@ -571,7 +571,6 @@ export default function StudentForm({
                      onChange={(e) => handleInputChange('student_id', e.target.value)}
                      placeholder="学号"
                      className={errors.student_id ? 'border-red-500' : ''}
-                     readOnly={isEditing}
                    />
                    {!isEditing && (
                      <Button
