@@ -1274,7 +1274,9 @@ export const generatePayslipHTML = (
           <p style="font-size:12px;opacity:0.85;margin-top:2px;">${settings.schoolNameEn || '智慧教育 · 卓越未来'}</p>
         </div>
       </div>
-      <div style="background:rgba(255,255,255,0.2);padding:8px 20px;border-radius:20px;font-size:14px;font-weight:600;border:1px solid rgba(255,255,255,0.3);white-space:nowrap;">PAYSLIP / 薪资单</div>
+      <div style="background:rgba(255,255,255,0.2);padding:8px 20px;border-radius:20px;font-size:14px;font-weight:600;border:1px solid rgba(255,255,255,0.3);white-space:nowrap;">
+        ${record.payslip_no ? `<div style="font-size:10px;opacity:0.8;text-align:center;">No.</div><div>${record.payslip_no}</div>` : 'PAYSLIP / 薪资单'}
+      </div>
     </div>
 
     <div class="body">

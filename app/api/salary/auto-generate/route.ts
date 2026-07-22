@@ -217,12 +217,20 @@ export async function POST(request: NextRequest) {
         const totalDeductions = epfDeduction + socsoDeduction + eisDeduction + taxDeduction
         const netSalary = grossSalary - totalDeductions
 
+        // 生成序列号
+        const existingCount = await pb.collection('teacher_salary_records').getList(1, 1, {
+          filter: `year = ${year} && month = ${month}`
+        })
+        const seq = String((existingCount.totalItems || 0) + 1).padStart(3, '0')
+        const payslipNo = `PS-${year}${String(month).padStart(2, '0')}-${seq}`
+
         // 创建薪资记录
         const salaryRecord = {
           teacher_id: teacher.id,
-          salary_period: `${year}-${month.toString().padStart(2, '0')}`,
+          salary_period: `${year}年${month}月`,
           year,
           month,
+          payslip_no: payslipNo,
           base_salary: baseSalary,
           hours_worked: totalHours,
           overtime_hours: overtimeHours,

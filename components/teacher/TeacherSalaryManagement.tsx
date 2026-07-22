@@ -78,6 +78,7 @@ interface TeacherSalaryStructure {
 interface TeacherSalaryRecord {
   id: string
   teacher_id: string
+  payslip_no?: string
   salary_period: string
   year: number
   month: number
@@ -1198,6 +1199,7 @@ export default function TeacherSalaryManagement() {
                       />
                     </TableHead>
                     <TableHead>教师</TableHead>
+                    <TableHead>Payslip No.</TableHead>
                     <TableHead>薪资期间</TableHead>
                     <TableHead>基本薪资</TableHead>
                     <TableHead>津贴</TableHead>
@@ -1222,6 +1224,11 @@ export default function TeacherSalaryManagement() {
                           <p className="font-medium">{record.expand?.teacher_id?.name}</p>
                           <p className="text-sm text-gray-500">{record.expand?.teacher_id?.email}</p>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-mono text-xs font-medium bg-gray-100 px-2 py-0.5 rounded">
+                          {record.payslip_no || `PS-${record.year}${String(record.month).padStart(2,'0')}-???`}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <div>
