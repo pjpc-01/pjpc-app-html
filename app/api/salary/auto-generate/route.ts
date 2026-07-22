@@ -207,12 +207,14 @@ export async function POST(request: NextRequest) {
 
         // 计算扣除项
         const epfDeduction = grossSalary * (structure.epf_rate || 0.11)
-        const epfEmployer = grossSalary * (structure.epf_employer_rate || 0.13)
-        const socsoDeduction = calculateSOCSO(grossSalary)
-        const socsoEmployer = calculateEmployerSOCSO(grossSalary)
+        const socsoDeduction = grossSalary * (structure.socso_rate || 0.005)
         const eisDeduction = Math.min(grossSalary * (structure.eis_rate || 0.002), 2.45)
-        const eisEmployer = Math.min(grossSalary * 0.002, 2.45)
-        const taxDeduction = calculateProgressivePCB(grossSalary)
+        const taxDeduction = grossSalary * (structure.tax_rate || 0)
+
+        // 雇主缴纳
+        const epfEmployer = grossSalary * (structure.epf_employer_rate || 0.13)
+        const socsoEmployer = grossSalary * (structure.socso_employer_rate || 0.0175)
+        const eisEmployer = grossSalary * (structure.eis_employer_rate || 0.002)
         
         const totalDeductions = epfDeduction + socsoDeduction + eisDeduction + taxDeduction
         const netSalary = grossSalary - totalDeductions
