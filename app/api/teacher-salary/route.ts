@@ -32,12 +32,12 @@ export async function GET(request: NextRequest) {
             filter: teacherIds.map(id => `id = "${id}"`).join(' || ')
           })
         : { items: [] }
-      const teacherMap = new Map(teachers.items.map(t => [t.id, { name: t.name, email: t.email }]))
+      const teacherMap = new Map(teachers.items.map(t => [t.id, { name: t.name, email: t.email, epfNo: t.epfNo, socsoNo: t.socsoNo, bankName: t.bankName, bankAccountNo: t.bankAccountNo }]))
 
       const data = records.items.map(r => ({
         ...r,
         expand: {
-          teacher_id: teacherMap.get(r.teacher_id) || { name: '未知教师', email: '' }
+          teacher_id: teacherMap.get(r.teacher_id) || { name: '未知教师', email: '', epfNo: 0, socsoNo: 0, bankName: '', bankAccountNo: 0 }
         }
       }))
 
@@ -77,13 +77,13 @@ export async function GET(request: NextRequest) {
             filter: recordTeacherIds.map(id => `id = "${id}"`).join(' || ')
           })
         : { items: [] }
-      const allTeacherMap = new Map(allTeachers.items.map(t => [t.id, { name: t.name, email: t.email }]))
+      const allTeacherMap = new Map(allTeachers.items.map(t => [t.id, { name: t.name, email: t.email, epfNo: t.epfNo, socsoNo: t.socsoNo, bankName: t.bankName, bankAccountNo: t.bankAccountNo }]))
 
       const recordsData = records.items.map(r => ({
         ...r,
         payslip_no: r.bank_reference || r.payslip_no || `PS-${r.year}${String(r.month).padStart(2,'0')}`,
         expand: {
-          teacher_id: allTeacherMap.get(r.teacher_id) || { name: '未知教师', email: '' }
+          teacher_id: allTeacherMap.get(r.teacher_id) || { name: '未知教师', email: '', epfNo: 0, socsoNo: 0, bankName: '', bankAccountNo: 0 }
         }
       }))
 

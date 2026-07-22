@@ -1147,7 +1147,8 @@ const MONTH_NAMES = ['一月', '二月', '三月', '四月', '五月', '六月',
 export const generatePayslipHTML = (
   record: PayslipRecord,
   settings: PayslipSettingsPreset,
-  teacherName: string
+  teacherName: string,
+  teacherInfo?: { epfNo?: number; socsoNo?: number; bankName?: string; bankAccountNo?: number }
 ): string => {
   const primaryColor = settings.primaryColor || '#1e40af'
   const secondaryColor = settings.secondaryColor || '#3b82f6'
@@ -1288,6 +1289,21 @@ export const generatePayslipHTML = (
         <div class="info-block">
           <h3>教师信息 Teacher</h3>
           <p class="highlight">${teacherName}</p>
+          ${teacherInfo ? `
+          <div style="margin-top:6px;font-size:11px;color:#6b7280;line-height:1.6;">
+            ${teacherInfo.epfNo ? `<span style="margin-right:12px;">EPF: ${teacherInfo.epfNo}</span>` : ''}
+            ${teacherInfo.socsoNo ? `<span style="margin-right:12px;">SOCSO: ${teacherInfo.socsoNo}</span>` : ''}
+            ${teacherInfo.bankName ? `<br/>银行: ${teacherInfo.bankName}` : ''}
+            ${teacherInfo.bankAccountNo ? ` · ${teacherInfo.bankAccountNo}` : ''}
+          </div>` : ''}
+        </div>
+        <div class="info-block" style="text-align:right;">
+          <h3>公司信息 Company</h3>
+          <div style="font-size:11px;color:#6b7280;line-height:1.6;">
+            ${settings.companyRegNo ? `<span>SSM: ${settings.companyRegNo}</span><br/>` : ''}
+            ${settings.employerEpfNo ? `<span>EPF Majikan: ${settings.employerEpfNo}</span><br/>` : ''}
+            ${settings.employerSocsoNo ? `<span>PERKESO: ${settings.employerSocsoNo}</span>` : ''}
+          </div>
         </div>
         <div class="info-block" style="text-align:right;">
           <h3>薪资期间 Period</h3>
@@ -1437,10 +1453,11 @@ export const generatePayslipHTML = (
 export const downloadPayslipPDF = async (
   record: PayslipRecord,
   settings: PayslipSettingsPreset,
-  teacherName: string
+  teacherName: string,
+  teacherInfo?: { epfNo?: number; socsoNo?: number; bankName?: string; bankAccountNo?: number }
 ): Promise<void> => {
   try {
-    const html = generatePayslipHTML(record, settings, teacherName)
+    const html = generatePayslipHTML(record, settings, teacherName, teacherInfo)
 
     const iframe = document.createElement('iframe')
     iframe.style.position = 'fixed'
