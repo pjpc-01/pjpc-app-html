@@ -131,9 +131,8 @@ export default function TeacherSalaryManagement() {
   const [isAdjusting, setIsAdjusting] = useState(false)
   
   // Global salary settings (EPF/SOCSO/EIS/TAX rates)
-  const [globalRates, setGlobalRates] = useState(() => {
-    return { epf: 0.11, socso: 0.005, eis: 0.002, tax: 0, epf_employer: 0.13 }
-  })
+  const defaultRates = { epf: 0.11, socso: 0.005, eis: 0.002, tax: 0, epf_employer: 0.13, socso_employer: 0.0175, eis_employer: 0.002 }
+  const [globalRates, setGlobalRates] = useState(() => defaultRates)
   
   // Fetch global rates from PocketBase
   useEffect(() => {
@@ -148,6 +147,8 @@ export default function TeacherSalaryManagement() {
             eis: result.data.eis_rate ?? 0.002,
             tax: result.data.tax_rate ?? 0,
             epf_employer: result.data.epf_employer_rate ?? 0.13,
+            socso_employer: result.data.socso_employer_rate ?? 0.0175,
+            eis_employer: result.data.eis_employer_rate ?? 0.002,
           })
         }
       } catch (error) {
@@ -170,7 +171,9 @@ export default function TeacherSalaryManagement() {
           socso_rate: next.socso,
           eis_rate: next.eis,
           tax_rate: next.tax,
-          epf_employer_rate: next.epf_employer
+          epf_employer_rate: next.epf_employer,
+          socso_employer_rate: next.socso_employer,
+          eis_employer_rate: next.eis_employer
         })
       })
     } catch (error) {
@@ -939,6 +942,34 @@ export default function TeacherSalaryManagement() {
                 className="bg-white"
               />
               <p className="text-xs text-gray-500 mt-1">雇主公积金</p>
+            </div>
+            <div>
+              <Label htmlFor="global_socso_employer">SOCSO 雇主比率 (%)</Label>
+              <Input
+                id="global_socso_employer"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={(globalRates.socso_employer * 100).toFixed(2)}
+                onChange={(e) => updateGlobalRates({ socso_employer: (parseFloat(e.target.value) || 0) / 100 })}
+                className="bg-white"
+              />
+              <p className="text-xs text-gray-500 mt-1">雇主社会保险</p>
+            </div>
+            <div>
+              <Label htmlFor="global_eis_employer">EIS 雇主比率 (%)</Label>
+              <Input
+                id="global_eis_employer"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={(globalRates.eis_employer * 100).toFixed(2)}
+                onChange={(e) => updateGlobalRates({ eis_employer: (parseFloat(e.target.value) || 0) / 100 })}
+                className="bg-white"
+              />
+              <p className="text-xs text-gray-500 mt-1">雇主就业保险</p>
             </div>
           </div>
         </CardContent>
