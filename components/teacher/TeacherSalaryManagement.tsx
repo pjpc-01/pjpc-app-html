@@ -62,6 +62,9 @@ interface TeacherSalaryStructure {
   eis_rate: number
   tax_rate: number
   epf_employer_rate?: number
+  socso_employer_rate?: number
+  eis_employer_rate?: number
+  bonus?: number
   salary_type: 'monthly' | 'hourly' | 'commission'
   effective_date: string
   end_date?: string
@@ -244,6 +247,9 @@ export default function TeacherSalaryManagement() {
     eis_rate: 0.002,
     tax_rate: 0,
     epf_employer_rate: 0.13,
+    socso_employer_rate: 0.0175,
+    eis_employer_rate: 0.002,
+    bonus: 0,
     salary_type: 'monthly' as 'monthly' | 'hourly' | 'commission',
     effective_date: '',
     end_date: '',
@@ -486,6 +492,9 @@ export default function TeacherSalaryManagement() {
           eis_rate: globalRates.eis,
           tax_rate: globalRates.tax,
           epf_employer_rate: globalRates.epf_employer || 0.13,
+          socso_employer_rate: globalRates.socso_employer || 0.0175,
+          eis_employer_rate: globalRates.eis_employer || 0.002,
+          bonus: 0,
           salary_type: 'monthly',
           effective_date: '',
           end_date: '',
@@ -540,6 +549,9 @@ export default function TeacherSalaryManagement() {
       eis_rate: structure.eis_rate ?? globalRates.eis,
       tax_rate: structure.tax_rate ?? globalRates.tax,
       epf_employer_rate: (structure.epf_employer_rate ?? globalRates.epf_employer) || 0.13,
+      socso_employer_rate: (structure.socso_employer_rate ?? globalRates.socso_employer) || 0.0175,
+      eis_employer_rate: (structure.eis_employer_rate ?? globalRates.eis_employer) || 0.002,
+      bonus: structure.bonus || 0,
       salary_type: structure.salary_type as 'monthly' | 'hourly' | 'commission',
       effective_date: structure.effective_date?.split(' ')[0] || '',
       end_date: structure.end_date?.split(' ')[0] || '',
@@ -1435,7 +1447,51 @@ export default function TeacherSalaryManagement() {
                   }))}
                 />
               </div>
-              <div></div>
+              <div>
+                <Label htmlFor="socso_employer_rate">SOCSO 雇主比率 (%)</Label>
+                <Input
+                  id="socso_employer_rate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={(structureForm.socso_employer_rate * 100).toFixed(2)}
+                  onChange={(e) => setStructureForm(prev => ({ 
+                    ...prev, 
+                    socso_employer_rate: (parseFloat(e.target.value) || 0) / 100 
+                  }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="eis_employer_rate">EIS 雇主比率 (%)</Label>
+                <Input
+                  id="eis_employer_rate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={(structureForm.eis_employer_rate * 100).toFixed(2)}
+                  onChange={(e) => setStructureForm(prev => ({ 
+                    ...prev, 
+                    eis_employer_rate: (parseFloat(e.target.value) || 0) / 100 
+                  }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="structure_bonus">每月奖金 (RM)</Label>
+                <Input
+                  id="structure_bonus"
+                  type="number"
+                  value={structureForm.bonus}
+                  onChange={(e) => setStructureForm(prev => ({ 
+                    ...prev, 
+                    bonus: parseFloat(e.target.value) || 0 
+                  }))}
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
