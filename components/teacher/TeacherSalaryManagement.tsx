@@ -1068,7 +1068,7 @@ export default function TeacherSalaryManagement() {
                     <TableHead>薪资类型</TableHead>
                     <TableHead>基本薪资</TableHead>
                     <TableHead>津贴</TableHead>
-                    <TableHead>预估净薪</TableHead>
+                    <TableHead>净薪金</TableHead>
                     <TableHead>EPF %</TableHead>
                     <TableHead>SOCSO %</TableHead>
                     <TableHead>EIS %</TableHead>
@@ -1203,20 +1203,9 @@ export default function TeacherSalaryManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-10">
-                      <Checkbox
-                        checked={allRecordsSelected}
-                        onCheckedChange={toggleSelectAllRecords}
-                        aria-label="全选"
-                      />
-                    </TableHead>
-                    <TableHead>教师</TableHead>
                     <TableHead>Payslip No.</TableHead>
+                    <TableHead>教师</TableHead>
                     <TableHead>薪资期间</TableHead>
-                    <TableHead>基本薪资</TableHead>
-                    <TableHead>津贴</TableHead>
-                    <TableHead>总薪资</TableHead>
-                    <TableHead>净薪资</TableHead>
                     <TableHead>状态</TableHead>
                     <TableHead>操作</TableHead>
                   </TableRow>
@@ -1225,11 +1214,9 @@ export default function TeacherSalaryManagement() {
                   {salaryRecords.map((record) => (
                     <TableRow key={record.id} className={recordSelectedIds.has(record.id) ? "bg-red-50/50" : ""}>
                       <TableCell>
-                        <Checkbox
-                          checked={recordSelectedIds.has(record.id)}
-                          onCheckedChange={() => toggleSelectRecord(record.id)}
-                          aria-label={`选择 ${record.expand?.teacher_id?.name || record.id}`}
-                        />
+                        <span className="font-mono text-xs font-medium bg-gray-100 px-2 py-0.5 rounded">
+                          {record.payslip_no || `PS-${record.year}${String(record.month).padStart(2,'0')}`}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <div>
@@ -1238,20 +1225,11 @@ export default function TeacherSalaryManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="font-mono text-xs font-medium bg-gray-100 px-2 py-0.5 rounded">
-                          {record.payslip_no || `PS-${record.year}${String(record.month).padStart(2,'0')}-???`}
-                        </span>
-                      </TableCell>
-                      <TableCell>
                         <div>
                           <p className="font-medium">{record.year}年{record.month}月</p>
                           <p className="text-sm text-gray-500">{record.salary_period}</p>
                         </div>
                       </TableCell>
-                      <TableCell>{formatCurrency(record.base_salary)}</TableCell>
-                      <TableCell>{formatCurrency(record.allowances)}</TableCell>
-                      <TableCell>{formatCurrency(record.gross_salary)}</TableCell>
-                      <TableCell>{formatCurrency(record.net_salary)}</TableCell>
                       <TableCell>
                         <Badge variant="default">已支付</Badge>
                       </TableCell>
