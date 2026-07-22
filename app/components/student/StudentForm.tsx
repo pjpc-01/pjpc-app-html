@@ -220,10 +220,6 @@ export default function StudentForm({
       newErrors.standard = '请选择年级'
     }
 
-    if (!formData.nric?.trim()) {
-      newErrors.nric = 'NRIC/护照是必填项'
-    }
-
     if (!formData.school?.trim()) {
       newErrors.school = '学校是必填项'
     }
@@ -599,7 +595,7 @@ export default function StudentForm({
                </div>
 
               <div>
-                <Label htmlFor="nric">NRIC/护照 *</Label>
+                <Label htmlFor="nric">NRIC/护照</Label>
                 <Input
                   id="nric"
                   value={formData.nric || ''}
