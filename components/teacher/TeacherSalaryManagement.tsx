@@ -260,6 +260,11 @@ export default function TeacherSalaryManagement() {
     overtime_pay: 0,
     allowances: 0,
     gross_salary: 0,
+    epf_rate: 0.11,
+    socso_rate: 0.005,
+    eis_rate: 0.002,
+    tax_rate: 0,
+    epf_employer_rate: 0.13,
     epf_deduction: 0,
     socso_deduction: 0,
     eis_deduction: 0,
@@ -718,6 +723,28 @@ export default function TeacherSalaryManagement() {
     toast.success(`已删除 ${ids.length} 条薪资记录`)
   }
 
+  // 自动计算薪资记录数字
+  useEffect(() => {
+    const base = recordForm.base_salary || 0
+    const allowance = recordForm.allowances || 0
+    const gross = base + allowance
+    const epf = gross * (recordForm.epf_rate || 0.11)
+    const socso = gross * (recordForm.socso_rate || 0.005)
+    const eis = Math.min(gross * (recordForm.eis_rate || 0.002), 2.45)
+    const tax = recordForm.tax_rate ? gross * recordForm.tax_rate : 0
+    const totalDed = epf + socso + eis + tax + (recordForm.other_deductions || 0)
+    const net = gross - totalDed + (recordForm.bonus || 0) + (recordForm.commission || 0)
+    setRecordForm(prev => ({
+      ...prev,
+      gross_salary: gross,
+      epf_deduction: epf,
+      socso_deduction: socso,
+      eis_deduction: eis,
+      tax_deduction: tax,
+      net_salary: net,
+    }))
+  }, [recordForm.base_salary, recordForm.allowances, recordForm.epf_rate, recordForm.socso_rate, recordForm.eis_rate, recordForm.tax_rate, recordForm.other_deductions, recordForm.bonus, recordForm.commission])
+
   // 处理薪资记录表单
   const handleRecordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -745,6 +772,11 @@ export default function TeacherSalaryManagement() {
           overtime_pay: 0,
           allowances: 0,
           gross_salary: 0,
+          epf_rate: 0.11,
+          socso_rate: 0.005,
+          eis_rate: 0.002,
+          tax_rate: 0,
+          epf_employer_rate: 0.13,
           epf_deduction: 0,
           socso_deduction: 0,
           eis_deduction: 0,
@@ -756,9 +788,9 @@ export default function TeacherSalaryManagement() {
           notes: ''
         })
         fetchSalaryRecords()
-        toast.success(isEdit ? "薪资记录更新成功" : "薪资记录创建成功")
+        toast.success("薪资记录创建成功")
       } else {
-        toast.error(isEdit ? "更新失败" : "创建失败", { description: result.error })
+        toast.error("创建失败", { description: result.error })
         setError(result.error)
       }
     } catch (error) {
@@ -1454,9 +1486,27 @@ export default function TeacherSalaryManagement() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="record_teacher_id">选择教师</Label>
-                <Select value={recordForm.teacher_id} onValueChange={(value) => 
-                  setRecordForm(prev => ({ ...prev, teacher_id: value }))
-                }>
+                <Select value={recordForm.teacher_id} onValueChange={(value) => {
+                  const structure = salaryStructures.find(s => s.teacher_id === value)
+                  const now = new Date()
+                  const period = `${now.getFullYear()}年${now.getMonth()+1}月`
+                  setRecordForm(prev => ({
+                    ...prev,
+                    teacher_id: value,
+                    salary_period: period,
+                    year: now.getFullYear(),
+                    month: now.getMonth() + 1,
+                    base_salary: structure?.base_salary || 0,
+                    hourly_rate: structure?.hourly_rate || 0,
+                    overtime_rate: structure?.overtime_rate || 0,
+                    allowances: structure?.allowances || 0,
+                    epf_rate: structure?.epf_rate || globalRates.epf,
+                    socso_rate: structure?.socso_rate || globalRates.socso,
+                    eis_rate: structure?.eis_rate || globalRates.eis,
+                    tax_rate: structure?.tax_rate || globalRates.tax,
+                    epf_employer_rate: structure?.epf_employer_rate || globalRates.epf_employer,
+                  }))
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="选择教师" />
                   </SelectTrigger>
