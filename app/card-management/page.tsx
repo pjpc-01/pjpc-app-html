@@ -250,7 +250,10 @@ export default function CardManagementPage() {
     const activeCardTeacherIds = new Set(
       cards.filter(c => c.type === "teacher" && c.status === "active").map(c => c.teacherId)
     )
-    const unlinkedTeachers = Object.values(teachers).filter(t => !activeCardTeacherIds.has(t.id))
+    const unlinkedTeachers = Object.values(teachers).filter(t => {
+      if (t.status === "graduated" || t.status === "deleted" || t.status === "left") return false
+      return !activeCardTeacherIds.has(t.id)
+    })
     setUnlinkedPeople({ students: unlinkedStudents, teachers: unlinkedTeachers })
     setShowIssueDialog(true)
   }
