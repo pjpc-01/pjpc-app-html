@@ -197,7 +197,7 @@ export default function StudentForm({
     if (!formData.student_id?.trim()) {
       newErrors.student_id = '学号是必填项'
     } else if (!validateStudentId(formData.student_id)) {
-      newErrors.student_id = '学号格式不正确（4-20位字母数字）'
+      newErrors.student_id = '学号不能为空'
     }
 
     if (!formData.center?.trim()) {
@@ -250,7 +250,7 @@ export default function StudentForm({
       const cleanData: any = {
         ...formData,
         student_name: sanitizeText(formData.student_name || '', 50),
-        student_id: sanitizeText(formData.student_id || '', 20).toUpperCase(),
+        student_id: sanitizeText(formData.student_id || '', 20),
         standard: formData.standard || '',
         center: formData.center || 'PU1',
         centerId: formData.centerId || '',
