@@ -140,13 +140,7 @@ export function validatePhone(phone: string): boolean {
  * 验证学生ID格式
  */
 export function validateStudentId(studentId: string): boolean {
-  if (!studentId || typeof studentId !== 'string') {
-    return false
-  }
-  
-  // 学生ID格式：2-20位字母数字组合（支持自动生成的 B1, T2 等短学号）
-  const idRegex = /^[A-Z0-9]{2,20}$/
-  return idRegex.test(studentId.trim().toUpperCase())
+  return !!(studentId && typeof studentId === 'string' && studentId.trim().length > 0)
 }
 
 /**
