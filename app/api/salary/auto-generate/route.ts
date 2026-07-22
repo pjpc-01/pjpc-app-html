@@ -79,6 +79,15 @@ function calculateSOCSO(grossSalary: number): number {
   return 66.75
 }
 
+function calculateEmployerSOCSO(grossSalary: number): number {
+  const bracket = SOCSO_BRACKETS.find(b => grossSalary <= b.max)
+  if (bracket) {
+    return bracket.employer
+  }
+  // Above RM5,000 — employer capped at RM86.65
+  return 86.65
+}
+
 function calculateProgressivePCB(grossSalary: number): number {
   let tax = 0
   let previousMax = 0
@@ -200,7 +209,9 @@ export async function POST(request: NextRequest) {
         const epfDeduction = grossSalary * (structure.epf_rate || 0.11)
         const epfEmployer = grossSalary * (structure.epf_employer_rate || 0.13)
         const socsoDeduction = calculateSOCSO(grossSalary)
+        const socsoEmployer = calculateEmployerSOCSO(grossSalary)
         const eisDeduction = Math.min(grossSalary * (structure.eis_rate || 0.002), 2.45)
+        const eisEmployer = Math.min(grossSalary * 0.002, 2.45)
         const taxDeduction = calculateProgressivePCB(grossSalary)
         
         const totalDeductions = epfDeduction + socsoDeduction + eisDeduction + taxDeduction
@@ -221,7 +232,9 @@ export async function POST(request: NextRequest) {
           epf_deduction: epfDeduction,
           epf_employer: epfEmployer,
           socso_deduction: socsoDeduction,
+          socso_employer: socsoEmployer,
           eis_deduction: eisDeduction,
+          eis_employer: eisEmployer,
           tax_deduction: taxDeduction,
           other_deductions: 0,
           net_salary: netSalary,

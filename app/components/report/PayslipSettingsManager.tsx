@@ -78,7 +78,9 @@ export const generatePayslipPreviewHTML = (settings: PayslipSettingsPreset): str
   const grossSalary = 4200.00
   const epfDeduction = 462.00
   const socsoDeduction = 21.00
+  const socsoEmployer = 49.50
   const eisDeduction = 8.40
+  const eisEmployer = 8.40
   const taxDeduction = 50.00
   const totalDeductions = epfDeduction + socsoDeduction + eisDeduction + taxDeduction
   const netSalary = grossSalary - totalDeductions
@@ -261,7 +263,10 @@ export const generatePayslipPreviewHTML = (settings: PayslipSettingsPreset): str
           <tr><th>项目 Item</th><th>金额 Amount (RM)</th></tr>
         </thead>
         <tbody>
-          <tr><td>EPF 雇主缴纳 (Employer)</td><td>${epfEmployer.toFixed(2)}</td></tr>
+          <tr><td>EPF 雇主公积 (Employer)</td><td>${epfEmployer.toFixed(2)}</td></tr>
+          <tr><td>SOCSO 雇主社保 (Employer)</td><td>${socsoEmployer.toFixed(2)}</td></tr>
+          <tr><td>EIS 雇主就业险 (Employer)</td><td>${eisEmployer.toFixed(2)}</td></tr>
+          <tr class="total-row"><td>雇主缴纳总计 Total Employer</td><td>${(epfEmployer + socsoEmployer + eisEmployer).toFixed(2)}</td></tr>
         </tbody>
       </table>` : ''}
 
