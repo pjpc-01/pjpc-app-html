@@ -81,6 +81,7 @@ export async function GET(request: NextRequest) {
 
       const recordsData = records.items.map(r => ({
         ...r,
+        payslip_no: r.bank_reference || r.payslip_no || `PS-${r.year}${String(r.month).padStart(2,'0')}`,
         expand: {
           teacher_id: allTeacherMap.get(r.teacher_id) || { name: '未知教师', email: '' }
         }
@@ -156,7 +157,6 @@ export async function POST(request: NextRequest) {
         salary_period: data.salary_period,
         year: data.year,
         month: data.month,
-        payslip_no: payslipNo,
         base_salary: data.base_salary,
         hours_worked: data.hours_worked || 0,
         overtime_hours: data.overtime_hours || 0,
@@ -174,6 +174,7 @@ export async function POST(request: NextRequest) {
         epf_employer: grossSalary * (data.epf_employer_rate || 0.13),
         socso_employer: grossSalary * (data.socso_rate || 0.0175),
         eis_employer: Math.min(grossSalary * (data.eis_rate || 0.002), 2.45),
+        bank_reference: payslipNo,
         status: 'paid',
         notes: data.notes,
         created_by: data.created_by
