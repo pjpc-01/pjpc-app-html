@@ -722,13 +722,11 @@ export default function TeacherSalaryManagement() {
   const handleRecordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const isEdit = !!editingRecord
       const response = await fetch('/api/teacher-salary', {
-        method: isEdit ? 'PUT' : 'POST',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'record',
-          id: editingRecord?.id,
           data: { ...recordForm, created_by: userProfile?.id || 'system' }
         })
       })
@@ -736,7 +734,6 @@ export default function TeacherSalaryManagement() {
       const result = await response.json()
       if (result.success) {
         setRecordDialogOpen(false)
-        setEditingRecord(null)
         setRecordForm({
           teacher_id: '',
           salary_period: '',
@@ -1208,33 +1205,6 @@ export default function TeacherSalaryManagement() {
                           }}>
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => {
-                            setEditingRecord(record)
-                            setRecordForm({
-                              teacher_id: record.teacher_id,
-                              salary_period: record.salary_period || '',
-                              year: record.year,
-                              month: record.month,
-                              base_salary: record.base_salary,
-                              hours_worked: record.hours_worked,
-                              overtime_hours: record.overtime_hours,
-                              overtime_pay: record.overtime_pay,
-                              allowances: record.allowances,
-                              gross_salary: record.gross_salary,
-                              epf_deduction: record.epf_deduction,
-                              socso_deduction: record.socso_deduction,
-                              eis_deduction: record.eis_deduction,
-                              tax_deduction: record.tax_deduction,
-                              other_deductions: record.other_deductions,
-                              net_salary: record.net_salary,
-                              bonus: record.bonus || 0,
-                              commission: record.commission || 0,
-                              notes: record.notes || '',
-                            })
-                            setRecordDialogOpen(true)
-                          }}>
-                            <Edit className="w-4 h-4" />
-                          </Button>
                           <Button size="sm" variant="outline" onClick={() => handleDeleteRecord(record.id)}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -1477,8 +1447,8 @@ export default function TeacherSalaryManagement() {
       <Dialog open={recordDialogOpen} onOpenChange={setRecordDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingRecord ? '编辑薪资记录' : '新建薪资记录'}</DialogTitle>
-            <DialogDescription>{editingRecord ? '修改教师的薪资发放记录' : '记录教师的薪资发放情况'}</DialogDescription>
+            <DialogTitle>新建薪资记录</DialogTitle>
+            <DialogDescription>记录教师的薪资发放情况</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleRecordSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -1491,7 +1461,9 @@ export default function TeacherSalaryManagement() {
                     <SelectValue placeholder="选择教师" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.isArray(teachers) && teachers.map((teacher) => (
+                    {Array.isArray(teachers) && teachers.filter(t => 
+                      salaryStructures.some(s => s.teacher_id === t.id)
+                    ).map((teacher) => (
                       <SelectItem key={teacher.id} value={teacher.id}>
                         {teacher.name} - {teacher.email}
                       </SelectItem>
@@ -1633,7 +1605,7 @@ export default function TeacherSalaryManagement() {
               <Button type="button" variant="outline" onClick={() => setRecordDialogOpen(false)}>
                 取消
               </Button>
-              <Button type="submit">{editingRecord ? '更新薪资记录' : '创建薪资记录'}</Button>
+              <Button type="submit">创建薪资记录</Button>
             </div>
           </form>
         </DialogContent>
