@@ -1414,7 +1414,7 @@ export const generatePayslipHTML = (
         </tbody>
       </table>
 
-      ${(record.payment_date || record.payment_method || record.bank_reference) ? `
+      ${(record.payment_date || record.payment_method) ? `
       <div class="payment-info">
         ${record.payment_date ? `
         <div>
@@ -1425,11 +1425,6 @@ export const generatePayslipHTML = (
         <div>
           <h4>🏦 发放方式 Payment Method</h4>
           <p>${record.payment_method}</p>
-        </div>` : ''}
-        ${record.bank_reference ? `
-        <div>
-          <h4>🔖 银行参考 Bank Reference</h4>
-          <p>${record.bank_reference}</p>
         </div>` : ''}
       </div>` : ''}
 
