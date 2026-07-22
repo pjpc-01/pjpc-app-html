@@ -1241,7 +1241,7 @@ export default function TeacherSalaryManagement() {
                             size="sm"
                             variant="outline"
                             onClick={() => {
-                              downloadPayslipPDF(record, payslipSettings, record.expand?.teacher_id?.name || '教师')
+                              downloadPayslipPDF(record, payslipSettings, record.expand?.teacher_id?.name || '教师', record.expand?.teacher_id ? { epfNo: record.expand.teacher_id.epfNo, socsoNo: record.expand.teacher_id.socsoNo, bankName: record.expand.teacher_id.bankName, bankAccountNo: record.expand.teacher_id.bankAccountNo } : undefined)
                             }}
                           >
                             <FileDown className="w-4 h-4 text-blue-600" />
@@ -1646,7 +1646,7 @@ export default function TeacherSalaryManagement() {
               {/* PDF Preview iframe */}
               <div className="w-full border rounded-lg overflow-hidden bg-white">
                 <iframe
-                  srcDoc={generatePayslipHTML(selectedPayslipRecord, payslipSettings, selectedPayslipRecord.expand?.teacher_id?.name || '教师')}
+                  srcDoc={generatePayslipHTML(selectedPayslipRecord, payslipSettings, selectedPayslipRecord.expand?.teacher_id?.name || '教师', selectedPayslipRecord.expand?.teacher_id ? { epfNo: selectedPayslipRecord.expand.teacher_id.epfNo, socsoNo: selectedPayslipRecord.expand.teacher_id.socsoNo, bankName: selectedPayslipRecord.expand.teacher_id.bankName, bankAccountNo: selectedPayslipRecord.expand.teacher_id.bankAccountNo } : undefined)}
                   className="w-full border-0"
                   style={{ height: '70vh', minHeight: '500px' }}
                   title="薪资单预览"
@@ -1658,7 +1658,7 @@ export default function TeacherSalaryManagement() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    downloadPayslipPDF(selectedPayslipRecord, payslipSettings, selectedPayslipRecord.expand?.teacher_id?.name || '教师')
+                    downloadPayslipPDF(selectedPayslipRecord, payslipSettings, selectedPayslipRecord.expand?.teacher_id?.name || '教师', selectedPayslipRecord.expand?.teacher_id ? { epfNo: selectedPayslipRecord.expand.teacher_id.epfNo, socsoNo: selectedPayslipRecord.expand.teacher_id.socsoNo, bankName: selectedPayslipRecord.expand.teacher_id.bankName, bankAccountNo: selectedPayslipRecord.expand.teacher_id.bankAccountNo } : undefined)
                   }}
                 >
                   <Download className="h-4 w-4 mr-2" />

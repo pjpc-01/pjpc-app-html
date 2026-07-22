@@ -25,10 +25,14 @@ export interface PayslipSettingsPreset {
   // School Info
   schoolName: string
   schoolNameEn: string
-  schoolLogo: string // base64 data URL
+  schoolLogo: string
   schoolAddress: string
   schoolPhone: string
   schoolEmail: string
+  // Company Registration
+  companyRegNo?: string
+  employerEpfNo?: string
+  employerSocsoNo?: string
   // Branding
   primaryColor: string
   secondaryColor: string
@@ -52,6 +56,9 @@ const createDefaultPreset = (overrides?: Partial<PayslipSettingsPreset>): Paysli
   schoolAddress: "",
   schoolPhone: "",
   schoolEmail: "",
+  companyRegNo: "",
+  employerEpfNo: "",
+  employerSocsoNo: "",
   primaryColor: "#1e40af",
   secondaryColor: "#3b82f6",
   accentColor: "#f59e0b",
@@ -576,6 +583,20 @@ export default function PayslipSettingsManager({ onSettingsChange, activePresetI
                   <div>
                     <Label><Mail className="h-3.5 w-3.5 inline mr-1" />邮箱</Label>
                     <Input value={settings.schoolEmail} onChange={e => updateSettings({ schoolEmail: e.target.value })} placeholder="info@school.com" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label>SSM 注册号</Label>
+                    <Input value={settings.companyRegNo || ''} onChange={e => updateSettings({ companyRegNo: e.target.value })} placeholder="201901012345" />
+                  </div>
+                  <div>
+                    <Label>EPF 雇主编号</Label>
+                    <Input value={settings.employerEpfNo || ''} onChange={e => updateSettings({ employerEpfNo: e.target.value })} placeholder="EPF12345678" />
+                  </div>
+                  <div>
+                    <Label>PERKESO 雇主编号</Label>
+                    <Input value={settings.employerSocsoNo || ''} onChange={e => updateSettings({ employerSocsoNo: e.target.value })} placeholder="SOCSO12345678" />
                   </div>
                 </div>
                 <div>
