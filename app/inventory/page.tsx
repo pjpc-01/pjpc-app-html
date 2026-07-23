@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useLanguage } from "@/contexts/language-context"
 import {
   Package,
   Plus,
@@ -27,6 +28,7 @@ import {
 } from "lucide-react"
 
 export default function InventoryPage() {
+  const { t } = useLanguage()
   const { items, loading, error, refetch } = useInventoryItems()
   const { categories, create: createCategory, remove: removeCategory } = useInventoryCategories()
   const { items: lowStockItems } = useLowStockItems()
@@ -57,7 +59,7 @@ export default function InventoryPage() {
 
   return (
     <PageLayout
-      title="库存管理"
+      title={t('inventory.inventory_management')}
       description={`${activeItems} 种商品 · ${lowStockItems.length} 项低库存`}
       actions={
         <Link href="/inventory/new">
@@ -165,9 +167,9 @@ export default function InventoryPage() {
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[140px]"><SelectValue placeholder="全部状态" /></SelectTrigger>
+          <SelectTrigger className="w-[140px]"><SelectValue placeholder={t('common.all_status')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">全部状态</SelectItem>
+            <SelectItem value="all">{t('common.all_status')}</SelectItem>
             <SelectItem value="active">在售</SelectItem>
             <SelectItem value="discontinued">已停产</SelectItem>
             <SelectItem value="low_stock">低库存</SelectItem>
@@ -191,7 +193,7 @@ export default function InventoryPage() {
         <div className="text-center py-12 text-red-500">
           <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
           <p>加载失败：{error}</p>
-          <Button variant="outline" className="mt-2" onClick={() => refetch()}>重试</Button>
+          <Button variant="outline" className="mt-2" onClick={() => refetch()}>{t('course.retry')}</Button>
         </div>
       )}
 
@@ -223,13 +225,13 @@ export default function InventoryPage() {
               <thead className="bg-gray-50 border-b">
                 <tr>
                   <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">商品名称</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">分类</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">单位</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">{t('inventory.category')}</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">{t('inventory.unit')}</th>
                   <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">进价</th>
                   <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">售价</th>
                   <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">库存</th>
-                  <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">状态</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">操作</th>
+                  <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">{t('teacher.status')}</th>
+                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">{t('teacher.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -266,7 +268,7 @@ export default function InventoryPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link href={`/inventory/${item.id}`}>
-                        <Button variant="ghost" size="sm">详情</Button>
+                        <Button variant="ghost" size="sm">{t('system.details')}</Button>
                       </Link>
                     </td>
                   </tr>

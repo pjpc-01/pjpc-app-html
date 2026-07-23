@@ -6,6 +6,7 @@ import { Fee } from "@/types/fees"
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle
 } from "@/components/ui/card"
+import { useLanguage } from "@/contexts/language-context"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -52,6 +53,7 @@ const ITEM_DESC_MAP: Record<string, string> = {
 }
 
 export default function FeeManagement() {
+  const { t } = useLanguage()
   const {
     fees,
     loading,
@@ -230,7 +232,7 @@ export default function FeeManagement() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-gray-500">加载中...</div>
+            <div className="text-center py-8 text-gray-500">{t('teacher.loading')}</div>
           ) : error ? (
             <div className="text-center py-8 text-red-500">错误: {error}</div>
           ) : fees.length === 0 ? (
@@ -290,11 +292,11 @@ export default function FeeManagement() {
                               <TableRow>
                                 <TableHead className="w-8"></TableHead>
                                 <TableHead>项目名称</TableHead>
-                                <TableHead>金额</TableHead>
+                                <TableHead>{t('finance.amount')}</TableHead>
                                 <TableHead>费用类型</TableHead>
-                                <TableHead>状态</TableHead>
-                                {isFeeEditMode && <TableHead>启用</TableHead>}
-                                {isFeeEditMode && <TableHead>操作</TableHead>}
+                                <TableHead>{t('teacher.status')}</TableHead>
+                                {isFeeEditMode && <TableHead>{t('finance.enable')}</TableHead>}
+                                {isFeeEditMode && <TableHead>{t('teacher.actions')}</TableHead>}
                               </TableRow>
                             </TableHeader>
                             <TableBody>

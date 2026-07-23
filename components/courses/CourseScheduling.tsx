@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useLanguage } from "@/contexts/language-context"
 import {
   Dialog,
   DialogContent,
@@ -132,6 +133,7 @@ function getTimeOptions() {
 // ============================================================
 
 export default function CourseScheduling() {
+  const { t } = useLanguage()
   // 数据状态
   const [courses, setCourses] = useState<Course[]>([])
   const [teachers, setTeachers] = useState<Teacher[]>([])
@@ -377,9 +379,9 @@ export default function CourseScheduling() {
       <Card className="border-red-200 bg-red-50">
         <CardContent className="p-6 text-center">
           <AlertCircle className="h-10 w-10 mx-auto text-red-400 mb-3" />
-          <p className="text-red-700 font-medium mb-1">加载失败</p>
+          <p className="text-red-700 font-medium mb-1">{t('course.load_failed')}</p>
           <p className="text-red-500 text-sm mb-4">{error}</p>
-          <Button variant="outline" onClick={loadData}>重试</Button>
+          <Button variant="outline" onClick={loadData}>{t('course.retry')}</Button>
         </CardContent>
       </Card>
     )
@@ -716,19 +718,19 @@ export default function CourseScheduling() {
             <div className="space-y-3 py-2">
               <div className="bg-gray-50 rounded-lg p-3 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">课程</span>
+                  <span className="text-gray-500">{t('course.course')}</span>
                   <span className="font-medium">{getCourseTitle(editingEntry.course_id)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">教师</span>
+                  <span className="text-gray-500">{t('teacher.teacher')}</span>
                   <span className="font-medium">{getTeacherName(editingEntry.teacher_id)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">星期</span>
+                  <span className="text-gray-500">{t('course.week')}</span>
                   <span className="font-medium">{DAY_LABELS[editingEntry.day_of_week]}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">时间</span>
+                  <span className="text-gray-500">{t('announcement.time')}</span>
                   <span className="font-medium">{editingEntry.start_time} - {editingEntry.end_time}</span>
                 </div>
               </div>

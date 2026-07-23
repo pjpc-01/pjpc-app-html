@@ -17,6 +17,7 @@ import {
   Calendar,
   Users
 } from 'lucide-react'
+import { useLanguage } from "@/contexts/language-context"
 
 interface ScheduleTemplate {
   id: string
@@ -31,6 +32,7 @@ interface ScheduleTemplate {
 }
 
 export default function ScheduleTemplateManager() {
+  const { t } = useLanguage()
   const [templates, setTemplates] = useState<ScheduleTemplate[]>([])
   const [isAdding, setIsAdding] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<ScheduleTemplate | null>(null)
@@ -254,7 +256,7 @@ export default function ScheduleTemplateManager() {
               </div>
               
               <div>
-                <Label>类型</Label>
+                <Label>{t('common.type')}</Label>
                 <Select
                   value={editingTemplate.type}
                   onValueChange={(value: any) => setEditingTemplate({
@@ -278,7 +280,7 @@ export default function ScheduleTemplateManager() {
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>开始时间</Label>
+                  <Label>{t('attendance.start_time')}</Label>
                   <Input
                     type="time"
                     value={editingTemplate.start_time}
@@ -289,7 +291,7 @@ export default function ScheduleTemplateManager() {
                   />
                 </div>
                 <div>
-                  <Label>结束时间</Label>
+                  <Label>{t('attendance.end_time')}</Label>
                   <Input
                     type="time"
                     value={editingTemplate.end_time}

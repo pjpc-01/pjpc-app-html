@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, CreditCard, ArrowLeftRight, CheckCircle2, Clock, AlertTriangle } from "lucide-react"
 import { useSearchParams } from "next/navigation"
+import { useLanguage } from "@/contexts/language-context"
 
 const STATUS_MAP: Record<string, { label: string; color: "default" | "secondary" | "destructive" | "outline" }> = {
   paid: { label: "已付款", color: "default" },
@@ -17,6 +18,7 @@ const STATUS_MAP: Record<string, { label: string; color: "default" | "secondary"
 }
 
 export default function ParentPaymentsPage() {
+  const { t } = useLanguage()
   const { children, loading } = useParentPortal()
   const searchParams = useSearchParams()
   const childId = searchParams?.get("child")
@@ -63,7 +65,7 @@ export default function ParentPaymentsPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">缴费记录</h1>
+      <h1 className="text-2xl font-bold text-gray-900">{t('finance.payment_records')}</h1>
       <p className="text-gray-500">查看孩子的学费缴纳情况</p>
 
       {fetching ? (
@@ -97,7 +99,7 @@ export default function ParentPaymentsPage() {
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-bold">
-                        RM {Number(inv.totalAmount || inv.amount || 0).toFixed(2)}
+                        RM {Number(inv.totalAmount || 0).toFixed(2)}
                       </div>
                       {inv.paidAmount && (
                         <div className="text-xs text-gray-400">

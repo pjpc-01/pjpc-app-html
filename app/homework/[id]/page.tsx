@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useLanguage } from "@/contexts/language-context"
 import { toast } from "sonner"
 import {
   Calendar,
@@ -48,6 +49,7 @@ const statusLabels: Record<string, string> = {
 }
 
 export default function HomeworkDetailPage() {
+  const { t } = useLanguage()
   const params = useParams()
   const router = useRouter()
   const homeworkId = params.id as string
@@ -102,8 +104,8 @@ export default function HomeworkDetailPage() {
 
   if (loading) {
     return (
-      <PageLayout title="加载中..." backUrl="/homework" userRole="admin">
-        <div className="text-center py-12 text-muted-foreground">加载中...</div>
+      <PageLayout title={t('teacher.loading')} backUrl="/homework" userRole="admin">
+        <div className="text-center py-12 text-muted-foreground">{t('teacher.loading')}</div>
       </PageLayout>
     )
   }
@@ -164,11 +166,11 @@ export default function HomeworkDetailPage() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-blue-600">{submittedCount}</div>
-                <div className="text-xs text-muted-foreground">已提交</div>
+                <div className="text-xs text-muted-foreground">{t('teacher.submitted')}</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-green-600">{gradedCount}</div>
-                <div className="text-xs text-muted-foreground">已批改</div>
+                <div className="text-xs text-muted-foreground">{t('assignment.graded')}</div>
               </div>
             </div>
           </div>

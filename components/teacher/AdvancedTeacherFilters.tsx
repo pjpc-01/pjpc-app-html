@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import {
   Search,
   Filter,
@@ -128,6 +129,7 @@ export default function AdvancedTeacherFilters({
   onLoadFilter,
   savedFilters = []
 }: AdvancedTeacherFiltersProps) {
+  const { t } = useLanguage()
   const [isExpanded, setIsExpanded] = useState(false)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [filterName, setFilterName] = useState("")
@@ -193,7 +195,7 @@ export default function AdvancedTeacherFilters({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Filter className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-lg">高级筛选</CardTitle>
+            <CardTitle className="text-lg">{t('course.advanced_filters')}</CardTitle>
             {hasActiveFilters && (
               <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                 {filters.quickFilters.length + 
@@ -268,7 +270,7 @@ export default function AdvancedTeacherFilters({
       <CardContent className="space-y-6">
         {/* 快速筛选 */}
         <div>
-          <Label className="text-sm font-medium mb-3 block">快速筛选</Label>
+          <Label className="text-sm font-medium mb-3 block">{t('course.quick_filters')}</Label>
           <div className="flex flex-wrap gap-2">
             {quickFilterOptions.map((option) => {
               const Icon = option.icon
@@ -306,10 +308,10 @@ export default function AdvancedTeacherFilters({
 
           <Select value={filters.selectedSubject} onValueChange={(value) => updateFilter({ selectedSubject: value })}>
             <SelectTrigger>
-              <SelectValue placeholder="选择科目" />
+              <SelectValue placeholder={t('assignment.select_subject')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部科目</SelectItem>
+              <SelectItem value="all">{t('course.all_subjects')}</SelectItem>
               {subjectOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -337,7 +339,7 @@ export default function AdvancedTeacherFilters({
               <SelectValue placeholder="选择状态" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部状态</SelectItem>
+              <SelectItem value="all">{t('common.all_status')}</SelectItem>
               {statusOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -418,16 +420,16 @@ export default function AdvancedTeacherFilters({
               </div>
 
               <div>
-                <Label className="text-sm font-medium mb-2 block">排序方式</Label>
+                <Label className="text-sm font-medium mb-2 block">{t('course.sort_by')}</Label>
                 <div className="flex gap-2">
                   <Select value={filters.sortBy} onValueChange={(value) => updateFilter({ sortBy: value })}>
                     <SelectTrigger className="flex-1">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="name">姓名</SelectItem>
+                      <SelectItem value="name">{t('student.name')}</SelectItem>
                       <SelectItem value="experience">教龄</SelectItem>
-                      <SelectItem value="subject">科目</SelectItem>
+                      <SelectItem value="subject">{t('exam.subject')}</SelectItem>
                       <SelectItem value="department">部门</SelectItem>
                       <SelectItem value="createdAt">入职时间</SelectItem>
                     </SelectContent>

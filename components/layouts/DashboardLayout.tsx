@@ -4,17 +4,19 @@ import React, { Suspense } from "react"
 import { Toaster } from "sonner"
 import AppShell from "./AppShell"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
+import { useLanguage } from "@/contexts/language-context"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
 function LoadingShell() {
+  const { t } = useLanguage()
   return (
     <div className="flex h-screen items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-3">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        <p className="text-sm text-muted-foreground">加载中...</p>
+        <p className="text-sm text-muted-foreground">{t('teacher.loading')}</p>
       </div>
     </div>
   )

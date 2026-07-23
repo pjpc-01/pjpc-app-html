@@ -17,6 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -88,6 +89,7 @@ export default function TeacherBulkOperations({
   onBulkImport,
   onBulkMessage
 }: TeacherBulkOperationsProps) {
+  const { t } = useLanguage()
   const [showBulkEdit, setShowBulkEdit] = useState(false)
   const [showBulkMessage, setShowBulkMessage] = useState(false)
   const [showBulkImport, setShowBulkImport] = useState(false)
@@ -171,15 +173,15 @@ export default function TeacherBulkOperations({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-            <div className="text-xs text-gray-600">总教师数</div>
+            <div className="text-xs text-gray-600">{t('teacher.total_teachers')}</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
-            <div className="text-xs text-gray-600">已批准</div>
+            <div className="text-xs text-gray-600">{t('attendance.approved')}</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
-            <div className="text-xs text-gray-600">待审核</div>
+            <div className="text-xs text-gray-600">{t('admin.pending_review')}</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-600">{stats.averageExperience}</div>
@@ -206,16 +208,16 @@ export default function TeacherBulkOperations({
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="status">状态</Label>
+                  <Label htmlFor="status">{t('teacher.status')}</Label>
                   <Select value={bulkEditData.status} onValueChange={(value) => setBulkEditData(prev => ({ ...prev, status: value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="选择状态" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="no-change">保持不变</SelectItem>
-                      <SelectItem value="approved">已批准</SelectItem>
-                      <SelectItem value="pending">待审核</SelectItem>
-                      <SelectItem value="suspended">已暂停</SelectItem>
+                      <SelectItem value="approved">{t('attendance.approved')}</SelectItem>
+                      <SelectItem value="pending">{t('admin.pending_review')}</SelectItem>
+                      <SelectItem value="suspended">{t('course.paused')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -244,22 +246,22 @@ export default function TeacherBulkOperations({
                   <Label htmlFor="subject">任教科目</Label>
                   <Select value={bulkEditData.subject} onValueChange={(value) => setBulkEditData(prev => ({ ...prev, subject: value }))}>
                     <SelectTrigger>
-                      <SelectValue placeholder="选择科目" />
+                      <SelectValue placeholder={t('assignment.select_subject')} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="no-change">保持不变</SelectItem>
-                      <SelectItem value="数学">数学</SelectItem>
-                      <SelectItem value="语文">语文</SelectItem>
-                      <SelectItem value="英语">英语</SelectItem>
-                      <SelectItem value="科学">科学</SelectItem>
-                      <SelectItem value="历史">历史</SelectItem>
-                      <SelectItem value="地理">地理</SelectItem>
-                      <SelectItem value="物理">物理</SelectItem>
-                      <SelectItem value="化学">化学</SelectItem>
-                      <SelectItem value="生物">生物</SelectItem>
+                      <SelectItem value="数学">{t('assignment.mathematics')}</SelectItem>
+                      <SelectItem value="语文">{t('assignment.chinese')}</SelectItem>
+                      <SelectItem value="英语">{t('assignment.english')}</SelectItem>
+                      <SelectItem value="科学">{t('assignment.science')}</SelectItem>
+                      <SelectItem value="历史">{t('assignment.history')}</SelectItem>
+                      <SelectItem value="地理">{t('assignment.geography')}</SelectItem>
+                      <SelectItem value="物理">{t('assignment.physics')}</SelectItem>
+                      <SelectItem value="化学">{t('assignment.chemistry')}</SelectItem>
+                      <SelectItem value="生物">{t('assignment.biology')}</SelectItem>
                       <SelectItem value="艺术">艺术</SelectItem>
-                      <SelectItem value="体育">体育</SelectItem>
-                      <SelectItem value="音乐">音乐</SelectItem>
+                      <SelectItem value="体育">{t('teacher.physical_education')}</SelectItem>
+                      <SelectItem value="音乐">{t('teacher.music')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -291,7 +293,7 @@ export default function TeacherBulkOperations({
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="sm" className="h-auto p-3 flex flex-col gap-2 text-red-600 border-red-200 hover:bg-red-50">
                 <Trash2 className="h-4 w-4" />
-                <span className="text-xs">批量删除</span>
+                <span className="text-xs">{t('teacher.batch_delete')}</span>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -302,7 +304,7 @@ export default function TeacherBulkOperations({
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogCancel>{t('report.cancel')}</AlertDialogCancel>
                 <AlertDialogAction onClick={onBulkDelete} className="bg-red-600 hover:bg-red-700">
                   确认删除
                 </AlertDialogAction>
@@ -366,7 +368,7 @@ export default function TeacherBulkOperations({
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="importFile">选择文件</Label>
+                  <Label htmlFor="importFile">{t('teacher.select_file')}</Label>
                   <Input
                     id="importFile"
                     type="file"
@@ -430,7 +432,7 @@ export default function TeacherBulkOperations({
                 </div>
                 
                 <div>
-                  <Label htmlFor="messageContent">内容</Label>
+                  <Label htmlFor="messageContent">{t('teacher.content')}</Label>
                   <Textarea
                     id="messageContent"
                     placeholder="消息内容..."
@@ -463,7 +465,7 @@ export default function TeacherBulkOperations({
           <div className="relative group">
             <Button variant="outline" size="sm" className="h-auto p-3 flex flex-col gap-2 w-full">
               <Settings className="h-4 w-4" />
-              <span className="text-xs">快速操作</span>
+              <span className="text-xs">{t('teacher.quick_actions')}</span>
             </Button>
             <div className="absolute top-full left-0 mt-1 bg-white border rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 min-w-[150px]">
               <div className="p-1">
@@ -510,11 +512,11 @@ export default function TeacherBulkOperations({
             <div className="text-lg font-bold text-blue-600">{stats.hasPhone}</div>
           </div>
           <div className="text-center">
-            <div className="text-sm font-medium text-gray-600">已验证</div>
+            <div className="text-sm font-medium text-gray-600">{t('teacher.verified')}</div>
             <div className="text-lg font-bold text-purple-600">{stats.emailVerified}</div>
           </div>
           <div className="text-center">
-            <div className="text-sm font-medium text-gray-600">待审核</div>
+            <div className="text-sm font-medium text-gray-600">{t('admin.pending_review')}</div>
             <div className="text-lg font-bold text-yellow-600">{stats.pending}</div>
           </div>
         </div>

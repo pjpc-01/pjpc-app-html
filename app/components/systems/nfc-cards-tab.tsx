@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import {
   CreditCard,
   Plus,
@@ -60,6 +61,7 @@ export default function NFCCardsTab({
   getStatusColor,
   getStatusIcon
 }: NFCCardsTabProps) {
+  const { t } = useLanguage()
   return (
     <div className="space-y-6">
       {/* 卡片统计 */}
@@ -135,13 +137,13 @@ export default function NFCCardsTab({
               <TableRow>
                 <TableHead>卡号</TableHead>
                 <TableHead>学生ID</TableHead>
-                <TableHead>学生姓名</TableHead>
-                <TableHead>卡片类型</TableHead>
-                <TableHead>状态</TableHead>
+                <TableHead>{t('student.student_name')}</TableHead>
+                <TableHead>{t('common.card_type')}</TableHead>
+                <TableHead>{t('teacher.status')}</TableHead>
                 <TableHead>专属网址</TableHead>
                 <TableHead>发行日期</TableHead>
                 <TableHead>到期日期</TableHead>
-                <TableHead>操作</TableHead>
+                <TableHead>{t('teacher.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -172,7 +174,7 @@ export default function NFCCardsTab({
                         访问网址
                       </a>
                     ) : (
-                      <span className="text-gray-400 text-sm">未设置</span>
+                      <span className="text-gray-400 text-sm">{t('card.not_set')}</span>
                     )}
                   </TableCell>
                   <TableCell>{card.issuedDate instanceof Date ? card.issuedDate.toLocaleDateString('zh-CN') : card.issuedDate}</TableCell>
@@ -247,7 +249,7 @@ export default function NFCCardsTab({
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="studentName">学生姓名</Label>
+                <Label htmlFor="studentName">{t('student.student_name')}</Label>
                 <Input
                   id="studentName"
                   value={editingCard ? editingCard.studentName : newCard.studentName}
@@ -259,7 +261,7 @@ export default function NFCCardsTab({
                 />
               </div>
               <div>
-                <Label htmlFor="cardType">卡片类型</Label>
+                <Label htmlFor="cardType">{t('common.card_type')}</Label>
                 <Select 
                   value={editingCard ? editingCard.cardType : newCard.cardType}
                   onValueChange={(value: "NFC" | "RFID") => editingCard 
@@ -271,7 +273,7 @@ export default function NFCCardsTab({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="NFC">NFC</SelectItem>
+                    <SelectItem value="NFC">{t('common.nfc')}</SelectItem>
                     <SelectItem value="RFID">RFID</SelectItem>
                   </SelectContent>
                 </Select>
@@ -307,7 +309,7 @@ export default function NFCCardsTab({
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="status">卡片状态</Label>
+                <Label htmlFor="status">{t('card.card_status')}</Label>
                 <Select 
                   value={editingCard ? editingCard.status : newCard.status}
                   onValueChange={(value: "active" | "inactive" | "lost" | "replaced") => editingCard 
@@ -319,15 +321,15 @@ export default function NFCCardsTab({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">活跃</SelectItem>
-                    <SelectItem value="inactive">停用</SelectItem>
-                    <SelectItem value="lost">丢失</SelectItem>
+                    <SelectItem value="active">{t('common.active')}</SelectItem>
+                    <SelectItem value="inactive">{t('common.disabled')}</SelectItem>
+                    <SelectItem value="lost">{t('common.lost')}</SelectItem>
                     <SelectItem value="replaced">已替换</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="balance">余额</Label>
+                <Label htmlFor="balance">{t('card.balance')}</Label>
                 <Input
                   id="balance"
                   type="number"
@@ -409,7 +411,7 @@ export default function NFCCardsTab({
             </div>
             
             <div>
-              <Label htmlFor="notes">备注</Label>
+              <Label htmlFor="notes">{t('teacher.notes')}</Label>
               <Input
                 id="notes"
                 value={editingCard ? editingCard.notes : newCard.notes}

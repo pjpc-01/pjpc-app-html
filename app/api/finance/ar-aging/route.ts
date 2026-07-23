@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 
       const dueDate = new Date(invoice.due_date || invoice.created)
       const diffDays = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
-      const amount = invoice.amount || invoice.totalAmount || 0
+      const amount = invoice.totalAmount || 0
 
       const item = {
         id: invoice.id,

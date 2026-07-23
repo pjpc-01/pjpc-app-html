@@ -31,6 +31,7 @@ import {
   Eye,
   Edit
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface TeacherProfileProps {
   teacherId: string
@@ -66,6 +67,7 @@ interface ClassAssignment {
 }
 
 export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState("overview")
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([])
   const [leaveRecords, setLeaveRecords] = useState<LeaveRecord[]>([])
@@ -297,7 +299,7 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
                   <div>
                     <h3 className="text-lg font-semibold">张老师</h3>
                     <p className="text-gray-600">数学教师</p>
-                    <Badge variant="outline" className="mt-1">在职</Badge>
+                    <Badge variant="outline" className="mt-1">{t('teacher.active')}</Badge>
                   </div>
                 </div>
                 
@@ -368,12 +370,12 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>日期</TableHead>
-                    <TableHead>签到时间</TableHead>
-                    <TableHead>签退时间</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>备注</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead>{t('finance.date')}</TableHead>
+                    <TableHead>{t('teacher.check_in_time')}</TableHead>
+                    <TableHead>{t('teacher.check_out_time')}</TableHead>
+                    <TableHead>{t('teacher.status')}</TableHead>
+                    <TableHead>{t('teacher.notes')}</TableHead>
+                    <TableHead>{t('teacher.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

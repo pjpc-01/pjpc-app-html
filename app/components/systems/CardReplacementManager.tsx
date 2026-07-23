@@ -23,6 +23,7 @@ import {
   MapPin,
   FileText
 } from 'lucide-react'
+import { useLanguage } from "@/contexts/language-context"
 
 interface ReplacementRequest {
   id: string
@@ -60,6 +61,7 @@ export default function CardReplacementManager({
   onReplacementCreated,
   onError
 }: CardReplacementManagerProps) {
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState("requests")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -308,7 +310,7 @@ export default function CardReplacementManager({
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <Label>搜索</Label>
+              <Label>{t('common.search')}</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
@@ -320,17 +322,17 @@ export default function CardReplacementManager({
               </div>
             </div>
             <div className="md:w-48">
-              <Label>状态筛选</Label>
+              <Label>{t('common.status_filter')}</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="选择状态" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部状态</SelectItem>
-                  <SelectItem value="pending">待处理</SelectItem>
-                  <SelectItem value="approved">已批准</SelectItem>
-                  <SelectItem value="rejected">已拒绝</SelectItem>
-                  <SelectItem value="completed">已完成</SelectItem>
+                  <SelectItem value="all">{t('common.all_status')}</SelectItem>
+                  <SelectItem value="pending">{t('common.pending')}</SelectItem>
+                  <SelectItem value="approved">{t('attendance.approved')}</SelectItem>
+                  <SelectItem value="rejected">{t('attendance.rejected')}</SelectItem>
+                  <SelectItem value="completed">{t('assignment.completed')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -348,7 +350,7 @@ export default function CardReplacementManager({
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8">加载中...</div>
+            <div className="text-center py-8">{t('teacher.loading')}</div>
           ) : filteredRequests.length === 0 ? (
             <div className="text-center py-8 text-gray-500">暂无补办申请</div>
           ) : (
@@ -448,7 +450,7 @@ export default function CardReplacementManager({
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label>选择学生</Label>
+                <Label>{t('common.select_student')}</Label>
                 <Select value={newRequest.studentId} onValueChange={(value) => {
                   const student = students.find(s => s.id === value)
                   setNewRequest({
@@ -460,7 +462,7 @@ export default function CardReplacementManager({
                   })
                 }}>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择学生" />
+                    <SelectValue placeholder={t('common.select_student')} />
                   </SelectTrigger>
                   <SelectContent>
                     {students.map(student => (
@@ -480,7 +482,7 @@ export default function CardReplacementManager({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="low">不急</SelectItem>
-                    <SelectItem value="medium">一般</SelectItem>
+                    <SelectItem value="medium">{t('common.average')}</SelectItem>
                     <SelectItem value="high">紧急</SelectItem>
                   </SelectContent>
                 </Select>
@@ -507,7 +509,7 @@ export default function CardReplacementManager({
             </div>
 
             <div>
-              <Label>备注</Label>
+              <Label>{t('teacher.notes')}</Label>
               <Textarea
                 value={newRequest.notes}
                 onChange={(e) => setNewRequest({...newRequest, notes: e.target.value})}

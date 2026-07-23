@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     for (const inv of prevInvoices) {
       const sid = inv.studentId
       if (!sid) continue
-      const invoiceAmount = inv.totalAmount || inv.amount || 0
+      const invoiceAmount = inv.totalAmount || 0
       const paidAmount = paymentSumByInvoice.get(inv.id) || 0
       const diff = paidAmount - invoiceAmount
       
@@ -346,7 +346,7 @@ export async function POST(request: NextRequest) {
         if (carryForward !== 0) {
           for (const inv of prevInvoices) {
             if (inv.studentId === sid) {
-              const ia = inv.totalAmount || inv.amount || 0
+              const ia = inv.totalAmount || 0
               const pa = paymentSumByInvoice.get(inv.id) || 0
               if (pa !== ia) {
                 await fetch(`${PB_URL}/api/collections/invoices/records/${inv.id}`, {

@@ -7,6 +7,7 @@ import {
   CourseCreateData,
   SUBJECT_OPTIONS,
 } from '@/lib/pocketbase-courses'
+import { useLanguage } from "@/contexts/language-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -150,6 +151,7 @@ function CourseFormDialog({
   onSave: (data: CourseCreateData) => Promise<void>
   teachers: { id: string; name: string }[]
 }) {
+  const { t } = useLanguage()
   const [form, setForm] = useState<CourseCreateData>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
 
@@ -219,7 +221,7 @@ function CourseFormDialog({
             <Label htmlFor="subject">科目 <span className="text-red-500">*</span></Label>
             <Select value={form.subject} onValueChange={(v) => setForm({ ...form, subject: v })}>
               <SelectTrigger>
-                <SelectValue placeholder="选择科目" />
+                <SelectValue placeholder={t('assignment.select_subject')} />
               </SelectTrigger>
               <SelectContent>
                 {SUBJECT_OPTIONS.map((s) => (
@@ -231,7 +233,7 @@ function CourseFormDialog({
 
           {/* 年级 */}
           <div className="grid gap-2">
-            <Label htmlFor="grade_level">年级</Label>
+            <Label htmlFor="grade_level">{t('student.grade')}</Label>
             <Select value={form.grade_level || ''} onValueChange={(v) => setForm({ ...form, grade_level: v })}>
               <SelectTrigger>
                 <SelectValue placeholder="选择年级" />
@@ -252,7 +254,7 @@ function CourseFormDialog({
               onValueChange={(v) => setForm({ ...form, teacher_id: v })}
             >
               <SelectTrigger>
-                <SelectValue placeholder="选择教师" />
+                <SelectValue placeholder={t('teacher.select_teacher')} />
               </SelectTrigger>
               <SelectContent>
                 {teachers.map((t) => (
@@ -298,7 +300,7 @@ function CourseFormDialog({
 
           {/* 状态 */}
           <div className="grid gap-2">
-            <Label>状态</Label>
+            <Label>{t('teacher.status')}</Label>
             <div className="flex gap-3">
               {[
                 { value: 'active', label: '进行中', color: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
@@ -322,7 +324,7 @@ function CourseFormDialog({
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">取消</Button>
+            <Button variant="outline">{t('report.cancel')}</Button>
           </DialogClose>
           <Button onClick={handleSave} disabled={saving}>
             {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -339,6 +341,7 @@ function CourseFormDialog({
 // ============================================================
 
 function CourseDetailView({ course, onClose }: { course: Course; onClose: () => void }) {
+  const { t } = useLanguage()
   return (
     <Card>
       <CardHeader>
@@ -383,12 +386,12 @@ function CourseDetailView({ course, onClose }: { course: Course; onClose: () => 
           <div className="bg-gray-50 rounded-lg p-3 text-center">
             <GraduationCap className="h-5 w-5 mx-auto text-gray-400 mb-1" />
             <div className="text-lg font-semibold">{course.grade_level || '—'}</div>
-            <div className="text-xs text-gray-500">年级</div>
+            <div className="text-xs text-gray-500">{t('student.grade')}</div>
           </div>
           <div className="bg-gray-50 rounded-lg p-3 text-center">
             <BookMarked className="h-5 w-5 mx-auto text-gray-400 mb-1" />
             <div className="text-lg font-semibold">{course.subject}</div>
-            <div className="text-xs text-gray-500">科目</div>
+            <div className="text-xs text-gray-500">{t('exam.subject')}</div>
           </div>
         </div>
 
@@ -425,6 +428,7 @@ function CourseStatsCards({ stats }: { stats: {
   activeCourses: number
   subjectDistribution: Record<string, number>
 }}) {
+  const { t } = useLanguage()
   const subjectCount = Object.keys(stats.subjectDistribution).length
   const topSubject = Object.entries(stats.subjectDistribution)
     .sort((a, b) => b[1] - a[1])[0]
@@ -438,7 +442,7 @@ function CourseStatsCards({ stats }: { stats: {
           </div>
           <div>
             <div className="text-2xl font-bold">{stats.totalCourses}</div>
-            <div className="text-xs text-gray-500">全部课程</div>
+            <div className="text-xs text-gray-500">{t('course.all_courses')}</div>
           </div>
         </CardContent>
       </Card>
@@ -449,7 +453,7 @@ function CourseStatsCards({ stats }: { stats: {
           </div>
           <div>
             <div className="text-2xl font-bold">{stats.activeCourses}</div>
-            <div className="text-xs text-gray-500">进行中</div>
+            <div className="text-xs text-gray-500">{t('assignment.in_progress')}</div>
           </div>
         </CardContent>
       </Card>
@@ -488,6 +492,7 @@ interface CourseManagementProps {
 }
 
 export default function CourseManagement({ showTitle = true }: CourseManagementProps) {
+  const { t } = useLanguage()
   const { courses, loading, error, refetch, createCourse, updateCourse, deleteCourse } = useCourses()
   const { stats } = useCourseStats()
   const [searchTerm, setSearchTerm] = useState('')
@@ -587,10 +592,10 @@ export default function CourseManagement({ showTitle = true }: CourseManagementP
         <div className="flex gap-2">
           <Select value={subjectFilter} onValueChange={setSubjectFilter}>
             <SelectTrigger className="w-[130px]">
-              <SelectValue placeholder="科目筛选" />
+              <SelectValue placeholder={t('course.subject_filter')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部科目</SelectItem>
+              <SelectItem value="all">{t('course.all_subjects')}</SelectItem>
               {SUBJECT_OPTIONS.map((s) => (
                 <SelectItem key={s} value={s}>{s}</SelectItem>
               ))}
@@ -598,13 +603,13 @@ export default function CourseManagement({ showTitle = true }: CourseManagementP
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[110px]">
-              <SelectValue placeholder="状态筛选" />
+              <SelectValue placeholder={t('common.status_filter')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部状态</SelectItem>
-              <SelectItem value="active">进行中</SelectItem>
-              <SelectItem value="inactive">已暂停</SelectItem>
-              <SelectItem value="archived">已归档</SelectItem>
+              <SelectItem value="all">{t('common.all_status')}</SelectItem>
+              <SelectItem value="active">{t('assignment.in_progress')}</SelectItem>
+              <SelectItem value="inactive">{t('course.paused')}</SelectItem>
+              <SelectItem value="archived">{t('course.archived')}</SelectItem>
             </SelectContent>
           </Select>
           <Button onClick={() => { setEditingCourse(null); setAddDialogOpen(true) }}>
@@ -663,14 +668,14 @@ export default function CourseManagement({ showTitle = true }: CourseManagementP
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>课程名称</TableHead>
-                <TableHead>科目</TableHead>
-                <TableHead>年级</TableHead>
-                <TableHead>教师</TableHead>
+                <TableHead>{t('course.course_name')}</TableHead>
+                <TableHead>{t('exam.subject')}</TableHead>
+                <TableHead>{t('student.grade')}</TableHead>
+                <TableHead>{t('teacher.teacher')}</TableHead>
                 <TableHead>时长</TableHead>
-                <TableHead>人数</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead className="w-[100px]">操作</TableHead>
+                <TableHead>{t('course.count')}</TableHead>
+                <TableHead>{t('teacher.status')}</TableHead>
+                <TableHead className="w-[100px]">{t('teacher.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -744,7 +749,7 @@ export default function CourseManagement({ showTitle = true }: CourseManagementP
       <Dialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>确认删除</DialogTitle>
+            <DialogTitle>{t('course.confirm_delete')}</DialogTitle>
             <DialogDescription>
               删除后无法恢复，确定要删除这个课程吗？
             </DialogDescription>

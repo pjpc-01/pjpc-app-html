@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 
 interface InvoiceListProps {
   invoices: any[]
@@ -41,6 +42,7 @@ export function InvoiceList({
   onDelete,
   payments = []
 }: InvoiceListProps) {
+  const { t } = useLanguage()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [invoiceToDelete, setInvoiceToDelete] = useState<any>(null)
 
@@ -122,7 +124,7 @@ export function InvoiceList({
     const invoice = invoices.find(inv => inv.id === invoiceId)
     
     if (!invoice) {
-      return <Badge variant="outline">未知</Badge>
+      return <Badge variant="outline">{t('teacher.unknown')}</Badge>
     }
     
     if (totalPaid >= invoice.totalAmount) {
@@ -172,7 +174,7 @@ export function InvoiceList({
           {/* Filters */}
           <div className="flex gap-4 mb-6">
             <div className="flex-1">
-              <Label htmlFor="search">搜索</Label>
+              <Label htmlFor="search">{t('common.search')}</Label>
               <Input
                 id="search"
                 placeholder="搜索发票号码、学生姓名..."
@@ -197,7 +199,7 @@ export function InvoiceList({
               </Select>
             </div>
             <div className="w-48">
-              <Label>年级</Label>
+              <Label>{t('student.grade')}</Label>
               <Select 
                 value={filters.grade || "all"} 
                 onValueChange={(value) => setFilters((prev: any) => ({ ...prev, grade: value }))}
@@ -207,12 +209,12 @@ export function InvoiceList({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">所有年级</SelectItem>
-                  <SelectItem value="一年级">一年级</SelectItem>
-                  <SelectItem value="二年级">二年级</SelectItem>
-                  <SelectItem value="三年级">三年级</SelectItem>
-                  <SelectItem value="四年级">四年级</SelectItem>
-                  <SelectItem value="五年级">五年级</SelectItem>
-                  <SelectItem value="六年级">六年级</SelectItem>
+                  <SelectItem value="一年级">{t('student.year_1')}</SelectItem>
+                  <SelectItem value="二年级">{t('student.year_2')}</SelectItem>
+                  <SelectItem value="三年级">{t('student.year_3')}</SelectItem>
+                  <SelectItem value="四年级">{t('student.year_4')}</SelectItem>
+                  <SelectItem value="五年级">{t('student.year_5')}</SelectItem>
+                  <SelectItem value="六年级">{t('student.year_6')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -254,19 +256,19 @@ export function InvoiceList({
                     <Checkbox
                       checked={allSelected}
                       onCheckedChange={toggleSelectAll}
-                      aria-label="全选"
+                      aria-label={t('teacher.select_all')}
                     />
                   </TableHead>
                   <TableHead>发票号码</TableHead>
                   <TableHead>发票状态</TableHead>
-                  <TableHead>学号</TableHead>
-                  <TableHead>学生姓名</TableHead>
-                  <TableHead>年级</TableHead>
-                  <TableHead>金额</TableHead>
+                  <TableHead>{t('student.student_no')}</TableHead>
+                  <TableHead>{t('student.student_name')}</TableHead>
+                  <TableHead>{t('student.grade')}</TableHead>
+                  <TableHead>{t('finance.amount')}</TableHead>
                   <TableHead>缴费状态</TableHead>
                   <TableHead>开具日期</TableHead>
                   <TableHead>到期日期</TableHead>
-                  <TableHead>操作</TableHead>
+                  <TableHead>{t('teacher.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -393,7 +395,7 @@ export function InvoiceList({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">逾期</p>
+                    <p className="text-sm font-medium text-gray-600">{t('student.overdue')}</p>
                     <p className="text-2xl font-bold text-red-600">
                       {invoices.filter(i => i.status === 'overdue').length}
                     </p>
@@ -410,7 +412,7 @@ export function InvoiceList({
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>确认删除</DialogTitle>
+            <DialogTitle>{t('course.confirm_delete')}</DialogTitle>
             <DialogDescription>
               确定要删除发票 <span className="font-semibold">{invoiceToDelete?.invoiceNumber}</span> 吗？
             </DialogDescription>

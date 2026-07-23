@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useLanguage } from "@/contexts/language-context"
 import { 
   Dialog,
   DialogContent,
@@ -75,6 +76,7 @@ export default function BulkOperations({
   onBulkImport,
   onBulkMessage
 }: BulkOperationsProps) {
+  const { t } = useLanguage()
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false)
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false)
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
@@ -193,13 +195,13 @@ export default function BulkOperations({
             </div>
             <div className="space-y-1">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">在读</span>
+                <span className="text-gray-600">{t('student.enrolled')}</span>
                 <Badge variant="outline" className="text-xs text-green-600">
                   {statusDistribution.active} 人
                 </Badge>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">离校</span>
+                <span className="text-gray-600">{t('student.left_school')}</span>
                 <Badge variant="outline" className="text-xs text-red-600">
                   {statusDistribution.inactive} 人
                 </Badge>
@@ -239,19 +241,19 @@ export default function BulkOperations({
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label>年级</Label>
+                  <Label>{t('student.grade')}</Label>
                   <Select value={updateData.grade || ''} onValueChange={(value) => setUpdateData(prev => ({ ...prev, grade: value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="选择年级" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="no-change">不修改</SelectItem>
-                      <SelectItem value="一年级">一年级</SelectItem>
-                      <SelectItem value="二年级">二年级</SelectItem>
-                      <SelectItem value="三年级">三年级</SelectItem>
-                      <SelectItem value="四年级">四年级</SelectItem>
-                      <SelectItem value="五年级">五年级</SelectItem>
-                      <SelectItem value="六年级">六年级</SelectItem>
+                      <SelectItem value="一年级">{t('student.year_1')}</SelectItem>
+                      <SelectItem value="二年级">{t('student.year_2')}</SelectItem>
+                      <SelectItem value="三年级">{t('student.year_3')}</SelectItem>
+                      <SelectItem value="四年级">{t('student.year_4')}</SelectItem>
+                      <SelectItem value="五年级">{t('student.year_5')}</SelectItem>
+                      <SelectItem value="六年级">{t('student.year_6')}</SelectItem>
                       <SelectItem value="初一">初一</SelectItem>
                       <SelectItem value="初二">初二</SelectItem>
                       <SelectItem value="初三">初三</SelectItem>
@@ -263,18 +265,18 @@ export default function BulkOperations({
                 </div>
 
                 <div>
-                  <Label>状态</Label>
+                  <Label>{t('teacher.status')}</Label>
                   <Select value={updateData.status || ''} onValueChange={(value) => setUpdateData(prev => ({ ...prev, status: value as any }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="选择状态" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="no-change">不修改</SelectItem>
-                      <SelectItem value="active">在读</SelectItem>
-                      <SelectItem value="graduated">已毕业</SelectItem>
-                      <SelectItem value="withdrawn">已停学</SelectItem>
+                      <SelectItem value="active">{t('student.enrolled')}</SelectItem>
+                      <SelectItem value="graduated">{t('student.graduated')}</SelectItem>
+                      <SelectItem value="withdrawn">{t('student.suspended')}</SelectItem>
                       <SelectItem value="transferred">已转学</SelectItem>
-                      <SelectItem value="inactive">非活跃</SelectItem>
+                      <SelectItem value="inactive">{t('user.inactive')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -296,7 +298,7 @@ export default function BulkOperations({
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="sm" className="flex flex-col items-center gap-1 h-auto py-3 border-red-200 text-red-600 hover:bg-red-50">
                 <Trash2 className="h-4 w-4" />
-                <span className="text-xs">批量删除</span>
+                <span className="text-xs">{t('teacher.batch_delete')}</span>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -307,7 +309,7 @@ export default function BulkOperations({
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogCancel>{t('report.cancel')}</AlertDialogCancel>
                 <AlertDialogAction onClick={onBulkDelete} className="bg-red-600 hover:bg-red-700">
                   确认删除
                 </AlertDialogAction>
@@ -371,7 +373,7 @@ export default function BulkOperations({
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label>选择文件</Label>
+                  <Label>{t('teacher.select_file')}</Label>
                   <Input
                     type="file"
                     accept=".csv,.xlsx,.xls"

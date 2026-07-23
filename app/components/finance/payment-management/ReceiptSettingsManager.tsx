@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
@@ -255,6 +256,7 @@ interface ReceiptSettingsManagerProps {
 }
 
 export default function ReceiptSettingsManager({ onSettingsChange, activePresetId }: ReceiptSettingsManagerProps) {
+  const { t } = useLanguage()
   const [presets, setPresets] = useState<ReceiptSettingsPreset[]>([])
   const [activeId, setActiveId] = useState<string>("")
   const [settings, setSettings] = useState<ReceiptSettingsPreset>(createDefaultPreset())
@@ -508,7 +510,7 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
             </h2>
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">基本信息</CardTitle>
+                <CardTitle className="text-base">{t('report.basic_info')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -527,11 +529,11 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label><Smartphone className="h-3.5 w-3.5 inline mr-1" />电话</Label>
+                    <Label><Smartphone className="h-3.5 w-3.5 inline mr-1" />{t('report.phone')}</Label>
                     <Input value={settings.schoolPhone} onChange={e => updateSettings({ schoolPhone: e.target.value })} placeholder="010-12345678" />
                   </div>
                   <div>
-                    <Label><Mail className="h-3.5 w-3.5 inline mr-1" />邮箱</Label>
+                    <Label><Mail className="h-3.5 w-3.5 inline mr-1" />{t('report.email')}</Label>
                     <Input value={settings.schoolEmail} onChange={e => updateSettings({ schoolEmail: e.target.value })} placeholder="info@school.com" />
                   </div>
                 </div>
@@ -550,7 +552,7 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
                       ) : (
                         <div className="flex flex-col items-center text-muted-foreground">
                           <Building2 className="h-8 w-8" />
-                          <span className="text-[10px] mt-1">点击上传</span>
+                          <span className="text-[10px] mt-1">{t('report.click_to_upload')}</span>
                         </div>
                       )}
                     </div>
@@ -687,8 +689,8 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
               <Input value={newPresetName} onChange={e => setNewPresetName(e.target.value)} placeholder="例如：标准收据、简化版" onKeyDown={e => { if (e.key === 'Enter') handleSaveAsNew() }} />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsNewPresetDialogOpen(false)}>取消</Button>
-              <Button onClick={handleSaveAsNew} disabled={!newPresetName.trim()}>保存</Button>
+              <Button variant="outline" onClick={() => setIsNewPresetDialogOpen(false)}>{t('report.cancel')}</Button>
+              <Button onClick={handleSaveAsNew} disabled={!newPresetName.trim()}>{t('report.save')}</Button>
             </div>
           </div>
         </DialogContent>

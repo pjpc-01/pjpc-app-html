@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { ChevronDown, ChevronRight, FileText, CheckCircle, Pencil, GraduationCap, Package, CalendarDays, Utensils, Bus, FolderOpen, BookOpen, School, ClipboardList, Receipt, Banknote, ScrollText, Library } from "lucide-react"
 import { createElement, type ComponentType } from "react"
+import { useLanguage } from "@/contexts/language-context"
 
 const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
   GraduationCap, BookOpen, Package, CalendarDays, Utensils, Bus,
@@ -250,7 +251,7 @@ export const StudentCard = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{t('report.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => { onCreateInvoice(studentId); setShowConfirmDialog(false) }}>
               确认开具
             </AlertDialogAction>

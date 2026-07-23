@@ -29,6 +29,7 @@ import {
   UserCheck,
   UserX
 } from 'lucide-react'
+import { useLanguage } from "@/contexts/language-context"
 
 interface LeaveRequest {
   id: string
@@ -64,6 +65,7 @@ interface LeaveBalance {
 }
 
 export function LeaveManagement() {
+  const { t } = useLanguage()
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([])
   const [leaveBalances, setLeaveBalances] = useState<LeaveBalance[]>([])
   const [selectedStatus, setSelectedStatus] = useState('all')
@@ -299,7 +301,7 @@ export function LeaveManagement() {
             <div className="text-2xl font-bold text-green-600">
               {leaveRequests.filter(r => r.status === 'approved').length}
             </div>
-            <p className="text-xs text-muted-foreground">已批准</p>
+            <p className="text-xs text-muted-foreground">{t('attendance.approved')}</p>
           </CardContent>
         </Card>
 
@@ -311,7 +313,7 @@ export function LeaveManagement() {
             <div className="text-2xl font-bold">
               {leaveRequests.reduce((sum, r) => sum + r.totalDays, 0)}
             </div>
-            <p className="text-xs text-muted-foreground">天</p>
+            <p className="text-xs text-muted-foreground">{t('attendance.days')}</p>
           </CardContent>
         </Card>
 
@@ -362,13 +364,13 @@ export function LeaveManagement() {
                 </div>
                 <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                   <SelectTrigger className="w-40">
-                    <SelectValue placeholder="状态" />
+                    <SelectValue placeholder={t('teacher.status')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部状态</SelectItem>
+                    <SelectItem value="all">{t('common.all_status')}</SelectItem>
                     <SelectItem value="pending">待审批</SelectItem>
-                    <SelectItem value="approved">已批准</SelectItem>
-                    <SelectItem value="rejected">已拒绝</SelectItem>
+                    <SelectItem value="approved">{t('attendance.approved')}</SelectItem>
+                    <SelectItem value="rejected">{t('attendance.rejected')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={selectedType} onValueChange={setSelectedType}>
@@ -376,7 +378,7 @@ export function LeaveManagement() {
                     <SelectValue placeholder="请假类型" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部类型</SelectItem>
+                    <SelectItem value="all">{t('common.all_types')}</SelectItem>
                     <SelectItem value="annual">年假</SelectItem>
                     <SelectItem value="sick">病假</SelectItem>
                     <SelectItem value="emergency">紧急假</SelectItem>
@@ -507,7 +509,7 @@ export function LeaveManagement() {
                       <th className="text-left py-3 px-4">紧急假</th>
                       <th className="text-left py-3 px-4">产假</th>
                       <th className="text-left py-3 px-4">陪产假</th>
-                      <th className="text-left py-3 px-4">操作</th>
+                      <th className="text-left py-3 px-4">{t('teacher.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>

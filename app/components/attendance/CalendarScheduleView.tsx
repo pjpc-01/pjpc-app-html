@@ -15,6 +15,7 @@ import {
   isToday,
   parseISO,
 } from "date-fns"
+import { useLanguage } from "@/contexts/language-context"
 import { zhCN } from "date-fns/locale"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -42,6 +43,7 @@ const statusColors: Record<string, string> = {
 }
 
 export default function CalendarScheduleView() {
+  const { t } = useLanguage()
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [events, setEvents] = useState<ScheduleEvent[]>([])
   const [loading, setLoading] = useState(true)
@@ -186,7 +188,7 @@ export default function CalendarScheduleView() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base">
               {format(selectedDate, "M 月 d 日 EEEE", { locale: zhCN })}
-              {isToday(selectedDate) && <Badge className="ml-2">今天</Badge>}
+              {isToday(selectedDate) && <Badge className="ml-2">{t('attendance.today')}</Badge>}
             </CardTitle>
           </CardHeader>
           <CardContent>

@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { AlertCircle, BarChart3, BookOpen, TrendingUp } from "lucide-react"
 import { useSearchParams } from "next/navigation"
+import { useLanguage } from "@/contexts/language-context"
 
 const gradeColor = (letter: string) => {
   switch (letter) {
@@ -22,6 +23,7 @@ const gradeColor = (letter: string) => {
 }
 
 export default function ParentGradesPage() {
+  const { t } = useLanguage()
   const { children, loading, error } = useParentPortal()
   const { getStudentGrades, getStats } = useGrades()
   const searchParams = useSearchParams()
@@ -80,14 +82,14 @@ export default function ParentGradesPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">成绩查询</h1>
+      <h1 className="text-2xl font-bold text-gray-900">{t('parent.grades_query')}</h1>
       <p className="text-gray-500">查看孩子的考试成绩与学习进度</p>
 
       {filtered.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center py-12">
             <BarChart3 className="h-12 w-12 text-gray-300 mb-4" />
-            <p className="text-gray-500">暂无数据</p>
+            <p className="text-gray-500">{t('parent.no_data')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -126,7 +128,7 @@ export default function ParentGradesPage() {
                             <p className="text-lg font-bold text-indigo-600">{stats.count}</p>
                           </div>
                           <div className="bg-slate-50 rounded-lg p-3 text-center">
-                            <p className="text-xs text-slate-500">平均分</p>
+                            <p className="text-xs text-slate-500">{t('report.average_score')}</p>
                             <p className="text-lg font-bold text-blue-600">{stats.average}</p>
                           </div>
                           <div className="bg-slate-50 rounded-lg p-3 text-center">
@@ -134,7 +136,7 @@ export default function ParentGradesPage() {
                             <p className="text-lg font-bold text-emerald-600">{stats.highest}</p>
                           </div>
                           <div className="bg-slate-50 rounded-lg p-3 text-center">
-                            <p className="text-xs text-slate-500">及格率</p>
+                            <p className="text-xs text-slate-500">{t('exam.pass_rate')}</p>
                             <p className="text-lg font-bold text-amber-600">{stats.passRate}%</p>
                           </div>
                           <div className="bg-slate-50 rounded-lg p-3 text-center">

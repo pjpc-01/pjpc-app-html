@@ -1,218 +1,123 @@
 ---
-version: "3.0"
-name: PJPC Phantom Glass
-description: 玻璃态设计系统 — 半透明模糊面板叠加在灰白渐变背景上。纯 Phantom 灰白中性色系，唯一外观主题。
-glassmorphism: true
-theme: phantom-only
-
-colors:
-  # Background — cool grey-white gradient
-  background: "#FAFAFA"
-  background-gradient: "linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 40%, #EEEEEE 100%)"
-  foreground: "#212529"
-
-  # Glass surfaces
-  glass-bg: "rgba(255,255,255,0.55)"
-  glass-bg-hover: "rgba(255,255,255,0.70)"
-  glass-bg-strong: "rgba(255,255,255,0.75)"
-  glass-bg-sidebar: "rgba(255,255,255,0.70)"
-
-  # Glass effects
-  glass-blur: "blur(20px) saturate(160%)"
-  glass-blur-heavy: "blur(28px) saturate(180%)"
-  glass-blur-light: "blur(12px) saturate(140%)"
-
-  # Glass borders
-  glass-border: "rgba(255,255,255,0.70)"
-  glass-border-strong: "rgba(255,255,255,0.70)"
-  glass-border-subtle: "rgba(0,0,0,0.06)"
-  sidebar-border: "rgba(0,0,0,0.08)"
-
-  # Brand colors (neutral grey)
-  primary: "#6c757d"
-  primary-foreground: "#FFFFFF"
-  secondary: "#E9ECEF"
-  secondary-foreground: "#212529"
-  muted: "#E9ECEF"
-  muted-foreground: "#6c757d"
-  accent: "#ADB5BD"
-  accent-foreground: "#212529"
-
-  # Semantic
-  destructive: "#DC3545"
-  destructive-foreground: "#FFFFFF"
-  border: "#DEE2E6"
-  input: "#DEE2E6"
-  ring: "#6c757d"
-
-  # Sidebar
-  sidebar-background: "rgba(255,255,255,0.70)"
-  sidebar-foreground: "#495057"
-  sidebar-primary: "#6c757d"
-  sidebar-primary-foreground: "#FFFFFF"
-  sidebar-accent: "rgba(233,236,239,0.60)"
-  sidebar-accent-foreground: "#495057"
-  sidebar-ring: "#6c757d"
-
-  # Charts
-  chart-1: "#6c757d"
-  chart-2: "#ADB5BD"
-  chart-3: "#5A9E6F"
-  chart-4: "#495057"
-  chart-5: "#DC3545"
-
-typography:
-  h1: { fontFamily: Nunito, fontSize: "1.875rem", fontWeight: 700, lineHeight: 1.2, letterSpacing: "-0.01em" }
-  h2: { fontFamily: Nunito, fontSize: "1.5rem", fontWeight: 700, lineHeight: 1.25 }
-  h3: { fontFamily: Nunito, fontSize: "1.125rem", fontWeight: 600, lineHeight: 1.3 }
-  body-lg: { fontFamily: Inter, fontSize: "1rem", fontWeight: 400, lineHeight: 1.6 }
-  body-md: { fontFamily: Inter, fontSize: "0.875rem", fontWeight: 400, lineHeight: 1.5 }
-  body-sm: { fontFamily: Inter, fontSize: "0.75rem", fontWeight: 400, lineHeight: 1.4 }
-  label: { fontFamily: Nunito, fontSize: "0.75rem", fontWeight: 600, lineHeight: 1.4, letterSpacing: "0.05em" }
-  stat-number: { fontFamily: Nunito, fontSize: "1.875rem", fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.02em" }
-  stat-label: { fontFamily: Inter, fontSize: "0.875rem", fontWeight: 500, lineHeight: 1.4 }
-
-rounded:
-  sm: 4px
-  md: 8px
-  lg: 12px
-  xl: 16px
-  "2xl": 20px
-  full: 9999px
-
-spacing:
-  xs: 4px
-  sm: 8px
-  md: 16px
-  lg: 24px
-  xl: 32px
-  "2xl": 48px
-
-shadows:
-  glass: "0 8px 32px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)"
-  glass-hover: "0 12px 40px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06)"
-  glass-sm: "0 4px 16px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03)"
-  card: "0 1px 3px rgba(0,0,0,0.06)"
-  card-hover: "0 4px 12px rgba(0,0,0,0.10)"
-
-components:
-  glass-card:
-    background: "rgba(255,255,255,0.55)"
-    backdropFilter: "blur(20px) saturate(160%)"
-    border: "1px solid rgba(255,255,255,0.70)"
-    borderRadius: "16px"
-    boxShadow: "0 8px 32px rgba(0,0,0,0.06)"
-    padding: "24px"
-    className: "glass transition-all duration-200 hover:bg-[rgba(255,255,255,0.70)]"
-
-  glass-stat:
-    background: "rgba(255,255,255,0.70)"
-    backdropFilter: "blur(20px) saturate(160%)"
-    border: "1px solid rgba(255,255,255,0.70)"
-    borderRadius: "12px"
-    boxShadow: "0 4px 16px rgba(0,0,0,0.04)"
-    padding: "16px 24px"
-
-  glass-sidebar:
-    background: "rgba(255,255,255,0.70)"
-    backdropFilter: "blur(28px) saturate(180%)"
-    borderRight: "1px solid rgba(0,0,0,0.08)"
-    boxShadow: "2px 0 24px rgba(0,0,0,0.06)"
-    width: "260px"
-
-  glass-button:
-    background: "rgba(255,255,255,0.70)"
-    backdropFilter: "blur(12px) saturate(140%)"
-    border: "1px solid rgba(255,255,255,0.70)"
-    borderRadius: "8px"
-    padding: "8px 16px"
-    fontWeight: 600
-    color: "#1A1A1A"
-
-  glass-button-primary:
-    background: "linear-gradient(135deg, #999999, #666666)"
-    color: "#FFFFFF"
-    fontWeight: 700
-    borderRadius: "8px"
-    padding: "10px 20px"
-    className: "shadow-[0_4px_16px_rgba(0,0,0,0.10)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.15)]"
-
-  glass-input:
-    background: "rgba(255,255,255,0.50)"
-    backdropFilter: "blur(12px) saturate(140%)"
-    border: "1px solid rgba(255,255,255,0.70)"
-    borderRadius: "8px"
-    padding: "8px 12px"
-
-  glass-table-row:
-    background: "rgba(255,255,255,0.40)"
-    borderRadius: "8px"
-    className: "glass-row"
-
-  glass-badge:
-    background: "rgba(255,255,255,0.45)"
-    border: "1px solid rgba(255,255,255,0.50)"
-    borderRadius: "9999px"
-    padding: "2px 10px"
-
-  glass-tabs:
-    background: "rgba(255,255,255,0.40)"
-    backdropFilter: "blur(12px) saturate(140%)"
-    border: "1px solid rgba(255,255,255,0.70)"
-    borderRadius: "12px"
-    padding: "4px"
-
-  page-background:
-    background: "linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 40%, #EEEEEE 100%)"
-    minHeight: "100vh"
-    className: "glass-body"
-
+version: "3.1"
+name: PJPC Neutral
+description: 中性灰白设计系统 — 纯色面板 + 灰白渐变背景。无玻璃态，无暖色，单一主题。
+theme: neutral-only
 ---
 
-## Phantom Glass — Design System v3.0
+## PJPC Neutral — Design System v3.1
 
-### 唯一外观主题：幻影玻璃 (Phantom Glass)
+### 唯一外观主题：中性灰白
 
-本项目仅使用 **一种** 外观：Phantom 灰白玻璃态。不存在其他主题切换。
+本项目仅使用 **一种** 外观：中性灰白色系。不存在其他主题切换。
 
-**核心色板：**
-- 背景：灰白渐变 `#FAFAFA → #F5F5F5 → #EEEEEE`
-- 玻璃层：半透明白 `rgba(255,255,255,0.55–0.70)` + `backdrop-filter: blur()`
-- 文字：深灰 `#212529` / 中灰 `#6c757d`
-- 主色：中性灰 `#6c757d`
-- 禁止：任何暖琥珀/棕/金/橙色调
-
-### Core CSS Classes
+### CSS 变量（实际值）
 
 ```css
-.glass-body {
-  background: linear-gradient(135deg, #FAFAFA 0%, #F5F5F5 40%, #EEEEEE 100%);
-  min-height: 100vh;
-}
+:root {
+  /* 基础 */
+  --background: 0 0% 100%;         /* 纯白 */
+  --foreground: 0 0% 3.9%;         /* 近黑 */
 
-.glass {
-  background: rgba(255,255,255,0.55);
-  backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid rgba(255,255,255,0.70);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.06);
-}
+  /* 卡片/弹出层 */
+  --card: 0 0% 100%;
+  --popover: 0 0% 100%;
 
-.glass-sidebar {
-  background: rgba(255,255,255,0.70);
-  backdrop-filter: blur(28px) saturate(180%);
-  border-right: 1px solid rgba(0,0,0,0.08);
-}
+  /* 主色 — 中性深灰 */
+  --primary: 0 0% 9%;              /* #171717 */
+  --primary-foreground: 0 0% 98%;
 
-.glass-btn-primary {
-  background: linear-gradient(135deg, #999999, #666666);
-  color: #FFFFFF;
+  /* 次色 — 浅灰 */
+  --secondary: 0 0% 96.1%;
+  --secondary-foreground: 0 0% 9%;
+
+  /* 静默色 */
+  --muted: 0 0% 96.1%;
+  --muted-foreground: 0 0% 45.1%;  /* 中灰文字 */
+
+  /* 强调色 */
+  --accent: 0 0% 96.1%;
+  --accent-foreground: 0 0% 9%;
+
+  /* 语义 */
+  --destructive: 0 84.2% 60.2%;    /* 红色 */
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 89.8%;
+  --input: 0 0% 89.8%;
+  --ring: 0 0% 3.9%;
+
+  /* 图表 */
+  --chart-1: 12 76% 61%;
+  --chart-2: 173 58% 39%;
+  --chart-3: 197 37% 24%;
+  --chart-4: 43 74% 66%;
+  --chart-5: 27 87% 67%;
+
+  /* 圆角 */
+  --radius: 0.5rem;               /* 8px */
+
+  /* 侧边栏 */
+  --sidebar-background: 0 0% 98%;           /* 浅灰白 */
+  --sidebar-foreground: 240 5.3% 26.1%;     /* 深灰 */
+  --sidebar-primary: 240 5.9% 10%;          /* 近黑 */
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 240 4.8% 95.9%;         /* hover 浅灰 */
+  --sidebar-accent-foreground: 240 5.9% 10%;
+  --sidebar-border: 220 13% 91%;
+  --sidebar-ring: 217.2 91.2% 59.8%;
 }
 ```
+
+### 核心色板
+
+| 用途 | 值 | 说明 |
+|------|-----|------|
+| 背景 | `0 0% 100%` / `0 0% 98%` | 纯白/浅灰白 |
+| 文字 | `0 0% 3.9%` / `0 0% 45.1%` | 近黑/中灰 |
+| 主色 | `0 0% 9%` | 中性深灰（按钮/激活态） |
+| 侧边栏 | `0 0% 98%` | 浅灰白背景 |
+| 边框 | `0 0% 89.8%` | 浅灰 |
+
+### 状态颜色
+
+| 状态 | Tailwind 类 | 用途 |
+|------|------------|------|
+| 成功 | `emerald-500` | 正常/已付款/已完成/出席 |
+| 待处理 | `amber-500` | 待处理/部分付款/迟到 |
+| 错误 | `red-500` | 逾期/未付款/缺席/退学 |
+| 激活 | `indigo-500` 或 `blue-500` | 激活/在线/主操作 |
+
+### 组件栈
+
+- **UI 库：** shadcn/ui (Button, Card, Dialog, Table, Select, Tabs, etc.)
+- **CSS：** Tailwind CSS 3
+- **图标：** lucide-react
+- **通知：** sonner (toast)
+- **图表：** recharts
 
 ### Anti-patterns
 
 - ❌ 任何暖色系（琥珀 #E8C86A、棕 #514A2E、金 #F59E0B 等）
 - ❌ 主题切换器
 - ❌ 暗色模式 .dark
-- ❌ planhat / superlist / basedash / 琥珀 / 任何非 Phantom 主题
+- ❌ backdrop-filter / glassmorphism（实际代码不使用玻璃态效果）
+- ❌ 任何非中性灰白色系的主题
+
+### 字体
+
+| 用途 | 字体 | 大小 |
+|------|------|------|
+| 标题 | Nunito | 1.875rem - 1.5rem |
+| 正文 | Inter | 0.875rem - 1rem |
+| 标签 | Nunito | 0.75rem |
+
+### 圆角
+
+| 尺寸 | 值 |
+|------|-----|
+| sm | 4px |
+| md | 8px (默认) |
+| lg | 12px |
+| xl | 16px |
+| 2xl | 20px |
+| full | 9999px |

@@ -24,6 +24,7 @@ import {
   Brain,
   Clock
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface UserRecord {
   id: string
@@ -85,6 +86,7 @@ export default function UserManagementTable({
   onViewUserDetail,
   onReviewUser
 }: UserManagementTableProps) {
+  const { t } = useLanguage()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [roleFilter, setRoleFilter] = useState<string>('all')
@@ -120,11 +122,11 @@ export default function UserManagementTable({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="secondary" className="flex items-center gap-1"><Clock className="h-3 w-3" />待审核</Badge>
+        return <Badge variant="secondary" className="flex items-center gap-1"><Clock className="h-3 w-3" />{t('admin.pending_review')}</Badge>
       case 'approved':
-        return <Badge variant="default" className="flex items-center gap-1"><CheckCircle className="h-3 w-3" />已审核</Badge>
+        return <Badge variant="default" className="flex items-center gap-1"><CheckCircle className="h-3 w-3" />{t('admin.reviewed')}</Badge>
       case 'suspended':
-        return <Badge variant="destructive" className="flex items-center gap-1"><XCircle className="h-3 w-3" />已拒绝</Badge>
+        return <Badge variant="destructive" className="flex items-center gap-1"><XCircle className="h-3 w-3" />{t('attendance.rejected')}</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
@@ -173,7 +175,7 @@ export default function UserManagementTable({
         {/* 搜索和过滤 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <div>
-            <Label htmlFor="search">搜索</Label>
+            <Label htmlFor="search">{t('common.search')}</Label>
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
@@ -186,45 +188,45 @@ export default function UserManagementTable({
             </div>
           </div>
           <div>
-            <Label htmlFor="status">状态</Label>
+            <Label htmlFor="status">{t('teacher.status')}</Label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">全部状态</SelectItem>
-                <SelectItem value="pending">待审核</SelectItem>
-                <SelectItem value="approved">已审核</SelectItem>
-                <SelectItem value="suspended">已拒绝</SelectItem>
+                <SelectItem value="all">{t('common.all_status')}</SelectItem>
+                <SelectItem value="pending">{t('admin.pending_review')}</SelectItem>
+                <SelectItem value="approved">{t('admin.reviewed')}</SelectItem>
+                <SelectItem value="suspended">{t('attendance.rejected')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label htmlFor="role">角色</Label>
+            <Label htmlFor="role">{t('admin.role')}</Label>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">全部角色</SelectItem>
-                <SelectItem value="admin">管理员</SelectItem>
-                <SelectItem value="teacher">教师</SelectItem>
-                <SelectItem value="parent">家长</SelectItem>
-                <SelectItem value="accountant">会计</SelectItem>
+                <SelectItem value="admin">{t('admin.admin')}</SelectItem>
+                <SelectItem value="teacher">{t('teacher.teacher')}</SelectItem>
+                <SelectItem value="parent">{t('admin.parent')}</SelectItem>
+                <SelectItem value="accountant">{t('admin.accountant')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label htmlFor="date">注册时间</Label>
+            <Label htmlFor="date">{t('admin.registration_time')}</Label>
             <Select value={dateFilter} onValueChange={setDateFilter}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">全部时间</SelectItem>
-                <SelectItem value="today">今天</SelectItem>
-                <SelectItem value="yesterday">昨天</SelectItem>
-                <SelectItem value="week">本周</SelectItem>
+                <SelectItem value="today">{t('attendance.today')}</SelectItem>
+                <SelectItem value="yesterday">{t('admin.yesterday')}</SelectItem>
+                <SelectItem value="week">{t('admin.this_week')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -241,12 +243,12 @@ export default function UserManagementTable({
                 />
               </TableHead>
               <TableHead>用户信息</TableHead>
-              <TableHead>角色</TableHead>
-              <TableHead>状态</TableHead>
+              <TableHead>{t('admin.role')}</TableHead>
+              <TableHead>{t('teacher.status')}</TableHead>
               <TableHead>AI建议</TableHead>
               <TableHead>风险评分</TableHead>
-              <TableHead>注册时间</TableHead>
-              <TableHead>操作</TableHead>
+              <TableHead>{t('admin.registration_time')}</TableHead>
+              <TableHead>{t('teacher.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -272,7 +274,7 @@ export default function UserManagementTable({
                       {aiLoading[user.id] ? (
                         <div className="flex items-center gap-2">
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                          <span className="text-xs text-gray-500">分析中...</span>
+                          <span className="text-xs text-gray-500">{t('admin.analyzing')}</span>
                         </div>
                       ) : aiSuggestions[user.id] ? (
                         <TooltipProvider>
@@ -427,7 +429,7 @@ export default function UserManagementTable({
         {filteredUsers.length === 0 && (
           <div className="text-center py-8">
             <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">暂无用户</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('admin.no_users')}</h3>
             <p className="text-gray-600">没有找到符合条件的用户</p>
           </div>
         )}

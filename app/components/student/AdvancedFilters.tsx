@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useLanguage } from "@/contexts/language-context"
 import { 
   Filter, 
   X, 
@@ -60,6 +61,7 @@ export default function AdvancedFilters({
   onClear,
   collapsed = true,
 }: AdvancedFiltersProps) {
+  const { t } = useLanguage()
   // UI-only expanded state
   const [_expanded, _setExpanded] = useState(false)
 
@@ -124,28 +126,28 @@ export default function AdvancedFilters({
           </div>
           <Select value={filters.selectedGrade} onValueChange={(v) => update('selectedGrade', v)}>
             <SelectTrigger className="w-[100px] h-9 text-sm">
-              <SelectValue placeholder="年级" />
+              <SelectValue placeholder={t('student.grade')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部年级</SelectItem>
+              <SelectItem value="all">{t('course.all_grades')}</SelectItem>
               {filterOptions.grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={filters.selectedStatus} onValueChange={(v) => update('selectedStatus', v)}>
             <SelectTrigger className="w-[90px] h-9 text-sm">
-              <SelectValue placeholder="状态" />
+              <SelectValue placeholder={t('teacher.status')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部状态</SelectItem>
+              <SelectItem value="all">{t('common.all_status')}</SelectItem>
               {filterOptions.statuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={filters.selectedCenter} onValueChange={(v) => update('selectedCenter', v)}>
             <SelectTrigger className="w-[100px] h-9 text-sm">
-              <SelectValue placeholder="中心" />
+              <SelectValue placeholder={t('teacher.center')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部中心</SelectItem>
+              <SelectItem value="all">{t('teacher.all_centers')}</SelectItem>
               {filterOptions.centers.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -180,40 +182,40 @@ export default function AdvancedFilters({
           <div className="space-y-2.5 pt-2 border-t">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <div>
-                <Label className="text-xs text-muted-foreground">性别</Label>
+                <Label className="text-xs text-muted-foreground">{t('student.gender')}</Label>
                 <Select value={filters.selectedGender} onValueChange={(v) => update('selectedGender', v)}>
                   <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="全部" />
+                    <SelectValue placeholder={t('card.all')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部</SelectItem>
+                    <SelectItem value="all">{t('card.all')}</SelectItem>
                     {filterOptions.genders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">级别</Label>
+                <Label className="text-xs text-muted-foreground">{t('student.level')}</Label>
                 <Select value={filters.selectedLevel} onValueChange={(v) => update('selectedLevel', v)}>
                   <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="全部" />
+                    <SelectValue placeholder={t('card.all')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部</SelectItem>
+                    <SelectItem value="all">{t('card.all')}</SelectItem>
                     {filterOptions.levels.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">排序</Label>
+                <Label className="text-xs text-muted-foreground">{t('student.sort')}</Label>
                 <Select value={filters.sortBy} onValueChange={(v) => update('sortBy', v)}>
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="name">姓名</SelectItem>
-                    <SelectItem value="grade">年级</SelectItem>
-                    <SelectItem value="status">状态</SelectItem>
-                    <SelectItem value="center">中心</SelectItem>
+                    <SelectItem value="name">{t('student.name')}</SelectItem>
+                    <SelectItem value="grade">{t('student.grade')}</SelectItem>
+                    <SelectItem value="status">{t('teacher.status')}</SelectItem>
+                    <SelectItem value="center">{t('teacher.center')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -224,8 +226,8 @@ export default function AdvancedFilters({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="asc">升序</SelectItem>
-                    <SelectItem value="desc">降序</SelectItem>
+                    <SelectItem value="asc">{t('student.ascending')}</SelectItem>
+                    <SelectItem value="desc">{t('student.descending')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

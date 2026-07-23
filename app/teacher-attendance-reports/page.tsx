@@ -30,6 +30,7 @@ import {
   UserCheck,
   GraduationCap
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import { format, parseISO, startOfDay, endOfDay, subDays, subWeeks, subMonths, subYears } from "date-fns"
 import { zhCN } from "date-fns/locale"
 
@@ -83,6 +84,7 @@ const DATE_RANGES = {
 type DateRange = keyof typeof DATE_RANGES
 
 export default function TeacherAttendanceReportsPage() {
+  const { t } = useLanguage()
   const [records, setRecords] = useState<TeacherAttendanceRecord[]>([])
   const [teachers, setTeachers] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -433,7 +435,7 @@ export default function TeacherAttendanceReportsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* 日期范围 */}
               <div className="space-y-2">
-                <Label htmlFor="dateRange">时间范围</Label>
+                <Label htmlFor="dateRange">{t('teacher.time_range')}</Label>
                 <Select value={filters.dateRange} onValueChange={handleDateRangeChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="选择时间范围" />
@@ -452,7 +454,7 @@ export default function TeacherAttendanceReportsPage() {
               {filters.dateRange === 'custom' && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="startDate">开始日期</Label>
+                    <Label htmlFor="startDate">{t('teacher.start_date')}</Label>
                     <Input
                       id="startDate"
                       type="date"
@@ -461,7 +463,7 @@ export default function TeacherAttendanceReportsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="endDate">结束日期</Label>
+                    <Label htmlFor="endDate">{t('teacher.end_date')}</Label>
                     <Input
                       id="endDate"
                       type="date"
@@ -474,7 +476,7 @@ export default function TeacherAttendanceReportsPage() {
 
               {/* 姓名搜索 */}
               <div className="space-y-2">
-                <Label htmlFor="name">教师姓名</Label>
+                <Label htmlFor="name">{t('teacher.teacher_name')}</Label>
                 <Input
                   id="name"
                   placeholder="输入教师姓名"
@@ -485,13 +487,13 @@ export default function TeacherAttendanceReportsPage() {
 
               {/* 中心筛选 */}
               <div className="space-y-2">
-                <Label htmlFor="center">中心</Label>
+                <Label htmlFor="center">{t('teacher.center')}</Label>
                 <Select value={filters.center} onValueChange={(value) => handleFilterChange('center', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="选择中心" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部中心</SelectItem>
+                    <SelectItem value="all">{t('teacher.all_centers')}</SelectItem>
                     <SelectItem value="WX 01">WX 01</SelectItem>
                     <SelectItem value="WX 02">WX 02</SelectItem>
                     <SelectItem value="WX 03">WX 03</SelectItem>
@@ -501,18 +503,18 @@ export default function TeacherAttendanceReportsPage() {
 
               {/* 状态筛选 */}
               <div className="space-y-2">
-                <Label htmlFor="status">状态</Label>
+                <Label htmlFor="status">{t('teacher.status')}</Label>
                 <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="选择状态" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部状态</SelectItem>
-                    <SelectItem value="present">已签到</SelectItem>
+                    <SelectItem value="all">{t('common.all_status')}</SelectItem>
+                    <SelectItem value="present">{t('teacher.checked_in')}</SelectItem>
                     <SelectItem value="absent">缺席</SelectItem>
-                    <SelectItem value="late">迟到</SelectItem>
-                    <SelectItem value="early_leave">早退</SelectItem>
-                    <SelectItem value="completed">已完成</SelectItem>
+                    <SelectItem value="late">{t('teacher.late')}</SelectItem>
+                    <SelectItem value="early_leave">{t('teacher.early_leave')}</SelectItem>
+                    <SelectItem value="completed">{t('assignment.completed')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -562,7 +564,7 @@ export default function TeacherAttendanceReportsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">出勤率</p>
+                  <p className="text-sm font-medium text-gray-600">{t('teacher.attendance_rate')}</p>
                   <p className="text-2xl font-bold text-green-600">{stats.attendanceRate}%</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-500" />
@@ -629,14 +631,14 @@ export default function TeacherAttendanceReportsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>教师姓名</TableHead>
+                      <TableHead>{t('teacher.teacher_name')}</TableHead>
                       <TableHead>教师ID</TableHead>
-                      <TableHead>中心</TableHead>
-                      <TableHead>日期</TableHead>
-                      <TableHead>签到时间</TableHead>
-                      <TableHead>签退时间</TableHead>
-                      <TableHead>状态</TableHead>
-                      <TableHead>操作</TableHead>
+                      <TableHead>{t('teacher.center')}</TableHead>
+                      <TableHead>{t('finance.date')}</TableHead>
+                      <TableHead>{t('teacher.check_in_time')}</TableHead>
+                      <TableHead>{t('teacher.check_out_time')}</TableHead>
+                      <TableHead>{t('teacher.status')}</TableHead>
+                      <TableHead>{t('teacher.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

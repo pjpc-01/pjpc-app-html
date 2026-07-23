@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Activity
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface TeacherStatsProps {
   teacherId?: string
@@ -32,6 +33,7 @@ interface StatsData {
 }
 
 export default function TeacherStats({ teacherId }: TeacherStatsProps) {
+  const { t } = useLanguage()
   const [stats, setStats] = useState<StatsData>({
     totalStudents: 0,
     todayAttendance: 0,
@@ -97,7 +99,7 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">总学生数</p>
+                <p className="text-sm font-medium text-gray-600">{t('dashboard.total_students')}</p>
                 <p className="text-2xl font-bold text-blue-600">{stats.totalStudents}</p>
                 <p className="text-xs text-gray-500">活跃学生</p>
               </div>
@@ -193,7 +195,7 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 text-blue-600" />
                   <div>
-                    <p className="font-medium text-blue-900">今日课程</p>
+                    <p className="font-medium text-blue-900">{t('teacher.todays_classes')}</p>
                     <p className="text-sm text-blue-700">已安排课程数</p>
                   </div>
                 </div>
@@ -227,7 +229,7 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-purple-600">+{stats.monthlyProgress}%</p>
-                  <p className="text-sm text-purple-600">较上月</p>
+                  <p className="text-sm text-purple-600">{t('teacher.vs_last_month')}</p>
                 </div>
               </div>
             </div>
@@ -247,10 +249,10 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-3">
-              <h4 className="font-semibold text-gray-900">学生管理</h4>
+              <h4 className="font-semibold text-gray-900">{t('teacher.student_management')}</h4>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">总学生数</span>
+                  <span className="text-sm text-gray-600">{t('dashboard.total_students')}</span>
                   <span className="font-medium">{stats.totalStudents}</span>
                 </div>
                 <div className="flex justify-between">
@@ -258,21 +260,21 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
                   <span className="font-medium">{stats.todayAttendance}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">出勤率</span>
+                  <span className="text-sm text-gray-600">{t('teacher.attendance_rate')}</span>
                   <span className="font-medium">{stats.attendanceRate}%</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-3">
-              <h4 className="font-semibold text-gray-900">作业管理</h4>
+              <h4 className="font-semibold text-gray-900">{t('teacher.homework_management')}</h4>
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">待批作业</span>
                   <span className="font-medium">{stats.pendingAssignments}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">已完成</span>
+                  <span className="text-sm text-gray-600">{t('assignment.completed')}</span>
                   <span className="font-medium">{stats.completedAssignments}</span>
                 </div>
                 <div className="flex justify-between">
@@ -294,7 +296,7 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
                   <span className="font-medium">{stats.averageGrade}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">今日课程</span>
+                  <span className="text-sm text-gray-600">{t('teacher.todays_classes')}</span>
                   <span className="font-medium">{stats.todayClasses}</span>
                 </div>
                 <div className="flex justify-between">

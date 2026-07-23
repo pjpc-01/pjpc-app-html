@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useGrades, GradeRecord, GradeStats } from "@/hooks/useGrades"
 import { useStudents } from "@/hooks/useStudents"
 import { Trophy, TrendingUp, TrendingDown, BarChart3, Search, Save, AlertCircle, GraduationCap, BookOpen } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 const SUBJECTS = ["华文", "国文", "英文", "数学", "科学", "历史", "地理", "道德", "美术", "音乐", "体育", "其他"]
 const TERMS = ["Term 1", "Term 2", "Term 3", "Final"]
@@ -31,6 +32,7 @@ const gradeColor = (letter: string) => {
 }
 
 export default function GradesManagementPage() {
+  const { t } = useLanguage()
   const { loading, error, getClassGrades, saveGrade, getStats } = useGrades()
   const { students, loading: studentsLoading, fetchStudents } = useStudents()
 
@@ -81,7 +83,7 @@ export default function GradesManagementPage() {
   })
 
   return (
-    <PageLayout title="成绩管理" description="录入和分析学生考试成绩">
+    <PageLayout title={t('exam.grade_management')} description="录入和分析学生考试成绩">
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-6">
         <Select value={subject} onValueChange={setSubject}>
@@ -92,7 +94,7 @@ export default function GradesManagementPage() {
           <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
           <SelectContent>{TERMS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
         </Select>
-        <Input type="number" value={year} onChange={e => setYear(parseInt(e.target.value) || CURRENT_YEAR)} className="w-24" placeholder="年份" />
+        <Input type="number" value={year} onChange={e => setYear(parseInt(e.target.value) || CURRENT_YEAR)} className="w-24" placeholder={t('teacher.year')} />
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input className="pl-9" placeholder="搜索学生..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
@@ -104,25 +106,25 @@ export default function GradesManagementPage() {
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
           <Card>
             <CardContent className="p-4 text-center">
-              <p className="text-xs text-slate-500">平均分</p>
+              <p className="text-xs text-slate-500">{t('report.average_score')}</p>
               <p className="text-2xl font-bold text-indigo-600">{stats.average}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <p className="text-xs text-slate-500">最高分</p>
+              <p className="text-xs text-slate-500">{t('grade.highest_score')}</p>
               <p className="text-2xl font-bold text-emerald-600">{stats.highest}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <p className="text-xs text-slate-500">最低分</p>
+              <p className="text-xs text-slate-500">{t('grade.lowest_score')}</p>
               <p className="text-2xl font-bold text-red-600">{stats.lowest}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <p className="text-xs text-slate-500">及格率</p>
+              <p className="text-xs text-slate-500">{t('exam.pass_rate')}</p>
               <p className="text-2xl font-bold text-blue-600">{stats.passRate}%</p>
             </CardContent>
           </Card>
@@ -155,12 +157,12 @@ export default function GradesManagementPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">#</TableHead>
-                  <TableHead>学生</TableHead>
-                  <TableHead className="w-24">年级</TableHead>
+                  <TableHead>{t('common.student')}</TableHead>
+                  <TableHead className="w-24">{t('student.grade')}</TableHead>
                   <TableHead className="w-24">分数</TableHead>
                   <TableHead className="w-20">等级</TableHead>
                   <TableHead>评语</TableHead>
-                  <TableHead className="w-24">操作</TableHead>
+                  <TableHead className="w-24">{t('teacher.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -193,8 +195,8 @@ export default function GradesManagementPage() {
                       <TableCell>
                         {isEditing ? (
                           <div className="flex gap-1">
-                            <Button size="sm" onClick={() => handleSave(g)}><Save className="h-3 w-3 mr-1" />保存</Button>
-                            <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>取消</Button>
+                            <Button size="sm" onClick={() => handleSave(g)}><Save className="h-3 w-3 mr-1" />{t('report.save')}</Button>
+                            <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>{t('report.cancel')}</Button>
                           </div>
                         ) : (
                           <Button size="sm" variant="outline" onClick={() => { setEditingId(g.id); setEditScore(String(g.score ?? "")); setEditComment(g.teacher_comment || ""); }}>

@@ -21,6 +21,7 @@ import {
   TrendingUp,
   BarChart3
 } from 'lucide-react'
+import { useLanguage } from "@/contexts/language-context"
 
 interface AttendanceRecord {
   id: string
@@ -50,6 +51,7 @@ interface AttendanceSummary {
 }
 
 export function AttendanceReport() {
+  const { t } = useLanguage()
   const [records, setRecords] = useState<AttendanceRecord[]>([])
   const [summary, setSummary] = useState<AttendanceSummary | null>(null)
   const [selectedEmployee, setSelectedEmployee] = useState('all')
@@ -228,7 +230,7 @@ export function AttendanceReport() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">时间范围</label>
+              <label className="text-sm font-medium">{t('teacher.time_range')}</label>
               <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
                 <SelectTrigger>
                   <SelectValue placeholder="选择时间范围" />
@@ -243,7 +245,7 @@ export function AttendanceReport() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">年份</label>
+              <label className="text-sm font-medium">{t('teacher.year')}</label>
               <Select value={selectedYear} onValueChange={setSelectedYear}>
                 <SelectTrigger>
                   <SelectValue placeholder="选择年份" />
@@ -322,7 +324,7 @@ export function AttendanceReport() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{summary.totalDays}</div>
-              <p className="text-xs text-muted-foreground">天</p>
+              <p className="text-xs text-muted-foreground">{t('attendance.days')}</p>
             </CardContent>
           </Card>
 
@@ -356,7 +358,7 @@ export function AttendanceReport() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">{summary.overtimeHours}</div>
-              <p className="text-xs text-muted-foreground">小时</p>
+              <p className="text-xs text-muted-foreground">{t('attendance.hours')}</p>
             </CardContent>
           </Card>
         </div>
@@ -388,13 +390,13 @@ export function AttendanceReport() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-3 px-4">员工信息</th>
-                  <th className="text-left py-3 px-4">日期</th>
-                  <th className="text-left py-3 px-4">签到时间</th>
-                  <th className="text-left py-3 px-4">签退时间</th>
+                  <th className="text-left py-3 px-4">{t('finance.date')}</th>
+                  <th className="text-left py-3 px-4">{t('teacher.check_in_time')}</th>
+                  <th className="text-left py-3 px-4">{t('teacher.check_out_time')}</th>
                   <th className="text-left py-3 px-4">总工时</th>
-                  <th className="text-left py-3 px-4">状态</th>
+                  <th className="text-left py-3 px-4">{t('teacher.status')}</th>
                   <th className="text-left py-3 px-4">加班</th>
-                  <th className="text-left py-3 px-4">操作</th>
+                  <th className="text-left py-3 px-4">{t('teacher.actions')}</th>
                 </tr>
               </thead>
               <tbody>

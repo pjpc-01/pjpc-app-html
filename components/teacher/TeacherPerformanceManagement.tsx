@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
@@ -85,6 +86,7 @@ interface Teacher {
 }
 
 export default function TeacherPerformanceManagement() {
+  const { t } = useLanguage()
   const { userProfile } = useAuth()
   
   // State
@@ -324,7 +326,7 @@ export default function TeacherPerformanceManagement() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">加载中...</p>
+          <p className="mt-2 text-gray-600">{t('teacher.loading')}</p>
         </div>
       </div>
     )
@@ -377,7 +379,7 @@ export default function TeacherPerformanceManagement() {
             <div className="flex items-center">
               <CheckCircle className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">已确认</p>
+                <p className="text-sm font-medium text-gray-600">{t('teacher.confirmed')}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.finalizedEvaluations}</p>
               </div>
             </div>
@@ -389,7 +391,7 @@ export default function TeacherPerformanceManagement() {
             <div className="flex items-center">
               <Clock className="h-8 w-8 text-orange-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">待审核</p>
+                <p className="text-sm font-medium text-gray-600">{t('admin.pending_review')}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.submittedEvaluations}</p>
               </div>
             </div>
@@ -402,15 +404,15 @@ export default function TeacherPerformanceManagement() {
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <Label htmlFor="teacher_filter">教师</Label>
+              <Label htmlFor="teacher_filter">{t('teacher.teacher')}</Label>
               <Select value={filters.teacher_id} onValueChange={(value) => 
                 setFilters(prev => ({ ...prev, teacher_id: value }))
               }>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择教师" />
+                  <SelectValue placeholder={t('teacher.select_teacher')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部教师</SelectItem>
+                  <SelectItem value="all">{t('teacher.all_teachers')}</SelectItem>
                     {Array.isArray(teachers) && teachers.map((teacher) => (
                       <SelectItem key={teacher.id} value={teacher.id}>
                         {teacher.name}
@@ -421,7 +423,7 @@ export default function TeacherPerformanceManagement() {
             </div>
             
             <div>
-              <Label htmlFor="year_filter">年份</Label>
+              <Label htmlFor="year_filter">{t('teacher.year')}</Label>
               <Input
                 id="year_filter"
                 type="number"
@@ -452,7 +454,7 @@ export default function TeacherPerformanceManagement() {
             </div>
             
             <div>
-              <Label htmlFor="status_filter">状态</Label>
+              <Label htmlFor="status_filter">{t('teacher.status')}</Label>
               <Select value={filters.status} onValueChange={(value) => 
                 setFilters(prev => ({ ...prev, status: value }))
               }>
@@ -460,11 +462,11 @@ export default function TeacherPerformanceManagement() {
                   <SelectValue placeholder="选择状态" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部状态</SelectItem>
-                  <SelectItem value="draft">草稿</SelectItem>
-                  <SelectItem value="submitted">已提交</SelectItem>
-                  <SelectItem value="reviewed">已审核</SelectItem>
-                  <SelectItem value="finalized">已确认</SelectItem>
+                  <SelectItem value="all">{t('common.all_status')}</SelectItem>
+                  <SelectItem value="draft">{t('teacher.draft')}</SelectItem>
+                  <SelectItem value="submitted">{t('teacher.submitted')}</SelectItem>
+                  <SelectItem value="reviewed">{t('admin.reviewed')}</SelectItem>
+                  <SelectItem value="finalized">{t('teacher.confirmed')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -482,13 +484,13 @@ export default function TeacherPerformanceManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>教师</TableHead>
+                <TableHead>{t('teacher.teacher')}</TableHead>
                 <TableHead>评估期间</TableHead>
                 <TableHead>总分</TableHead>
                 <TableHead>等级</TableHead>
-                <TableHead>状态</TableHead>
+                <TableHead>{t('teacher.status')}</TableHead>
                 <TableHead>评估日期</TableHead>
-                <TableHead>操作</TableHead>
+                <TableHead>{t('teacher.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -580,7 +582,7 @@ export default function TeacherPerformanceManagement() {
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>教师</Label>
+                  <Label>{t('teacher.teacher')}</Label>
                   <p className="font-medium">{viewingEvaluation.expand?.teacher_id?.name}</p>
                 </div>
                 <div>
@@ -631,7 +633,7 @@ export default function TeacherPerformanceManagement() {
                 </div>
               )}
               <div className="flex justify-end">
-                <Button variant="outline" onClick={() => setViewingEvaluation(null)}>关闭</Button>
+                <Button variant="outline" onClick={() => setViewingEvaluation(null)}>{t('teacher.close')}</Button>
               </div>
             </div>
           )}
@@ -648,12 +650,12 @@ export default function TeacherPerformanceManagement() {
           <form onSubmit={handleEvaluationSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="teacher_id">选择教师</Label>
+                <Label htmlFor="teacher_id">{t('teacher.select_teacher')}</Label>
                 <Select value={evaluationForm.teacher_id} onValueChange={(value) => 
                   setEvaluationForm(prev => ({ ...prev, teacher_id: value }))
                 }>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择教师" />
+                    <SelectValue placeholder={t('teacher.select_teacher')} />
                   </SelectTrigger>
                   <SelectContent>
                     {Array.isArray(teachers) && teachers.map((teacher) => (
@@ -681,7 +683,7 @@ export default function TeacherPerformanceManagement() {
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="year">年份</Label>
+                <Label htmlFor="year">{t('teacher.year')}</Label>
                 <Input
                   id="year"
                   type="number"

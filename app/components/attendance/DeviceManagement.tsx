@@ -20,6 +20,7 @@ import {
   Wifi,
   WifiOff
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface Device {
   id: string
@@ -33,6 +34,7 @@ interface Device {
 }
 
 export default function DeviceManagement() {
+  const { t } = useLanguage()
   const [devices, setDevices] = useState<Device[]>([])
   const [editingDevice, setEditingDevice] = useState<Device | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -198,12 +200,12 @@ export default function DeviceManagement() {
               <TableHeader>
                 <TableRow>
                   <TableHead>设备名称</TableHead>
-                  <TableHead>类型</TableHead>
+                  <TableHead>{t('common.type')}</TableHead>
                   <TableHead>位置</TableHead>
                   <TableHead>IP地址</TableHead>
-                  <TableHead>状态</TableHead>
+                  <TableHead>{t('teacher.status')}</TableHead>
                   <TableHead>最后在线</TableHead>
-                  <TableHead>操作</TableHead>
+                  <TableHead>{t('teacher.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -312,6 +314,7 @@ function AddDeviceForm({
   onAdd: (device: Omit<Device, 'id'>) => void
   onCancel: () => void
 }) {
+  const { t } = useLanguage()
   const [formData, setFormData] = useState({
     name: '',
     type: 'desktop' as const,
@@ -372,7 +375,7 @@ function AddDeviceForm({
         </div>
       </div>
       <div>
-        <Label htmlFor="description">描述</Label>
+        <Label htmlFor="description">{t('finance.description')}</Label>
         <Input
           id="description"
           value={formData.description}
@@ -401,6 +404,7 @@ function EditDeviceForm({
   onUpdate: (id: string, updates: Partial<Device>) => void
   onCancel: () => void
 }) {
+  const { t } = useLanguage()
   const [formData, setFormData] = useState({
     name: device.name,
     type: device.type,
@@ -458,7 +462,7 @@ function EditDeviceForm({
         </div>
       </div>
       <div>
-        <Label htmlFor="description">描述</Label>
+        <Label htmlFor="description">{t('finance.description')}</Label>
         <Input
           id="description"
           value={formData.description}

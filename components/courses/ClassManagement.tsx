@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useLanguage } from "@/contexts/language-context"
 import {
   Users,
   BookOpen,
@@ -62,6 +63,7 @@ interface ClassManagementProps {
 }
 
 export default function ClassManagement({ showTitle = true }: ClassManagementProps) {
+  const { t } = useLanguage()
   const { groups, loading, error, refetch } = useClassGroups()
   const [searchTerm, setSearchTerm] = useState('')
   const [gradeFilter, setGradeFilter] = useState('all')
@@ -105,7 +107,7 @@ export default function ClassManagement({ showTitle = true }: ClassManagementPro
       <Card className="border-red-200 bg-red-50">
         <CardContent className="p-6 text-center">
           <AlertCircle className="h-10 w-10 mx-auto text-red-400 mb-3" />
-          <h3 className="text-lg font-medium text-red-700 mb-1">加载失败</h3>
+          <h3 className="text-lg font-medium text-red-700 mb-1">{t('course.load_failed')}</h3>
           <p className="text-sm text-red-500 mb-4">{error}</p>
           <Button variant="outline" onClick={refetch}>
             <RefreshCw className="h-4 w-4 mr-2" /> 重试
@@ -182,10 +184,10 @@ export default function ClassManagement({ showTitle = true }: ClassManagementPro
         </div>
         <Select value={gradeFilter} onValueChange={setGradeFilter}>
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="年级筛选" />
+            <SelectValue placeholder={t('course.grade_filter')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">全部年级</SelectItem>
+            <SelectItem value="all">{t('course.all_grades')}</SelectItem>
             {GRADE_OPTIONS.map((g) => (
               <SelectItem key={g} value={g}>{g}</SelectItem>
             ))}
@@ -278,11 +280,11 @@ export default function ClassManagement({ showTitle = true }: ClassManagementPro
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>课程名称</TableHead>
-                <TableHead>科目</TableHead>
-                <TableHead>年级</TableHead>
-                <TableHead>教师</TableHead>
-                <TableHead>状态</TableHead>
+                <TableHead>{t('course.course_name')}</TableHead>
+                <TableHead>{t('exam.subject')}</TableHead>
+                <TableHead>{t('student.grade')}</TableHead>
+                <TableHead>{t('teacher.teacher')}</TableHead>
+                <TableHead>{t('teacher.status')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

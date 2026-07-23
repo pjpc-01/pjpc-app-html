@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -27,6 +28,7 @@ import { Progress } from "@/components/ui/progress"
 import { FileText, Plus, Edit, Eye, CheckCircle, Clock, AlertCircle, BarChart3 } from "lucide-react"
 
 export default function AssignmentManagement() {
+  const { t } = useLanguage()
   const { user } = useAuth()
   const { teacher, loading: teacherLoading, error: teacherError } = useCurrentTeacher()
   const { assignments, loading: assignmentsLoading, createAssignment } = useAssignments(teacher?.id)
@@ -140,17 +142,17 @@ export default function AssignmentManagement() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
-        return <Badge variant="default">进行中</Badge>
+        return <Badge variant="default">{t('assignment.in_progress')}</Badge>
       case "grading":
         return <Badge variant="secondary">批改中</Badge>
       case "completed":
-        return <Badge variant="outline">已完成</Badge>
+        return <Badge variant="outline">{t('assignment.completed')}</Badge>
       case "graded":
-        return <Badge variant="default">已批改</Badge>
+        return <Badge variant="default">{t('assignment.graded')}</Badge>
       case "pending":
         return <Badge variant="secondary">待批改</Badge>
       case "late":
-        return <Badge variant="destructive">逾期</Badge>
+        return <Badge variant="destructive">{t('student.overdue')}</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
@@ -225,18 +227,18 @@ export default function AssignmentManagement() {
                 </Label>
                 <Select value={newAssignment.subject} onValueChange={(value) => setNewAssignment({...newAssignment, subject: value})}>
                   <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="选择科目" />
+                    <SelectValue placeholder={t('assignment.select_subject')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="数学">数学</SelectItem>
-                    <SelectItem value="语文">语文</SelectItem>
-                    <SelectItem value="英语">英语</SelectItem>
-                    <SelectItem value="科学">科学</SelectItem>
-                    <SelectItem value="物理">物理</SelectItem>
-                    <SelectItem value="化学">化学</SelectItem>
-                    <SelectItem value="生物">生物</SelectItem>
-                    <SelectItem value="历史">历史</SelectItem>
-                    <SelectItem value="地理">地理</SelectItem>
+                    <SelectItem value="数学">{t('assignment.mathematics')}</SelectItem>
+                    <SelectItem value="语文">{t('assignment.chinese')}</SelectItem>
+                    <SelectItem value="英语">{t('assignment.english')}</SelectItem>
+                    <SelectItem value="科学">{t('assignment.science')}</SelectItem>
+                    <SelectItem value="物理">{t('assignment.physics')}</SelectItem>
+                    <SelectItem value="化学">{t('assignment.chemistry')}</SelectItem>
+                    <SelectItem value="生物">{t('assignment.biology')}</SelectItem>
+                    <SelectItem value="历史">{t('assignment.history')}</SelectItem>
+                    <SelectItem value="地理">{t('assignment.geography')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -309,7 +311,7 @@ export default function AssignmentManagement() {
 
       <Tabs defaultValue="assignments" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="assignments">作业列表</TabsTrigger>
+          <TabsTrigger value="assignments">{t('assignment.homework_list')}</TabsTrigger>
           <TabsTrigger value="submissions">提交管理</TabsTrigger>
           <TabsTrigger value="grading">在线批改</TabsTrigger>
           <TabsTrigger value="statistics">成绩统计</TabsTrigger>
@@ -369,7 +371,7 @@ export default function AssignmentManagement() {
                         </div>
                         {avgScore > 0 && (
                           <div className="flex justify-between items-center">
-                            <span className="text-sm">平均分</span>
+                            <span className="text-sm">{t('report.average_score')}</span>
                             <Badge variant="outline">{avgScore}分</Badge>
                           </div>
                         )}
@@ -405,12 +407,12 @@ export default function AssignmentManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>学生姓名</TableHead>
-                    <TableHead>作业标题</TableHead>
-                    <TableHead>提交时间</TableHead>
-                    <TableHead>状态</TableHead>
+                    <TableHead>{t('student.student_name')}</TableHead>
+                    <TableHead>{t('assignment.homework_title')}</TableHead>
+                    <TableHead>{t('assignment.submit_time')}</TableHead>
+                    <TableHead>{t('teacher.status')}</TableHead>
                     <TableHead>分数</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead>{t('teacher.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -636,7 +638,7 @@ export default function AssignmentManagement() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">平均分</CardTitle>
+                  <CardTitle className="text-sm font-medium">{t('report.average_score')}</CardTitle>
                   <CheckCircle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>

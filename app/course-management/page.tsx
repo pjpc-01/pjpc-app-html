@@ -21,8 +21,10 @@ import {
   CalendarDays,
   RefreshCw,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 export default function CourseManagementPage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const { userProfile } = useAuth()
   const [view, setView] = useState<"week" | "month">("week")
@@ -42,14 +44,14 @@ export default function CourseManagementPage() {
       value: loading ? "..." : todayPresent,
       icon: UserCheck,
       color: "bg-green-100",
-      description: "出勤人数",
+      description: t('course.present_count'),
     },
     {
       title: "今日缺勤",
       value: loading ? "..." : todayAbsent,
       icon: UserX,
       color: "bg-red-100",
-      description: "缺勤人数",
+      description: t('course.absent_count'),
     },
     {
       title: "今日排班",
@@ -59,7 +61,7 @@ export default function CourseManagementPage() {
       description: "排班数量",
     },
     {
-      title: "出勤率",
+      title: t('teacher.attendance_rate'),
       value: loading ? "..." : `${attendanceRate}%`,
       icon: BarChart3,
       color: "bg-purple-100",
@@ -69,7 +71,7 @@ export default function CourseManagementPage() {
 
   return (
     <PageLayout
-      title="课程管理"
+      title={t('course.course_management')}
       description="管理课程设置和教学安排"
       userRole={userProfile?.role || "admin"}
       status="系统正常"
@@ -87,7 +89,7 @@ export default function CourseManagementPage() {
     >
       <div className="space-y-6">
         <section>
-          <h2 className="text-lg font-semibold mb-3">课程管理</h2>
+          <h2 className="text-lg font-semibold mb-3">{t('course.course_management')}</h2>
           <CourseManagement />
         </section>
 

@@ -26,6 +26,7 @@ import {
   Target,
   RefreshCw
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface Student {
   id: string
@@ -60,6 +61,7 @@ interface AttendanceManagementProps {
 }
 
 export default function AttendanceManagement({ teacherId }: AttendanceManagementProps) {
+  const { t } = useLanguage()
   const [students, setStudents] = useState<Student[]>([])
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([])
   const [loading, setLoading] = useState(false)
@@ -217,11 +219,11 @@ export default function AttendanceManagement({ teacherId }: AttendanceManagement
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'present': return <Badge variant="default" className="bg-green-100 text-green-700">出勤</Badge>
-      case 'absent': return <Badge variant="destructive">缺勤</Badge>
-      case 'late': return <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">迟到</Badge>
-      case 'excused': return <Badge variant="outline" className="bg-gray-100 text-gray-700">请假</Badge>
-      default: return <Badge variant="outline">未知</Badge>
+      case 'present': return <Badge variant="default" className="bg-green-100 text-green-700">{t('attendance.present')}</Badge>
+      case 'absent': return <Badge variant="destructive">{t('attendance.absent')}</Badge>
+      case 'late': return <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">{t('teacher.late')}</Badge>
+      case 'excused': return <Badge variant="outline" className="bg-gray-100 text-gray-700">{t('teacher.leave')}</Badge>
+      default: return <Badge variant="outline">{t('teacher.unknown')}</Badge>
     }
   }
 
@@ -239,7 +241,7 @@ export default function AttendanceManagement({ teacherId }: AttendanceManagement
     <div className="space-y-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">考勤管理</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('teacher.attendance_management')}</h2>
           <p className="text-gray-600 mt-1">记录学生出勤情况、查看考勤统计和趋势分析</p>
         </div>
         <div className="flex items-center gap-3">
@@ -251,11 +253,11 @@ export default function AttendanceManagement({ teacherId }: AttendanceManagement
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm font-medium text-gray-600">总学生数</p><p className="text-2xl font-bold text-gray-900">{attendanceStats.totalStudents}</p></div><div className="p-3 bg-blue-100 rounded-lg"><Users className="h-8 w-8 text-blue-600" /></div></div></CardContent></Card>
-        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm font-medium text-gray-600">出勤</p><p className="text-2xl font-bold text-green-600">{attendanceStats.present}</p></div><div className="p-3 bg-green-100 rounded-lg"><CheckCircle className="h-8 w-8 text-green-600" /></div></div></CardContent></Card>
-        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm font-medium text-gray-600">迟到</p><p className="text-2xl font-bold text-yellow-600">{attendanceStats.late}</p></div><div className="p-3 bg-yellow-100 rounded-lg"><Clock className="h-8 w-8 text-yellow-600" /></div></div></CardContent></Card>
-        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm font-medium text-gray-600">缺勤</p><p className="text-2xl font-bold text-red-600">{attendanceStats.absent}</p></div><div className="p-3 bg-red-100 rounded-lg"><XCircle className="h-8 w-8 text-red-600" /></div></div></CardContent></Card>
-        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm font-medium text-gray-600">出勤率</p><p className="text-2xl font-bold text-blue-600">{attendanceStats.attendanceRate}%</p></div><div className="p-3 bg-blue-100 rounded-lg"><Target className="h-8 w-8 text-blue-600" /></div></div></CardContent></Card>
+        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm font-medium text-gray-600">{t('dashboard.total_students')}</p><p className="text-2xl font-bold text-gray-900">{attendanceStats.totalStudents}</p></div><div className="p-3 bg-blue-100 rounded-lg"><Users className="h-8 w-8 text-blue-600" /></div></div></CardContent></Card>
+        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm font-medium text-gray-600">{t('attendance.present')}</p><p className="text-2xl font-bold text-green-600">{attendanceStats.present}</p></div><div className="p-3 bg-green-100 rounded-lg"><CheckCircle className="h-8 w-8 text-green-600" /></div></div></CardContent></Card>
+        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm font-medium text-gray-600">{t('teacher.late')}</p><p className="text-2xl font-bold text-yellow-600">{attendanceStats.late}</p></div><div className="p-3 bg-yellow-100 rounded-lg"><Clock className="h-8 w-8 text-yellow-600" /></div></div></CardContent></Card>
+        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm font-medium text-gray-600">{t('attendance.absent')}</p><p className="text-2xl font-bold text-red-600">{attendanceStats.absent}</p></div><div className="p-3 bg-red-100 rounded-lg"><XCircle className="h-8 w-8 text-red-600" /></div></div></CardContent></Card>
+        <Card><CardContent className="p-6"><div className="flex items-center justify-between"><div><p className="text-sm font-medium text-gray-600">{t('teacher.attendance_rate')}</p><p className="text-2xl font-bold text-blue-600">{attendanceStats.attendanceRate}%</p></div><div className="p-3 bg-blue-100 rounded-lg"><Target className="h-8 w-8 text-blue-600" /></div></div></CardContent></Card>
       </div>
       <Card>
         <CardHeader className="pb-4">
@@ -277,7 +279,7 @@ export default function AttendanceManagement({ teacherId }: AttendanceManagement
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">搜索学生</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('teacher.search_students')}</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input placeholder="搜索学生姓名..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
@@ -308,15 +310,15 @@ export default function AttendanceManagement({ teacherId }: AttendanceManagement
                     <div className="flex items-center gap-3">
                       {record && (
                         <div className="text-center">
-                          <p className="text-xs text-gray-500">签到时间</p>
+                          <p className="text-xs text-gray-500">{t('teacher.check_in_time')}</p>
                           <p className={`text-sm font-medium ${getStatusColor(status)}`}>{record.time || '-'}</p>
                         </div>
                       )}
                       <div className="flex gap-2">
-                        <Button variant={status === 'present' ? 'default' : 'outline'} size="sm" onClick={() => updateAttendanceStatus(student.id, 'present')} className="min-w-[60px]">出勤</Button>
-                        <Button variant={status === 'late' ? 'default' : 'outline'} size="sm" onClick={() => updateAttendanceStatus(student.id, 'late')} className="min-w-[60px]">迟到</Button>
-                        <Button variant={status === 'absent' ? 'default' : 'outline'} size="sm" onClick={() => updateAttendanceStatus(student.id, 'absent')} className="min-w-[60px]">缺勤</Button>
-                        <Button variant={status === 'excused' ? 'default' : 'outline'} size="sm" onClick={() => updateAttendanceStatus(student.id, 'excused')} className="min-w-[60px]">请假</Button>
+                        <Button variant={status === 'present' ? 'default' : 'outline'} size="sm" onClick={() => updateAttendanceStatus(student.id, 'present')} className="min-w-[60px]">{t('attendance.present')}</Button>
+                        <Button variant={status === 'late' ? 'default' : 'outline'} size="sm" onClick={() => updateAttendanceStatus(student.id, 'late')} className="min-w-[60px]">{t('teacher.late')}</Button>
+                        <Button variant={status === 'absent' ? 'default' : 'outline'} size="sm" onClick={() => updateAttendanceStatus(student.id, 'absent')} className="min-w-[60px]">{t('attendance.absent')}</Button>
+                        <Button variant={status === 'excused' ? 'default' : 'outline'} size="sm" onClick={() => updateAttendanceStatus(student.id, 'excused')} className="min-w-[60px]">{t('teacher.leave')}</Button>
                       </div>
                     </div>
                   </div>

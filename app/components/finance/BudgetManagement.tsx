@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { toast } from "sonner"
 import { Plus, Pencil, Trash2, AlertTriangle, Loader2, DollarSign, TrendingUp, TrendingDown } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 const BUDGET_CATEGORIES = [
   "Rent", "Utilities", "Salary", "Supplies", "Food",
@@ -50,6 +51,7 @@ interface BudgetSummary {
 }
 
 export default function BudgetManagement() {
+  const { t } = useLanguage()
   const now = new Date()
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [year, setYear] = useState(now.getFullYear())
@@ -200,13 +202,13 @@ export default function BudgetManagement() {
                 <Input type="number" value={formData.budgetAmount} onChange={e => setFormData(p => ({...p, budgetAmount: e.target.value}))} placeholder="0.00" />
               </div>
               <div>
-                <Label>备注</Label>
+                <Label>{t('teacher.notes')}</Label>
                 <Input value={formData.notes} onChange={e => setFormData(p => ({...p, notes: e.target.value}))} placeholder="预算说明" />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setShowAdd(false); resetForm() }}>取消</Button>
-              <Button onClick={handleSave}>保存</Button>
+              <Button variant="outline" onClick={() => { setShowAdd(false); resetForm() }}>{t('report.cancel')}</Button>
+              <Button onClick={handleSave}>{t('report.save')}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -257,8 +259,8 @@ export default function BudgetManagement() {
                 <TableHead className="text-right">实际 (RM)</TableHead>
                 <TableHead className="text-right">差异 (RM)</TableHead>
                 <TableHead>使用率</TableHead>
-                <TableHead className="text-center">状态</TableHead>
-                <TableHead className="text-right">操作</TableHead>
+                <TableHead className="text-center">{t('teacher.status')}</TableHead>
+                <TableHead className="text-right">{t('teacher.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -302,7 +304,7 @@ export default function BudgetManagement() {
                       ) : isWarning ? (
                         <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800">接近上限</Badge>
                       ) : (
-                        <Badge variant="default" className="text-xs bg-emerald-100 text-emerald-800">正常</Badge>
+                        <Badge variant="default" className="text-xs bg-emerald-100 text-emerald-800">{t('common.normal')}</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-right">

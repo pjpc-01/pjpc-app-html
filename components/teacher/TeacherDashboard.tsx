@@ -52,6 +52,7 @@ import {
   Zap,
   BarChart3
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -92,6 +93,7 @@ interface TeacherDashboardProps {
 }
 
 export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
+  const { t } = useLanguage()
   const router = useRouter()
   const [stats, setStats] = useState<TeacherStats>({
     totalStudents: 0,
@@ -249,7 +251,7 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">总学生数</p>
+                <p className="text-sm font-medium text-gray-600">{t('dashboard.total_students')}</p>
                 <p className="text-2xl font-bold text-blue-600">{stats.totalStudents}</p>
               </div>
               <Users className="h-8 w-8 text-blue-600" />
@@ -287,7 +289,7 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">今日课程</p>
+                <p className="text-sm font-medium text-gray-600">{t('teacher.todays_classes')}</p>
                 <p className="text-2xl font-bold text-purple-600">{stats.todayClasses}</p>
                 <p className="text-xs text-gray-500">平均分 {stats.averageGrade}</p>
               </div>

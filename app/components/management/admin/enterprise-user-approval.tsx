@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { useLanguage } from "@/contexts/language-context"
 import {
   Activity,
   BarChart3,
@@ -109,6 +110,7 @@ interface ApprovalStats {
 }
 
 export default function EnterpriseUserApproval() {
+  const { t } = useLanguage()
   const [users, setUsers] = useState<UserRecord[]>([])
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
   const [loading, setLoading] = useState(true)
@@ -636,7 +638,7 @@ export default function EnterpriseUserApproval() {
     return (
       <div className="p-6">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">权限不足</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('admin.insufficient_permissions')}</h2>
           <p className="text-gray-600">只有管理员可以访问用户审核功能</p>
         </div>
       </div>
@@ -747,15 +749,15 @@ export default function EnterpriseUserApproval() {
                   <h4 className="font-medium mb-4">审核状态分布</h4>
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span>待审核</span>
+                      <span>{t('admin.pending_review')}</span>
                       <span className="font-medium">{stats.pending}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>已审核</span>
+                      <span>{t('admin.reviewed')}</span>
                       <span className="font-medium">{stats.approved}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>已拒绝</span>
+                      <span>{t('attendance.rejected')}</span>
                       <span className="font-medium">{stats.suspended}</span>
                     </div>
                   </div>
@@ -787,7 +789,7 @@ export default function EnterpriseUserApproval() {
       <Dialog open={userDetailDialog} onOpenChange={setUserDetailDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>用户详情</DialogTitle>
+            <DialogTitle>{t('admin.user_details')}</DialogTitle>
             <DialogDescription>
               查看用户的详细信息
             </DialogDescription>
@@ -797,28 +799,28 @@ export default function EnterpriseUserApproval() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">姓名</label>
+                  <label className="text-sm font-medium">{t('student.name')}</label>
                   <div className="p-2 bg-gray-50 rounded">{selectedUser.name}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">邮箱</label>
+                  <label className="text-sm font-medium">{t('report.email')}</label>
                   <div className="p-2 bg-gray-50 rounded">{selectedUser.email}</div>
                 </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">角色</label>
+                  <label className="text-sm font-medium">{t('admin.role')}</label>
                   <div className="p-2 bg-gray-50 rounded">{selectedUser.role}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">状态</label>
+                  <label className="text-sm font-medium">{t('teacher.status')}</label>
                   <div className="p-2 bg-gray-50 rounded">{selectedUser.status}</div>
                 </div>
               </div>
               
               <div>
-                <label className="text-sm font-medium">备注</label>
+                <label className="text-sm font-medium">{t('teacher.notes')}</label>
                 <div className="p-2 bg-gray-50 rounded min-h-[60px]">
                   {selectedUser.notes || '暂无备注'}
                 </div>
@@ -851,19 +853,19 @@ export default function EnterpriseUserApproval() {
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium">姓名</label>
+                      <label className="text-sm font-medium">{t('student.name')}</label>
                       <div className="p-2 bg-gray-50 rounded">{currentReviewUser.name}</div>
                     </div>
                     <div>
-                      <label className="text-sm font-medium">邮箱</label>
+                      <label className="text-sm font-medium">{t('report.email')}</label>
                       <div className="p-2 bg-gray-50 rounded">{currentReviewUser.email}</div>
                     </div>
                     <div>
-                      <label className="text-sm font-medium">角色</label>
+                      <label className="text-sm font-medium">{t('admin.role')}</label>
                       <div className="p-2 bg-gray-50 rounded">{currentReviewUser.role}</div>
                     </div>
                     <div>
-                      <label className="text-sm font-medium">注册时间</label>
+                      <label className="text-sm font-medium">{t('admin.registration_time')}</label>
                       <div className="p-2 bg-gray-50 rounded">
                         {formatDate(currentReviewUser.created)}
                       </div>

@@ -1,21 +1,13 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { RefreshCw, Users, Wifi, WifiOff, CheckCircle, AlertTriangle, XCircle } from "lucide-react"
-
-interface PointsHealthStatus {
-  isHealthy: boolean
-  lastCheck: Date | null
-  inconsistencies: number
-  lastError: string | null
-}
+import { RefreshCw, Users, Wifi, WifiOff } from "lucide-react"
 
 interface TVBoardHeaderProps {
   center: string
   studentCount: number
   isRealtime: boolean
   onRefresh: () => void
-  pointsHealthStatus?: PointsHealthStatus
 }
 
 export default function TVBoardHeader({
@@ -23,7 +15,6 @@ export default function TVBoardHeader({
   studentCount,
   isRealtime,
   onRefresh,
-  pointsHealthStatus
 }: TVBoardHeaderProps) {
   return (
     <motion.div
@@ -48,30 +39,6 @@ export default function TVBoardHeader({
         </div>
         
         <div className="flex items-center gap-4">
-          {/* 积分数据健康状态指示器 */}
-          {pointsHealthStatus && (
-            <div className="flex items-center gap-2 text-sm">
-              {pointsHealthStatus.isHealthy ? (
-                <>
-                  <CheckCircle className="w-4 h-4 text-green-400" />
-                  <span className="text-green-400 font-medium">数据正常</span>
-                </>
-              ) : pointsHealthStatus.lastError ? (
-                <>
-                  <XCircle className="w-4 h-4 text-red-400" />
-                  <span className="text-red-400 font-medium">检查失败</span>
-                </>
-              ) : (
-                <>
-                  <AlertTriangle className="w-4 h-4 text-yellow-400" />
-                  <span className="text-yellow-400 font-medium">
-                    {pointsHealthStatus.inconsistencies} 个异常
-                  </span>
-                </>
-              )}
-            </div>
-          )}
-          
           <div className="text-right">
             <div className="flex items-center gap-2 text-sm">
               {isRealtime ? (
@@ -81,20 +48,19 @@ export default function TVBoardHeader({
                 </>
               ) : (
                 <>
-                  <WifiOff className="w-4 h-4 text-yellow-400" />
-                  <span className="text-yellow-400 font-medium">离线模式</span>
+                  <WifiOff className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-400 font-medium">离线模式</span>
                 </>
               )}
             </div>
+            <button
+              onClick={onRefresh}
+              className="text-gray-400 hover:text-white text-sm flex items-center gap-1 mt-1"
+            >
+              <RefreshCw className="w-3 h-3" />
+              刷新
+            </button>
           </div>
-          
-          <button
-            onClick={onRefresh}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
-          >
-            <RefreshCw className="w-4 h-4" />
-            刷新
-          </button>
         </div>
       </div>
     </motion.div>

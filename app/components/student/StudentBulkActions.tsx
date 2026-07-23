@@ -9,6 +9,7 @@ import { generateCSV, downloadCSV } from "./utils"
 import { Student } from "@/types/student"
 import PermissionGate from "@/components/shared/PermissionGate"
 import type { UserRole } from "@/lib/permissions"
+import { useLanguage } from "@/contexts/language-context"
 
 interface StudentBulkActionsProps {
   selectedCount: number
@@ -25,6 +26,7 @@ export default function StudentBulkActions({
   selectedStudents = [],
   userRole = 'admin'
 }: StudentBulkActionsProps) {
+  const { t } = useLanguage()
   const handleExportSelected = () => {
     if (selectedStudents.length === 0) return
     
@@ -77,7 +79,7 @@ export default function StudentBulkActions({
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>取消</AlertDialogCancel>
+                    <AlertDialogCancel>{t('report.cancel')}</AlertDialogCancel>
                     <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700">
                       确认删除
                     </AlertDialogAction>

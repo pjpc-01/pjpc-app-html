@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   Trash2
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface AttendanceRecord {
   id: string
@@ -42,6 +43,7 @@ export default function AttendanceRecords({
   onUpdateRecords,
   onExportRecords
 }: AttendanceRecordsProps) {
+  const { t } = useLanguage()
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState<string>("all")
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -144,22 +146,22 @@ export default function AttendanceRecords({
           </div>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="类型筛选" />
+              <SelectValue placeholder={t('common.type_filter')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部类型</SelectItem>
-              <SelectItem value="checkin">签到</SelectItem>
-              <SelectItem value="checkout">签退</SelectItem>
+              <SelectItem value="all">{t('common.all_types')}</SelectItem>
+              <SelectItem value="checkin">{t('attendance.check_in')}</SelectItem>
+              <SelectItem value="checkout">{t('attendance.check_out')}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="状态筛选" />
+              <SelectValue placeholder={t('common.status_filter')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部状态</SelectItem>
-              <SelectItem value="success">成功</SelectItem>
-              <SelectItem value="failed">失败</SelectItem>
+              <SelectItem value="all">{t('common.all_status')}</SelectItem>
+              <SelectItem value="success">{t('common.success')}</SelectItem>
+              <SelectItem value="failed">{t('finance.failed')}</SelectItem>
               <SelectItem value="duplicate">重复</SelectItem>
             </SelectContent>
           </Select>
@@ -168,7 +170,7 @@ export default function AttendanceRecords({
         {/* 日期范围筛选 */}
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
           <div>
-            <Label htmlFor="startDate">开始日期</Label>
+            <Label htmlFor="startDate">{t('teacher.start_date')}</Label>
             <Input
               id="startDate"
               type="date"
@@ -177,7 +179,7 @@ export default function AttendanceRecords({
             />
           </div>
           <div>
-            <Label htmlFor="endDate">结束日期</Label>
+            <Label htmlFor="endDate">{t('teacher.end_date')}</Label>
             <Input
               id="endDate"
               type="date"
@@ -208,12 +210,12 @@ export default function AttendanceRecords({
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
-              <TableHead>时间</TableHead>
-              <TableHead>学生</TableHead>
+              <TableHead>{t('announcement.time')}</TableHead>
+              <TableHead>{t('common.student')}</TableHead>
               <TableHead>卡片号</TableHead>
               <TableHead>设备</TableHead>
-              <TableHead>类型</TableHead>
-              <TableHead>状态</TableHead>
+              <TableHead>{t('common.type')}</TableHead>
+              <TableHead>{t('teacher.status')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -251,7 +253,7 @@ export default function AttendanceRecords({
         {filteredRecords.length === 0 && (
           <div className="text-center py-8">
             <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">暂无记录</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('common.no_records')}</h3>
             <p className="text-gray-600">没有找到符合条件的打卡记录</p>
           </div>
         )}

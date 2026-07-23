@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
@@ -123,6 +124,7 @@ interface Teacher {
 }
 
 export default function TeacherSalaryManagement() {
+  const { t } = useLanguage()
   const { userProfile } = useAuth()
   
   // State
@@ -807,7 +809,7 @@ export default function TeacherSalaryManagement() {
         setError(result.error)
       }
     } catch (error) {
-      toast.error("操作失败", { description: "网络错误" })
+      toast.error("操作失败", { description: t('teacher.network_error') })
       setError('操作失败')
     }
   }
@@ -833,7 +835,7 @@ export default function TeacherSalaryManagement() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">加载中...</p>
+          <p className="mt-2 text-gray-600">{t('teacher.loading')}</p>
         </div>
       </div>
     )
@@ -955,7 +957,7 @@ export default function TeacherSalaryManagement() {
                 onChange={(e) => updateGlobalRates({ eis: (parseFloat(e.target.value) || 0) / 100 })}
                 className="bg-white"
               />
-              <p className="text-xs text-gray-500 mt-1">就业保险</p>
+              <p className="text-xs text-gray-500 mt-1">{t('teacher.eis')}</p>
             </div>
             <div>
               <Label htmlFor="global_tax">PCB 税率 (%)</Label>
@@ -1061,19 +1063,19 @@ export default function TeacherSalaryManagement() {
                       <Checkbox
                         checked={allStructuresSelected}
                         onCheckedChange={toggleSelectAllStructures}
-                        aria-label="全选"
+                        aria-label={t('teacher.select_all')}
                       />
                     </TableHead>
-                    <TableHead>教师</TableHead>
+                    <TableHead>{t('teacher.teacher')}</TableHead>
                     <TableHead>薪资类型</TableHead>
                     <TableHead>基本薪资</TableHead>
                     <TableHead>津贴</TableHead>
                     <TableHead>EPF %</TableHead>
                     <TableHead>SOCSO %</TableHead>
                     <TableHead>EIS %</TableHead>
-                    <TableHead>状态</TableHead>
+                    <TableHead>{t('teacher.status')}</TableHead>
                     <TableHead>生效日期</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead>{t('teacher.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1152,7 +1154,7 @@ export default function TeacherSalaryManagement() {
               className="bg-green-600 hover:bg-green-700"
             >
               {isGenerating ? (
-                <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />生成中...</>
+                <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />{t('teacher.generating')}</>
               ) : (
                 <><Calculator className="mr-1 h-3.5 w-3.5" />生成本月薪资</>
               )}
@@ -1197,10 +1199,10 @@ export default function TeacherSalaryManagement() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Payslip No.</TableHead>
-                    <TableHead>教师</TableHead>
+                    <TableHead>{t('teacher.teacher')}</TableHead>
                     <TableHead>薪资期间</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead>{t('teacher.status')}</TableHead>
+                    <TableHead>{t('teacher.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1224,7 +1226,7 @@ export default function TeacherSalaryManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="default">已支付</Badge>
+                        <Badge variant="default">{t('teacher.paid')}</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
@@ -1271,12 +1273,12 @@ export default function TeacherSalaryManagement() {
           <form onSubmit={handleStructureSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="teacher_id">选择教师</Label>
+                <Label htmlFor="teacher_id">{t('teacher.select_teacher')}</Label>
                 <Select value={structureForm.teacher_id} onValueChange={(value) => 
                   setStructureForm(prev => ({ ...prev, teacher_id: value }))
                 }>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择教师" />
+                    <SelectValue placeholder={t('teacher.select_teacher')} />
                   </SelectTrigger>
                   <SelectContent>
                     {Array.isArray(availableTeachers) && availableTeachers.map((teacher) => (
@@ -1494,7 +1496,7 @@ export default function TeacherSalaryManagement() {
             </div>
 
             <div>
-              <Label htmlFor="notes">备注</Label>
+              <Label htmlFor="notes">{t('teacher.notes')}</Label>
               <Textarea
                 id="notes"
                 value={structureForm.notes}
@@ -1526,7 +1528,7 @@ export default function TeacherSalaryManagement() {
           <form onSubmit={handleRecordSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="record_teacher_id">选择教师</Label>
+                <Label htmlFor="record_teacher_id">{t('teacher.select_teacher')}</Label>
                 <Select value={recordForm.teacher_id} onValueChange={(value) => {
                   const structure = salaryStructures.find(s => s.teacher_id === value)
                   const now = new Date()
@@ -1549,7 +1551,7 @@ export default function TeacherSalaryManagement() {
                   }))
                 }}>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择教师" />
+                    <SelectValue placeholder={t('teacher.select_teacher')} />
                   </SelectTrigger>
                   <SelectContent>
                     {Array.isArray(teachers) && teachers.filter(t => 
@@ -1608,7 +1610,7 @@ export default function TeacherSalaryManagement() {
             </div>
 
             <div>
-              <Label htmlFor="record_notes">备注</Label>
+              <Label htmlFor="record_notes">{t('teacher.notes')}</Label>
               <Textarea
                 id="record_notes"
                 value={recordForm.notes}

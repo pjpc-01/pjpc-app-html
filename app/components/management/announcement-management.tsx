@@ -16,8 +16,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Bell, Megaphone, AlertTriangle, Calendar, Edit, Trash2, Eye } from 'lucide-react'
 import { useAnnouncements, useNotifications, Announcement, Notification } from '@/hooks/useAnnouncements'
 import { useCurrentTeacher } from '@/hooks/useCurrentTeacher'
+import { useLanguage } from "@/contexts/language-context"
 
 export default function AnnouncementManagement() {
+  const { t } = useLanguage()
   const { teacher, loading: teacherLoading } = useCurrentTeacher()
   const { announcements, loading: announcementsLoading, createAnnouncement } = useAnnouncements(teacher?.id)
   const { notifications, loading: notificationsLoading, createNotification, markAsRead } = useNotifications(teacher?.id)
@@ -256,13 +258,13 @@ export default function AnnouncementManagement() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="notification-type">通知类型</Label>
+                  <Label htmlFor="notification-type">{t('announcement.notification_type')}</Label>
                   <Select value={newNotification.type} onValueChange={(value) => setNewNotification({ ...newNotification, type: value })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="system">系统通知</SelectItem>
+                      <SelectItem value="system">{t('announcement.system_notification')}</SelectItem>
                       <SelectItem value="assignment">作业通知</SelectItem>
                       <SelectItem value="attendance">考勤通知</SelectItem>
                       <SelectItem value="announcement">公告通知</SelectItem>
@@ -317,7 +319,7 @@ export default function AnnouncementManagement() {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="announcement-priority">优先级</Label>
+                    <Label htmlFor="announcement-priority">{t('announcement.priority')}</Label>
                     <Select value={newAnnouncement.priority} onValueChange={(value) => setNewAnnouncement({ ...newAnnouncement, priority: value })}>
                       <SelectTrigger>
                         <SelectValue />
@@ -358,7 +360,7 @@ export default function AnnouncementManagement() {
       <Tabs defaultValue="announcements" className="space-y-6">
         <TabsList>
           <TabsTrigger value="announcements">公告管理</TabsTrigger>
-          <TabsTrigger value="notifications">通知中心</TabsTrigger>
+          <TabsTrigger value="notifications">{t('announcement.notification_center')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="announcements">
@@ -368,7 +370,7 @@ export default function AnnouncementManagement() {
             </CardHeader>
             <CardContent>
               {announcementsLoading ? (
-                <div className="text-center py-8">加载中...</div>
+                <div className="text-center py-8">{t('teacher.loading')}</div>
               ) : announcements.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   暂无公告，点击上方按钮发布第一个公告
@@ -377,12 +379,12 @@ export default function AnnouncementManagement() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>标题</TableHead>
-                      <TableHead>类型</TableHead>
-                      <TableHead>优先级</TableHead>
-                      <TableHead>状态</TableHead>
+                      <TableHead>{t('report.title')}</TableHead>
+                      <TableHead>{t('common.type')}</TableHead>
+                      <TableHead>{t('announcement.priority')}</TableHead>
+                      <TableHead>{t('teacher.status')}</TableHead>
                       <TableHead>发布日期</TableHead>
-                      <TableHead>操作</TableHead>
+                      <TableHead>{t('teacher.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -446,11 +448,11 @@ export default function AnnouncementManagement() {
         <TabsContent value="notifications">
           <Card>
             <CardHeader>
-              <CardTitle>通知中心</CardTitle>
+              <CardTitle>{t('announcement.notification_center')}</CardTitle>
             </CardHeader>
             <CardContent>
               {notificationsLoading ? (
-                <div className="text-center py-8">加载中...</div>
+                <div className="text-center py-8">{t('teacher.loading')}</div>
               ) : notifications.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   暂无通知
@@ -459,12 +461,12 @@ export default function AnnouncementManagement() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>标题</TableHead>
-                      <TableHead>类型</TableHead>
+                      <TableHead>{t('report.title')}</TableHead>
+                      <TableHead>{t('common.type')}</TableHead>
                       <TableHead>发送者</TableHead>
-                      <TableHead>状态</TableHead>
-                      <TableHead>时间</TableHead>
-                      <TableHead>操作</TableHead>
+                      <TableHead>{t('teacher.status')}</TableHead>
+                      <TableHead>{t('announcement.time')}</TableHead>
+                      <TableHead>{t('teacher.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -586,7 +588,7 @@ export default function AnnouncementManagement() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="edit-announcement-priority">优先级</Label>
+                <Label htmlFor="edit-announcement-priority">{t('announcement.priority')}</Label>
                 <Select value={newAnnouncement.priority} onValueChange={(value) => setNewAnnouncement({ ...newAnnouncement, priority: value })}>
                   <SelectTrigger>
                     <SelectValue />

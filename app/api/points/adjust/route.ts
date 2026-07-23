@@ -71,26 +71,6 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    // 4. Also update the points collection (total_points)
-    const pointsFilter = encodeURIComponent(`studentId="${student_id}"`)
-    const pointsRes = await fetch(
-      `${PB_URL}/api/collections/points/records?perPage=1&filter=${pointsFilter}`,
-      { headers: { Authorization: token } }
-    )
-    const pointsData = await pointsRes.json()
-    if (pointsData.items?.length > 0) {
-      const pointRecord = pointsData.items[0]
-      const oldTotal = pointRecord.total_points || 0
-      await fetch(
-        `${PB_URL}/api/collections/points/records/${pointRecord.id}`,
-        {
-          method: 'PATCH',
-          headers: { Authorization: token, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ total_points: oldTotal + amount }),
-        }
-      )
-    }
-
     return NextResponse.json({
       success: true,
       student_name: student.name,

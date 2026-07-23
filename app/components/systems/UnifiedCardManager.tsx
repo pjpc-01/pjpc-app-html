@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import {
   CreditCard,
   Search,
@@ -85,6 +86,7 @@ interface UnifiedCardManagerProps {
 }
 
 export default function UnifiedCardManager({ center }: UnifiedCardManagerProps) {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
@@ -458,21 +460,21 @@ export default function UnifiedCardManager({ center }: UnifiedCardManagerProps) 
                     <CheckCircle className="h-5 w-5 text-green-600" />
                     <span className="font-medium">读卡器状态</span>
                   </div>
-                  <Badge className="bg-green-100 text-green-800">正常</Badge>
+                  <Badge className="bg-green-100 text-green-800">{t('common.normal')}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-5 w-5 text-blue-600" />
                     <span className="font-medium">卡片识别</span>
                   </div>
-                  <Badge className="bg-blue-100 text-blue-800">正常</Badge>
+                  <Badge className="bg-blue-100 text-blue-800">{t('common.normal')}</Badge>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
                   <div className="flex items-center gap-2">
                     <Users className="h-5 w-5 text-purple-600" />
                     <span className="font-medium">用户关联</span>
                   </div>
-                  <Badge className="bg-purple-100 text-purple-800">正常</Badge>
+                  <Badge className="bg-purple-100 text-purple-800">{t('common.normal')}</Badge>
                 </div>
               </div>
             </CardContent>
@@ -521,15 +523,15 @@ export default function UnifiedCardManager({ center }: UnifiedCardManagerProps) 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2">
                 <Plus className="h-6 w-6" />
-                <span className="text-sm">新增卡片</span>
+                <span className="text-sm">{t('common.add_card')}</span>
               </Button>
               <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2">
                 <Search className="h-6 w-6" />
-                <span className="text-sm">搜索卡片</span>
+                <span className="text-sm">{t('common.search_cards')}</span>
               </Button>
               <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2">
                 <Download className="h-6 w-6" />
-                <span className="text-sm">导出数据</span>
+                <span className="text-sm">{t('common.export_data')}</span>
               </Button>
               <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2">
                 <RefreshCw className="h-6 w-6" />
@@ -573,24 +575,24 @@ export default function UnifiedCardManager({ center }: UnifiedCardManagerProps) 
               />
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-40">
-                  <SelectValue placeholder="状态筛选" />
+                  <SelectValue placeholder={t('common.status_filter')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部状态</SelectItem>
-                  <SelectItem value="active">活跃</SelectItem>
-                  <SelectItem value="inactive">停用</SelectItem>
-                  <SelectItem value="lost">丢失</SelectItem>
+                  <SelectItem value="all">{t('common.all_status')}</SelectItem>
+                  <SelectItem value="active">{t('common.active')}</SelectItem>
+                  <SelectItem value="inactive">{t('common.disabled')}</SelectItem>
+                  <SelectItem value="lost">{t('common.lost')}</SelectItem>
                   <SelectItem value="replaced">已补办</SelectItem>
-                  <SelectItem value="pending">待处理</SelectItem>
+                  <SelectItem value="pending">{t('common.pending')}</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="w-32">
-                  <SelectValue placeholder="类型" />
+                  <SelectValue placeholder={t('common.type')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部类型</SelectItem>
-                  <SelectItem value="NFC">NFC</SelectItem>
+                  <SelectItem value="all">{t('common.all_types')}</SelectItem>
+                  <SelectItem value="NFC">{t('common.nfc')}</SelectItem>
                   <SelectItem value="RFID">RFID</SelectItem>
                 </SelectContent>
               </Select>
@@ -602,11 +604,11 @@ export default function UnifiedCardManager({ center }: UnifiedCardManagerProps) 
                 <TableRow>
                   <TableHead>卡片号</TableHead>
                   <TableHead>学生信息</TableHead>
-                  <TableHead>类型</TableHead>
-                  <TableHead>状态</TableHead>
+                  <TableHead>{t('common.type')}</TableHead>
+                  <TableHead>{t('teacher.status')}</TableHead>
                   <TableHead>关联状态</TableHead>
                   <TableHead>最后使用</TableHead>
-                  <TableHead>操作</TableHead>
+                  <TableHead>{t('teacher.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -734,7 +736,7 @@ export default function UnifiedCardManager({ center }: UnifiedCardManagerProps) 
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-600">维护中</p>
+                        <p className="text-sm font-medium text-gray-600">{t('common.under_maintenance')}</p>
                         <p className="text-2xl font-bold text-orange-600">1</p>
                       </div>
                       <Settings className="h-8 w-8 text-orange-400" />
@@ -760,11 +762,11 @@ export default function UnifiedCardManager({ center }: UnifiedCardManagerProps) 
                   <TableRow>
                     <TableHead>设备名称</TableHead>
                     <TableHead>位置</TableHead>
-                    <TableHead>类型</TableHead>
-                    <TableHead>状态</TableHead>
+                    <TableHead>{t('common.type')}</TableHead>
+                    <TableHead>{t('teacher.status')}</TableHead>
                     <TableHead>最后活动</TableHead>
                     <TableHead>今日使用</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead>{t('teacher.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -777,7 +779,7 @@ export default function UnifiedCardManager({ center }: UnifiedCardManagerProps) 
                     </TableCell>
                     <TableCell>主入口</TableCell>
                     <TableCell>
-                      <Badge variant="outline">NFC</Badge>
+                      <Badge variant="outline">{t('common.nfc')}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge className="bg-green-100 text-green-800">
@@ -884,10 +886,10 @@ export default function UnifiedCardManager({ center }: UnifiedCardManagerProps) 
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">批量操作权限</span>
-                  <Button variant="outline" size="sm">设置</Button>
+                  <Button variant="outline" size="sm">{t('common.settings')}</Button>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">数据备份</span>
+                  <span className="text-sm font-medium">{t('common.data_backup')}</span>
                   <Button variant="outline" size="sm">备份</Button>
                 </div>
               </div>
@@ -906,11 +908,11 @@ export default function UnifiedCardManager({ center }: UnifiedCardManagerProps) 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">系统负载</span>
-                  <Badge className="bg-green-100 text-green-800">正常</Badge>
+                  <Badge className="bg-green-100 text-green-800">{t('common.normal')}</Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">数据库连接</span>
-                  <Badge className="bg-green-100 text-green-800">正常</Badge>
+                  <Badge className="bg-green-100 text-green-800">{t('common.normal')}</Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">API响应时间</span>
@@ -942,7 +944,7 @@ export default function UnifiedCardManager({ center }: UnifiedCardManagerProps) 
             />
           </div>
           <div>
-            <Label>学生</Label>
+            <Label>{t('common.student')}</Label>
             <Select value={newCard.studentId} onValueChange={(value) => {
               const student = students.find(s => s.id === value)
               setNewCard({
@@ -953,7 +955,7 @@ export default function UnifiedCardManager({ center }: UnifiedCardManagerProps) 
               })
             }}>
               <SelectTrigger>
-                <SelectValue placeholder="选择学生" />
+                <SelectValue placeholder={t('common.select_student')} />
               </SelectTrigger>
               <SelectContent>
                 {students.map(student => (
@@ -966,34 +968,34 @@ export default function UnifiedCardManager({ center }: UnifiedCardManagerProps) 
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>卡片类型</Label>
+              <Label>{t('common.card_type')}</Label>
               <Select value={newCard.cardType} onValueChange={(value: "NFC" | "RFID") => setNewCard({...newCard, cardType: value})}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="NFC">NFC</SelectItem>
+                  <SelectItem value="NFC">{t('common.nfc')}</SelectItem>
                   <SelectItem value="RFID">RFID</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>状态</Label>
+              <Label>{t('teacher.status')}</Label>
               <Select value={newCard.status} onValueChange={(value: "active" | "inactive" | "lost" | "replaced") => setNewCard({...newCard, status: value})}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">活跃</SelectItem>
-                  <SelectItem value="inactive">停用</SelectItem>
-                  <SelectItem value="lost">丢失</SelectItem>
+                  <SelectItem value="active">{t('common.active')}</SelectItem>
+                  <SelectItem value="inactive">{t('common.disabled')}</SelectItem>
+                  <SelectItem value="lost">{t('common.lost')}</SelectItem>
                   <SelectItem value="replaced">已补办</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div>
-            <Label>备注</Label>
+            <Label>{t('teacher.notes')}</Label>
             <Input
               value={newCard.notes}
               onChange={(e) => setNewCard({...newCard, notes: e.target.value})}

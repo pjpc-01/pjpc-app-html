@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Cake, Calendar, MapPin } from "lucide-react"
 import { useStudents } from "@/hooks/useStudents"
+import { useLanguage } from "@/contexts/language-context"
 
 interface BirthdaysPanelProps {
   center?: string | null
@@ -19,6 +20,7 @@ function formatDateToMonthDay(dateStr?: string) {
 }
 
 export default function BirthdaysPanel({ center }: BirthdaysPanelProps) {
+  const { t } = useLanguage()
   const { students, loading } = useStudents()
 
   const { monthBirthdays, next7Days } = useMemo(() => {
@@ -70,7 +72,7 @@ export default function BirthdaysPanel({ center }: BirthdaysPanelProps) {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="text-center text-gray-600 py-6">加载中...</div>
+          <div className="text-center text-gray-600 py-6">{t('teacher.loading')}</div>
         ) : monthBirthdays.length === 0 ? (
           <div className="text-center text-gray-500 py-6">本月无生日</div>
         ) : (
@@ -86,7 +88,7 @@ export default function BirthdaysPanel({ center }: BirthdaysPanelProps) {
                     ) : null}
                   </div>
                 </div>
-                <Badge variant="secondary">生日</Badge>
+                <Badge variant="secondary">{t('common.birthday')}</Badge>
               </div>
             ))}
           </div>

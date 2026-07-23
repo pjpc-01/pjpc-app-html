@@ -28,6 +28,7 @@ import {
   BarChart3,
   Settings
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface ModernParentDashboardProps {
   activeTab: string
@@ -35,6 +36,7 @@ interface ModernParentDashboardProps {
 }
 
 export default function ModernParentDashboard({ activeTab, setActiveTab }: ModernParentDashboardProps) {
+  const { t } = useLanguage()
   // 模拟数据
   const childData = {
     name: "小明",
@@ -147,7 +149,7 @@ export default function ModernParentDashboard({ activeTab, setActiveTab }: Moder
               </div>
               <div className="text-right">
                 <div className="text-3xl font-bold text-blue-600">{childData.points}</div>
-                <div className="text-sm text-gray-500">积分</div>
+                <div className="text-sm text-gray-500">{t('dashboard.points')}</div>
               </div>
             </div>
           </CardContent>
@@ -163,7 +165,7 @@ export default function ModernParentDashboard({ activeTab, setActiveTab }: Moder
           <CardContent className="space-y-4">
             <div>
               <div className="flex justify-between text-sm mb-2">
-                <span>出勤率</span>
+                <span>{t('teacher.attendance_rate')}</span>
                 <span className="font-medium">{childData.attendance}%</span>
               </div>
               <Progress value={childData.attendance} className="h-2" />
@@ -192,7 +194,7 @@ export default function ModernParentDashboard({ activeTab, setActiveTab }: Moder
               className="flex items-center gap-2 px-4 py-3 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-rose-500 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300"
             >
               <Activity className="h-4 w-4" />
-              <span className="font-medium">概览</span>
+              <span className="font-medium">{t('common.overview')}</span>
             </TabsTrigger>
             <TabsTrigger 
               value="progress" 
@@ -243,7 +245,7 @@ export default function ModernParentDashboard({ activeTab, setActiveTab }: Moder
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">出勤率</p>
+                    <p className="text-sm font-medium text-gray-600">{t('teacher.attendance_rate')}</p>
                     <p className="text-2xl font-bold text-gray-900">96.8%</p>
                   </div>
                   <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -315,7 +317,7 @@ export default function ModernParentDashboard({ activeTab, setActiveTab }: Moder
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-green-600">+{activity.points}</div>
-                        <div className="text-xs text-gray-500">积分</div>
+                        <div className="text-xs text-gray-500">{t('dashboard.points')}</div>
                       </div>
                     </div>
                   ))}

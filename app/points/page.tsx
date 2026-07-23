@@ -11,6 +11,7 @@ import {
   Loader2, Star, Trophy, Plus, Minus, Check, GraduationCap,
   History, LogIn, Users, ChevronLeft, ChevronRight, User,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
 import PointsNfcScanner from "@/components/attendance/PointsNfcScanner"
@@ -28,6 +29,7 @@ interface Transaction {
 const TX_PAGE_SIZE = 30
 
 export default function PointsPage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const searchParams = useSearchParams()
   const studentIdParam = searchParams.get("studentId")
@@ -144,7 +146,7 @@ export default function PointsPage() {
 
   return (
     <PageLayout
-      title="积分操作"
+      title={t('teacher.points')}
       description={isAuthenticated && teacher ? `${teacher.teacher_name || teacher.name} 老师` : "请先登入"}
       backUrl="/"
       userRole="admin"
@@ -290,7 +292,7 @@ export default function PointsPage() {
             {txLoading ? (
               <div className="text-center py-10"><Loader2 className="h-5 w-5 mx-auto animate-spin text-amber-500" /></div>
             ) : txLogs.length === 0 ? (
-              <div className="text-center py-10 text-gray-400 text-xs">暂无记录</div>
+              <div className="text-center py-10 text-gray-400 text-xs">{t('common.no_records')}</div>
             ) : (
               <>
                 <div className="max-h-[400px] overflow-y-auto">

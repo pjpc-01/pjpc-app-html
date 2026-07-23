@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import {
   CreditCard,
   Smartphone,
@@ -55,6 +56,7 @@ import NFCCardsTab from "./nfc-cards-tab"
 import Link from "next/link"
 
 export default function NFCAttendanceSystem() {
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState("overview")
   const [isSimulating, setIsSimulating] = useState(false)
   const [selectedDevice, setSelectedDevice] = useState<string>("")
@@ -386,22 +388,22 @@ export default function NFCAttendanceSystem() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="NFC">NFC</SelectItem>
+                    <SelectItem value="NFC">{t('common.nfc')}</SelectItem>
                     <SelectItem value="RFID">RFID</SelectItem>
                     <SelectItem value="hybrid">混合</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="status">状态</Label>
+                <Label htmlFor="status">{t('teacher.status')}</Label>
                 <Select value={newDevice.status} onValueChange={(value: "online" | "offline" | "maintenance") => setNewDevice({...newDevice, status: value})}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="online">在线</SelectItem>
-                    <SelectItem value="offline">离线</SelectItem>
-                    <SelectItem value="maintenance">维护中</SelectItem>
+                    <SelectItem value="online">{t('common.online')}</SelectItem>
+                    <SelectItem value="offline">{t('attendance.offline')}</SelectItem>
+                    <SelectItem value="maintenance">{t('common.under_maintenance')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -436,7 +438,7 @@ export default function NFCAttendanceSystem() {
               />
             </div>
             <div>
-              <Label htmlFor="deviceNotes">备注</Label>
+              <Label htmlFor="deviceNotes">{t('teacher.notes')}</Label>
               <Input
                 id="deviceNotes"
                 value={newDevice.notes}

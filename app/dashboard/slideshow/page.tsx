@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Plus, Trash2, GripVertical, Play, Pause, Settings2, ChevronLeft, ChevronRight, LayoutGrid, MonitorPlay, Trophy, Cake, Calendar, Megaphone, X, MoveUp, MoveDown, Palette, Eye, EyeOff } from "lucide-react"
 import { LeaderboardList, type LeaderboardStudent } from "@/components/shared/LeaderboardList"
+import { useLanguage } from "@/contexts/language-context"
 
 // ─── Types ──────────────────────────────────────────────────────────
 interface Student {
@@ -49,9 +50,10 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
 
 // ─── Main Page ──────────────────────────────────────────────────────
 export default function DashboardPage() {
+  const { t } = useLanguage()
   return (
     <Suspense fallback={
-      <PageLayout title="分行仪表板" description="加载中..." userRole="admin" background="from-slate-50 to-gray-50">
+      <PageLayout title="分行仪表板" description={t('teacher.loading')} userRole="admin" background="from-slate-50 to-gray-50">
         <div className="text-center py-16"><Loader2 className="h-6 w-6 mx-auto animate-spin text-gray-400" /></div>
       </PageLayout>
     }>
@@ -113,6 +115,7 @@ function BirthdayWidget({ students }: { students: Student[] }) {
 
 // ─── Events Widget ──────────────────────────────────────────────────
 function EventsWidget({ events, onUpdate }: { events: any[]; onUpdate?: (events: any[]) => void }) {
+  const { t } = useLanguage()
   const [editing, setEditing] = useState(false)
   const [newTitle, setNewTitle] = useState("")
   const [newDate, setNewDate] = useState("")
@@ -179,8 +182,8 @@ function EventsWidget({ events, onUpdate }: { events: any[]; onUpdate?: (events:
           <div className="flex items-center gap-2 mt-2 px-2">
             <Input placeholder="活动名称" value={newTitle} onChange={e => setNewTitle(e.target.value)} className="h-7 text-xs flex-1" />
             <Input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className="h-7 text-xs w-28" />
-            <Button size="sm" className="h-7 text-xs" onClick={addEvent}>添加</Button>
-            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditing(false)}>取消</Button>
+            <Button size="sm" className="h-7 text-xs" onClick={addEvent}>{t('dashboard.add')}</Button>
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditing(false)}>{t('report.cancel')}</Button>
           </div>
         ) : (
           <Button variant="ghost" size="sm" className="text-xs mt-1 w-full" onClick={() => setEditing(true)}>+ 添加活动</Button>
@@ -192,6 +195,7 @@ function EventsWidget({ events, onUpdate }: { events: any[]; onUpdate?: (events:
 
 // ─── Announcement Widget ────────────────────────────────────────────
 function AnnouncementWidget({ text, onUpdate }: { text: string; onUpdate?: (text: string) => void }) {
+  const { t } = useLanguage()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(text)
 
@@ -217,8 +221,8 @@ function AnnouncementWidget({ text, onUpdate }: { text: string; onUpdate?: (text
             className="w-full min-h-[80px] p-2 text-sm border rounded-lg resize-y focus:outline-none focus:ring-2 focus:ring-blue-200"
             placeholder="输入公告内容..." />
           <div className="flex gap-2">
-            <Button size="sm" className="h-7 text-xs" onClick={save}>保存</Button>
-            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setDraft(text); setEditing(false) }}>取消</Button>
+            <Button size="sm" className="h-7 text-xs" onClick={save}>{t('report.save')}</Button>
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setDraft(text); setEditing(false) }}>{t('report.cancel')}</Button>
           </div>
         </div>
       ) : (
@@ -395,6 +399,7 @@ function SlideshowOverlay({
 
 // ─── Main Content ───────────────────────────────────────────────────
 function DashboardContent() {
+  const { t } = useLanguage()
   const router = useRouter()
   const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
@@ -583,7 +588,7 @@ function DashboardContent() {
 
   if (loading) {
     return (
-      <PageLayout title="分行仪表板" description="加载中..." userRole="admin" background="from-slate-50 to-gray-50">
+      <PageLayout title="分行仪表板" description={t('teacher.loading')} userRole="admin" background="from-slate-50 to-gray-50">
         <div className="text-center py-16"><Loader2 className="h-6 w-6 mx-auto animate-spin text-gray-400" /></div>
       </PageLayout>
     )

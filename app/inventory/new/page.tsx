@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useLanguage } from "@/contexts/language-context"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowLeft, Save, Package } from "lucide-react"
 import Link from "next/link"
@@ -22,6 +23,7 @@ import Link from "next/link"
 const UNITS = ["本", "支", "包", "盒", "张", "个", "条", "双", "套", "瓶", "袋", "箱", "罐", "份"]
 
 export default function NewInventoryItemPage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const { create } = useInventoryItems()
   const { categories } = useInventoryCategories()
@@ -100,7 +102,7 @@ export default function NewInventoryItemPage() {
               {/* Category + Unit row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>分类</Label>
+                  <Label>{t('inventory.category')}</Label>
                   <Select value={form.categoryId} onValueChange={v => updateField("categoryId", v)}>
                     <SelectTrigger><SelectValue placeholder="选择分类" /></SelectTrigger>
                     <SelectContent>
@@ -111,7 +113,7 @@ export default function NewInventoryItemPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label>单位</Label>
+                  <Label>{t('inventory.unit')}</Label>
                   <Select value={form.unit} onValueChange={v => updateField("unit", v)}>
                     <SelectTrigger><SelectValue placeholder="选择单位" /></SelectTrigger>
                     <SelectContent>
@@ -159,7 +161,7 @@ export default function NewInventoryItemPage() {
 
               {/* Description */}
               <div>
-                <Label>描述</Label>
+                <Label>{t('finance.description')}</Label>
                 <Textarea value={form.description} onChange={e => updateField("description", e.target.value)}
                   placeholder="可选，商品说明/规格" rows={3} />
               </div>
@@ -172,7 +174,7 @@ export default function NewInventoryItemPage() {
               {/* Submit */}
               <div className="flex justify-end gap-3">
                 <Link href="/inventory">
-                  <Button type="button" variant="outline">取消</Button>
+                  <Button type="button" variant="outline">{t('report.cancel')}</Button>
                 </Link>
                 <Button type="submit" disabled={saving} className="bg-indigo-600 hover:bg-indigo-700">
                   <Save className="h-4 w-4 mr-2" />

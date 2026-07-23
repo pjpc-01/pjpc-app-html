@@ -11,6 +11,7 @@ import { Student } from "@/hooks/useStudents"
 import { convertGradeToChinese } from "./utils"
 import PermissionGate from "@/components/shared/PermissionGate"
 import type { UserRole } from "@/lib/permissions"
+import { useLanguage } from "@/contexts/language-context"
 
 interface StudentListProps {
   students: Student[]
@@ -37,6 +38,7 @@ export default function StudentList({
   onViewReport,
   userRole = 'admin'
 }: StudentListProps) {
+  const { t } = useLanguage()
   const [sortBy, setSortBy] = useState<string>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
@@ -96,7 +98,7 @@ export default function StudentList({
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600 mx-auto"></div>
-          <p className="mt-2 text-amber-700">加载中...</p>
+          <p className="mt-2 text-amber-700">{t('teacher.loading')}</p>
         </div>
       </div>
     )
@@ -106,7 +108,7 @@ export default function StudentList({
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <p className="text-amber-700">暂无学生数据</p>
+          <p className="text-amber-700">{t('student.no_student_data')}</p>
         </div>
       </div>
     )
@@ -141,16 +143,16 @@ export default function StudentList({
             >
               年级
             </TableHead>
-            <TableHead className="text-accent-foreground font-semibold">父亲</TableHead>
-            <TableHead className="text-accent-foreground font-semibold">母亲</TableHead>
-            <TableHead className="text-accent-foreground font-semibold">联系电话</TableHead>
+            <TableHead className="text-accent-foreground font-semibold">{t('student.father')}</TableHead>
+            <TableHead className="text-accent-foreground font-semibold">{t('student.mother')}</TableHead>
+            <TableHead className="text-accent-foreground font-semibold">{t('student.contact_phone')}</TableHead>
             <TableHead 
               className="hover:bg-accent text-accent-foreground font-semibold cursor-pointer"
               onClick={() => handleSort('status')}
             >
               状态
             </TableHead>
-            <TableHead className="w-24 text-accent-foreground font-semibold">操作</TableHead>
+            <TableHead className="w-24 text-accent-foreground font-semibold">{t('teacher.actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

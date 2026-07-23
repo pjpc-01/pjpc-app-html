@@ -18,6 +18,7 @@ import {
   CheckCircle,
   GraduationCap,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import { useStudents } from "@/hooks/useStudents"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import StudentForm from "../student/StudentForm"
@@ -33,6 +34,7 @@ interface StudentsTabProps {
 export default function StudentsTab({ 
   setActiveTab 
 }: StudentsTabProps) {
+  const { t } = useLanguage()
   const { students, loading: studentsLoading, refetch: refetchStudents, addStudent, updateStudent, deleteStudent } = useStudents()
   const { userProfile } = useAuth()
   
@@ -185,7 +187,7 @@ export default function StudentsTab({
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">总学生数</p>
+                <p className="text-sm font-medium text-gray-600">{t('dashboard.total_students')}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
               </div>
               <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
@@ -199,7 +201,7 @@ export default function StudentsTab({
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">在读学生</p>
+                <p className="text-sm font-medium text-gray-600">{t('dashboard.active_students')}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
               </div>
               <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -243,7 +245,7 @@ export default function StudentsTab({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>学生列表</CardTitle>
+              <CardTitle>{t('student.student_list')}</CardTitle>
               <CardDescription>查看和管理所有学生基本资料及打卡状态</CardDescription>
             </div>
             <div className="flex gap-2">
@@ -311,15 +313,15 @@ export default function StudentsTab({
               <TableHeader>
                 <TableRow>
                   <TableHead>学生信息</TableHead>
-                  <TableHead>年级</TableHead>
+                  <TableHead>{t('student.grade')}</TableHead>
                   <TableHead>学校</TableHead>
-                  <TableHead>中心</TableHead>
+                  <TableHead>{t('teacher.center')}</TableHead>
                   <TableHead>服务类型</TableHead>
-                  <TableHead>父亲</TableHead>
-                  <TableHead>母亲</TableHead>
+                  <TableHead>{t('student.father')}</TableHead>
+                  <TableHead>{t('student.mother')}</TableHead>
                   <TableHead>父母电话</TableHead>
                   <TableHead>学费状态</TableHead>
-                  <TableHead>操作</TableHead>
+                  <TableHead>{t('teacher.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

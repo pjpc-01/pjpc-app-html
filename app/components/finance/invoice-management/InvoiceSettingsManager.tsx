@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import {
   Select,
   SelectContent,
@@ -375,6 +376,7 @@ interface InvoiceSettingsManagerProps {
 }
 
 export default function InvoiceSettingsManager({ onSettingsChange, activePresetId }: InvoiceSettingsManagerProps) {
+  const { t } = useLanguage()
   const [presets, setPresets] = useState<InvoiceSettingsPreset[]>([])
   const [activeId, setActiveId] = useState<string>("")
   const [settings, setSettings] = useState<InvoiceSettingsPreset>(createDefaultPreset())
@@ -652,7 +654,7 @@ export default function InvoiceSettingsManager({ onSettingsChange, activePresetI
         <div className="space-y-4">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="school"><Building2 className="h-4 w-4 mr-1" />学校信息</TabsTrigger>
+              <TabsTrigger value="school"><Building2 className="h-4 w-4 mr-1" />{t('report.school_info')}</TabsTrigger>
               <TabsTrigger value="branding"><Palette className="h-4 w-4 mr-1" />品牌样式</TabsTrigger>
               <TabsTrigger value="payment"><Landmark className="h-4 w-4 mr-1" />付款信息</TabsTrigger>
             </TabsList>
@@ -661,7 +663,7 @@ export default function InvoiceSettingsManager({ onSettingsChange, activePresetI
             <TabsContent value="school" className="space-y-4 mt-4">
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">基本信息</CardTitle>
+                  <CardTitle className="text-base">{t('report.basic_info')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -680,11 +682,11 @@ export default function InvoiceSettingsManager({ onSettingsChange, activePresetI
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label><Smartphone className="h-3.5 w-3.5 inline mr-1" />电话</Label>
+                      <Label><Smartphone className="h-3.5 w-3.5 inline mr-1" />{t('report.phone')}</Label>
                       <Input value={settings.schoolPhone} onChange={e => updateSettings({ schoolPhone: e.target.value })} placeholder="010-12345678" />
                     </div>
                     <div>
-                      <Label><Mail className="h-3.5 w-3.5 inline mr-1" />邮箱</Label>
+                      <Label><Mail className="h-3.5 w-3.5 inline mr-1" />{t('report.email')}</Label>
                       <Input value={settings.schoolEmail} onChange={e => updateSettings({ schoolEmail: e.target.value })} placeholder="info@school.com" />
                     </div>
                   </div>
@@ -713,7 +715,7 @@ export default function InvoiceSettingsManager({ onSettingsChange, activePresetI
                         ) : (
                           <div className="flex flex-col items-center text-muted-foreground">
                             <Building2 className="h-8 w-8" />
-                            <span className="text-[10px] mt-1">点击上传</span>
+                            <span className="text-[10px] mt-1">{t('report.click_to_upload')}</span>
                           </div>
                         )}
                       </div>
@@ -786,11 +788,11 @@ export default function InvoiceSettingsManager({ onSettingsChange, activePresetI
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>银行名称</Label>
+                      <Label>{t('teacher.bank_name')}</Label>
                       <Input value={settings.bankName} onChange={e => updateSettings({ bankName: e.target.value })} placeholder="马来亚银行" />
                     </div>
                     <div>
-                      <Label>账户号码</Label>
+                      <Label>{t('finance.account_number')}</Label>
                       <Input value={settings.bankAccount} onChange={e => updateSettings({ bankAccount: e.target.value })} placeholder="1234-5678-9012" />
                     </div>
                   </div>
@@ -878,8 +880,8 @@ export default function InvoiceSettingsManager({ onSettingsChange, activePresetI
               <Input value={newPresetName} onChange={e => setNewPresetName(e.target.value)} placeholder="例如：国际部、假期班" onKeyDown={e => { if (e.key === 'Enter') handleSaveAsNew() }} />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsNewPresetDialogOpen(false)}>取消</Button>
-              <Button onClick={handleSaveAsNew} disabled={!newPresetName.trim()}>保存</Button>
+              <Button variant="outline" onClick={() => setIsNewPresetDialogOpen(false)}>{t('report.cancel')}</Button>
+              <Button onClick={handleSaveAsNew} disabled={!newPresetName.trim()}>{t('report.save')}</Button>
             </div>
           </div>
         </DialogContent>

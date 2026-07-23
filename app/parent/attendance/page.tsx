@@ -8,8 +8,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, ClipboardCheck, CheckCircle2, XCircle, Clock } from "lucide-react"
 import { useSearchParams } from "next/navigation"
+import { useLanguage } from "@/contexts/language-context"
 
 export default function ParentAttendancePage() {
+  const { t } = useLanguage()
   const { children, loading } = useParentPortal()
   const searchParams = useSearchParams()
   const childId = searchParams?.get("child")
@@ -56,14 +58,14 @@ export default function ParentAttendancePage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">出勤记录</h1>
+      <h1 className="text-2xl font-bold text-gray-900">{t('attendance.attendance_records')}</h1>
       <p className="text-gray-500">查看孩子的每日签到情况</p>
 
       {filteredChildren.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center py-12">
             <ClipboardCheck className="h-12 w-12 text-gray-300 mb-4" />
-            <p className="text-gray-500">暂无数据</p>
+            <p className="text-gray-500">{t('parent.no_data')}</p>
           </CardContent>
         </Card>
       ) : (

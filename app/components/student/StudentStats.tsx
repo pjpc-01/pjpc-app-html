@@ -13,6 +13,7 @@ import {
   UserCheck,
   UserX
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import { Student } from "@/hooks/useStudents"
 
 interface StudentStatsProps {
@@ -26,6 +27,7 @@ export default function StudentStats({
   totalStudents, 
   className = "" 
 }: StudentStatsProps) {
+  const { t } = useLanguage()
   const stats = useMemo(() => {
     const total = students.length
     const active = students.filter(s => s.status === 'active').length
@@ -106,7 +108,7 @@ export default function StudentStats({
                 <GraduationCap className="h-4 w-4 text-green-500" />
                 <span className="text-lg font-semibold">{stats.active}</span>
               </div>
-              <p className="text-xs text-gray-600">在读学生</p>
+              <p className="text-xs text-gray-600">{t('dashboard.active_students')}</p>
             </div>
             
             <div className="text-center">
@@ -114,7 +116,7 @@ export default function StudentStats({
                 <GraduationCap className="h-4 w-4 text-orange-600" />
                 <span className="text-lg font-semibold">{stats.graduated}</span>
               </div>
-              <p className="text-xs text-gray-600">已毕业</p>
+              <p className="text-xs text-gray-600">{t('student.graduated')}</p>
             </div>
             
             <div className="text-center">
@@ -209,7 +211,7 @@ export default function StudentStats({
                    </Badge>
                  </div>
                  <div className="flex justify-between items-center text-xs">
-                   <span>总学生数</span>
+                   <span>{t('dashboard.total_students')}</span>
                    <Badge variant="outline" className="text-xs">
                      {stats.total}
                    </Badge>

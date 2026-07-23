@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   RefreshCw
 } from 'lucide-react'
+import { useLanguage } from "@/contexts/language-context"
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 
@@ -57,6 +58,7 @@ interface AttendanceStats {
 }
 
 export default function AttendanceRecords() {
+  const { t } = useLanguage()
   const [records, setRecords] = useState<AttendanceRecord[]>([])
   const [teacherRecords, setTeacherRecords] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -206,13 +208,13 @@ export default function AttendanceRecords() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'present':
-        return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />出勤</Badge>
+        return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />{t('attendance.present')}</Badge>
       case 'absent':
-        return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />缺勤</Badge>
+        return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />{t('attendance.absent')}</Badge>
       case 'late':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" />迟到</Badge>
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" />{t('teacher.late')}</Badge>
       case 'early_leave':
-        return <Badge variant="outline" className="bg-orange-100 text-orange-800"><AlertTriangle className="h-3 w-3 mr-1" />早退</Badge>
+        return <Badge variant="outline" className="bg-orange-100 text-orange-800"><AlertTriangle className="h-3 w-3 mr-1" />{t('teacher.early_leave')}</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
@@ -249,7 +251,7 @@ export default function AttendanceRecords() {
               </div>
               <div>
                 <div className="text-2xl font-bold">{stats.present}</div>
-                <div className="text-sm text-gray-500">出勤</div>
+                <div className="text-sm text-gray-500">{t('attendance.present')}</div>
               </div>
             </div>
           </CardContent>
@@ -263,7 +265,7 @@ export default function AttendanceRecords() {
               </div>
               <div>
                 <div className="text-2xl font-bold">{stats.absent}</div>
-                <div className="text-sm text-gray-500">缺勤</div>
+                <div className="text-sm text-gray-500">{t('attendance.absent')}</div>
               </div>
             </div>
           </CardContent>
@@ -277,7 +279,7 @@ export default function AttendanceRecords() {
               </div>
               <div>
                 <div className="text-2xl font-bold">{stats.attendanceRate}%</div>
-                <div className="text-sm text-gray-500">出勤率</div>
+                <div className="text-sm text-gray-500">{t('teacher.attendance_rate')}</div>
               </div>
             </div>
           </CardContent>
@@ -295,7 +297,7 @@ export default function AttendanceRecords() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
-              <Label htmlFor="date">日期</Label>
+              <Label htmlFor="date">{t('finance.date')}</Label>
               <Input
                 id="date"
                 type="date"
@@ -305,7 +307,7 @@ export default function AttendanceRecords() {
             </div>
             
             <div>
-              <Label htmlFor="name">姓名</Label>
+              <Label htmlFor="name">{t('student.name')}</Label>
               <Input
                 id="name"
                 placeholder="输入姓名"
@@ -315,45 +317,45 @@ export default function AttendanceRecords() {
             </div>
             
             <div>
-              <Label>类型</Label>
+              <Label>{t('common.type')}</Label>
               <Select value={filters.type} onValueChange={(value) => setFilters(prev => ({ ...prev, type: value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="选择类型" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部类型</SelectItem>
-                  <SelectItem value="student">学生</SelectItem>
+                  <SelectItem value="all">{t('common.all_types')}</SelectItem>
+                  <SelectItem value="student">{t('common.student')}</SelectItem>
                   <SelectItem value="teacher">教师/员工</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div>
-              <Label>中心</Label>
+              <Label>{t('teacher.center')}</Label>
               <Select value={filters.center} onValueChange={(value) => setFilters(prev => ({ ...prev, center: value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="选择中心" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部中心</SelectItem>
+                  <SelectItem value="all">{t('teacher.all_centers')}</SelectItem>
                   <SelectItem value="总校">总校</SelectItem>
-                  <SelectItem value="分校">分校</SelectItem>
+                  <SelectItem value="分校">{t('attendance.branch')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div>
-              <Label>状态</Label>
+              <Label>{t('teacher.status')}</Label>
               <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="选择状态" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部状态</SelectItem>
-                  <SelectItem value="present">出勤</SelectItem>
-                  <SelectItem value="absent">缺勤</SelectItem>
-                  <SelectItem value="late">迟到</SelectItem>
-                  <SelectItem value="early_leave">早退</SelectItem>
+                  <SelectItem value="all">{t('common.all_status')}</SelectItem>
+                  <SelectItem value="present">{t('attendance.present')}</SelectItem>
+                  <SelectItem value="absent">{t('attendance.absent')}</SelectItem>
+                  <SelectItem value="late">{t('teacher.late')}</SelectItem>
+                  <SelectItem value="early_leave">{t('teacher.early_leave')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -392,7 +394,7 @@ export default function AttendanceRecords() {
           {loading ? (
             <div className="text-center py-8">
               <RefreshCw className="h-8 w-8 mx-auto mb-4 animate-spin text-gray-400" />
-              <p className="text-gray-500">加载中...</p>
+              <p className="text-gray-500">{t('teacher.loading')}</p>
             </div>
           ) : error ? (
             <div className="text-center py-8">
@@ -416,14 +418,14 @@ export default function AttendanceRecords() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>类型</TableHead>
+                    <TableHead>{t('common.type')}</TableHead>
                     <TableHead>人员信息</TableHead>
-                    <TableHead>中心</TableHead>
-                    <TableHead>日期</TableHead>
-                    <TableHead>签到时间</TableHead>
-                    <TableHead>签退时间</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>备注</TableHead>
+                    <TableHead>{t('teacher.center')}</TableHead>
+                    <TableHead>{t('finance.date')}</TableHead>
+                    <TableHead>{t('teacher.check_in_time')}</TableHead>
+                    <TableHead>{t('teacher.check_out_time')}</TableHead>
+                    <TableHead>{t('teacher.status')}</TableHead>
+                    <TableHead>{t('teacher.notes')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

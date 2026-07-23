@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useMemo } from "react"
 import { useFees } from "@/hooks/useFees"
 import { useStudents } from "@/hooks/useStudents"
@@ -6,8 +8,10 @@ import { useInvoices } from "@/hooks/useInvoices"
 import { StudentFeeMatrixHeader } from "./StudentFeeMatrixHeader"
 import { SearchAndFilter } from "./SearchAndFilter"
 import { FeeCard } from "./FeeCard"
+import { useLanguage } from "@/contexts/language-context"
 
 export const StudentFeeMatrix = () => {
+  const { t } = useLanguage()
   const { fees } = useFees()
   const { students } = useStudents()
   const { isAssigned, getStudentAmount, assignFeeToStudent, removeFeeFromStudent, enterEditMode, exitEditMode,
@@ -49,7 +53,7 @@ export const StudentFeeMatrix = () => {
     return grades.sort((a, b) => (order[a] ?? 99) - (order[b] ?? 99))
   }, [students])
 
-  if (studentFeesLoading) return <div className="py-12 text-center text-muted-foreground">加载中...</div>
+  if (studentFeesLoading) return <div className="py-12 text-center text-muted-foreground">{t('teacher.loading')}</div>
   if (studentFeesError) return <div className="py-12 text-center text-red-600">加载失败: {studentFeesError}</div>
 
   const createInvoice = async (studentId: string) => {

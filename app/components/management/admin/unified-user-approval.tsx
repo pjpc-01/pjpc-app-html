@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { useLanguage } from "@/contexts/language-context"
 import {
   CheckCircle,
   XCircle,
@@ -102,6 +103,7 @@ interface ReviewEntry {
 }
 
 export default function UnifiedUserApproval() {
+  const { t } = useLanguage()
   const {
     users,
     loading,
@@ -295,7 +297,7 @@ export default function UnifiedUserApproval() {
     return (
       <div className="flex items-center justify-center p-8">
         <RefreshCw className="h-8 w-8 animate-spin" />
-        <span className="ml-2">加载中...</span>
+        <span className="ml-2">{t('teacher.loading')}</span>
       </div>
     )
   }
@@ -447,13 +449,13 @@ export default function UnifiedUserApproval() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="状态筛选" />
+                <SelectValue placeholder={t('common.status_filter')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">全部状态</SelectItem>
+                <SelectItem value="all">{t('common.all_status')}</SelectItem>
                 <SelectItem value="pending">待审批</SelectItem>
                 <SelectItem value="approved">已通过</SelectItem>
-                <SelectItem value="suspended">已拒绝</SelectItem>
+                <SelectItem value="suspended">{t('attendance.rejected')}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -462,10 +464,10 @@ export default function UnifiedUserApproval() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">全部角色</SelectItem>
-                <SelectItem value="admin">管理员</SelectItem>
-                <SelectItem value="teacher">教师</SelectItem>
-                <SelectItem value="parent">家长</SelectItem>
-                <SelectItem value="accountant">会计</SelectItem>
+                <SelectItem value="admin">{t('admin.admin')}</SelectItem>
+                <SelectItem value="teacher">{t('teacher.teacher')}</SelectItem>
+                <SelectItem value="parent">{t('admin.parent')}</SelectItem>
+                <SelectItem value="accountant">{t('admin.accountant')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -498,11 +500,11 @@ export default function UnifiedUserApproval() {
                       />
                     </TableHead>
                     <TableHead>用户信息</TableHead>
-                    <TableHead>角色</TableHead>
+                    <TableHead>{t('admin.role')}</TableHead>
                     <TableHead>AI建议</TableHead>
                     <TableHead>风险评分</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead>{t('teacher.status')}</TableHead>
+                    <TableHead>{t('teacher.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -554,7 +556,7 @@ export default function UnifiedUserApproval() {
                               </Tooltip>
                             </TooltipProvider>
                           ) : (
-                            <span className="text-gray-400">分析中...</span>
+                            <span className="text-gray-400">{t('admin.analyzing')}</span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -619,13 +621,13 @@ export default function UnifiedUserApproval() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="状态筛选" />
+                <SelectValue placeholder={t('common.status_filter')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">全部状态</SelectItem>
+                <SelectItem value="all">{t('common.all_status')}</SelectItem>
                 <SelectItem value="pending">待审批</SelectItem>
                 <SelectItem value="approved">已通过</SelectItem>
-                <SelectItem value="suspended">已拒绝</SelectItem>
+                <SelectItem value="suspended">{t('attendance.rejected')}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -634,10 +636,10 @@ export default function UnifiedUserApproval() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">全部角色</SelectItem>
-                <SelectItem value="admin">管理员</SelectItem>
-                <SelectItem value="teacher">教师</SelectItem>
-                <SelectItem value="parent">家长</SelectItem>
-                <SelectItem value="accountant">会计</SelectItem>
+                <SelectItem value="admin">{t('admin.admin')}</SelectItem>
+                <SelectItem value="teacher">{t('teacher.teacher')}</SelectItem>
+                <SelectItem value="parent">{t('admin.parent')}</SelectItem>
+                <SelectItem value="accountant">{t('admin.accountant')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -670,10 +672,10 @@ export default function UnifiedUserApproval() {
                       />
                     </TableHead>
                     <TableHead>用户信息</TableHead>
-                    <TableHead>角色</TableHead>
-                    <TableHead>注册时间</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead>{t('admin.role')}</TableHead>
+                    <TableHead>{t('admin.registration_time')}</TableHead>
+                    <TableHead>{t('teacher.status')}</TableHead>
+                    <TableHead>{t('teacher.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -744,7 +746,7 @@ export default function UnifiedUserApproval() {
                       <TableCell colSpan={6} className="text-center py-8">
                         <div className="flex flex-col items-center space-y-2">
                           <Shield className="h-12 w-12 text-gray-400" />
-                          <p className="text-lg font-medium text-gray-900">暂无用户</p>
+                          <p className="text-lg font-medium text-gray-900">{t('admin.no_users')}</p>
                           <p className="text-sm text-gray-500">没有找到符合条件的用户</p>
                           <Button onClick={() => fetchUsers()} variant="outline" size="sm">
                             <RefreshCw className="h-4 w-4 mr-2" />
@@ -776,23 +778,23 @@ export default function UnifiedUserApproval() {
               {/* 用户基本信息 */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">基本信息</CardTitle>
+                  <CardTitle className="text-lg">{t('report.basic_info')}</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>姓名</Label>
+                    <Label>{t('student.name')}</Label>
                     <p className="text-sm">{currentReviewUser.name}</p>
                   </div>
                   <div>
-                    <Label>邮箱</Label>
+                    <Label>{t('report.email')}</Label>
                     <p className="text-sm">{currentReviewUser.email}</p>
                   </div>
                   <div>
-                    <Label>角色</Label>
+                    <Label>{t('admin.role')}</Label>
                     <p className="text-sm">{currentReviewUser.role}</p>
                   </div>
                   <div>
-                    <Label>注册时间</Label>
+                    <Label>{t('admin.registration_time')}</Label>
                     <p className="text-sm">{new Date(currentReviewUser.created).toLocaleString()}</p>
                   </div>
                   <div>

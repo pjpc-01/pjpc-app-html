@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useLanguage } from "@/contexts/language-context"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Dialog,
@@ -37,6 +38,7 @@ interface Center {
 const API_BASE = '/api/pocketbase-proxy'
 
 export default function CenterManagementPage() {
+  const { t } = useLanguage()
   const [centers, setCenters] = useState<Center[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -180,11 +182,11 @@ export default function CenterManagementPage() {
                     <TableHead>分行名称</TableHead>
                     <TableHead>代码</TableHead>
                     <TableHead>负责人</TableHead>
-                    <TableHead>电话</TableHead>
-                    <TableHead>地址</TableHead>
+                    <TableHead>{t('report.phone')}</TableHead>
+                    <TableHead>{t('teacher.address')}</TableHead>
                     <TableHead>学生数</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead className="w-20">操作</TableHead>
+                    <TableHead>{t('teacher.status')}</TableHead>
+                    <TableHead className="w-20">{t('teacher.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -275,7 +277,7 @@ export default function CenterManagementPage() {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">电话</Label>
+              <Label className="text-right">{t('report.phone')}</Label>
               <Input
                 value={form.phone}
                 onChange={e => setForm({...form, phone: e.target.value})}
@@ -284,7 +286,7 @@ export default function CenterManagementPage() {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">地址</Label>
+              <Label className="text-right">{t('teacher.address')}</Label>
               <Input
                 value={form.address}
                 onChange={e => setForm({...form, address: e.target.value})}
@@ -293,20 +295,20 @@ export default function CenterManagementPage() {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">状态</Label>
+              <Label className="text-right">{t('teacher.status')}</Label>
               <Select value={form.status} onValueChange={v => setForm({...form, status: v})}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="active">营业中</SelectItem>
-                  <SelectItem value="inactive">已关闭</SelectItem>
+                  <SelectItem value="inactive">{t('center.disabled')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>取消</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('report.cancel')}</Button>
             <Button onClick={handleSave} disabled={saving || !form.name.trim()}>
               {saving ? '保存中...' : '保存'}
             </Button>
@@ -318,12 +320,12 @@ export default function CenterManagementPage() {
       <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>确认删除</DialogTitle>
+            <DialogTitle>{t('course.confirm_delete')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-gray-600">确定要删除这个分行吗？此操作不可撤销。</p>
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setDeleteId(null)}>取消</Button>
-            <Button variant="destructive" onClick={confirmDelete}>删除</Button>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>{t('report.cancel')}</Button>
+            <Button variant="destructive" onClick={confirmDelete}>{t('card.delete')}</Button>
           </div>
         </DialogContent>
       </Dialog>

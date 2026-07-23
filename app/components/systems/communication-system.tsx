@@ -9,8 +9,10 @@ import TabbedPage from "@/components/layouts/TabbedPage"
 import StatsGrid from "@/components/ui/StatsGrid"
 import { Textarea } from "@/components/ui/textarea"
 import { MessageCircle, Send, Phone, Video, Users, Bell } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 export default function CommunicationSystem() {
+  const { t } = useLanguage()
   const [messages] = useState([
     {
       id: 1,
@@ -194,7 +196,7 @@ export default function CommunicationSystem() {
                 <div className="border rounded-lg p-4">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-medium">寒假作业安排</h3>
-                    <Badge variant="secondary">通知</Badge>
+                    <Badge variant="secondary">{t('communication.notification')}</Badge>
                   </div>
                   <p className="text-sm text-gray-600 mb-2">寒假期间请督促孩子完成各科作业，开学后将进行检查。</p>
                   <div className="flex justify-between text-xs text-gray-500">

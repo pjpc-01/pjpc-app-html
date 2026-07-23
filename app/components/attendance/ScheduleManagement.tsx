@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Calendar, Clock, Users, Settings, Plus, Edit, Trash2, Save } from 'lucide-react'
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO, eachDayOfInterval } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
+import { useLanguage } from "@/contexts/language-context"
 
 // 排班类型定义
 interface ScheduleTemplate {
@@ -45,6 +46,7 @@ interface WeeklySchedule {
 }
 
 export default function ScheduleManagement() {
+  const { t } = useLanguage()
   const [currentWeek, setCurrentWeek] = useState(new Date())
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week')
@@ -467,7 +469,7 @@ export default function ScheduleManagement() {
               <div className="flex items-center">
                 <Calendar className="h-8 w-8 text-orange-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">工作日</p>
+                  <p className="text-sm font-medium text-gray-600">{t('attendance.workday')}</p>
                   <p className="text-2xl font-bold">
                     {getMonthDays(currentMonth)
                       .filter(day => 
@@ -594,7 +596,7 @@ export default function ScheduleManagement() {
                 </Select>
               </div>
               <div>
-                <Label>开始时间</Label>
+                <Label>{t('attendance.start_time')}</Label>
                 <Input 
                   type="time" 
                   value={newSchedule.startTime || ''}
@@ -602,7 +604,7 @@ export default function ScheduleManagement() {
                 />
               </div>
               <div>
-                <Label>结束时间</Label>
+                <Label>{t('attendance.end_time')}</Label>
                 <Input 
                   type="time" 
                   value={newSchedule.endTime || ''}

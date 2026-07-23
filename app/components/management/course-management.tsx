@@ -17,8 +17,10 @@ import { Plus, BookOpen, Users, Clock, Calendar, Edit, Trash2 } from 'lucide-rea
 import { useCourses, useCourseStats, Course } from '@/hooks/useCourses'
 import { useCurrentTeacher } from '@/hooks/useCurrentTeacher'
 import { useStudents } from '@/hooks/useStudents'
+import { useLanguage } from "@/contexts/language-context"
 
 export default function CourseManagement() {
+  const { t } = useLanguage()
   const { teacher, loading: teacherLoading } = useCurrentTeacher()
   const { courses, loading: coursesLoading, createCourse, updateCourse, deleteCourse } = useCourses(teacher?.id)
   const { stats, loading: statsLoading } = useCourseStats(teacher?.id)
@@ -126,7 +128,7 @@ export default function CourseManagement() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">课程管理</h2>
+        <h2 className="text-2xl font-bold">{t('course.course_management')}</h2>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
             <Button>
@@ -163,7 +165,7 @@ export default function CourseManagement() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="grade_level">年级</Label>
+                  <Label htmlFor="grade_level">{t('student.grade')}</Label>
                   <Input
                     id="grade_level"
                     value={newCourse.grade_level}
@@ -235,7 +237,7 @@ export default function CourseManagement() {
                   <BookOpen className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">总课程数</p>
+                  <p className="text-sm font-medium text-gray-600">{t('teacher.total_courses')}</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.totalCourses}</p>
                 </div>
               </div>
@@ -261,7 +263,7 @@ export default function CourseManagement() {
                   <Users className="h-5 w-5 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">总学生数</p>
+                  <p className="text-sm font-medium text-gray-600">{t('dashboard.total_students')}</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.totalStudents}</p>
                 </div>
               </div>
@@ -290,7 +292,7 @@ export default function CourseManagement() {
         </CardHeader>
         <CardContent>
           {coursesLoading ? (
-            <div className="text-center py-8">加载中...</div>
+            <div className="text-center py-8">{t('teacher.loading')}</div>
           ) : courses.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               暂无课程，点击上方按钮创建第一个课程
@@ -299,13 +301,13 @@ export default function CourseManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>课程名称</TableHead>
-                  <TableHead>科目</TableHead>
-                  <TableHead>年级</TableHead>
+                  <TableHead>{t('course.course_name')}</TableHead>
+                  <TableHead>{t('exam.subject')}</TableHead>
+                  <TableHead>{t('student.grade')}</TableHead>
                   <TableHead>时长</TableHead>
                   <TableHead>最大学生数</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>操作</TableHead>
+                  <TableHead>{t('teacher.status')}</TableHead>
+                  <TableHead>{t('teacher.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

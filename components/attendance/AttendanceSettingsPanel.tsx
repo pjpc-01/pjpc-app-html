@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Loader2, Settings2, Save, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface GradeOverride {
   grade: string
@@ -35,6 +36,7 @@ interface AttendanceConfig {
 }
 
 export default function AttendanceSettingsPanel() {
+  const { t } = useLanguage()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -323,7 +325,7 @@ export default function AttendanceSettingsPanel() {
                 </div>
               </>
             ) : (
-              <div className="text-center py-4 text-gray-400 text-xs">加载失败</div>
+              <div className="text-center py-4 text-gray-400 text-xs">{t('course.load_failed')}</div>
             )}
           </CardContent>
         </Card>

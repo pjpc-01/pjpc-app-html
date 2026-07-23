@@ -14,8 +14,10 @@ import { useClasses, useClassEnrollments, Class } from '@/hooks/useClasses'
 import { useCourses } from '@/hooks/useCourses'
 import { useCurrentTeacher } from '@/hooks/useCurrentTeacher'
 import { useStudents } from '@/hooks/useStudents'
+import { useLanguage } from "@/contexts/language-context"
 
 export default function ClassManagement() {
+  const { t } = useLanguage()
   const { teacher, loading: teacherLoading } = useCurrentTeacher()
   const { classes, loading: classesLoading, createClass, updateClass, deleteClass } = useClasses(teacher?.id)
   const { courses } = useCourses(teacher?.id)
@@ -153,7 +155,7 @@ export default function ClassManagement() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="center">所属中心</Label>
+                  <Label htmlFor="center">{t('teacher.center')}</Label>
                   <Input
                     id="center"
                     value={newClass.center}
@@ -211,7 +213,7 @@ export default function ClassManagement() {
         </CardHeader>
         <CardContent>
           {classesLoading ? (
-            <div className="text-center py-8">加载中...</div>
+            <div className="text-center py-8">{t('teacher.loading')}</div>
           ) : classes.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               暂无班级，点击上方按钮创建第一个班级
@@ -220,14 +222,14 @@ export default function ClassManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>班级名称</TableHead>
+                  <TableHead>{t('course.class_name')}</TableHead>
                   <TableHead>关联课程</TableHead>
-                  <TableHead>中心</TableHead>
+                  <TableHead>{t('teacher.center')}</TableHead>
                   <TableHead>教室</TableHead>
                   <TableHead>学生数</TableHead>
                   <TableHead>容量</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>操作</TableHead>
+                  <TableHead>{t('teacher.status')}</TableHead>
+                  <TableHead>{t('teacher.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -297,10 +299,10 @@ export default function ClassManagement() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>学生姓名</TableHead>
-                      <TableHead>学号</TableHead>
-                      <TableHead>状态</TableHead>
-                      <TableHead>操作</TableHead>
+                      <TableHead>{t('student.student_name')}</TableHead>
+                      <TableHead>{t('student.student_no')}</TableHead>
+                      <TableHead>{t('teacher.status')}</TableHead>
+                      <TableHead>{t('teacher.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

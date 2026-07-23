@@ -10,10 +10,12 @@ import TeacherLeaveManagement from "@/components/teacher/TeacherLeaveManagement"
 import TeacherPerformanceManagement from "@/components/teacher/TeacherPerformanceManagement"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Users, CalendarCheck, BarChart3 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 type TabKey = "teachers" | "leave" | "performance"
 
 export default function TeacherManagementPage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { userProfile, loading } = useAuth()
@@ -85,7 +87,7 @@ export default function TeacherManagementPage() {
 
   // Page config by tab — no tab bar UI, controlled entirely by sidebar URL
   const tabConfig: Record<TabKey, { title: string; description: string }> = {
-    teachers: { title: "教师列表", description: "管理所有教师信息、权限和教学安排" },
+    teachers: { title: t('teacher.teacher_list'), description: "管理所有教师信息、权限和教学安排" },
     leave:    { title: "请假管理", description: "审核和管理教师请假申请" },
     performance: { title: "绩效管理", description: "查看和管理教师绩效考核" },
   }

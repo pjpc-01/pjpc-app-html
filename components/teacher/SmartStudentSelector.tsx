@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useLanguage } from "@/contexts/language-context"
 import {
   Command,
   CommandEmpty,
@@ -68,6 +69,7 @@ export default function SmartStudentSelector({
   label = "选择学生",
   required = false
 }: SmartStudentSelectorProps) {
+  const { t } = useLanguage()
   const [open, setOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCenter, setSelectedCenter] = useState("all")
@@ -237,10 +239,10 @@ export default function SmartStudentSelector({
                 <div className="flex gap-2">
                   <Select value={selectedCenter} onValueChange={setSelectedCenter}>
                     <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="中心" />
+                      <SelectValue placeholder={t('teacher.center')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">全部中心</SelectItem>
+                      <SelectItem value="all">{t('teacher.all_centers')}</SelectItem>
                       {filterOptions.centers.map((center) => (
                         <SelectItem key={center} value={center}>
                           {center}
@@ -251,10 +253,10 @@ export default function SmartStudentSelector({
                   
                   <Select value={selectedGrade} onValueChange={setSelectedGrade}>
                     <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="年级" />
+                      <SelectValue placeholder={t('student.grade')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">全部年级</SelectItem>
+                      <SelectItem value="all">{t('course.all_grades')}</SelectItem>
                       {filterOptions.grades.map((grade) => (
                         <SelectItem key={grade} value={grade}>
                           {grade}
