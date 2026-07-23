@@ -276,29 +276,29 @@ export const getAllStudents = async (): Promise<Student[]> => {
 }
 
 // 添加学生
-export const addStudent = async (studentData: StudentCreateData): Promise<Student> => {
+export const addStudent = async (studentData: any): Promise<Student> => {
   try {
     console.log('开始添加学生...')
     
     // 准备要保存的数据（映射到 PB 的字段名）
     const dataToSave: Record<string, any> = {
-      name: studentData.student_name || '未命名学生',
+      name: studentData.student_name || studentData.name || '未命名学生',
       student_id: studentData.student_id || '',
-      grade: studentData.standard || '',
-      fatherName: studentData.father_name || '',
-      motherName: studentData.mother_name || '',
-      fatherPhone: studentData.father_phone || '',
-      motherPhone: studentData.mother_phone || '',
+      grade: studentData.standard || studentData.grade || '',
+      fatherName: studentData.fatherName || studentData.father_name || '',
+      motherName: studentData.motherName || studentData.mother_name || '',
+      fatherPhone: studentData.fatherPhone || studentData.father_phone || '',
+      motherPhone: studentData.motherPhone || studentData.mother_phone || '',
       center: studentData.center || '',
       centerId: studentData.centerId || '',
       status: studentData.status || 'active',
-      address: studentData.home_address || studentData.address,
-      gender: studentData.gender,
-      nric: studentData.nric,
-      school: studentData.school,
-      dob: studentData.dob,
-      email: studentData.email,
-      phone: studentData.phone,
+      address: studentData.home_address || studentData.address || '',
+      gender: studentData.gender || '',
+      nric: studentData.nric || '',
+      school: studentData.school || '',
+      dob: studentData.dob || '',
+      email: studentData.email || '',
+      phone: studentData.phone || '',
     }
     
     console.log('保存学生数据:', dataToSave)
