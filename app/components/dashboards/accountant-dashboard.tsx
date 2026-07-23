@@ -21,6 +21,7 @@ import {
   CreditCard,
   Banknote,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface AccountantDashboardProps {
   activeTab: string
@@ -28,6 +29,7 @@ interface AccountantDashboardProps {
 }
 
 export default function AccountantDashboard({ activeTab, setActiveTab }: AccountantDashboardProps) {
+  const { t } = useLanguage()
   const [stats] = useState({
     totalRevenue: 156000,
     monthlyRevenue: 45600,
@@ -124,7 +126,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">总学生数</p>
+                      <p className="text-sm font-medium text-gray-600">{t('dashboard.total_students')}</p>
                       <p className="text-2xl font-bold">{stats.totalStudents}</p>
                       <p className="text-xs text-blue-600 flex items-center mt-1">
                         <Users className="h-3 w-3 mr-1" />
@@ -149,7 +151,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">总收入</span>
+                    <span className="text-sm">{t('finance.total_income')}</span>
                     <span className="font-medium text-green-600">RM {stats.totalRevenue.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -215,7 +217,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
             {/* Quick Actions */}
             <Card>
               <CardHeader>
-                <CardTitle>快速操作</CardTitle>
+                <CardTitle>{t('teacher.quick_actions')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -225,7 +227,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                     onClick={() => setActiveTab("finance")}
                   >
                     <DollarSign className="h-6 w-6 text-green-600" />
-                    <span className="text-sm">财务管理</span>
+                    <span className="text-sm">{t('dashboard.finance_management')}</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -233,7 +235,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                     onClick={() => setActiveTab("reports")}
                   >
                     <FileText className="h-6 w-6 text-blue-600" />
-                    <span className="text-sm">财务报表</span>
+                    <span className="text-sm">{t('dashboard.financial_report')}</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -275,7 +277,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                   <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-green-200">
                     <CardContent className="p-6 text-center">
                       <FileText className="h-12 w-12 mx-auto mb-4 text-green-600" />
-                      <h3 className="font-semibold mb-2">月度报表</h3>
+                      <h3 className="font-semibold mb-2">{t('dashboard.monthly_report')}</h3>
                       <p className="text-sm text-gray-600 mb-3">生成月度财务报告</p>
                       <Badge variant="secondary" className="bg-green-100 text-green-800">
                         本月数据
@@ -286,7 +288,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                   <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-blue-200">
                     <CardContent className="p-6 text-center">
                       <Calculator className="h-12 w-12 mx-auto mb-4 text-blue-600" />
-                      <h3 className="font-semibold mb-2">年度报表</h3>
+                      <h3 className="font-semibold mb-2">{t('dashboard.annual_report')}</h3>
                       <p className="text-sm text-gray-600 mb-3">年度财务汇总报告</p>
                       <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                         2024年度

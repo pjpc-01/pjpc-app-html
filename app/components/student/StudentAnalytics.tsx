@@ -16,6 +16,7 @@ import {
   XCircle,
   Info
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import { Student } from "@/hooks/useStudents"
 
 interface StudentAnalyticsProps {
@@ -26,6 +27,7 @@ interface StudentAnalyticsProps {
 
 
 export default function StudentAnalytics({ students, filteredStudents }: StudentAnalyticsProps) {
+  const { t } = useLanguage()
   const analytics = useMemo(() => {
     const total = students.length
     const filtered = filteredStudents.length
@@ -121,7 +123,7 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">总学生数</p>
+                <p className="text-sm font-medium text-gray-600">{t('dashboard.total_students')}</p>
                 <p className="text-2xl font-bold text-blue-600">{analytics.total}</p>
                 <p className="text-xs text-blue-600 flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 mr-1" />
@@ -137,7 +139,7 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">在读学生</p>
+                <p className="text-sm font-medium text-gray-600">{t('dashboard.active_students')}</p>
                 <p className="text-2xl font-bold text-green-600">{analytics.active}</p>
                 <p className="text-xs text-green-600 flex items-center mt-1">
                   <CheckCircle className="h-3 w-3 mr-1" />
@@ -270,7 +272,7 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
             <div className="space-y-6">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">联系电话</span>
+                  <span className="text-sm font-medium">{t('student.contact_phone')}</span>
                   <span className="text-sm text-gray-500">{analytics.hasPhone} / {analytics.total}</span>
                 </div>
                 <Progress value={analytics.phoneRate} className="h-2" />
@@ -281,7 +283,7 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
               
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">邮箱地址</span>
+                  <span className="text-sm font-medium">{t('student.email_address')}</span>
                   <span className="text-sm text-gray-500">{analytics.hasEmail} / {analytics.total}</span>
                 </div>
                 <Progress value={analytics.emailRate} className="h-2" />
@@ -307,7 +309,7 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
                 <div className="flex items-center gap-3">
                   <CheckCircle className="h-5 w-5 text-green-600" />
                   <div>
-                    <p className="font-medium text-green-900">在读学生</p>
+                    <p className="font-medium text-green-900">{t('dashboard.active_students')}</p>
                     <p className="text-sm text-green-600">正常学习状态</p>
                   </div>
                 </div>

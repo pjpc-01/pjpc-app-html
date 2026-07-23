@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useLanguage } from "@/contexts/language-context"
 import { toast } from "sonner"
 import { ArrowLeft, Save } from "lucide-react"
 
@@ -22,6 +23,7 @@ const SUBJECTS = ["数学", "英文", "华文", "马来文", "科学", "历史",
 const GRADES = ["一年级", "二年级", "三年级", "四年级", "五年级", "六年级", "预备班", "Form 1", "Form 2", "Form 3", "Form 4", "Form 5"]
 
 export default function NewHomeworkPage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const searchParams = useSearchParams()
   const centerFromUrl = searchParams?.get("center")
@@ -112,7 +114,7 @@ export default function NewHomeworkPage() {
                   onValueChange={(v) => setForm((f) => ({ ...f, subject: v }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="选择科目" />
+                    <SelectValue placeholder={t('assignment.select_subject')} />
                   </SelectTrigger>
                   <SelectContent>
                     {SUBJECTS.map((s) => (
@@ -142,16 +144,16 @@ export default function NewHomeworkPage() {
 
               {/* Center */}
               <div>
-                <Label>所属中心</Label>
+                <Label>{t('teacher.center')}</Label>
                 <Select
                   value={form.centerId}
                   onValueChange={(v) => setForm((f) => ({ ...f, centerId: v }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="全部中心" />
+                    <SelectValue placeholder={t('teacher.all_centers')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部中心</SelectItem>
+                    <SelectItem value="all">{t('teacher.all_centers')}</SelectItem>
                     {centers.map((c) => (
                       <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                     ))}
@@ -167,7 +169,7 @@ export default function NewHomeworkPage() {
                   onValueChange={(v) => setForm((f) => ({ ...f, teacherId: v }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="选择教师" />
+                    <SelectValue placeholder={t('teacher.select_teacher')} />
                   </SelectTrigger>
                   <SelectContent>
                     {teachers.map((t) => (

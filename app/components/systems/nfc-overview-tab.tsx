@@ -15,6 +15,7 @@ import {
   Pause,
   RefreshCw,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import { NFCCard, AttendanceRecord, NFCDevice } from "@/lib/nfc-rfid"
 
 interface NFCOverviewTabProps {
@@ -38,6 +39,7 @@ export default function NFCOverviewTab({
   simulateAttendance,
   loading
 }: NFCOverviewTabProps) {
+  const { t } = useLanguage()
   return (
     <div className="space-y-6">
       {/* 统计卡片 */}
@@ -90,7 +92,7 @@ export default function NFCOverviewTab({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">系统状态</p>
-                <p className="text-2xl font-bold text-orange-600">正常</p>
+                <p className="text-2xl font-bold text-orange-600">{t('common.normal')}</p>
                 <p className="text-xs text-gray-500">所有设备运行中</p>
               </div>
               <Shield className="h-8 w-8 text-orange-600" />
@@ -211,7 +213,7 @@ export default function NFCOverviewTab({
                   <span className="text-sm text-purple-600">支持 100+ 用户</span>
                 </div>
                 <div className="flex justify-between p-3 bg-orange-50 rounded-lg">
-                  <span className="text-sm font-medium">数据同步</span>
+                  <span className="text-sm font-medium">{t('attendance.data_sync')}</span>
                   <span className="text-sm text-orange-600">实时同步</span>
                 </div>
               </div>

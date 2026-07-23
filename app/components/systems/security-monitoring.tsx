@@ -8,8 +8,10 @@ import TabbedPage from "@/components/layouts/TabbedPage"
 import StatsGrid from "@/components/ui/StatsGrid"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertTriangle, Users } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 export default function SecurityMonitoring() {
+  const { t } = useLanguage()
   const pickupRecords = [
     { id: 1, student: "王小明", guardian: "王爸爸", time: "17:30", status: "completed", date: "2024-01-15" },
     { id: 2, student: "李小红", guardian: "李妈妈", time: "18:00", status: "pending", date: "2024-01-15" },
@@ -23,7 +25,7 @@ export default function SecurityMonitoring() {
       case "pending":
         return <Badge variant="secondary">等待接送</Badge>
       case "late":
-        return <Badge variant="destructive">逾期</Badge>
+        return <Badge variant="destructive">{t('student.overdue')}</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
@@ -68,7 +70,7 @@ export default function SecurityMonitoring() {
                 <CardTitle className="text-sm font-medium">安全状态</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">正常</div>
+                <div className="text-2xl font-bold">{t('common.normal')}</div>
                 <p className="text-xs text-muted-foreground">系统运行正常</p>
               </CardContent>
             </Card>
@@ -120,7 +122,7 @@ export default function SecurityMonitoring() {
                       <div className="font-medium">门禁系统</div>
                       <div className="text-sm text-gray-500">运行状态正常</div>
                     </div>
-                    <Badge variant="default">正常</Badge>
+                    <Badge variant="default">{t('common.normal')}</Badge>
                   </div>
                 </div>
 
@@ -130,7 +132,7 @@ export default function SecurityMonitoring() {
                       <div className="font-medium">监控摄像</div>
                       <div className="text-sm text-gray-500">8个摄像头在线</div>
                     </div>
-                    <Badge variant="default">正常</Badge>
+                    <Badge variant="default">{t('common.normal')}</Badge>
                   </div>
                 </div>
 
@@ -140,7 +142,7 @@ export default function SecurityMonitoring() {
                       <div className="font-medium">消防系统</div>
                       <div className="text-sm text-gray-500">设备检查正常</div>
                     </div>
-                    <Badge variant="default">正常</Badge>
+                    <Badge variant="default">{t('common.normal')}</Badge>
                   </div>
                 </div>
               </div>
@@ -152,7 +154,7 @@ export default function SecurityMonitoring() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>紧急联系人</CardTitle>
+                <CardTitle>{t('teacher.emergency_contact')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">

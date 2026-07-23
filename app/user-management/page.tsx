@@ -12,9 +12,11 @@ import {
   Loader2, Trash2, ArrowLeft, Users, ShieldOff, Shield,
   CheckCircle2, MailCheck, MailX, UserCog,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import PermissionEditor from "@/components/admin/PermissionEditor"
 
 export default function UserManagementPage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const { userProfile } = useAuth()
   const [users, setUsers] = useState<any[]>([])
@@ -126,7 +128,7 @@ export default function UserManagementPage() {
           <ShieldOff className="h-12 w-12 text-red-400 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-red-600 mb-2">访问被拒绝</h2>
           <p className="text-muted-foreground mb-4">只有管理员可以管理用户</p>
-          <Button onClick={() => router.push("/")}>返回首页</Button>
+          <Button onClick={() => router.push("/")}>{t('system.back_to_home')}</Button>
         </div>
       </div>
     )
@@ -174,18 +176,18 @@ export default function UserManagementPage() {
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : users.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">暂无用户</div>
+                <div className="text-center py-12 text-muted-foreground">{t('admin.no_users')}</div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>姓名</TableHead>
-                        <TableHead>邮箱</TableHead>
-                        <TableHead>角色</TableHead>
-                        <TableHead>验证</TableHead>
-                        <TableHead>注册时间</TableHead>
-                        <TableHead className="text-right">操作</TableHead>
+                        <TableHead>{t('student.name')}</TableHead>
+                        <TableHead>{t('report.email')}</TableHead>
+                        <TableHead>{t('admin.role')}</TableHead>
+                        <TableHead>{t('user.verify')}</TableHead>
+                        <TableHead>{t('admin.registration_time')}</TableHead>
+                        <TableHead className="text-right">{t('teacher.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import { Label } from "@/components/ui/label"
 import { 
   Search, 
@@ -37,6 +38,7 @@ export default function SimpleStudentManagement({
   title = "学生管理", 
   description = "管理学生信息和学习进度" 
 }: SimpleStudentManagementProps) {
+  const { t } = useLanguage()
   const { students, loading, error, addStudent, updateStudent, deleteStudent } = useStudents()
   
   const [searchTerm, setSearchTerm] = useState('')
@@ -232,16 +234,16 @@ export default function SimpleStudentManagement({
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">姓名</Label>
+                    <Label className="text-right">{t('student.name')}</Label>
                     <Input
                       value={newStudent.student_name}
                       onChange={(e) => setNewStudent({...newStudent, student_name: e.target.value})}
                       className="col-span-3"
-                      placeholder="学生姓名"
+                      placeholder={t('student.student_name')}
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">学号</Label>
+                    <Label className="text-right">{t('student.student_no')}</Label>
                     <Input
                       value={newStudent.student_id}
                       onChange={(e) => setNewStudent({...newStudent, student_id: e.target.value})}
@@ -250,7 +252,7 @@ export default function SimpleStudentManagement({
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">出生日期</Label>
+                    <Label className="text-right">{t('student.date_of_birth')}</Label>
                     <Input
                       type="date"
                       value={newStudent.dob}
@@ -259,7 +261,7 @@ export default function SimpleStudentManagement({
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">年级</Label>
+                    <Label className="text-right">{t('student.grade')}</Label>
                     <div className="col-span-3">
                       <Input
                         value={newStudent.standard}
@@ -328,14 +330,14 @@ export default function SimpleStudentManagement({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="whitespace-nowrap">姓名</TableHead>
-                  <TableHead className="whitespace-nowrap">学号</TableHead>
-                  <TableHead className="whitespace-nowrap">年级</TableHead>
-                  <TableHead className="whitespace-nowrap">父亲</TableHead>
-                  <TableHead className="whitespace-nowrap">母亲</TableHead>
-                  <TableHead className="whitespace-nowrap">联系电话</TableHead>
-                  <TableHead className="whitespace-nowrap">状态</TableHead>
-                  <TableHead className="whitespace-nowrap">操作</TableHead>
+                  <TableHead className="whitespace-nowrap">{t('student.name')}</TableHead>
+                  <TableHead className="whitespace-nowrap">{t('student.student_no')}</TableHead>
+                  <TableHead className="whitespace-nowrap">{t('student.grade')}</TableHead>
+                  <TableHead className="whitespace-nowrap">{t('student.father')}</TableHead>
+                  <TableHead className="whitespace-nowrap">{t('student.mother')}</TableHead>
+                  <TableHead className="whitespace-nowrap">{t('student.contact_phone')}</TableHead>
+                  <TableHead className="whitespace-nowrap">{t('teacher.status')}</TableHead>
+                  <TableHead className="whitespace-nowrap">{t('teacher.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -413,25 +415,25 @@ export default function SimpleStudentManagement({
       <Dialog open={!!viewingStudent} onOpenChange={() => setViewingStudent(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>学生详情</DialogTitle>
+            <DialogTitle>{t('student.student_details')}</DialogTitle>
           </DialogHeader>
           {viewingStudent && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">姓名</Label>
+                  <Label className="text-sm font-medium text-gray-500">{t('student.name')}</Label>
                   <p>{viewingStudent.student_name || '-'}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">学号</Label>
+                  <Label className="text-sm font-medium text-gray-500">{t('student.student_no')}</Label>
                   <p className="font-mono">{viewingStudent.student_id || '-'}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">年级</Label>
+                  <Label className="text-sm font-medium text-gray-500">{t('student.grade')}</Label>
                   <p>{viewingStudent.standard || '-'}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">状态</Label>
+                  <Label className="text-sm font-medium text-gray-500">{t('teacher.status')}</Label>
                   <Badge variant={viewingStudent.status === 'active' ? 'default' : 'secondary'}>
                     {viewingStudent.status === 'active' ? '在读' : viewingStudent.status === 'graduated' ? '毕业' : '休学'}
                   </Badge>
@@ -484,7 +486,7 @@ export default function SimpleStudentManagement({
           {editingStudent && (
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">姓名</Label>
+                <Label className="text-right">{t('student.name')}</Label>
                 <Input
                   value={editingStudent.student_name || ''}
                   onChange={(e) => setEditingStudent({...editingStudent, student_name: e.target.value})}
@@ -492,7 +494,7 @@ export default function SimpleStudentManagement({
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">学号</Label>
+                <Label className="text-right">{t('student.student_no')}</Label>
                 <Input
                   value={editingStudent.student_id || ''}
                   onChange={(e) => setEditingStudent({...editingStudent, student_id: e.target.value})}
@@ -500,7 +502,7 @@ export default function SimpleStudentManagement({
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">出生日期</Label>
+                <Label className="text-right">{t('student.date_of_birth')}</Label>
                 <Input
                   type="date"
                   value={editingStudent.dob || ''}
@@ -517,7 +519,7 @@ export default function SimpleStudentManagement({
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">年级</Label>
+                <Label className="text-right">{t('student.grade')}</Label>
                 <div className="col-span-3">
                   <Input
                     value={editingStudent.standard || ''}

@@ -26,6 +26,7 @@ import {
   Pause,
   RefreshCw
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -47,6 +48,7 @@ interface ScheduleItem {
 }
 
 export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
+  const { t } = useLanguage()
   const router = useRouter()
   const [schedule, setSchedule] = useState<ScheduleItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -216,7 +218,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">日期</label>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">{t('finance.date')}</label>
               <Input
                 type="date"
                 value={selectedDate}
@@ -224,7 +226,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">搜索</label>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">{t('common.search')}</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -236,28 +238,28 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">状态</label>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">{t('teacher.status')}</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="选择状态" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部状态</SelectItem>
+                  <SelectItem value="all">{t('common.all_status')}</SelectItem>
                   <SelectItem value="upcoming">即将开始</SelectItem>
-                  <SelectItem value="active">进行中</SelectItem>
-                  <SelectItem value="completed">已完成</SelectItem>
-                  <SelectItem value="cancelled">已取消</SelectItem>
+                  <SelectItem value="active">{t('assignment.in_progress')}</SelectItem>
+                  <SelectItem value="completed">{t('assignment.completed')}</SelectItem>
+                  <SelectItem value="cancelled">{t('teacher.cancelled')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">科目</label>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">{t('exam.subject')}</label>
               <Select value={subjectFilter} onValueChange={setSubjectFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择科目" />
+                  <SelectValue placeholder={t('assignment.select_subject')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部科目</SelectItem>
+                  <SelectItem value="all">{t('course.all_subjects')}</SelectItem>
                   {subjects.map(subject => (
                     <SelectItem key={subject} value={subject}>{subject}</SelectItem>
                   ))}
@@ -394,7 +396,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">总课程数</p>
+                <p className="text-sm font-medium text-gray-600">{t('teacher.total_courses')}</p>
                 <p className="text-2xl font-bold text-blue-600">{schedule.length}</p>
               </div>
               <Calendar className="h-8 w-8 text-blue-600" />
@@ -406,7 +408,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">已完成</p>
+                <p className="text-sm font-medium text-gray-600">{t('assignment.completed')}</p>
                 <p className="text-2xl font-bold text-green-600">
                   {schedule.filter(item => item.status === 'completed').length}
                 </p>
@@ -420,7 +422,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">进行中</p>
+                <p className="text-sm font-medium text-gray-600">{t('assignment.in_progress')}</p>
                 <p className="text-2xl font-bold text-orange-600">
                   {schedule.filter(item => item.status === 'active').length}
                 </p>

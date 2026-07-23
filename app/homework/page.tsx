@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useLanguage } from "@/contexts/language-context"
 import {
   Plus,
   BookOpen,
@@ -45,6 +46,7 @@ const subjectColors: Record<string, string> = {
 }
 
 export default function HomeworkPage() {
+  const { t } = useLanguage()
   const { homeworkList, loading, error } = useHomeworkList()
   const { centers } = useCenters()
   const [filterSubject, setFilterSubject] = useState<string>("all")
@@ -66,7 +68,7 @@ export default function HomeworkPage() {
 
   return (
     <PageLayout
-      title="作业管理"
+      title={t('teacher.homework_management')}
       description="布置、查看和批改学生作业"
       backUrl="/"
       userRole="admin"
@@ -86,10 +88,10 @@ export default function HomeworkPage() {
           <Select value={filterSubject} onValueChange={setFilterSubject}>
             <SelectTrigger className="w-[130px]">
               <Filter className="h-4 w-4 mr-1" />
-              <SelectValue placeholder="科目" />
+              <SelectValue placeholder={t('exam.subject')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部科目</SelectItem>
+              <SelectItem value="all">{t('course.all_subjects')}</SelectItem>
               {SUBJECTS.map((s) => (
                 <SelectItem key={s} value={s}>{s}</SelectItem>
               ))}
@@ -97,10 +99,10 @@ export default function HomeworkPage() {
           </Select>
           <Select value={filterGrade} onValueChange={setFilterGrade}>
             <SelectTrigger className="w-[130px]">
-              <SelectValue placeholder="年级" />
+              <SelectValue placeholder={t('student.grade')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部年级</SelectItem>
+              <SelectItem value="all">{t('course.all_grades')}</SelectItem>
               {GRADES.map((g) => (
                 <SelectItem key={g} value={g}>{g}</SelectItem>
               ))}
@@ -126,7 +128,7 @@ export default function HomeworkPage() {
 
       {/* Loading */}
       {loading && (
-        <div className="text-center py-12 text-muted-foreground">加载中...</div>
+        <div className="text-center py-12 text-muted-foreground">{t('teacher.loading')}</div>
       )}
 
       {/* Empty state */}

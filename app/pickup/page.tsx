@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { usePickup, PickupRecord } from "@/hooks/usePickup"
 import { useStudents } from "@/hooks/useStudents"
 import { Truck, User, Phone, Car, Clock, CheckCircle, AlertCircle, Plus, Search, Users } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 const RELATIONSHIPS = [
   { value: "father", label: "父亲" },
@@ -27,11 +28,12 @@ const RELATIONSHIPS = [
 ]
 
 const statusBadge = (status: string) => {
+  const { t } = useLanguage()
   switch (status) {
     case "picked_up": return <Badge className="bg-emerald-100 text-emerald-700">已接走</Badge>
-    case "scheduled": return <Badge className="bg-blue-100 text-blue-700">已安排</Badge>
+    case "scheduled": return <Badge className="bg-blue-100 text-blue-700">{t('exam.scheduled')}</Badge>
     case "delayed": return <Badge className="bg-amber-100 text-amber-700">延迟</Badge>
-    case "cancelled": return <Badge className="bg-slate-100 text-slate-500">取消</Badge>
+    case "cancelled": return <Badge className="bg-slate-100 text-slate-500">{t('report.cancel')}</Badge>
     default: return <Badge>{status}</Badge>
   }
 }
@@ -39,6 +41,7 @@ const statusBadge = (status: string) => {
 const relationLabel = (r: string) => RELATIONSHIPS.find(x => x.value === r)?.label || r
 
 export default function PickupManagementPage() {
+  const { t } = useLanguage()
   const { loading, getTodayPickups, recordPickup, updatePickup } = usePickup()
   const { students, loading: studentsLoading, fetchStudents } = useStudents()
 
@@ -98,7 +101,7 @@ export default function PickupManagementPage() {
   }
 
   return (
-    <PageLayout title="接送管理" description="登记和追踪学生接送情况">
+    <PageLayout title={t('pickup.pickup_management')} description="登记和追踪学生接送情况">
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <Card><CardContent className="p-4 text-center">
@@ -143,15 +146,15 @@ export default function PickupManagementPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>学生</TableHead>
-                  <TableHead>年级</TableHead>
-                  <TableHead>时间</TableHead>
+                  <TableHead>{t('common.student')}</TableHead>
+                  <TableHead>{t('student.grade')}</TableHead>
+                  <TableHead>{t('announcement.time')}</TableHead>
                   <TableHead>接人者</TableHead>
-                  <TableHead>关系</TableHead>
-                  <TableHead>电话</TableHead>
+                  <TableHead>{t('student.relationship')}</TableHead>
+                  <TableHead>{t('report.phone')}</TableHead>
                   <TableHead>车牌</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>确认</TableHead>
+                  <TableHead>{t('teacher.status')}</TableHead>
+                  <TableHead>{t('pickup.confirm')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -171,7 +174,7 @@ export default function PickupManagementPage() {
                     <TableCell>
                       {p.parent_confirmed
                         ? <CheckCircle className="h-4 w-4 text-emerald-500" />
-                        : <Button size="sm" variant="outline" onClick={() => handleConfirm(p.id)}>确认</Button>
+                        : <Button size="sm" variant="outline" onClick={() => handleConfirm(p.id)}>{t('pickup.confirm')}</Button>
                       }
                     </TableCell>
                   </TableRow>
@@ -203,14 +206,14 @@ export default function PickupManagementPage() {
               <Input value={pickupBy} onChange={e => setPickupBy(e.target.value)} placeholder="接人者姓名" />
             </div>
             <div>
-              <Label>关系</Label>
+              <Label>{t('student.relationship')}</Label>
               <Select value={relationship} onValueChange={setRelationship}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{RELATIONSHIPS.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
-              <Label>电话</Label>
+              <Label>{t('report.phone')}</Label>
               <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="接人者电话" />
             </div>
             <div>
@@ -218,12 +221,12 @@ export default function PickupManagementPage() {
               <Input value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value)} placeholder="接人车辆车牌" />
             </div>
             <div>
-              <Label>备注</Label>
+              <Label>{t('teacher.notes')}</Label>
               <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="备注信息" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>取消</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('report.cancel')}</Button>
             <Button onClick={handleRecord} disabled={!selectedStudent || !pickupBy}>确认登记</Button>
           </DialogFooter>
         </DialogContent>

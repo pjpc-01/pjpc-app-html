@@ -6,8 +6,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { DollarSign, CreditCard, FileText, TrendingUp, AlertCircle, Loader2, Wallet } from "lucide-react"
 import { useFinancialStats } from "@/hooks/useFinancialStats"
 import UtilityBillsCard from "./UtilityBillsCard"
+import { useLanguage } from "@/contexts/language-context"
 
 export default function FinanceOverview() {
+  const { t } = useLanguage()
   const { stats: financialStats, loading: financialLoading, error: financialError } = useFinancialStats()
 
   return (
@@ -31,7 +33,7 @@ export default function FinanceOverview() {
             {financialLoading ? (
               <div className="flex items-center">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                <span className="text-sm text-gray-500">加载中...</span>
+                <span className="text-sm text-gray-500">{t('teacher.loading')}</span>
               </div>
             ) : (
               <>
@@ -51,7 +53,7 @@ export default function FinanceOverview() {
             {financialLoading ? (
               <div className="flex items-center">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                <span className="text-sm text-gray-500">加载中...</span>
+                <span className="text-sm text-gray-500">{t('teacher.loading')}</span>
               </div>
             ) : (
               <>
@@ -71,7 +73,7 @@ export default function FinanceOverview() {
             {financialLoading ? (
               <div className="flex items-center">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                <span className="text-sm text-gray-500">加载中...</span>
+                <span className="text-sm text-gray-500">{t('teacher.loading')}</span>
               </div>
             ) : (
               <>
@@ -84,14 +86,14 @@ export default function FinanceOverview() {
 
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">总收入</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('finance.total_income')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {financialLoading ? (
               <div className="flex items-center">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                <span className="text-sm text-gray-500">加载中...</span>
+                <span className="text-sm text-gray-500">{t('teacher.loading')}</span>
               </div>
             ) : (
               <>
@@ -111,7 +113,7 @@ export default function FinanceOverview() {
             {financialLoading ? (
               <div className="flex items-center">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                <span className="text-sm text-gray-500">加载中...</span>
+                <span className="text-sm text-gray-500">{t('teacher.loading')}</span>
               </div>
             ) : (
               <>

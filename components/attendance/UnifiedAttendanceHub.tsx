@@ -8,6 +8,7 @@ import {
   SmartphoneNfc, Users, Clock, RefreshCw, Search, X,
   Loader2, GraduationCap, User, LogIn, LogOut, BarChart3, ChevronLeft, ChevronRight, CalendarDays,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import NfcTapReader from "./NfcTapReader"
 
 // ─── Types ─────────────────────────────────────────────
@@ -35,6 +36,7 @@ interface ReportStats {
 // ─── Main ──────────────────────────────────────────────
 
 export default function UnifiedAttendanceHub() {
+  const { t } = useLanguage()
   const [records, setRecords] = useState<ScanRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [showNfc, setShowNfc] = useState(false)
@@ -155,7 +157,7 @@ export default function UnifiedAttendanceHub() {
               </CardTitle>
               <div className="flex items-center gap-1">
                 <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="text-xs border rounded px-2 py-1 h-7 bg-white">
-                  <option value="all">全部</option><option value="student">学生</option><option value="teacher">教师</option>
+                  <option value="all">{t('card.all')}</option><option value="student">{t('common.student')}</option><option value="teacher">{t('teacher.teacher')}</option>
                 </select>
                 <Button variant="ghost" size="sm" onClick={() => { fetchRecords(); fetchReport() }} className="h-7 w-7 p-0"><RefreshCw className="h-3.5 w-3.5" /></Button>
               </div>
@@ -194,7 +196,7 @@ export default function UnifiedAttendanceHub() {
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     reportTab === "today" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
                   }`}
-                >今日考勤</button>
+                >{t('attendance.todays_attendance')}</button>
                 <button
                   onClick={() => setReportTab("calendar")}
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
@@ -230,6 +232,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
   fmtTime: (iso: string | null) => string; calcDuration: (ci: string | null, co: string | null) => string
   absentStudents: AbsentStudent[]
 }) {
+  const { t } = useLanguage()
   // Merge: present students first, then absent students at bottom
   const allRows: { person_name: string; person_type: string; center: string; grade?: string; check_in_time: string | null; check_out_time: string | null; is_late: boolean; is_early: boolean; status: string; _isAbsent: boolean }[] = [
     ...report.map(r => ({ ...r, _isAbsent: false })),
@@ -285,7 +288,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
                     {item._isAbsent ? <span className="text-[11px] text-gray-300">—</span> : (
                       <>
                         <span className={`font-mono text-xs ${item.is_late ? "text-orange-500" : "text-green-600"}`}>{item.check_in_time || "—"}</span>
-                        {item.is_late && <Badge className="ml-1.5 text-[9px] bg-orange-50 text-orange-500 px-1.5 py-0 h-4 font-normal">迟到</Badge>}
+                        {item.is_late && <Badge className="ml-1.5 text-[9px] bg-orange-50 text-orange-500 px-1.5 py-0 h-4 font-normal">{t('teacher.late')}</Badge>}
                       </>
                     )}
                   </td>
@@ -293,7 +296,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
                     {item._isAbsent ? <span className="text-[11px] text-gray-300">—</span> : (
                       <>
                         <span className={`font-mono text-xs ${item.is_early ? "text-orange-500" : "text-amber-600"}`}>{item.check_out_time || "—"}</span>
-                        {item.is_early && <Badge className="ml-1.5 text-[9px] bg-orange-50 text-orange-500 px-1.5 py-0 h-4 font-normal">早退</Badge>}
+                        {item.is_early && <Badge className="ml-1.5 text-[9px] bg-orange-50 text-orange-500 px-1.5 py-0 h-4 font-normal">{t('teacher.early_leave')}</Badge>}
                       </>
                     )}
                   </td>
@@ -303,7 +306,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
                       <span className="inline-flex items-center gap-1 text-[10px] text-gray-400">
                         <span className="w-1 h-1 rounded-full bg-gray-300" /> 缺勤
                       </span>
-                    ) : item.status === "late" ? <Badge className="text-[9px] bg-orange-50 text-orange-600 font-normal">迟到</Badge> :
+                    ) : item.status === "late" ? <Badge className="text-[9px] bg-orange-50 text-orange-600 font-normal">{t('teacher.late')}</Badge> :
                        item.status === "on_time" ? <Badge className="text-[9px] bg-emerald-50 text-emerald-600 font-normal">准时</Badge> :
                        <Badge variant="secondary" className="text-[9px] font-normal">{item.check_out_time ? "已签退" : "仅签到"}</Badge>}
                   </td>
@@ -320,6 +323,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
 // ─── 考勤日历 ──────────────────────────────────────────
 
 function CalendarReport() {
+  const { t } = useLanguage()
   const [search, setSearch] = useState("")
   const [results, setResults] = useState<any[]>([])
   const [selected, setSelected] = useState<{ id: string; name: string; type: string } | null>(null)
@@ -506,7 +510,7 @@ function CalendarReport() {
               <div className="space-y-1 text-xs">
                 {calendar[selectedDay].check_ins.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-green-100 text-green-700 text-[10px]">签到</Badge>
+                    <Badge className="bg-green-100 text-green-700 text-[10px]">{t('attendance.check_in')}</Badge>
                     <span className="font-mono text-green-700">
                       {calendar[selectedDay].check_ins.map(t => fmtDayTime(t)).join(", ")}
                     </span>
@@ -514,7 +518,7 @@ function CalendarReport() {
                 )}
                 {calendar[selectedDay].check_outs.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-amber-100 text-amber-700 text-[10px]">签退</Badge>
+                    <Badge className="bg-amber-100 text-amber-700 text-[10px]">{t('attendance.check_out')}</Badge>
                     <span className="font-mono text-amber-700">
                       {calendar[selectedDay].check_outs.map(t => fmtDayTime(t)).join(", ")}
                     </span>

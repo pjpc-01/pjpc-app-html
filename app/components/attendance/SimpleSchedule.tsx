@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Today
 } from 'lucide-react'
+import { useLanguage } from "@/contexts/language-context"
 import { 
   format, 
   addDays, 
@@ -57,6 +58,7 @@ interface Schedule {
 }
 
 export default function SimpleSchedule() {
+  const { t } = useLanguage()
   const [currentWeek, setCurrentWeek] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [teachers, setTeachers] = useState<Teacher[]>([])
@@ -222,7 +224,7 @@ export default function SimpleSchedule() {
       {/* 页面标题 */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">课程排班</h2>
+          <h2 className="text-2xl font-bold">{t('attendance.course_scheduling')}</h2>
           <p className="text-gray-600">简单直观的课程安排管理</p>
         </div>
         <div className="flex gap-2">
@@ -290,7 +292,7 @@ export default function SimpleSchedule() {
                     {format(date, 'd')}
                   </div>
                   {isToday && (
-                    <div className="text-xs text-blue-600 font-bold">今天</div>
+                    <div className="text-xs text-blue-600 font-bold">{t('attendance.today')}</div>
                   )}
                 </div>
               </CardHeader>
@@ -374,12 +376,12 @@ export default function SimpleSchedule() {
       {isAddingClass && (
         <Card>
           <CardHeader>
-            <CardTitle>添加课程</CardTitle>
+            <CardTitle>{t('attendance.add_course')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label>课程名称</Label>
+                <Label>{t('course.course_name')}</Label>
                 <Input 
                   value={newClass.name || ''}
                   onChange={(e) => setNewClass(prev => ({ ...prev, name: e.target.value }))}
@@ -387,40 +389,40 @@ export default function SimpleSchedule() {
                 />
               </div>
               <div>
-                <Label>科目</Label>
+                <Label>{t('exam.subject')}</Label>
                 <Select onValueChange={(value) => setNewClass(prev => ({ ...prev, subject: value }))}>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择科目" />
+                    <SelectValue placeholder={t('assignment.select_subject')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="数学">数学</SelectItem>
-                    <SelectItem value="英文">英文</SelectItem>
-                    <SelectItem value="华文">华文</SelectItem>
-                    <SelectItem value="科学">科学</SelectItem>
+                    <SelectItem value="数学">{t('assignment.mathematics')}</SelectItem>
+                    <SelectItem value="英文">{t('attendance.english')}</SelectItem>
+                    <SelectItem value="华文">{t('attendance.chinese')}</SelectItem>
+                    <SelectItem value="科学">{t('assignment.science')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>年级</Label>
+                <Label>{t('student.grade')}</Label>
                 <Select onValueChange={(value) => setNewClass(prev => ({ ...prev, grade: value }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="选择年级" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="一年级">一年级</SelectItem>
-                    <SelectItem value="二年级">二年级</SelectItem>
-                    <SelectItem value="三年级">三年级</SelectItem>
-                    <SelectItem value="四年级">四年级</SelectItem>
-                    <SelectItem value="五年级">五年级</SelectItem>
-                    <SelectItem value="六年级">六年级</SelectItem>
-                    <SelectItem value="中一">中一</SelectItem>
-                    <SelectItem value="中二">中二</SelectItem>
-                    <SelectItem value="中三">中三</SelectItem>
+                    <SelectItem value="一年级">{t('student.year_1')}</SelectItem>
+                    <SelectItem value="二年级">{t('student.year_2')}</SelectItem>
+                    <SelectItem value="三年级">{t('student.year_3')}</SelectItem>
+                    <SelectItem value="四年级">{t('student.year_4')}</SelectItem>
+                    <SelectItem value="五年级">{t('student.year_5')}</SelectItem>
+                    <SelectItem value="六年级">{t('student.year_6')}</SelectItem>
+                    <SelectItem value="中一">{t('attendance.form_1')}</SelectItem>
+                    <SelectItem value="中二">{t('attendance.form_2')}</SelectItem>
+                    <SelectItem value="中三">{t('attendance.form_3')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>时间</Label>
+                <Label>{t('announcement.time')}</Label>
                 <Input 
                   value={newClass.time || ''}
                   onChange={(e) => setNewClass(prev => ({ ...prev, time: e.target.value }))}
@@ -428,10 +430,10 @@ export default function SimpleSchedule() {
                 />
               </div>
               <div>
-                <Label>教师</Label>
+                <Label>{t('teacher.teacher')}</Label>
                 <Select onValueChange={(value) => setNewClass(prev => ({ ...prev, teacher: value }))}>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择教师" />
+                    <SelectValue placeholder={t('teacher.select_teacher')} />
                   </SelectTrigger>
                   <SelectContent>
                     {teachers.filter(t => t.status === 'available').map(teacher => (

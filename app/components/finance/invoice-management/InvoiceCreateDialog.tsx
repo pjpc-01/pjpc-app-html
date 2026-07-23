@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import { FileText, Users, AlertCircle, Loader2 } from "lucide-react"
 
 interface InvoiceCreateDialogProps {
@@ -37,6 +38,7 @@ export function InvoiceCreateDialog({
   onDirectCreate,
   onBulkCreate,
 }: InvoiceCreateDialogProps) {
+  const { t } = useLanguage()
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [dueDate, setDueDate] = useState("")
@@ -138,7 +140,7 @@ export function InvoiceCreateDialog({
           {/* Student Selection */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <Label className="text-sm font-medium">选择学生</Label>
+              <Label className="text-sm font-medium">{t('common.select_student')}</Label>
               <span className="text-xs text-muted-foreground">
                 {selectedGrades.length > 0 
                   ? `${selectedGrades.length} 年级 · ${filteredStudents.length} 人`
@@ -162,8 +164,8 @@ export function InvoiceCreateDialog({
                         }}
                       />
                     </TableHead>
-                    <TableHead>学生姓名</TableHead>
-                    <TableHead className="w-20">年级</TableHead>
+                    <TableHead>{t('student.student_name')}</TableHead>
+                    <TableHead className="w-20">{t('student.grade')}</TableHead>
                     <TableHead className="w-28 text-right">应缴费</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -239,7 +241,7 @@ export function InvoiceCreateDialog({
                     </TableRow>
                   ))}
                   <TableRow className="border-t-2">
-                    <TableCell colSpan={2} className="text-right font-bold text-sm">总计</TableCell>
+                    <TableCell colSpan={2} className="text-right font-bold text-sm">{t('finance.total')}</TableCell>
                     <TableCell className="text-right font-bold text-green-600">
                       RM {feePreview.total.toFixed(2)}
                     </TableCell>
@@ -271,7 +273,7 @@ export function InvoiceCreateDialog({
               />
             </div>
             <div>
-              <Label htmlFor="notes">备注</Label>
+              <Label htmlFor="notes">{t('teacher.notes')}</Label>
               <Input
                 id="notes"
                 placeholder="发票备注（可选）"

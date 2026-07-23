@@ -13,6 +13,7 @@ import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { Teacher } from '@/types/teacher'
+import { useLanguage } from "@/contexts/language-context"
 
 interface TeacherFormProps {
   open: boolean
@@ -29,6 +30,7 @@ export default function TeacherForm({
   teacher, 
   title = "添加教师" 
 }: TeacherFormProps) {
+  const { t } = useLanguage()
   // 马来西亚银行列表
   const malaysianBanks = [
     { value: 'maybank', label: '马来亚银行 (Maybank)' },
@@ -342,18 +344,18 @@ export default function TeacherForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">邮箱</Label>
+              <Label htmlFor="email">{t('report.email')}</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder="请输入邮箱"
+                placeholder={t('teacher.enter_email')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">电话</Label>
+              <Label htmlFor="phone">{t('report.phone')}</Label>
               <Input
                 id="phone"
                 value={formData.phone}
@@ -363,15 +365,15 @@ export default function TeacherForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="status">状态</Label>
+              <Label htmlFor="status">{t('teacher.status')}</Label>
               <Select value={formData.status || 'active'} onValueChange={(value) => handleInputChange('status', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="选择状态" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">在职</SelectItem>
-                  <SelectItem value="on_leave">请假</SelectItem>
-                  <SelectItem value="inactive">离职</SelectItem>
+                  <SelectItem value="active">{t('teacher.active')}</SelectItem>
+                  <SelectItem value="on_leave">{t('teacher.leave')}</SelectItem>
+                  <SelectItem value="inactive">{t('teacher.resigned')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -434,7 +436,7 @@ export default function TeacherForm({
              </div>
 
                          <div className="space-y-2">
-               <Label htmlFor="resignationDate">离职日期</Label>
+               <Label htmlFor="resignationDate">{t('teacher.resignation_date')}</Label>
                <Input
                  id="resignationDate"
                  type="date"
@@ -449,7 +451,7 @@ export default function TeacherForm({
             <h3 className="text-lg font-semibold text-gray-900">中心分配</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="center">所属中心</Label>
+                <Label htmlFor="center">{t('teacher.center')}</Label>
                 <Select value={formData.centerId} onValueChange={(value) => handleInputChange('centerId', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="选择中心" />
@@ -494,7 +496,7 @@ export default function TeacherForm({
             <h3 className="text-lg font-semibold text-gray-900">银行信息</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="bankName">银行名称</Label>
+                <Label htmlFor="bankName">{t('teacher.bank_name')}</Label>
                 <Select value={formData.bankName} onValueChange={(value) => handleInputChange('bankName', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="选择银行" />
@@ -555,7 +557,7 @@ export default function TeacherForm({
                     onChange={(e) => handleInputChange('isCitizen', e.target.value === 'true')}
                     className="text-blue-600"
                   />
-                  <span>是</span>
+                  <span>{t('teacher.yes')}</span>
                 </label>
                 <label className="flex items-center space-x-2">
                   <input
@@ -566,7 +568,7 @@ export default function TeacherForm({
                     onChange={(e) => handleInputChange('isCitizen', e.target.value === 'true')}
                     className="text-blue-600"
                   />
-                  <span>否</span>
+                  <span>{t('teacher.no')}</span>
                 </label>
               </div>
             </div>
@@ -603,17 +605,17 @@ export default function TeacherForm({
           {/* 地址和紧急联系人 */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="address">地址</Label>
+              <Label htmlFor="address">{t('teacher.address')}</Label>
               <Input
                 id="address"
                 value={formData.address}
                 onChange={(e) => handleInputChange('address', e.target.value)}
-                placeholder="请输入地址"
+                placeholder={t('teacher.enter_address')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="emergencyContact">紧急联系人</Label>
+              <Label htmlFor="emergencyContact">{t('teacher.emergency_contact')}</Label>
               <Input
                 id="emergencyContact"
                 value={formData.emergencyContact}
@@ -625,7 +627,7 @@ export default function TeacherForm({
 
           {/* 备注 */}
           <div className="space-y-2">
-            <Label htmlFor="notes">备注</Label>
+            <Label htmlFor="notes">{t('teacher.notes')}</Label>
             <Textarea
               id="notes"
               value={formData.notes}

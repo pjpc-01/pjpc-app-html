@@ -14,6 +14,7 @@ import {
   UserX,
   AlertCircle
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface QuickFilter {
   id: string
@@ -107,11 +108,12 @@ export default function QuickFilters({
   activeFilters, 
   className = "" 
 }: QuickFiltersProps) {
+  const { t } = useLanguage()
   return (
     <div className={`space-y-3 ${className}`}>
       <div className="flex items-center gap-2">
         <Clock className="h-4 w-4 text-gray-500" />
-        <span className="text-sm font-medium text-gray-700">快速筛选</span>
+        <span className="text-sm font-medium text-gray-700">{t('course.quick_filters')}</span>
       </div>
       
       <div className="flex flex-wrap gap-2">

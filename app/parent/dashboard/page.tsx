@@ -19,9 +19,11 @@ import {
   BookOpen,
   RefreshCw,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import Link from "next/link"
 
 function ChildCard({ child }: { child: any }) {
+  const { t } = useLanguage()
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
@@ -47,13 +49,13 @@ function ChildCard({ child }: { child: any }) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           <QuickStat
             icon={<UserCheck className="h-4 w-4" />}
-            label="出勤"
+            label={t('attendance.present')}
             value="95%"
             color="text-green-600"
           />
           <QuickStat
             icon={<BarChart3 className="h-4 w-4" />}
-            label="成绩"
+            label={t('dashboard.grade')}
             value="查看"
             color="text-blue-600"
           />
@@ -65,14 +67,14 @@ function ChildCard({ child }: { child: any }) {
           />
           <QuickStat
             icon={<BookOpen className="h-4 w-4" />}
-            label="作业"
+            label={t('teacher.homework')}
             value="查看"
             color="text-purple-600"
             href={`/parent/children/${child.id}/homework`}
           />
           <QuickStat
             icon={<span className="text-lg">📓</span>}
-            label="日志"
+            label={t('dashboard.log')}
             value="查看"
             color="text-teal-600"
             href={`/parent/dailylogs?child=${child.id}`}

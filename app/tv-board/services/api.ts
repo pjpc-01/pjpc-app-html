@@ -322,49 +322,6 @@ class ApiService {
     return result
   }
 
-  // 修复积分数据
-  async fixPointsData(): Promise<ApiResponse<any>> {
-    const result = await this.fetchWithRetry<any>('/api/points-sync', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    return result
-  }
-
-  // 创建积分交易（使用新的同步API）
-  async createPointTransaction(transactionData: {
-    student_id: string
-    teacher_id: string
-    points_change: number
-    transaction_type: string
-    reason: string
-    gift_name?: string
-    gift_points?: number
-  }): Promise<ApiResponse<any>> {
-    const result = await this.fetchWithRetry<any>('/api/points-sync', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(transactionData)
-    })
-    
-    // 如果交易创建成功，清除积分相关缓存
-    if (result.success) {
-      this.clearCacheByPattern('/api/points')
-      this.clearCacheByPattern('/api/students')
-    }
-    
-    return result
-  }
-
-  // 获取学生积分历史
-  async getStudentPointsHistory(studentId: string, limit: number = 50): Promise<ApiResponse<any>> {
-    const result = await this.fetchWithRetry<any>(`/api/points-sync?student_id=${studentId}&limit=${limit}`)
-    return result
-  }
 }
 
 export const apiService = new ApiService()

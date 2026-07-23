@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import { 
   Wifi, 
   Plus, 
@@ -39,6 +40,7 @@ interface WiFiNetwork {
 }
 
 export default function WiFiNetworkManager() {
+  const { t } = useLanguage()
   const [networks, setNetworks] = useState<WiFiNetwork[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -207,7 +209,7 @@ export default function WiFiNetworkManager() {
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-              <span>加载中...</span>
+              <span>{t('teacher.loading')}</span>
             </div>
           ) : networks.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
@@ -297,7 +299,7 @@ export default function WiFiNetworkManager() {
             </div>
             
             <div>
-              <Label htmlFor="description">描述</Label>
+              <Label htmlFor="description">{t('finance.description')}</Label>
               <Input
                 id="description"
                 value={formData.description}

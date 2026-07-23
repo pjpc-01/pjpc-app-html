@@ -22,6 +22,7 @@ import {
   ShieldAlert,
   Loader2
 } from 'lucide-react'
+import { useLanguage } from "@/contexts/language-context"
 
 // 冲突检测
 import { detectAllConflicts, getConflictBadge, type Conflict } from '@/lib/schedule-conflicts'
@@ -52,6 +53,7 @@ interface ScheduleTemplate {
 }
 
 export default function SimpleScheduleManager() {
+  const { t } = useLanguage()
   // 基础状态
   const [currentWeek, setCurrentWeek] = useState(new Date())
   const [schedules, setSchedules] = useState<Schedule[]>([])
@@ -494,7 +496,7 @@ export default function SimpleScheduleManager() {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-gray-50">
-                  <th className="text-left p-4 font-medium">教师</th>
+                  <th className="text-left p-4 font-medium">{t('teacher.teacher')}</th>
                   {weekDates.map(date => (
                     <th key={date.toISOString()} className="text-center p-4 font-medium min-w-32">
                       <div className="text-sm">
@@ -504,7 +506,7 @@ export default function SimpleScheduleManager() {
                         {format(date, 'd')}
                       </div>
                       {isToday(date) && (
-                        <div className="text-xs text-blue-600">今天</div>
+                        <div className="text-xs text-blue-600">{t('attendance.today')}</div>
                       )}
                     </th>
                   ))}
@@ -582,7 +584,7 @@ export default function SimpleScheduleManager() {
                                 </div>
                               </div>
                             ) : isWeekendDay ? (
-                              <div className="text-gray-400 text-sm">周末</div>
+                              <div className="text-gray-400 text-sm">{t('attendance.weekend')}</div>
                             ) : (
                               <Button
                                 size="sm"
@@ -616,12 +618,12 @@ export default function SimpleScheduleManager() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>教师</Label>
+                <Label>{t('teacher.teacher')}</Label>
                 <div className="text-sm text-gray-600">{editingSchedule.teacher_name}</div>
               </div>
 
               <div>
-                <Label>日期</Label>
+                <Label>{t('finance.date')}</Label>
                 <div className="text-sm text-gray-600">
                   {format(new Date(editingSchedule.date), 'yyyy年MM月dd日 EEEE', { locale: zhCN })}
                 </div>
@@ -629,7 +631,7 @@ export default function SimpleScheduleManager() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>开始时间</Label>
+                  <Label>{t('attendance.start_time')}</Label>
                   <Input
                     type="time"
                     value={editingSchedule.start_time}
@@ -640,7 +642,7 @@ export default function SimpleScheduleManager() {
                   />
                 </div>
                 <div>
-                  <Label>结束时间</Label>
+                  <Label>{t('attendance.end_time')}</Label>
                   <Input
                     type="time"
                     value={editingSchedule.end_time}
@@ -653,7 +655,7 @@ export default function SimpleScheduleManager() {
               </div>
 
               <div>
-                <Label>状态</Label>
+                <Label>{t('teacher.status')}</Label>
                 <Select
                   value={editingSchedule.status}
                   onValueChange={(value: any) => setEditingSchedule({
@@ -665,15 +667,15 @@ export default function SimpleScheduleManager() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="scheduled">已安排</SelectItem>
-                    <SelectItem value="confirmed">已确认</SelectItem>
-                    <SelectItem value="completed">已完成</SelectItem>
+                    <SelectItem value="scheduled">{t('exam.scheduled')}</SelectItem>
+                    <SelectItem value="confirmed">{t('teacher.confirmed')}</SelectItem>
+                    <SelectItem value="completed">{t('assignment.completed')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label>备注</Label>
+                <Label>{t('teacher.notes')}</Label>
                 <Input
                   value={editingSchedule.notes || ''}
                   onChange={(e) => setEditingSchedule({

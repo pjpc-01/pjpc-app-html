@@ -20,6 +20,7 @@ import {
   Phone,
   Calendar
 } from 'lucide-react'
+import { useLanguage } from "@/contexts/language-context"
 
 interface User {
   id: string
@@ -33,6 +34,7 @@ interface User {
 }
 
 export default function UserManagement() {
+  const { t } = useLanguage()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -100,28 +102,28 @@ export default function UserManagement() {
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'admin':
-        return <Badge variant="destructive">管理员</Badge>
+        return <Badge variant="destructive">{t('admin.admin')}</Badge>
       case 'teacher':
         return <Badge variant="default">老师</Badge>
       case 'parent':
-        return <Badge variant="secondary">家长</Badge>
+        return <Badge variant="secondary">{t('admin.parent')}</Badge>
       case 'student':
-        return <Badge variant="outline">学生</Badge>
+        return <Badge variant="outline">{t('common.student')}</Badge>
       default:
-        return <Badge variant="outline">未知</Badge>
+        return <Badge variant="outline">{t('teacher.unknown')}</Badge>
     }
   }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge variant="default" className="bg-green-100 text-green-800">活跃</Badge>
+        return <Badge variant="default" className="bg-green-100 text-green-800">{t('common.active')}</Badge>
       case 'inactive':
-        return <Badge variant="secondary">非活跃</Badge>
+        return <Badge variant="secondary">{t('user.inactive')}</Badge>
       case 'pending':
-        return <Badge variant="outline">待审核</Badge>
+        return <Badge variant="outline">{t('admin.pending_review')}</Badge>
       default:
-        return <Badge variant="outline">未知</Badge>
+        return <Badge variant="outline">{t('teacher.unknown')}</Badge>
     }
   }
 
@@ -157,7 +159,7 @@ export default function UserManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">用户管理</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('user.user_management')}</h2>
           <p className="text-gray-600">管理系统中的所有用户账户</p>
         </div>
         <Button>
@@ -224,7 +226,7 @@ export default function UserManagement() {
         <CardContent>
           <div className="flex gap-4">
             <div className="flex-1">
-              <Label htmlFor="search">搜索用户</Label>
+              <Label htmlFor="search">{t('user.search_users')}</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -244,10 +246,10 @@ export default function UserManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">全部角色</SelectItem>
-                  <SelectItem value="admin">管理员</SelectItem>
+                  <SelectItem value="admin">{t('admin.admin')}</SelectItem>
                   <SelectItem value="teacher">老师</SelectItem>
-                  <SelectItem value="parent">家长</SelectItem>
-                  <SelectItem value="student">学生</SelectItem>
+                  <SelectItem value="parent">{t('admin.parent')}</SelectItem>
+                  <SelectItem value="student">{t('common.student')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -258,10 +260,10 @@ export default function UserManagement() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部状态</SelectItem>
-                  <SelectItem value="active">活跃</SelectItem>
-                  <SelectItem value="inactive">非活跃</SelectItem>
-                  <SelectItem value="pending">待审核</SelectItem>
+                  <SelectItem value="all">{t('common.all_status')}</SelectItem>
+                  <SelectItem value="active">{t('common.active')}</SelectItem>
+                  <SelectItem value="inactive">{t('user.inactive')}</SelectItem>
+                  <SelectItem value="pending">{t('admin.pending_review')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -272,7 +274,7 @@ export default function UserManagement() {
       {/* 用户列表 */}
       <Card>
         <CardHeader>
-          <CardTitle>用户列表</CardTitle>
+          <CardTitle>{t('user.user_list')}</CardTitle>
           <CardDescription>显示所有用户信息，点击编辑或删除按钮进行管理</CardDescription>
         </CardHeader>
         <CardContent>
@@ -343,11 +345,11 @@ export default function UserManagement() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle>编辑用户</CardTitle>
+              <CardTitle>{t('user.edit_user')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="name">姓名</Label>
+                <Label htmlFor="name">{t('student.name')}</Label>
                 <Input
                   id="name"
                   value={selectedUser.name}
@@ -355,7 +357,7 @@ export default function UserManagement() {
                 />
               </div>
               <div>
-                <Label htmlFor="email">邮箱</Label>
+                <Label htmlFor="email">{t('report.email')}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -364,7 +366,7 @@ export default function UserManagement() {
                 />
               </div>
               <div>
-                <Label htmlFor="phone">电话</Label>
+                <Label htmlFor="phone">{t('report.phone')}</Label>
                 <Input
                   id="phone"
                   value={selectedUser.phone || ''}
@@ -372,29 +374,29 @@ export default function UserManagement() {
                 />
               </div>
               <div>
-                <Label htmlFor="role">角色</Label>
+                <Label htmlFor="role">{t('admin.role')}</Label>
                 <Select value={selectedUser.role} onValueChange={(value) => setSelectedUser({...selectedUser, role: value as any})}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">管理员</SelectItem>
+                    <SelectItem value="admin">{t('admin.admin')}</SelectItem>
                     <SelectItem value="teacher">老师</SelectItem>
-                    <SelectItem value="parent">家长</SelectItem>
-                    <SelectItem value="student">学生</SelectItem>
+                    <SelectItem value="parent">{t('admin.parent')}</SelectItem>
+                    <SelectItem value="student">{t('common.student')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="status">状态</Label>
+                <Label htmlFor="status">{t('teacher.status')}</Label>
                 <Select value={selectedUser.status} onValueChange={(value) => setSelectedUser({...selectedUser, status: value as any})}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">活跃</SelectItem>
-                    <SelectItem value="inactive">非活跃</SelectItem>
-                    <SelectItem value="pending">待审核</SelectItem>
+                    <SelectItem value="active">{t('common.active')}</SelectItem>
+                    <SelectItem value="inactive">{t('user.inactive')}</SelectItem>
+                    <SelectItem value="pending">{t('admin.pending_review')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -10,6 +10,7 @@ import {
   SheetTitle, 
   SheetDescription 
 } from "@/components/ui/sheet"
+import { useLanguage } from "@/contexts/language-context"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Edit, 
@@ -46,6 +47,7 @@ export default function StudentDetails({
   onEdit,
   onDelete
 }: StudentDetailsProps) {
+  const { t } = useLanguage()
   
   if (!student) {
     return (
@@ -62,8 +64,8 @@ export default function StudentDetails({
           </SheetHeader>
           <div className="p-8 text-center mt-10">
             <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">数据加载失败</h3>
-            <Button onClick={() => onOpenChange(false)} className="mt-4">关闭</Button>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('student.data_load_failed')}</h3>
+            <Button onClick={() => onOpenChange(false)} className="mt-4">{t('teacher.close')}</Button>
           </div>
         </SheetContent>
       </Sheet>
@@ -160,12 +162,12 @@ export default function StudentDetails({
 
               <TabsContent value="basic" className="space-y-4">
                 <DetailSection title="个人身份">
-                  <DetailRow label="出生日期" value={student.dob ? new Date(student.dob).toLocaleDateString('zh-CN') : '-'} icon={<Calendar className="h-3 w-3" />} />
-                  <DetailRow label="性别" value={student.gender === 'male' ? '男' : student.gender === 'female' ? '女' : '-'} icon={<User className="h-3 w-3" />} />
+                  <DetailRow label={t('student.date_of_birth')} value={student.dob ? new Date(student.dob).toLocaleDateString('zh-CN') : '-'} icon={<Calendar className="h-3 w-3" />} />
+                  <DetailRow label={t('student.gender')} value={student.gender === 'male' ? '男' : student.gender === 'female' ? '女' : '-'} icon={<User className="h-3 w-3" />} />
                   <DetailRow label="NRIC/护照" value={student.nric || '-'} icon={<FileText className="h-3 w-3" />} />
                 </DetailSection>
 
-                <DetailSection title="联系方式">
+                <DetailSection title={t('teacher.contact_info')}>
                   <DetailRow label="父亲姓名" value={student.father_name || student.fatherName || '-'} icon={<User className="h-3 w-3" />} />
                   <DetailRow label="母亲姓名" value={student.mother_name || student.motherName || '-'} icon={<User className="h-3 w-3" />} />
                   <DetailRow label="父亲电话" value={student.father_phone || student.fatherPhone || '-'} icon={<Phone className="h-3 w-3" />} />
@@ -174,7 +176,7 @@ export default function StudentDetails({
 
                 <DetailSection title="居住地址">
                   <div className="flex justify-between items-start py-2">
-                    <span className="text-sm font-medium text-slate-500">家庭地址</span>
+                    <span className="text-sm font-medium text-slate-500">{t('parent.home_address')}</span>
                     <div className="text-right">
                       <p className="text-sm text-slate-900 mb-1">{student.home_address || '未填写'}</p>
                       {student.home_address && (
@@ -194,12 +196,12 @@ export default function StudentDetails({
 
               <TabsContent value="school" className="space-y-4">
                 <DetailSection title="学习状态">
-                  <DetailRow label="就读学校" value={student.school || '-'} icon={<School className="h-3 w-3" />} />
-                  <DetailRow label="年级" value={convertGradeToChinese(student.standard || student.grade || '') || '-'} icon={<GraduationCap className="h-3 w-3" />} />
+                  <DetailRow label={t('student.school')} value={student.school || '-'} icon={<School className="h-3 w-3" />} />
+                  <DetailRow label={t('student.grade')} value={convertGradeToChinese(student.standard || student.grade || '') || '-'} icon={<GraduationCap className="h-3 w-3" />} />
                 </DetailSection>
 
                 <DetailSection title="中心服务">
-                  <DetailRow label="所属中心" value={student.center || '-'} icon={<MapPin className="h-3 w-3" />} />
+                  <DetailRow label={t('teacher.center')} value={student.center || '-'} icon={<MapPin className="h-3 w-3" />} />
                   <DetailRow label="注册日期" value={student.registrationDate ? new Date(student.registrationDate).toLocaleDateString('zh-CN') : '-'} icon={<Calendar className="h-3 w-3" />} />
                 </DetailSection>
 

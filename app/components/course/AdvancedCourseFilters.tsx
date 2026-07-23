@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import {
   Search,
   Filter,
@@ -127,6 +128,7 @@ export default function AdvancedCourseFilters({
   onLoadFilter,
   savedFilters = []
 }: AdvancedCourseFiltersProps) {
+  const { t } = useLanguage()
   const [isExpanded, setIsExpanded] = useState(false)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [filterName, setFilterName] = useState("")
@@ -196,7 +198,7 @@ export default function AdvancedCourseFilters({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Filter className="h-5 w-5 text-purple-600" />
-            <CardTitle className="text-lg">高级筛选</CardTitle>
+            <CardTitle className="text-lg">{t('course.advanced_filters')}</CardTitle>
             {hasActiveFilters && (
               <Badge variant="secondary" className="bg-purple-100 text-purple-800">
                 {filters.quickFilters.length + 
@@ -272,7 +274,7 @@ export default function AdvancedCourseFilters({
       <CardContent className="space-y-6">
         {/* 快速筛选 */}
         <div>
-          <Label className="text-sm font-medium mb-3 block">快速筛选</Label>
+          <Label className="text-sm font-medium mb-3 block">{t('course.quick_filters')}</Label>
           <div className="flex flex-wrap gap-2">
             {quickFilterOptions.map((option) => {
               const Icon = option.icon
@@ -310,10 +312,10 @@ export default function AdvancedCourseFilters({
 
           <Select value={filters.selectedTeacher} onValueChange={(value) => updateFilter({ selectedTeacher: value })}>
             <SelectTrigger>
-              <SelectValue placeholder="选择教师" />
+              <SelectValue placeholder={t('teacher.select_teacher')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部教师</SelectItem>
+              <SelectItem value="all">{t('teacher.all_teachers')}</SelectItem>
               {teacherOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -324,10 +326,10 @@ export default function AdvancedCourseFilters({
 
           <Select value={filters.selectedSubject} onValueChange={(value) => updateFilter({ selectedSubject: value })}>
             <SelectTrigger>
-              <SelectValue placeholder="选择科目" />
+              <SelectValue placeholder={t('assignment.select_subject')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部科目</SelectItem>
+              <SelectItem value="all">{t('course.all_subjects')}</SelectItem>
               {subjectOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -341,7 +343,7 @@ export default function AdvancedCourseFilters({
               <SelectValue placeholder="选择状态" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部状态</SelectItem>
+              <SelectItem value="all">{t('common.all_status')}</SelectItem>
               {statusOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -452,19 +454,19 @@ export default function AdvancedCourseFilters({
               </div>
 
               <div>
-                <Label className="text-sm font-medium mb-2 block">排序方式</Label>
+                <Label className="text-sm font-medium mb-2 block">{t('course.sort_by')}</Label>
                 <div className="flex gap-2">
                   <Select value={filters.sortBy} onValueChange={(value) => updateFilter({ sortBy: value })}>
                     <SelectTrigger className="flex-1">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="name">课程名称</SelectItem>
+                      <SelectItem value="name">{t('course.course_name')}</SelectItem>
                       <SelectItem value="teacher">授课教师</SelectItem>
                       <SelectItem value="students">学生人数</SelectItem>
                       <SelectItem value="progress">教学进度</SelectItem>
                       <SelectItem value="materials">教材数量</SelectItem>
-                      <SelectItem value="createdAt">创建时间</SelectItem>
+                      <SelectItem value="createdAt">{t('course.created_at')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button
@@ -503,7 +505,7 @@ export default function AdvancedCourseFilters({
                   checked={filters.hasSchedule}
                   onCheckedChange={(checked) => updateFilter({ hasSchedule: checked as boolean })}
                 />
-                <Label htmlFor="hasSchedule" className="text-sm">已排课</Label>
+                <Label htmlFor="hasSchedule" className="text-sm">{t('course.scheduled')}</Label>
               </div>
 
               <div className="flex items-center space-x-2">

@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   RefreshCw
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface NFCDevice {
   id: string
@@ -49,6 +50,7 @@ export default function DeviceManagement({
   onAddDevice,
   onEditDevice
 }: DeviceManagementProps) {
+  const { t } = useLanguage()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [typeFilter, setTypeFilter] = useState<string>("all")
@@ -154,22 +156,22 @@ export default function DeviceManagement({
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="状态筛选" />
+              <SelectValue placeholder={t('common.status_filter')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部状态</SelectItem>
-              <SelectItem value="online">在线</SelectItem>
-              <SelectItem value="offline">离线</SelectItem>
-              <SelectItem value="maintenance">维护中</SelectItem>
+              <SelectItem value="all">{t('common.all_status')}</SelectItem>
+              <SelectItem value="online">{t('common.online')}</SelectItem>
+              <SelectItem value="offline">{t('attendance.offline')}</SelectItem>
+              <SelectItem value="maintenance">{t('common.under_maintenance')}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="类型筛选" />
+              <SelectValue placeholder={t('common.type_filter')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部类型</SelectItem>
-              <SelectItem value="NFC">NFC</SelectItem>
+              <SelectItem value="all">{t('common.all_types')}</SelectItem>
+              <SelectItem value="NFC">{t('common.nfc')}</SelectItem>
               <SelectItem value="RFID">RFID</SelectItem>
               <SelectItem value="hybrid">混合</SelectItem>
             </SelectContent>
@@ -211,12 +213,12 @@ export default function DeviceManagement({
               </TableHead>
               <TableHead>设备名称</TableHead>
               <TableHead>位置</TableHead>
-              <TableHead>类型</TableHead>
-              <TableHead>状态</TableHead>
+              <TableHead>{t('common.type')}</TableHead>
+              <TableHead>{t('teacher.status')}</TableHead>
               <TableHead>IP地址</TableHead>
               <TableHead>固件版本</TableHead>
               <TableHead>最后在线</TableHead>
-              <TableHead>操作</TableHead>
+              <TableHead>{t('teacher.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

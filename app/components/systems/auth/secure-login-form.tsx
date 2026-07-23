@@ -13,8 +13,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Eye, EyeOff, GraduationCap, AlertTriangle, CheckCircle, Loader2, Shield, SmartphoneNfc, XCircle } from "lucide-react"
 import { useNfcAuth } from "@/contexts/nfc-auth-context"
+import { useLanguage } from "@/contexts/language-context"
+import LanguageSwitcher from "@/components/LanguageSwitcher"
 
 export default function SecureLoginForm() {
+  const { t } = useLanguage()
   const { signIn, signUp, resetPassword } = useAuth()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
@@ -225,6 +228,10 @@ export default function SecureLoginForm() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Language switcher — top right */}
+        <div className="flex justify-end mb-2">
+          <LanguageSwitcher />
+        </div>
         {/* Logo and Title */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
@@ -277,16 +284,16 @@ export default function SecureLoginForm() {
 
             <Tabs defaultValue="login" onValueChange={(v) => { console.log('[Tab Debug] onValueChange:', v); setActiveTab(v); }} className="w-full">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="login">登录</TabsTrigger>
-                <TabsTrigger value="register">注册</TabsTrigger>
-                <TabsTrigger value="reset">重置密码</TabsTrigger>
+                <TabsTrigger value="login">{t('auth.login')}</TabsTrigger>
+                <TabsTrigger value="register">{t('auth.register')}</TabsTrigger>
+                <TabsTrigger value="reset">{t('auth.reset_password')}</TabsTrigger>
               </TabsList>
 
               {/* 登录表单 */}
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-email">邮箱地址</Label>
+                    <Label htmlFor="login-email">{t('student.email_address')}</Label>
                     <Input
                       id="login-email"
                       type="email"
@@ -297,12 +304,12 @@ export default function SecureLoginForm() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="login-password">密码</Label>
+                    <Label htmlFor="login-password">{t('auth.password')}</Label>
                     <div className="relative">
                       <Input
                         id="login-password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="请输入密码"
+                        placeholder={t('auth.enter_password')}
                         value={loginData.password}
                         onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                         required
@@ -370,7 +377,7 @@ export default function SecureLoginForm() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="register-email">邮箱地址</Label>
+                    <Label htmlFor="register-email">{t('student.email_address')}</Label>
                     <Input
                       id="register-email"
                       type="email"
@@ -392,14 +399,14 @@ export default function SecureLoginForm() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="teacher">老师</SelectItem>
-                        <SelectItem value="parent">家长</SelectItem>
+                        <SelectItem value="parent">{t('admin.parent')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-gray-500">注：管理员账户需要特殊申请</p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="register-password">密码</Label>
+                    <Label htmlFor="register-password">{t('auth.password')}</Label>
                     <div className="relative">
                       <Input
                         id="register-password"
@@ -422,7 +429,7 @@ export default function SecureLoginForm() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="register-confirm-password">确认密码</Label>
+                    <Label htmlFor="register-confirm-password">{t('auth.confirm_password')}</Label>
                     <div className="relative">
                       <Input
                         id="register-confirm-password"
@@ -461,7 +468,7 @@ export default function SecureLoginForm() {
               <TabsContent value="reset">
                 <form onSubmit={handleResetPassword} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="reset-email">邮箱地址</Label>
+                    <Label htmlFor="reset-email">{t('student.email_address')}</Label>
                     <Input
                       id="reset-email"
                       type="email"

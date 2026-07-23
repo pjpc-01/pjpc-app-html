@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useLanguage } from "@/contexts/language-context"
 import { 
   Dialog,
   DialogContent,
@@ -239,6 +240,7 @@ const applyFilters = (students: Student[], filters: FilterState) => {
 }
 
 export default function StudentManagementPage() {
+  const { t } = useLanguage()
   const { students, loading, error, refetch, updateStudent, deleteStudent, addStudent } = useStudents()
   
   const searchParams = useSearchParams()
@@ -691,7 +693,7 @@ export default function StudentManagementPage() {
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-amber-800">总学生数</p>
+                  <p className="text-sm font-medium text-amber-800">{t('dashboard.total_students')}</p>
                   <p className="text-3xl font-bold bg-gradient-to-r from-amber-700 to-orange-700 bg-clip-text text-transparent">
                     {stats.total}
                   </p>
@@ -712,7 +714,7 @@ export default function StudentManagementPage() {
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-amber-800">在读学生</p>
+                  <p className="text-sm font-medium text-amber-800">{t('dashboard.active_students')}</p>
                   <p className="text-3xl font-bold bg-gradient-to-r from-yellow-700 to-amber-700 bg-clip-text text-transparent">
                     {stats.active}
                   </p>
@@ -872,7 +874,7 @@ export default function StudentManagementPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                       </svg>
                     </div>
-                    <p className="text-amber-700">暂无学生数据</p>
+                    <p className="text-amber-700">{t('student.no_student_data')}</p>
                     <p className="text-sm text-amber-500 mt-1">请添加学生或调整筛选条件</p>
                   </div>
                 </div>

@@ -17,11 +17,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import { AlertCircle, Bell, Send, Clock, Users, Mail, Plus, Edit, Trash2 } from "lucide-react"
 import { useReminders } from "@/hooks/useReminders"
 import { useInvoices } from "@/hooks/useInvoices"
 
 export default function ReminderManagement() {
+  const { t } = useLanguage()
   const { invoices } = useInvoices()
   const {
     reminders,
@@ -59,13 +61,13 @@ export default function ReminderManagement() {
   const getReminderStatusBadge = (status: string) => {
     switch (status) {
       case "scheduled":
-        return <Badge variant="secondary">已安排</Badge>
+        return <Badge variant="secondary">{t('exam.scheduled')}</Badge>
       case "sent":
-        return <Badge variant="default">已发送</Badge>
+        return <Badge variant="default">{t('finance.sent')}</Badge>
       case "failed":
-        return <Badge variant="destructive">发送失败</Badge>
+        return <Badge variant="destructive">{t('finance.send_failed')}</Badge>
       case "cancelled":
-        return <Badge variant="outline">已取消</Badge>
+        return <Badge variant="outline">{t('teacher.cancelled')}</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
@@ -169,7 +171,7 @@ export default function ReminderManagement() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">发送失败</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('finance.send_failed')}</CardTitle>
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -261,10 +263,10 @@ export default function ReminderManagement() {
             <TableHeader>
               <TableRow>
                 <TableHead>模板名称</TableHead>
-                <TableHead>类型</TableHead>
+                <TableHead>{t('common.type')}</TableHead>
                 <TableHead>提前天数</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>操作</TableHead>
+                <TableHead>{t('teacher.status')}</TableHead>
+                <TableHead>{t('teacher.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -279,7 +281,7 @@ export default function ReminderManagement() {
                   </TableCell>
                   <TableCell>{template.daysBeforeDue}天</TableCell>
                   <TableCell>
-                    <Badge variant="default">启用</Badge>
+                    <Badge variant="default">{t('finance.enable')}</Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
@@ -319,11 +321,11 @@ export default function ReminderManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>学生姓名</TableHead>
+                <TableHead>{t('student.student_name')}</TableHead>
                 <TableHead>提醒类型</TableHead>
                 <TableHead>计划发送时间</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>操作</TableHead>
+                <TableHead>{t('teacher.status')}</TableHead>
+                <TableHead>{t('teacher.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

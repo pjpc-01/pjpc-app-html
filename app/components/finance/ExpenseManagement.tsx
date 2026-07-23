@@ -14,6 +14,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table"
+import { useLanguage } from "@/contexts/language-context"
 import { 
   Dialog, 
   DialogContent, 
@@ -73,6 +74,7 @@ const CATEGORY_COLORS: Record<string, string> = Object.fromEntries(
 )
 
 export default function ExpenseManagement() {
+  const { t } = useLanguage()
   const searchParams = useSearchParams()
   const centerParam = searchParams.get("center")
   const { centers } = useCenters()
@@ -304,8 +306,8 @@ export default function ExpenseManagement() {
                         <SelectValue placeholder="选择支付方式" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Bank Transfer">银行转账</SelectItem>
-                        <SelectItem value="Cash">现金</SelectItem>
+                        <SelectItem value="Bank Transfer">{t('finance.bank_transfer')}</SelectItem>
+                        <SelectItem value="Cash">{t('finance.cash')}</SelectItem>
                         <SelectItem value="Credit Card">信用卡</SelectItem>
                         <SelectItem value="Online Banking">网银</SelectItem>
                       </SelectContent>
@@ -407,7 +409,7 @@ export default function ExpenseManagement() {
               </div>
 
               <div className="flex justify-end gap-3 pt-6 border-t">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>取消</Button>
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>{t('report.cancel')}</Button>
                 <Button 
                   onClick={handleAddExpense} 
                   disabled={!isFormValid}
@@ -424,7 +426,7 @@ export default function ExpenseManagement() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-red-50 border-red-100">
           <CardHeader className="pb-2">
-            <CardDescription className="text-red-600 font-medium">总支出</CardDescription>
+            <CardDescription className="text-red-600 font-medium">{t('finance.total_expenses')}</CardDescription>
             <CardTitle className="text-3xl font-bold text-red-900">RM {totalExpenses.toLocaleString()}</CardTitle>
           </CardHeader>
         </Card>
@@ -496,23 +498,23 @@ export default function ExpenseManagement() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-gray-500">加载中...</div>
+            <div className="text-center py-8 text-gray-500">{t('teacher.loading')}</div>
           ) : error ? (
             <div className="text-center py-8 text-red-500">错误: {error}</div>
           ) : filteredExpenses.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">暂无支出记录</div>
+            <div className="text-center py-8 text-gray-500">{t('finance.no_expense_records')}</div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[120px]">日期</TableHead>
+                  <TableHead className="w-[120px]">{t('finance.date')}</TableHead>
                   <TableHead className="w-[150px]">类别</TableHead>
-                  <TableHead>描述</TableHead>
+                  <TableHead>{t('finance.description')}</TableHead>
                   <TableHead className="w-[100px]">分行</TableHead>
                   <TableHead className="w-[100px]">方式</TableHead>
                   <TableHead className="w-[60px] text-center">凭证</TableHead>
-                  <TableHead className="text-right w-[120px]">金额</TableHead>
-                  <TableHead className="text-center w-[80px]">操作</TableHead>
+                  <TableHead className="text-right w-[120px]">{t('finance.amount')}</TableHead>
+                  <TableHead className="text-center w-[80px]">{t('teacher.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

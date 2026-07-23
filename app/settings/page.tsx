@@ -35,8 +35,10 @@ import {
   UserCog,
   Palette,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 export default function SettingsPage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const { userProfile } = useAuth()
   const [activeTab, setActiveTab] = useState("params")
@@ -252,7 +254,7 @@ export default function SettingsPage() {
         <div className="text-center max-w-md">
           <h2 className="text-2xl font-bold text-red-600 mb-4">访问被拒绝</h2>
           <p className="text-gray-600 mb-2">只有管理员可以访问系统设置</p>
-          <Button onClick={() => router.push("/")}>返回首页</Button>
+          <Button onClick={() => router.push("/")}>{t('system.back_to_home')}</Button>
         </div>
       </div>
     )
@@ -260,7 +262,7 @@ export default function SettingsPage() {
 
   return (
     <PageLayout
-      title="系统设置"
+      title={t('system.system_settings')}
       description=""
       userRole="admin"
       status="系统正常"
@@ -322,7 +324,7 @@ export default function SettingsPage() {
                 <AlertTriangle className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">待审核</p>
+                <p className="text-xs text-gray-500">{t('admin.pending_review')}</p>
                 <p className="text-xl font-bold">{userStats.pending}</p>
               </div>
             </CardContent>
@@ -333,7 +335,7 @@ export default function SettingsPage() {
                 <Shield className="h-5 w-5 text-orange-700" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">管理员</p>
+                <p className="text-xs text-gray-500">{t('admin.admin')}</p>
                 <p className="text-xl font-bold">{userStats.admin}</p>
               </div>
             </CardContent>
@@ -381,7 +383,7 @@ export default function SettingsPage() {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label>银行名称</Label>
+                    <Label>{t('teacher.bank_name')}</Label>
                     <Input
                       value={bankSettings.bankName}
                       onChange={(e) => setBankSettings({ ...bankSettings, bankName: e.target.value })}
@@ -395,7 +397,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>账户号码</Label>
+                    <Label>{t('finance.account_number')}</Label>
                     <Input
                       value={bankSettings.accountNumber}
                       onChange={(e) => setBankSettings({ ...bankSettings, accountNumber: e.target.value })}
@@ -663,7 +665,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
-                        <p className="font-medium">系统通知</p>
+                        <p className="font-medium">{t('announcement.system_notification')}</p>
                         <p className="text-xs text-gray-500">启用系统通知推送</p>
                       </div>
                       <Switch
@@ -673,7 +675,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
-                        <p className="font-medium">自动备份</p>
+                        <p className="font-medium">{t('system.auto_backup')}</p>
                         <p className="text-xs text-gray-500">每日自动备份数据库</p>
                       </div>
                       <Switch
@@ -732,10 +734,10 @@ export default function SettingsPage() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b">
-                          <th className="text-left py-2 px-3 font-medium text-gray-500">时间</th>
-                          <th className="text-left py-2 px-3 font-medium text-gray-500">用户</th>
-                          <th className="text-left py-2 px-3 font-medium text-gray-500">操作</th>
-                          <th className="text-left py-2 px-3 font-medium text-gray-500">详情</th>
+                          <th className="text-left py-2 px-3 font-medium text-gray-500">{t('announcement.time')}</th>
+                          <th className="text-left py-2 px-3 font-medium text-gray-500">{t('system.user')}</th>
+                          <th className="text-left py-2 px-3 font-medium text-gray-500">{t('teacher.actions')}</th>
+                          <th className="text-left py-2 px-3 font-medium text-gray-500">{t('system.details')}</th>
                           <th className="text-left py-2 px-3 font-medium text-gray-500">IP</th>
                         </tr>
                       </thead>

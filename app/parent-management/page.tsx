@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -35,6 +36,7 @@ import {
 } from "lucide-react"
 
 export default function ParentManagementPage() {
+  const { t } = useLanguage()
   const { parents, loading, refetch } = useParents()
   const [search, setSearch] = useState("")
   const [showForm, setShowForm] = useState(false)
@@ -149,7 +151,7 @@ export default function ParentManagementPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">加载中...</div>
+            <div className="text-center py-8 text-muted-foreground">{t('teacher.loading')}</div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <User className="h-12 w-12 mx-auto mb-4 opacity-30" />
@@ -160,14 +162,14 @@ export default function ParentManagementPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>姓名</TableHead>
-                    <TableHead>关系</TableHead>
-                    <TableHead>电话</TableHead>
+                    <TableHead>{t('student.name')}</TableHead>
+                    <TableHead>{t('student.relationship')}</TableHead>
+                    <TableHead>{t('report.phone')}</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>职业</TableHead>
                     <TableHead>学生数</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
+                    <TableHead>{t('teacher.status')}</TableHead>
+                    <TableHead className="text-right">{t('teacher.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -222,7 +224,7 @@ export default function ParentManagementPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
                 <Label>姓名 *</Label>
-                <Input value={form.name} onChange={(e) => setForm(f => ({...f, name: e.target.value}))} placeholder="家长姓名" />
+                <Input value={form.name} onChange={(e) => setForm(f => ({...f, name: e.target.value}))} placeholder={t('parent.parent_name')} />
               </div>
               <div>
                 <Label>关系 *</Label>
@@ -231,22 +233,22 @@ export default function ParentManagementPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="父亲">父亲</SelectItem>
-                    <SelectItem value="母亲">母亲</SelectItem>
-                    <SelectItem value="监护人">监护人</SelectItem>
-                    <SelectItem value="其他">其他</SelectItem>
+                    <SelectItem value="父亲">{t('student.father')}</SelectItem>
+                    <SelectItem value="母亲">{t('student.mother')}</SelectItem>
+                    <SelectItem value="监护人">{t('parent.guardian')}</SelectItem>
+                    <SelectItem value="其他">{t('parent.other')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>状态</Label>
+                <Label>{t('teacher.status')}</Label>
                 <Select value={form.status} onValueChange={(v) => setForm(f => ({...f, status: v}))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">活跃</SelectItem>
-                    <SelectItem value="inactive">停用</SelectItem>
+                    <SelectItem value="active">{t('common.active')}</SelectItem>
+                    <SelectItem value="inactive">{t('common.disabled')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -267,16 +269,16 @@ export default function ParentManagementPage() {
                 <Input value={form.occupation} onChange={(e) => setForm(f => ({...f, occupation: e.target.value}))} placeholder="职业" />
               </div>
               <div className="col-span-2">
-                <Label>地址</Label>
-                <Input value={form.address} onChange={(e) => setForm(f => ({...f, address: e.target.value}))} placeholder="家庭地址" />
+                <Label>{t('teacher.address')}</Label>
+                <Input value={form.address} onChange={(e) => setForm(f => ({...f, address: e.target.value}))} placeholder={t('parent.home_address')} />
               </div>
               <div className="col-span-2">
-                <Label>备注</Label>
+                <Label>{t('teacher.notes')}</Label>
                 <Input value={form.notes} onChange={(e) => setForm(f => ({...f, notes: e.target.value}))} placeholder="备注信息" />
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setShowForm(false)}>取消</Button>
+              <Button variant="outline" onClick={() => setShowForm(false)}>{t('report.cancel')}</Button>
               <Button onClick={handleSave} disabled={saving}>
                 {saving ? "保存中..." : editing ? "更新" : "添加"}
               </Button>

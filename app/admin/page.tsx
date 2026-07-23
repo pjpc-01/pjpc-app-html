@@ -9,8 +9,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Loader2, CheckCircle, AlertTriangle, UserPlus, Users, Key } from 'lucide-react'
 import { useAuth } from '@/contexts/pocketbase-auth-context'
+import { useLanguage } from "@/contexts/language-context"
 
 export default function AdminDashboard() {
+  const { t } = useLanguage()
   const { user } = useAuth()
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
@@ -123,16 +125,16 @@ export default function AdminDashboard() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="user-role">角色</Label>
+                <Label htmlFor="user-role">{t('admin.role')}</Label>
                 <Select value={role} onValueChange={setRole}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="teacher">教师</SelectItem>
-                    <SelectItem value="parent">家长</SelectItem>
-                    <SelectItem value="admin">管理员</SelectItem>
-                    <SelectItem value="accountant">会计</SelectItem>
+                    <SelectItem value="teacher">{t('teacher.teacher')}</SelectItem>
+                    <SelectItem value="parent">{t('admin.parent')}</SelectItem>
+                    <SelectItem value="admin">{t('admin.admin')}</SelectItem>
+                    <SelectItem value="accountant">{t('admin.accountant')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -152,7 +154,7 @@ export default function AdminDashboard() {
 
             <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 rounded p-2">
               <Users className="h-4 w-4 shrink-0" />
-              <span>创建后用户状态为<strong>已批准</strong>，可直接登录。系统会自动生成临时密码。</span>
+              <span>创建后用户状态为<strong>{t('attendance.approved')}</strong>，可直接登录。系统会自动生成临时密码。</span>
             </div>
 
             <Button type="submit" disabled={isLoading || !email} className="bg-amber-600 hover:bg-amber-700">

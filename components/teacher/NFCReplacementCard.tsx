@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import { 
   CreditCard, 
   Plus, 
@@ -58,6 +59,7 @@ interface NFCRequest {
 }
 
 export default function NFCReplacementCard() {
+  const { t } = useLanguage()
   const [students, setStudents] = useState<Student[]>([])
   const [requests, setRequests] = useState<NFCRequest[]>([])
   const [loading, setLoading] = useState(false)
@@ -286,7 +288,7 @@ export default function NFCReplacementCard() {
                 selectedStudent={selectedStudent}
                 onStudentSelect={setSelectedStudent}
                 placeholder="搜索并选择需要补办NFC卡的学生..."
-                label="选择学生"
+                label={t('common.select_student')}
                 required={true}
               />
 
@@ -297,7 +299,7 @@ export default function NFCReplacementCard() {
                     <SelectValue placeholder="请选择卡片状态" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="lost">丢失</SelectItem>
+                    <SelectItem value="lost">{t('common.lost')}</SelectItem>
                     <SelectItem value="damaged">损坏</SelectItem>
                     <SelectItem value="replace">更换</SelectItem>
                   </SelectContent>
@@ -351,7 +353,7 @@ export default function NFCReplacementCard() {
               </div>
 
               <div>
-                <Label htmlFor="notes">备注</Label>
+                <Label htmlFor="notes">{t('teacher.notes')}</Label>
                 <Textarea
                   id="notes"
                   value={notes}

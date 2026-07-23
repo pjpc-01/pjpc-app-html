@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import {
   Loader2, Save, CheckCircle2, Shield, Plus, Trash2, X,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 // Sidebar nav structure (must match AppShell.tsx)
 const NAV_TREE: Record<string, { label: string; icon?: string; children?: string[] }> = {
@@ -49,6 +50,7 @@ interface RoleInfo {
 }
 
 export default function PermissionEditor() {
+  const { t } = useLanguage()
   const [roles, setRoles] = useState<RoleInfo[]>([])
   const [selectedRole, setSelectedRole] = useState<string>("teacher")
   const [permissions, setPermissions] = useState<Record<string, boolean>>({})
@@ -293,7 +295,7 @@ export default function PermissionEditor() {
           <Card className="border-amber-200">
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-semibold">新增角色</h4>
+                <h4 className="text-sm font-semibold">{t('admin.add_role')}</h4>
                 <Button
                   variant="ghost"
                   size="sm"

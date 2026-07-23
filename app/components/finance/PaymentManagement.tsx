@@ -13,6 +13,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table"
+import { useLanguage } from "@/contexts/language-context"
 import { 
   Dialog, 
   DialogContent, 
@@ -68,6 +69,7 @@ const formatDate = (dateStr: string) => {
 }
 
 export default function PaymentManagement() {
+  const { t } = useLanguage()
   const { invoices, loading: invoicesLoading } = useInvoices()
   const { payments, loading: paymentsLoading, createPayment, deletePayment, refetch } = usePayments()
   const { createReceipt } = useReceipts()
@@ -269,11 +271,11 @@ export default function PaymentManagement() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-green-500 hover:bg-green-600">已完成</Badge>
+        return <Badge className="bg-green-500 hover:bg-green-600">{t('assignment.completed')}</Badge>
       case 'pending':
-        return <Badge className="bg-yellow-500 hover:bg-yellow-600">待处理</Badge>
+        return <Badge className="bg-yellow-500 hover:bg-yellow-600">{t('common.pending')}</Badge>
       case 'failed':
-        return <Badge className="bg-red-500 hover:bg-red-600">失败</Badge>
+        return <Badge className="bg-red-500 hover:bg-red-600">{t('finance.failed')}</Badge>
       case 'refunded':
         return <Badge className="bg-purple-500 hover:bg-purple-600">已退款</Badge>
       default:
@@ -351,8 +353,8 @@ export default function PaymentManagement() {
                       <SelectValue placeholder="选择支付方式" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Bank Transfer">银行转账</SelectItem>
-                      <SelectItem value="Cash">现金</SelectItem>
+                      <SelectItem value="Bank Transfer">{t('finance.bank_transfer')}</SelectItem>
+                      <SelectItem value="Cash">{t('finance.cash')}</SelectItem>
                       <SelectItem value="Online Banking">网银</SelectItem>
                       <SelectItem value="TNG">Touch 'n Go eWallet</SelectItem>
                       <SelectItem value="DuitNow">DuitNow</SelectItem>
@@ -401,7 +403,7 @@ export default function PaymentManagement() {
               </div>
 
               <div className="flex justify-end gap-3 pt-6 border-t">
-                <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)}>取消</Button>
+                <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)}>{t('report.cancel')}</Button>
                 <Button 
                   onClick={handleConfirmPayment} 
                   disabled={isSubmitting || !selectedInvoiceId || !paymentAmount}
@@ -476,7 +478,7 @@ export default function PaymentManagement() {
             <div className="flex items-center justify-between mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
               <span className="text-sm text-red-700">已选择 <strong>{selectedIds.size}</strong> 条付款记录</span>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={clearSelection}><XCircle className="h-4 w-4 mr-1" />取消选择</Button>
+                <Button variant="ghost" size="sm" onClick={clearSelection}><XCircle className="h-4 w-4 mr-1" />{t('finance.clear_selection')}</Button>
                 <Button variant="destructive" size="sm" onClick={() => setIsBatchDeleteOpen(true)}><Trash2 className="h-4 w-4 mr-1" />删除选中({selectedIds.size})</Button>
               </div>
             </div>
@@ -489,7 +491,7 @@ export default function PaymentManagement() {
           ) : filteredPayments.length === 0 ? (
             <div className="text-center py-12">
               <Receipt className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500">暂无付款记录</p>
+              <p className="text-slate-500">{t('finance.no_payment_records')}</p>
             </div>
           ) : (
             <Table>
@@ -499,16 +501,16 @@ export default function PaymentManagement() {
                     <Checkbox
                       checked={allSelected}
                       onCheckedChange={toggleSelectAll}
-                      aria-label="全选"
+                      aria-label={t('teacher.select_all')}
                     />
                   </TableHead>
-                  <TableHead>日期</TableHead>
-                  <TableHead>学生</TableHead>
-                  <TableHead>发票编号</TableHead>
+                  <TableHead>{t('finance.date')}</TableHead>
+                  <TableHead>{t('common.student')}</TableHead>
+                  <TableHead>{t('finance.invoice_no')}</TableHead>
                   <TableHead>支付方式</TableHead>
                   <TableHead className="text-right">实付金额</TableHead>
-                  <TableHead className="text-center">状态</TableHead>
-                  <TableHead className="text-center">操作</TableHead>
+                  <TableHead className="text-center">{t('teacher.status')}</TableHead>
+                  <TableHead className="text-center">{t('teacher.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -683,15 +685,15 @@ export default function PaymentManagement() {
                     <SelectValue placeholder="选择退款方式" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="bank_transfer">银行转账</SelectItem>
-                    <SelectItem value="cash">现金</SelectItem>
+                    <SelectItem value="bank_transfer">{t('finance.bank_transfer')}</SelectItem>
+                    <SelectItem value="cash">{t('finance.cash')}</SelectItem>
                     <SelectItem value="credit_note">信用凭证</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-semibold">备注</Label>
+                <Label className="text-sm font-semibold">{t('teacher.notes')}</Label>
                 <Input
                   placeholder="可选备注信息"
                   value={refundNotes}
@@ -700,7 +702,7 @@ export default function PaymentManagement() {
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t">
-                <Button variant="outline" onClick={() => setIsRefundDialogOpen(false)}>取消</Button>
+                <Button variant="outline" onClick={() => setIsRefundDialogOpen(false)}>{t('report.cancel')}</Button>
                 <Button
                   onClick={handleRefund}
                   disabled={isRefunding || !refundAmount || parseFloat(refundAmount) <= 0 || !refundReason.trim()}

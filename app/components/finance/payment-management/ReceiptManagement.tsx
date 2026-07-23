@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import { FileText, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Link, Receipt, Trash2, XCircle, Loader2, CheckSquare, Settings } from "lucide-react"
 import { useReceipts } from "@/hooks/useReceipts"
 import { useInvoices } from "@/hooks/useInvoices"
@@ -52,6 +53,7 @@ const formatDate = (dateStr: string) => {
 }
 
 export default function ReceiptManagement() {
+  const { t } = useLanguage()
   const {
     receipts,
     filters: receiptFilters,
@@ -234,11 +236,11 @@ export default function ReceiptManagement() {
           <span class="info-value">${receipt.receiptNumber}</span>
         </div>
         <div class="info-row">
-          <span class="info-label">状态</span>
+          <span class="info-label">{t('teacher.status')}</span>
           <span class="info-value"><span class="status-badge">${receipt.status === 'issued' ? '已开具' : receipt.status}</span></span>
         </div>
         <div class="info-row">
-          <span class="info-label">学生姓名</span>
+          <span class="info-label">{t('student.student_name')}</span>
           <span class="info-value">${studentName}</span>
         </div>
         <div class="info-row">
@@ -250,7 +252,7 @@ export default function ReceiptManagement() {
           <span class="info-value">${formatDate(receipt.receipt_date)}</span>
         </div>
         <table>
-          <tr><th>项目</th><th>金额</th></tr>
+          <tr><th>项目</th><th>{t('finance.amount')}</th></tr>
           <tr><td>学费付款</td><td>RM ${receipt.totalAmount?.toLocaleString() || '0.00'}</td></tr>
         </table>
         <div class="total-row">合计: RM ${receipt.totalAmount?.toLocaleString() || '0.00'}</div>
@@ -283,7 +285,7 @@ export default function ReceiptManagement() {
              {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-2xl font-bold">收据管理</h3>
+          <h3 className="text-2xl font-bold">{t('finance.receipt_management')}</h3>
           <p className="text-gray-600">自动生成的学生缴费收据和凭证</p>
           <p className="text-sm text-green-600 mt-1">
             💡 收据会在缴费状态更改为&quot;已缴费&quot;且发票全额付款时自动生成
@@ -327,7 +329,7 @@ export default function ReceiptManagement() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">待处理</p>
+                <p className="text-sm font-medium text-gray-600">{t('common.pending')}</p>
                 <p className="text-2xl font-bold text-orange-600">{receiptStats.draft}</p>
               </div>
               <AlertCircle className="h-8 w-8 text-orange-600" />
@@ -356,7 +358,7 @@ export default function ReceiptManagement() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="status-filter">状态</Label>
+              <Label htmlFor="status-filter">{t('teacher.status')}</Label>
                              <Select 
                  value={receiptFilters.status || "all"} 
                  onValueChange={(value) => setReceiptFilters(prev => ({ ...prev, status: value }))}
@@ -365,17 +367,17 @@ export default function ReceiptManagement() {
                    <SelectValue placeholder="选择状态" />
                  </SelectTrigger>
                                  <SelectContent>
-                   <SelectItem value="all">全部</SelectItem>
-                   <SelectItem value="pending">待处理</SelectItem>
+                   <SelectItem value="all">{t('card.all')}</SelectItem>
+                   <SelectItem value="pending">{t('common.pending')}</SelectItem>
                    <SelectItem value="issued">已开具</SelectItem>
-                   <SelectItem value="sent">已发送</SelectItem>
-                   <SelectItem value="cancelled">已取消</SelectItem>
+                   <SelectItem value="sent">{t('finance.sent')}</SelectItem>
+                   <SelectItem value="cancelled">{t('teacher.cancelled')}</SelectItem>
                  </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="student-filter">学生姓名</Label>
+              <Label htmlFor="student-filter">{t('student.student_name')}</Label>
               <Input
                 id="student-filter"
                 placeholder="搜索学生姓名..."
@@ -402,7 +404,7 @@ export default function ReceiptManagement() {
       {/* Receipts List */}
       <Card>
         <CardHeader>
-          <CardTitle>收据列表</CardTitle>
+          <CardTitle>{t('finance.receipt_list')}</CardTitle>
           <CardDescription>
            自动生成的收据列表，包含发票链接信息
          </CardDescription>
@@ -451,16 +453,16 @@ export default function ReceiptManagement() {
                         <Checkbox
                           checked={allSelected}
                           onCheckedChange={toggleSelectAllReceipts}
-                          aria-label="全选"
+                          aria-label={t('teacher.select_all')}
                         />
                       </TableHead>
                       <TableHead>收据号码</TableHead>
                       <TableHead>发票号码</TableHead>
-                      <TableHead>学生姓名</TableHead>
-                      <TableHead>金额</TableHead>
+                      <TableHead>{t('student.student_name')}</TableHead>
+                      <TableHead>{t('finance.amount')}</TableHead>
                       <TableHead>付款日期</TableHead>
-                      <TableHead>状态</TableHead>
-                      <TableHead>操作</TableHead>
+                      <TableHead>{t('teacher.status')}</TableHead>
+                      <TableHead>{t('teacher.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

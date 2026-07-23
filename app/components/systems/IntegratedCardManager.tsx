@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import {
   CreditCard,
   Search,
@@ -78,6 +79,7 @@ export default function IntegratedCardManager({
   onCardDetected, 
   onError 
 }: IntegratedCardManagerProps) {
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState("overview")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -824,8 +826,8 @@ export default function IntegratedCardManager({
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="overview">概览</TabsTrigger>
-              <TabsTrigger value="cards">卡片管理</TabsTrigger>
+              <TabsTrigger value="overview">{t('common.overview')}</TabsTrigger>
+              <TabsTrigger value="cards">{t('common.card_management')}</TabsTrigger>
               <TabsTrigger value="replacement">补办管理</TabsTrigger>
             </TabsList>
 
@@ -833,7 +835,7 @@ export default function IntegratedCardManager({
             <TabsContent value="overview" className="space-y-4">
               {/* 主要功能按钮 */}
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">卡片管理</h3>
+                <h3 className="text-lg font-semibold">{t('common.card_management')}</h3>
                 <div className="flex gap-2">
                   <Button onClick={() => setCardDialog(true)} className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
@@ -855,24 +857,24 @@ export default function IntegratedCardManager({
                 />
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-40">
-                    <SelectValue placeholder="状态筛选" />
+                    <SelectValue placeholder={t('common.status_filter')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部状态</SelectItem>
-                    <SelectItem value="active">活跃</SelectItem>
-                    <SelectItem value="inactive">停用</SelectItem>
-                    <SelectItem value="lost">丢失</SelectItem>
+                    <SelectItem value="all">{t('common.all_status')}</SelectItem>
+                    <SelectItem value="active">{t('common.active')}</SelectItem>
+                    <SelectItem value="inactive">{t('common.disabled')}</SelectItem>
+                    <SelectItem value="lost">{t('common.lost')}</SelectItem>
                     <SelectItem value="replaced">已补办</SelectItem>
-                    <SelectItem value="pending">待处理</SelectItem>
+                    <SelectItem value="pending">{t('common.pending')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
                   <SelectTrigger className="w-32">
-                    <SelectValue placeholder="类型" />
+                    <SelectValue placeholder={t('common.type')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部类型</SelectItem>
-                    <SelectItem value="NFC">NFC</SelectItem>
+                    <SelectItem value="all">{t('common.all_types')}</SelectItem>
+                    <SelectItem value="NFC">{t('common.nfc')}</SelectItem>
                     <SelectItem value="RFID">RFID</SelectItem>
                   </SelectContent>
                 </Select>
@@ -909,11 +911,11 @@ export default function IntegratedCardManager({
                   <TableRow>
                     <TableHead>卡片号</TableHead>
                     <TableHead>学生信息</TableHead>
-                    <TableHead>类型</TableHead>
-                    <TableHead>状态</TableHead>
+                    <TableHead>{t('common.type')}</TableHead>
+                    <TableHead>{t('teacher.status')}</TableHead>
                     <TableHead>关联状态</TableHead>
                     <TableHead>最后使用</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead>{t('teacher.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1016,7 +1018,7 @@ export default function IntegratedCardManager({
               </Select>
             </div>
             <div>
-              <Label>选择学生</Label>
+              <Label>{t('common.select_student')}</Label>
               <div className="text-xs text-gray-500 mb-2">
                 学生总数: {students.length} | 当前分行: {newCard.center || '全部'}
               </div>
@@ -1037,7 +1039,7 @@ export default function IntegratedCardManager({
                   })
                 }}>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择学生" />
+                    <SelectValue placeholder={t('common.select_student')} />
                   </SelectTrigger>
                 <SelectContent>
                   {students.length === 0 ? (
@@ -1082,29 +1084,29 @@ export default function IntegratedCardManager({
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>卡片类型</Label>
+                <Label>{t('common.card_type')}</Label>
                 <Select value={newCard.cardType} onValueChange={(value: "NFC" | "RFID") => setNewCard({...newCard, cardType: value})}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="NFC">NFC</SelectItem>
+                    <SelectItem value="NFC">{t('common.nfc')}</SelectItem>
                     <SelectItem value="RFID">RFID</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>状态</Label>
+                <Label>{t('teacher.status')}</Label>
                 <Select value={newCard.status} onValueChange={(value: any) => setNewCard({...newCard, status: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="选择状态" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">活跃</SelectItem>
-                    <SelectItem value="inactive">停用</SelectItem>
-                    <SelectItem value="lost">丢失</SelectItem>
+                    <SelectItem value="active">{t('common.active')}</SelectItem>
+                    <SelectItem value="inactive">{t('common.disabled')}</SelectItem>
+                    <SelectItem value="lost">{t('common.lost')}</SelectItem>
                     <SelectItem value="replaced">已补办</SelectItem>
-                    <SelectItem value="pending">待处理</SelectItem>
+                    <SelectItem value="pending">{t('common.pending')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

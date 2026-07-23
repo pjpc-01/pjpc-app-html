@@ -17,6 +17,7 @@ import {
   CheckCircle,
   AlertCircle
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface AttendanceSettingsProps {
   centerId: string
@@ -36,6 +37,7 @@ interface AttendanceConfig {
 }
 
 export default function AttendanceSettings({ centerId }: AttendanceSettingsProps) {
+  const { t } = useLanguage()
   const [config, setConfig] = useState<AttendanceConfig>({
     centerId,
     checkInStartTime: "08:00",
@@ -123,10 +125,10 @@ export default function AttendanceSettings({ centerId }: AttendanceSettingsProps
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <h3 className="font-medium">签到时间</h3>
+              <h3 className="font-medium">{t('teacher.check_in_time')}</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="checkInStart">开始时间</Label>
+                  <Label htmlFor="checkInStart">{t('attendance.start_time')}</Label>
                   <Input
                     id="checkInStart"
                     type="time"
@@ -138,7 +140,7 @@ export default function AttendanceSettings({ centerId }: AttendanceSettingsProps
                   />
                 </div>
                 <div>
-                  <Label htmlFor="checkInEnd">结束时间</Label>
+                  <Label htmlFor="checkInEnd">{t('attendance.end_time')}</Label>
                   <Input
                     id="checkInEnd"
                     type="time"
@@ -153,10 +155,10 @@ export default function AttendanceSettings({ centerId }: AttendanceSettingsProps
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-medium">签退时间</h3>
+              <h3 className="font-medium">{t('teacher.check_out_time')}</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="checkOutStart">开始时间</Label>
+                  <Label htmlFor="checkOutStart">{t('attendance.start_time')}</Label>
                   <Input
                     id="checkOutStart"
                     type="time"
@@ -168,7 +170,7 @@ export default function AttendanceSettings({ centerId }: AttendanceSettingsProps
                   />
                 </div>
                 <div>
-                  <Label htmlFor="checkOutEnd">结束时间</Label>
+                  <Label htmlFor="checkOutEnd">{t('attendance.end_time')}</Label>
                   <Input
                     id="checkOutEnd"
                     type="time"
@@ -324,14 +326,14 @@ export default function AttendanceSettings({ centerId }: AttendanceSettingsProps
                 {config.autoCheckOut ? (
                   <Badge variant="default" className="ml-2">启用 ({config.autoCheckOutTime})</Badge>
                 ) : (
-                  <Badge variant="secondary" className="ml-2">禁用</Badge>
+                  <Badge variant="secondary" className="ml-2">{t('finance.disable')}</Badge>
                 )}
               </p>
               <p><strong>邮件通知:</strong> 
                 {config.enableNotifications ? (
-                  <Badge variant="default" className="ml-2">启用</Badge>
+                  <Badge variant="default" className="ml-2">{t('finance.enable')}</Badge>
                 ) : (
-                  <Badge variant="secondary" className="ml-2">禁用</Badge>
+                  <Badge variant="secondary" className="ml-2">{t('finance.disable')}</Badge>
                 )}
               </p>
             </div>

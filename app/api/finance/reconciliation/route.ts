@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
             perPage: "50",
           })
           for (const invoice of invResult.items || []) {
-            const invAmount = invoice.totalAmount || invoice.amount || 0
+            const invAmount = invoice.totalAmount || 0
             if (amountsMatch(txAmount, invAmount)) {
               // Update the bank transaction
               await pbUpdate(headers, "bank_transactions", tx.id, {

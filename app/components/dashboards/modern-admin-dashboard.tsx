@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { useLanguage } from "@/contexts/language-context"
 import {
   BarChart,
   Bar,
@@ -184,6 +185,7 @@ function formatMonthLabel(monthKey: string): string {
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function ModernAdminDashboard({ activeTab, setActiveTab }: ModernAdminDashboardProps) {
+  const { t } = useLanguage()
   const { userProfile } = useAuth()
 
   // Center filter state
@@ -478,7 +480,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
-                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">总学生数</p>
+                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">{t('dashboard.total_students')}</p>
                 <p className="text-2xl sm:text-3xl font-bold text-foreground">
                   {loading ? "—" : totalStudents}
                 </p>
@@ -499,7 +501,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
-                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">总教师数</p>
+                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">{t('teacher.total_teachers')}</p>
                 <p className="text-2xl sm:text-3xl font-bold text-foreground">
                   {loading ? "—" : totalTeachers}
                 </p>
@@ -520,7 +522,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
-                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">总收入</p>
+                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">{t('finance.total_income')}</p>
                 <p className="text-2xl sm:text-3xl font-bold text-foreground">
                   {loading ? "—" : `RM ${totalIncome.toLocaleString()}`}
                 </p>
@@ -544,7 +546,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
-                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">总支出</p>
+                <p className="text-muted-foreground text-xs sm:text-sm font-medium truncate">{t('finance.total_expenses')}</p>
                 <p className="text-2xl sm:text-3xl font-bold text-foreground">
                   {loading ? "—" : `RM ${totalExpenses.toLocaleString()}`}
                 </p>
@@ -980,10 +982,10 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="text-amber-800 font-semibold">分行</TableHead>
                   <TableHead className="text-amber-800 font-semibold text-right">学生总数</TableHead>
-                  <TableHead className="text-amber-800 font-semibold text-right">在读学生</TableHead>
+                  <TableHead className="text-amber-800 font-semibold text-right">{t('dashboard.active_students')}</TableHead>
                   <TableHead className="text-amber-800 font-semibold text-right">教师数</TableHead>
-                  <TableHead className="text-amber-800 font-semibold text-right">总收入</TableHead>
-                  <TableHead className="text-amber-800 font-semibold text-right">总支出</TableHead>
+                  <TableHead className="text-amber-800 font-semibold text-right">{t('finance.total_income')}</TableHead>
+                  <TableHead className="text-amber-800 font-semibold text-right">{t('finance.total_expenses')}</TableHead>
                   <TableHead className="text-amber-800 font-semibold text-right">净利润</TableHead>
                 </TableRow>
               </TableHeader>

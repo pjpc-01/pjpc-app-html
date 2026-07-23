@@ -15,6 +15,7 @@ import {
   BarChart3,
   PieChart
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import { Student } from "@/hooks/useStudents"
 
 interface FilterAnalyticsProps {
@@ -28,6 +29,7 @@ export default function FilterAnalytics({
   filteredStudents, 
   filters 
 }: FilterAnalyticsProps) {
+  const { t } = useLanguage()
   
   // 计算统计数据
   const analytics = useMemo(() => {
@@ -119,7 +121,7 @@ export default function FilterAnalytics({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">{analytics.total}</div>
-              <div className="text-sm text-gray-600">总学生数</div>
+              <div className="text-sm text-gray-600">{t('dashboard.total_students')}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{analytics.filtered}</div>

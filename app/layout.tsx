@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/pocketbase-auth-context"
 import QueryProvider from "@/components/providers/query-provider"
 import DashboardLayout from "@/components/layouts/DashboardLayout"
 import { NfcAuthProvider } from "@/contexts/nfc-auth-context"
+import { LanguageProvider } from "@/contexts/language-context"
 import GlobalCardScanner from "@/components/attendance/GlobalCardScanner"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -30,14 +31,16 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <body className={inter.className}>
         <QueryProvider>
-          <AuthProvider>
-            <NfcAuthProvider>
-            <DashboardLayout>
-              {children}
-            </DashboardLayout>
-            <GlobalCardScanner />
-            </NfcAuthProvider>
-          </AuthProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              <NfcAuthProvider>
+                <DashboardLayout>
+                  {children}
+                </DashboardLayout>
+                <GlobalCardScanner />
+              </NfcAuthProvider>
+            </AuthProvider>
+          </LanguageProvider>
         </QueryProvider>
       </body>
     </html>

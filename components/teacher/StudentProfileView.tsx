@@ -29,12 +29,14 @@ import {
   XCircle,
   Info
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface StudentProfileViewProps {
   teacherId?: string
 }
 
 export default function StudentProfileView({ teacherId }: StudentProfileViewProps) {
+  const { t } = useLanguage()
   const { students, loading, error } = useStudents()
   const { teacher } = useCurrentTeacher()
   const [searchTerm, setSearchTerm] = useState("")
@@ -117,7 +119,7 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
     return (
       <div className="text-center py-8">
         <p className="text-red-600 mb-4">加载学生档案失败: {error}</p>
-        <Button onClick={() => window.location.reload()}>重新加载</Button>
+        <Button onClick={() => window.location.reload()}>{t('teacher.reload')}</Button>
       </div>
     )
   }
@@ -298,7 +300,7 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
                       <div className="flex items-center gap-3">
                         <Calendar className="h-4 w-4 text-gray-400" />
                         <div>
-                          <p className="text-sm text-gray-600">出生日期</p>
+                          <p className="text-sm text-gray-600">{t('student.date_of_birth')}</p>
                           <p className="font-medium">{formatDate(selectedStudent.date_of_birth)}</p>
                         </div>
                       </div>
@@ -312,7 +314,7 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
                       <div className="flex items-center gap-3">
                         <MapPin className="h-4 w-4 text-gray-400" />
                         <div>
-                          <p className="text-sm text-gray-600">地址</p>
+                          <p className="text-sm text-gray-600">{t('teacher.address')}</p>
                           <p className="font-medium">{selectedStudent.address || '未设置'}</p>
                         </div>
                       </div>
@@ -329,21 +331,21 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
                       <div className="flex items-center gap-3">
                         <User className="h-4 w-4 text-gray-400" />
                         <div>
-                          <p className="text-sm text-gray-600">监护人</p>
+                          <p className="text-sm text-gray-600">{t('parent.guardian')}</p>
                           <p className="font-medium">{selectedStudent.guardian_name || '未设置'}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <Phone className="h-4 w-4 text-gray-400" />
                         <div>
-                          <p className="text-sm text-gray-600">联系电话</p>
+                          <p className="text-sm text-gray-600">{t('student.contact_phone')}</p>
                           <p className="font-medium">{selectedStudent.guardian_phone || '未设置'}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <Mail className="h-4 w-4 text-gray-400" />
                         <div>
-                          <p className="text-sm text-gray-600">邮箱</p>
+                          <p className="text-sm text-gray-600">{t('report.email')}</p>
                           <p className="font-medium">{selectedStudent.guardian_email || '未设置'}</p>
                         </div>
                       </div>
@@ -398,14 +400,14 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
                       <div className="flex items-center gap-3">
                         <Calendar className="h-4 w-4 text-gray-400" />
                         <div>
-                          <p className="text-sm text-gray-600">入学日期</p>
+                          <p className="text-sm text-gray-600">{t('teacher.enrollment_date')}</p>
                           <p className="font-medium">{formatDate(selectedStudent.enrollment_date)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <Info className="h-4 w-4 text-gray-400" />
                         <div>
-                          <p className="text-sm text-gray-600">备注</p>
+                          <p className="text-sm text-gray-600">{t('teacher.notes')}</p>
                           <p className="font-medium">{selectedStudent.notes || '无'}</p>
                         </div>
                       </div>

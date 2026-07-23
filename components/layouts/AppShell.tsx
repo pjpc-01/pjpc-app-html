@@ -40,6 +40,8 @@ import {
   GripVertical,
   Edit3,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
+import LanguageSwitcher from "@/components/LanguageSwitcher"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import GlobalSearch from "@/components/ui/global-search"
@@ -54,6 +56,63 @@ type NavItem = {
 type RoleConfig = {
   title: string
   navItems: NavItem[]
+}
+
+const NAV_LABEL_MAP: Record<string, string> = {
+  "概览": "nav.dashboard",
+  "仪表板": "nav.dashboard",
+  "幻灯片": "nav.slideshow",
+  "TV看板": "nav.tv_board",
+  "教务": "nav.education",
+  "教育概览": "breadcrumb.education_overview",
+  "学生列表": "nav.students",
+  "学生报告": "nav.student_reports",
+  "家长管理": "nav.parents",
+  "作业管理": "nav.homework",
+  "成绩管理": "nav.grades",
+  "接送管理": "nav.pickup",
+  "每日日志": "nav.daily_logs",
+  "资源库": "nav.resource_library",
+  "教师列表": "nav.teachers",
+  "教师考勤": "nav.teacher_attendance",
+  "课程管理": "nav.courses",
+  "财务": "nav.finance",
+  "财务概览": "nav.finance_overview",
+  "收费管理": "nav.fees",
+  "学生费用": "nav.student_fees",
+  "发票管理": "nav.invoices",
+  "付款管理": "nav.payments",
+  "收据管理": "nav.receipts",
+  "薪资管理": "nav.payroll",
+  "支出管理": "nav.expenses",
+  "银行对账": "nav.bank_reconciliation",
+  "预算管理": "nav.budget",
+  "财务报表": "nav.financial_reports",
+  "库存管理": "nav.inventory",
+  "系统": "nav.system",
+  "考勤中心": "nav.attendance",
+  "卡片管理": "nav.card_management",
+  "积分操作": "nav.points",
+  "积分规则": "nav.points_rules",
+  "积分排行": "nav.points_leaderboard",
+  "用户管理": "nav.user_management",
+  "分行管理": "nav.center_management",
+  "系统设置": "nav.settings",
+  "管理面板": "nav.admin_panel",
+  "管理后台": "nav.admin_panel",
+  "教师工作台": "nav.teacher_workspace",
+  "我的工作台": "nav.teacher_workspace",
+  "学生签到": "nav.student_checkin",
+  "我的学生": "nav.students",
+  "家长门户": "nav.parent_portal",
+  "孩子总览": "nav.parent_dashboard",
+  "成绩查询": "nav.parent_grades",
+  "缴费记录": "nav.parent_payments",
+  "出勤记录": "nav.parent_attendance",
+  "通知消息": "nav.parent_notifications",
+  "财务工作台": "nav.accountant_workspace",
+  "报告详情": "breadcrumb.report_detail",
+  "未知": "breadcrumb.unknown",
 }
 
 const ROLE_CONFIGS: Record<string, RoleConfig> = {
@@ -199,6 +258,7 @@ export default function AppShell({
   userName = "Admin",
   userAvatar,
 }: AppShellProps) {
+  const { t } = useLanguage()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -457,7 +517,7 @@ export default function AppShell({
                 }`}
               >
                 <item.icon className="w-4 h-4 flex-shrink-0" />
-                <span className="flex-1 text-left truncate">{item.label}</span>
+                <span className="flex-1 text-left truncate">{NAV_LABEL_MAP[item.label] ? t(NAV_LABEL_MAP[item.label]) : item.label}</span>
                 <ChevronDown
                   className={`w-3.5 h-3.5 transition-transform duration-200 flex-shrink-0 ${
                     expanded ? "rotate-180" : ""
@@ -481,7 +541,7 @@ export default function AppShell({
             }`}
           >
             <item.icon className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{item.label}</span>
+            <span className="truncate">{NAV_LABEL_MAP[item.label] ? t(NAV_LABEL_MAP[item.label]) : item.label}</span>
             {active && (
               <span className="ml-auto w-1.5 h-1.5 rounded-full bg-gray-500"></span>
             )}
@@ -548,13 +608,13 @@ export default function AppShell({
     if (!info && pathname.startsWith("/student-report/")) {
       const baseInfo = BREADCRUMB_LABELS["/student-report"]
       if (baseInfo?.parent) crumbs.push({ label: baseInfo.parent })
-      crumbs.push({ label: baseInfo?.label || "报告详情" })
+      crumbs.push({ label: baseInfo?.label ? (NAV_LABEL_MAP[baseInfo.label] ? t(NAV_LABEL_MAP[baseInfo.label]) : baseInfo.label) : t('breadcrumb.report_detail') })
       return crumbs
     }
     if (info?.parent) {
       crumbs.push({ label: info.parent })
     }
-    crumbs.push({ label: info?.label || pathname.replace("/", "") || "未知" })
+    crumbs.push({ label: info?.label ? (NAV_LABEL_MAP[info.label] ? t(NAV_LABEL_MAP[info.label]) : info.label) : (pathname.replace("/", "") || t('breadcrumb.unknown')) })
     return crumbs
   }
 
@@ -651,10 +711,10 @@ export default function AppShell({
         <div className="flex-shrink-0 border-t border-gray-200/30">
           {/* Center filter */}
           <div className="px-3 pt-3 pb-2">
-            <p className="text-[10px] text-gray-400/40 uppercase tracking-wider font-semibold px-2 mb-1.5">分行筛选</p>
+            <p className="text-[10px] text-gray-400/40 uppercase tracking-wider font-semibold px-2 mb-1.5">{t('common.center_filter')}</p>
             <div className="flex flex-wrap gap-1">
               {centers.length === 0 ? (
-                <div className="text-[10px] text-gray-400/40 px-2">加载中...</div>
+                <div className="text-[10px] text-gray-400/40 px-2">{t('teacher.loading')}</div>
               ) : (
                 [{ id: "all", code: "全部", icon: Building2 } as const, ...centers.map(c => ({ id: c.id, code: c.code, icon: School } as const))].map((c) => (
                 <button
@@ -677,6 +737,10 @@ export default function AppShell({
               )))}
             </div>
           </div>
+          {/* Language switcher — above user/login */}
+          <div className="px-3 py-2 border-t border-gray-200/30">
+            <LanguageSwitcher />
+          </div>
           {/* User info + tools */}
           <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200/30">
             {user ? (
@@ -690,7 +754,7 @@ export default function AppShell({
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] text-gray-500/50">{getRoleLabel(userRole)}</span>
                       <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                      <span className="text-[9px] text-gray-500/50">在线</span>
+                      <span className="text-[9px] text-gray-500/50">{t('common.online')}</span>
                     </div>
                   </div>
                 </div>

@@ -14,8 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 
 import { GraduationCap, Mail, Lock, User, AlertCircle, Loader2 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 export default function LoginForm() {
+  const { t } = useLanguage()
   const { signIn, signUp, resetPassword } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -120,7 +122,7 @@ export default function LoginForm() {
               <GraduationCap className="h-8 w-8 text-white" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">安亲班管理系统</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('auth.after_school_care_management_system')}</h1>
           <p className="text-gray-600">欢迎使用我们的教育管理平台</p>
         </div>
 
@@ -132,9 +134,9 @@ export default function LoginForm() {
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="login">登录</TabsTrigger>
-                <TabsTrigger value="signup">注册</TabsTrigger>
-                <TabsTrigger value="reset">重置密码</TabsTrigger>
+                <TabsTrigger value="login">{t('auth.login')}</TabsTrigger>
+                <TabsTrigger value="signup">{t('auth.register')}</TabsTrigger>
+                <TabsTrigger value="reset">{t('auth.reset_password')}</TabsTrigger>
               </TabsList>
 
               {/* 错误和成功提示 */}
@@ -161,7 +163,7 @@ export default function LoginForm() {
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-email">邮箱地址</Label>
+                    <Label htmlFor="login-email">{t('student.email_address')}</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
@@ -176,13 +178,13 @@ export default function LoginForm() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="login-password">密码</Label>
+                    <Label htmlFor="login-password">{t('auth.password')}</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
                         id="login-password"
                         type="password"
-                        placeholder="请输入密码"
+                        placeholder={t('auth.enter_password')}
                         value={loginForm.password}
                         onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                         className="pl-10"
@@ -207,7 +209,7 @@ export default function LoginForm() {
               <TabsContent value="signup">
                 <form onSubmit={handleSignup} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-name">姓名</Label>
+                    <Label htmlFor="signup-name">{t('student.name')}</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
@@ -222,7 +224,7 @@ export default function LoginForm() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email">邮箱地址</Label>
+                    <Label htmlFor="signup-email">{t('student.email_address')}</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
@@ -248,15 +250,15 @@ export default function LoginForm() {
                         <SelectValue placeholder="请选择您的角色" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">管理员</SelectItem>
+                        <SelectItem value="admin">{t('admin.admin')}</SelectItem>
                         <SelectItem value="teacher">老师</SelectItem>
-                        <SelectItem value="parent">家长</SelectItem>
-                        <SelectItem value="accountant">会计</SelectItem>
+                        <SelectItem value="parent">{t('admin.parent')}</SelectItem>
+                        <SelectItem value="accountant">{t('admin.accountant')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-password">密码</Label>
+                    <Label htmlFor="signup-password">{t('auth.password')}</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
@@ -272,7 +274,7 @@ export default function LoginForm() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-confirm-password">确认密码</Label>
+                    <Label htmlFor="signup-confirm-password">{t('auth.confirm_password')}</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
@@ -303,7 +305,7 @@ export default function LoginForm() {
               <TabsContent value="reset">
                 <form onSubmit={handleResetPassword} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="reset-email">邮箱地址</Label>
+                    <Label htmlFor="reset-email">{t('student.email_address')}</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input

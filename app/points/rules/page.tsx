@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, Plus, Trash2, Save, Minus } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface PointRule {
   id: string
@@ -31,6 +32,7 @@ const DEFAULT_RULES: Omit<PointRule, "id">[] = [
 const STORAGE_KEY = "pjpc_point_rules"
 
 export default function RulesPage() {
+  const { t } = useLanguage()
   const [rules, setRules] = useState<PointRule[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -90,7 +92,7 @@ export default function RulesPage() {
 
   if (loading) {
     return (
-      <PageLayout title="积分规则" description="加载中..." backUrl="/points" userRole="admin" background="from-amber-50 to-yellow-50">
+      <PageLayout title={t('points.points_rules')} description={t('teacher.loading')} backUrl="/points" userRole="admin" background="from-amber-50 to-yellow-50">
         <div className="text-center py-16"><Loader2 className="h-6 w-6 mx-auto animate-spin text-amber-500" /></div>
       </PageLayout>
     )
@@ -181,7 +183,7 @@ export default function RulesPage() {
 
   return (
     <PageLayout
-      title="积分规则"
+      title={t('points.points_rules')}
       description={`${activeAdd.length + activeSub.length} 条生效中`}
       backUrl="/points"
       userRole="admin"

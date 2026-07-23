@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
@@ -146,15 +147,16 @@ const renderPreviewGrowth = (section: ReportSection, growthMsg: string, color: s
 
 const renderPreviewSubjects = (section: ReportSection, rows: string, overallAvg: number, color: string): string => `
   <div class="section-label" style="background:${color}">📚 ${section.title}</div>
+  const { t } = useLanguage()
   <p style="font-size:13px;color:#6b7280;margin-bottom:8px;">
     在本学期中，该生在各个学科的学习中总体表现良好，能够按时完成作业，积极参与课堂讨论，成绩稳中有进。
   </p>
   <table>
-    <tr><th>学科</th><th>期中</th><th>期末</th><th>评价</th></tr>
+    <tr><th>{t('report.subject')}</th><th>期中</th><th>期末</th><th>评价</th></tr>
     ${rows}
   </table>
   <div class="stat-row">
-    <div class="stat"><div class="num">${overallAvg}</div><div class="label">平均分</div></div>
+    <div class="stat"><div class="num">${overallAvg}</div><div class="label">{t('report.average_score')}</div></div>
     <div class="stat"><div class="num">8</div><div class="label">班级排名</div></div>
     <div class="stat"><div class="num">↑2</div><div class="label">进步幅度</div></div>
   </div>
@@ -412,6 +414,7 @@ interface ReportSettingsManagerProps {
 }
 
 export default function ReportSettingsManager({ onSettingsChange, activePresetId }: ReportSettingsManagerProps) {
+  const { t } = useLanguage()
   const [presets, setPresets] = useState<ReportSettingsPreset[]>([])
   const [activeId, setActiveId] = useState<string>("")
   const [settings, setSettings] = useState<ReportSettingsPreset>(createDefaultPreset())
@@ -600,7 +603,7 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
         <div className="space-y-4">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="school"><Building2 className="h-4 w-4 mr-1" />学校信息</TabsTrigger>
+              <TabsTrigger value="school"><Building2 className="h-4 w-4 mr-1" />{t('report.school_info')}</TabsTrigger>
               <TabsTrigger value="style"><Palette className="h-4 w-4 mr-1" />样式 & 内容</TabsTrigger>
               <TabsTrigger value="content"><FileText className="h-4 w-4 mr-1" />内容模板</TabsTrigger>
             </TabsList>
@@ -609,7 +612,7 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
             <TabsContent value="school" className="space-y-4 mt-4">
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">基本信息</CardTitle>
+                  <CardTitle className="text-base">{t('report.basic_info')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -628,11 +631,11 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label><Smartphone className="h-3.5 w-3.5 inline mr-1" />电话</Label>
+                      <Label><Smartphone className="h-3.5 w-3.5 inline mr-1" />{t('report.phone')}</Label>
                       <Input value={settings.schoolPhone} onChange={e => updateSettings({ schoolPhone: e.target.value })} placeholder="010-12345678" />
                     </div>
                     <div>
-                      <Label><Mail className="h-3.5 w-3.5 inline mr-1" />邮箱</Label>
+                      <Label><Mail className="h-3.5 w-3.5 inline mr-1" />{t('report.email')}</Label>
                       <Input value={settings.schoolEmail} onChange={e => updateSettings({ schoolEmail: e.target.value })} placeholder="info@school.com" />
                     </div>
                   </div>
@@ -651,7 +654,7 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                         ) : (
                           <div className="flex flex-col items-center text-muted-foreground">
                             <Building2 className="h-8 w-8" />
-                            <span className="text-[10px] mt-1">点击上传</span>
+                            <span className="text-[10px] mt-1">{t('report.click_to_upload')}</span>
                           </div>
                         )}
                       </div>
@@ -702,7 +705,7 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label>标题</Label>
+                    <Label>{t('report.title')}</Label>
                     <Input value={settings.headerTitle} onChange={e => updateSettings({ headerTitle: e.target.value })} placeholder="学生报告" />
                   </div>
                   <div>

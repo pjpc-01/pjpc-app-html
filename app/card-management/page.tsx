@@ -6,6 +6,7 @@ import {
   CreditCard, Search, Plus, Trash2, RefreshCw, ArrowRightLeft,
   User, Users, BarChart3, Shield, XCircle, CheckCircle,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -40,6 +41,7 @@ interface PersonInfo {
 }
 
 export default function CardManagementPage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const [cards, setCards] = useState<NfcCard[]>([])
   const [students, setStudents] = useState<Record<string, PersonInfo>>({})
@@ -146,9 +148,9 @@ export default function CardManagementPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "active": return <Badge className="bg-green-100 text-green-800">正常</Badge>
-      case "inactive": return <Badge className="bg-gray-100 text-gray-800">停用</Badge>
-      case "lost": return <Badge className="bg-red-100 text-red-800">挂失</Badge>
+      case "active": return <Badge className="bg-green-100 text-green-800">{t('common.normal')}</Badge>
+      case "inactive": return <Badge className="bg-gray-100 text-gray-800">{t('common.disabled')}</Badge>
+      case "lost": return <Badge className="bg-red-100 text-red-800">{t('card.report_lost')}</Badge>
       default: return <Badge variant="outline">{status}</Badge>
     }
   }
@@ -309,20 +311,20 @@ export default function CardManagementPage() {
               />
             </div>
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-28"><SelectValue placeholder="类型" /></SelectTrigger>
+              <SelectTrigger className="w-28"><SelectValue placeholder={t('common.type')} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">全部</SelectItem>
-                <SelectItem value="student">学生</SelectItem>
-                <SelectItem value="teacher">教师</SelectItem>
+                <SelectItem value="all">{t('card.all')}</SelectItem>
+                <SelectItem value="student">{t('common.student')}</SelectItem>
+                <SelectItem value="teacher">{t('teacher.teacher')}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-28"><SelectValue placeholder="状态" /></SelectTrigger>
+              <SelectTrigger className="w-28"><SelectValue placeholder={t('teacher.status')} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">全部状态</SelectItem>
-                <SelectItem value="active">正常</SelectItem>
-                <SelectItem value="inactive">停用</SelectItem>
-                <SelectItem value="lost">挂失</SelectItem>
+                <SelectItem value="all">{t('common.all_status')}</SelectItem>
+                <SelectItem value="active">{t('common.normal')}</SelectItem>
+                <SelectItem value="inactive">{t('common.disabled')}</SelectItem>
+                <SelectItem value="lost">{t('card.report_lost')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -339,22 +341,22 @@ export default function CardManagementPage() {
         {/* Cards Table */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle>卡片列表</CardTitle>
+            <CardTitle>{t('card.card_list')}</CardTitle>
             <CardDescription>共 {filteredCards.length} 张卡片 · 第{page}/{totalPages}页</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-8 text-gray-500">加载中...</div>
+              <div className="text-center py-8 text-gray-500">{t('teacher.loading')}</div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>卡号</TableHead>
-                    <TableHead>类型</TableHead>
+                    <TableHead>{t('common.type')}</TableHead>
                     <TableHead>持卡人</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>备注</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead>{t('teacher.status')}</TableHead>
+                    <TableHead>{t('teacher.notes')}</TableHead>
+                    <TableHead>{t('teacher.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -373,14 +375,14 @@ export default function CardManagementPage() {
                       <TableCell>
                         <div className="flex gap-1">
                           {card.status === "active" && (
-                            <Button variant="ghost" size="sm" onClick={() => handleRevokeCard(card)} title="停用">
+                            <Button variant="ghost" size="sm" onClick={() => handleRevokeCard(card)} title={t('common.disabled')}>
                               <XCircle className="h-4 w-4 text-orange-500" />
                             </Button>
                           )}
                           <Button variant="ghost" size="sm" onClick={() => openTransferDialog(card)} title="转绑">
                             <ArrowRightLeft className="h-4 w-4 text-blue-500" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDeleteCard(card)} title="删除">
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteCard(card)} title={t('card.delete')}>
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>
@@ -403,9 +405,9 @@ export default function CardManagementPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p-1))}>上一页</Button>
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p-1))}>{t('card.previous')}</Button>
             <span className="text-sm text-gray-500">{page} / {totalPages}</span>
-            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p+1))}>下一页</Button>
+            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p+1))}>{t('card.next')}</Button>
           </div>
         )}
 
@@ -476,8 +478,8 @@ export default function CardManagementPage() {
                 <Select value={newCard.personType} onValueChange={v => setNewCard({ ...newCard, personType: v, personId: "" })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="student">学生</SelectItem>
-                    <SelectItem value="teacher">教师</SelectItem>
+                    <SelectItem value="student">{t('common.student')}</SelectItem>
+                    <SelectItem value="teacher">{t('teacher.teacher')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -496,7 +498,7 @@ export default function CardManagementPage() {
                 </Select>
               </div>
               <div>
-                <Label>备注</Label>
+                <Label>{t('teacher.notes')}</Label>
                 <Input
                   placeholder="发卡备注"
                   value={newCard.notes}
@@ -532,8 +534,8 @@ export default function CardManagementPage() {
                 <Select value={transferPersonType} onValueChange={v => { setTransferPersonType(v); setTransferPersonId("") }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="student">学生</SelectItem>
-                    <SelectItem value="teacher">教师</SelectItem>
+                    <SelectItem value="student">{t('common.student')}</SelectItem>
+                    <SelectItem value="teacher">{t('teacher.teacher')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

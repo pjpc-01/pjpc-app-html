@@ -17,6 +17,7 @@ import { toast } from "sonner"
 import RevenueChart from "../charts/RevenueChart"
 import ProfitChart from "../charts/ProfitChart"
 import ExpenseChart from "../charts/ExpenseChart"
+import { useLanguage } from "@/contexts/language-context"
 
 const CATEGORY_LABELS: Record<string, string> = {
   salary: "教师薪资",
@@ -29,6 +30,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 }
 
 export default function FinancialReports() {
+  const { t } = useLanguage()
   const { stats: financialStats, loading: financialLoading } = useFinancialStats()
   const { invoices } = useInvoices()
   const { payments } = usePayments()
@@ -240,12 +242,12 @@ export default function FinancialReports() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">总收入</p>
+                  <p className="text-sm font-medium text-gray-600">{t('finance.total_income')}</p>
                   <p className="text-2xl font-bold text-green-600">RM {financialSummary.totalIncome.toLocaleString()}</p>
                   <p className="text-xs text-gray-500">{financialSummary.successfulPayments} 笔成功缴费</p>
                 </div>
                 <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">总支出</p>
+                  <p className="text-sm font-medium text-gray-600">{t('finance.total_expenses')}</p>
                   <p className="text-2xl font-bold text-red-600">RM {financialSummary.totalExpenses.toLocaleString()}</p>
                   <p className="text-xs text-gray-500">{safeExpenses.length} 笔支出记录</p>
                 </div>
@@ -625,7 +627,7 @@ export default function FinancialReports() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>支出类别</TableHead>
-                        <TableHead>金额</TableHead>
+                        <TableHead>{t('finance.amount')}</TableHead>
                         <TableHead>占比</TableHead>
                         <TableHead>占收入比例</TableHead>
                       </TableRow>
@@ -644,7 +646,7 @@ export default function FinancialReports() {
                         </TableRow>
                       ))}
                       <TableRow className="bg-gray-50">
-                        <TableCell className="font-semibold">总计</TableCell>
+                        <TableCell className="font-semibold">{t('finance.total')}</TableCell>
                         <TableCell className="font-semibold text-red-600">RM {financialSummary.totalExpenses.toLocaleString()}</TableCell>
                         <TableCell className="font-semibold">100%</TableCell>
                         <TableCell className="font-semibold">

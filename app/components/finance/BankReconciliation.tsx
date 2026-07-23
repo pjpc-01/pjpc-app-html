@@ -12,8 +12,10 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { toast } from "sonner"
 import { Plus, Upload, RefreshCw, CheckCircle2, XCircle, AlertCircle, Building2, FileText, Loader2, Search, Trash2 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 export default function BankReconciliation() {
+  const { t } = useLanguage()
   const { accounts, loading: acctLoading, createAccount, updateAccount, deleteAccount, refetch: refetchAccounts } = useBankAccounts()
   const [selectedAccountId, setSelectedAccountId] = useState<string>("")
   const { transactions, loading: txnLoading, importTransactions, deleteTransaction, refetch: refetchTransactions } = useBankTransactions(selectedAccountId)
@@ -204,8 +206,8 @@ export default function BankReconciliation() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowAddAccount(false)}>取消</Button>
-                  <Button onClick={handleAddAccount}>保存</Button>
+                  <Button variant="outline" onClick={() => setShowAddAccount(false)}>{t('report.cancel')}</Button>
+                  <Button onClick={handleAddAccount}>{t('report.save')}</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -293,7 +295,7 @@ export default function BankReconciliation() {
                       />
                     </div>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowImport(false)}>取消</Button>
+                      <Button variant="outline" onClick={() => setShowImport(false)}>{t('report.cancel')}</Button>
                       <Button onClick={handleImportTransactions}>导入</Button>
                     </DialogFooter>
                   </DialogContent>
@@ -315,13 +317,13 @@ export default function BankReconciliation() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>日期</TableHead>
-                        <TableHead>描述</TableHead>
+                        <TableHead>{t('finance.date')}</TableHead>
+                        <TableHead>{t('finance.description')}</TableHead>
                         <TableHead>参考号</TableHead>
-                        <TableHead className="text-right">金额</TableHead>
-                        <TableHead className="text-center">类型</TableHead>
+                        <TableHead className="text-right">{t('finance.amount')}</TableHead>
+                        <TableHead className="text-center">{t('common.type')}</TableHead>
                         <TableHead className="text-center">对账状态</TableHead>
-                        <TableHead className="text-right">操作</TableHead>
+                        <TableHead className="text-right">{t('teacher.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -446,12 +448,12 @@ export default function BankReconciliation() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>日期</TableHead>
-                      <TableHead>描述</TableHead>
-                      <TableHead className="text-right">金额</TableHead>
+                      <TableHead>{t('finance.date')}</TableHead>
+                      <TableHead>{t('finance.description')}</TableHead>
+                      <TableHead className="text-right">{t('finance.amount')}</TableHead>
                       <TableHead>匹配目标</TableHead>
                       <TableHead className="text-center">匹配类型</TableHead>
-                      <TableHead className="text-center">状态</TableHead>
+                      <TableHead className="text-center">{t('teacher.status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

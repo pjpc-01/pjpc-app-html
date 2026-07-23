@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { toast } from "sonner"
 import { ArrowLeft, Save, CheckCircle2, Award } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface SubmissionItem {
   id: string
@@ -25,6 +26,7 @@ interface SubmissionItem {
 }
 
 export default function BatchGradingPage() {
+  const { t } = useLanguage()
   const params = useParams()
   const router = useRouter()
   const homeworkId = params.id as string
@@ -173,7 +175,7 @@ export default function BatchGradingPage() {
   if (loading) {
     return (
       <PageLayout title="批量批改" backUrl={`/homework/${homeworkId}`} userRole="admin">
-        <div className="text-center py-12 text-muted-foreground">加载中...</div>
+        <div className="text-center py-12 text-muted-foreground">{t('teacher.loading')}</div>
       </PageLayout>
     )
   }

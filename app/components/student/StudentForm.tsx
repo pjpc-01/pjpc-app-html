@@ -14,6 +14,7 @@ import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Student } from '@/types/student'
 import { validateEmail, validatePhone, validateStudentId, sanitizeText } from '@/lib/validation'
+import { useLanguage } from "@/contexts/language-context"
 
 // 工具函数
 
@@ -50,6 +51,7 @@ export default function StudentForm({
   onSubmit,
   existingStudents = []
 }: StudentFormProps) {
+  const { t } = useLanguage()
   const [formData, setFormData] = useState<Partial<Student>>({
     student_name: '',
     student_id: '',
@@ -484,7 +486,7 @@ export default function StudentForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* 基本信息 */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">基本信息</h3>
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('report.basic_info')}</h3>
             
             {/* 头像上传 */}
             <div className="flex items-center gap-6 p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
@@ -552,7 +554,7 @@ export default function StudentForm({
                   id="student_name"
                   value={formData.student_name || ''}
                   onChange={(e) => handleInputChange('student_name', e.target.value)}
-                  placeholder="学生姓名"
+                  placeholder={t('student.student_name')}
                   className={errors.student_name ? 'border-red-500' : ''}
                 />
                 {errors.student_name && <p className="text-red-500 text-sm mt-1">{errors.student_name}</p>}
@@ -565,7 +567,7 @@ export default function StudentForm({
                      id="student_id"
                      value={formData.student_id || ''}
                      onChange={(e) => handleInputChange('student_id', e.target.value)}
-                     placeholder="学号"
+                     placeholder={t('student.student_no')}
                      className={errors.student_id ? 'border-red-500' : ''}
                    />
                    {!isEditing && (
@@ -647,15 +649,15 @@ export default function StudentForm({
                     <SelectValue placeholder="选择性别" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="male">男</SelectItem>
-                    <SelectItem value="female">女</SelectItem>
+                    <SelectItem value="male">{t('student.male')}</SelectItem>
+                    <SelectItem value="female">{t('student.female')}</SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
               </div>
 
               <div>
-                <Label htmlFor="standard">年级</Label>
+                <Label htmlFor="standard">{t('student.grade')}</Label>
                 <Select value={formData.standard} onValueChange={(value) => handleInputChange('standard', value)}>
                   <SelectTrigger className={errors.standard ? 'border-red-500' : ''}>
                     <SelectValue placeholder="选择年级" />
@@ -686,7 +688,7 @@ export default function StudentForm({
 
           {/* 学校信息 */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">学校信息</h3>
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('report.school_info')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="school">学校 *</Label>
@@ -784,13 +786,13 @@ export default function StudentForm({
               </div>
 
               <div>
-                <Label htmlFor="email">邮箱</Label>
+                <Label htmlFor="email">{t('report.email')}</Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email || ''}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="邮箱地址"
+                  placeholder={t('student.email_address')}
                   className={errors.email ? 'border-red-500' : ''}
                 />
                 {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
@@ -873,7 +875,7 @@ export default function StudentForm({
                   <h4 className="font-medium text-gray-900">授权接送人 1</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                      <Label htmlFor="authorizedPickup1Name">姓名</Label>
+                      <Label htmlFor="authorizedPickup1Name">{t('student.name')}</Label>
                                              <Input
                          id="authorizedPickup1Name"
                          value={formData.authorizedPickup1Name || ''}
@@ -882,16 +884,16 @@ export default function StudentForm({
                        />
                      </div>
                      <div>
-                       <Label htmlFor="authorizedPickup1Phone">电话</Label>
+                       <Label htmlFor="authorizedPickup1Phone">{t('report.phone')}</Label>
                        <Input
                          id="authorizedPickup1Phone"
                          value={formData.authorizedPickup1Phone || ''}
                          onChange={(e) => handleInputChange('authorizedPickup1Phone', e.target.value)}
-                         placeholder="联系电话"
+                         placeholder={t('student.contact_phone')}
                        />
                      </div>
                      <div>
-                       <Label htmlFor="authorizedPickup1Relation">关系</Label>
+                       <Label htmlFor="authorizedPickup1Relation">{t('student.relationship')}</Label>
                        <Input
                          id="authorizedPickup1Relation"
                          value={formData.authorizedPickup1Relation || ''}
@@ -907,7 +909,7 @@ export default function StudentForm({
                    <h4 className="font-medium text-gray-900">授权接送人 2</h4>
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                      <div>
-                       <Label htmlFor="authorizedPickup2Name">姓名</Label>
+                       <Label htmlFor="authorizedPickup2Name">{t('student.name')}</Label>
                        <Input
                          id="authorizedPickup2Name"
                          value={formData.authorizedPickup2Name || ''}
@@ -916,16 +918,16 @@ export default function StudentForm({
                        />
                      </div>
                      <div>
-                       <Label htmlFor="authorizedPickup2Phone">电话</Label>
+                       <Label htmlFor="authorizedPickup2Phone">{t('report.phone')}</Label>
                        <Input
                          id="authorizedPickup2Phone"
                          value={formData.authorizedPickup2Phone || ''}
                          onChange={(e) => handleInputChange('authorizedPickup2Phone', e.target.value)}
-                         placeholder="联系电话"
+                         placeholder={t('student.contact_phone')}
                        />
                      </div>
                      <div>
-                       <Label htmlFor="authorizedPickup2Relation">关系</Label>
+                       <Label htmlFor="authorizedPickup2Relation">{t('student.relationship')}</Label>
                        <Input
                          id="authorizedPickup2Relation"
                          value={formData.authorizedPickup2Relation || ''}
@@ -941,7 +943,7 @@ export default function StudentForm({
                    <h4 className="font-medium text-gray-900">授权接送人 3</h4>
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                      <div>
-                       <Label htmlFor="authorizedPickup3Name">姓名</Label>
+                       <Label htmlFor="authorizedPickup3Name">{t('student.name')}</Label>
                        <Input
                          id="authorizedPickup3Name"
                          value={formData.authorizedPickup3Name || ''}
@@ -950,16 +952,16 @@ export default function StudentForm({
                        />
                      </div>
                      <div>
-                       <Label htmlFor="authorizedPickup3Phone">电话</Label>
+                       <Label htmlFor="authorizedPickup3Phone">{t('report.phone')}</Label>
                        <Input
                          id="authorizedPickup3Phone"
                          value={formData.authorizedPickup3Phone || ''}
                          onChange={(e) => handleInputChange('authorizedPickup3Phone', e.target.value)}
-                         placeholder="联系电话"
+                         placeholder={t('student.contact_phone')}
                        />
                      </div>
                      <div>
-                       <Label htmlFor="authorizedPickup3Relation">关系</Label>
+                       <Label htmlFor="authorizedPickup3Relation">{t('student.relationship')}</Label>
                        <Input
                          id="authorizedPickup3Relation"
                          value={formData.authorizedPickup3Relation || ''}
@@ -1000,10 +1002,10 @@ export default function StudentForm({
                     <SelectValue placeholder="选择学费状态" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">待付款</SelectItem>
-                    <SelectItem value="paid">已付款</SelectItem>
+                    <SelectItem value="pending">{t('student.pending_payment')}</SelectItem>
+                    <SelectItem value="paid">{t('student.paid')}</SelectItem>
                     <SelectItem value="partial">部分付款</SelectItem>
-                    <SelectItem value="overdue">逾期</SelectItem>
+                    <SelectItem value="overdue">{t('student.overdue')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

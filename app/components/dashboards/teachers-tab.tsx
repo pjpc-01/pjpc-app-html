@@ -19,6 +19,7 @@ import {
   DollarSign,
   UserX,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import { useTeachers } from "@/hooks/useTeachers"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import TeacherForm from "@/components/teacher/TeacherForm"
@@ -30,6 +31,7 @@ interface TeachersTabProps {
 }
 
 export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
+  const { t } = useLanguage()
   const { teachers, loading: teachersLoading, refetch: refetchTeachers, addTeacher, updateTeacher, deleteTeacher } = useTeachers()
   const { userProfile } = useAuth()
 
@@ -159,7 +161,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>教师列表</CardTitle>
+              <CardTitle>{t('teacher.teacher_list')}</CardTitle>
               <CardDescription>查看和管理所有教师信息及教学安排</CardDescription>
             </div>
             <div className="flex gap-2">
@@ -211,9 +213,9 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">所有状态</SelectItem>
-                <SelectItem value="active">在职</SelectItem>
-                <SelectItem value="on_leave">请假</SelectItem>
-                <SelectItem value="inactive">离职</SelectItem>
+                <SelectItem value="active">{t('teacher.active')}</SelectItem>
+                <SelectItem value="on_leave">{t('teacher.leave')}</SelectItem>
+                <SelectItem value="inactive">{t('teacher.resigned')}</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" onClick={() => refetchTeachers()}>
@@ -228,11 +230,11 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
                 <TableRow>
                   <TableHead>教师信息</TableHead>
                   <TableHead>部门职位</TableHead>
-                  <TableHead>所属中心</TableHead>
-                  <TableHead>联系方式</TableHead>
+                  <TableHead>{t('teacher.center')}</TableHead>
+                  <TableHead>{t('teacher.contact_info')}</TableHead>
                   <TableHead>教龄</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>操作</TableHead>
+                  <TableHead>{t('teacher.status')}</TableHead>
+                  <TableHead>{t('teacher.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -307,7 +309,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
                             variant="outline" 
                             size="sm"
                             className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                            title="薪资管理"
+                            title={t('teacher.payroll_management')}
                             onClick={() => setSalaryTeacher(teacher)}
                           >
                             <DollarSign className="h-4 w-4" />
@@ -316,7 +318,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
                             variant="outline" 
                             size="sm"
                             className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                            title="离职"
+                            title={t('teacher.resigned')}
                             onClick={async () => {
                               if (!confirm(`确定要将 ${teacher.teacher_name} 设为离职吗？`)) return
                               try {
@@ -407,7 +409,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onSubmit={handleAddTeacher}
-        title="添加教师"
+        title={t('teacher.add_teacher')}
       />
 
       {/* 编辑教师对话框 */}
@@ -416,7 +418,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
         onOpenChange={(open) => !open && setEditingTeacher(null)}
         onSubmit={handleUpdateTeacher}
         teacher={editingTeacher}
-        title="编辑教师"
+        title={t('teacher.edit_teacher')}
       />
 
       {/* 查看教师详情对话框 */}

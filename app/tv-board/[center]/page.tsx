@@ -12,7 +12,6 @@ import { useTransactions } from "../hooks/useTransactions"
 import { useTransactionLayout } from "../hooks/useTransactionLayout"
 import { useMemoryOptimization } from "../hooks/useMemoryOptimization"
 import { useSmartLoading, useSmartError, useSmartAnimation } from "../hooks/useUIOptimization"
-import { usePointsHealthCheck } from "../hooks/usePointsHealthCheck"
 import { DISPLAY_MS, ANIMATION_CLASSES } from "../constants"
 import { SlideData } from "../types"
 
@@ -30,6 +29,7 @@ import LoadingScreen from "../components/LoadingScreen"
 import ErrorScreen from "../components/ErrorScreen"
 import SafeAreaLayout from "../components/SafeAreaLayout"
 import TVBoardContainer from "../components/TVBoardContainer"
+import { useLanguage } from "@/contexts/language-context"
 
 // 调试模式 - 在开发环境启用
 const DEBUG_MODE = process.env.NODE_ENV === 'development'
@@ -76,6 +76,7 @@ function navigationReducer(state: NavigationState, action: NavigationAction): Na
 const MILESTONE_CACHE = Array.from({ length: 100 }, (_, i) => (i + 1) * 50)
 
 export default function TVBoardByCenter() {
+  const { t } = useLanguage()
   const params = useParams<{ center: string }>()
   const router = useRouter()
   const center = decodeURIComponent(params.center)
@@ -156,9 +157,6 @@ export default function TVBoardByCenter() {
   // 主题
   const { isBright, colors } = useTheme()
   
-  // 积分数据健康检查
-  const { healthStatus } = usePointsHealthCheck(center)
-
   // 优化的里程碑检测逻辑
   const detectMilestones = useCallback(() => {
     if (sortedStudents.length === 0) return
@@ -345,7 +343,7 @@ export default function TVBoardByCenter() {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center text-white">
-          <h2 className="text-2xl font-bold mb-4">暂无数据</h2>
+          <h2 className="text-2xl font-bold mb-4">{t('parent.no_data')}</h2>
           <p className="text-gray-400">该中心暂无学生数据</p>
         </div>
       </div>
@@ -377,7 +375,6 @@ export default function TVBoardByCenter() {
             studentCount={sortedStudents.length}
             isRealtime={true}
             onRefresh={refreshData}
-            pointsHealthStatus={healthStatus}
           />
 
           {/* 主要内容区域 */}

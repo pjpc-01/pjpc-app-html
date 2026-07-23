@@ -1,3 +1,5 @@
+'use client'
+
 
 "use client"
 
@@ -8,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CheckCircle, XCircle, Clock, User, Mail, Shield, RefreshCw } from 'lucide-react'
 import { pb } from '@/lib/pocketbase'
+import { useLanguage } from "@/contexts/language-context"
 
 interface UserRecord {
   id: string
@@ -19,6 +22,7 @@ interface UserRecord {
 }
 
 export default function UserApproval() {
+  const { t } = useLanguage()
   const [users, setUsers] = useState<UserRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -114,11 +118,11 @@ export default function UserApproval() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="secondary" className="flex items-center gap-1"><Clock className="h-3 w-3" />待审核</Badge>
+        return <Badge variant="secondary" className="flex items-center gap-1"><Clock className="h-3 w-3" />{t('admin.pending_review')}</Badge>
       case 'approved':
-        return <Badge variant="default" className="flex items-center gap-1"><CheckCircle className="h-3 w-3" />已审核</Badge>
+        return <Badge variant="default" className="flex items-center gap-1"><CheckCircle className="h-3 w-3" />{t('admin.reviewed')}</Badge>
       case 'suspended':
-        return <Badge variant="destructive" className="flex items-center gap-1"><XCircle className="h-3 w-3" />已拒绝</Badge>
+        return <Badge variant="destructive" className="flex items-center gap-1"><XCircle className="h-3 w-3" />{t('attendance.rejected')}</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
@@ -156,7 +160,7 @@ export default function UserApproval() {
     return (
       <div className="p-6">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">权限不足</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('admin.insufficient_permissions')}</h2>
           <p className="text-gray-600">只有管理员可以访问用户审核功能</p>
         </div>
       </div>
@@ -242,7 +246,7 @@ export default function UserApproval() {
       {users.length === 0 && (
         <div className="text-center py-8">
           <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">暂无用户</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('admin.no_users')}</h3>
           <p className="text-gray-600">目前没有需要审核的用户</p>
           <div className="mt-4">
             <Button onClick={fetchUsers} variant="outline">

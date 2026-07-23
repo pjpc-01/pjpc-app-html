@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useLanguage } from "@/contexts/language-context"
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ import {
 } from "lucide-react"
 
 export default function InventoryItemDetailPage() {
+  const { t } = useLanguage()
   const params = useParams()
   const router = useRouter()
   const itemId = params.id as string
@@ -97,13 +99,13 @@ export default function InventoryItemDetailPage() {
   }
 
   if (loading) return (
-    <PageLayout title="商品详情" actions={<Link href="/inventory"><Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" />返回</Button></Link>}>
-      <div className="text-center py-16 text-gray-500"><Package className="h-8 w-8 mx-auto mb-2 animate-pulse" /><p>加载中...</p></div>
+    <PageLayout title="商品详情" actions={<Link href="/inventory"><Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" />{t('inventory.back')}</Button></Link>}>
+      <div className="text-center py-16 text-gray-500"><Package className="h-8 w-8 mx-auto mb-2 animate-pulse" /><p>{t('teacher.loading')}</p></div>
     </PageLayout>
   )
 
   if (error || !item) return (
-    <PageLayout title="商品详情" actions={<Link href="/inventory"><Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" />返回</Button></Link>}>
+    <PageLayout title="商品详情" actions={<Link href="/inventory"><Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" />{t('inventory.back')}</Button></Link>}>
       <div className="text-center py-16 text-red-500"><AlertTriangle className="h-8 w-8 mx-auto mb-2" /><p>{error || "商品不存在"}</p></div>
     </PageLayout>
   )
@@ -115,7 +117,7 @@ export default function InventoryItemDetailPage() {
       actions={
         <div className="flex gap-2">
           <Link href="/inventory">
-            <Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" />返回</Button>
+            <Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" />{t('inventory.back')}</Button>
           </Link>
         </div>
       }
@@ -124,17 +126,17 @@ export default function InventoryItemDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         {/* Basic Info */}
         <Card className="lg:col-span-2">
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Package className="h-4 w-4" />基本信息</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Package className="h-4 w-4" />{t('report.basic_info')}</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-              <div><span className="text-gray-500">分类</span><p className="font-medium">{categoryName}</p></div>
-              <div><span className="text-gray-500">单位</span><p className="font-medium">{item.unit || "—"}</p></div>
-              <div><span className="text-gray-500">状态</span><p><Badge className={item.status === "active" ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-800"}>{item.status === "active" ? "在售" : "停产"}</Badge></p></div>
+              <div><span className="text-gray-500">{t('inventory.category')}</span><p className="font-medium">{categoryName}</p></div>
+              <div><span className="text-gray-500">{t('inventory.unit')}</span><p className="font-medium">{item.unit || "—"}</p></div>
+              <div><span className="text-gray-500">{t('teacher.status')}</span><p><Badge className={item.status === "active" ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-800"}>{item.status === "active" ? "在售" : "停产"}</Badge></p></div>
               <div><span className="text-gray-500">进货价</span><p className="font-medium">{item.costPrice != null ? `RM ${item.costPrice}` : "—"}</p></div>
               <div><span className="text-gray-500">售价</span><p className="font-medium">{item.sellingPrice != null ? `RM ${item.sellingPrice}` : "—"}</p></div>
               <div><span className="text-gray-500">毛利率</span><p className="font-medium">{item.costPrice && item.sellingPrice ? `${Math.round((item.sellingPrice - item.costPrice) / item.sellingPrice * 100)}%` : "—"}</p></div>
               <div><span className="text-gray-500">最低库存</span><p className="font-medium">{item.minStock != null ? item.minStock : "未设置"}</p></div>
-              {item.description && <div className="col-span-3"><span className="text-gray-500">描述</span><p className="mt-1 text-gray-700">{item.description}</p></div>}
+              {item.description && <div className="col-span-3"><span className="text-gray-500">{t('finance.description')}</span><p className="mt-1 text-gray-700">{item.description}</p></div>}
             </div>
           </CardContent>
         </Card>
@@ -176,7 +178,7 @@ export default function InventoryItemDetailPage() {
         </CardHeader>
         <CardContent>
           {txLoading ? (
-            <div className="text-center py-8 text-gray-400">加载中...</div>
+            <div className="text-center py-8 text-gray-400">{t('teacher.loading')}</div>
           ) : transactions.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -187,11 +189,11 @@ export default function InventoryItemDetailPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-gray-500">
-                    <th className="text-left py-2 pr-4">日期</th>
-                    <th className="text-left py-2 pr-4">类型</th>
-                    <th className="text-right py-2 pr-4">数量</th>
-                    <th className="text-right py-2 pr-4">单价</th>
-                    <th className="text-right py-2 pr-4">金额</th>
+                    <th className="text-left py-2 pr-4">{t('finance.date')}</th>
+                    <th className="text-left py-2 pr-4">{t('common.type')}</th>
+                    <th className="text-right py-2 pr-4">{t('inventory.quantity')}</th>
+                    <th className="text-right py-2 pr-4">{t('inventory.unit_price')}</th>
+                    <th className="text-right py-2 pr-4">{t('finance.amount')}</th>
                     <th className="text-left py-2 pr-4">供应商/备注</th>
                     <th className="text-left py-2 pr-4">凭证号</th>
                   </tr>
@@ -259,10 +261,10 @@ export default function InventoryItemDetailPage() {
               <Label>单价 (RM)</Label>
               <Input type="number" step="0.01" min="0" value={txForm.unitPrice}
                 onChange={e => setTxForm(prev => ({ ...prev, unitPrice: e.target.value }))}
-                placeholder="可选" />
+                placeholder={t('inventory.optional')} />
             </div>
             <div>
-              <Label>供应商</Label>
+              <Label>{t('inventory.supplier')}</Label>
               <Input value={txForm.supplier}
                 onChange={e => setTxForm(prev => ({ ...prev, supplier: e.target.value }))}
                 placeholder="入库来源/出库去向" />
@@ -271,17 +273,17 @@ export default function InventoryItemDetailPage() {
               <Label>凭证号 / 采购单号</Label>
               <Input value={txForm.reference}
                 onChange={e => setTxForm(prev => ({ ...prev, reference: e.target.value }))}
-                placeholder="可选" />
+                placeholder={t('inventory.optional')} />
             </div>
             <div>
-              <Label>备注</Label>
+              <Label>{t('teacher.notes')}</Label>
               <Textarea value={txForm.notes}
                 onChange={e => setTxForm(prev => ({ ...prev, notes: e.target.value }))}
                 placeholder="可选备注" rows={2} />
             </div>
             {txError && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg">{txError}</div>}
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => setStockDialogOpen(false)}>取消</Button>
+              <Button type="button" variant="outline" onClick={() => setStockDialogOpen(false)}>{t('report.cancel')}</Button>
               <Button type="submit" disabled={txSaving} className="bg-indigo-600 hover:bg-indigo-700">
                 {txSaving ? "处理中..." : "确认"}
               </Button>

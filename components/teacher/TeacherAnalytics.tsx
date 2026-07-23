@@ -26,6 +26,7 @@ import {
   Target,
   CheckCircle,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface Teacher {
   uid: string
@@ -49,6 +50,7 @@ interface TeacherAnalyticsProps {
 }
 
 export default function TeacherAnalytics({ teachers, filteredTeachers }: TeacherAnalyticsProps) {
+  const { t } = useLanguage()
   const analytics = useMemo(() => {
     const total = teachers.length
     const filtered = filteredTeachers.length
@@ -141,7 +143,7 @@ export default function TeacherAnalytics({ teachers, filteredTeachers }: Teacher
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">总教师数</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('teacher.total_teachers')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -208,7 +210,7 @@ export default function TeacherAnalytics({ teachers, filteredTeachers }: Teacher
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <UserCheck className="h-4 w-4 text-green-600" />
-                  <span className="text-sm">已批准</span>
+                  <span className="text-sm">{t('attendance.approved')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{analytics.approvedCount}</span>
@@ -222,7 +224,7 @@ export default function TeacherAnalytics({ teachers, filteredTeachers }: Teacher
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-yellow-600" />
-                  <span className="text-sm">待审核</span>
+                  <span className="text-sm">{t('admin.pending_review')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{analytics.pendingCount}</span>
@@ -236,7 +238,7 @@ export default function TeacherAnalytics({ teachers, filteredTeachers }: Teacher
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <UserX className="h-4 w-4 text-red-600" />
-                  <span className="text-sm">已暂停</span>
+                  <span className="text-sm">{t('course.paused')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{analytics.suspendedCount}</span>

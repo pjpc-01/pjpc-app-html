@@ -30,6 +30,7 @@ import {
   Edit,
   Eye,
 } from 'lucide-react'
+import { useLanguage } from "@/contexts/language-context"
 
 // 获取今天日期
 function today(): string {
@@ -48,6 +49,7 @@ function fmtDate(d: string): string {
 }
 
 export default function DailyLogsPage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const { userProfile } = useAuth()
   const [selectedDate, setSelectedDate] = useState(today())
@@ -119,7 +121,7 @@ export default function DailyLogsPage() {
 
   return (
     <PageLayout
-      title="每日日志"
+      title={t('dailylog.daily_logs')}
       description="记录学生每天的学习、用餐和情绪状态"
       userRole={userProfile?.role || 'teacher'}
       status=""
@@ -182,7 +184,7 @@ export default function DailyLogsPage() {
         {(loading || studentsLoading) && (
           <div className="text-center py-8">
             <Loader2 className="h-8 w-8 animate-spin mx-auto text-gray-400" />
-            <p className="text-sm text-gray-500 mt-2">加载中...</p>
+            <p className="text-sm text-gray-500 mt-2">{t('teacher.loading')}</p>
           </div>
         )}
 
@@ -269,7 +271,7 @@ export default function DailyLogsPage() {
                       {/* 编辑模式 — 备注 */}
                       {isEditing && (
                         <div className="space-y-2 pt-2 border-t">
-                          <Label className="text-xs">备注</Label>
+                          <Label className="text-xs">{t('teacher.notes')}</Label>
                           <Textarea
                             value={log.behavior_note}
                             onChange={(e) => handleQuickToggle(log.id, 'behavior_note', e.target.value)}

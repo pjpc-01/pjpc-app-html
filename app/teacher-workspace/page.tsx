@@ -37,9 +37,11 @@ import {
   FileEdit,
   ExternalLink,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import { usePendingGradingCount } from "@/hooks/useHomework"
 
 export default function TeacherWorkspace() {
+  const { t } = useLanguage()
   const router = useRouter()
   const { user, logout } = useAuth()
   const { teacher, loading: teacherLoading, error: teacherError } = useCurrentTeacher()
@@ -383,14 +385,14 @@ export default function TeacherWorkspace() {
                   <CardContent>
                     <div className="space-y-4">
                       <div className="p-4 border rounded-lg bg-yellow-50">
-                        <h4 className="font-medium mb-2 text-yellow-800">积分操作</h4>
+                        <h4 className="font-medium mb-2 text-yellow-800">{t('teacher.points')}</h4>
                         <p className="text-sm text-yellow-600 mb-3">为学生添加或扣除积分</p>
                         <Button variant="outline" size="sm" className="text-yellow-600 border-yellow-300">
                           积分操作
                         </Button>
                       </div>
                       <div className="p-4 border rounded-lg bg-indigo-50">
-                        <h4 className="font-medium mb-2 text-indigo-800">积分排行</h4>
+                        <h4 className="font-medium mb-2 text-indigo-800">{t('teacher.points_leaderboard')}</h4>
                         <p className="text-sm text-indigo-600 mb-3">查看班级积分排行榜</p>
                         <Button variant="outline" size="sm" className="text-indigo-600 border-indigo-300">
                           查看排行

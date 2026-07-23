@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Edit, Settings, Loader2, Zap } from "lucide-react"
 import { useInvoices } from "@/hooks/useInvoices"
 import { downloadInvoicePDF, printInvoicePDF, generateInvoiceHTML, generateInvoicePDF } from "@/lib/pdf-generator"
@@ -48,6 +49,7 @@ const getInvoiceStatusBadge = (status: string) => {
 }
 
 export default function InvoiceManagement() {
+  const { t } = useLanguage()
   const {
     invoices,
     filters: invoiceFilters,
@@ -368,7 +370,7 @@ Prospek Cemerlang`,
         dueDate: new Date(invoice.dueDate).toLocaleDateString('zh-CN'),
         items: invoice.items && invoice.items.length > 0 
           ? invoice.items.map((item: any) => `- ${item.name}: RM ${(item.amount || 0).toLocaleString()}`).join('\n')
-          : `- 学生费用: RM ${(invoice.totalAmount || invoice.amount || 0)?.toLocaleString()}`,
+          : `- 学生费用: RM ${(invoice.totalAmount || 0)?.toLocaleString()}`,
         tax: invoice.tax && invoice.tax > 0 ? `税费: RM ${invoice.tax.toLocaleString()}` : '',
         discount: invoice.discount && invoice.discount > 0 ? `折扣: RM ${invoice.discount.toLocaleString()}` : '',
         customMessage: messageContent || '请及时处理付款，如有疑问请联系我们。',
@@ -443,12 +445,12 @@ Prospek Cemerlang`,
       studentId: student.id,
       studentGrade: student.grade || student.standard,
       studentNumber: student.student_id, // 学号
-      items: invoiceItems.length > 0 ? invoiceItems : [{ name: "学生费用", amount: student.amount || totalAmount || 0 }],
+      items: invoiceItems.length > 0 ? invoiceItems : [{ name: "学生费用", amount: totalAmount || 0 }],
       status: "issued" as const,
       issueDate: new Date().toISOString().split('T')[0],
       dueDate: dueDate,
       notes: notes || '',
-      totalAmount: totalAmount || student.amount || 0
+      totalAmount: totalAmount || 0
     } as any)
   }
 
@@ -485,7 +487,7 @@ Prospek Cemerlang`,
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">发票管理</h1>
+          <h1 className="text-3xl font-bold">{t('finance.invoice_management')}</h1>
           <p className="text-gray-600">管理学校发票和付款状态</p>
         </div>
         
@@ -537,7 +539,7 @@ Prospek Cemerlang`,
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-600" />
               <div>
-                <p className="text-sm text-gray-600">已付款</p>
+                <p className="text-sm text-gray-600">{t('student.paid')}</p>
                 <p className="text-2xl font-bold">
                   {invoices.filter(inv => inv.status === 'paid').length}
                 </p>
@@ -551,7 +553,7 @@ Prospek Cemerlang`,
             <div className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-yellow-600" />
               <div>
-                <p className="text-sm text-gray-600">待付款</p>
+                <p className="text-sm text-gray-600">{t('student.pending_payment')}</p>
                 <p className="text-2xl font-bold">
                   {invoices.filter(inv => inv.status === 'issued').length}
                 </p>
@@ -565,7 +567,7 @@ Prospek Cemerlang`,
             <div className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-red-600" />
               <div>
-                <p className="text-sm text-gray-600">逾期</p>
+                <p className="text-sm text-gray-600">{t('student.overdue')}</p>
                 <p className="text-2xl font-bold">
                   {invoices.filter(inv => inv.status === 'overdue').length}
                 </p>
@@ -616,12 +618,12 @@ Prospek Cemerlang`,
               studentName: student.name || student.student_name,
               studentId: student.id,
               studentGrade: student.grade || student.standard,
-              items: invoiceItems.length > 0 ? invoiceItems : [{ name: "学生费用", amount: student.amount || totalAmount || 0 }],
+              items: invoiceItems.length > 0 ? invoiceItems : [{ name: "学生费用", amount: totalAmount || 0 }],
               status: "issued",
               issueDate: new Date().toISOString().split('T')[0],
               dueDate: formData.dueDate || new Date(Date.now() + 14*86400000).toISOString().split('T')[0],
               notes: formData.notes || '',
-              totalAmount: totalAmount || student.amount || 0
+              totalAmount: totalAmount || 0
             } as any)
           })
           setIsCreateInvoiceDialogOpen(false)

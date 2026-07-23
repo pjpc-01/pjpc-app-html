@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import { Tag, CreditCard, FileText, MapPin, GraduationCap, Activity, Edit3, DollarSign, BookOpen, Package, CalendarDays, Utensils, Bus, FolderOpen, School, ClipboardList, Receipt, Banknote, ScrollText, Library, Loader2 } from "lucide-react"
 import { Fee } from "@/types/fees"
 
@@ -50,6 +51,7 @@ export const EditFeeDialog = ({
   onFeeItemInputChange,
   onUpdateFeeItem,
 }: EditFeeDialogProps) => {
+  const { t } = useLanguage()
   const [centers, setCenters] = useState<CenterInfo[]>([])
   const [centersLoading, setCentersLoading] = useState(true)
   const isFormValid = newFeeItem.name.trim() !== "" && newFeeItem.amount > 0
@@ -283,8 +285,8 @@ export const EditFeeDialog = ({
                   <SelectValue placeholder="选择状态" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">启用</SelectItem>
-                  <SelectItem value="inactive">禁用</SelectItem>
+                  <SelectItem value="active">{t('finance.enable')}</SelectItem>
+                  <SelectItem value="inactive">{t('finance.disable')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

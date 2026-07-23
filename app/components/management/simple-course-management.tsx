@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { 
@@ -50,6 +51,7 @@ export default function SimpleCourseManagement({
   title = "课程管理", 
   description = "管理课程设置和教学安排" 
 }: SimpleCourseManagementProps) {
+  const { t } = useLanguage()
   // 模拟课程数据
   const [courses, setCourses] = useState<Course[]>([
     {
@@ -202,7 +204,7 @@ export default function SimpleCourseManagement({
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">课程名称</Label>
+                    <Label htmlFor="name" className="text-right">{t('course.course_name')}</Label>
                     <Input
                       id="name"
                       value={newCourse.name}
@@ -230,7 +232,7 @@ export default function SimpleCourseManagement({
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="schedule" className="text-right">课程时间</Label>
+                    <Label htmlFor="schedule" className="text-right">{t('course.course_time')}</Label>
                     <Input
                       id="schedule"
                       value={newCourse.schedule}
@@ -276,14 +278,14 @@ export default function SimpleCourseManagement({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>课程名称</TableHead>
+                  <TableHead>{t('course.course_name')}</TableHead>
                   <TableHead>授课教师</TableHead>
                   <TableHead>学生人数</TableHead>
-                  <TableHead>课程时间</TableHead>
+                  <TableHead>{t('course.course_time')}</TableHead>
                   <TableHead>进度</TableHead>
                   <TableHead>教材</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>操作</TableHead>
+                  <TableHead>{t('teacher.status')}</TableHead>
+                  <TableHead>{t('teacher.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -368,13 +370,13 @@ export default function SimpleCourseManagement({
       <Dialog open={!!viewingCourse} onOpenChange={() => setViewingCourse(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>课程详情</DialogTitle>
+            <DialogTitle>{t('course.course_details')}</DialogTitle>
           </DialogHeader>
           {viewingCourse && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">课程名称</Label>
+                  <Label className="text-sm font-medium text-gray-500">{t('course.course_name')}</Label>
                   <p className="text-sm">{viewingCourse.name}</p>
                 </div>
                 <div>
@@ -386,7 +388,7 @@ export default function SimpleCourseManagement({
                   <p className="text-sm">{viewingCourse.students} 人</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">课程时间</Label>
+                  <Label className="text-sm font-medium text-gray-500">{t('course.course_time')}</Label>
                   <p className="text-sm">{viewingCourse.schedule}</p>
                 </div>
                 <div>
@@ -398,7 +400,7 @@ export default function SimpleCourseManagement({
                   <p className="text-sm">{viewingCourse.materials} 本</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">状态</Label>
+                  <Label className="text-sm font-medium text-gray-500">{t('teacher.status')}</Label>
                   <Badge variant={viewingCourse.status === 'active' ? 'default' : 'secondary'}>
                     {viewingCourse.status === 'active' ? '进行中' : '已结束'}
                   </Badge>
@@ -422,7 +424,7 @@ export default function SimpleCourseManagement({
           {editingCourse && (
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-name" className="text-right">课程名称</Label>
+                <Label htmlFor="edit-name" className="text-right">{t('course.course_name')}</Label>
                 <Input
                   id="edit-name"
                   value={editingCourse.name}
@@ -450,7 +452,7 @@ export default function SimpleCourseManagement({
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-schedule" className="text-right">课程时间</Label>
+                <Label htmlFor="edit-schedule" className="text-right">{t('course.course_time')}</Label>
                 <Input
                   id="edit-schedule"
                   value={editingCourse.schedule}

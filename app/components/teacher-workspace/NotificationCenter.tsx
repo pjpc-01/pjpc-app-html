@@ -22,6 +22,7 @@ import {
   Archive,
   Trash2
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 interface Notification {
   id: string
@@ -41,6 +42,7 @@ interface NotificationCenterProps {
 }
 
 export default function NotificationCenter({ teacherId }: NotificationCenterProps) {
+  const { t } = useLanguage()
   // 模拟通知数据
   const [notifications] = useState<Notification[]>([
     {
@@ -163,12 +165,12 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
 
   const getTypeBadge = (type: string) => {
     switch (type) {
-      case 'system': return <Badge variant="outline" className="bg-blue-100 text-blue-700">系统</Badge>
+      case 'system': return <Badge variant="outline" className="bg-blue-100 text-blue-700">{t('teacher.system')}</Badge>
       case 'meeting': return <Badge variant="outline" className="bg-green-100 text-green-700">会议</Badge>
-      case 'assignment': return <Badge variant="outline" className="bg-purple-100 text-purple-700">作业</Badge>
+      case 'assignment': return <Badge variant="outline" className="bg-purple-100 text-purple-700">{t('teacher.homework')}</Badge>
       case 'reminder': return <Badge variant="outline" className="bg-yellow-100 text-yellow-700">提醒</Badge>
       case 'announcement': return <Badge variant="outline" className="bg-orange-100 text-orange-700">公告</Badge>
-      default: return <Badge variant="outline">未知</Badge>
+      default: return <Badge variant="outline">{t('teacher.unknown')}</Badge>
     }
   }
 
@@ -178,7 +180,7 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
       case 'high': return <Badge variant="default" className="bg-red-100 text-red-700">高</Badge>
       case 'medium': return <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">中</Badge>
       case 'low': return <Badge variant="outline" className="bg-gray-100 text-gray-700">低</Badge>
-      default: return <Badge variant="outline">未知</Badge>
+      default: return <Badge variant="outline">{t('teacher.unknown')}</Badge>
     }
   }
 
@@ -196,7 +198,7 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
     <div className="space-y-6">
       {/* 页面标题和描述 */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">通知中心</h2>
+        <h2 className="text-2xl font-bold text-gray-900">{t('announcement.notification_center')}</h2>
         <p className="text-gray-600 mt-1">查看系统通知、工作安排、会议提醒等重要信息</p>
       </div>
 
@@ -220,7 +222,7 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">未读通知</p>
+                <p className="text-sm font-medium text-gray-600">{t('teacher.unread_notifications')}</p>
                 <p className="text-2xl font-bold text-orange-600">{stats.unread}</p>
               </div>
               <div className="p-3 bg-orange-100 rounded-lg">
@@ -285,7 +287,7 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">所有类型</option>
-              <option value="system">系统通知</option>
+              <option value="system">{t('announcement.system_notification')}</option>
               <option value="meeting">会议通知</option>
               <option value="assignment">作业相关</option>
               <option value="reminder">提醒通知</option>
@@ -310,9 +312,9 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">所有状态</option>
-              <option value="unread">未读</option>
-              <option value="read">已读</option>
-              <option value="archived">已归档</option>
+              <option value="unread">{t('teacher.unread')}</option>
+              <option value="read">{t('teacher.read')}</option>
+              <option value="archived">{t('course.archived')}</option>
             </select>
           </div>
         </CardContent>
@@ -413,7 +415,7 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">通知详情</h3>
+              <h3 className="text-lg font-semibold">{t('teacher.notification_details')}</h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -425,23 +427,23 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
             
             <div className="space-y-4">
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">标题</h4>
+                <h4 className="font-medium text-gray-900 mb-2">{t('report.title')}</h4>
                 <p className="text-gray-900">{viewingNotification.title}</p>
               </div>
               
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">内容</h4>
+                <h4 className="font-medium text-gray-900 mb-2">{t('teacher.content')}</h4>
                 <p className="text-gray-600">{viewingNotification.content}</p>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">类型</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">{t('common.type')}</h4>
                   {getTypeBadge(viewingNotification.type)}
                 </div>
                 
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">优先级</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">{t('announcement.priority')}</h4>
                   {getPriorityBadge(viewingNotification.priority)}
                 </div>
                 

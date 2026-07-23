@@ -9,11 +9,13 @@ import { Badge } from "@/components/ui/badge"
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import { FileText, Eye, Settings } from "lucide-react"
 import Link from "next/link"
 import ReportSettingsManager, { type ReportSettingsPreset } from "@/app/components/report/ReportSettingsManager"
 
 export default function StudentReportsPage() {
+  const { t } = useLanguage()
   const [reports, setReports] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -81,18 +83,18 @@ export default function StudentReportsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-gray-500 text-center py-8">加载中...</p>
+            <p className="text-gray-500 text-center py-8">{t('teacher.loading')}</p>
           ) : reports.length === 0 ? (
             <p className="text-gray-500 text-center py-8">暂无学生报告。前往「学生列表」为学生创建报告。</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>学期</TableHead>
-                  <TableHead>年份</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>创建时间</TableHead>
-                  <TableHead>操作</TableHead>
+                  <TableHead>{t('student.semester')}</TableHead>
+                  <TableHead>{t('teacher.year')}</TableHead>
+                  <TableHead>{t('teacher.status')}</TableHead>
+                  <TableHead>{t('course.created_at')}</TableHead>
+                  <TableHead>{t('teacher.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

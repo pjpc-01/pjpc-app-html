@@ -18,12 +18,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
 import { BookOpen, Plus, Edit, Eye, Clock, Users, BarChart3, FileText, CheckCircle } from "lucide-react"
 
 export default function ExamSystem() {
+  const { t } = useLanguage()
   const [exams, setExams] = useState([
     {
       id: 1,
@@ -103,11 +105,11 @@ export default function ExamSystem() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "scheduled":
-        return <Badge variant="secondary">已安排</Badge>
+        return <Badge variant="secondary">{t('exam.scheduled')}</Badge>
       case "ongoing":
-        return <Badge variant="default">进行中</Badge>
+        return <Badge variant="default">{t('assignment.in_progress')}</Badge>
       case "completed":
-        return <Badge variant="outline">已完成</Badge>
+        return <Badge variant="outline">{t('assignment.completed')}</Badge>
       case "graded":
         return <Badge variant="default">已评分</Badge>
       default:
@@ -160,13 +162,13 @@ export default function ExamSystem() {
                 </Label>
                 <Select>
                   <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="选择科目" />
+                    <SelectValue placeholder={t('assignment.select_subject')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="math">数学</SelectItem>
-                    <SelectItem value="chinese">语文</SelectItem>
-                    <SelectItem value="english">英语</SelectItem>
-                    <SelectItem value="science">科学</SelectItem>
+                    <SelectItem value="math">{t('assignment.mathematics')}</SelectItem>
+                    <SelectItem value="chinese">{t('assignment.chinese')}</SelectItem>
+                    <SelectItem value="english">{t('assignment.english')}</SelectItem>
+                    <SelectItem value="science">{t('assignment.science')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -194,8 +196,8 @@ export default function ExamSystem() {
         <TabsList>
           <TabsTrigger value="exams">考试管理</TabsTrigger>
           <TabsTrigger value="questions">题库管理</TabsTrigger>
-          <TabsTrigger value="results">成绩管理</TabsTrigger>
-          <TabsTrigger value="analysis">数据分析</TabsTrigger>
+          <TabsTrigger value="results">{t('exam.grade_management')}</TabsTrigger>
+          <TabsTrigger value="analysis">{t('exam.data_analysis')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="exams" className="space-y-6">
@@ -282,12 +284,12 @@ export default function ExamSystem() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>科目</TableHead>
-                    <TableHead>年级</TableHead>
+                    <TableHead>{t('exam.subject')}</TableHead>
+                    <TableHead>{t('student.grade')}</TableHead>
                     <TableHead>题型</TableHead>
                     <TableHead>题目</TableHead>
                     <TableHead>难度</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead>{t('teacher.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -333,12 +335,12 @@ export default function ExamSystem() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>学生姓名</TableHead>
-                    <TableHead>考试名称</TableHead>
-                    <TableHead>得分</TableHead>
+                    <TableHead>{t('student.student_name')}</TableHead>
+                    <TableHead>{t('exam.exam_name')}</TableHead>
+                    <TableHead>{t('exam.score')}</TableHead>
                     <TableHead>完成时间</TableHead>
                     <TableHead>排名</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead>{t('teacher.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -399,7 +401,7 @@ export default function ExamSystem() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">平均分</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('report.average_score')}</CardTitle>
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -410,7 +412,7 @@ export default function ExamSystem() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">及格率</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('exam.pass_rate')}</CardTitle>
                 <CheckCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -429,28 +431,28 @@ export default function ExamSystem() {
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between mb-2">
-                      <span>数学</span>
+                      <span>{t('assignment.mathematics')}</span>
                       <span>86.5分</span>
                     </div>
                     <Progress value={86.5} />
                   </div>
                   <div>
                     <div className="flex justify-between mb-2">
-                      <span>语文</span>
+                      <span>{t('assignment.chinese')}</span>
                       <span>82.1分</span>
                     </div>
                     <Progress value={82.1} />
                   </div>
                   <div>
                     <div className="flex justify-between mb-2">
-                      <span>英语</span>
+                      <span>{t('assignment.english')}</span>
                       <span>78.9分</span>
                     </div>
                     <Progress value={78.9} />
                   </div>
                   <div>
                     <div className="flex justify-between mb-2">
-                      <span>科学</span>
+                      <span>{t('assignment.science')}</span>
                       <span>84.3分</span>
                     </div>
                     <Progress value={84.3} />
@@ -461,7 +463,7 @@ export default function ExamSystem() {
 
             <Card>
               <CardHeader>
-                <CardTitle>成绩分布</CardTitle>
+                <CardTitle>{t('exam.grade_distribution')}</CardTitle>
                 <CardDescription>按分数段统计</CardDescription>
               </CardHeader>
               <CardContent>

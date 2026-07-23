@@ -18,6 +18,7 @@ import {
   RefreshCw,
   Search
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import { useAttendance, AttendanceRecord } from "@/hooks/useAttendance"
 
 interface AttendanceManagementProps {
@@ -25,6 +26,7 @@ interface AttendanceManagementProps {
 }
 
 export default function AttendanceManagement({ centerId }: AttendanceManagementProps) {
+  const { t } = useLanguage()
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [selectedType, setSelectedType] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
@@ -109,7 +111,7 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">签到人数</p>
+                <p className="text-sm font-medium text-gray-600">{t('attendance.checked_in_count')}</p>
                 <p className="text-2xl font-bold text-green-600">{todayStats.checkIn}</p>
               </div>
               <User className="h-8 w-8 text-green-500" />
@@ -153,7 +155,7 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <Label htmlFor="date">日期</Label>
+              <Label htmlFor="date">{t('finance.date')}</Label>
               <Input
                 id="date"
                 type="date"
@@ -169,15 +171,15 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部</SelectItem>
-                  <SelectItem value="check-in">签到</SelectItem>
-                  <SelectItem value="check-out">签退</SelectItem>
+                  <SelectItem value="all">{t('card.all')}</SelectItem>
+                  <SelectItem value="check-in">{t('attendance.check_in')}</SelectItem>
+                  <SelectItem value="check-out">{t('attendance.check_out')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="search">搜索学生</Label>
+              <Label htmlFor="search">{t('teacher.search_students')}</Label>
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
                 <Input
@@ -212,7 +214,7 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
           {loading ? (
             <div className="text-center py-8">
               <RefreshCw className="h-8 w-8 mx-auto animate-spin text-blue-500" />
-              <p className="mt-2 text-gray-600">加载中...</p>
+              <p className="mt-2 text-gray-600">{t('teacher.loading')}</p>
             </div>
           ) : error ? (
             <div className="text-center py-8">
@@ -224,12 +226,12 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
                 <TableHeader>
                                      <TableRow>
                      <TableHead>学生ID</TableHead>
-                     <TableHead>学生姓名</TableHead>
-                     <TableHead>中心</TableHead>
+                     <TableHead>{t('student.student_name')}</TableHead>
+                     <TableHead>{t('teacher.center')}</TableHead>
                      <TableHead>设备</TableHead>
-                     <TableHead>时间</TableHead>
-                     <TableHead>类型</TableHead>
-                     <TableHead>状态</TableHead>
+                     <TableHead>{t('announcement.time')}</TableHead>
+                     <TableHead>{t('common.type')}</TableHead>
+                     <TableHead>{t('teacher.status')}</TableHead>
                    </TableRow>
                 </TableHeader>
                 <TableBody>

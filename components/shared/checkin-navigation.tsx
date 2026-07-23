@@ -11,9 +11,11 @@ import {
   Users,
   Clock,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 import Link from "next/link"
 
 export default function CheckInNavigation() {
+  const { t } = useLanguage()
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -81,7 +83,7 @@ export default function CheckInNavigation() {
             
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <div className="text-2xl font-bold text-green-600">NFC</div>
+                <div className="text-2xl font-bold text-green-600">{t('common.nfc')}</div>
                 <div className="text-xs text-gray-500">现代智能系统</div>
               </div>
               <Link href="/attendance">
@@ -117,7 +119,7 @@ export default function CheckInNavigation() {
             
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <div className="text-2xl font-bold text-orange-600">手机</div>
+                <div className="text-2xl font-bold text-orange-600">{t('attendance.phone')}</div>
                 <div className="text-xs text-gray-500">移动NFC系统</div>
               </div>
                           <Link href="/attendance">
@@ -187,7 +189,7 @@ export default function CheckInNavigation() {
               <div className="text-xs text-gray-500 mt-1">主入口设备</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600 mb-2">NFC</div>
+              <div className="text-2xl font-bold text-green-600 mb-2">{t('common.nfc')}</div>
               <div className="text-sm text-gray-600">13.56MHz 智能系统</div>
               <div className="text-xs text-gray-500 mt-1">侧入口设备</div>
             </div>
@@ -199,7 +201,7 @@ export default function CheckInNavigation() {
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600 mb-2">统一</div>
               <div className="text-sm text-gray-600">中央数据库</div>
-              <div className="text-xs text-gray-500 mt-1">数据同步</div>
+              <div className="text-xs text-gray-500 mt-1">{t('attendance.data_sync')}</div>
             </div>
           </div>
         </CardContent>

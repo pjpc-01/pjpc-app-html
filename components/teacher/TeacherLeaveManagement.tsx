@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/contexts/language-context"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
@@ -80,6 +81,7 @@ interface Teacher {
 }
 
 export default function TeacherLeaveManagement() {
+  const { t } = useLanguage()
   const { userProfile } = useAuth()
   
   // State
@@ -331,7 +333,7 @@ export default function TeacherLeaveManagement() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">加载中...</p>
+          <p className="mt-2 text-gray-600">{t('teacher.loading')}</p>
         </div>
       </div>
     )
@@ -384,7 +386,7 @@ export default function TeacherLeaveManagement() {
             <div className="flex items-center">
               <CheckCircle className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">已批准</p>
+                <p className="text-sm font-medium text-gray-600">{t('attendance.approved')}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.approvedLeaves}</p>
               </div>
             </div>
@@ -409,15 +411,15 @@ export default function TeacherLeaveManagement() {
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <Label htmlFor="teacher_filter">教师</Label>
+              <Label htmlFor="teacher_filter">{t('teacher.teacher')}</Label>
               <Select value={filters.teacher_id} onValueChange={(value) => 
                 setFilters(prev => ({ ...prev, teacher_id: value }))
               }>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择教师" />
+                  <SelectValue placeholder={t('teacher.select_teacher')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部教师</SelectItem>
+                  <SelectItem value="all">{t('teacher.all_teachers')}</SelectItem>
                     {Array.isArray(teachers) && teachers.map((teacher) => (
                       <SelectItem key={teacher.id} value={teacher.id}>
                         {teacher.name}
@@ -428,7 +430,7 @@ export default function TeacherLeaveManagement() {
             </div>
             
             <div>
-              <Label htmlFor="status_filter">状态</Label>
+              <Label htmlFor="status_filter">{t('teacher.status')}</Label>
               <Select value={filters.status} onValueChange={(value) => 
                 setFilters(prev => ({ ...prev, status: value }))
               }>
@@ -436,17 +438,17 @@ export default function TeacherLeaveManagement() {
                   <SelectValue placeholder="选择状态" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部状态</SelectItem>
+                  <SelectItem value="all">{t('common.all_status')}</SelectItem>
                   <SelectItem value="pending">待审批</SelectItem>
-                  <SelectItem value="approved">已批准</SelectItem>
-                  <SelectItem value="rejected">已拒绝</SelectItem>
-                  <SelectItem value="cancelled">已取消</SelectItem>
+                  <SelectItem value="approved">{t('attendance.approved')}</SelectItem>
+                  <SelectItem value="rejected">{t('attendance.rejected')}</SelectItem>
+                  <SelectItem value="cancelled">{t('teacher.cancelled')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div>
-              <Label htmlFor="year_filter">年份</Label>
+              <Label htmlFor="year_filter">{t('teacher.year')}</Label>
               <Input
                 id="year_filter"
                 type="number"
@@ -490,14 +492,14 @@ export default function TeacherLeaveManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>教师</TableHead>
+                <TableHead>{t('teacher.teacher')}</TableHead>
                 <TableHead>请假类型</TableHead>
                 <TableHead>请假期间</TableHead>
                 <TableHead>天数</TableHead>
                 <TableHead>原因</TableHead>
-                <TableHead>状态</TableHead>
+                <TableHead>{t('teacher.status')}</TableHead>
                 <TableHead>申请日期</TableHead>
-                <TableHead>操作</TableHead>
+                <TableHead>{t('teacher.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -587,12 +589,12 @@ export default function TeacherLeaveManagement() {
           <form onSubmit={handleLeaveSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="teacher_id">选择教师</Label>
+                <Label htmlFor="teacher_id">{t('teacher.select_teacher')}</Label>
                 <Select value={leaveForm.teacher_id} onValueChange={(value) => 
                   setLeaveForm(prev => ({ ...prev, teacher_id: value }))
                 }>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择教师" />
+                    <SelectValue placeholder={t('teacher.select_teacher')} />
                   </SelectTrigger>
                   <SelectContent>
                     {Array.isArray(teachers) && teachers.map((teacher) => (
@@ -626,7 +628,7 @@ export default function TeacherLeaveManagement() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="start_date">开始日期</Label>
+                <Label htmlFor="start_date">{t('teacher.start_date')}</Label>
                 <Input
                   id="start_date"
                   type="date"
@@ -643,7 +645,7 @@ export default function TeacherLeaveManagement() {
               </div>
               
               <div>
-                <Label htmlFor="end_date">结束日期</Label>
+                <Label htmlFor="end_date">{t('teacher.end_date')}</Label>
                 <Input
                   id="end_date"
                   type="date"
@@ -691,7 +693,7 @@ export default function TeacherLeaveManagement() {
             </div>
 
             <div>
-              <Label htmlFor="notes">备注</Label>
+              <Label htmlFor="notes">{t('teacher.notes')}</Label>
               <Textarea
                 id="notes"
                 value={leaveForm.notes}
@@ -736,7 +738,7 @@ export default function TeacherLeaveManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="approved">批准</SelectItem>
-                  <SelectItem value="rejected">拒绝</SelectItem>
+                  <SelectItem value="rejected">{t('teacher.reject')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

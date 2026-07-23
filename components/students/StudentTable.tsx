@@ -10,6 +10,7 @@ import { Student } from "@/hooks/useStudents"
 import { convertGradeToChinese } from "@/app/components/student/utils"
 import PermissionGate from "@/components/shared/PermissionGate"
 import type { UserRole } from "@/lib/permissions"
+import { useLanguage } from "@/contexts/language-context"
 
 interface StudentListProps {
   students: Student[]
@@ -34,6 +35,7 @@ export default function StudentList({
   onDeleteStudent,
   userRole = 'admin'
 }: StudentListProps) {
+  const { t } = useLanguage()
   const [sortBy, setSortBy] = useState<string>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
@@ -93,7 +95,7 @@ export default function StudentList({
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-gray-600">加载中...</p>
+          <p className="mt-2 text-gray-600">{t('teacher.loading')}</p>
         </div>
       </div>
     )
@@ -103,7 +105,7 @@ export default function StudentList({
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <p className="text-gray-600">暂无学生数据</p>
+          <p className="text-gray-600">{t('student.no_student_data')}</p>
         </div>
       </div>
     )
@@ -138,16 +140,16 @@ export default function StudentList({
             >
               年级
             </TableHead>
-            <TableHead>父亲</TableHead>
-            <TableHead>母亲</TableHead>
-            <TableHead>联系电话</TableHead>
+            <TableHead>{t('student.father')}</TableHead>
+            <TableHead>{t('student.mother')}</TableHead>
+            <TableHead>{t('student.contact_phone')}</TableHead>
             <TableHead 
               className="cursor-pointer hover:bg-gray-50"
               onClick={() => handleSort('status')}
             >
               状态
             </TableHead>
-            <TableHead className="w-24">操作</TableHead>
+            <TableHead className="w-24">{t('teacher.actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
