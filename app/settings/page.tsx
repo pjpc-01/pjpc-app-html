@@ -355,11 +355,12 @@ export default function SettingsPage() {
 
         {/* Settings Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full max-w-md">
-            <TabsTrigger value="params" className="flex items-center gap-2">
-              <Sliders className="h-4 w-4" />
-              系统参数
-            </TabsTrigger>
+          <TabsList className="w-full flex-wrap">
+            <TabsTrigger value="params" className="flex items-center gap-2"><Sliders className="h-4 w-4" />系统参数</TabsTrigger>
+            <TabsTrigger value="bank" className="flex items-center gap-2"><Building2 className="h-4 w-4" />银行</TabsTrigger>
+            <TabsTrigger value="rates" className="flex items-center gap-2"><Percent className="h-4 w-4" />费率</TabsTrigger>
+            <TabsTrigger value="permissions" className="flex items-center gap-2"><Shield className="h-4 w-4" />权限</TabsTrigger>
+            <TabsTrigger value="audit" className="flex items-center gap-2"><History className="h-4 w-4" />日志</TabsTrigger>
           </TabsList>
 
           {/* 1. Bank Account Settings */}
@@ -586,7 +587,7 @@ export default function SettingsPage() {
           </TabsContent>
 
           {/* 3. System Parameters */}
-          <TabsContent value="system" className="space-y-6 mt-6">
+          <TabsContent value="params" className="space-y-6 mt-6">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">

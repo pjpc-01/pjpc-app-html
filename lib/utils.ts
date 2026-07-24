@@ -527,3 +527,13 @@ export function getCardUidSearchTerms(raw: string): string[] {
 export const performanceMonitor = PerformanceMonitor.getInstance()
 export const cacheManager = CacheManager.getInstance()
 export const errorHandler = ErrorHandler.getInstance()
+
+// 年级数字映射为中文名
+const GRADE_NAME_MAP: Record<string, string> = {
+  '1': '一年级', '2': '二年级', '3': '三年级', '4': '四年级', '5': '五年级', '6': '六年级',
+  '7': '中一', '8': '中二', '9': '中三', '10': '中四', '11': '中五',
+}
+export const formatGrade = (grade: string | undefined | null): string => {
+  if (!grade) return ''
+  return GRADE_NAME_MAP[grade] || grade
+}

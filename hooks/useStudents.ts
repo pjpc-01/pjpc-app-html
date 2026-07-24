@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getAllStudents, Student as PocketBaseStudent, addStudent as addStudentToPb, updateStudent as updateStudentInPb, deleteStudent as deleteStudentFromPb } from '@/lib/pocketbase-students'
+import { formatGrade } from '@/lib/utils'
 
 // 使用与 lib/pocketbase-students.ts 相同的 Student 接口
 export interface Student extends PocketBaseStudent {}
@@ -14,13 +15,19 @@ export const useStudents = () => {
       setLoading(true)
       setError(null)
       
-      console.log('🔍 useStudents: 开始获取融合的学生数据...')
       const allStudents = await getAllStudents()
+      // Normalize grade at source
+      const normalized = allStudents.map((s: any) => ({
+        ...s,
+        grade: formatGrade(s.grade),
+        standard: formatGrade(s.standard),
+      }))
+      setStudents(normalized)
       console.log(`✅ useStudents: 成功获取 ${allStudents.length} 个学生数据`)
       
       if (allStudents.length > 0) {
-        console.log('🔍 useStudents: 前3个学生数据:', allStudents.slice(0, 3))
-        const centerCounts = allStudents.reduce((acc, student) => {
+        console.log('🔍 useStudents: 前3个学生数据:', normalized.slice(0, 3))
+        const centerCounts = normalized.reduce((acc: any, student: any) => {
           const center = student.center || 'WX 01'
           acc[center] = (acc[center] || 0) + 1
           return acc
@@ -31,7 +38,6 @@ export const useStudents = () => {
       }
       
       console.log('🔍 useStudents: 设置学生数据到状态...')
-      setStudents(allStudents)
       console.log('✅ useStudents: 学生数据已设置到状态')
     } catch (err: any) {
       console.error('❌ useStudents: 获取学生数据失败:', err)

@@ -11,18 +11,8 @@ export const convertGradeToChinese = (grade: string): string => {
   const gradeNum = parseInt(grade.toString())
   if (!isNaN(gradeNum)) {
     const gradeMap: Record<number, string> = {
-      1: 'Standard 1（一年级）',
-      2: 'Standard 2（二年级）',
-      3: 'Standard 3（三年级）',
-      4: 'Standard 4（四年级）',
-      5: 'Standard 5（五年级）',
-      6: 'Standard 6（六年级）',
-      7: 'Form 1（初一）',
-      8: 'Form 2（初二）',
-      9: 'Form 3（初三）',
-      10: 'Form 4（高一）',
-      11: 'Form 5（高二）',
-      12: 'Form 6（高三）'
+      1: '一年级', 2: '二年级', 3: '三年级', 4: '四年级', 5: '五年级', 6: '六年级',
+      7: '中一', 8: '中二', 9: '中三', 10: '中四', 11: '中五', 12: '中六'
     }
     return gradeMap[gradeNum] || grade
   }

@@ -48,18 +48,21 @@ export const useReceipts = () => {
     const year = new Date().getFullYear()
     const prefix = `RCP-${year}-`
     
+    // Fetch all receipts (no filter — filter would fail on missing field)
     const allReceipts = await fetchSecureData<Receipt[]>('receipts', {
       fullList: true,
-      filter: `receiptNumber begins with '${prefix}'`
+      sort: '-created'
     })
     
-    // Use max number instead of length to handle gaps from deleted receipts
+    // Filter and find max number in JS
     let maxNumber = 0
     for (const r of allReceipts) {
-      const numPart = r.receiptNumber.replace(prefix, '')
-      const num = parseInt(numPart, 10)
-      if (!isNaN(num) && num > maxNumber) {
-        maxNumber = num
+      if (r.receiptNumber && r.receiptNumber.startsWith(prefix)) {
+        const numPart = r.receiptNumber.replace(prefix, '')
+        const num = parseInt(numPart, 10)
+        if (!isNaN(num) && num > maxNumber) {
+          maxNumber = num
+        }
       }
     }
     const nextNumber = maxNumber + 1

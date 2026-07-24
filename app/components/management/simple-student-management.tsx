@@ -28,6 +28,7 @@ import {
 } from "lucide-react"
 import { useStudents } from "@/hooks/useStudents"
 import { Student } from "@/hooks/useStudents"
+import { formatGrade } from "@/lib/utils"
 
 interface SimpleStudentManagementProps {
   title?: string
@@ -345,7 +346,7 @@ export default function SimpleStudentManagement({
                   <TableRow key={student.id}>
                     <TableCell className="font-medium">{student.student_name || '-'}</TableCell>
                     <TableCell className="font-mono text-xs">{student.student_id || '-'}</TableCell>
-                    <TableCell>{student.standard || '-'}</TableCell>
+                    <TableCell>{formatGrade(student.standard)}</TableCell>
                     <TableCell>{student.father_name || '-'}</TableCell>
                     <TableCell>{student.mother_name || '-'}</TableCell>
                     <TableCell>
@@ -430,7 +431,7 @@ export default function SimpleStudentManagement({
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-500">{t('student.grade')}</Label>
-                  <p>{viewingStudent.standard || '-'}</p>
+                  <p>{formatGrade(viewingStudent.standard)}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-500">{t('teacher.status')}</Label>

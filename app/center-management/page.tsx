@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { 
-  Plus, Edit, Trash2, Building, MapPin, Phone, User, Users
+  Plus, Edit, Trash2, Building, MapPin, Phone, User, Users, FileText
 } from "lucide-react"
 
 interface Center {
@@ -53,6 +53,13 @@ export default function CenterManagementPage() {
   const [saving, setSaving] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
+  // PDF preset state
+  const [presetForm, setPresetForm] = useState({ invoice_settings_id: '', receipt_settings_id: '', payslip_settings_id: '' })
+  const [invoicePresets, setInvoicePresets] = useState<any[]>([])
+  const [receiptPresets, setReceiptPresets] = useState<any[]>([])
+  const [payslipPresets, setPayslipPresets] = useState<any[]>([])
+  const [centerPresetsMap, setCenterPresetsMap] = useState<Record<string, any>>({})
+
   const fetchCenters = useCallback(async () => {
     try {
       setLoading(true)
@@ -80,11 +87,30 @@ export default function CenterManagementPage() {
     }
   }, [])
 
-  useEffect(() => { fetchCenters() }, [fetchCenters])
+  const fetchPresets = async () => {
+    try {
+      const [iRes, rRes, pRes, cpRes] = await Promise.all([
+        fetch(`${API_BASE}/api/collections/invoice_settings/records?perPage=50`),
+        fetch(`${API_BASE}/api/collections/receipt_settings/records?perPage=50`),
+        fetch(`${API_BASE}/api/collections/salary_settings/records?perPage=50`),
+        fetch('/api/center-presets'),
+      ])
+      if (iRes.ok) { const d = await iRes.json(); setInvoicePresets(d.items || []) }
+      if (rRes.ok) { const d = await rRes.json(); setReceiptPresets(d.items || []) }
+      if (pRes.ok) { const d = await pRes.json(); setPayslipPresets(d.items || []) }
+      if (cpRes.ok) {
+        const d = await cpRes.json()
+        setCenterPresetsMap(d.data || {})
+      }
+    } catch {}
+  }
+
+  useEffect(() => { fetchCenters(); fetchPresets() }, [fetchCenters])
 
   const openAdd = () => {
     setEditCenter(null)
     setForm({ name: '', code: '', address: '', phone: '', manager: '', status: 'active' })
+    setPresetForm({ invoice_settings_id: '', receipt_settings_id: '', payslip_settings_id: '' })
     setDialogOpen(true)
   }
 
@@ -98,6 +124,8 @@ export default function CenterManagementPage() {
       manager: c.manager || '',
       status: c.status || 'active',
     })
+    const cp = centerPresetsMap[c.code] || {}
+    setPresetForm({ invoice_settings_id: cp.invoice_settings_id || '', receipt_settings_id: cp.receipt_settings_id || '', payslip_settings_id: cp.payslip_settings_id || '' })
     setDialogOpen(true)
   }
 
@@ -116,8 +144,21 @@ export default function CenterManagementPage() {
         body: JSON.stringify(form),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const saved = await res.json()
+      const centerCode = saved.code || editCenter?.code || form.code
+
+      // Save center presets via API
+      if (centerCode) {
+        await fetch('/api/center-presets', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...presetForm, center_id: centerCode }),
+        })
+      }
+
       setDialogOpen(false)
       fetchCenters()
+      fetchPresets()
     } catch (e: any) {
       setError(e.message)
     } finally {
@@ -184,6 +225,9 @@ export default function CenterManagementPage() {
                     <TableHead>负责人</TableHead>
                     <TableHead>{t('report.phone')}</TableHead>
                     <TableHead>{t('teacher.address')}</TableHead>
+                    <TableHead>发票预设</TableHead>
+                    <TableHead>收据预设</TableHead>
+                    <TableHead>工资单预设</TableHead>
                     <TableHead>学生数</TableHead>
                     <TableHead>{t('teacher.status')}</TableHead>
                     <TableHead className="w-20">{t('teacher.actions')}</TableHead>
@@ -212,6 +256,9 @@ export default function CenterManagementPage() {
                           {c.address || '-'}
                         </span>
                       </TableCell>
+                      <TableCell className="text-xs text-gray-500">{invoicePresets.find(p => p.id === centerPresetsMap[c.code]?.invoice_settings_id)?.name || '未设置'}</TableCell>
+                      <TableCell className="text-xs text-gray-500">{receiptPresets.find(p => p.id === centerPresetsMap[c.code]?.receipt_settings_id)?.name || '未设置'}</TableCell>
+                      <TableCell className="text-xs text-gray-500">{payslipPresets.find(p => p.id === centerPresetsMap[c.code]?.payslip_settings_id)?.name || '未设置'}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="bg-blue-50">
                           <Users className="h-3 w-3 mr-1" />
@@ -305,6 +352,34 @@ export default function CenterManagementPage() {
                   <SelectItem value="inactive">{t('center.disabled')}</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* PDF Preset Selectors */}
+            <div className="col-span-4 border-t pt-4 mt-2">
+              <h4 className="font-semibold text-sm mb-3 flex items-center gap-2"><FileText className="h-4 w-4" />PDF 预设方案</h4>
+              <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right text-xs">发票预设</Label>
+                  <select className="col-span-3 border rounded-md px-3 py-2 text-sm" value={presetForm.invoice_settings_id} onChange={e => setPresetForm({...presetForm, invoice_settings_id: e.target.value})}>
+                    <option value="">不使用预设</option>
+                    {invoicePresets.map((p: any) => <option key={p.id} value={p.id}>{p.name || '未命名'}{p.isDefault ? ' (默认)' : ''}</option>)}
+                  </select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right text-xs">收据预设</Label>
+                  <select className="col-span-3 border rounded-md px-3 py-2 text-sm" value={presetForm.receipt_settings_id} onChange={e => setPresetForm({...presetForm, receipt_settings_id: e.target.value})}>
+                    <option value="">不使用预设</option>
+                    {receiptPresets.map((p: any) => <option key={p.id} value={p.id}>{p.name || '未命名'}{p.isDefault ? ' (默认)' : ''}</option>)}
+                  </select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right text-xs">工资单预设</Label>
+                  <select className="col-span-3 border rounded-md px-3 py-2 text-sm" value={presetForm.payslip_settings_id} onChange={e => setPresetForm({...presetForm, payslip_settings_id: e.target.value})}>
+                    <option value="">不使用预设</option>
+                    {payslipPresets.map((p: any) => <option key={p.id} value={p.id}>{p.name || '未命名'}{p.isDefault ? ' (默认)' : ''}</option>)}
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
           <div className="flex justify-end gap-2">
