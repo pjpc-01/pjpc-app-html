@@ -5,13 +5,11 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url)
     const searchParams = url.searchParams.toString()
     
-    const origin = new URL(request.url).origin.replace('https://', 'http://')
     // Always exclude soft-deleted students
     let pbUrl = `/api/pocketbase-proxy/api/collections/students/records?perPage=500&expand=centerId&filter=(status!='deleted')`
     if (searchParams) pbUrl += `&${searchParams}`
-    const proxyUrl = pbUrl
     
-    const response = await fetch(`${origin}${proxyUrl}`)
+    const response = await fetch(`http://127.0.0.1:3001${pbUrl}`)
     
     if (!response.ok) {
       return NextResponse.json({ success: false, error: 'Proxy error' }, { status: response.status })
@@ -32,7 +30,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const response = await fetch(`${new URL(request.url).origin}/api/pocketbase-proxy/api/collections/students/records`, {
+    const response = await fetch(`http://127.0.0.1:3001/api/pocketbase-proxy/api/collections/students/records`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)

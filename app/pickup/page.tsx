@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { usePickup, PickupRecord } from "@/hooks/usePickup"
 import { useStudents } from "@/hooks/useStudents"
 import { Truck, User, Phone, Car, Clock, CheckCircle, AlertCircle, Plus, Search, Users } from "lucide-react"
+import { formatGrade } from "@/lib/utils"
 import { useLanguage } from "@/contexts/language-context"
 
 const RELATIONSHIPS = [

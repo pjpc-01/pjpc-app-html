@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { formatGrade } from "@/lib/utils"
 import { useLanguage } from "@/contexts/language-context"
 import { FileText, Users, AlertCircle, Loader2 } from "lucide-react"
 
@@ -200,7 +201,7 @@ export function InvoiceCreateDialog({
                               </span>
                             )}
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{student.standard || student.grade}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{formatGrade(student.standard || student.grade)}</TableCell>
                           <TableCell className={`text-right font-semibold ${amount > 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
                             RM {amount.toFixed(2)}
                           </TableCell>

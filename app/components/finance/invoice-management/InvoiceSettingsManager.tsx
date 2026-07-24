@@ -66,6 +66,12 @@ export interface InvoiceSettingsPreset {
   paymentTerms: string
   receiptNote: string
   latePaymentRule: string
+  // Extra PB fields
+  daycareContact?: string
+  daycarePhone?: string
+  late_payment_fee?: number
+  late_payment_grace_days?: number
+  thanksGreeting?: string
   // Defaults
   isDefault: boolean
   createdAt: string
@@ -93,7 +99,13 @@ const createDefaultPreset = (overrides?: Partial<InvoiceSettingsPreset>): Invoic
   footerText: "",
   paymentTerms: "",
   receiptNote: "",
-  latePaymentRule: "",
+  latePaymentRule: "每月7日前缴费，逾期将收取 RM8 迟付款费用。",
+  // Extra PB fields preserved through spread
+  daycareContact: "",
+  daycarePhone: "",
+  late_payment_fee: 8,
+  late_payment_grace_days: 0,
+  thanksGreeting: "",
   isDefault: true,
   createdAt: new Date().toISOString().split('T')[0],
   updatedAt: new Date().toISOString().split('T')[0],

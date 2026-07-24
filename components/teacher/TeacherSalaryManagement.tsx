@@ -211,17 +211,21 @@ export default function TeacherSalaryManagement() {
   })
   const [isPayslipSettingsOpen, setIsPayslipSettingsOpen] = useState(false)
   const [payslipActivePresetId, setPayslipActivePresetId] = useState<string>()
+  const [centerPresetMap, setCenterPresetMap] = useState<Record<string, string>>({})
+  const [allPayslipPresets, setAllPayslipPresets] = useState<PayslipSettingsPreset[]>([])
 
   // Load payslip settings from PB
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('/api/pocketbase-proxy/api/collections/salary_settings/records?perPage=1&sort=-created')
-        if (!res.ok) return
-        const data = await res.json()
-        if (data.items?.length > 0) {
-          const s = data.items[0]
-          setPayslipSettings({
+        const [res, cpRes] = await Promise.all([
+          fetch('/api/pocketbase-proxy/api/collections/salary_settings/records?perPage=50&sort=-created'),
+          fetch('/api/center-presets'),
+        ])
+        if (res.ok) {
+          const data = await res.json()
+          // Store all presets
+          const items = (data.items || []).map((s: any) => ({
             id: s.id, name: s.name || "默认",
             schoolName: s.schoolName || "", schoolNameEn: s.schoolNameEn || "",
             schoolLogo: s.schoolLogo || "", schoolAddress: s.schoolAddress || "",
@@ -230,14 +234,37 @@ export default function TeacherSalaryManagement() {
             accentColor: s.accentColor || "#f59e0b", footerText: s.footerText || "",
             showEmployerEPF: s.showEmployerEPF !== false,
             isDefault: true, createdAt: s.created || "", updatedAt: s.updated || "",
-          })
+          }))
+          setAllPayslipPresets(items)
+          if (items.length > 0) {
+            setPayslipSettings(items[0])
+          }
+        }
+        if (cpRes.ok) {
+          const cpData = await cpRes.json()
+          const map: Record<string, string> = {}
+          for (const [cid, p] of Object.entries(cpData.data || {})) {
+            if ((p as any).payslip_settings_id) map[cid] = (p as any).payslip_settings_id
+          }
+          setCenterPresetMap(map)
         }
       } catch {}
     }
     load()
   }, [])
+
+    // Get payslip preset for a record based on teacher's center
+    const getPayslipPresetForRecord = (record: any): PayslipSettingsPreset => {
+      const teacher = record.expand?.teacher_id
+          const centerId = teacher?.centerId || teacher?.center || ''
+      if (centerId && centerPresetMap[centerId]) {
+        const preset = allPayslipPresets.find(p => p.id === centerPresetMap[centerId])
+        if (preset) return preset
+      }
+      return payslipSettings
+    }
   
-  // Form states
+    // Form states
   const [structureForm, setStructureForm] = useState({
     teacher_id: '',
     base_salary: 0,
@@ -1243,7 +1270,7 @@ export default function TeacherSalaryManagement() {
                             size="sm"
                             variant="outline"
                             onClick={() => {
-                              downloadPayslipPDF(record, payslipSettings, record.expand?.teacher_id?.name || '教师', record.expand?.teacher_id ? { epfNo: record.expand.teacher_id.epfNo, socsoNo: record.expand.teacher_id.socsoNo, bankName: record.expand.teacher_id.bankName, bankAccountNo: record.expand.teacher_id.bankAccountNo } : undefined)
+                              downloadPayslipPDF(record, getPayslipPresetForRecord(record), record.expand?.teacher_id?.name || '教师', record.expand?.teacher_id ? { epfNo: record.expand.teacher_id.epfNo, socsoNo: record.expand.teacher_id.socsoNo, bankName: record.expand.teacher_id.bankName, bankAccountNo: record.expand.teacher_id.bankAccountNo } : undefined)
                             }}
                           >
                             <FileDown className="w-4 h-4 text-blue-600" />
@@ -1648,7 +1675,7 @@ export default function TeacherSalaryManagement() {
               {/* PDF Preview iframe */}
               <div className="w-full border rounded-lg overflow-hidden bg-white">
                 <iframe
-                  srcDoc={generatePayslipHTML(selectedPayslipRecord, payslipSettings, selectedPayslipRecord.expand?.teacher_id?.name || '教师', selectedPayslipRecord.expand?.teacher_id ? { epfNo: selectedPayslipRecord.expand.teacher_id.epfNo, socsoNo: selectedPayslipRecord.expand.teacher_id.socsoNo, bankName: selectedPayslipRecord.expand.teacher_id.bankName, bankAccountNo: selectedPayslipRecord.expand.teacher_id.bankAccountNo } : undefined)}
+                  srcDoc={generatePayslipHTML(selectedPayslipRecord, getPayslipPresetForRecord(selectedPayslipRecord), selectedPayslipRecord.expand?.teacher_id?.name || '教师', selectedPayslipRecord.expand?.teacher_id ? { epfNo: selectedPayslipRecord.expand.teacher_id.epfNo, socsoNo: selectedPayslipRecord.expand.teacher_id.socsoNo, bankName: selectedPayslipRecord.expand.teacher_id.bankName, bankAccountNo: selectedPayslipRecord.expand.teacher_id.bankAccountNo } : undefined)}
                   className="w-full border-0"
                   style={{ height: '70vh', minHeight: '500px' }}
                   title="薪资单预览"
@@ -1660,7 +1687,7 @@ export default function TeacherSalaryManagement() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    downloadPayslipPDF(selectedPayslipRecord, payslipSettings, selectedPayslipRecord.expand?.teacher_id?.name || '教师', selectedPayslipRecord.expand?.teacher_id ? { epfNo: selectedPayslipRecord.expand.teacher_id.epfNo, socsoNo: selectedPayslipRecord.expand.teacher_id.socsoNo, bankName: selectedPayslipRecord.expand.teacher_id.bankName, bankAccountNo: selectedPayslipRecord.expand.teacher_id.bankAccountNo } : undefined)
+                    downloadPayslipPDF(selectedPayslipRecord, getPayslipPresetForRecord(selectedPayslipRecord), selectedPayslipRecord.expand?.teacher_id?.name || '教师', selectedPayslipRecord.expand?.teacher_id ? { epfNo: selectedPayslipRecord.expand.teacher_id.epfNo, socsoNo: selectedPayslipRecord.expand.teacher_id.socsoNo, bankName: selectedPayslipRecord.expand.teacher_id.bankName, bankAccountNo: selectedPayslipRecord.expand.teacher_id.bankAccountNo } : undefined)
                   }}
                 >
                   <Download className="h-4 w-4 mr-2" />

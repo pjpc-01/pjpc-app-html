@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { formatGrade } from "@/lib/utils"
 import { useLanguage } from "@/contexts/language-context"
 
 interface InvoiceListProps {
@@ -287,7 +288,7 @@ export function InvoiceList({
                     </TableCell>
                     <TableCell>{invoice.studentNumber || '-'}</TableCell>
                     <TableCell>{invoice.studentName}</TableCell>
-                    <TableCell>{invoice.grade}</TableCell>
+                    <TableCell>{formatGrade(invoice.grade)}</TableCell>
                     <TableCell className="font-semibold text-green-600">
                       {formatCurrency(invoice.totalAmount)}
                     </TableCell>

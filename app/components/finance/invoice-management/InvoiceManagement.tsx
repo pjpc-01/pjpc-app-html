@@ -98,42 +98,52 @@ export default function InvoiceManagement() {
     isDefault: true, createdAt: "", updatedAt: ""
   })
 
-  // Load settings from PB on mount
+  // Load settings from PB on mount - load ALL presets for center-based resolution
+  const [allInvoicePresets, setAllInvoicePresets] = useState<InvoiceSettingsPreset[]>([])
+  const [centerPresetMap, setCenterPresetMap] = useState<Record<string, string>>({})
+
   useEffect(() => {
     const loadFromPB = async () => {
       try {
-        const res = await fetch('/api/pocketbase-proxy/api/collections/invoice_settings/records?perPage=50&sort=-created')
-        if (!res.ok) return
-        const data = await res.json()
-        const items = data.items || []
-        if (items.length > 0) {
-          const defaultPreset = items.find((r: any) => r.isDefault) || items[0]
-          const mapped = {
-            ...defaultPreset,
-            id: defaultPreset.id,
-            schoolLogo: defaultPreset.schoolLogo || '',
-            schoolName: defaultPreset.schoolName || '',
-            schoolNameEn: defaultPreset.schoolNameEn || '',
-            schoolAddress: defaultPreset.schoolAddress || '',
-            schoolPhone: defaultPreset.schoolPhone || '',
-            schoolEmail: defaultPreset.schoolEmail || '',
-            schoolWebsite: defaultPreset.schoolWebsite || '',
-            taxNumber: defaultPreset.taxNumber || '',
-            bankName: defaultPreset.bankName || '',
-            bankAccount: defaultPreset.bankAccount || '',
-            bankHolder: defaultPreset.bankHolder || '',
-            primaryColor: defaultPreset.primaryColor || '#1e40af',
-            secondaryColor: defaultPreset.secondaryColor || '#3b82f6',
-            accentColor: defaultPreset.accentColor || '#f59e0b',
-            footerText: defaultPreset.footerText || '',
-            paymentTerms: defaultPreset.paymentTerms || '',
-            receiptNote: defaultPreset.receiptNote || '',
-            isDefault: true,
-            createdAt: defaultPreset.created || '',
-            updatedAt: defaultPreset.updated || '',
-          } as InvoiceSettingsPreset
-          setPdfOptions(mapped)
-          localStorage.setItem('pjpc_invoice_settings_active', JSON.stringify(mapped))
+        const [invRes, cpRes] = await Promise.all([
+          fetch('/api/pocketbase-proxy/api/collections/invoice_settings/records?perPage=50&sort=-created'),
+          fetch('/api/center-presets'),
+        ])
+        
+        // Load all invoice presets
+        if (invRes.ok) {
+          const data = await invRes.json()
+          const items = (data.items || []).map((r: any) => ({
+            id: r.id, name: r.name || '', schoolName: r.schoolName || '', schoolNameEn: r.schoolNameEn || '',
+            schoolLogo: r.schoolLogo || '', schoolAddress: r.schoolAddress || '', schoolPhone: r.schoolPhone || '',
+            schoolEmail: r.schoolEmail || '', schoolWebsite: r.schoolWebsite || '',
+            taxNumber: r.taxNumber || '', bankName: r.bankName || '', bankAccount: r.bankAccount || '', bankHolder: r.bankHolder || '',
+            primaryColor: r.primaryColor || '#1e40af', secondaryColor: r.secondaryColor || '#3b82f6', accentColor: r.accentColor || '#f59e0b',
+            footerText: r.footerText || '', paymentTerms: r.paymentTerms || '', receiptNote: r.receiptNote || '',
+            latePaymentRule: r.latePaymentRule || '', isDefault: r.isDefault || false,
+            createdAt: r.created || '', updatedAt: r.updated || '',
+          } as InvoiceSettingsPreset))
+          setAllInvoicePresets(items)
+          
+          // Set default preset as initial pdfOptions
+          const defaultPreset = items.find((p: any) => p.isDefault) || items[0]
+          if (defaultPreset) {
+            setPdfOptions(defaultPreset)
+            localStorage.setItem('pjpc_invoice_settings_active', JSON.stringify(defaultPreset))
+          }
+        }
+        
+        // Load center_presets mapping from API
+        if (cpRes.ok) {
+          const cpData = await cpRes.json()
+          const map: Record<string, string> = {}
+          const presetsData = cpData.data || {}
+          for (const [centerId, preset] of Object.entries(presetsData)) {
+            if ((preset as any).invoice_settings_id) {
+              map[centerId] = (preset as any).invoice_settings_id
+            }
+          }
+          setCenterPresetMap(map)
         }
       } catch (e) {
         console.error('Failed to load invoice settings from PB:', e)
@@ -141,6 +151,27 @@ export default function InvoiceManagement() {
     }
     loadFromPB()
   }, [])
+
+  // Get the correct preset for a given center ID
+  const getPresetForCenter = (centerId: string): InvoiceSettingsPreset => {
+    const presetId = centerPresetMap[centerId]
+    if (presetId) {
+      const preset = allInvoicePresets.find(p => p.id === presetId)
+      if (preset) return preset
+    }
+    return pdfOptions // fallback to default
+  }
+
+  // Get the correct preset for a given invoice (based on student's center)
+  const getPresetForInvoice = (invoice: any): InvoiceSettingsPreset => {
+    const student = students.find((s: any) => s.id === invoice.studentId)
+    const centerId = student?.center || ''
+    if (centerId) {
+      const preset = getPresetForCenter(centerId)
+      if (preset.id !== pdfOptions.id) return preset
+    }
+    return pdfOptions
+  }
 
   // Sync active settings to localStorage (for fast initial load)
   useEffect(() => {
@@ -220,7 +251,7 @@ Prospek Cemerlang`,
     try {
       console.log('📄 PDF Download - invoice:', { id: invoice.id, studentName: invoice.studentName, itemsCount: invoice.items?.length, items: invoice.items, totalAmount: invoice.totalAmount })
       console.log('📄 PDF Download - pdfOptions:', { schoolName: pdfOptions.schoolName, primaryColor: pdfOptions.primaryColor, bankName: pdfOptions.bankName })
-      await downloadInvoicePDF(invoice, pdfOptions)
+      await downloadInvoicePDF(invoice, getPresetForInvoice(invoice))
     } catch (error) {
       console.error('Failed to download invoice:', error)
     }
@@ -228,7 +259,7 @@ Prospek Cemerlang`,
 
   const handlePrintInvoice = async (invoice: any) => {
     try {
-      await printInvoicePDF(invoice, pdfOptions)
+      await printInvoicePDF(invoice, getPresetForInvoice(invoice))
     } catch (error) {
       console.error('Failed to print invoice:', error)
     }
@@ -254,7 +285,7 @@ Prospek Cemerlang`,
       const formattedPhone = phoneNumber.replace(/\s+/g, '').replace(/^0/, '60').replace(/^\+/, '')
       
       // 1. Generate PDF blob
-      const pdfBlob = await generateInvoicePDF(invoice, pdfOptions)
+      const pdfBlob = await generateInvoicePDF(invoice, getPresetForInvoice(invoice))
       const pdfFile = new File([pdfBlob], `Invoice_${invoice.invoiceNumber}.pdf`, { type: 'application/pdf' })
       
       // 2. Build message
@@ -357,7 +388,7 @@ Prospek Cemerlang`,
       }
 
       // 1. Generate PDF blob
-      const pdfBlob = await generateInvoicePDF(invoice, pdfOptions)
+      const pdfBlob = await generateInvoicePDF(invoice, getPresetForInvoice(invoice))
 
       // 2. Build email body
       const templateData = {
@@ -771,7 +802,7 @@ Prospek Cemerlang`,
               {/* PDF Preview iframe */}
               <div className="w-full border rounded-lg overflow-hidden bg-white">
                 <iframe
-                  srcDoc={generateInvoiceHTML(selectedInvoice, pdfOptions)}
+                  srcDoc={generateInvoiceHTML(selectedInvoice, getPresetForInvoice(selectedInvoice))}
                   className="w-full border-0"
                   style={{ height: '70vh', minHeight: '500px' }}
                   title="发票预览"
