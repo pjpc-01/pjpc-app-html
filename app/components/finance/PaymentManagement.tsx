@@ -102,6 +102,8 @@ export default function PaymentManagement() {
 
   // Apply center filter to invoices (for the new payment dialog dropdown)
   const filteredInvoices = invoices.filter(inv => {
+    // Exclude fully paid invoices
+    if (inv.status === 'paid') return false
     if (centerFilter && centerFilter !== "all") {
       const student = students.find(s => s.id === inv.studentId)
       if (!student || student.centerId !== centerFilter) return false
