@@ -88,14 +88,9 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
 
     const res = await fetch(
-      `${PB_URL}/api/collections/students/records?perPage=${limit}&sort=-points&fields=id,name,points,center,grade,student_id,avatar&filter=points>0`,
+      `${PB_URL}/api/collections/students/records?perPage=${limit}&sort=-points&fields=id,name,points,center,grade,student_id,avatar`,
       { headers: { Authorization: token } }
     ).then(r => r.json())
-
-    const gradeNameMap: Record<string, string> = {
-      '1': '一年级', '2': '二年级', '3': '三年级', '4': '四年级', '5': '五年级', '6': '六年级',
-      '7': '中一', '8': '中二', '9': '中三', '10': '中四', '11': '中五',
-    }
 
     return NextResponse.json({
       success: true,
@@ -104,7 +99,7 @@ export async function GET(request: NextRequest) {
         name: s.name,
         points: s.points || 0,
         center: s.center || '',
-        grade: gradeNameMap[s.grade] || s.grade || '',
+        grade: s.grade || '',
         student_id: s.student_id || '',
         avatar: s.avatar || '',
       })),

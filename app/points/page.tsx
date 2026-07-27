@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import {
   Loader2, Star, Trophy, Plus, Minus, Check, GraduationCap,
-  History, LogIn, Users, ChevronLeft, ChevronRight, User,
+  History, LogIn, Users, ChevronLeft, ChevronRight, User, Search,
 } from "lucide-react"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
@@ -49,6 +49,12 @@ export default function PointsPage() {
   const [logs, setLogs] = useState<PointLog[]>([])
   const [logsLoading, setLogsLoading] = useState(false)
 
+
+  // ─── 搜索 ──────────────────────────────────────────
+  const [search, setSearch] = useState("")
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searching, setSearching] = useState(false)
+  const [showResults, setShowResults] = useState(false)
   // ─── 交易记录 ──────────────────────────────────────
   const [txLogs, setTxLogs] = useState<Transaction[]>([])
   const [txLoading, setTxLoading] = useState(true)
@@ -108,6 +114,23 @@ export default function PointsPage() {
 
   useEffect(() => { fetchTransactions(txPage) }, [txPage, fetchTransactions])
 
+
+  // Debounced search
+  useEffect(() => {
+    if (!search || search.length < 2) { setSearchResults([]); setShowResults(false); return }
+    const timer = setTimeout(async () => {
+      setSearching(true)
+      try {
+        const res = await fetch(`/api/students/search?q=${encodeURIComponent(search)}`)
+        const data = await res.json()
+        setSearchResults(data.students || [])
+        setShowResults(true)
+      } catch { /* ignore */ }
+      finally { setSearching(false) }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [search])
+
   const handleConfirm = async () => {
     if (!currentStudent || amount <= 0 || !isAuthenticated) return
     setSubmitting(true)
@@ -158,25 +181,45 @@ export default function PointsPage() {
           </Button>
         </div>
 
-        {/* Auth bar */}
-        <div className={`flex items-center justify-between px-3 py-1.5 rounded-lg border text-xs ${
-          isAuthenticated ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"
-        }`}>
-          <div className="flex items-center gap-2">
-            {isAuthenticated && teacher ? (
-              <>
-                <GraduationCap className="h-3.5 w-3.5 text-green-600" />
-                <span className="font-medium text-green-700">{teacher.teacher_name || teacher.name} 老师</span>
-                <Badge variant="outline" className="text-[10px] bg-green-100 text-green-600 border-green-300">已登入</Badge>
-              </>
-            ) : (
-              <>
-                <LogIn className="h-3.5 w-3.5 text-amber-500" />
-                <span className="text-amber-700">请先登入 PJPC App</span>
-              </>
+        {/* Search bar — always visible */}
+        {isAuthenticated && (
+          <div className="relative">
+            <div className="flex items-center gap-1 bg-white rounded-lg border px-3 py-2">
+              <Search className="h-4 w-4 text-gray-400 shrink-0" />
+              <Input
+                placeholder="搜索学生姓名或学号..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="border-0 h-7 text-sm p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+              {searching && <Loader2 className="h-4 w-4 animate-spin text-amber-500 shrink-0" />}
+            </div>
+            {showResults && searchResults.length > 0 && (
+              <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white rounded-lg border shadow-lg max-h-60 overflow-y-auto">
+                {searchResults.map((s: any) => (
+                  <button
+                    key={s.id}
+                    onClick={() => loadStudent(s.id, s.name)}
+                    className="w-full text-left px-3 py-2 hover:bg-amber-50 flex items-center gap-2 border-b border-gray-50 last:border-0"
+                  >
+                    <GraduationCap className="h-4 w-4 text-gray-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-700 truncate">{s.name}</div>
+                      <div className="text-[10px] text-gray-400">{s.student_id} · {s.grade} · {s.center}</div>
+                    </div>
+                    <Star className="h-3 w-3 text-amber-400 shrink-0" />
+                    <span className="text-xs text-amber-600 font-medium">{s.points || 0}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {showResults && search.length >= 2 && searchResults.length === 0 && !searching && (
+              <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white rounded-lg border shadow-lg p-4 text-center text-xs text-gray-400">
+                未找到匹配的学生
+              </div>
             )}
           </div>
-        </div>
+        )}
 
         {/* NFC Adjustment */}
         <Card className={`border-2 min-h-[280px] transition-colors ${currentStudent ? "border-green-400 bg-gradient-to-b from-green-50" : "border-dashed border-gray-200 bg-white"}`}>
