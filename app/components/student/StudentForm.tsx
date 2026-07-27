@@ -448,14 +448,11 @@ export default function StudentForm({
     // 根据马来西亚教育体系标准计算年级
     // 7岁 = Standard 1, 8岁 = Standard 2, 以此类推
     if (grade >= 7 && grade <= 12) {
-      // 小学：7-12岁对应Standard 1-6
-      return (grade - 6).toString()
+      return `Standard ${grade - 6}`
     } else if (grade >= 13 && grade <= 17) {
-      // 中学：13-17岁对应Form 1-5
-      return (grade - 6).toString()
+      return `Form ${grade - 12}`
     } else if (grade >= 18 && grade <= 19) {
-      // 预科：18-19岁对应Form 6
-      return '12'
+      return 'Form 6'
     }
     
     return ''

@@ -528,10 +528,26 @@ export const performanceMonitor = PerformanceMonitor.getInstance()
 export const cacheManager = CacheManager.getInstance()
 export const errorHandler = ErrorHandler.getInstance()
 
-// 年级数字映射为中文名
+// 年级统一映射 — 马来西亚 KSSM 体系
 const GRADE_NAME_MAP: Record<string, string> = {
-  '1': '一年级', '2': '二年级', '3': '三年级', '4': '四年级', '5': '五年级', '6': '六年级',
-  '7': '中一', '8': '中二', '9': '中三', '10': '中四', '11': '中五',
+  // Standard 1-6 (小学)
+  '1': 'Standard 1', '一年级': 'Standard 1',
+  '2': 'Standard 2', '二年级': 'Standard 2',
+  '3': 'Standard 3', '三年级': 'Standard 3',
+  '4': 'Standard 4', '四年级': 'Standard 4',
+  '5': 'Standard 5', '五年级': 'Standard 5',
+  '6': 'Standard 6', '六年级': 'Standard 6',
+  // Form 1-6 (中学)
+  '7': 'Form 1',
+  '8': 'Form 2',
+  '9': 'Form 3',
+  '10': 'Form 4',
+  '11': 'Form 5',
+  '12': 'Form 6',
+  // Legacy / alternative
+  'remove': 'Peralihan', 'peralihan': 'Peralihan',
+  'y3': 'Standard 3', 'y4': 'Standard 4', 'y5': 'Standard 5', 'y6': 'Standard 6',
+  'y7': 'Form 1', 'y8': 'Form 2', 'y9': 'Form 3', 'y10': 'Form 4', 'y11': 'Form 5', 'y12': 'Form 6',
 }
 export const formatGrade = (grade: string | undefined | null): string => {
   if (!grade) return ''
