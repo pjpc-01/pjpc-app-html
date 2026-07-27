@@ -1,5 +1,6 @@
 "use client"
 
+import { formatGrade } from "@/lib/utils"
 import { useState, useEffect, useCallback } from "react"
 import PageLayout from "@/components/layouts/PageLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -165,7 +166,7 @@ export default function PickupManagementPage() {
                 }).map((p) => (
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.expand?.studentId?.name || p.studentId}</TableCell>
-                    <TableCell className="text-xs text-slate-500">{p.expand?.studentId?.grade || "-"}</TableCell>
+                    <TableCell className="text-xs text-slate-500">{formatGrade(p.expand?.studentId?.grade)}</TableCell>
                     <TableCell className="text-sm">{p.pickup_time || "-"}</TableCell>
                     <TableCell><span className="font-medium">{p.pickup_by}</span></TableCell>
                     <TableCell className="text-xs text-slate-500">{relationLabel(p.relationship)}</TableCell>
@@ -197,7 +198,7 @@ export default function PickupManagementPage() {
                 <SelectTrigger><SelectValue placeholder="选择学生..." /></SelectTrigger>
                 <SelectContent>
                   {students.map(s => (
-                    <SelectItem key={s.id} value={s.id}>{s.name} ({s.grade})</SelectItem>
+                    <SelectItem key={s.id} value={s.id}>{s.name} ({formatGrade(s.grade)})</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

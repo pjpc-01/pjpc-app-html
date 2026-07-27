@@ -1,5 +1,6 @@
 "use client"
 
+import { formatGrade } from "@/lib/utils"
 import React from "react"
 import { useParentPortal } from "@/hooks/useParentPortal"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,7 +36,7 @@ function ChildCard({ child }: { child: any }) {
             <div>
               <CardTitle className="text-lg">{child.name}</CardTitle>
               <CardDescription>
-                {child.grade}
+                {formatGrade(child.grade)}
                 {child.school ? ` · ${child.school}` : ""}
               </CardDescription>
             </div>

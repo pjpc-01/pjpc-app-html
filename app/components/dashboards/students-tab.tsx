@@ -1,5 +1,6 @@
 "use client"
 
+import { formatGrade } from "@/lib/utils"
 import { useState, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -352,7 +353,7 @@ export default function StudentsTab({
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200">
-                        {convertGradeToChinese(student.standard || '')}
+                        {formatGrade(student.standard)}
                       </Badge>
                     </TableCell>
                     <TableCell>
