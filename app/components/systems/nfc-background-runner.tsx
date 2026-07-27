@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef, useCallback } from "react"
+import { isNFCLocked } from "@/lib/nfc-lock"
 
 // 声明NDEFReader类型
 declare global {
@@ -427,6 +428,8 @@ export default function NFCBackgroundRunner({ center, enabled }: { center: strin
     let lastInputTime = 0
     
     const handleKeyPress = (event: KeyboardEvent) => {
+      // Skip if NFC is locked (e.g. teacher verification dialog open)
+      if (isNFCLocked()) return
       const currentTime = Date.now()
       
       // 如果输入间隔超过1秒，清空缓冲区
