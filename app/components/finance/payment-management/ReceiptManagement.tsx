@@ -89,19 +89,25 @@ export default function ReceiptManagement() {
   // Settings dialog state
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
   const [activePresetId, setActivePresetId] = useState<string>()
+  const [centerPresetMap, setCenterPresetMap] = useState<Record<string, string>>({})
+  const [allReceiptPresets, setAllReceiptPresets] = useState<ReceiptSettingsPreset[]>([])
 
   // Load school settings for PDF header
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const res = await fetch('/api/pocketbase-proxy/api/collections/receipt_settings/records?perPage=1&sort=-created')
-        if (!res.ok) return
-        const data = await res.json()
-        const items = data.items || []
-        if (items.length > 0) {
-          const s = items[0]
-          setPdfSettings(prev => ({
-            ...prev,
+        const [res, cpRes, allRes] = await Promise.all([
+          fetch('/api/pocketbase-proxy/api/collections/receipt_settings/records?perPage=1&sort=-created'),
+          fetch('/api/center-presets'),
+          fetch('/api/pocketbase-proxy/api/collections/receipt_settings/records?perPage=50&sort=-created'),
+        ])
+        if (res.ok) {
+          const data = await res.json()
+          const items = data.items || []
+          if (items.length > 0) {
+            const s = items[0]
+            setPdfSettings(prev => ({
+              ...prev,
             schoolLogo: s.schoolLogo || '',
             schoolName: s.schoolName || '智慧教育学校',
             schoolNameEn: s.schoolNameEn || '',
@@ -114,11 +120,44 @@ export default function ReceiptManagement() {
             footerText: s.footerText || '',
             receiptNote: s.receiptNote || '',
           }))
+          }
+        }
+        if (cpRes.ok) {
+          const cpData = await cpRes.json()
+          const map: Record<string, string> = {}
+          for (const [cid, p] of Object.entries(cpData.data || {})) {
+            if ((p as any).receipt_settings_id) map[cid] = (p as any).receipt_settings_id
+          }
+          setCenterPresetMap(map)
+        }
+        if (allRes.ok) {
+          const allData = await allRes.json()
+          const presets = (allData.items || []).map((s: any) => ({
+            id: s.id, name: s.name || '未命名', schoolName: s.schoolName || '',
+            schoolNameEn: s.schoolNameEn || '', schoolLogo: s.schoolLogo || '',
+            schoolAddress: s.schoolAddress || '', schoolPhone: s.schoolPhone || '',
+            schoolEmail: s.schoolEmail || '', primaryColor: s.primaryColor || '#1e40af',
+            secondaryColor: s.secondaryColor || '#3b82f6', accentColor: s.accentColor || '#f59e0b',
+            footerText: s.footerText || '', receiptNote: s.receiptNote || '',
+            isDefault: true, createdAt: s.created || '', updatedAt: s.updated || '',
+          }))
+          setAllReceiptPresets(presets)
         }
       } catch { /* use defaults */ }
     }
     loadSettings()
   }, [])
+
+  // Get receipt preset based on student's center
+  const getReceiptPresetForReceipt = (receipt: any): ReceiptSettingsPreset => {
+    const student = students.find((s: any) => s.id === receipt.studentId)
+    const centerId = student?.center || ''
+    if (centerId && centerPresetMap[centerId]) {
+      const preset = allReceiptPresets.find(p => p.id === centerPresetMap[centerId])
+      if (preset) return preset
+    }
+    return pdfSettings
+  }
 
   // ── Batch delete state ──
   const [selectedReceiptIds, setSelectedReceiptIds] = useState<Set<string>>(new Set())
@@ -191,7 +230,7 @@ export default function ReceiptManagement() {
   const handleDownloadReceipt = async (receipt: any) => {
     try {
       const studentName = getStudentName(receipt.studentId)
-      await downloadReceiptPDF(receipt, pdfSettings, studentName)
+      await downloadReceiptPDF(receipt, getReceiptPresetForReceipt(receipt), studentName)
     } catch (error) {
       console.error('Failed to download receipt PDF:', error)
     }
@@ -528,7 +567,7 @@ export default function ReceiptManagement() {
               {/* PDF Preview iframe */}
               <div className="w-full border rounded-lg overflow-hidden bg-white">
                 <iframe
-                  srcDoc={generateReceiptHTML(selectedReceipt, pdfSettings, getStudentName(selectedReceipt.studentId))}
+                  srcDoc={generateReceiptHTML(selectedReceipt, getReceiptPresetForReceipt(selectedReceipt), getStudentName(selectedReceipt.studentId))}
                   className="w-full border-0"
                   style={{ height: '70vh', minHeight: '500px' }}
                   title="收据预览"
