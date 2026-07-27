@@ -1,5 +1,6 @@
 "use client"
 
+import { formatGrade } from "@/lib/utils"
 import React, { useState, useEffect, useMemo, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -580,7 +581,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                     className="inline-flex items-center gap-2 bg-white rounded-full px-3 py-1.5 border border-amber-200 hover:border-amber-400 hover:shadow-sm transition-all text-sm">
                     <span className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-xs font-bold text-amber-700">{day}</span>
                     <span className="text-gray-700 font-medium">{s.name}</span>
-                    <span className="text-xs text-gray-400">{s.grade || ""}</span>
+                    <span className="text-xs text-gray-400">{formatGrade(s.grade)}</span>
                   </a>
                 )
               })}

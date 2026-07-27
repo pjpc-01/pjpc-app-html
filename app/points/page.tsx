@@ -9,9 +9,11 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import {
   Loader2, Star, Trophy, Plus, Minus, Check, GraduationCap,
-  History, LogIn, Users, ChevronLeft, ChevronRight, User,
+  History, LogIn, Users, ChevronLeft, ChevronRight, User, Shield,
 } from "lucide-react"
-import { useLanguage } from "@/contexts/language-context"
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
 import PointsNfcScanner from "@/components/attendance/PointsNfcScanner"
@@ -29,7 +31,6 @@ interface Transaction {
 const TX_PAGE_SIZE = 30
 
 export default function PointsPage() {
-  const { t } = useLanguage()
   const router = useRouter()
   const searchParams = useSearchParams()
   const studentIdParam = searchParams.get("studentId")
@@ -50,6 +51,13 @@ export default function PointsPage() {
   const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null)
   const [logs, setLogs] = useState<PointLog[]>([])
   const [logsLoading, setLogsLoading] = useState(false)
+
+  // ─── 老师验证 ──────────────────────────────────────
+  const [teacherVerifyOpen, setTeacherVerifyOpen] = useState(false)
+  const [verifiedTeacher, setVerifiedTeacher] = useState<{
+    id: string; name: string; cardNumber: string
+  } | null>(null)
+  const [verifyError, setVerifyError] = useState("")
 
   // ─── 交易记录 ──────────────────────────────────────
   const [txLogs, setTxLogs] = useState<Transaction[]>([])
@@ -110,22 +118,58 @@ export default function PointsPage() {
 
   useEffect(() => { fetchTransactions(txPage) }, [txPage, fetchTransactions])
 
-  const handleConfirm = async () => {
+  const handleConfirm = () => {
     if (!currentStudent || amount <= 0 || !isAuthenticated) return
+    // Show teacher verification dialog first
+    setVerifyError("")
+    setVerifiedTeacher(null)
+    setTeacherVerifyOpen(true)
+  }
+
+  const handleTeacherScan = async (cardUid: string) => {
+    setVerifyError("")
+    try {
+      const res = await fetch("/api/nfc/verify-teacher", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ card_uid: cardUid }),
+      })
+      const data = await res.json()
+      if (data.success && data.teacher) {
+        setVerifiedTeacher(data.teacher)
+      } else {
+        setVerifyError(data.error || "未找到教师卡")
+      }
+    } catch {
+      setVerifyError("验证失败，请重试")
+    }
+  }
+
+  const executePointAdjust = async () => {
+    if (!currentStudent || amount <= 0) return
     setSubmitting(true)
     const delta = mode === "add" ? amount : -amount
     try {
+      const teacherId = verifiedTeacher?.id || teacher?.id
+      const teacherName = verifiedTeacher?.name || teacher?.teacher_name || teacher?.name
       const res = await fetch("/api/points/adjust", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ student_id: currentStudent.id, amount: delta, reason: reason || undefined, teacher_id: teacher?.id || undefined }),
+        body: JSON.stringify({
+          student_id: currentStudent.id,
+          amount: delta,
+          reason: reason || undefined,
+          teacher_id: teacherId || undefined,
+          teacher_name: teacherName || undefined,
+        }),
       })
       const data = await res.json()
       if (data.success) {
-        setResult({ ok: true, msg: `${delta > 0 ? "+" : ""}${delta} 分 (${data.points_before} → ${data.points_after})` })
+        setResult({ ok: true, msg: `${delta > 0 ? "+" : ""}${delta} 分 (${data.points_before} → ${data.points_after}) — ${teacherName}` })
         setCurrentStudent(prev => prev ? { ...prev, points: data.points_after } : null)
+        setTeacherVerifyOpen(false)
         fetchLogs(currentStudent.id)
-        fetchTransactions(1) // refresh tx list
+        fetchTransactions(1)
       } else {
         setResult({ ok: false, msg: data.error || "操作失败" })
       }
@@ -146,7 +190,7 @@ export default function PointsPage() {
 
   return (
     <PageLayout
-      title={t('teacher.points')}
+      title="积分操作"
       description={isAuthenticated && teacher ? `${teacher.teacher_name || teacher.name} 老师` : "请先登入"}
       backUrl="/"
       userRole="admin"
@@ -292,7 +336,7 @@ export default function PointsPage() {
             {txLoading ? (
               <div className="text-center py-10"><Loader2 className="h-5 w-5 mx-auto animate-spin text-amber-500" /></div>
             ) : txLogs.length === 0 ? (
-              <div className="text-center py-10 text-gray-400 text-xs">{t('common.no_records')}</div>
+              <div className="text-center py-10 text-gray-400 text-xs">暂无记录</div>
             ) : (
               <>
                 <div className="max-h-[400px] overflow-y-auto">
@@ -352,6 +396,55 @@ export default function PointsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* ===== 教师验证弹窗 ===== */}
+      <Dialog open={teacherVerifyOpen} onOpenChange={(open) => {
+        if (!open && !submitting) setTeacherVerifyOpen(false)
+      }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-amber-500" />
+              教师身份验证
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              {verifiedTeacher
+                ? `已验证: ${verifiedTeacher.name} 老师`
+                : `请刷教师卡以确认 ${mode === "add" ? "加分" : "减分"} ${amount} 分给 ${currentStudent?.name}`}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center gap-3 py-2">
+            {!verifiedTeacher ? (
+              <>
+                <PointsNfcScanner mode="teacher" onScan={handleTeacherScan} label="请刷教师卡" />
+                {verifyError && (
+                  <p className="text-xs text-red-500">{verifyError}</p>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg border border-green-200 text-sm">
+                  <GraduationCap className="h-4 w-4 text-green-600" />
+                  <span className="font-medium text-green-700">{verifiedTeacher.name} 老师</span>
+                </div>
+                <Button
+                  onClick={executePointAdjust}
+                  disabled={submitting}
+                  className={`w-full ${mode === "add" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
+                >
+                  {submitting ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4 mr-1" />
+                  )}
+                  确认{mode === "add" ? `+${amount}` : `-${amount}`} 分
+                </Button>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </PageLayout>
   )
 }

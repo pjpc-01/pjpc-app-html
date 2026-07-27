@@ -1,5 +1,6 @@
 "use client"
 
+import { formatGrade } from "@/lib/utils"
 import React, { useEffect, useState } from "react"
 import { useParentPortal } from "@/hooks/useParentPortal"
 import { useGrades, GradeRecord } from "@/hooks/useGrades"
@@ -104,7 +105,7 @@ export default function ParentGradesPage() {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <BookOpen className="h-5 w-5 text-indigo-600" />
-                    {child.name} — {child.grade}
+                    {child.name} — {formatGrade(child.grade)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

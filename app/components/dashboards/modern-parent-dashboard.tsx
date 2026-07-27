@@ -1,5 +1,6 @@
 "use client"
 
+import { formatGrade } from "@/lib/utils"
 import React, { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -144,7 +145,7 @@ export default function ModernParentDashboard({ activeTab, setActiveTab }: Moder
               </div>
               <div className="flex-1">
                 <h3 className="text-2xl font-bold text-gray-900">{childData.name}</h3>
-                <p className="text-gray-600">{childData.grade} {childData.class}</p>
+                <p className="text-gray-600">{formatGrade(childData.grade)} {childData.class}</p>
                 <p className="text-sm text-gray-500">班主任：{childData.teacher}</p>
               </div>
               <div className="text-right">
