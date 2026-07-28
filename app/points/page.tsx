@@ -41,7 +41,7 @@ export default function PointsPage() {
   const [currentStudent, setCurrentStudent] = useState<{
     id: string; name: string; points: number; grade: string; center: string
   } | null>(null)
-  const [amount, setAmount] = useState(1)
+  const [amount, setAmount] = useState("1")
   const [reason, setReason] = useState("")
   const [mode, setMode] = useState<"add" | "subtract">("add")
   const [submitting, setSubmitting] = useState(false)
@@ -132,9 +132,9 @@ export default function PointsPage() {
   }, [search])
 
   const handleConfirm = async () => {
-    if (!currentStudent || amount <= 0 || !isAuthenticated) return
+    if (!currentStudent || Number(amount) <= 0 || !isAuthenticated) return
     setSubmitting(true)
-    const delta = mode === "add" ? amount : -amount
+    const delta = mode === "add" ? Number(amount) : -Number(amount)
     try {
       const res = await fetch("/api/points/adjust", {
         method: "POST",
@@ -269,18 +269,18 @@ export default function PointsPage() {
                       className={`px-3 py-1 rounded text-xs font-medium ${mode === "subtract" ? "bg-white shadow text-red-700" : "text-gray-500"}`}>➖ 减分</button>
                   </div>
                   <div className="flex items-center justify-center gap-2">
-                    <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setAmount(Math.max(1, amount - 1))}><Minus className="h-3 w-3" /></Button>
-                    <Input type="number" min={1} value={amount} onChange={e => setAmount(parseInt(e.target.value) || 1)} className="w-16 h-9 text-center text-lg font-bold tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                    <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setAmount(amount + 1)}><Plus className="h-3 w-3" /></Button>
+                    <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setAmount(String(Math.max(1, Number(amount) - 1)))}><Minus className="h-3 w-3" /></Button>
+                    <Input type="text" inputMode="numeric" value={amount} onChange={e => setAmount(e.target.value.replace(/\D/g, ""))} className="w-16 h-9 text-center text-lg font-bold tabular-nums" />
+                    <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setAmount(String(Number(amount) + 1))}><Plus className="h-3 w-3" /></Button>
                   </div>
                   <div className="flex gap-1 justify-center">
                     {[1, 2, 3, 5, 10, 50, 100].map(n => (
-                      <button key={n} onClick={() => setAmount(n)}
-                        className={`px-2 py-0.5 rounded text-xs border ${amount === n ? "bg-amber-100 border-amber-300 text-amber-700" : "bg-white text-gray-400 hover:bg-gray-50"}`}>{n}</button>
+                      <button key={n} onClick={() => setAmount(String(n))}
+                        className={`px-2 py-0.5 rounded text-xs border ${Number(amount) === n ? "bg-amber-100 border-amber-300 text-amber-700" : "bg-white text-gray-400 hover:bg-gray-50"}`}>{n}</button>
                     ))}
                   </div>
                   <Input placeholder="原因" value={reason} onChange={e => setReason(e.target.value)} className="text-xs h-8 text-center" />
-                  <Button onClick={handleConfirm} disabled={submitting || amount <= 0}
+                  <Button onClick={handleConfirm} disabled={submitting || Number(amount) <= 0}
                     className={`w-full h-8 text-sm ${mode === "add" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}>
                     {submitting ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Check className="h-3.5 w-3.5 mr-1" />}
                     {mode === "add" ? `+${amount} 分` : `-${amount} 分`}
