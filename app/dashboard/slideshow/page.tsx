@@ -316,7 +316,7 @@ function SlideshowOverlay({
   const renderWidget = (w: WidgetConfig) => {
     switch (w.type) {
       case "leaderboard": {
-        const sorted = [...centerStudents].filter(s => s.points > 0).sort((a, b) => b.points - a.points)
+        const sorted = [...centerStudents].sort((a, b) => b.points - a.points)
         const mapped: LeaderboardStudent[] = sorted.map(s => ({
           id: s.id,
           name: s.name,
@@ -549,7 +549,7 @@ function DashboardContent() {
   const renderWidgetContent = (w: WidgetConfig) => {
     switch (w.type) {
       case "leaderboard": {
-        const sorted = [...centerStudents].filter(s => s.points > 0).sort((a, b) => b.points - a.points)
+        const sorted = [...centerStudents].sort((a, b) => b.points - a.points)
         const mapped: LeaderboardStudent[] = sorted.map(s => ({
           id: s.id,
           name: s.name,

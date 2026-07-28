@@ -20,7 +20,26 @@ async function getAdminToken() {
   return data.token
 }
 
+let _invoiceSeq = 0
+async function getNextInvoiceNumber(token: string, period: string): Promise<string> {
+  if (_invoiceSeq === 0) {
+    // First call: query PB for existing count this period
+    const yearMonth = period.replace("-", "")
+    const prefix = `INV-${yearMonth}-`
+    const res = await fetch(
+      `${PB_URL}/api/collections/invoices/records?perPage=1&filter=invoiceNumber~'${prefix}'`,
+      { headers: { Authorization: token } }
+    )
+    const data = await res.json()
+    _invoiceSeq = (data.totalItems || 0) + 1
+  } else {
+    _invoiceSeq++
+  }
+  return `INV-${period.replace("-", "")}-${String(_invoiceSeq).padStart(3, "0")}`
+}
+
 export async function POST(request: NextRequest) {
+  _invoiceSeq = 0 // Reset sequence counter for this request
   try {
     const token = await getAdminToken()
     const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
@@ -308,7 +327,7 @@ export async function POST(request: NextRequest) {
         studentName: student?.name || "",
         studentGrade: student?.grade || "",
         studentNumber: student?.student_id || "",
-        invoiceNumber: `INV-${period.replace("-", "")}-${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`,
+        invoiceNumber: await getNextInvoiceNumber(token, period),
         amount: totalAmount,
         totalAmount: totalAmount,
         items,

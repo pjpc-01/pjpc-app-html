@@ -315,6 +315,8 @@ export default function PayslipSettingsManager({ onSettingsChange, activePresetI
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false)
   const logoSpanRef = useRef<HTMLInputElement>(null)
   const previewRef = useRef<HTMLIFrameElement>(null)
+  const settingsRef = useRef(settings)
+  settingsRef.current = settings
 
   // Load presets from PocketBase on mount
   useEffect(() => {
@@ -391,11 +393,21 @@ export default function PayslipSettingsManager({ onSettingsChange, activePresetI
     return () => { cancelled = true }
   }, [])
 
+  const SAVE_FIELDS = [
+    'name', 'schoolName', 'schoolNameEn', 'schoolLogo', 'schoolAddress',
+    'schoolPhone', 'schoolEmail', 'companyRegNo', 'employerEpfNo', 'employerSocsoNo',
+    'primaryColor', 'secondaryColor', 'accentColor', 'footerText',
+    'showEmployerEPF', 'isDefault',
+  ]
+
   const savePreset = async (preset: PayslipSettingsPreset, isNew: boolean = false) => {
-    const { id, createdAt, updatedAt, ...data } = preset as any
+    const data: any = {}
+    for (const f of SAVE_FIELDS) {
+      if ((preset as any)[f] !== undefined) data[f] = (preset as any)[f]
+    }
     const url = isNew
       ? '/api/pocketbase-proxy/api/collections/salary_settings/records'
-      : `/api/pocketbase-proxy/api/collections/salary_settings/records/${id}`
+      : `/api/pocketbase-proxy/api/collections/salary_settings/records/${preset.id}`
     const method = isNew ? 'POST' : 'PATCH'
     const res = await fetch(url, {
       method,
@@ -413,17 +425,19 @@ export default function PayslipSettingsManager({ onSettingsChange, activePresetI
   }
 
   const updateSettings = async (updates: Partial<PayslipSettingsPreset>) => {
-    const newSettings = { ...settings, ...updates, updatedAt: new Date().toISOString().split('T')[0] }
-    setSettings(newSettings)
-    const updated = presets.map(p => p.id === activeId ? newSettings : p)
+    const merged = { ...settingsRef.current, ...updates, updatedAt: new Date().toISOString().split('T')[0] }
+    settingsRef.current = merged
+    setSettings(merged)
+    const updated = presets.map(p => p.id === activeId ? merged : p)
     setPresets(updated)
-    try { await savePreset(newSettings) } catch (e) { console.error('Save failed:', e) }
-    if (onSettingsChange) onSettingsChange(newSettings)
+    try { await savePreset(merged) } catch (e) { console.error('Save failed:', e) }
+    if (onSettingsChange) onSettingsChange(merged)
   }
 
   const handleSelectPreset = (id: string) => {
     const preset = presets.find(p => p.id === id)
     if (preset) {
+      settingsRef.current = preset
       setActiveId(id)
       setSettings(preset)
       if (onSettingsChange) onSettingsChange(preset)

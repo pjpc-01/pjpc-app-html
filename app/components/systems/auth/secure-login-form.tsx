@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -51,8 +51,58 @@ export default function SecureLoginForm() {
   const { loginWithCard } = useNfcAuth()
   const [nfcScanning, setNfcScanning] = useState(false)
   const [nfcStatus, setNfcStatus] = useState<{ ok: boolean; msg: string } | null>(null)
+  const [usbNfcBuffer, setUsbNfcBuffer] = useState("")
 
-  const handleNfcLogin = async () => {
+  // USB NFC 键盘监听
+  useEffect(() => {
+    let buffer = ""
+    let lastKeyTime = 0
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      const now = Date.now()
+      if (now - lastKeyTime > 500) buffer = ""
+      lastKeyTime = now
+      
+      if (e.key === "Enter" && buffer.length >= 8) {
+        const cardUid = buffer.trim()
+        buffer = ""
+        setUsbNfcBuffer(cardUid)
+        handleNfcLogin(cardUid)
+        return
+      }
+      if (/^[0-9]$/.test(e.key)) {
+        buffer += e.key
+      }
+    }
+    
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [])
+
+  const handleNfcLogin = async (directCardUid?: string) => {
+    // Direct USB card scan — skip NDEFReader
+    if (directCardUid) {
+      setNfcScanning(true)
+      setNfcStatus({ ok: true, msg: `卡号: ${directCardUid}，验证中...` })
+      setError("")
+      try {
+        const result = await loginWithCard(directCardUid)
+        if (result.success) {
+          setNfcStatus({ ok: true, msg: "✅ 登入成功，跳转中..." })
+          setTimeout(() => router.push("/"), 800)
+        } else {
+          setNfcStatus({ ok: false, msg: result.error || "登入失败" })
+        }
+      } catch (err: any) {
+        setNfcStatus({ ok: false, msg: err.message })
+      } finally {
+        setNfcScanning(false)
+      }
+      return
+    }
+
+    // Mobile NDEFReader flow
     if (typeof window === "undefined" || !("NDEFReader" in window)) {
       setNfcStatus({ ok: false, msg: "此设备不支持 NFC（仅 Android Chrome 支持）" })
       return
@@ -517,7 +567,7 @@ export default function SecureLoginForm() {
               </div>
             )}
             <Button
-              onClick={handleNfcLogin}
+              onClick={() => handleNfcLogin()}
               disabled={nfcScanning}
               variant="outline"
               className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"

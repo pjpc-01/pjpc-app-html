@@ -398,6 +398,8 @@ export default function InvoiceSettingsManager({ onSettingsChange, activePresetI
   const [activeTab, setActiveTab] = useState("school")
   const logoSpanRef = useRef<HTMLInputElement>(null)
   const previewRef = useRef<HTMLIFrameElement>(null)
+  const settingsRef = useRef(settings)
+  settingsRef.current = settings
 
   // Load presets from PocketBase on mount
   useEffect(() => {
@@ -485,12 +487,24 @@ export default function InvoiceSettingsManager({ onSettingsChange, activePresetI
     return () => { cancelled = true }
   }, [])
 
+  const SAVE_FIELDS = [
+    'name', 'schoolName', 'schoolNameEn', 'schoolLogo', 'schoolAddress',
+    'schoolPhone', 'schoolEmail', 'schoolWebsite', 'taxNumber', 'bankName',
+    'bankAccount', 'bankHolder', 'primaryColor', 'secondaryColor', 'accentColor',
+    'footerText', 'paymentTerms', 'receiptNote', 'latePaymentRule',
+    'daycareContact', 'daycarePhone', 'late_payment_fee', 'late_payment_grace_days',
+    'thanksGreeting', 'isDefault',
+  ]
+
   // Save a single preset to PocketBase (POST for new, PATCH for existing)
   const savePreset = async (preset: InvoiceSettingsPreset, isNew: boolean = false) => {
-    const { id, createdAt, updatedAt, ...data } = preset as any
+    const data: any = {}
+    for (const f of SAVE_FIELDS) {
+      if ((preset as any)[f] !== undefined) data[f] = (preset as any)[f]
+    }
     const url = isNew 
       ? '/api/pocketbase-proxy/api/collections/invoice_settings/records'
-      : `/api/pocketbase-proxy/api/collections/invoice_settings/records/${id}`
+      : `/api/pocketbase-proxy/api/collections/invoice_settings/records/${preset.id}`
     const method = isNew ? 'POST' : 'PATCH'
     const res = await fetch(url, {
       method,
@@ -510,20 +524,20 @@ export default function InvoiceSettingsManager({ onSettingsChange, activePresetI
 
   // Update current settings and persist to PB
   const updateSettings = async (updates: Partial<InvoiceSettingsPreset>) => {
-    const newSettings = { ...settings, ...updates, updatedAt: new Date().toISOString().split('T')[0] }
-    setSettings(newSettings)
-    // Update in presets list
-    const updated = presets.map(p => p.id === activeId ? newSettings : p)
+    const merged = { ...settingsRef.current, ...updates, updatedAt: new Date().toISOString().split('T')[0] }
+    settingsRef.current = merged
+    setSettings(merged)
+    const updated = presets.map(p => p.id === activeId ? merged : p)
     setPresets(updated)
-    // Save to PB
-    try { await savePreset(newSettings) } catch (e) { console.error('Save failed:', e) }
-    if (onSettingsChange) onSettingsChange(newSettings)
+    try { await savePreset(merged) } catch (e: any) { console.error('Save failed:', e) }
+    if (onSettingsChange) onSettingsChange(merged)
   }
 
   // Handle preset selection
   const handleSelectPreset = (id: string) => {
     const preset = presets.find(p => p.id === id)
     if (preset) {
+      settingsRef.current = preset
       setActiveId(id)
       setSettings(preset)
       if (onSettingsChange) onSettingsChange(preset)
