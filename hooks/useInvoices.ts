@@ -58,14 +58,24 @@ export const useInvoices = () => {
     fetchInvoices()
   }, [fetchInvoices])
 
-  const generateInvoiceNumber = useCallback(() => {
-    const year = new Date().getFullYear()
-    const nextNumber = invoices.length + 1
-    return `INV-${year}-${nextNumber.toString().padStart(3, '0')}`
-  }, [invoices])
+  const generateInvoiceNumber = useCallback(async (): Promise<string> => {
+    const now = new Date()
+    const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
+    try {
+      // Query PB for existing invoice numbers in this month
+      const prefix = `INV-${yearMonth}-`
+      const res = await fetch(`/api/pocketbase-proxy/api/collections/invoices/records?perPage=1&filter=invoiceNumber~'${prefix}'`)
+      const data = await res.json()
+      const count = (data.totalItems || 0) + 1
+      return `INV-${yearMonth}-${String(count).padStart(3, '0')}`
+    } catch {
+      // Fallback: use timestamp-based
+      return `INV-${yearMonth}-${String(Date.now() % 1000).padStart(3, '0')}`
+    }
+  }, [])
 
   const createInvoice = useCallback(async (invoiceData: Omit<Invoice, 'id' | 'invoiceNumber'>) => {
-    const invoiceNumber = generateInvoiceNumber()
+    const invoiceNumber = await generateInvoiceNumber()
     const data = { ...invoiceData, invoiceNumber }
     const result = await createRecord('invoices', data)
     setInvoices(prev => [...prev, result])

@@ -36,6 +36,7 @@ import {
   Palette,
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
+import AccountSettings from "@/components/settings/account-settings"
 
 export default function SettingsPage() {
   const { t } = useLanguage()
@@ -361,6 +362,7 @@ export default function SettingsPage() {
             <TabsTrigger value="rates" className="flex items-center gap-2"><Percent className="h-4 w-4" />费率</TabsTrigger>
             <TabsTrigger value="permissions" className="flex items-center gap-2"><Shield className="h-4 w-4" />权限</TabsTrigger>
             <TabsTrigger value="audit" className="flex items-center gap-2"><History className="h-4 w-4" />日志</TabsTrigger>
+            <TabsTrigger value="account" className="flex items-center gap-2"><UserCog className="h-4 w-4" />账户</TabsTrigger>
           </TabsList>
 
           {/* 1. Bank Account Settings */}
@@ -760,6 +762,11 @@ export default function SettingsPage() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Account Settings */}
+          <TabsContent value="account">
+            <AccountSettings />
           </TabsContent>
         </Tabs>
       </div>

@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     const escaped = q.replace(/'/g, "\\'")
-    const filter = `(name~'${escaped}' || student_id~'${escaped}') && status!='deleted' && status!='inactive'`
+    const filter = `(name~'${escaped}' || student_id~'${escaped}') && status='active'`
     
     const res = await fetch(
       `${PB_URL}/api/collections/students/records?filter=${encodeURIComponent(filter)}&perPage=20&sort=name`,
