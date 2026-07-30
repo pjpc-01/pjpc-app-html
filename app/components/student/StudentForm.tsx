@@ -147,6 +147,7 @@ export default function StudentForm({
         authorizedPickup3Relation: student.authorizedPickup3Relation || '',
         registrationDate: student.registrationDate || new Date().toISOString().split('T')[0],
         tuitionStatus: student.tuitionStatus || 'pending',
+        points_enabled: student.points_enabled ?? true,
         birthCertificate: student.birthCertificate || null,
         avatar: student.avatar || null
       })
@@ -174,6 +175,7 @@ export default function StudentForm({
         pickupMethod: 'parent',
         registrationDate: new Date().toISOString().split('T')[0],
         tuitionStatus: 'pending',
+        points_enabled: true,
         birthCertificate: null
       })
     }
@@ -1007,6 +1009,22 @@ export default function StudentForm({
                 </Select>
               </div>
             </div>
+          </div>
+
+          {/* 积分系统 */}
+          <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-200">
+            <div>
+              <Label className="text-sm font-medium">积分系统</Label>
+              <p className="text-xs text-amber-600">关闭后该学生不出现在排行榜和积分操作中</p>
+            </div>
+            <select
+              value={formData.points_enabled ? '1' : '0'}
+              onChange={(e) => setFormData((prev: any) => ({ ...prev, points_enabled: e.target.value === '1' }))}
+              className="text-sm rounded-md border border-amber-300 bg-white px-3 py-1.5 font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-amber-300"
+            >
+              <option value="1">启用</option>
+              <option value="0">关闭</option>
+            </select>
           </div>
 
           {/* 报生纸副本 */}

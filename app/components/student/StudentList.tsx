@@ -146,6 +146,7 @@ export default function StudentList({
             <TableHead className="text-accent-foreground font-semibold">{t('student.father')}</TableHead>
             <TableHead className="text-accent-foreground font-semibold">{t('student.mother')}</TableHead>
             <TableHead className="text-accent-foreground font-semibold">{t('student.contact_phone')}</TableHead>
+            <TableHead className="text-accent-foreground font-semibold">积分</TableHead>
             <TableHead 
               className="hover:bg-accent text-accent-foreground font-semibold cursor-pointer"
               onClick={() => handleSort('status')}
@@ -200,6 +201,9 @@ export default function StudentList({
                     {student.mother_phone && <span>母: {student.mother_phone}</span>}
                   </span>
                 ) : '-'}
+              </TableCell>
+              <TableCell className="text-center text-xs">
+                {student.points_enabled !== false ? '启用' : '关闭'}
               </TableCell>
               <TableCell>
                 <Badge variant={student.status === 'active' ? 'default' : 'secondary'} className={
