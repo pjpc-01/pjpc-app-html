@@ -246,14 +246,14 @@ export default function CardManagementPage() {
       cards.filter(c => c.type === "student" && c.status === "active").map(c => c.studentId)
     )
     const unlinkedStudents = Object.values(students).filter(s => {
-      if (s.status === "graduated" || s.status === "deleted") return false
+      if (s.status === "graduated" || s.status === "deleted" || s.status === "inactive") return false
       return !activeCardStudentIds.has(s.id)
     })
     const activeCardTeacherIds = new Set(
       cards.filter(c => c.type === "teacher" && c.status === "active").map(c => c.teacherId)
     )
     const unlinkedTeachers = Object.values(teachers).filter(t => {
-      if (t.status === "graduated" || t.status === "deleted" || t.status === "left") return false
+      if (t.status === "graduated" || t.status === "deleted" || t.status === "left" || t.status === "inactive") return false
       return !activeCardTeacherIds.has(t.id)
     })
     setUnlinkedPeople({ students: unlinkedStudents, teachers: unlinkedTeachers })

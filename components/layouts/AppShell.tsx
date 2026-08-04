@@ -146,6 +146,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
           { label: "教师列表", href: "/teacher-management", icon: UserCog },
           { label: "教师考勤", href: "/teacher-attendance-reports", icon: CalendarCheck },
           { label: "课程管理", href: "/course-management", icon: BookOpen },
+          { label: "教学评估", href: "/teacher-teaching-report", icon: ClipboardCheck },
         ],
       },
       {
@@ -192,6 +193,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
       { label: "学生签到", href: "/attendance", icon: UserCheck },
       { label: "每日日志", href: "/daily-logs", icon: FileEdit },
       { label: "我的学生", href: "/student-management", icon: Users },
+      { label: "教学评估", href: "/teacher-teaching-report", icon: ClipboardCheck },
     ],
   },
   parent: {
@@ -579,6 +581,7 @@ export default function AppShell({
     "/teacher-management": { label: "教师列表", parent: "教务" },
     "/teacher-attendance-reports": { label: "教师考勤", parent: "教务" },
     "/course-management": { label: "课程管理", parent: "教务" },
+    "/teacher-teaching-report": { label: "教学评估", parent: "教务" },
     "/finance/overview": { label: "财务概览", parent: "财务" },
     "/finance/fees": { label: "收费管理", parent: "财务" },
     "/finance/student-fees": { label: "学生费用", parent: "财务" },

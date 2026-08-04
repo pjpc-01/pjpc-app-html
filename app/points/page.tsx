@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import {
   Loader2, Star, Trophy, Plus, Minus, Check, GraduationCap,
   History, LogIn, Users, ChevronLeft, ChevronRight, User, Search,
+  Layers, X, Building,
 } from "lucide-react"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
@@ -61,6 +62,13 @@ export default function PointsPage() {
   const [txPage, setTxPage] = useState(1)
   const [txTotalPages, setTxTotalPages] = useState(1)
   const [txTotal, setTxTotal] = useState(0)
+  const [batchMode, setBatchMode] = useState(false)
+  const [batchStudents, setBatchStudents] = useState<any[]>([])
+  const [batchAmount, setBatchAmount] = useState("1")
+  const [batchOp, setBatchOp] = useState<"add" | "subtract" | "set">("add")
+  const [batchBusy, setBatchBusy] = useState(false)
+  const [batchMsg, setBatchMsg] = useState("")
+  const [batchReason, setBatchReason] = useState("")
 
   const loadStudent = useCallback(async (studentId: string, name?: string) => {
     setResult(null)
@@ -174,12 +182,120 @@ export default function PointsPage() {
       background="from-amber-50 to-yellow-50"
     >
       <div className="space-y-4">
-        {/* Quick links */}
+        {/* Quick links + batch toggle */}
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => router.push("/points/leaderboard")} className="h-8 text-xs bg-white">
             <Trophy className="h-3 w-3 mr-1" />排行榜
           </Button>
+          <Button
+            variant={batchMode ? "default" : "outline"}
+            size="sm"
+            onClick={() => setBatchMode(!batchMode)}
+            className={`h-8 text-xs ${batchMode ? "bg-amber-600 hover:bg-amber-700" : "bg-white"}`}
+          >
+            <Layers className="h-3 w-3 mr-1" />批量改积分{batchStudents.length > 0 && ` (${batchStudents.length})`}
+          </Button>
         </div>
+
+        {/* Batch mode panel */}
+        {batchMode && (
+          <Card className="border-2 border-amber-300 bg-amber-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center justify-between">
+                <span className="flex items-center gap-2"><Layers className="h-4 w-4 text-amber-600" />批量修改积分</span>
+                <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setBatchMode(false)}><X className="h-3 w-3 mr-1" />关闭</Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Selected chips */}
+              {batchStudents.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {batchStudents.map(s => (
+                    <Badge key={s.id} variant="secondary" className="flex items-center gap-1 bg-white text-xs cursor-pointer"
+                      onClick={() => setBatchStudents(prev => prev.filter(x => x.id !== s.id))}>
+                      {s.name} <X className="h-2.5 w-2.5" />
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400">搜索学生勾选，或使用快捷按钮：</p>
+              )}
+
+              {/* Quick select buttons — by center */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {[{ code: "PU1", label: "中学（PU1）" }, { code: "BATU14", label: "小学（BATU14）" }].map(ctr => (
+                  <Button key={ctr.code} size="sm" variant="outline" className="h-7 text-xs bg-white"
+                    onClick={async () => {
+                      const filter = encodeURIComponent(`status='active' && center='${ctr.code}' && points_enabled!=false`)
+                      const res = await fetch(`/api/pocketbase-proxy/api/collections/students/records?perPage=500&filter=${filter}&fields=id,name,points`)
+                      const data = await res.json()
+                      setBatchStudents(data.items || [])
+                    }}>
+                    <Building className="h-3 w-3 mr-1" />{ctr.label}
+                  </Button>
+                ))}
+                {batchStudents.length > 0 && (
+                  <Button size="sm" variant="ghost" className="h-7 text-xs"
+                    onClick={() => setBatchStudents([])}>清空</Button>
+                )}
+              </div>
+
+              {/* Operation controls */}
+              {batchStudents.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <select value={batchOp} onChange={e => setBatchOp(e.target.value as any)}
+                    className="text-xs border rounded px-2 py-1 h-8 bg-white">
+                    <option value="add">增加</option>
+                    <option value="subtract">减少</option>
+                    <option value="set">设置为</option>
+                  </select>
+                  <Input type="number" min={0} value={batchAmount} onChange={e => setBatchAmount(e.target.value)}
+                    className="w-20 h-8 text-sm" placeholder="数量" />
+                  <Input
+                    value={batchReason}
+                    onChange={e => setBatchReason(e.target.value)}
+                    className="h-8 text-xs"
+                    placeholder="原因"
+                    style={{ width: 120 }}
+                  />
+                  <Button size="sm" disabled={batchBusy || batchAmount === ""}
+                    onClick={async () => {
+                      setBatchBusy(true)
+                      setBatchMsg("")
+                      const val = Number(batchAmount)
+                      try {
+                        const promises: Promise<any>[] = []
+                        for (const s of batchStudents) {
+                          const delta = batchOp === "set" ? val - (s.points || 0) : batchOp === "add" ? val : -val
+                          if (delta === 0) continue
+                          const p = fetch("/api/points/adjust", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ student_id: s.id, amount: delta, reason: batchReason || `批量${batchOp === "add" ? "加分" : batchOp === "subtract" ? "减分" : "设置"}`, teacher_id: teacher?.id || undefined }),
+                          })
+                          promises.push(p)
+                        }
+                        await Promise.all(promises)
+                        setBatchMsg(`✅ 已为 ${batchStudents.length} 名学生${batchOp === "add" ? "增加" : batchOp === "subtract" ? "减少" : "设置"} ${val} 分`)
+                        setBatchStudents([])
+                        setBatchAmount("1")
+                        fetchTransactions(1)
+                      } catch (e: any) {
+                        setBatchMsg(`❌ 操作失败: ${e.message}`)
+                      }
+                      setBatchBusy(false)
+                    }}
+                    className="h-8 text-xs bg-amber-600 hover:bg-amber-700"
+                  >
+                    {batchBusy ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Check className="h-3 w-3 mr-1" />}
+                    确认修改
+                  </Button>
+                  {batchMsg && <span className="text-xs text-gray-600">{batchMsg}</span>}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Search bar — always visible */}
         {isAuthenticated && (
@@ -199,9 +315,22 @@ export default function PointsPage() {
                 {searchResults.map((s: any) => (
                   <button
                     key={s.id}
-                    onClick={() => loadStudent(s.id, s.name)}
+                    onClick={() => {
+                      if (batchMode) {
+                        setBatchStudents(prev => prev.some(x => x.id === s.id)
+                          ? prev.filter(x => x.id !== s.id)
+                          : [...prev, s])
+                      } else {
+                        loadStudent(s.id, s.name)
+                      }
+                    }}
                     className="w-full text-left px-3 py-2 hover:bg-amber-50 flex items-center gap-2 border-b border-gray-50 last:border-0"
                   >
+                    {batchMode && (
+                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${batchStudents.some(x => x.id === s.id) ? "bg-amber-500 border-amber-500" : "border-gray-300"}`}>
+                        {batchStudents.some(x => x.id === s.id) && <Check className="h-3 w-3 text-white" />}
+                      </div>
+                    )}
                     <GraduationCap className="h-4 w-4 text-gray-400 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-gray-700 truncate">{s.name}</div>
