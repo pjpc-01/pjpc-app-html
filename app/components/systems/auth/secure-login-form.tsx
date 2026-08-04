@@ -109,7 +109,7 @@ export default function SecureLoginForm() {
     }
 
     setNfcScanning(true)
-    setNfcStatus({ ok: true, msg: "请将教师卡片贴近手机背面..." })
+    setNfcStatus({ ok: true, msg: "请将卡片贴近手机背面..." })
     setError("")
 
     try {
@@ -552,7 +552,7 @@ export default function SecureLoginForm() {
               NFC 快速登入
             </CardTitle>
             <CardDescription className="text-xs text-blue-600">
-              教师可使用手机 NFC 刷卡快速登入（仅 Android Chrome 支持）
+              用户可使用手机 NFC 刷卡快速登入（仅 Android Chrome 支持）
             </CardDescription>
           </CardHeader>
           <CardContent>

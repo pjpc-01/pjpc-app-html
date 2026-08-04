@@ -53,7 +53,8 @@ import {
   UserX,
   GraduationCap,
   Calendar,
-  MapPin
+  MapPin,
+  Star
 } from "lucide-react"
 import { Student } from "@/hooks/useStudents"
 
@@ -65,6 +66,8 @@ interface BulkOperationsProps {
   onBulkExport: (format: 'csv' | 'excel' | 'pdf') => void
   onBulkImport: (file: File) => Promise<void>
   onBulkMessage: (message: string, type: 'email' | 'sms') => Promise<void>
+  onBulkPoints: (op: string, value: number) => Promise<void>
+  onBulkStatusChange?: (status: string) => Promise<void>
 }
 
 export default function BulkOperations({
@@ -74,7 +77,9 @@ export default function BulkOperations({
   onBulkDelete,
   onBulkExport,
   onBulkImport,
-  onBulkMessage
+  onBulkMessage,
+  onBulkPoints,
+  onBulkStatusChange
 }: BulkOperationsProps) {
   const { t } = useLanguage()
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false)
@@ -83,6 +88,8 @@ export default function BulkOperations({
   const [updateData, setUpdateData] = useState<Partial<Student>>({})
   const [messageData, setMessageData] = useState({ message: '', type: 'email' as 'email' | 'sms' })
   const [importFile, setImportFile] = useState<File | null>(null)
+  const [pointsOp, setPointsOp] = useState('add')
+  const [pointsVal, setPointsVal] = useState('')
 
   const handleBulkUpdate = async () => {
     try {
@@ -443,6 +450,80 @@ export default function BulkOperations({
               </div>
             </DialogContent>
           </Dialog>
+
+          {/* 批量改积分 */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="flex flex-col items-center gap-1 h-auto py-3 border-amber-200 text-amber-600 hover:bg-amber-50">
+                <Star className="h-4 w-4" />
+                <span className="text-xs">批量改积分</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>批量修改积分</DialogTitle>
+                <DialogDescription>
+                  为选中的 {selectedStudents.length} 个学生统～调整积分
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>操作方式</Label>
+                  <Select value={pointsOp} onValueChange={setPointsOp}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="add">增加</SelectItem>
+                      <SelectItem value="subtract">减少</SelectItem>
+                      <SelectItem value="set">设置为</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>积分数值</Label>
+                  <Input type="number" min={0} value={pointsVal} onChange={(e) => setPointsVal(e.target.value)} placeholder="输入积分" />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => {}}>取消</Button>
+                  <Button onClick={async () => {
+                    await onBulkPoints(pointsOp, parseInt(pointsVal) || 0)
+                  }}>确认修改</Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* 批量状态修改 */}
+          {onBulkStatusChange && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex flex-col items-center gap-1 h-auto py-3 border-red-200 text-red-600 hover:bg-red-50"
+                onClick={() => onBulkStatusChange('withdrawn')}
+              >
+                <UserX className="h-4 w-4" />
+                <span className="text-xs">标记停学</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex flex-col items-center gap-1 h-auto py-3 border-green-200 text-green-600 hover:bg-green-50"
+                onClick={() => onBulkStatusChange('active')}
+              >
+                <UserCheck className="h-4 w-4" />
+                <span className="text-xs">恢复在读</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex flex-col items-center gap-1 h-auto py-3 border-gray-200 text-gray-500 hover:bg-gray-50"
+                onClick={() => onBulkStatusChange('graduated')}
+              >
+                <UserCheck className="h-4 w-4" />
+                <span className="text-xs">标记毕业</span>
+              </Button>
+            </>
+          )}
 
           {/* 复制信息 */}
           <Button

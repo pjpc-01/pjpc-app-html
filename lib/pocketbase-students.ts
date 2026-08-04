@@ -81,6 +81,8 @@ export interface Student {
   notes?: string
   usageCount?: number
   lastUsed?: string
+  points?: number
+  points_enabled?: boolean
   
   // 系统字段
   created: string
@@ -260,6 +262,8 @@ export const getAllStudents = async (): Promise<Student[]> => {
       notes: student.notes,
       usageCount: student.usageCount || 0,
       lastUsed: student.lastUsed,
+      points: student.points,
+      points_enabled: student.points_enabled,
       
       // 系统字段
       created: student.created,

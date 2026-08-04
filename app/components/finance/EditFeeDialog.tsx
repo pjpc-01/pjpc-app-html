@@ -42,6 +42,7 @@ interface EditFeeDialogProps {
   newFeeItem: Omit<Fee, "id">
   onFeeItemInputChange: (field: keyof Omit<Fee, "id">, value: any) => void
   onUpdateFeeItem: () => void
+  feeCategories: { id: string; name: string }[]
 }
 
 export const EditFeeDialog = ({
@@ -50,6 +51,7 @@ export const EditFeeDialog = ({
   newFeeItem,
   onFeeItemInputChange,
   onUpdateFeeItem,
+  feeCategories,
 }: EditFeeDialogProps) => {
   const { t } = useLanguage()
   const [centers, setCenters] = useState<CenterInfo[]>([])
@@ -120,14 +122,9 @@ export const EditFeeDialog = ({
                   <SelectValue placeholder="选择分类" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Tuition">学费</SelectItem>
-                  <SelectItem value="Administrative">行政费</SelectItem>
-                  <SelectItem value="Materials">教材费</SelectItem>
-                  <SelectItem value="Activity">活动费</SelectItem>
-                  <SelectItem value="Daycare">安亲班</SelectItem>
-                  <SelectItem value="Transport">交通费</SelectItem>
-                  <SelectItem value="Meals">膳食费</SelectItem>
-                  <SelectItem value="Miscellaneous">杂项</SelectItem>
+                  {feeCategories.map(cat => (
+                    <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

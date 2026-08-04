@@ -1,11 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useFees } from "@/hooks/useFees"
 import { Fee } from "@/types/fees"
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle
 } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { useLanguage } from "@/contexts/language-context"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -25,6 +27,14 @@ const renderIcon = (iconName: string | undefined, className = "h-4 w-4") => {
 }
 import { AddFeeDialog } from "./AddFeeDialog"
 import { EditFeeDialog } from "./EditFeeDialog"
+
+interface FeeCategory {
+  id: string
+  name: string
+  key: string
+  sort_order: number
+  color: string
+}
 
 
 const CATEGORY_MAP: Record<string, string> = {
@@ -78,6 +88,51 @@ export default function FeeManagement() {
     applicableCenters: [],
     applicableLevels: [],
   })
+
+  // Fee categories from PB
+  const [feeCategories, setFeeCategories] = useState<FeeCategory[]>([])
+  const [catDialogOpen, setCatDialogOpen] = useState(false)
+  const [newCatName, setNewCatName] = useState("")
+
+  const loadCategories = useCallback(async () => {
+    try {
+      const res = await fetch('/api/pocketbase-proxy/api/collections/fee_categories/records?perPage=50&sort=sort_order')
+      if (res.ok) {
+        const data = await res.json()
+        setFeeCategories(data.items || [])
+      }
+    } catch {}
+  }, [])
+
+  useEffect(() => { loadCategories() }, [loadCategories])
+
+  const getCategoryName = (code: string) => {
+    const lower = code?.toLowerCase()
+    const cat = feeCategories.find(c => (c.name || c.key || '').toLowerCase() === lower)
+    return cat?.name || CATEGORY_MAP[code] || code || "未分类"
+  }
+
+  const handleAddCategory = async () => {
+    const name = newCatName.trim()
+    if (!name) return
+    try {
+      await fetch('/api/pocketbase-proxy/api/collections/fee_categories/records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, key: name.toLowerCase().replace(/\s+/g, '_'), sort_order: feeCategories.length + 1 }),
+      })
+      setNewCatName("")
+      loadCategories()
+    } catch { alert("添加失败") }
+  }
+
+  const handleDeleteCategory = async (id: string) => {
+    if (!confirm("确定删除？")) return
+    try {
+      await fetch(`/api/pocketbase-proxy/api/collections/fee_categories/records/${id}`, { method: 'DELETE' })
+      loadCategories()
+    } catch { alert("删除失败") }
+  }
 
   const onToggleItemActive = async (feeId: string, active: boolean) => {
     await updateFee(feeId, { status: active ? "active" : "inactive" })
@@ -190,6 +245,45 @@ export default function FeeManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Category Management Dialog */}
+      <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>费用分类管理</DialogTitle>
+            <DialogDescription>自定义费用分类，添加或删除分类</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                value={newCatName}
+                onChange={e => setNewCatName(e.target.value)}
+                placeholder="新分类名称..."
+                className="h-9 text-sm flex-1"
+                onKeyDown={e => e.key === 'Enter' && handleAddCategory()}
+              />
+              <Button size="sm" onClick={handleAddCategory} disabled={!newCatName.trim()} className="h-9">
+                <Plus className="h-4 w-4 mr-1" />添加
+              </Button>
+            </div>
+            <div className="space-y-1 max-h-60 overflow-y-auto">
+              {feeCategories.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">暂无自定义分类</p>
+              ) : (
+                feeCategories.map(cat => (
+                  <div key={cat.id} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium">{cat.name}</span>
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-400 hover:text-red-600"
+                      onClick={() => handleDeleteCategory(cat.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -206,6 +300,9 @@ export default function FeeManagement() {
               <CardDescription>管理所有费用项</CardDescription>
             </div>
             <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setCatDialogOpen(true)}>
+                分类管理
+              </Button>
               <Button variant="outline" onClick={toggleAllCategories}>
                 {Object.keys(groupedFees).every(cat => expandedCategories.has(cat)) ? (
                   <>
@@ -264,7 +361,7 @@ export default function FeeManagement() {
                               <div className="flex items-center gap-2">
                                 {renderIcon(categoryFees.find(f => f.icon)?.icon, "h-5 w-5 text-muted-foreground")}
                                 <div>
-                                  <CardTitle className="text-lg">{CATEGORY_MAP[category] || category}</CardTitle>
+                                  <CardTitle className="text-lg">{getCategoryName(category)}</CardTitle>
                                   <CardDescription>
                                     {categoryFees.length} 项 • {activeCount} 已启用
                                   </CardDescription>
@@ -372,6 +469,7 @@ export default function FeeManagement() {
         newFeeItem={newFeeItem}
         onFeeItemInputChange={handleFeeItemInputChange}
         onAddFeeItem={handleAddFeeItem}
+        feeCategories={feeCategories}
       />
 
       <EditFeeDialog
@@ -380,6 +478,7 @@ export default function FeeManagement() {
         newFeeItem={newFeeItem}
         onFeeItemInputChange={handleFeeItemInputChange}
         onUpdateFeeItem={handleUpdateFeeItem}
+        feeCategories={feeCategories}
       />
     </div>
   )

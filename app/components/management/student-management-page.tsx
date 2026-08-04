@@ -541,6 +541,19 @@ export default function StudentManagementPage() {
     // 这里可以实现实际的消息发送逻辑
   }
 
+  const handleBulkStatusChange = async (status: string) => {
+    const ids = Array.from(selectedStudents)
+    await Promise.all(ids.map(id =>
+      fetch(`/api/pocketbase-proxy/api/collections/students/records/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+    ))
+    setSelectedStudents(new Set())
+    refetch()
+  }
+
   const handleSelectStudent = (studentId: string, checked: boolean) => {
     setSelectedStudents(prev => {
       const newSet = new Set(prev)
@@ -796,6 +809,7 @@ export default function StudentManagementPage() {
         onBulkExport={handleBulkExport}
         onBulkImport={handleBulkImport}
         onBulkMessage={handleBulkMessage}
+        onBulkStatusChange={handleBulkStatusChange}
       />
 
         {/* 视图模式切换和统计信息 */}

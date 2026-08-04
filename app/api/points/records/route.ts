@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
       sort: '-points,name',
       fields: 'id,name,points,grade,center,status,student_id,avatar',
     })
-    if (filter) params.set('filter', filter)
+    if (filter) params.set('filter', `${filter} && points_enabled!=false`)
+    else params.set('filter', 'points_enabled!=false')
 
     const res = await fetch(
       `${PB_URL}/api/collections/students/records?${params}`,
