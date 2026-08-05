@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Loader2, Settings2, Save, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
+import { formatGrade } from "@/lib/utils"
 
 interface GradeOverride {
   grade: string
@@ -46,6 +47,7 @@ export default function AttendanceSettingsPanel() {
   const [newGrade, setNewGrade] = useState("")
   const [newGradeDeadline, setNewGradeDeadline] = useState("14:00")
   const [newGradeMinimum, setNewGradeMinimum] = useState("17:00")
+  const [grades, setGrades] = useState<string[]>([])
   const [newTeacherId, setNewTeacherId] = useState("")
   const [newTeacherDeadline, setNewTeacherDeadline] = useState("14:00")
   const [newTeacherMinimum, setNewTeacherMinimum] = useState("17:00")
@@ -57,12 +59,30 @@ export default function AttendanceSettingsPanel() {
     Promise.all([
       fetch("/api/attendance/settings").then(r => r.json()),
       fetch("/api/pocketbase-proxy/api/collections/teachers/records?perPage=200&fields=id,teacher_name").then(r => r.json()),
-    ]).then(([settingsData, teachersData]) => {
-      if (settingsData.success) setConfig(settingsData.settings)
+      fetch("/api/pocketbase-proxy/api/collections/students/records?perPage=500&fields=grade").then(r => r.json()),
+    ]).then(([settingsData, teachersData, studentsData]) => {
+      if (settingsData.success) {
+        const cfg = settingsData.settings
+        // Normalize existing grade_overrides to match dropdown values
+        if (cfg.grade_overrides) {
+          cfg.grade_overrides = cfg.grade_overrides.map((g: GradeOverride) => ({
+            ...g,
+            grade: formatGrade(g.grade),
+          }))
+        }
+        setConfig(cfg)
+      }
       setTeachers((teachersData?.items || []).map((t: any) => ({
         id: t.id,
         name: t.teacher_name || t.name || t.id,
       })))
+      // Extract unique grades from students, normalize with formatGrade
+      const gradeSet = new Set<string>()
+      for (const s of studentsData?.items || []) {
+        const g = formatGrade(s.grade)
+        if (g) gradeSet.add(g)
+      }
+      setGrades(Array.from(gradeSet).sort())
     }).catch(console.error).finally(() => setLoading(false))
   }, [open])
 
@@ -202,12 +222,16 @@ export default function AttendanceSettingsPanel() {
                     </div>
                   )}
                   <div className="flex items-center gap-2">
-                    <Input
-                      placeholder="年级（如：一年级）"
+                    <select
                       value={newGrade}
                       onChange={e => setNewGrade(e.target.value)}
-                      className="h-7 text-xs w-28"
-                    />
+                      className="h-7 text-xs border rounded px-2 bg-white w-28"
+                    >
+                      <option value="">选择年级</option>
+                      {grades.filter(g => !config.grade_overrides.some(o => o.grade === g)).map(g => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
                     <Input
                       type="time"
                       value={newGradeDeadline}
@@ -270,49 +294,6 @@ export default function AttendanceSettingsPanel() {
                       <Plus className="h-3 w-3 mr-1" /> 添加
                     </Button>
                   </div>
-                </div>
-
-                {/* ─── Points Settings ─── */}
-                <div className="border-t pt-3">
-                  <p className="text-xs font-semibold text-gray-500 mb-2">积分联动</p>
-                  <div className="flex items-center justify-between mb-2">
-                    <Label className="text-xs text-gray-600">启用积分联动</Label>
-                    <Switch
-                      checked={config.enable_points}
-                      onCheckedChange={v => update("enable_points", v)}
-                    />
-                  </div>
-                  {config.enable_points && (
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <Label className="text-[10px] text-gray-400">全勤 +分</Label>
-                        <Input
-                          type="number"
-                          value={config.points_full_attendance}
-                          onChange={e => update("points_full_attendance", parseInt(e.target.value) || 0)}
-                          className="h-7 text-xs"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-[10px] text-gray-400">迟到扣分</Label>
-                        <Input
-                          type="number"
-                          value={config.points_late}
-                          onChange={e => update("points_late", parseInt(e.target.value) || 0)}
-                          className="h-7 text-xs"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-[10px] text-gray-400">早退扣分</Label>
-                        <Input
-                          type="number"
-                          value={config.points_early}
-                          onChange={e => update("points_early", parseInt(e.target.value) || 0)}
-                          className="h-7 text-xs"
-                        />
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* ─── Save ─── */}

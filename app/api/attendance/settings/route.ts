@@ -33,9 +33,10 @@ interface TeacherOverride {
 interface AttendanceConfig {
   checkin_deadline: string       // global default: "14:00"
   checkout_minimum: string       // global default: "17:00"
-  points_full_attendance: number // +N for on-time
-  points_late: number           // -N for late
-  points_early: number          // -N for early
+  points_checkin: number         // 每日打卡 +N
+  points_late: number           // 迟到 -N
+  points_early: number          // 早退 -N
+  points_absent: number         // 缺勤 -N
   absent_alert_days: number     // consecutive absent days for alert
   enable_points: boolean
   grade_overrides: GradeOverride[]
@@ -45,9 +46,10 @@ interface AttendanceConfig {
 const DEFAULTS: AttendanceConfig = {
   checkin_deadline: "14:00",
   checkout_minimum: "17:00",
-  points_full_attendance: 2,
+  points_checkin: 2,
   points_late: -1,
   points_early: -1,
+  points_absent: -3,
   absent_alert_days: 3,
   enable_points: true,
   grade_overrides: [],
