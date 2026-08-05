@@ -42,11 +42,13 @@ export function LeaderboardList({
   variant = "dark",
   multiColumn = false,
   onStudentClick,
+  startRank = 1,
 }: {
   students: LeaderboardStudent[]
   variant?: "dark" | "light"
   multiColumn?: boolean
   onStudentClick?: (s: LeaderboardStudent) => void
+  startRank?: number
 }) {
   if (students.length === 0) {
     return (
@@ -141,14 +143,14 @@ export function LeaderboardList({
           gridTemplateRows: `repeat(10, auto)`,
         }}
       >
-        {students.map((s, i) => row(s, i + 1))}
+        {students.map((s, i) => row(s, startRank + i))}
       </div>
     )
   }
 
   return (
     <div>
-      {students.map((s, i) => row(s, i + 1))}
+      {students.map((s, i) => row(s, startRank + i))}
     </div>
   )
 }

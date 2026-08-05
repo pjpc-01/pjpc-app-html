@@ -262,12 +262,26 @@ function SlideshowOverlay({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const list = widgets.filter(w => w.enabled)
-  const current = list[idx] || null
   const centerStudents = students.filter(s => s.center === centerName || s.center === (centerName.includes("中学") ? "PU1" : "BATU14"))
 
+  // Expand leaderboard widgets into pages of 30
+  const expandedList = list.flatMap(w => {
+    if (w.type !== "leaderboard") return [{ ...w, page: 1, pageCount: 1 }]
+    const sorted = [...centerStudents].sort((a, b) => b.points - a.points)
+    if (sorted.length <= 30) return [{ ...w, page: 1, pageCount: 1 }]
+    const pages = Math.ceil(sorted.length / 30)
+    return Array.from({ length: pages }).map((_, p) => ({
+      ...w,
+      id: `${w.id}_page${p}`,
+      page: p + 1,
+      pageCount: pages,
+    }))
+  })
+  const current = expandedList[idx] || null
+
   const go = (dir: 1 | -1) => {
-    if (list.length < 2) return
-    setIdx(i => (i + dir + list.length) % list.length)
+    if (expandedList.length < 2) return
+    setIdx(i => (i + dir + expandedList.length) % expandedList.length)
   }
 
   // Header auto-hide after 3s inactivity
@@ -288,12 +302,14 @@ function SlideshowOverlay({
   }, [])
 
   // Auto-advance
-
   useEffect(() => {
-    if (paused || list.length <= 1) return
-    intervalRef.current = setInterval(() => setIdx(i => (i + 1) % list.length), interval)
+    if (expandedList.length <= 1 || paused) {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      return
+    }
+    intervalRef.current = setInterval(() => setIdx(i => (i + 1) % expandedList.length), interval)
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [paused, list.length, interval])
+  }, [paused, expandedList.length, interval])
 
   // Keyboard — stable references via refs to avoid dependency churn
   const refOnClose = useRef(onClose)
@@ -318,15 +334,14 @@ function SlideshowOverlay({
       case "leaderboard": {
         const sorted = [...centerStudents].sort((a, b) => b.points - a.points)
         const mapped: LeaderboardStudent[] = sorted.map(s => ({
-          id: s.id,
-          name: s.name,
-          points: s.points,
-          center: s.center,
-          grade: s.grade,
-          student_id: s.student_id || undefined,
-          avatar: s.avatar || undefined,
+          id: s.id, name: s.name, points: s.points, center: s.center, grade: s.grade,
+          student_id: s.student_id || undefined, avatar: s.avatar || undefined,
         }))
-        return <LeaderboardList students={mapped} variant="light" multiColumn={true} />
+        const pageNum = (current as any).page || 1
+        const pageCount = (current as any).pageCount || 1
+        const startRank = (pageNum - 1) * 30 + 1
+        const pageStudents = pageCount > 1 ? mapped.slice((pageNum - 1) * 30, pageNum * 30) : mapped
+        return <LeaderboardList students={pageStudents} variant="light" multiColumn={true} startRank={startRank} />
       }
       case "birthdays": return <BirthdayWidget students={centerStudents} />
       case "events": return <EventsWidget events={eventsByWidget[w.id] || w.settings.events || []} />
@@ -343,7 +358,7 @@ function SlideshowOverlay({
         <div className="flex items-center gap-3">
           <MonitorPlay className="h-4 w-4 text-blue-400" />
           <span className="text-xs font-semibold">{centerName} · 幻灯片模式</span>
-          <Badge className="text-[10px] bg-gray-700 text-gray-300">{idx + 1}/{list.length}</Badge>
+          <Badge className="text-[10px] bg-gray-700 text-gray-300">{idx + 1}/{expandedList.length}</Badge>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" className="text-white/60 hover:text-white h-8 text-xs gap-1"
@@ -363,10 +378,13 @@ function SlideshowOverlay({
       <div className="flex-1 flex p-6 min-h-0">
         <div className="w-full flex flex-col min-h-0">
           <div className="text-center mb-4 shrink-0">
-            <h1 className="text-lg font-bold text-white">{current.title}</h1>
+            <h1 className="text-lg font-bold text-white">
+              {current.title}
+              {(current as any).pageCount > 1 ? `（第${(current as any).page}页，第${(current as any).page * 30 - 29}-${Math.min((current as any).page * 30, centerStudents.length)}名）` : ''}
+            </h1>
             <div className="flex justify-center">
               <div className="flex gap-1.5 mt-1">
-                {list.map((_, i) => (
+                {expandedList.map((_, i) => (
                   <div key={i} className={`w-1.5 h-1.5 rounded-full transition-all ${i === idx ? "bg-white w-4" : "bg-white/30"}`} />
                 ))}
               </div>
@@ -556,7 +574,8 @@ function DashboardContent() {
           points: s.points,
           center: s.center,
           grade: s.grade,
-          student_id: (s as any).student_id || undefined,
+          student_id: s.student_id || undefined,
+          avatar: s.avatar || undefined,
         }))
         return <LeaderboardList students={mapped} variant="light" />
       }
