@@ -5,7 +5,7 @@ import PageLayout from "@/components/layouts/PageLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, Plus, Trash2, Save, Minus } from "lucide-react"
+import { Loader2, Plus, Trash2, Save, Minus, Clock } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 
 interface PointRule {
@@ -42,6 +42,35 @@ export default function RulesPage() {
   const [addAmount, setAddAmount] = useState(1)
   const [subLabel, setSubLabel] = useState("")
   const [subAmount, setSubAmount] = useState(1)
+
+  // 考勤打卡积分
+  const [attendanceSettings, setAttendanceSettings] = useState({ points_checkin: 2, points_late: -1, points_early: 0, points_absent: -3, enable_points: true })
+  const [attendanceId, setAttendanceId] = useState("")
+  const [savingAttendance, setSavingAttendance] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/pocketbase-proxy/api/collections/attendance_settings/records?perPage=1&filter=center=\"default\"")
+      .then(r => r.json())
+      .then(d => {
+        if (d.items?.[0]) {
+          setAttendanceId(d.items[0].id)
+          setAttendanceSettings(d.items[0].config || attendanceSettings)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const saveAttendance = async () => {
+    setSavingAttendance(true)
+    try {
+      await fetch(`/api/pocketbase-proxy/api/collections/attendance_settings/records/${attendanceId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ config: attendanceSettings }),
+      })
+    } catch (e) {}
+    setSavingAttendance(false)
+  }
 
   // Load from localStorage
   useEffect(() => {
@@ -190,6 +219,89 @@ export default function RulesPage() {
       background="from-amber-50 to-yellow-50"
     >
       <div className="space-y-4">
+        {/* 考勤打卡积分 */}
+        <Card className="border-blue-200 shadow-sm">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <Clock className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-sm font-bold text-blue-800">考勤打卡积分</CardTitle>
+                  <p className="text-[11px] text-blue-500">NFC打卡自动加减分规则</p>
+                </div>
+              </div>
+              <Button size="sm" onClick={saveAttendance} disabled={savingAttendance} className="h-8 text-xs">
+                {savingAttendance ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Save className="h-3.5 w-3.5 mr-1" />}
+                保存
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div>
+                <label className="text-xs font-medium text-gray-500 mb-1 block">打卡积分</label>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setAttendanceSettings(p => ({ ...p, points_checkin: p.points_checkin - 1 }))}
+                    className="w-6 h-6 rounded border text-xs">−</button>
+                  <Input type="number" value={attendanceSettings.points_checkin}
+                    onChange={e => setAttendanceSettings(p => ({ ...p, points_checkin: Number(e.target.value) }))}
+                    className="w-16 h-8 text-center text-sm font-bold text-green-600" />
+                  <button onClick={() => setAttendanceSettings(p => ({ ...p, points_checkin: p.points_checkin + 1 }))}
+                    className="w-6 h-6 rounded border text-xs">+</button>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 mb-1 block">缺勤扣分</label>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setAttendanceSettings(p => ({ ...p, points_absent: p.points_absent - 1 }))}
+                    className="w-6 h-6 rounded border text-xs">−</button>
+                  <Input type="number" value={attendanceSettings.points_absent}
+                    onChange={e => setAttendanceSettings(p => ({ ...p, points_absent: Number(e.target.value) }))}
+                    className="w-16 h-8 text-center text-sm font-bold text-gray-600" />
+                  <button onClick={() => setAttendanceSettings(p => ({ ...p, points_absent: p.points_absent + 1 }))}
+                    className="w-6 h-6 rounded border text-xs">+</button>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 mb-1 block">迟到扣分</label>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setAttendanceSettings(p => ({ ...p, points_late: p.points_late - 1 }))}
+                    className="w-6 h-6 rounded border text-xs">−</button>
+                  <Input type="number" value={attendanceSettings.points_late}
+                    onChange={e => setAttendanceSettings(p => ({ ...p, points_late: Number(e.target.value) }))}
+                    className="w-16 h-8 text-center text-sm font-bold text-red-600" />
+                  <button onClick={() => setAttendanceSettings(p => ({ ...p, points_late: p.points_late + 1 }))}
+                    className="w-6 h-6 rounded border text-xs">+</button>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 mb-1 block">早退扣分</label>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setAttendanceSettings(p => ({ ...p, points_early: p.points_early - 1 }))}
+                    className="w-6 h-6 rounded border text-xs">−</button>
+                  <Input type="number" value={attendanceSettings.points_early}
+                    onChange={e => setAttendanceSettings(p => ({ ...p, points_early: Number(e.target.value) }))}
+                    className="w-16 h-8 text-center text-sm font-bold text-orange-600" />
+                  <button onClick={() => setAttendanceSettings(p => ({ ...p, points_early: p.points_early + 1 }))}
+                    className="w-6 h-6 rounded border text-xs">+</button>
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                onClick={() => setAttendanceSettings(p => ({ ...p, enable_points: !p.enable_points }))}
+                className={`text-[11px] px-2 py-0.5 rounded-full transition-colors ${
+                  attendanceSettings.enable_points ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"
+                }`}
+              >
+                {attendanceSettings.enable_points ? "打卡积分：开" : "打卡积分：关"}
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Save bar */}
         <div className="flex justify-end">
           <Button size="sm" onClick={save} disabled={saving} className="h-8 text-xs">

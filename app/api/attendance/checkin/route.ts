@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { formatGrade } from '@/lib/utils'
 
 const PB_URL = 'http://127.0.0.1:8090'
 const PB_ADMIN = { email: 'admin@pjpc.com', password: '1234567890' }
@@ -61,19 +62,35 @@ export async function POST(request: NextRequest) {
     // ── Determine action ─────────────────────────
     const dateFilter = `${idField}="${person_id}" && created >= "${today} 00:00:00"`
     const prevRes = await fetch(
-      `${PB_URL}/api/collections/${collectionName}/records?perPage=1&sort=-created&filter=${encodeURIComponent(dateFilter)}`,
+      `${PB_URL}/api/collections/${collectionName}/records?perPage=10&sort=-created&filter=${encodeURIComponent(dateFilter)}`,
       { headers: { Authorization: token } }
     ).then(r => r.json())
 
     let action: 'check_in' | 'check_out'
     const prev = prevRes.items?.[0]
+    // Check if there's already a check_in today — only allow one
+    const hasCheckIn = prevRes.items?.some((r: any) => {
+      const notes = r.notes || ''
+      return notes.startsWith('[签到]') || (!notes.startsWith('[签退]') && !r.check_out)
+    })
     if (!prev) {
       action = 'check_in'
+    } else if (hasCheckIn) {
+      // Already checked in today — try check_out if not done yet
+      const hasCheckOut = prevRes.items?.some((r: any) => (r.notes || '').startsWith('[签退]') || r.check_out)
+      if (hasCheckOut) {
+        // Both check-in and check-out exist today
+        if (prev.notes?.startsWith('[签到]') || (!prev.notes?.startsWith('[签退]') && !prev.check_out)) {
+          // Last was check-in, allow another check_out
+          action = 'check_out'
+        } else {
+          return NextResponse.json({ error: '今天已完成签到和签退', action: 'none' }, { status: 200 })
+        }
+      } else {
+        action = 'check_out'
+      }
     } else {
-      const lastAction = (prev.notes || '').startsWith('[签退]') ? 'check_out' :
-                         (prev.notes || '').startsWith('[签到]') ? 'check_in' :
-                         prev.check_out ? 'check_out' : 'check_in'
-      action = lastAction === 'check_in' ? 'check_out' : 'check_in'
+      action = 'check_in'
     }
 
     const actionLabel = action === 'check_in' ? '签到' : '签退'
@@ -132,16 +149,23 @@ async function handlePointsIntegration(
   let settings: any = {
     checkin_deadline: "14:00",
     checkout_minimum: "17:00",
-    points_full_attendance: 2,
+    points_checkin: 2,
     points_late: -1,
     points_early: -1,
+    points_absent: -3,
     enable_points: true,
     grade_overrides: [] as any[],
     teacher_overrides: [] as any[],
   }
   try {
-    const settingsUrl = `${PB_URL}/api/collections/attendance_settings/records?perPage=1&filter=center="${encodeURIComponent(center)}"`
-    const settingsRes = await fetch(settingsUrl, { headers: { Authorization: token } }).then(r => r.json())
+    // Try center-specific first
+    let settingsUrl = `${PB_URL}/api/collections/attendance_settings/records?perPage=1&filter=center="${encodeURIComponent(center)}"`
+    let settingsRes = await fetch(settingsUrl, { headers: { Authorization: token } }).then(r => r.json())
+    if (!settingsRes.items?.[0]?.config) {
+      // Fallback to default
+      settingsUrl = `${PB_URL}/api/collections/attendance_settings/records?perPage=1&filter=center="default"`
+      settingsRes = await fetch(settingsUrl, { headers: { Authorization: token } }).then(r => r.json())
+    }
     if (settingsRes.items?.[0]?.config) {
       settings = { ...settings, ...settingsRes.items[0].config }
     }
@@ -158,7 +182,12 @@ async function handlePointsIntegration(
     ).then(r => r.json())
     const grade = studentRes.grade
     if (grade) {
-      const go = (settings.grade_overrides || []).find((g: any) => g.grade === grade)
+      const normalized = formatGrade(grade)
+      const go = (settings.grade_overrides || []).find((g: any) => {
+        const goGrade = g.grade
+        // Match both raw and normalized forms
+        return goGrade === normalized || goGrade === grade || formatGrade(goGrade) === normalized
+      })
       if (go) deadline = go.checkin_deadline
     }
   } catch { /* use global deadline */ }
@@ -169,8 +198,8 @@ async function handlePointsIntegration(
   const timeStr = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`
 
   const isLate = timeStr > deadline
-  const points = isLate ? settings.points_late : settings.points_full_attendance
-  const reason = isLate ? `考勤迟到 (打卡时间 ${timeStr}，迟到线 ${deadline})` : '考勤全勤签到'
+  const points = isLate ? settings.points_late : (settings.points_checkin ?? settings.points_full_attendance ?? 2)
+  const reason = isLate ? `考勤迟到 (打卡时间 ${timeStr}，迟到线 ${deadline})` : '考勤打卡签到'
 
   // Check if student already got points today (avoid duplicate)
   const today = todayLocal()
@@ -206,6 +235,17 @@ async function handlePointsIntegration(
     points: points,
     reason,
     teacher_id: 'system',
+    created: nowStr(),
+  })
+
+  // Create point_logs (transaction history)
+  await pbCreate(token, 'point_logs', {
+    student: studentId,
+    amount: points,
+    points_before: currentPoints,
+    points_after: newPoints,
+    reason,
+    teacher: null,
     created: nowStr(),
   })
 

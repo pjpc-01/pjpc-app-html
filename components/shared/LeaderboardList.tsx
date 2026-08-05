@@ -177,21 +177,29 @@ export function LeaderboardView({
   return (
     <div className="space-y-4">
       {!compact && (
-        <div className="flex items-center gap-2">
-          <Building className="h-4 w-4 text-gray-400" />
-          <select
-            value={centerFilter}
-            onChange={e => onCenterChange(e.target.value)}
-            className="text-xs border rounded-lg px-3 py-2 h-9 bg-white"
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            size="sm"
+            variant={!centerFilter || centerFilter === "all" || centerFilter === "" ? "default" : "outline"}
+            onClick={() => onCenterChange("all")}
+            className="h-8 text-xs"
           >
-            <option value="">全部分行</option>
-            {centers.map(c => (
-              <option key={c.id} value={c.code}>{c.name || c.code}</option>
-            ))}
-          </select>
+            全部
+          </Button>
+          {centers.map(c => (
+            <Button
+              key={c.id}
+              size="sm"
+              variant={centerFilter === c.code ? "default" : "outline"}
+              onClick={() => onCenterChange(c.code)}
+              className="h-8 text-xs"
+            >
+              <Building className="h-3 w-3 mr-1" />{c.name || c.code}
+            </Button>
+          ))}
           {onRefresh && (
-            <Button variant="ghost" size="sm" onClick={onRefresh} className="h-9">
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <Button variant="ghost" size="sm" onClick={onRefresh} className="h-8">
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
             </Button>
           )}
           {onFullscreen && (
