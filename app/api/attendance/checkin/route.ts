@@ -185,10 +185,12 @@ async function handlePointsIntegration(
       const normalized = formatGrade(grade)
       const go = (settings.grade_overrides || []).find((g: any) => {
         const goGrade = g.grade
-        // Match both raw and normalized forms
         return goGrade === normalized || goGrade === grade || formatGrade(goGrade) === normalized
       })
-      if (go) deadline = go.checkin_deadline
+      if (go) {
+        deadline = go.checkin_deadline
+        console.log(`[POINTS DEBUG] grade=${grade} deadline=${deadline} (override)`)
+      }
     }
   } catch { /* use global deadline */ }
 
@@ -198,8 +200,9 @@ async function handlePointsIntegration(
   const timeStr = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`
 
   const isLate = timeStr > deadline
-  const points = isLate ? settings.points_late : (settings.points_checkin ?? settings.points_full_attendance ?? 2)
-  const reason = isLate ? `考勤迟到 (打卡时间 ${timeStr}，迟到线 ${deadline})` : '考勤打卡签到'
+  const points = isLate ? settings.points_late : (settings.points_checkin ?? 2)
+  const reason = isLate ? `考勤迟到 (${timeStr}, 线 ${deadline})` : '考勤打卡签到'
+  console.log(`[POINTS DEBUG] timeStr=${timeStr} deadline=${deadline} isLate=${isLate} points=${points}`)
 
   // Check if student already got points today (avoid duplicate)
   const today = todayLocal()
@@ -210,6 +213,7 @@ async function handlePointsIntegration(
   ).then(r => r.json())
 
   if (existingPts.items?.length > 0) {
+    console.log(`[POINTS DEBUG] 今日已有点数记录: studentId=${studentId}, ptsFilter=${ptsFilter}`)
     return { skipped: true, reason: '今日已发放考勤积分' }
   }
 

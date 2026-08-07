@@ -297,7 +297,7 @@ export default function AttendanceSettingsPanel() {
                 </div>
 
                 {/* ─── Save ─── */}
-                <div className="flex items-center gap-2 pt-2 border-t">
+                <div className="flex items-center gap-2 pt-2 border-t flex-wrap">
                   <Button onClick={handleSave} disabled={saving} size="sm" className="h-8 text-xs">
                     {saving ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Save className="h-3 w-3 mr-1" />}
                     保存设置
