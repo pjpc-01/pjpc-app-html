@@ -54,7 +54,7 @@ def parse(text):
                 elif nxt in "ABCDEF": pass  # grade letter
                 elif re.match(r'^\d{1,2}\.\s+', nxt): break  # next subject
                 elif any(k in nxt for k in ("RUMUSAN","JUMLAH","PURATA","ANALISIS")): break
-                elif nxt and nxt != "-" and not nxt.isdigit(): break
+                elif nxt and not nxt.isdigit() and not re.match(r'^[\s\-–—]+$', nxt): break  # skip dash-only lines (no PPSA)
                 j += 1
             valid = [s for s in scores if s is not None]
             if valid: subjects.append({"name": sn, "score": max(valid)})
@@ -70,33 +70,54 @@ async def scrape_one(p, ic, grade_str=""):
         page = await ctx.new_page()
         await page.goto(DS_URL, wait_until='domcontentloaded', timeout=45000)
         await asyncio.sleep(5)
+        
+        # Enter IC
         icf = await page.query_selector('input')
-        if icf:
-            await icf.click()
-            await icf.fill(ic)
-            await page.keyboard.press('Enter')
-            await asyncio.sleep(7)
+        if not icf:
+            await browser.close()
+            return None
+        await icf.click()
+        await icf.fill(ic)
+        await page.keyboard.press('Enter')
+        await asyncio.sleep(7)
 
-        # Determine which tab based on student grade
+        # Map grade to tab label (sidebar tab text)
         g = grade_str.lower()
-        tab = "T1-T3"
-        if "form 4" in g or "form 5" in g: tab = "T4-T5"
-        elif "peralihan" in g or "remove" in g: tab = "PERALIHAN"
+        tab_label = "T1-T3"
+        if "form 4" in g or "form 5" in g:
+            tab_label = "T4-T5"
+        elif "peralihan" in g or "remove" in g:
+            tab_label = "PERALIHAN"
+
+        # Always click the correct tab first
+        # Sidebar tabs are xap-nav-link elements
+        try:
+            tab_el = page.locator('xap-nav-link').filter(has_text=f'{tab_label}:')
+            count = await tab_el.count()
+            if count > 0:
+                await tab_el.first.click()
+                await asyncio.sleep(4)
+        except Exception:
+            pass
 
         text = await page.evaluate("() => document.body.innerText")
 
-        # If "No data", try other tabs
+        # If still "No data", try other tabs
         if "No data" in text:
-            for alt in [t for t in ("T4-T5", "PERALIHAN", "T1-T3") if t != tab]:
+            for alt in ["T4-T5", "PERALIHAN", "T1-T3"]:
+                if alt == tab_label:
+                    continue
                 try:
-                    el = await page.query_selector(f"text={alt}:")
-                    if el:
-                        await el.click()
+                    alt_el = page.locator('xap-nav-link').filter(has_text=f'{alt}:')
+                    cnt = await alt_el.count()
+                    if cnt > 0:
+                        await alt_el.first.click()
                         await asyncio.sleep(4)
                         text = await page.evaluate("() => document.body.innerText")
                         if "No data" not in text:
                             break
-                except: pass
+                except Exception:
+                    pass
 
         await browser.close()
         return parse(text)
@@ -120,10 +141,10 @@ async def main(center_filter=""):
     sf = 'status="active"'
     if center_filter:
         sf += f' && center="{urllib.parse.quote(center_filter)}"'
-    u = f"{PB_URL}/api/collections/students/records?perPage=500&fields=id,nric,name,grade,center&filter={urllib.parse.quote(sf)}"
+    u = f"{PB_URL}/api/collections/students/records?perPage=500&fields=id,nric,name,grade,center,is_peralihan&filter={urllib.parse.quote(sf)}"
     r = subprocess.run(['curl', '-s', u], capture_output=True, text=True)
     students = json.loads(r.stdout).get('items', [])
-    targets = [(s['id'], s['nric'].strip().replace('-', ''), s.get('name', ''), s.get('grade', '')) for s in students if s.get('nric') and s['nric'].strip()]
+    targets = [(s['id'], s['nric'].strip().replace('-', ''), s.get('name', ''), s.get('grade', ''), s.get('is_peralihan', False)) for s in students if s.get('nric') and s['nric'].strip()]
     if not targets:
         print(json.dumps({"success": False, "message": "no students with NRIC"}))
         return
@@ -133,7 +154,11 @@ async def main(center_filter=""):
     ok = 0
 
     async with async_playwright() as p:
-        for sid, ic, name, grade_str in targets:
+        for sid, ic, name, grade_str, is_peralihan in targets:
+            # Adjust grade_str for peralihan
+            if is_peralihan and grade_str:
+                # Student is in peralihan — use PERALIHAN tab
+                grade_str = "peralihan"
             print(f"  {name} {ic}", file=sys.stderr)
             data = await scrape_one(p, ic, grade_str)
             if not data or not data.get('subjects'):

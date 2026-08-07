@@ -58,7 +58,7 @@ export default function GradesManagementPage() {
   const [importing, setImporting] = useState(false)
   const [importMsg, setImportMsg] = useState("")
   const [showAnalysis, setShowAnalysis] = useState(true)
-  const [activeTab, setActiveTab] = useState<"entry" | "report">("entry")
+  const [activeTab, setActiveTab] = useState<"entry" | "report">("report")
 
   const studentMap = useMemo(() => {
     const centerMap: Record<string, string> = {}
