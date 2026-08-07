@@ -224,7 +224,7 @@ async function handlePointsIntegration(
   ).then(r => r.json())
 
   const currentPoints = student.points || 0
-  const newPoints = Math.max(0, currentPoints + points)
+  const newPoints = currentPoints + points
 
   // Update student points
   await fetch(`${PB_URL}/api/collections/students/records/${studentId}`, {
