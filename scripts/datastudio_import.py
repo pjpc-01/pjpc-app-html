@@ -18,13 +18,16 @@ def gl(s): return "A" if s>=80 else "B" if s>=70 else "C" if s>=60 else "D" if s
 
 def parse(text):
     lines = [l.strip() for l in text.split('\n')]
-    # Name: find NO.KAD, then next ALL-UPPERCASE non-digit line after TINGKATAN
+    # Name: find NO.KAD, then first proper name line (non-digit, non-header)
     name = ""
-    in_header = False
+    found_kp = False
     for l in lines:
-        if "TINGKATAN" in l and any(c.isdigit() for c in l):
-            in_header = True; continue
-        if in_header and l and l.upper() == l and not l[0].isdigit() and l != "NO.KAD PENGENALAN" and "SLIP" not in l and "TINGKATAN" not in l and "masukkan" not in l.lower():
+        if "NO.KAD PENGENALAN" in l:
+            found_kp = True; continue
+        if found_kp and l:
+            # Skip known non-name lines
+            if any(k in l.upper() for k in ("SILA MASUK", "SLIP PELAPORAN", "TINGKATAN", "NO DATA")): continue
+            if l[0].isdigit() and '.' in l[:3]: continue  # numbered subject line
             name = l; break
     if not name: return None
 
@@ -60,12 +63,12 @@ def parse(text):
     return {"name": name, "form": form, "subjects": subjects}
 
 
-async def scrape_one(p, ic):
+async def scrape_one(p, ic, grade_str=""):
     browser = await p.chromium.launch(headless=True, args=['--no-sandbox'])
     try:
         ctx = await browser.new_context(viewport={'width': 1920, 'height': 1080})
         page = await ctx.new_page()
-        await page.goto(DS_URL, wait_until='domcontentloaded', timeout=30000)
+        await page.goto(DS_URL, wait_until='domcontentloaded', timeout=45000)
         await asyncio.sleep(5)
         icf = await page.query_selector('input')
         if icf:
@@ -73,7 +76,28 @@ async def scrape_one(p, ic):
             await icf.fill(ic)
             await page.keyboard.press('Enter')
             await asyncio.sleep(7)
+
+        # Determine which tab based on student grade
+        g = grade_str.lower()
+        tab = "T1-T3"
+        if "form 4" in g or "form 5" in g: tab = "T4-T5"
+        elif "peralihan" in g or "remove" in g: tab = "PERALIHAN"
+
         text = await page.evaluate("() => document.body.innerText")
+
+        # If "No data", try other tabs
+        if "No data" in text:
+            for alt in [t for t in ("T4-T5", "PERALIHAN", "T1-T3") if t != tab]:
+                try:
+                    el = await page.query_selector(f"text={alt}:")
+                    if el:
+                        await el.click()
+                        await asyncio.sleep(4)
+                        text = await page.evaluate("() => document.body.innerText")
+                        if "No data" not in text:
+                            break
+                except: pass
+
         await browser.close()
         return parse(text)
     except Exception as e:
@@ -99,7 +123,7 @@ async def main(center_filter=""):
     u = f"{PB_URL}/api/collections/students/records?perPage=500&fields=id,nric,name,grade,center&filter={urllib.parse.quote(sf)}"
     r = subprocess.run(['curl', '-s', u], capture_output=True, text=True)
     students = json.loads(r.stdout).get('items', [])
-    targets = [(s['id'], s['nric'].strip().replace('-', ''), s.get('name', '')) for s in students if s.get('nric') and s['nric'].strip()]
+    targets = [(s['id'], s['nric'].strip().replace('-', ''), s.get('name', ''), s.get('grade', '')) for s in students if s.get('nric') and s['nric'].strip()]
     if not targets:
         print(json.dumps({"success": False, "message": "no students with NRIC"}))
         return
@@ -109,9 +133,9 @@ async def main(center_filter=""):
     ok = 0
 
     async with async_playwright() as p:
-        for sid, ic, name in targets:
+        for sid, ic, name, grade_str in targets:
             print(f"  {name} {ic}", file=sys.stderr)
-            data = await scrape_one(p, ic)
+            data = await scrape_one(p, ic, grade_str)
             if not data or not data.get('subjects'):
                 results.append({"studentId": sid, "name": name, "status": "failed"})
                 continue
