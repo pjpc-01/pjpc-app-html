@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       if (alreadyDeducted.has(s.id)) continue
 
       const currentPoints = s.points || 0
-      const newPoints = Math.max(0, currentPoints + pointsAbsent)
+      const newPoints = currentPoints + pointsAbsent
 
       // Update student points
       await fetch(`${PB_URL}/api/collections/students/records/${s.id}`, {

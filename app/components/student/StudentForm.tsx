@@ -56,6 +56,7 @@ export default function StudentForm({
     student_name: '',
     student_id: '',
     standard: '',
+    is_peralihan: false,
     fatherName: '',
     motherName: '',
     fatherPhone: '',
@@ -116,7 +117,7 @@ export default function StudentForm({
       setFormData({
         student_name: student.student_name || '',
         student_id: student.student_id || '',
-        standard: student.standard || '',
+        standard: student.standard || student.grade || '',
         fatherName: student.fatherName || student.father_name || '',
         motherName: student.motherName || student.mother_name || '',
         fatherPhone: student.fatherPhone || student.father_phone || '',
@@ -128,6 +129,7 @@ export default function StudentForm({
         gender: student.gender || 'male',
         serviceType: student.serviceType || 'afterschool',
         dob: student.dob || '',
+        is_peralihan: student.is_peralihan || false,
         // 新增字段
         nric: student.nric || '',
         school: student.school || '',
@@ -435,7 +437,7 @@ export default function StudentForm({
   }, [formData.gender, formData.serviceType, formData.center, isEditing, generateStudentId, existingStudents])
 
   // 根据出生日期计算年级（马来西亚完整教育体系）
-  const calculateGradeFromDob = (dob: string) => {
+  const calculateGradeFromDob = (dob: string, isPeralihan: boolean = false) => {
     if (!dob) return ''
     
     const birthYear = new Date(dob).getFullYear()
@@ -445,29 +447,40 @@ export default function StudentForm({
     // 年级计算：当前年份 - 出生年份
     let grade = currentYear - birthYear
     
-    console.log(`年级计算: ${currentYear} - ${birthYear} = ${grade}`)
+    console.log(`年级计算: ${currentYear} - ${birthYear} = ${grade}${isPeralihan ? ' (Peralihan)' : ''}`)
     
+    let result = ''
     // 根据马来西亚教育体系标准计算年级
     // 7岁 = Standard 1, 8岁 = Standard 2, 以此类推
     if (grade >= 7 && grade <= 12) {
-      return `Standard ${grade - 6}`
+      result = `Standard ${grade - 6}`
     } else if (grade >= 13 && grade <= 17) {
-      return `Form ${grade - 12}`
+      result = `Form ${grade - 12}`
     } else if (grade >= 18 && grade <= 19) {
-      return 'Form 6'
+      result = 'Form 6'
     }
     
-    return ''
+    return result
+  }
+
+  // Peralihan: maps Form → grade one step below, Form 1 → "remove"
+  const PERALIHAN_SHIFT_FROM: Record<string, string> = {
+    'Form 1': 'remove', 'Form 2': '7', 'Form 3': '8',
+    'Form 4': '9', 'Form 5': '10', 'Form 6': '11',
   }
 
   // 当出生日期改变时，自动计算年级
   useEffect(() => {
     if (formData.dob) {
       let grade = calculateGradeFromDob(formData.dob)
+      // Apply peralihan shift
+      if (formData.is_peralihan && PERALIHAN_SHIFT_FROM[grade]) {
+        grade = PERALIHAN_SHIFT_FROM[grade]
+      }
       console.log(`出生日期: ${formData.dob}, 计算年级: ${grade}`)
       setFormData(prev => ({ ...prev, standard: grade }))
     }
-  }, [formData.dob])
+  }, [formData.dob, formData.is_peralihan])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -668,7 +681,6 @@ export default function StudentForm({
                     <SelectItem value="4">Standard 4</SelectItem>
                     <SelectItem value="5">Standard 5</SelectItem>
                     <SelectItem value="6">Standard 6</SelectItem>
-                    <SelectItem value="remove">Peralihan / Remove</SelectItem>
                     <SelectItem value="7">Form 1</SelectItem>
                     <SelectItem value="8">Form 2</SelectItem>
                     <SelectItem value="9">Form 3</SelectItem>
@@ -681,6 +693,33 @@ export default function StudentForm({
                   <p className="text-xs text-green-600 mt-1">✓ 年级已根据出生日期自动计算，也可手动选择</p>
                 )}
                 {errors.standard && <p className="text-red-500 text-sm mt-1">{errors.standard}</p>}
+              </div>
+
+              {/* Peralihan checkbox */}
+              <div className="flex items-center gap-2 mt-1">
+                <input
+                  type="checkbox"
+                  id="is_peralihan"
+                  checked={formData.is_peralihan || false}
+                  onChange={(e) => {
+                    const checked = e.target.checked
+                    setFormData(prev => {
+                      const updated = { ...prev, is_peralihan: checked }
+                      // When toggling, recalculate grade
+                      if (prev.dob && checked) {
+                        let grade = calculateGradeFromDob(prev.dob)
+                        if (PERALIHAN_SHIFT_FROM[grade]) {
+                          updated.standard = PERALIHAN_SHIFT_FROM[grade]
+                        }
+                      } else if (prev.dob && !checked) {
+                        updated.standard = calculateGradeFromDob(prev.dob)
+                      }
+                      return updated
+                    })
+                  }}
+                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <Label htmlFor="is_peralihan" className="text-sm text-slate-600 cursor-pointer">Peralihan / Remove 班</Label>
               </div>
             </div>
           </div>

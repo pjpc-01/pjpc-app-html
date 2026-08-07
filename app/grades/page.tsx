@@ -53,10 +53,12 @@ export default function GradesManagementPage() {
   const [editScore, setEditScore] = useState("")
   const [editComment, setEditComment] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
-  const [centerFilter, setCenterFilter] = useState("all")
+  const [centerFilter, setCenterFilter] = useState("PU1")
+  const [reportGradeFilter, setReportGradeFilter] = useState("all")
   const [importing, setImporting] = useState(false)
   const [importMsg, setImportMsg] = useState("")
   const [showAnalysis, setShowAnalysis] = useState(true)
+  const [activeTab, setActiveTab] = useState<"entry" | "report">("entry")
 
   const studentMap = useMemo(() => {
     const centerMap: Record<string, string> = {}
@@ -94,7 +96,7 @@ export default function GradesManagementPage() {
   const handleImport = async () => {
     setImporting(true); setImportMsg("正在从 DataStudio 导入...")
     try {
-      const res = await fetch("/api/grades/import-datastudio", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ center: centerFilter === "all" ? "" : centerFilter }) })
+      const res = await fetch("/api/grades/import-datastudio", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ center: centerFilter }) })
       const data = await res.json()
       setImportMsg(data.success ? `✅ 成功 ${data.ok}/${data.total}` : `❌ ${data.message || data.error || "导入失败"}`)
       if (data.success) loadGrades()
@@ -140,8 +142,9 @@ export default function GradesManagementPage() {
     const map: Record<string, { scores: number[]; grade: string; name: string }> = {}
     for (const g of analysisGrades) {
       if (!map[g.studentId]) {
-        const info = studentMap.infoMap[g.studentId] || { name: g.studentId, grade: "" }
-        map[g.studentId] = { scores: [], grade: info.grade, name: info.name }
+        const name = g.expand?.studentId?.name || studentMap.infoMap[g.studentId]?.name || g.studentId
+        const grade = g.expand?.studentId?.grade || studentMap.infoMap[g.studentId]?.grade || ""
+        map[g.studentId] = { scores: [], grade, name }
       }
       map[g.studentId].scores.push(g.score!)
     }
@@ -157,9 +160,14 @@ export default function GradesManagementPage() {
 
   return (
     <PageLayout title={t('exam.grade_management')} description="录入和分析学生考试成绩">
+      {/* Tab switcher */}
+      <div className="flex gap-1 mb-3 border-b pb-0">
+        <button onClick={() => setActiveTab("report")} className={`px-3 py-1.5 text-xs font-medium border-b-2 -mb-[2px] ${activeTab === "report" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>📊 成绩报表</button>
+        <button onClick={() => setActiveTab("entry")} className={`px-3 py-1.5 text-xs font-medium border-b-2 -mb-[2px] ${activeTab === "entry" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>📝 录入分析</button>
+      </div>
+
       {/* Center + Import */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
-        <Button size="sm" variant={centerFilter === "all" ? "default" : "outline"} onClick={() => setCenterFilter("all")} className="h-8 text-xs">全部</Button>
         {CENTERS.map(c => (
           <Button key={c.code} size="sm" variant={centerFilter === c.code ? "default" : "outline"} onClick={() => setCenterFilter(c.code)} className="h-8 text-xs"><Building className="h-3 w-3 mr-1" />{c.name}</Button>
         ))}
@@ -170,6 +178,7 @@ export default function GradesManagementPage() {
         {importMsg && <Badge className="text-[10px] bg-blue-50 text-blue-700">{importMsg}</Badge>}
       </div>
 
+      {activeTab === "entry" && (<>
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-6">
         <Select value={subject} onValueChange={setSubject}>
@@ -228,7 +237,77 @@ export default function GradesManagementPage() {
           </Table>
         </div></Card>
       )}
+      </>)}  {/* end entry tab */}
 
+      {activeTab === "report" && analysisGrades.length > 0 && (() => {
+        const gradeSubjects = ["华文", "国文", "英文", "科学", "数学", "历史", "地理", "伊斯兰教育", "道德", "RBT", "美术", "体育", "电脑"]
+        // Build per-student subject map
+        const studentSubjectMap: Record<string, Record<string, {score:number;letter:string}>> = {}
+        for (const g of analysisGrades) {
+          if (!studentSubjectMap[g.studentId]) studentSubjectMap[g.studentId] = {}
+          studentSubjectMap[g.studentId][g.subject] = { score: g.score!, letter: g.grade_letter }
+        }
+        const filteredRanking = reportGradeFilter === "all" ? studentRanking : studentRanking.filter(s => s.grade === reportGradeFilter)
+        return (
+          <Card className="mb-6">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2"><GraduationCap className="h-4 w-4" />成绩报表 · {term} · {year}</CardTitle>
+                <Select value={reportGradeFilter} onValueChange={setReportGradeFilter}>
+                  <SelectTrigger className="w-28 h-7 text-xs"><SelectValue placeholder="全部年级" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部年级</SelectItem>
+                    <SelectItem value="Peralihan">Peralihan</SelectItem>
+                    <SelectItem value="Form 1">Form 1</SelectItem>
+                    <SelectItem value="Form 2">Form 2</SelectItem>
+                    <SelectItem value="Form 3">Form 3</SelectItem>
+                    <SelectItem value="Form 4">Form 4</SelectItem>
+                    <SelectItem value="Form 5">Form 5</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0 overflow-auto">
+              <div className="min-w-[900px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs w-10">#</TableHead>
+                      <TableHead className="text-xs w-28">学生</TableHead>
+                      <TableHead className="text-xs w-16">年级</TableHead>
+                      {gradeSubjects.map(s => <TableHead key={s} className="text-xs text-center w-16">{s}</TableHead>)}
+                      <TableHead className="text-xs text-right w-14">平均</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredRanking.map((s, i) => {
+                      const subjects = studentSubjectMap[s.id] || {}
+                      return (
+                        <TableRow key={s.id} className={i < 3 ? "bg-amber-50/30" : i >= filteredRanking.length - 3 ? "bg-red-50/30" : ""}>
+                          <TableCell className="text-xs font-mono text-slate-400">{i + 1}</TableCell>
+                          <TableCell className="text-xs font-medium">{s.name}</TableCell>
+                          <TableCell className="text-xs text-slate-500">{s.grade}</TableCell>
+                          {gradeSubjects.map(subj => {
+                            const d = subjects[subj]
+                            return (
+                              <TableCell key={subj} className="text-center p-1">
+                                {d ? <span className={`text-xs font-mono ${d.score >= 80 ? "text-emerald-600" : d.score >= 50 ? "text-slate-700" : "text-red-600"}`}>{d.score}<span className="text-[10px] ml-0.5 text-slate-400">{d.letter}</span></span> : <span className="text-xs text-slate-300">-</span>}
+                              </TableCell>
+                            )
+                          })}
+                          <TableCell className={`text-xs text-right font-bold ${s.avg >= 70 ? "text-emerald-600" : s.avg >= 50 ? "text-slate-700" : "text-red-600"}`}>{s.avg}</TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )
+      })()}
+
+      {activeTab === "entry" && (<>
       {/* Analysis: toggle */}
       <div className="flex items-center gap-2 mb-4">
         <Button size="sm" variant="ghost" onClick={() => setShowAnalysis(!showAnalysis)} className="h-7 text-xs text-slate-500">
@@ -337,6 +416,7 @@ export default function GradesManagementPage() {
           </Card>
         </>
       )}
+      </>)}  {/* end entry tab (analysis) */}
     </PageLayout>
   )
 }

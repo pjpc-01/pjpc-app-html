@@ -549,7 +549,19 @@ const GRADE_NAME_MAP: Record<string, string> = {
   'y3': 'Standard 3', 'y4': 'Standard 4', 'y5': 'Standard 5', 'y6': 'Standard 6',
   'y7': 'Form 1', 'y8': 'Form 2', 'y9': 'Form 3', 'y10': 'Form 4', 'y11': 'Form 5', 'y12': 'Form 6',
 }
-export const formatGrade = (grade: string | undefined | null): string => {
+
+// Peralihan shift: Form 1→Peralihan, Form 2→Form 1, etc.
+const PERALIHAN_SHIFT: Record<string, string> = {
+  'Form 1': 'Peralihan', 'Form 2': 'Form 1', 'Form 3': 'Form 2',
+  'Form 4': 'Form 3', 'Form 5': 'Form 4', 'Form 6': 'Form 5',
+}
+export const applyPeralihan = (grade: string, isPeralihan?: boolean): string => {
+  if (!isPeralihan) return grade
+  return PERALIHAN_SHIFT[grade] || grade
+}
+
+export const formatGrade = (grade: string | undefined | null, isPeralihan?: boolean): string => {
   if (!grade) return ''
-  return GRADE_NAME_MAP[grade] || grade
+  const base = GRADE_NAME_MAP[grade] || grade
+  return applyPeralihan(base, isPeralihan)
 }

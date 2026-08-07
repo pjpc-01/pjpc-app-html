@@ -19,8 +19,8 @@ export const useStudents = () => {
       // Normalize grade at source
       const normalized = allStudents.map((s: any) => ({
         ...s,
-        grade: formatGrade(s.grade),
-        standard: formatGrade(s.standard),
+        grade: formatGrade(s.grade, s.is_peralihan),
+        standard: formatGrade(s.standard || s.grade, s.is_peralihan),
       }))
       setStudents(normalized)
       console.log(`✅ useStudents: 成功获取 ${allStudents.length} 个学生数据`)

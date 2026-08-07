@@ -453,6 +453,7 @@ export const updateStudent = async (id: string, studentData: any): Promise<Stude
     if (get('registrationDate') !== undefined) pbData.registrationDate = get('registrationDate')
     if (get('tuitionStatus') !== undefined) pbData.tuitionStatus = get('tuitionStatus')
     if (get('points_enabled') !== undefined) pbData.points_enabled = get('points_enabled')
+    if (get('is_peralihan') !== undefined) pbData.is_peralihan = get('is_peralihan')
     
     // Emergency / health
     if (get('emergencyContact') !== undefined) pbData.emergencyContact = get('emergencyContact')
