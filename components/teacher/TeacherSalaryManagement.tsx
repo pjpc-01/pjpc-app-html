@@ -131,6 +131,9 @@ export default function TeacherSalaryManagement() {
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [salaryStructures, setSalaryStructures] = useState<TeacherSalaryStructure[]>([])
   const [salaryRecords, setSalaryRecords] = useState<TeacherSalaryRecord[]>([])
+  const [recordPage, setRecordPage] = useState(1)
+  const [recordTotalPages, setRecordTotalPages] = useState(1)
+  const [recordTotal, setRecordTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -348,34 +351,45 @@ export default function TeacherSalaryManagement() {
     }
   }, [])
 
-  const fetchSalaryStructures = useCallback(async () => {
-    try {
-      const params = new URLSearchParams()
-      if (filters.teacher_id) params.append('teacher_id', filters.teacher_id)
-      
-      const response = await fetch(`/api/teacher-salary?type=structure&${params}`)
-      const result = await response.json()
-      if (result.success) {
-        setSalaryStructures(result.data)
+  const fetchSalaryStructures = useCallback(async (retries = 2) => {
+    for (let i = 0; i <= retries; i++) {
+      try {
+        const params = new URLSearchParams()
+        if (filters.teacher_id) params.append('teacher_id', filters.teacher_id)
+        const response = await fetch(`/api/teacher-salary?type=structure&${params}`)
+        const result = await response.json()
+        if (result.success) {
+          setSalaryStructures(result.data)
+          return
+        }
+        if (i === retries) throw new Error(result.error || 'unknown')
+      } catch (error) {
+        if (i === retries) {
+          console.error('获取薪资结构失败:', error)
+        } else {
+          await new Promise(r => setTimeout(r, 500))
+        }
       }
-    } catch (error) {
-      console.error('获取薪资结构失败:', error)
-      setError('获取薪资结构失败')
     }
   }, [filters.teacher_id])
 
-  const fetchSalaryRecords = useCallback(async () => {
+  const fetchSalaryRecords = useCallback(async (page = 1) => {
     try {
       const params = new URLSearchParams()
       if (filters.teacher_id) params.append('teacher_id', filters.teacher_id)
       if (filters.year) params.append('year', filters.year.toString())
-      if (filters.month) params.append('month', filters.month)
+      if (filters.month) params.append('month', filters.month.toString())
       if (filters.status) params.append('status', filters.status)
+      params.append('page', page.toString())
+      params.append('limit', '20')
       
       const response = await fetch(`/api/teacher-salary?type=record&${params}`)
       const result = await response.json()
       if (result.success) {
         setSalaryRecords(result.data)
+        setRecordPage(page)
+        setRecordTotalPages(result.totalPages || 1)
+        setRecordTotal(result.total || 0)
       }
     } catch (error) {
       console.error('获取薪资记录失败:', error)
@@ -722,11 +736,28 @@ export default function TeacherSalaryManagement() {
   const allRecordsSelected = allRecordIds.length > 0 && recordSelectedIds.size === allRecordIds.length
   const someRecordsSelected = recordSelectedIds.size > 0
 
-  const toggleSelectAllRecords = () => {
+  const toggleSelectAllRecords = async () => {
     if (allRecordsSelected) {
       setRecordSelectedIds(new Set())
     } else {
-      setRecordSelectedIds(new Set(allRecordIds))
+      // Fetch ALL record IDs matching current filters
+      try {
+        const params = new URLSearchParams()
+        if (filters.teacher_id) params.append('teacher_id', filters.teacher_id)
+        if (filters.year) params.append('year', filters.year.toString())
+        if (filters.month) params.append('month', filters.month.toString())
+        if (filters.status) params.append('status', filters.status)
+        params.append('page', '1')
+        params.append('limit', '10000')
+        const response = await fetch(`/api/teacher-salary?type=record&${params}`)
+        const result = await response.json()
+        if (result.success && result.data) {
+          setRecordSelectedIds(new Set(result.data.map((r: any) => r.id)))
+        }
+      } catch (err) {
+        console.error('Fetch all record IDs failed:', err)
+        setRecordSelectedIds(new Set(allRecordIds))
+      }
     }
   }
 
@@ -772,7 +803,7 @@ export default function TeacherSalaryManagement() {
     const gross = base + allowance
     const epf = gross * (recordForm.epf_rate || 0.11)
     const socso = gross * (recordForm.socso_rate || 0.005)
-    const eis = Math.min(gross * (recordForm.eis_rate || 0.002), 2.45)
+    const eis = gross * (recordForm.eis_rate || 0.002)
     const tax = recordForm.tax_rate ? gross * recordForm.tax_rate : 0
     const totalDed = epf + socso + eis + tax + (recordForm.other_deductions || 0)
     const net = gross - totalDed + (recordForm.bonus || 0) + (recordForm.commission || 0)
@@ -1225,6 +1256,13 @@ export default function TeacherSalaryManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={allRecordsSelected}
+                        onCheckedChange={toggleSelectAllRecords}
+                        aria-label="全选"
+                      />
+                    </TableHead>
                     <TableHead>Payslip No.</TableHead>
                     <TableHead>{t('teacher.teacher')}</TableHead>
                     <TableHead>薪资期间</TableHead>
@@ -1235,6 +1273,13 @@ export default function TeacherSalaryManagement() {
                 <TableBody>
                   {salaryRecords.map((record) => (
                     <TableRow key={record.id} className={recordSelectedIds.has(record.id) ? "bg-red-50/50" : ""}>
+                      <TableCell>
+                        <Checkbox
+                          checked={recordSelectedIds.has(record.id)}
+                          onCheckedChange={() => toggleSelectRecord(record.id)}
+                          aria-label={`选择 ${record.expand?.teacher_id?.name || record.id}`}
+                        />
+                      </TableCell>
                       <TableCell>
                         <span className="font-mono text-xs font-medium bg-gray-100 px-2 py-0.5 rounded">
                           {record.payslip_no || '-'}
@@ -1282,6 +1327,27 @@ export default function TeacherSalaryManagement() {
                 </TableBody>
               </Table>
             </div>
+            {/* Pagination */}
+            {recordTotalPages > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <span className="text-sm text-gray-500">
+                  共 {recordTotal} 条，每页 20 条
+                </span>
+                <div className="flex gap-1">
+                  {Array.from({ length: recordTotalPages }, (_, i) => i + 1).map(p => (
+                    <Button
+                      key={p}
+                      size="sm"
+                      variant={p === recordPage ? "default" : "outline"}
+                      onClick={() => fetchSalaryRecords(p)}
+                      className="min-w-[32px] h-8"
+                    >
+                      {p}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
             </CardContent>
           </Card>
         </div>

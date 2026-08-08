@@ -63,7 +63,7 @@ export default function SettingsPage() {
     socsoEmployeeRate: 0.5,
     socsoEmployerRate: 1.75,
     eisEmployeeRate: 0.2,
-    eisEmployerRate: 0.4,
+    eisEmployerRate: 0.2,
   })
 
   // --- System Parameters ---
@@ -580,7 +580,7 @@ export default function SettingsPage() {
                   <Percent className="h-5 w-5 text-amber-700 mt-0.5 shrink-0" />
                   <div className="text-sm text-amber-800">
                     <p className="font-medium mb-1">马来西亚法定贡献费率参考</p>
-                    <p>EPF 雇员 11% / 雇主 13% | SOCSO 雇员 0.5% / 雇主 1.75% | EIS 雇员 0.2% / 雇主 0.4%</p>
+                    <p>EPF 雇员 11% / 雇主 13% | SOCSO 雇员 0.5% / 雇主 1.75% | EIS 雇员 0.2% / 雇主 0.2%</p>
                     <p className="text-xs mt-1">请根据最新政府公告调整费率。这些费率将用于教师薪资计算。</p>
                   </div>
                 </div>
