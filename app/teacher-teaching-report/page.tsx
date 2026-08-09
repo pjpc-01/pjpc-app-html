@@ -257,14 +257,17 @@ async function fetchReport(id: string): Promise<TeachingReport | null> {
   }
 }
 
-async function fetchReports(opts: { teacherId?: string; grade?: string; page?: number; perPage?: number } = {}): Promise<{ items: any[]; totalPages: number; totalItems: number }> {
-  const { teacherId, grade, page = 1, perPage = 15 } = opts
+async function fetchReports(opts: { teacherId?: string; grade?: string; page?: number; perPage?: number; bin?: boolean } = {}): Promise<{ items: any[]; totalPages: number; totalItems: number }> {
+  const { teacherId, grade, page = 1, perPage = 15, bin = false } = opts
   // Load ALL matching records, then sort + paginate client-side (PB proxy can't sort by created field)
   const allUrl = `${API_BASE}/records?perPage=500`
   const resp = await fetch(allUrl)
   if (!resp.ok) return { items: [], totalPages: 1, totalItems: 0 }
   const data = await resp.json()
   let items = (data.items || []) as any[]
+  
+  // Filter deleted/non-deleted
+  items = items.filter((r: any) => bin ? r.deleted === true : !r.deleted)
   
   // Filter
   if (teacherId) items = items.filter((r: any) => r.teacher_id === teacherId)
@@ -316,6 +319,7 @@ export default function TeacherTeachingReportPage() {
   const [analysisLevels, setAnalysisLevels] = useState<Record<number, AnalysisLevel>>({})
   const [photoFiles, setPhotoFiles] = useState<File[]>([])
   const [docFiles, setDocFiles] = useState<File[]>([])
+  const [binTab, setBinTab] = useState(false)
 
   // ── 筛选 + 分页 ──
   const [filterTeacher, setFilterTeacher] = useState("")
@@ -345,13 +349,14 @@ export default function TeacherTeachingReportPage() {
       grade: effGrade,
       page: pageNum,
       perPage: PER_PAGE,
+      bin: binTab,
     })
     setReports(items)
     setTotalPages(tp)
     setTotalItems(ti)
     setPage(pageNum)
     setLoading(false)
-  }, [teacher?.id, user?.teacher_id, user?.role, filterTeacher, filterGrade])
+  }, [teacher?.id, user?.teacher_id, user?.role, filterTeacher, filterGrade, binTab])
 
   useEffect(() => {
     loadReports()
@@ -510,11 +515,41 @@ export default function TeacherTeachingReportPage() {
     }
   }
 
+  // 软删除
   const handleDelete = async (id: string) => {
-    if (!confirm("确定要删除这份报告吗？")) return
+    if (!confirm("确定要删除这份报告吗？将移入回收站。")) return
     try {
-      await deleteReport(id)
-      toast.success("已删除")
+      await fetch(`${API_BASE}/records/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deleted: true }),
+      })
+      toast.success("已移入回收站")
+      loadReports()
+    } catch {
+      toast.error("删除失败")
+    }
+  }
+
+  const handleRestore = async (id: string) => {
+    try {
+      await fetch(`${API_BASE}/records/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deleted: false }),
+      })
+      toast.success("已还原")
+      loadReports()
+    } catch {
+      toast.error("还原失败")
+    }
+  }
+
+  const handlePermanentDelete = async (id: string) => {
+    if (!confirm("确定要永久删除吗？此操作不可恢复！")) return
+    try {
+      await fetch(`${API_BASE}/records/${id}`, { method: "DELETE" })
+      toast.success("已永久删除")
       loadReports()
     } catch {
       toast.error("删除失败")
@@ -571,10 +606,16 @@ export default function TeacherTeachingReportPage() {
       >
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              报告列表
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                {binTab ? "🗑️ 回收站" : "报告列表"}
+              </CardTitle>
+              <div className="flex gap-1">
+                <Button size="sm" variant={!binTab ? "default" : "ghost"} onClick={() => { setBinTab(false); setPage(1); }}>报告列表</Button>
+                <Button size="sm" variant={binTab ? "default" : "ghost"} onClick={() => { setBinTab(true); setPage(1); }}>🗑️ 回收站</Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {/* 筛选栏 */}
@@ -642,16 +683,27 @@ export default function TeacherTeachingReportPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       {statusBadge(r.status)}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDelete(r.id)
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
+                      {binTab ? (
+                        <>
+                          <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleRestore(r.id); }}>
+                            还原
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handlePermanentDelete(r.id); }}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDelete(r.id)
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
