@@ -1,25 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase, authenticateAdmin } from '@/lib/pocketbase'
-
-// SOCSO contribution rates (Act 4 First Schedule) — from PERKESO calculator
-// Salaries above RM 5000: employee capped at 24.75, employer at 86.65
-// Format: { max, employee, employer }
-const SOCSO_BRACKETS = [
-  { max: 100,   employee: 0.00, employer: 0.00 },
-  { max: 500,   employee: 2.50, employer: 13.45 },
-  { max: 1000,  employee: 5.00, employer: 26.95 },
-  { max: 1500,  employee: 7.25, employer: 25.35 },
-  { max: 2000,  employee: 9.75, employer: 34.15 },
-  { max: 2500,  employee: 12.25, employer: 42.85 },
-  { max: 3000,  employee: 14.75, employer: 51.65 },
-  { max: 3500,  employee: 17.25, employer: 60.35 },
-  { max: 4000,  employee: 19.75, employer: 69.15 },
-  { max: 4500,  employee: 22.25, employer: 77.85 },
-  { max: 5000,  employee: 24.75, employer: 86.65 },
-  { max: Infinity, employee: 24.75, employer: 86.65 },
-]
-
-// Monthly progressive PCB tax brackets (2025 Malaysia — annual brackets ÷ 12)
+import { getSocsoEmployee, getSocsoEmployer, getEisContribution } from '@/lib/perkeso-rates'
 // Official: 0-5000/yr=0%, 5001-20000=1%, 20001-35000=3%, 35001-50000=6%,
 //           50001-70000=11%, 70001-100000=19%, 100001-400000=25%
 // Monthly thresholds = annual ÷ 12 (rounded)
@@ -34,21 +15,15 @@ const PCB_BRACKETS = [
 ]
 
 function calculateSOCSO(grossSalary: number): number {
-  const bracket = SOCSO_BRACKETS.find(b => grossSalary <= b.max)
-  if (bracket) {
-    return bracket.employee
-  }
-  // Above RM5,000 — employee capped at RM66.75
-  return 66.75
+  return getSocsoEmployee(grossSalary)
 }
 
 function calculateEmployerSOCSO(grossSalary: number): number {
-  const bracket = SOCSO_BRACKETS.find(b => grossSalary <= b.max)
-  if (bracket) {
-    return bracket.employer
-  }
-  // Above RM5,000 — employer capped at RM86.65
-  return 86.65
+  return getSocsoEmployer(grossSalary)
+}
+
+function calculateEIS(grossSalary: number): number {
+  return getEisContribution(grossSalary)
 }
 
 function calculateProgressivePCB(grossSalary: number): number {
@@ -164,20 +139,29 @@ export async function POST(request: NextRequest) {
         const overtimeRate = structure.overtime_rate || (hourlyRate * 1.5)
         
         const overtimePay = overtimeHours * overtimeRate
-        const allowances = structure.allowances || 0
         
-        const grossSalary = baseSalary + overtimePay + allowances
+        // 津贴分项
+        const allowanceFixed = structure.allowance_fixed || 0
+        const allowanceTransport = structure.allowance_transport || 0
+        const allowanceMeal = structure.allowance_meal || 0
+        const allowanceOther = structure.allowance_other || 0
+        const totalAllowances = allowanceFixed + allowanceTransport + allowanceMeal + allowanceOther
+        
+        // 奖金
+        const bonus = structure.bonus || 0
+        
+        const grossSalary = baseSalary + overtimePay + totalAllowances + bonus
 
         // 计算扣除项
         const epfDeduction = grossSalary * (structure.epf_rate || 0.11)
         const socsoDeduction = calculateSOCSO(grossSalary)
-        const eisDeduction = grossSalary * (structure.eis_rate || 0.002)  // EIS: 0.2%, no cap
+        const eisDeduction = calculateEIS(grossSalary)
         const taxDeduction = calculateProgressivePCB(grossSalary)
 
         // 雇主缴纳
         const epfEmployer = grossSalary * (structure.epf_employer_rate || (grossSalary > 5000 ? 0.12 : 0.13))
         const socsoEmployer = calculateEmployerSOCSO(grossSalary)
-        const eisEmployer = grossSalary * 0.002  // EIS employer: 0.2%, no cap
+        const eisEmployer = calculateEIS(grossSalary)
         
         const totalDeductions = epfDeduction + socsoDeduction + eisDeduction + taxDeduction
         const netSalary = grossSalary - totalDeductions
@@ -200,7 +184,8 @@ export async function POST(request: NextRequest) {
           hours_worked: totalHours,
           overtime_hours: overtimeHours,
           overtime_pay: overtimePay,
-          allowances,
+          allowances: totalAllowances,
+          bonus,
           gross_salary: grossSalary,
           epf_deduction: epfDeduction,
           epf_employer: epfEmployer,

@@ -57,7 +57,10 @@ interface TeacherSalaryStructure {
   base_salary: number
   hourly_rate?: number
   overtime_rate?: number
-  allowances: number
+  allowance_fixed?: number
+  allowance_transport?: number
+  allowance_meal?: number
+  allowance_other?: number
   epf_rate: number
   socso_rate: number
   eis_rate: number
@@ -273,7 +276,10 @@ export default function TeacherSalaryManagement() {
     base_salary: 0,
     hourly_rate: 0,
     overtime_rate: 0,
-    allowances: 0,
+    allowance_fixed: 0,
+    allowance_transport: 0,
+    allowance_meal: 0,
+    allowance_other: 0,
     epf_rate: 0.11,
     socso_rate: 0.005,
     eis_rate: 0.002,
@@ -413,8 +419,9 @@ export default function TeacherSalaryManagement() {
   // 计算薪资
   const calculateSalary = useCallback((form: typeof structureForm) => {
     const baseSalary = form.base_salary
-    const allowances = form.allowances
-    const grossSalary = baseSalary + allowances
+    const allowances = (form.allowance_fixed || 0) + (form.allowance_transport || 0) + (form.allowance_meal || 0) + (form.allowance_other || 0)
+    const bonus = (form as any).bonus || 0
+    const grossSalary = baseSalary + allowances + bonus
     
     const epfDeduction = grossSalary * form.epf_rate
     const socsoDeduction = grossSalary * form.socso_rate
@@ -529,7 +536,10 @@ export default function TeacherSalaryManagement() {
           base_salary: 0,
           hourly_rate: 0,
           overtime_rate: 0,
-          allowances: 0,
+          allowance_fixed: 0,
+          allowance_transport: 0,
+          allowance_meal: 0,
+          allowance_other: 0,
           epf_rate: globalRates.epf,
           socso_rate: globalRates.socso,
           eis_rate: globalRates.eis,
@@ -538,7 +548,6 @@ export default function TeacherSalaryManagement() {
           socso_employer_rate: globalRates.socso_employer || 0.0175,
           eis_employer_rate: globalRates.eis_employer || 0.002,
           bonus: 0,
-          salary_type: 'monthly',
           effective_date: '',
           end_date: '',
           notes: ''
@@ -586,7 +595,7 @@ export default function TeacherSalaryManagement() {
       base_salary: structure.base_salary,
       hourly_rate: structure.hourly_rate || 0,
       overtime_rate: structure.overtime_rate || 0,
-      allowances: structure.allowances || 0,
+      allowances: (structure.allowance_fixed || 0) + (structure.allowance_transport || 0) + (structure.allowance_meal || 0) + (structure.allowance_other || 0),
       epf_rate: structure.epf_rate ?? globalRates.epf,
       socso_rate: structure.socso_rate ?? globalRates.socso,
       eis_rate: structure.eis_rate ?? globalRates.eis,
@@ -1159,7 +1168,7 @@ export default function TeacherSalaryManagement() {
                         </Badge>
                       </TableCell>
                       <TableCell>{formatCurrency(structure.base_salary)}</TableCell>
-                      <TableCell>{formatCurrency(structure.allowances)}</TableCell>
+                      <TableCell>{formatCurrency((structure.allowance_fixed || 0) + (structure.allowance_transport || 0) + (structure.allowance_meal || 0) + (structure.allowance_other || 0))}</TableCell>
                       <TableCell>{(structure.epf_rate * 100).toFixed(1)}%</TableCell>
                       <TableCell>{(structure.socso_rate * 100).toFixed(2)}%</TableCell>
                       <TableCell>{(structure.eis_rate * 100).toFixed(2)}%</TableCell>
@@ -1418,16 +1427,24 @@ export default function TeacherSalaryManagement() {
               </div>
               
               <div>
-                <Label htmlFor="allowances">每月补贴总额</Label>
-                <Input
-                  id="allowances"
-                  type="number"
-                  value={structureForm.allowances}
-                  onChange={(e) => setStructureForm(prev => ({ 
-                    ...prev, 
-                    allowances: parseFloat(e.target.value) || 0 
-                  }))}
-                />
+                <Label htmlFor="allowance_fixed">固定津贴 (RM)</Label>
+                <Input id="allowance_fixed" type="number" value={structureForm.allowance_fixed || ''}
+                  onChange={(e) => setStructureForm(prev => ({ ...prev, allowance_fixed: parseFloat(e.target.value) || 0 }))} />
+              </div>
+              <div>
+                <Label htmlFor="allowance_transport">交通津贴 (RM)</Label>
+                <Input id="allowance_transport" type="number" value={structureForm.allowance_transport || ''}
+                  onChange={(e) => setStructureForm(prev => ({ ...prev, allowance_transport: parseFloat(e.target.value) || 0 }))} />
+              </div>
+              <div>
+                <Label htmlFor="allowance_meal">膳食津贴 (RM)</Label>
+                <Input id="allowance_meal" type="number" value={structureForm.allowance_meal || ''}
+                  onChange={(e) => setStructureForm(prev => ({ ...prev, allowance_meal: parseFloat(e.target.value) || 0 }))} />
+              </div>
+              <div>
+                <Label htmlFor="allowance_other">其他津贴 (RM)</Label>
+                <Input id="allowance_other" type="number" value={structureForm.allowance_other || ''}
+                  onChange={(e) => setStructureForm(prev => ({ ...prev, allowance_other: parseFloat(e.target.value) || 0 }))} />
               </div>
             </div>
 
@@ -1635,12 +1652,11 @@ export default function TeacherSalaryManagement() {
                     base_salary: structure?.base_salary || 0,
                     hourly_rate: structure?.hourly_rate || 0,
                     overtime_rate: structure?.overtime_rate || 0,
-                    allowances: structure?.allowances || 0,
+                    allowances: (structure?.allowance_fixed || 0) + (structure?.allowance_transport || 0) + (structure?.allowance_meal || 0) + (structure?.allowance_other || 0),
                     epf_rate: structure?.epf_rate || globalRates.epf,
                     socso_rate: structure?.socso_rate || globalRates.socso,
                     eis_rate: structure?.eis_rate || globalRates.eis,
                     tax_rate: structure?.tax_rate || globalRates.tax,
-                    epf_employer_rate: structure?.epf_employer_rate || globalRates.epf_employer,
                   }))
                 }}>
                   <SelectTrigger>
