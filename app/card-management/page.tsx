@@ -38,6 +38,7 @@ interface PersonInfo {
   cardNumber?: string
   center?: string
   status?: string
+  grade?: string
 }
 
 export default function CardManagementPage() {
@@ -50,6 +51,7 @@ export default function CardManagementPage() {
   const [search, setSearch] = useState("")
   const [filterType, setFilterType] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")
+  const [filterLevel, setFilterLevel] = useState("all")
   const [page, setPage] = useState(1)
   const pageSize = 15
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -98,13 +100,33 @@ export default function CardManagementPage() {
   }
 
   useEffect(() => { fetchData() }, [])
-  useEffect(() => { setPage(1) }, [filterType, filterStatus, search])
+  useEffect(() => { setPage(1) }, [filterType, filterStatus, filterLevel, search])
+
+  // Helper: determine 小学/中学 from grade string
+  const isPrimary = (grade?: string) => {
+    if (!grade) return false
+    const g = grade.trim()
+    return /^([1-6]|一年级|二年级|三年级|四年级|五年级|六年级|Standard [1-6]|Year [1-6]|y[1-6])$/i.test(g)
+  }
+  const isSecondary = (grade?: string) => {
+    if (!grade) return false
+    const g = grade.trim()
+    return /^([7-9]|1[0-2]|中一|中二|中三|中四|中五|中六|Form [1-6]|Per|预备班|Remove)$/i.test(g)
+  }
 
   // Filtered cards
   const filteredCards = useMemo(() => {
     return cards.filter(c => {
       if (filterType !== "all" && c.type !== filterType) return false
       if (filterStatus !== "all" && c.status !== filterStatus) return false
+      if (filterLevel === "primary" && c.type === "student") {
+        const grade = students[c.studentId || ""]?.grade
+        if (!isPrimary(grade)) return false
+      }
+      if (filterLevel === "secondary" && c.type === "student") {
+        const grade = students[c.studentId || ""]?.grade
+        if (!isSecondary(grade)) return false
+      }
       if (search) {
         const person = c.type === "student" ? students[c.studentId || ""] : teachers[c.teacherId || ""]
         const name = person?.name || ""
@@ -112,7 +134,7 @@ export default function CardManagementPage() {
       }
       return true
     })
-  }, [cards, filterType, filterStatus, search, students, teachers])
+  }, [cards, filterType, filterStatus, filterLevel, search, students, teachers])
 
   // Paginated + reset on filter change
   const totalPages = Math.max(1, Math.ceil(filteredCards.length / pageSize))
@@ -123,7 +145,9 @@ export default function CardManagementPage() {
     const pu1: PersonInfo[] = []
     const batu14: PersonInfo[] = []
     for (const s of Object.values(students)) {
-      if (s.status === "graduated") continue
+      if (s.status === "graduated" || s.status === "deleted" || s.status === "inactive") continue
+      // Skip test data
+      if (s.name?.toLowerCase() === "test user" || s.name?.toLowerCase() === "aa" || s.name?.startsWith("__LOCAL_TEST")) continue
       if (s.cardNumber && s.cardNumber !== "-") continue
       const c = (s.center || "").toUpperCase()
       if (c === "PU1") pu1.push(s)
@@ -247,6 +271,7 @@ export default function CardManagementPage() {
     )
     const unlinkedStudents = Object.values(students).filter(s => {
       if (s.status === "graduated" || s.status === "deleted" || s.status === "inactive") return false
+      if (s.name?.toLowerCase() === "test user" || s.name?.toLowerCase() === "aa" || s.name?.startsWith("__LOCAL_TEST")) return false
       return !activeCardStudentIds.has(s.id)
     })
     const activeCardTeacherIds = new Set(
@@ -325,6 +350,14 @@ export default function CardManagementPage() {
                 <SelectItem value="active">{t('common.normal')}</SelectItem>
                 <SelectItem value="inactive">{t('common.disabled')}</SelectItem>
                 <SelectItem value="lost">{t('card.report_lost')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterLevel} onValueChange={setFilterLevel}>
+              <SelectTrigger className="w-28"><SelectValue placeholder="学段" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部</SelectItem>
+                <SelectItem value="primary">小学</SelectItem>
+                <SelectItem value="secondary">中学</SelectItem>
               </SelectContent>
             </Select>
           </div>
