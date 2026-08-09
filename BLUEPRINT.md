@@ -11,10 +11,9 @@
 |---|------|------|------|
 | 1 | **NFC UID 统一** | Card reader (USB) 和手机 Web NFC 扫出来的 uid 格式不同，没有 convert | `nfc_cards` 126条，`card_uid` 十进制有值但 `nfc_uid` hex 全空 |
 | 2 | **学生成绩报告** | DataStudio 导入只完成 PU1 不到一半，Form1-5 全没拉 | 92条成绩，13/32 PU1 成功。20人无/假 NRIC |
-| 3 | **Finance 全测试** | 薪资 SOCSO/EIS 刚修正，要出 payslip 了必须对 | SOCSO 换成 PERKESO 2024 表 ✅、EIS 去 2.45 上限 ✅、Synorex 97条 ✅、PCB 累进税率修正 ✅ |
+| 3 | **Finance 全测试** | 薪资 SOCSO/EIS/PCB 修正，需全量重算验证 | SOCSO ✅、EIS ✅、Synorex ✅、PCB ✅、EPF ✅ |
 | 4 | **创建教师 agent profile** | Alicia 和马老师各一个 Hermes agent profile | 未开始 |
-| 5 | **教师评估 bug** | 用户反馈教师评估有 bug | 待定位 |
-| 6 | **考勤打卡积分验证** | 打卡有没有加分、有没有按设置时间判断缺勤 | 17点缺勤逻辑已有，待全查 |
+| 5 | **考勤打卡积分验证** | 打卡有没有加分、有没有按设置时间判断缺勤 | 17点缺勤逻辑已有，待全查 |
 
 ---
 
