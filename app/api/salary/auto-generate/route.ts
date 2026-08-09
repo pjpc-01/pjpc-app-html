@@ -19,14 +19,17 @@ const SOCSO_BRACKETS = [
   { max: Infinity, employee: 24.75, employer: 86.65 },
 ]
 
-// Monthly progressive PCB tax brackets (simplified, based on monthly gross)
+// Monthly progressive PCB tax brackets (2025 Malaysia — annual brackets ÷ 12)
+// Official: 0-5000/yr=0%, 5001-20000=1%, 20001-35000=3%, 35001-50000=6%,
+//           50001-70000=11%, 70001-100000=19%, 100001-400000=25%
+// Monthly thresholds = annual ÷ 12 (rounded)
 const PCB_BRACKETS = [
-  { max: 4166, rate: 0 },
-  { max: 16666, rate: 0.01 },
-  { max: 29166, rate: 0.03 },
-  { max: 41666, rate: 0.06 },
-  { max: 58333, rate: 0.11 },
-  { max: 83333, rate: 0.19 },
+  { max: 416, rate: 0 },
+  { max: 1666, rate: 0.01 },
+  { max: 2916, rate: 0.03 },
+  { max: 4166, rate: 0.06 },
+  { max: 5833, rate: 0.11 },
+  { max: 8333, rate: 0.19 },
   { max: Infinity, rate: 0.25 },
 ]
 
@@ -172,7 +175,7 @@ export async function POST(request: NextRequest) {
         const taxDeduction = calculateProgressivePCB(grossSalary)
 
         // 雇主缴纳
-        const epfEmployer = grossSalary * (structure.epf_employer_rate || 0.13)
+        const epfEmployer = grossSalary * (structure.epf_employer_rate || (grossSalary > 5000 ? 0.12 : 0.13))
         const socsoEmployer = calculateEmployerSOCSO(grossSalary)
         const eisEmployer = grossSalary * 0.002  // EIS employer: 0.2%, no cap
         

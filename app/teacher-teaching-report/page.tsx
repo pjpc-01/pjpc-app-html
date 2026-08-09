@@ -257,13 +257,30 @@ async function fetchReport(id: string): Promise<TeachingReport | null> {
   }
 }
 
-async function fetchReports(teacherId?: string): Promise<any[]> {
-  let url = `${API_BASE}/records?perPage=100`
-  if (teacherId) url += `&filter=(teacher_id='${teacherId}')`
-  const resp = await fetch(url)
-  if (!resp.ok) return []
+async function fetchReports(opts: { teacherId?: string; grade?: string; page?: number; perPage?: number } = {}): Promise<{ items: any[]; totalPages: number; totalItems: number }> {
+  const { teacherId, grade, page = 1, perPage = 15 } = opts
+  // Load ALL matching records, then sort + paginate client-side (PB proxy can't sort by created field)
+  const allUrl = `${API_BASE}/records?perPage=500`
+  const resp = await fetch(allUrl)
+  if (!resp.ok) return { items: [], totalPages: 1, totalItems: 0 }
   const data = await resp.json()
-  return data.items || []
+  let items = (data.items || []) as any[]
+  
+  // Filter
+  if (teacherId) items = items.filter((r: any) => r.teacher_id === teacherId)
+  if (grade) items = items.filter((r: any) => r.grade === grade)
+  
+  // Sort by date descending, then created descending (newest first)
+  items.sort((a: any, b: any) => {
+    const dateDiff = new Date(b.date || '').getTime() - new Date(a.date || '').getTime()
+    if (dateDiff !== 0) return dateDiff
+    return new Date(b.created || 0).getTime() - new Date(a.created || 0).getTime()
+  })
+  
+  const total = items.length
+  const totalPages = Math.ceil(total / perPage)
+  const paged = items.slice((page - 1) * perPage, page * perPage)
+  return { items: paged, totalPages, totalItems: total }
 }
 
 async function deleteReport(id: string): Promise<void> {
@@ -300,6 +317,14 @@ export default function TeacherTeachingReportPage() {
   const [photoFiles, setPhotoFiles] = useState<File[]>([])
   const [docFiles, setDocFiles] = useState<File[]>([])
 
+  // ── 筛选 + 分页 ──
+  const [filterTeacher, setFilterTeacher] = useState("")
+  const [filterGrade, setFilterGrade] = useState("")
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const PER_PAGE = 15
+
   // Set report editing mode
   useEffect(() => {
     if (editId) {
@@ -309,14 +334,24 @@ export default function TeacherTeachingReportPage() {
   }, [editId])
 
   // Load reports — admin sees all, teachers see only their own
-  const loadReports = useCallback(async () => {
+  const loadReports = useCallback(async (pageNum = 1) => {
     setLoading(true)
     const isAdmin = user?.role === "admin"
-    const tid = isAdmin ? undefined : (teacher?.id || user?.teacher_id || undefined)
-    const data = await fetchReports(tid)
-    setReports(data)
+    const tid = (!isAdmin && (teacher?.id || user?.teacher_id)) ? (teacher?.id || user?.teacher_id) : undefined
+    const effTeacherId = filterTeacher && filterTeacher !== '__all__' ? filterTeacher : tid || undefined
+    const effGrade = filterGrade && filterGrade !== '__all__' ? filterGrade : undefined
+    const { items, totalPages: tp, totalItems: ti } = await fetchReports({
+      teacherId: effTeacherId,
+      grade: effGrade,
+      page: pageNum,
+      perPage: PER_PAGE,
+    })
+    setReports(items)
+    setTotalPages(tp)
+    setTotalItems(ti)
+    setPage(pageNum)
     setLoading(false)
-  }, [teacher?.id, user?.teacher_id, user?.role])
+  }, [teacher?.id, user?.teacher_id, user?.role, filterTeacher, filterGrade])
 
   useEffect(() => {
     loadReports()
@@ -542,6 +577,36 @@ export default function TeacherTeachingReportPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* 筛选栏 */}
+            <div className="flex flex-wrap gap-3 mb-4">
+              <Select value={filterTeacher} onValueChange={(v) => { setFilterTeacher(v); setPage(1); }}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="全部教师" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">全部教师</SelectItem>
+                  {teachers.map((t: any) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.teacher_name || t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterGrade} onValueChange={(v) => { setFilterGrade(v); setPage(1); }}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="全部年级" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">全部年级</SelectItem>
+                  {GRADE_OPTIONS.map(g => (
+                    <SelectItem key={g} value={g}>{g}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" onClick={() => { setFilterTeacher(""); setFilterGrade(""); setPage(1); }}>
+                重置
+              </Button>
+            </div>
             {loading ? (
               <p className="text-gray-500 text-center py-8">加载中...</p>
             ) : reports.length === 0 ? (
@@ -590,6 +655,27 @@ export default function TeacherTeachingReportPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                <span className="text-sm text-gray-500">
+                  共 {totalItems} 条，每页 {PER_PAGE} 条
+                </span>
+                <div className="flex gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                    <Button
+                      key={p}
+                      size="sm"
+                      variant={p === page ? "default" : "outline"}
+                      onClick={() => loadReports(p)}
+                      className="min-w-[32px] h-8"
+                    >
+                      {p}
+                    </Button>
+                  ))}
+                </div>
               </div>
             )}
           </CardContent>
