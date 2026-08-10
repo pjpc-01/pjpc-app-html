@@ -110,40 +110,32 @@ export async function POST(request: NextRequest) {
         
         const overtimePay = overtimeHours * overtimeRate
         
-        // 津贴分项（固定/交通/膳食/其他 计入 gross 扣 EPF/SOCSO/EIS）
-        const allowanceFixed = structure.allowance_fixed || 0
-        const allowanceTransport = structure.allowance_transport || 0
-        const allowanceMeal = structure.allowance_meal || 0
-        const allowanceOther = structure.allowance_other || 0
-        const taxableAllowances = allowanceFixed + allowanceTransport + allowanceMeal + allowanceOther
+        // 津贴分项 - taxable 勾选的加入 gross，未勾选的直接加 net
+        const allowanceItems: { name: string; amount: number; taxable: boolean }[] = structure.allowance_items || []
+        const taxableAllowances = allowanceItems.filter(a => a.taxable !== false).reduce((sum, a) => sum + (a.amount || 0), 0)
+        const nonTaxableAllowances = allowanceItems.filter(a => a.taxable === false).reduce((sum, a) => sum + (a.amount || 0), 0)
+        const totalAllowances = taxableAllowances + nonTaxableAllowances
         
-        // 旅游津贴（不扣 EPF/SOCSO/EIS，直接加净薪）
-        const allowanceTravel = structure.allowance_travel || 0
+        // 奖金 - 总额加入 net
+        const bonusItems: { name: string; amount: number; taxable: boolean }[] = structure.bonus_items || []
+        const totalBonuses = bonusItems.reduce((sum, b) => sum + (b.amount || 0), 0)
         
-        // 奖金（不扣 EPF/SOCSO/EIS）
-        const bonus = structure.bonus || 0
-        const customBonuses: { name: string; amount: number }[] = structure.custom_bonuses || []
-        const totalBonuses = bonus + customBonuses.reduce((sum, b) => sum + (b.amount || 0), 0)
-        
-        // grossForDeductions = 底薪 + 加班 + 应税津贴（不计旅游/奖金）
-        const grossForDeductions = baseSalary + overtimePay + taxableAllowances
-        
-        // 总 gross（不含旅游/奖金，用于显示）
-        const grossSalary = grossForDeductions
+        // gross = 底薪 + 加班 + 应税津贴
+        const grossSalary = baseSalary + overtimePay + taxableAllowances
 
-        // 计算扣除项（基于 grossForDeductions）
-        const epfDeduction = grossForDeductions * (structure.epf_rate || 0.11)
-        const socsoDeduction = calculateSOCSO(grossForDeductions)
-        const eisDeduction = calculateEIS(grossForDeductions)
-        const taxDeduction = calculateProgressivePCB(grossForDeductions)
+        // 计算扣除项（基于 grossSalary）
+        const epfDeduction = grossSalary * (structure.epf_rate || 0.11)
+        const socsoDeduction = calculateSOCSO(grossSalary)
+        const eisDeduction = calculateEIS(grossSalary)
+        const taxDeduction = calculateProgressivePCB(grossSalary)
 
-        // 雇主缴纳（基于 grossForDeductions）
-        const epfEmployer = grossForDeductions * (structure.epf_employer_rate || (grossForDeductions > 5000 ? 0.12 : 0.13))
-        const socsoEmployer = calculateEmployerSOCSO(grossForDeductions)
-        const eisEmployer = calculateEIS(grossForDeductions)
+        // 雇主缴纳（基于 grossSalary）
+        const epfEmployer = grossSalary * (structure.epf_employer_rate || (grossSalary > 5000 ? 0.12 : 0.13))
+        const socsoEmployer = calculateEmployerSOCSO(grossSalary)
+        const eisEmployer = calculateEIS(grossSalary)
         
         const totalDeductions = epfDeduction + socsoDeduction + eisDeduction + taxDeduction
-        const netSalary = grossSalary - totalDeductions + allowanceTravel + totalBonuses
+        const netSalary = grossSalary - totalDeductions + nonTaxableAllowances + totalBonuses
 
         // 生成序列号
         const existingCount = await pb.collection('teacher_salary_records').getList(1, 1, {
@@ -163,10 +155,9 @@ export async function POST(request: NextRequest) {
           hours_worked: totalHours,
           overtime_hours: overtimeHours,
           overtime_pay: overtimePay,
-          allowances: taxableAllowances,
-          allowance_travel: allowanceTravel,
-          bonus,
-          custom_bonuses: customBonuses,
+          allowances: totalAllowances,
+          allowance_items: allowanceItems,
+          bonus_items: bonusItems,
           gross_salary: grossSalary,
           epf_deduction: epfDeduction,
           epf_employer: epfEmployer,
