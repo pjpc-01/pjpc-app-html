@@ -1353,18 +1353,13 @@ export const generatePayslipHTML = (
           </tr>
           ${renderItems(
             '津贴 Allowances',
-            (record as any).allowance_items,
-            (a: any) => a.taxable === false ? `<span style="color:#059669;font-size:11px;">（不计扣）</span>` : ''
+            ((record as any).allowance_items || []).filter((a: any) => a.taxable !== false),
+            () => ''
           )}
           ${record.overtime_pay ? `<tr>
             <td>加班费 Overtime Pay</td>
             <td>${(record.overtime_pay || 0).toFixed(2)}</td>
           </tr>` : ''}
-          ${renderItems(
-            '奖金 Bonus',
-            (record as any).bonus_items,
-            () => `<span style="color:#059669;font-size:11px;">（不计扣）</span>`
-          )}
           ${record.commission ? `<tr>
             <td>佣金 Commission</td>
             <td>${(record.commission || 0).toFixed(2)}</td>
@@ -1391,6 +1386,7 @@ export const generatePayslipHTML = (
               '<tr><td>EPF 雇主公积 (Employer)</td><td>' + empEPF.toFixed(2) + '</td></tr>' +
               '<tr><td>SOCSO 雇主社保 (Employer)</td><td>' + empSOCSO.toFixed(2) + '</td></tr>' +
               '<tr><td>EIS 雇主就业险 (Employer)</td><td>' + empEIS.toFixed(2) + '</td></tr>' +
+              '<tr class="total-row"><td>雇主缴纳总计 Total Employer</td><td>' + empTotal.toFixed(2) + '</td></tr>' +
               '</tbody></table></div>'
             : ''
           const dedHtml = '<div style="flex:1;">' +
@@ -1401,20 +1397,49 @@ export const generatePayslipHTML = (
             '<tr><td>EIS 就业保险</td><td>' + (record.eis_deduction || 0).toFixed(2) + '</td></tr>' +
             '<tr><td>PCB 预扣税 Tax</td><td>' + (record.tax_deduction || 0).toFixed(2) + '</td></tr>' +
             (record.other_deductions ? '<tr><td>其他扣款 Other</td><td>' + (record.other_deductions || 0).toFixed(2) + '</td></tr>' : '') +
+            '<tr class="deductions-total"><td>扣款总计 Total Deductions</td><td>' + totalDeductions.toFixed(2) + '</td></tr>' +
             '</tbody></table></div>'
-          return empHtml + dedHtml + '</div>' +
-            '<div style="display:flex; gap:16px;">' +
-            (showEmp ? '<div class="total-row" style="flex:1;">雇主缴纳总计 Total Employer: ' + empTotal.toFixed(2) + '</div>' : '') +
-            '<div class="deductions-total" style="flex:1;">扣款总计 Total Deductions: ' + totalDeductions.toFixed(2) + '</div>' +
-            '</div>'
+          return empHtml + dedHtml + '</div>'
         })()}
       </div>
 
       <table class="items-table">
         <tbody>
           <tr class="net-salary-row">
-            <td>🏆 净薪资 Net Salary / 净薪资</td>
-            <td>RM ${(record.net_salary || 0).toFixed(2)}</td>
+            <td>💰 净薪资 Net Salary</td>
+            <td style="font-size:16px;">RM ${(record.net_salary || 0).toFixed(2)}</td>
+          </tr>
+          ${(() => {
+            const ai = (record as any).allowance_items || []
+            const bi = (record as any).bonus_items || []
+            const nonTaxAllowances = ai.filter((a: any) => a.taxable === false)
+            const totalNonTax = nonTaxAllowances.reduce((s: number, a: any) => s + (a.amount || 0), 0)
+            const totalBonus = bi.reduce((s: number, b: any) => s + (b.amount || 0), 0)
+            const extra = totalNonTax + totalBonus
+            if (extra === 0) return ''
+            let html = ''
+            if (nonTaxAllowances.length > 0) {
+              html += `<tr class="total-row"><td>加项津贴 Extra Allowances</td><td><strong>${totalNonTax.toFixed(2)}</strong></td></tr>`
+              for (const a of nonTaxAllowances)
+                html += `<tr><td style="padding-left:24px;">└ ${a.name || '—'}</td><td>${(a.amount || 0).toFixed(2)}</td></tr>`
+            }
+            if (bi.length > 0) {
+              html += `<tr class="total-row"><td>加项奖金 Extra Bonus</td><td><strong>${totalBonus.toFixed(2)}</strong></td></tr>`
+              for (const b of bi)
+                html += `<tr><td style="padding-left:24px;">└ ${b.name || '—'}</td><td>${(b.amount || 0).toFixed(2)}</td></tr>`
+            }
+            return html
+          })()}
+          <tr class="net-salary-row">
+            <td style="font-weight:bold;font-size:20px;">💰 Total 总计</td>
+            <td style="font-weight:bold;font-size:20px;">RM ${(() => {
+              const ai = (record as any).allowance_items || []
+              const bi = (record as any).bonus_items || []
+              let extra = 0
+              for (const a of ai) { if (a.taxable === false) extra += a.amount || 0 }
+              for (const b of bi) { extra += b.amount || 0 }
+              return ((record.net_salary || 0) + extra).toFixed(2)
+            })()}</td>
           </tr>
         </tbody>
       </table>

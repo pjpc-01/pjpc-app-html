@@ -427,9 +427,10 @@ export default function TeacherSalaryManagement() {
     const eisDeduction = grossSalary * form.eis_rate
     const taxDeduction = grossSalary * form.tax_rate
     const totalDeductions = epfDeduction + socsoDeduction + eisDeduction + taxDeduction
-    const netSalary = grossSalary - totalDeductions + nonTaxableAllowances + bonuses
+    const netSalary = grossSalary - totalDeductions
+    const takeHome = netSalary + nonTaxableAllowances + bonuses
     
-    return { grossSalary, epfDeduction, socsoDeduction, eisDeduction, taxDeduction, totalDeductions, netSalary }
+    return { grossSalary, epfDeduction, socsoDeduction, eisDeduction, taxDeduction, totalDeductions, netSalary, takeHome }
   }, [])
 
   // 自动生成薪资
@@ -813,7 +814,9 @@ export default function TeacherSalaryManagement() {
     const eisEmployer = getEisContribution(gross)
     const tax = getPCB(gross)
     const totalDed = epf + socso + eis + tax + (recordForm.other_deductions || 0)
-    const net = gross - totalDed + nonTaxableAllowances + totalBonuses + (recordForm.commission || 0)
+    const net = gross - totalDed
+    const extra = nonTaxableAllowances + totalBonuses + (recordForm.commission || 0)
+    const takeHome = net + extra
     setRecordForm(prev => ({
       ...prev,
       gross_salary: gross,
@@ -822,6 +825,8 @@ export default function TeacherSalaryManagement() {
       eis_deduction: eis,
       tax_deduction: tax,
       net_salary: net,
+      extra_additions: extra,
+      take_home: takeHome,
       epf_employer: epfEmployer,
       socso_employer: socsoEmployer,
       eis_employer: eisEmployer,
