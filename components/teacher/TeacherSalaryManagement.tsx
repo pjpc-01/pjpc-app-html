@@ -58,12 +58,8 @@ interface TeacherSalaryStructure {
   base_salary: number
   hourly_rate?: number
   overtime_rate?: number
-  allowance_fixed?: number
-  allowance_transport?: number
-  allowance_meal?: number
-  allowance_travel?: number
-  allowance_other?: number
-  custom_bonuses?: { name: string; amount: number }[]
+  allowance_items?: { name: string; amount: number; taxable: boolean }[]
+  bonus_items?: { name: string; amount: number; taxable: boolean }[]
   epf_rate: number
   socso_rate: number
   eis_rate: number
@@ -279,12 +275,8 @@ export default function TeacherSalaryManagement() {
     base_salary: 0,
     hourly_rate: 0,
     overtime_rate: 0,
-    allowance_fixed: 0,
-    allowance_transport: 0,
-    allowance_meal: 0,
-    allowance_travel: 0,
-    allowance_other: 0,
-    custom_bonuses: [],
+    allowance_items: [] as { name: string; amount: number; taxable: boolean }[],
+    bonus_items: [] as { name: string; amount: number; taxable: boolean }[],
     epf_rate: 0.11,
     socso_rate: 0.005,
     eis_rate: 0.002,
@@ -421,29 +413,23 @@ export default function TeacherSalaryManagement() {
     loadData()
   }, [fetchTeachers, fetchSalaryStructures, fetchSalaryRecords])
 
-  // 计算薪资
+  // 计算薪资（预览用）
   const calculateSalary = useCallback((form: typeof structureForm) => {
     const baseSalary = form.base_salary
-    const allowances = (form.allowance_fixed || 0) + (form.allowance_transport || 0) + (form.allowance_meal || 0) + (form.allowance_other || 0)
-    const bonus = (form as any).bonus || 0
-    const grossSalary = baseSalary + allowances + bonus
+    const items = form.allowance_items || []
+    const taxableAllowances = items.filter(a => a.taxable !== false).reduce((s, a) => s + (a.amount || 0), 0)
+    const nonTaxableAllowances = items.filter(a => a.taxable === false).reduce((s, a) => s + (a.amount || 0), 0)
+    const bonuses = (form.bonus_items || []).reduce((s, b) => s + (b.amount || 0), 0)
     
+    const grossSalary = baseSalary + taxableAllowances
     const epfDeduction = grossSalary * form.epf_rate
     const socsoDeduction = grossSalary * form.socso_rate
     const eisDeduction = grossSalary * form.eis_rate
     const taxDeduction = grossSalary * form.tax_rate
     const totalDeductions = epfDeduction + socsoDeduction + eisDeduction + taxDeduction
-    const netSalary = grossSalary - totalDeductions
+    const netSalary = grossSalary - totalDeductions + nonTaxableAllowances + bonuses
     
-    return {
-      grossSalary,
-      epfDeduction,
-      socsoDeduction,
-      eisDeduction,
-      taxDeduction,
-      totalDeductions,
-      netSalary
-    }
+    return { grossSalary, epfDeduction, socsoDeduction, eisDeduction, taxDeduction, totalDeductions, netSalary }
   }, [])
 
   // 自动生成薪资
@@ -541,10 +527,8 @@ export default function TeacherSalaryManagement() {
           base_salary: 0,
           hourly_rate: 0,
           overtime_rate: 0,
-          allowance_fixed: 0,
-          allowance_transport: 0,
-          allowance_meal: 0,
-          allowance_other: 0,
+          allowance_items: [],
+          bonus_items: [],
           epf_rate: globalRates.epf,
           socso_rate: globalRates.socso,
           eis_rate: globalRates.eis,
@@ -552,7 +536,6 @@ export default function TeacherSalaryManagement() {
           epf_employer_rate: globalRates.epf_employer || 0.13,
           socso_employer_rate: globalRates.socso_employer || 0.0175,
           eis_employer_rate: globalRates.eis_employer || 0.002,
-          bonus: 0,
           effective_date: '',
           end_date: '',
           notes: ''
@@ -600,7 +583,8 @@ export default function TeacherSalaryManagement() {
       base_salary: structure.base_salary,
       hourly_rate: structure.hourly_rate || 0,
       overtime_rate: structure.overtime_rate || 0,
-      allowances: (structure.allowance_fixed || 0) + (structure.allowance_transport || 0) + (structure.allowance_meal || 0) + (structure.allowance_other || 0),
+      allowance_items: (structure as any).allowance_items || [],
+      bonus_items: (structure as any).bonus_items || [],
       epf_rate: structure.epf_rate ?? globalRates.epf,
       socso_rate: structure.socso_rate ?? globalRates.socso,
       eis_rate: structure.eis_rate ?? globalRates.eis,
@@ -608,7 +592,6 @@ export default function TeacherSalaryManagement() {
       epf_employer_rate: (structure.epf_employer_rate ?? globalRates.epf_employer) || 0.13,
       socso_employer_rate: (structure.socso_employer_rate ?? globalRates.socso_employer) || 0.0175,
       eis_employer_rate: (structure.eis_employer_rate ?? globalRates.eis_employer) || 0.002,
-      bonus: structure.bonus || 0,
       salary_type: structure.salary_type as 'monthly' | 'hourly' | 'commission',
       effective_date: structure.effective_date?.split(' ')[0] || '',
       end_date: structure.end_date?.split(' ')[0] || '',
@@ -813,32 +796,27 @@ export default function TeacherSalaryManagement() {
   // 自动计算薪资记录数字
   useEffect(() => {
     const base = recordForm.base_salary || 0
-    const indvAllowances = (recordForm as any).allowance_fixed || 0
-      + (recordForm as any).allowance_transport || 0
-      + (recordForm as any).allowance_meal || 0
-      + (recordForm as any).allowance_other || 0
-    // 旧记录没细分字段时 fallback 到总 allowances
-    const allowancesTaxable = indvAllowances > 0 ? indvAllowances : (recordForm.allowances || 0)
-    const travelAllowance = (recordForm as any).allowance_travel || 0
-    const bonus = recordForm.bonus || 0
-    const customBonuses: { name: string; amount: number }[] = (recordForm as any).custom_bonuses || []
-    const totalBonuses = bonus + customBonuses.reduce((s: number, b: any) => s + (b.amount || 0), 0)
+    const allowanceItems = (recordForm as any).allowance_items || []
+    const taxableAllowances = allowanceItems.filter((a: any) => a.taxable !== false).reduce((s: number, a: any) => s + (a.amount || 0), 0)
+    const nonTaxableAllowances = allowanceItems.filter((a: any) => a.taxable === false).reduce((s: number, a: any) => s + (a.amount || 0), 0)
+    const bonusItems = (recordForm as any).bonus_items || []
+    const totalBonuses = bonusItems.reduce((s: number, b: any) => s + (b.amount || 0), 0)
+    const totalAllowances = taxableAllowances + nonTaxableAllowances
+
+    const gross = base + taxableAllowances
     
-    const grossForDeductions = base + allowancesTaxable
-    const gross = grossForDeductions + travelAllowance + totalBonuses
-    
-    const epf = grossForDeductions * (recordForm.epf_rate || 0.11)
-    const socso = getSocsoEmployee(grossForDeductions)
-    const eis = getEisContribution(grossForDeductions)
-    const epfEmployer = grossForDeductions * (recordForm.epf_employer_rate || (grossForDeductions > 5000 ? 0.12 : 0.13))
-    const socsoEmployer = getSocsoEmployer(grossForDeductions)
-    const eisEmployer = getEisContribution(grossForDeductions)
-    const tax = getPCB(grossForDeductions)
+    const epf = gross * (recordForm.epf_rate || 0.11)
+    const socso = getSocsoEmployee(gross)
+    const eis = getEisContribution(gross)
+    const epfEmployer = gross * (recordForm.epf_employer_rate || (gross > 5000 ? 0.12 : 0.13))
+    const socsoEmployer = getSocsoEmployer(gross)
+    const eisEmployer = getEisContribution(gross)
+    const tax = getPCB(gross)
     const totalDed = epf + socso + eis + tax + (recordForm.other_deductions || 0)
-    const net = grossForDeductions - totalDed + travelAllowance + totalBonuses + (recordForm.commission || 0)
+    const net = gross - totalDed + nonTaxableAllowances + totalBonuses + (recordForm.commission || 0)
     setRecordForm(prev => ({
       ...prev,
-      gross_salary: grossForDeductions,
+      gross_salary: gross,
       epf_deduction: epf,
       socso_deduction: socso,
       eis_deduction: eis,
@@ -1135,7 +1113,7 @@ export default function TeacherSalaryManagement() {
                         </Badge>
                       </TableCell>
                       <TableCell>{formatCurrency(structure.base_salary)}</TableCell>
-                      <TableCell>{formatCurrency((structure.allowance_fixed || 0) + (structure.allowance_transport || 0) + (structure.allowance_meal || 0) + (structure.allowance_other || 0))}</TableCell>
+                      <TableCell>{formatCurrency((structure.allowance_items || []).reduce((s: number, a: any) => s + (a.amount || 0), 0))}</TableCell>
                       <TableCell>{(structure.epf_rate * 100).toFixed(1)}%</TableCell>
                       <TableCell>{(structure.socso_rate * 100).toFixed(2)}%</TableCell>
                       <TableCell>{(structure.eis_rate * 100).toFixed(2)}%</TableCell>
@@ -1400,70 +1378,80 @@ export default function TeacherSalaryManagement() {
             </div>
 
             {/* ── 津贴 ── */}
-            <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">📦 津贴</h4>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="allowance_fixed">固定 (RM)</Label>
-                <Input id="allowance_fixed" type="number" value={structureForm.allowance_fixed || ''}
-                  onChange={(e) => setStructureForm(prev => ({ ...prev, allowance_fixed: parseFloat(e.target.value) || 0 }))} />
-              </div>
-              <div>
-                <Label htmlFor="allowance_transport">交通 (RM)</Label>
-                <Input id="allowance_transport" type="number" value={structureForm.allowance_transport || ''}
-                  onChange={(e) => setStructureForm(prev => ({ ...prev, allowance_transport: parseFloat(e.target.value) || 0 }))} />
-              </div>
-              <div>
-                <Label htmlFor="allowance_meal">膳食 (RM)</Label>
-                <Input id="allowance_meal" type="number" value={structureForm.allowance_meal || ''}
-                  onChange={(e) => setStructureForm(prev => ({ ...prev, allowance_meal: parseFloat(e.target.value) || 0 }))} />
-              </div>
-              <div>
-                <Label htmlFor="allowance_other">其他 (RM)</Label>
-                <Input id="allowance_other" type="number" value={structureForm.allowance_other || ''}
-                  onChange={(e) => setStructureForm(prev => ({ ...prev, allowance_other: parseFloat(e.target.value) || 0 }))} />
-              </div>
-              <div>
-                <Label htmlFor="allowance_travel">旅游 (RM) <span className="text-xs text-green-600">不计扣</span></Label>
-                <Input id="allowance_travel" type="number" value={structureForm.allowance_travel || ''}
-                  onChange={(e) => setStructureForm(prev => ({ ...prev, allowance_travel: parseFloat(e.target.value) || 0 }))} />
-              </div>
-            </div>
-
-            {/* ── 奖金 ── */}
-            <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">🎁 奖金 <span className="text-xs text-green-600">均不计扣</span></h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="structure_bonus">固定奖金 (RM)</Label>
-                <Input id="structure_bonus" type="number" value={structureForm.bonus}
-                  onChange={(e) => setStructureForm(prev => ({ ...prev, bonus: parseFloat(e.target.value) || 0 }))} />
-              </div>
-            </div>
-            <div className="space-y-2 mt-2">
-              {(structureForm.custom_bonuses || []).map((cb, i) => (
+            <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">
+              📦 津贴
+              <span className="text-xs text-gray-400 ml-2">总额: RM {(structureForm.allowance_items || []).reduce((s, a) => s + (a.amount || 0), 0).toFixed(2)}</span>
+            </h4>
+            <div className="space-y-1">
+              {(structureForm.allowance_items || []).map((item, i) => (
                 <div key={i} className="flex gap-2 items-center">
-                  <Input placeholder="名称" value={cb.name}
+                  <Input placeholder="津贴名称" value={item.name}
                     onChange={(e) => {
-                      const updated = [...(structureForm.custom_bonuses || [])]
+                      const updated = [...(structureForm.allowance_items || [])]
                       updated[i] = { ...updated[i], name: e.target.value }
-                      setStructureForm(prev => ({ ...prev, custom_bonuses: updated }))
-                    }} className="w-40" />
-                  <Input type="number" placeholder="金额" value={cb.amount || ''}
+                      setStructureForm(prev => ({ ...prev, allowance_items: updated }))
+                    }} className="w-36" />
+                  <Input type="number" placeholder="金额" value={item.amount || ''}
                     onChange={(e) => {
-                      const updated = [...(structureForm.custom_bonuses || [])]
+                      const updated = [...(structureForm.allowance_items || [])]
                       updated[i] = { ...updated[i], amount: parseFloat(e.target.value) || 0 }
-                      setStructureForm(prev => ({ ...prev, custom_bonuses: updated }))
-                    }} className="w-32" />
+                      setStructureForm(prev => ({ ...prev, allowance_items: updated }))
+                    }} className="w-24" />
+                  <label className="flex items-center gap-1 text-xs cursor-pointer">
+                    <input type="checkbox" checked={item.taxable !== false}
+                      onChange={(e) => {
+                        const updated = [...(structureForm.allowance_items || [])]
+                        updated[i] = { ...updated[i], taxable: e.target.checked }
+                        setStructureForm(prev => ({ ...prev, allowance_items: updated }))
+                      }} />
+                    计扣
+                  </label>
                   <Button type="button" variant="ghost" size="sm" onClick={() => {
-                    setStructureForm(prev => ({ ...prev, 
-                      custom_bonuses: (prev.custom_bonuses || []).filter((_, j) => j !== i) 
-                    }))
+                    setStructureForm(prev => ({ ...prev, allowance_items: (prev.allowance_items || []).filter((_, j) => j !== i) }))
                   }}>✕</Button>
                 </div>
               ))}
               <Button type="button" variant="outline" size="sm" onClick={() => {
-                setStructureForm(prev => ({ ...prev, 
-                  custom_bonuses: [...(prev.custom_bonuses || []), { name: '', amount: 0 }] 
-                }))
+                setStructureForm(prev => ({ ...prev, allowance_items: [...(prev.allowance_items || []), { name: '', amount: 0, taxable: true }] }))
+              }}>+ 加津贴</Button>
+            </div>
+
+            {/* ── 奖金 ── */}
+            <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">
+              🎁 奖金
+              <span className="text-xs text-gray-400 ml-2">总额: RM {(structureForm.bonus_items || []).reduce((s, b) => s + (b.amount || 0), 0).toFixed(2)}</span>
+            </h4>
+            <div className="space-y-1">
+              {(structureForm.bonus_items || []).map((item, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <Input placeholder="奖金名称" value={item.name}
+                    onChange={(e) => {
+                      const updated = [...(structureForm.bonus_items || [])]
+                      updated[i] = { ...updated[i], name: e.target.value }
+                      setStructureForm(prev => ({ ...prev, bonus_items: updated }))
+                    }} className="w-36" />
+                  <Input type="number" placeholder="金额" value={item.amount || ''}
+                    onChange={(e) => {
+                      const updated = [...(structureForm.bonus_items || [])]
+                      updated[i] = { ...updated[i], amount: parseFloat(e.target.value) || 0 }
+                      setStructureForm(prev => ({ ...prev, bonus_items: updated }))
+                    }} className="w-24" />
+                  <label className="flex items-center gap-1 text-xs cursor-pointer">
+                    <input type="checkbox" checked={item.taxable === true}
+                      onChange={(e) => {
+                        const updated = [...(structureForm.bonus_items || [])]
+                        updated[i] = { ...updated[i], taxable: e.target.checked }
+                        setStructureForm(prev => ({ ...prev, bonus_items: updated }))
+                      }} />
+                    计扣
+                  </label>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => {
+                    setStructureForm(prev => ({ ...prev, bonus_items: (prev.bonus_items || []).filter((_, j) => j !== i) }))
+                  }}>✕</Button>
+                </div>
+              ))}
+              <Button type="button" variant="outline" size="sm" onClick={() => {
+                setStructureForm(prev => ({ ...prev, bonus_items: [...(prev.bonus_items || []), { name: '', amount: 0, taxable: false }] }))
               }}>+ 加奖金</Button>
             </div>
 
@@ -1559,7 +1547,7 @@ export default function TeacherSalaryManagement() {
                     base_salary: structure?.base_salary || 0,
                     hourly_rate: structure?.hourly_rate || 0,
                     overtime_rate: structure?.overtime_rate || 0,
-                    allowances: (structure?.allowance_fixed || 0) + (structure?.allowance_transport || 0) + (structure?.allowance_meal || 0) + (structure?.allowance_other || 0),
+                    allowances: (structure?.allowance_items || []).reduce((s: number, a: any) => s + (a.amount || 0), 0),
                     epf_rate: structure?.epf_rate || globalRates.epf,
                     socso_rate: structure?.socso_rate || globalRates.socso,
                     eis_rate: structure?.eis_rate || globalRates.eis,

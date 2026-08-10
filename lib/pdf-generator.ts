@@ -1151,6 +1151,23 @@ interface PayslipRecord {
 
 const MONTH_NAMES = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
 
+const renderItems = (
+  title: string,
+  items: { name: string; amount: number; taxable: boolean }[] | undefined,
+  tagLabel: (item: any) => string
+): string => {
+  if (!items || items.length === 0) return ''
+  const total = items.reduce((s: number, i: any) => s + (i.amount || 0), 0)
+  const rows = items.map((item: any) => `<tr>
+    <td style="padding-left:24px;">└ ${item.name || '—'} ${tagLabel(item)}</td>
+    <td>${(item.amount || 0).toFixed(2)}</td>
+  </tr>`).join('')
+  return `<tr class="total-row">
+    <td>${title} <span style="font-weight:normal;font-size:12px;">总额: RM ${total.toFixed(2)}</span></td>
+    <td><strong>${total.toFixed(2)}</strong></td>
+  </tr>${rows}`
+}
+
 export const generatePayslipHTML = (
   record: PayslipRecord,
   settings: PayslipSettingsPreset,
@@ -1334,26 +1351,20 @@ export const generatePayslipHTML = (
             <td>基本薪资 Base Salary</td>
             <td>${(record.base_salary || 0).toFixed(2)}</td>
           </tr>
-          ${record.allowances ? `<tr>
-            <td>津贴 Allowances</td>
-            <td>${(record.allowances || 0).toFixed(2)}</td>
-          </tr>` : ''}
-          ${record.allowance_travel ? `<tr>
-            <td>旅游津贴 Travel <span style="color:#059669;font-size:11px;">（不计扣）</span></td>
-            <td style="color:#059669;">${(record.allowance_travel || 0).toFixed(2)}</td>
-          </tr>` : ''}
+          ${renderItems(
+            '津贴 Allowances',
+            (record as any).allowance_items,
+            (a: any) => a.taxable === false ? `<span style="color:#059669;font-size:11px;">（不计扣）</span>` : ''
+          )}
           ${record.overtime_pay ? `<tr>
             <td>加班费 Overtime Pay</td>
             <td>${(record.overtime_pay || 0).toFixed(2)}</td>
           </tr>` : ''}
-          ${record.bonus ? `<tr>
-            <td>奖金 Bonus <span style="color:#059669;font-size:11px;">（不计扣）</span></td>
-            <td style="color:#059669;">${(record.bonus || 0).toFixed(2)}</td>
-          </tr>` : ''}
-          ${(record.custom_bonuses || []).map((b: any) => `<tr>
-            <td>${b.name || '奖金'} <span style="color:#059669;font-size:11px;">（不计扣）</span></td>
-            <td style="color:#059669;">${(b.amount || 0).toFixed(2)}</td>
-          </tr>`).join('')}
+          ${renderItems(
+            '奖金 Bonus',
+            (record as any).bonus_items,
+            () => `<span style="color:#059669;font-size:11px;">（不计扣）</span>`
+          )}
           ${record.commission ? `<tr>
             <td>佣金 Commission</td>
             <td>${(record.commission || 0).toFixed(2)}</td>
