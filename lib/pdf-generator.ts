@@ -1376,61 +1376,39 @@ export const generatePayslipHTML = (
         </tbody>
       </table>
 
-      <hr class="divider" />
-
-      <div class="section-title" style="color:#dc2626;border-bottom-color:#dc262630;">📋 扣款明细 Deductions</div>
-      <table class="deductions-table">
-        <thead>
-          <tr>
-            <th>项目 Item</th>
-            <th>金额 Amount (RM)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>EPF 雇员公积金 (Employee)</td>
-            <td>${(record.epf_deduction || 0).toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td>SOCSO 社会保险</td>
-            <td>${(record.socso_deduction || 0).toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td>EIS 就业保险</td>
-            <td>${(record.eis_deduction || 0).toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td>PCB 预扣税 Tax</td>
-            <td>${(record.tax_deduction || 0).toFixed(2)}</td>
-          </tr>
-          ${record.other_deductions ? `<tr>
-            <td>其他扣款 Other Deductions</td>
-            <td>${(record.other_deductions || 0).toFixed(2)}</td>
-          </tr>` : ''}
-          <tr class="deductions-total">
-            <td>扣款总计 Total Deductions</td>
-            <td>${totalDeductions.toFixed(2)}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <hr class="divider" />
-
-      ${((): string => {
-        if (!settings.showEmployerEPF) return ''
-        const empEPF = record.epf_employer || (record.gross_salary || 0) * 0.13
-        const gross = record.gross_salary || 0
-        const empSOCSO = (record as any).socso_employer || getSocsoEmployer(gross)
-        const empEIS = (record as any).eis_employer || getEisContribution(gross)
-        const empTotal = empEPF + empSOCSO + empEIS
-        return '<div class="section-title" style="color:#059669;border-bottom-color:#05966930;">🏢 雇主缴纳 Employer Contributions</div>' +
-          '<table class="items-table"><thead><tr><th>项目 Item</th><th>金额 Amount (RM)</th></tr></thead><tbody>' +
-          '<tr><td>EPF 雇主公积 (Employer)</td><td>' + empEPF.toFixed(2) + '</td></tr>' +
-          '<tr><td>SOCSO 雇主社保 (Employer)</td><td>' + empSOCSO.toFixed(2) + '</td></tr>' +
-          '<tr><td>EIS 雇主就业险 (Employer)</td><td>' + empEIS.toFixed(2) + '</td></tr>' +
-          '<tr class="total-row"><td>雇主缴纳总计 Total Employer</td><td>' + empTotal.toFixed(2) + '</td></tr>' +
-          '</tbody></table><hr class="divider" />'
-      })()}
+      <div style="display:flex; gap:16px;">
+        ${(() => {
+          const showEmp = settings.showEmployerEPF
+          const gross = record.gross_salary || 0
+          const empEPF = record.epf_employer || gross * 0.13
+          const empSOCSO = (record as any).socso_employer || getSocsoEmployer(gross)
+          const empEIS = (record as any).eis_employer || getEisContribution(gross)
+          const empTotal = empEPF + empSOCSO + empEIS
+          const empHtml = showEmp
+            ? '<div style="flex:1;">' +
+              '<div class="section-title" style="color:#059669;border-bottom-color:#05966930;">🏢 雇主缴纳 Employer</div>' +
+              '<table class="items-table" style="width:100%;"><tbody>' +
+              '<tr><td>EPF 雇主公积 (Employer)</td><td>' + empEPF.toFixed(2) + '</td></tr>' +
+              '<tr><td>SOCSO 雇主社保 (Employer)</td><td>' + empSOCSO.toFixed(2) + '</td></tr>' +
+              '<tr><td>EIS 雇主就业险 (Employer)</td><td>' + empEIS.toFixed(2) + '</td></tr>' +
+              '</tbody></table></div>'
+            : ''
+          const dedHtml = '<div style="flex:1;">' +
+            '<div class="section-title" style="color:#dc2626;border-bottom-color:#dc262630;">📋 扣款 Deductions</div>' +
+            '<table class="deductions-table" style="width:100%;"><tbody>' +
+            '<tr><td>EPF 雇员 (Employee)</td><td>' + (record.epf_deduction || 0).toFixed(2) + '</td></tr>' +
+            '<tr><td>SOCSO 社会保险</td><td>' + (record.socso_deduction || 0).toFixed(2) + '</td></tr>' +
+            '<tr><td>EIS 就业保险</td><td>' + (record.eis_deduction || 0).toFixed(2) + '</td></tr>' +
+            '<tr><td>PCB 预扣税 Tax</td><td>' + (record.tax_deduction || 0).toFixed(2) + '</td></tr>' +
+            (record.other_deductions ? '<tr><td>其他扣款 Other</td><td>' + (record.other_deductions || 0).toFixed(2) + '</td></tr>' : '') +
+            '</tbody></table></div>'
+          return empHtml + dedHtml + '</div>' +
+            '<div style="display:flex; gap:16px;">' +
+            (showEmp ? '<div class="total-row" style="flex:1;">雇主缴纳总计 Total Employer: ' + empTotal.toFixed(2) + '</div>' : '') +
+            '<div class="deductions-total" style="flex:1;">扣款总计 Total Deductions: ' + totalDeductions.toFixed(2) + '</div>' +
+            '</div>'
+        })()}
+      </div>
 
       <table class="items-table">
         <tbody>
