@@ -45,6 +45,7 @@ export default function GradesManagementPage() {
 
   const [subject, setSubject] = useState("数学")
   const [term, setTerm] = useState("Term 1")
+  const [reportTerm, setReportTerm] = useState("Term 1")
   const [year, setYear] = useState(CURRENT_YEAR)
   const [grades, setGrades] = useState<GradeRecord[]>([])
   const [allGrades, setAllGrades] = useState<GradeRecord[]>([]) // all subjects for analysis
@@ -55,6 +56,8 @@ export default function GradesManagementPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [centerFilter, setCenterFilter] = useState("PU1")
   const [reportGradeFilter, setReportGradeFilter] = useState("all")
+  const [editingCell, setEditingCell] = useState<string | null>(null)
+  const [editCellScore, setEditCellScore] = useState("")
   const [importing, setImporting] = useState(false)
   const [importMsg, setImportMsg] = useState("")
   const [showAnalysis, setShowAnalysis] = useState(true)
@@ -90,6 +93,14 @@ export default function GradesManagementPage() {
     if (isNaN(score) || score < 0 || score > 100) return
     await saveGrade({ studentId: record.studentId, subject, term, year, score, teacher_comment: editComment })
     setEditingId(null); setEditScore(""); setEditComment("")
+    loadGrades()
+  }
+
+  const handleCellSave = async (studentId: string, subj: string) => {
+    const score = parseInt(editCellScore)
+    if (isNaN(score) || score < 0 || score > 100) { setEditingCell(null); return }
+    await saveGrade({ studentId, subject: subj, term: reportTerm, year, score })
+    setEditingCell(null); setEditCellScore("")
     loadGrades()
   }
 
@@ -252,7 +263,14 @@ export default function GradesManagementPage() {
           <Card className="mb-6">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm flex items-center gap-2"><GraduationCap className="h-4 w-4" />成绩报表 · {term} · {year}</CardTitle>
+                <CardTitle className="text-sm flex items-center gap-2"><GraduationCap className="h-4 w-4" />成绩报表</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Select value={reportTerm} onValueChange={setReportTerm}>
+                    <SelectTrigger className="w-28 h-7 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>{TERMS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                  </Select>
+                  <Input type="number" value={year} onChange={e => setYear(parseInt(e.target.value) || CURRENT_YEAR)} className="w-20 h-7 text-xs" />
+                </div>
                 <Select value={reportGradeFilter} onValueChange={setReportGradeFilter}>
                   <SelectTrigger className="w-28 h-7 text-xs"><SelectValue placeholder="全部年级" /></SelectTrigger>
                   <SelectContent>
@@ -291,7 +309,17 @@ export default function GradesManagementPage() {
                             const d = subjects[subj]
                             return (
                               <TableCell key={subj} className="text-center p-1">
-                                {d ? <span className={`text-xs font-mono ${d.score >= 80 ? "text-emerald-600" : d.score >= 50 ? "text-slate-700" : "text-red-600"}`}>{d.score}<span className="text-[10px] ml-0.5 text-slate-400">{d.letter}</span></span> : <span className="text-xs text-slate-300">-</span>}
+                                {(() => {
+                              const cellKey = `${s.id}-${subj}`
+                              const isEditing = editingCell === cellKey
+                              if (isEditing) {
+                                return <form onSubmit={e => { e.preventDefault(); handleCellSave(s.id, subj) }} className="flex items-center gap-1"><Input type="number" min={0} max={100} value={editCellScore} onChange={e => setEditCellScore(e.target.value)} className="w-14 h-6 text-xs p-1" autoFocus onBlur={() => handleCellSave(s.id, subj)} /></form>
+                              }
+                              if (d) {
+                                return <span onClick={() => { setEditingCell(cellKey); setEditCellScore(String(d.score)) }} className={`text-xs font-mono cursor-pointer hover:bg-indigo-50 rounded px-1 -mx-1 ${d.score >= 80 ? "text-emerald-600" : d.score >= 50 ? "text-slate-700" : "text-red-600"}`}>{d.score}<span className="text-[10px] ml-0.5 text-slate-400">{d.letter}</span></span>
+                              }
+                              return <span onClick={() => { setEditingCell(cellKey); setEditCellScore("") }} className="text-xs text-slate-300 cursor-pointer hover:bg-indigo-50 rounded px-1 -mx-1">+</span>
+                            })()}
                               </TableCell>
                             )
                           })}
