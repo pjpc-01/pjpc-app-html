@@ -1163,7 +1163,7 @@ const renderItems = (
     <td>${(item.amount || 0).toFixed(2)}</td>
   </tr>`).join('')
   return `<tr class="total-row">
-    <td>${title} <span style="font-weight:normal;font-size:12px;">总额: RM ${total.toFixed(2)}</span></td>
+    <td>${title}</td>
     <td><strong>${total.toFixed(2)}</strong></td>
   </tr>${rows}`
 }
