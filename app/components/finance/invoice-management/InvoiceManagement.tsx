@@ -465,10 +465,33 @@ Prospek Cemerlang`,
     }
   }
 
-  const handleDirectCreate = (student: any, dueDate: string, notes: string) => {
+  const handleDirectCreate = async (student: any, dueDate: string, notes: string) => {
     const invoiceItems = activeFees
       .filter(fee => isAssigned(student.id, fee.id))
       .map(fee => ({ name: fee.name, amount: fee.amount }))
+
+    // Fetch student fee adjustment for discount
+    let discount = 0
+    let discountType: 'amount' | 'percent' = 'amount'
+    try {
+      const r = await fetch(`/api/pocketbase-proxy/api/collections/student_fees/records?filter=(student_id='${student.id}')&perPage=1`)
+      if (r.ok) {
+        const data = await r.json()
+        if (data.items?.length > 0) {
+          discount = data.items[0].discount || 0
+          discountType = data.items[0].discount_type || 'amount'
+        }
+      }
+    } catch {}
+
+    if (discount > 0) {
+      const baseAmount = invoiceItems.reduce((sum, it) => sum + it.amount, 0)
+      const actualDiscount = discountType === 'percent'
+        ? Math.round(baseAmount * (discount / 100) * 100) / 100
+        : discount
+      invoiceItems.push({ name: discountType === 'percent' ? `学生折扣 (${discount}%)` : '学生折扣', amount: -actualDiscount })
+    }
+
     const totalAmount = invoiceItems.reduce((sum, item) => sum + item.amount, 0)
     
     createInvoice({
@@ -481,7 +504,9 @@ Prospek Cemerlang`,
       issueDate: new Date().toISOString().split('T')[0],
       dueDate: dueDate,
       notes: notes || '',
-      totalAmount: totalAmount || 0
+      totalAmount: totalAmount || 0,
+      discount: discount || undefined,
+      discountType: discount > 0 ? discountType : undefined,
     } as any)
   }
 
