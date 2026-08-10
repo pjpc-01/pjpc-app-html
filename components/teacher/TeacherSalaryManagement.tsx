@@ -813,13 +813,18 @@ export default function TeacherSalaryManagement() {
   // 自动计算薪资记录数字
   useEffect(() => {
     const base = recordForm.base_salary || 0
-    const allowance = recordForm.allowances || 0
+    const indvAllowances = (recordForm as any).allowance_fixed || 0
+      + (recordForm as any).allowance_transport || 0
+      + (recordForm as any).allowance_meal || 0
+      + (recordForm as any).allowance_other || 0
+    // 旧记录没细分字段时 fallback 到总 allowances
+    const allowancesTaxable = indvAllowances > 0 ? indvAllowances : (recordForm.allowances || 0)
     const travelAllowance = (recordForm as any).allowance_travel || 0
     const bonus = recordForm.bonus || 0
     const customBonuses: { name: string; amount: number }[] = (recordForm as any).custom_bonuses || []
     const totalBonuses = bonus + customBonuses.reduce((s: number, b: any) => s + (b.amount || 0), 0)
     
-    const grossForDeductions = base + allowance
+    const grossForDeductions = base + allowancesTaxable
     const gross = grossForDeductions + travelAllowance + totalBonuses
     
     const epf = grossForDeductions * (recordForm.epf_rate || 0.11)
@@ -830,10 +835,10 @@ export default function TeacherSalaryManagement() {
     const eisEmployer = getEisContribution(grossForDeductions)
     const tax = getPCB(grossForDeductions)
     const totalDed = epf + socso + eis + tax + (recordForm.other_deductions || 0)
-    const net = gross + (recordForm.commission || 0) - totalDed
+    const net = grossForDeductions - totalDed + travelAllowance + totalBonuses + (recordForm.commission || 0)
     setRecordForm(prev => ({
       ...prev,
-      gross_salary: gross,
+      gross_salary: grossForDeductions,
       epf_deduction: epf,
       socso_deduction: socso,
       eis_deduction: eis,

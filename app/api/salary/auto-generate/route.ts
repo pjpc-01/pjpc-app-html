@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
         const eisEmployer = calculateEIS(grossForDeductions)
         
         const totalDeductions = epfDeduction + socsoDeduction + eisDeduction + taxDeduction
-        const netSalary = grossSalary - totalDeductions
+        const netSalary = grossSalary - totalDeductions + allowanceTravel + totalBonuses
 
         // 生成序列号
         const existingCount = await pb.collection('teacher_salary_records').getList(1, 1, {

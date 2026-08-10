@@ -1136,6 +1136,12 @@ interface PayslipRecord {
   net_salary: number
   bonus?: number
   commission?: number
+  allowance_fixed?: number
+  allowance_transport?: number
+  allowance_meal?: number
+  allowance_other?: number
+  allowance_travel?: number
+  custom_bonuses?: { name: string; amount: number }[]
   status?: string
   payment_date?: string
   payment_method?: string
@@ -1332,14 +1338,22 @@ export const generatePayslipHTML = (
             <td>津贴 Allowances</td>
             <td>${(record.allowances || 0).toFixed(2)}</td>
           </tr>` : ''}
+          ${record.allowance_travel ? `<tr>
+            <td>旅游津贴 Travel <span style="color:#059669;font-size:11px;">（不计扣）</span></td>
+            <td style="color:#059669;">${(record.allowance_travel || 0).toFixed(2)}</td>
+          </tr>` : ''}
           ${record.overtime_pay ? `<tr>
             <td>加班费 Overtime Pay</td>
             <td>${(record.overtime_pay || 0).toFixed(2)}</td>
           </tr>` : ''}
           ${record.bonus ? `<tr>
-            <td>奖金 Bonus</td>
-            <td>${(record.bonus || 0).toFixed(2)}</td>
+            <td>奖金 Bonus <span style="color:#059669;font-size:11px;">（不计扣）</span></td>
+            <td style="color:#059669;">${(record.bonus || 0).toFixed(2)}</td>
           </tr>` : ''}
+          ${(record.custom_bonuses || []).map((b: any) => `<tr>
+            <td>${b.name || '奖金'} <span style="color:#059669;font-size:11px;">（不计扣）</span></td>
+            <td style="color:#059669;">${(b.amount || 0).toFixed(2)}</td>
+          </tr>`).join('')}
           ${record.commission ? `<tr>
             <td>佣金 Commission</td>
             <td>${(record.commission || 0).toFixed(2)}</td>
