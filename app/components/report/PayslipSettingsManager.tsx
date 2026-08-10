@@ -255,22 +255,20 @@ export const generatePayslipPreviewHTML = (settings: PayslipSettingsPreset): str
             <tr><td>EPF 雇主公积 (Employer)</td><td>${epfEmployer.toFixed(2)}</td></tr>
             <tr><td>SOCSO 雇主社保 (Employer)</td><td>${socsoEmployer.toFixed(2)}</td></tr>
             <tr><td>EIS 雇主就业险 (Employer)</td><td>${eisEmployer.toFixed(2)}</td></tr>
-            </tbody></table>
-            </div>` : ''}
-            <div style="flex:1;">
-            <div class="section-title" style="color:#dc2626;border-bottom-color:#dc262630;">📋 扣款 Deductions</div>
-            <table class="deductions-table" style="width:100%;"><tbody>
+            <tr class="total-row"><td>雇主缴纳总计 Total Employer</td><td>${(epfEmployer + socsoEmployer + eisEmployer).toFixed(2)}</td></tr>
+          </tbody></table>
+        </div>` : ''}
+        <div style="flex:1;">
+          <div class="section-title" style="color:#dc2626;border-bottom-color:#dc262630;">📋 扣款 Deductions</div>
+          <table class="deductions-table" style="width:100%;"><tbody>
             <tr><td>EPF 雇员 (Employee)</td><td>${epfDeduction.toFixed(2)}</td></tr>
             <tr><td>SOCSO 社会保险</td><td>${socsoDeduction.toFixed(2)}</td></tr>
             <tr><td>EIS 就业保险</td><td>${eisDeduction.toFixed(2)}</td></tr>
             <tr><td>PCB 预扣税 Tax</td><td>${taxDeduction.toFixed(2)}</td></tr>
-            </tbody></table>
-            </div>
-            </div>
-            <div style="display:flex; gap:16px;">
-            ${settings.showEmployerEPF ? `<div class="total-row" style="flex:1;">雇主缴纳总计 Total Employer: ${(epfEmployer + socsoEmployer + eisEmployer).toFixed(2)}</div>` : ''}
-            <div class="deductions-total" style="flex:1;">扣款总计 Total Deductions: ${totalDeductions.toFixed(2)}</div>
-            </div>
+            <tr class="deductions-total"><td>扣款总计 Total Deductions</td><td>${totalDeductions.toFixed(2)}</td></tr>
+          </tbody></table>
+        </div>
+      </div>
 
       <table class="items-table">
         <tbody>
