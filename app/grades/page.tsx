@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useGrades, GradeRecord, GradeStats } from "@/hooks/useGrades"
 import { useStudents } from "@/hooks/useStudents"
-import { Trophy, BarChart3, Search, Save, AlertCircle, GraduationCap, Building, Download, Loader2, Medal, AlertTriangle } from "lucide-react"
+import { Trophy, BarChart3, Search, Save, AlertCircle, GraduationCap, Building, Download, Loader2, Medal, AlertTriangle, ExternalLink } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 
 const SUBJECTS = ["华文", "国文", "英文", "数学", "科学", "历史", "地理", "道德", "美术", "音乐", "体育", "其他"]
@@ -138,7 +138,7 @@ export default function GradesManagementPage() {
 
   const subjectStats = useMemo(() => {
     const map: Record<string, { scores: number[]; dist: Record<string, number> }> = {}
-    for (const g of analysisGrades) {
+    for (const g of allGrades) {
       if (!map[g.subject]) map[g.subject] = { scores: [], dist: { A: 0, B: 0, C: 0, D: 0, F: 0 } }
       map[g.subject].scores.push(g.score!)
       map[g.subject].dist[g.grade_letter] = (map[g.subject].dist[g.grade_letter] || 0) + 1
@@ -151,7 +151,7 @@ export default function GradesManagementPage() {
 
   const studentRanking = useMemo(() => {
     const map: Record<string, { scores: number[]; grade: string; name: string }> = {}
-    for (const g of analysisGrades) {
+    for (const g of allGrades) {
       if (!map[g.studentId]) {
         const name = g.expand?.studentId?.name || studentMap.infoMap[g.studentId]?.name || g.studentId
         const grade = g.expand?.studentId?.grade || studentMap.infoMap[g.studentId]?.grade || ""
@@ -183,6 +183,7 @@ export default function GradesManagementPage() {
           <Button key={c.code} size="sm" variant={centerFilter === c.code ? "default" : "outline"} onClick={() => setCenterFilter(c.code)} className="h-8 text-xs"><Building className="h-3 w-3 mr-1" />{c.name}</Button>
         ))}
         <div className="flex-1" />
+        <Button size="sm" variant="ghost" onClick={() => window.open("https://datastudio.google.com", "_blank")} className="h-8 text-xs text-blue-600"><ExternalLink className="h-3 w-3 mr-1" />DataStudio</Button>
         <Button size="sm" onClick={handleImport} disabled={importing} className="h-8 text-xs bg-green-600 hover:bg-green-700">
           {importing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}从 DataStudio 导入
         </Button>
@@ -250,15 +251,25 @@ export default function GradesManagementPage() {
       )}
       </>)}  {/* end entry tab */}
 
-      {activeTab === "report" && analysisGrades.length > 0 && (() => {
+      {activeTab === "report" && (() => {
         const gradeSubjects = ["华文", "国文", "英文", "科学", "数学", "历史", "地理", "伊斯兰教育", "道德", "RBT", "美术", "体育", "电脑"]
         // Build per-student subject map
         const studentSubjectMap: Record<string, Record<string, {score:number;letter:string}>> = {}
-        for (const g of analysisGrades) {
+        for (const g of allGrades) {
+          if (g.term !== reportTerm) continue
+          if (g.score == null) continue
           if (!studentSubjectMap[g.studentId]) studentSubjectMap[g.studentId] = {}
           studentSubjectMap[g.studentId][g.subject] = { score: g.score!, letter: g.grade_letter }
         }
-        const filteredRanking = reportGradeFilter === "all" ? studentRanking : studentRanking.filter(s => s.grade === reportGradeFilter)
+        const order = {"标准1":1,"标准2":2,"标准3":3,"标准4":4,"标准5":5,"标准6":6,"Peralihan":7,"中一":8,"中二":9,"中三":10,"中四":11,"中五":12}
+        const centerStudents = students
+          .filter((s) => {
+            if (centerFilter !== "all" && s.center !== centerFilter) return false
+            if (s.status === "graduated" || s.status === "dropped") return false
+            if (reportGradeFilter !== "all" && s.standard !== reportGradeFilter) return false
+            return true
+          })
+          .sort((a, b) => (order[a.standard] || 0) - (order[b.standard] || 0))
         return (
           <Card className="mb-6">
             <CardHeader className="pb-2">
@@ -298,13 +309,13 @@ export default function GradesManagementPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredRanking.map((s, i) => {
+                    {centerStudents.map((s, i) => {
                       const subjects = studentSubjectMap[s.id] || {}
                       return (
-                        <TableRow key={s.id} className={i < 3 ? "bg-amber-50/30" : i >= filteredRanking.length - 3 ? "bg-red-50/30" : ""}>
+                        <TableRow key={s.id} className={i < 3 ? "bg-amber-50/30" : i >= centerStudents.length - 3 ? "bg-red-50/30" : ""}>
                           <TableCell className="text-xs font-mono text-slate-400">{i + 1}</TableCell>
-                          <TableCell className="text-xs font-medium">{s.name}</TableCell>
-                          <TableCell className="text-xs text-slate-500">{s.grade}</TableCell>
+                          <TableCell className="text-xs font-medium">{s.name || s.student_name}</TableCell>
+                          <TableCell className="text-xs text-slate-500">{s.standard || s.grade}</TableCell>
                           {gradeSubjects.map(subj => {
                             const d = subjects[subj]
                             return (
@@ -323,7 +334,7 @@ export default function GradesManagementPage() {
                               </TableCell>
                             )
                           })}
-                          <TableCell className={`text-xs text-right font-bold ${s.avg >= 70 ? "text-emerald-600" : s.avg >= 50 ? "text-slate-700" : "text-red-600"}`}>{s.avg}</TableCell>
+                          <TableCell className={`text-xs text-right font-bold ${s.avg >= 70 ? "text-emerald-600" : s.avg >= 50 ? "text-slate-700" : "text-red-600"}`}>{(() => { const subjects = studentSubjectMap[s.id] || {}; const scores = Object.values(subjects).filter((d) => !isNaN(d.score)).map((d) => d.score); const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length * 10) / 10 : 0; return avg > 0 ? avg : "-" })()}</TableCell>
                         </TableRow>
                       )
                     })}
@@ -370,7 +381,7 @@ export default function GradesManagementPage() {
                           return <div key={l} className="flex-1 flex flex-col items-center"><div className="w-full bg-gray-100 rounded h-4 relative"><div className={`h-full rounded ${gradeBarCls(l)}`} style={{ width: `${(c / max) * 100}%`, minWidth: c ? '4px' : '0' }} /></div><span className="text-[10px] text-slate-500 mt-0.5">{l}:{c}</span></div>
                         })}
                       </div>
-                      <div className="w-16 text-xs text-right"><span className="font-semibold">{s.avg}</span><span className="text-slate-400 ml-1">{s.passRate}%</span></div>
+                      <div className="w-16 text-xs text-right"><span className="font-semibold">{(() => { const subjects = studentSubjectMap[s.id] || {}; const scores = Object.values(subjects).filter((d) => !isNaN(d.score)).map((d) => d.score); const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length * 10) / 10 : 0; return avg > 0 ? avg : "-" })()}</span><span className="text-slate-400 ml-1">{s.passRate}%</span></div>
                     </div>
                   )
                 })}
@@ -389,9 +400,9 @@ export default function GradesManagementPage() {
                       top10.map((s, i) => (
                         <TableRow key={s.id} className={i < 3 ? "bg-amber-50/50" : ""}>
                           <TableCell className="text-xs">{i < 3 ? <Medal className={`h-3.5 w-3.5 ${i === 0 ? "text-amber-500" : i === 1 ? "text-slate-400" : "text-orange-400"}`} /> : i + 1}</TableCell>
-                          <TableCell className="font-medium text-sm">{s.name}</TableCell>
-                          <TableCell className="text-xs text-slate-500">{s.grade}</TableCell>
-                          <TableCell className={`text-xs text-right font-bold ${s.avg >= 70 ? "text-emerald-600" : s.avg >= 50 ? "text-blue-600" : "text-amber-600"}`}>{s.avg}</TableCell>
+                          <TableCell className="font-medium text-sm">{s.name || s.student_name}</TableCell>
+                          <TableCell className="text-xs text-slate-500">{s.standard || s.grade}</TableCell>
+                          <TableCell className={`text-xs text-right font-bold ${s.avg >= 70 ? "text-emerald-600" : s.avg >= 50 ? "text-blue-600" : "text-amber-600"}`}>{(() => { const subjects = studentSubjectMap[s.id] || {}; const scores = Object.values(subjects).filter((d) => !isNaN(d.score)).map((d) => d.score); const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length * 10) / 10 : 0; return avg > 0 ? avg : "-" })()}</TableCell>
                         </TableRow>
                       ))
                     }
@@ -409,9 +420,9 @@ export default function GradesManagementPage() {
                       bottom10.map((s, i) => (
                         <TableRow key={s.id} className={s.avg < 40 ? "bg-red-50/50" : ""}>
                           <TableCell className="text-xs text-slate-400">{studentRanking.length - i}</TableCell>
-                          <TableCell className="font-medium text-sm">{s.name}</TableCell>
-                          <TableCell className="text-xs text-slate-500">{s.grade}</TableCell>
-                          <TableCell className={`text-xs text-right font-bold ${s.avg < 40 ? "text-red-600" : "text-amber-600"}`}>{s.avg}</TableCell>
+                          <TableCell className="font-medium text-sm">{s.name || s.student_name}</TableCell>
+                          <TableCell className="text-xs text-slate-500">{s.standard || s.grade}</TableCell>
+                          <TableCell className={`text-xs text-right font-bold ${s.avg < 40 ? "text-red-600" : "text-amber-600"}`}>{(() => { const subjects = studentSubjectMap[s.id] || {}; const scores = Object.values(subjects).filter((d) => !isNaN(d.score)).map((d) => d.score); const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length * 10) / 10 : 0; return avg > 0 ? avg : "-" })()}</TableCell>
                         </TableRow>
                       ))
                     }
@@ -431,9 +442,9 @@ export default function GradesManagementPage() {
                     {studentRanking.map((s, i) => (
                       <TableRow key={s.id} className={i < 3 ? "bg-amber-50/50" : s.avg < 40 ? "bg-red-50/50" : ""}>
                         <TableCell className="text-xs text-slate-400">{i + 1}</TableCell>
-                        <TableCell className="font-medium text-sm">{s.name}</TableCell>
-                        <TableCell className="text-xs text-slate-500">{s.grade}</TableCell>
-                        <TableCell className={`text-xs text-right font-bold ${s.avg >= 70 ? "text-emerald-600" : s.avg >= 50 ? "text-blue-600" : s.avg < 40 ? "text-red-600" : "text-amber-600"}`}>{s.avg}</TableCell>
+                        <TableCell className="font-medium text-sm">{s.name || s.student_name}</TableCell>
+                        <TableCell className="text-xs text-slate-500">{s.standard || s.grade}</TableCell>
+                        <TableCell className={`text-xs text-right font-bold ${s.avg >= 70 ? "text-emerald-600" : s.avg >= 50 ? "text-blue-600" : s.avg < 40 ? "text-red-600" : "text-amber-600"}`}>{(() => { const subjects = studentSubjectMap[s.id] || {}; const scores = Object.values(subjects).filter((d) => !isNaN(d.score)).map((d) => d.score); const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length * 10) / 10 : 0; return avg > 0 ? avg : "-" })()}</TableCell>
                         <TableCell className="text-xs text-right text-slate-400">{s.subjects}</TableCell>
                       </TableRow>
                     ))}
