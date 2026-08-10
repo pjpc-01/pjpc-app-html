@@ -59,8 +59,21 @@ export const StudentFeeMatrix = () => {
   const createInvoice = async (studentId: string) => {
     const student = students.find(s => s.id === studentId)
     if (!student) return
-    const adj = getLocalAdjustment(studentId)
+    let adj = getLocalAdjustment(studentId)
     const assignedFees = allFees.filter(f => isAssigned(studentId, f.id))
+
+    // Fallback: fetch discount from PB if not in edit mode (local state empty)
+    if (!adj.discount) {
+      try {
+        const r = await fetch(`/api/pocketbase-proxy/api/collections/student_fees/records?filter=(student_id='${studentId}')&perPage=1`)
+        if (r.ok) {
+          const data = await r.json()
+          if (data.items?.length > 0) {
+            adj = { ...adj, discount: data.items[0].discount || 0, discount_type: data.items[0].discount_type || 'amount' }
+          }
+        }
+      } catch {}
+    }
 
     let items = assignedFees.map(f => ({ name: f.name, amount: f.amount }))
 
