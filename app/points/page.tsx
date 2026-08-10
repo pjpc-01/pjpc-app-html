@@ -322,6 +322,8 @@ export default function PointsPage() {
                           : [...prev, s])
                       } else {
                         loadStudent(s.id, s.name)
+                        setSearch('')
+                        setShowResults(false)
                       }
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-amber-50 flex items-center gap-2 border-b border-gray-50 last:border-0"
