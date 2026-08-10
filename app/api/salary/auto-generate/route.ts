@@ -1,43 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase, authenticateAdmin } from '@/lib/pocketbase'
-import { getSocsoEmployee, getSocsoEmployer, getEisContribution } from '@/lib/perkeso-rates'
-// Official: 0-5000/yr=0%, 5001-20000=1%, 20001-35000=3%, 35001-50000=6%,
-//           50001-70000=11%, 70001-100000=19%, 100001-400000=25%
-// Monthly thresholds = annual ÷ 12 (rounded)
-const PCB_BRACKETS = [
-  { max: 416, rate: 0 },
-  { max: 1666, rate: 0.01 },
-  { max: 2916, rate: 0.03 },
-  { max: 4166, rate: 0.06 },
-  { max: 5833, rate: 0.11 },
-  { max: 8333, rate: 0.19 },
-  { max: Infinity, rate: 0.25 },
-]
+import { getSocsoEmployee, getSocsoEmployer, getEisContribution, getPCB } from '@/lib/perkeso-rates'
 
-function calculateSOCSO(grossSalary: number): number {
-  return getSocsoEmployee(grossSalary)
-}
+// PCB — uses shared getPCB from perkeso-rates
+function calculateProgressivePCB(grossSalary: number): number { return getPCB(grossSalary) }
 
-function calculateEmployerSOCSO(grossSalary: number): number {
-  return getSocsoEmployer(grossSalary)
-}
-
-function calculateEIS(grossSalary: number): number {
-  return getEisContribution(grossSalary)
-}
-
-function calculateProgressivePCB(grossSalary: number): number {
-  let tax = 0
-  let previousMax = 0
-  for (const bracket of PCB_BRACKETS) {
-    if (grossSalary <= 0) break
-    const taxableInBracket = Math.min(Math.max(grossSalary - previousMax, 0), bracket.max - previousMax)
-    tax += taxableInBracket * bracket.rate
-    previousMax = bracket.max
-    if (grossSalary <= bracket.max) break
-  }
-  return tax
-}
+function calculateSOCSO(grossSalary: number): number { return getSocsoEmployee(grossSalary) }
+function calculateEmployerSOCSO(grossSalary: number): number { return getSocsoEmployer(grossSalary) }
+function calculateEIS(grossSalary: number): number { return getEisContribution(grossSalary) }
 
 // 自动生成月度薪资记录
 export async function POST(request: NextRequest) {
@@ -140,28 +110,37 @@ export async function POST(request: NextRequest) {
         
         const overtimePay = overtimeHours * overtimeRate
         
-        // 津贴分项
+        // 津贴分项（固定/交通/膳食/其他 计入 gross 扣 EPF/SOCSO/EIS）
         const allowanceFixed = structure.allowance_fixed || 0
         const allowanceTransport = structure.allowance_transport || 0
         const allowanceMeal = structure.allowance_meal || 0
         const allowanceOther = structure.allowance_other || 0
-        const totalAllowances = allowanceFixed + allowanceTransport + allowanceMeal + allowanceOther
+        const taxableAllowances = allowanceFixed + allowanceTransport + allowanceMeal + allowanceOther
         
-        // 奖金
+        // 旅游津贴（不扣 EPF/SOCSO/EIS，直接加净薪）
+        const allowanceTravel = structure.allowance_travel || 0
+        
+        // 奖金（不扣 EPF/SOCSO/EIS）
         const bonus = structure.bonus || 0
+        const customBonuses: { name: string; amount: number }[] = structure.custom_bonuses || []
+        const totalBonuses = bonus + customBonuses.reduce((sum, b) => sum + (b.amount || 0), 0)
         
-        const grossSalary = baseSalary + overtimePay + totalAllowances + bonus
+        // grossForDeductions = 底薪 + 加班 + 应税津贴（不计旅游/奖金）
+        const grossForDeductions = baseSalary + overtimePay + taxableAllowances
+        
+        // 总 gross（不含旅游/奖金，用于显示）
+        const grossSalary = grossForDeductions
 
-        // 计算扣除项
-        const epfDeduction = grossSalary * (structure.epf_rate || 0.11)
-        const socsoDeduction = calculateSOCSO(grossSalary)
-        const eisDeduction = calculateEIS(grossSalary)
-        const taxDeduction = calculateProgressivePCB(grossSalary)
+        // 计算扣除项（基于 grossForDeductions）
+        const epfDeduction = grossForDeductions * (structure.epf_rate || 0.11)
+        const socsoDeduction = calculateSOCSO(grossForDeductions)
+        const eisDeduction = calculateEIS(grossForDeductions)
+        const taxDeduction = calculateProgressivePCB(grossForDeductions)
 
-        // 雇主缴纳
-        const epfEmployer = grossSalary * (structure.epf_employer_rate || (grossSalary > 5000 ? 0.12 : 0.13))
-        const socsoEmployer = calculateEmployerSOCSO(grossSalary)
-        const eisEmployer = calculateEIS(grossSalary)
+        // 雇主缴纳（基于 grossForDeductions）
+        const epfEmployer = grossForDeductions * (structure.epf_employer_rate || (grossForDeductions > 5000 ? 0.12 : 0.13))
+        const socsoEmployer = calculateEmployerSOCSO(grossForDeductions)
+        const eisEmployer = calculateEIS(grossForDeductions)
         
         const totalDeductions = epfDeduction + socsoDeduction + eisDeduction + taxDeduction
         const netSalary = grossSalary - totalDeductions
@@ -184,8 +163,10 @@ export async function POST(request: NextRequest) {
           hours_worked: totalHours,
           overtime_hours: overtimeHours,
           overtime_pay: overtimePay,
-          allowances: totalAllowances,
+          allowances: taxableAllowances,
+          allowance_travel: allowanceTravel,
           bonus,
+          custom_bonuses: customBonuses,
           gross_salary: grossSalary,
           epf_deduction: epfDeduction,
           epf_employer: epfEmployer,

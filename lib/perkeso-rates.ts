@@ -147,3 +147,32 @@ export function getEisContribution(salary: number): number {
   const band = EIS_BANDS.find(b => salary <= b.max)
   return band ? band.amount : 11.90
 }
+
+// PCB (MTD) — LHDN Computerised Calculation Method
+const PCB_BRACKETS = [
+  { max: 5000, M: 0, R: 0, B: 0 },
+  { max: 20000, M: 5000, R: 0.01, B: 0 },
+  { max: 35000, M: 20000, R: 0.03, B: 150 },
+  { max: 50000, M: 35000, R: 0.06, B: 600 },
+  { max: 70000, M: 50000, R: 0.11, B: 1500 },
+  { max: 100000, M: 70000, R: 0.19, B: 3700 },
+  { max: 250000, M: 100000, R: 0.25, B: 9400 },
+  { max: 400000, M: 250000, R: 0.26, B: 46900 },
+  { max: 600000, M: 400000, R: 0.28, B: 85900 },
+  { max: 1000000, M: 600000, R: 0.30, B: 141900 },
+  { max: Infinity, M: 1000000, R: 0.30, B: 261900 },
+]
+
+export function getPCB(grossSalary: number): number {
+  const epfMonthly = Math.min(grossSalary * 0.11, 333.33)
+  const netMonthly = grossSalary - epfMonthly
+  const P = Math.max(netMonthly * 12 - 9000, 0)
+  
+  for (const bracket of PCB_BRACKETS) {
+    if (P <= bracket.max) {
+      const tax = (P - bracket.M) * bracket.R + bracket.B
+      return P <= 35000 ? Math.max(tax - 400, 0) / 12 : tax / 12
+    }
+  }
+  return 0
+}
