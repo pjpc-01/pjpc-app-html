@@ -6,6 +6,7 @@ import { type ReportSettingsPreset } from '@/app/components/report/ReportSetting
 import { type ReceiptSettingsPreset } from '@/app/components/finance/payment-management/ReceiptSettingsManager'
 import { type PayslipSettingsPreset } from '@/app/components/report/PayslipSettingsManager'
 import { StudentReport, ReportSubject } from '@/hooks/useStudentReports'
+import { getSocsoEmployer, getEisContribution } from '@/lib/perkeso-rates'
 
 export type { InvoiceSettingsPreset } from '@/app/components/finance/invoice-management/InvoiceSettingsManager'
 export type { ReceiptSettingsPreset } from '@/app/components/finance/payment-management/ReceiptSettingsManager'
@@ -1393,8 +1394,9 @@ export const generatePayslipHTML = (
       ${((): string => {
         if (!settings.showEmployerEPF) return ''
         const empEPF = record.epf_employer || (record.gross_salary || 0) * 0.13
-        const empSOCSO = (record as any).socso_employer || (record.gross_salary || 0) * 0.0175
-        const empEIS = (record as any).eis_employer || Math.min((record.gross_salary || 0) * 0.002, 2.45)
+        const gross = record.gross_salary || 0
+        const empSOCSO = (record as any).socso_employer || getSocsoEmployer(gross)
+        const empEIS = (record as any).eis_employer || getEisContribution(gross)
         const empTotal = empEPF + empSOCSO + empEIS
         return '<div class="section-title" style="color:#059669;border-bottom-color:#05966930;">🏢 雇主缴纳 Employer Contributions</div>' +
           '<table class="items-table"><thead><tr><th>项目 Item</th><th>金额 Amount (RM)</th></tr></thead><tbody>' +

@@ -2,29 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase } from '@/lib/pocketbase'
 import { authenticateAdmin } from '@/lib/auth-utils'
 import { TeacherSalaryStructure, TeacherSalaryRecord } from '@/lib/pocketbase-schema'
-
-// SOCSO contribution rates (Act 4 First Schedule) — PERKESO 2024+
-const SOCSO_TABLE: { max: number; employee: number; employer: number }[] = [
-  { max: 100,   employee: 0.00, employer: 0.00 },
-  { max: 500,   employee: 2.50, employer: 13.45 },
-  { max: 1000,  employee: 5.00, employer: 26.95 },
-  { max: 1500,  employee: 7.25, employer: 25.35 },
-  { max: 2000,  employee: 9.75, employer: 34.15 },
-  { max: 2500,  employee: 12.25, employer: 42.85 },
-  { max: 3000,  employee: 14.75, employer: 51.65 },
-  { max: 3500,  employee: 17.25, employer: 60.35 },
-  { max: 4000,  employee: 19.75, employer: 69.15 },
-  { max: 4500,  employee: 22.25, employer: 77.85 },
-  { max: 5000,  employee: 24.75, employer: 86.65 },
-  { max: Infinity, employee: 24.75, employer: 86.65 },
-]
-
-function lookupSOCSO(gross: number) {
-  for (const bracket of SOCSO_TABLE) {
-    if (gross <= bracket.max) return bracket
-  }
-  return SOCSO_TABLE[SOCSO_TABLE.length - 1]
-}
+import { getSocsoEmployee, getSocsoEmployer, getEisContribution } from '@/lib/perkeso-rates'
 
 // 获取教师薪资结构
 export async function GET(request: NextRequest) {
@@ -175,7 +153,7 @@ export async function POST(request: NextRequest) {
 
       // 创建薪资记录
       const grossSalary = data.gross_salary || 0
-      const salaryRecord: Partial<TeacherSalaryRecord> = {
+      const salaryRecord: any = {
         teacher_id: data.teacher_id,
         salary_period: data.salary_period,
         year: data.year,
@@ -195,8 +173,8 @@ export async function POST(request: NextRequest) {
         bonus: data.bonus || 0,
         commission: data.commission || 0,
         epf_employer: grossSalary * (data.epf_employer_rate || 0.13),
-        socso_employer: lookupSOCSO(grossSalary).employer,
-        eis_employer: grossSalary * (data.eis_rate || 0.002),
+        socso_employer: getSocsoEmployer(grossSalary),
+        eis_employer: getEisContribution(grossSalary),
         bank_reference: payslipNo,
         status: 'paid',
         notes: data.notes,

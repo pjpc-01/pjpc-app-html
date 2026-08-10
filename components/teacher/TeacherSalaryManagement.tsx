@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { getSocsoEmployee, getSocsoEmployer, getEisContribution, getPCB } from "@/lib/perkeso-rates"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -60,7 +61,9 @@ interface TeacherSalaryStructure {
   allowance_fixed?: number
   allowance_transport?: number
   allowance_meal?: number
+  allowance_travel?: number
   allowance_other?: number
+  custom_bonuses?: { name: string; amount: number }[]
   epf_rate: number
   socso_rate: number
   eis_rate: number
@@ -279,7 +282,9 @@ export default function TeacherSalaryManagement() {
     allowance_fixed: 0,
     allowance_transport: 0,
     allowance_meal: 0,
+    allowance_travel: 0,
     allowance_other: 0,
+    custom_bonuses: [],
     epf_rate: 0.11,
     socso_rate: 0.005,
     eis_rate: 0.002,
@@ -809,13 +814,23 @@ export default function TeacherSalaryManagement() {
   useEffect(() => {
     const base = recordForm.base_salary || 0
     const allowance = recordForm.allowances || 0
-    const gross = base + allowance
-    const epf = gross * (recordForm.epf_rate || 0.11)
-    const socso = gross * (recordForm.socso_rate || 0.005)
-    const eis = gross * (recordForm.eis_rate || 0.002)
-    const tax = recordForm.tax_rate ? gross * recordForm.tax_rate : 0
+    const travelAllowance = (recordForm as any).allowance_travel || 0
+    const bonus = recordForm.bonus || 0
+    const customBonuses: { name: string; amount: number }[] = (recordForm as any).custom_bonuses || []
+    const totalBonuses = bonus + customBonuses.reduce((s: number, b: any) => s + (b.amount || 0), 0)
+    
+    const grossForDeductions = base + allowance
+    const gross = grossForDeductions + travelAllowance + totalBonuses
+    
+    const epf = grossForDeductions * (recordForm.epf_rate || 0.11)
+    const socso = getSocsoEmployee(grossForDeductions)
+    const eis = getEisContribution(grossForDeductions)
+    const epfEmployer = grossForDeductions * (recordForm.epf_employer_rate || (grossForDeductions > 5000 ? 0.12 : 0.13))
+    const socsoEmployer = getSocsoEmployer(grossForDeductions)
+    const eisEmployer = getEisContribution(grossForDeductions)
+    const tax = getPCB(grossForDeductions)
     const totalDed = epf + socso + eis + tax + (recordForm.other_deductions || 0)
-    const net = gross - totalDed + (recordForm.bonus || 0) + (recordForm.commission || 0)
+    const net = gross + (recordForm.commission || 0) - totalDed
     setRecordForm(prev => ({
       ...prev,
       gross_salary: gross,
@@ -824,6 +839,9 @@ export default function TeacherSalaryManagement() {
       eis_deduction: eis,
       tax_deduction: tax,
       net_salary: net,
+      epf_employer: epfEmployer,
+      socso_employer: socsoEmployer,
+      eis_employer: eisEmployer,
     }))
   }, [recordForm.base_salary, recordForm.allowances, recordForm.epf_rate, recordForm.socso_rate, recordForm.eis_rate, recordForm.tax_rate, recordForm.other_deductions, recordForm.bonus, recordForm.commission])
 
@@ -999,34 +1017,6 @@ export default function TeacherSalaryManagement() {
               <p className="text-xs text-gray-500 mt-1">雇员公积金</p>
             </div>
             <div>
-              <Label htmlFor="global_socso">SOCSO 比率 (%)</Label>
-              <Input
-                id="global_socso"
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                value={(globalRates.socso * 100).toFixed(2)}
-                onChange={(e) => updateGlobalRates({ socso: (parseFloat(e.target.value) || 0) / 100 })}
-                className="bg-white"
-              />
-              <p className="text-xs text-gray-500 mt-1">社会保险</p>
-            </div>
-            <div>
-              <Label htmlFor="global_eis">EIS 比率 (%)</Label>
-              <Input
-                id="global_eis"
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                value={(globalRates.eis * 100).toFixed(2)}
-                onChange={(e) => updateGlobalRates({ eis: (parseFloat(e.target.value) || 0) / 100 })}
-                className="bg-white"
-              />
-              <p className="text-xs text-gray-500 mt-1">{t('teacher.eis')}</p>
-            </div>
-            <div>
               <Label htmlFor="global_tax">PCB 税率 (%)</Label>
               <Input
                 id="global_tax"
@@ -1053,34 +1043,6 @@ export default function TeacherSalaryManagement() {
                 className="bg-white"
               />
               <p className="text-xs text-gray-500 mt-1">雇主公积金</p>
-            </div>
-            <div>
-              <Label htmlFor="global_socso_employer">SOCSO 雇主比率 (%)</Label>
-              <Input
-                id="global_socso_employer"
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                value={(globalRates.socso_employer * 100).toFixed(2)}
-                onChange={(e) => updateGlobalRates({ socso_employer: (parseFloat(e.target.value) || 0) / 100 })}
-                className="bg-white"
-              />
-              <p className="text-xs text-gray-500 mt-1">雇主社会保险</p>
-            </div>
-            <div>
-              <Label htmlFor="global_eis_employer">EIS 雇主比率 (%)</Label>
-              <Input
-                id="global_eis_employer"
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                value={(globalRates.eis_employer * 100).toFixed(2)}
-                onChange={(e) => updateGlobalRates({ eis_employer: (parseFloat(e.target.value) || 0) / 100 })}
-                className="bg-white"
-              />
-              <p className="text-xs text-gray-500 mt-1">雇主就业保险</p>
             </div>
           </div>
         </CardContent>
@@ -1412,168 +1374,108 @@ export default function TeacherSalaryManagement() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* ── 工资 ── */}
+            <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">💰 工资</h4>
+            <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="base_salary">基本薪资</Label>
-                <Input
-                  id="base_salary"
-                  type="number"
-                  value={structureForm.base_salary}
-                  onChange={(e) => setStructureForm(prev => ({ 
-                    ...prev, 
-                    base_salary: parseFloat(e.target.value) || 0 
-                  }))}
-                />
+                <Label htmlFor="base_salary">基本薪资 (RM)</Label>
+                <Input id="base_salary" type="number" value={structureForm.base_salary}
+                  onChange={(e) => setStructureForm(prev => ({ ...prev, base_salary: parseFloat(e.target.value) || 0 }))} />
               </div>
-              
               <div>
-                <Label htmlFor="allowance_fixed">固定津贴 (RM)</Label>
+                <Label htmlFor="hourly_rate">时薪 (RM/h)</Label>
+                <Input id="hourly_rate" type="number" value={structureForm.hourly_rate || ''}
+                  onChange={(e) => setStructureForm(prev => ({ ...prev, hourly_rate: parseFloat(e.target.value) || 0 }))} />
+              </div>
+              <div>
+                <Label htmlFor="overtime_rate">加班费率 (RM/h)</Label>
+                <Input id="overtime_rate" type="number" value={structureForm.overtime_rate || ''}
+                  onChange={(e) => setStructureForm(prev => ({ ...prev, overtime_rate: parseFloat(e.target.value) || 0 }))} />
+              </div>
+            </div>
+
+            {/* ── 津贴 ── */}
+            <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">📦 津贴</h4>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="allowance_fixed">固定 (RM)</Label>
                 <Input id="allowance_fixed" type="number" value={structureForm.allowance_fixed || ''}
                   onChange={(e) => setStructureForm(prev => ({ ...prev, allowance_fixed: parseFloat(e.target.value) || 0 }))} />
               </div>
               <div>
-                <Label htmlFor="allowance_transport">交通津贴 (RM)</Label>
+                <Label htmlFor="allowance_transport">交通 (RM)</Label>
                 <Input id="allowance_transport" type="number" value={structureForm.allowance_transport || ''}
                   onChange={(e) => setStructureForm(prev => ({ ...prev, allowance_transport: parseFloat(e.target.value) || 0 }))} />
               </div>
               <div>
-                <Label htmlFor="allowance_meal">膳食津贴 (RM)</Label>
+                <Label htmlFor="allowance_meal">膳食 (RM)</Label>
                 <Input id="allowance_meal" type="number" value={structureForm.allowance_meal || ''}
                   onChange={(e) => setStructureForm(prev => ({ ...prev, allowance_meal: parseFloat(e.target.value) || 0 }))} />
               </div>
               <div>
-                <Label htmlFor="allowance_other">其他津贴 (RM)</Label>
+                <Label htmlFor="allowance_other">其他 (RM)</Label>
                 <Input id="allowance_other" type="number" value={structureForm.allowance_other || ''}
                   onChange={(e) => setStructureForm(prev => ({ ...prev, allowance_other: parseFloat(e.target.value) || 0 }))} />
               </div>
+              <div>
+                <Label htmlFor="allowance_travel">旅游 (RM) <span className="text-xs text-green-600">不计扣</span></Label>
+                <Input id="allowance_travel" type="number" value={structureForm.allowance_travel || ''}
+                  onChange={(e) => setStructureForm(prev => ({ ...prev, allowance_travel: parseFloat(e.target.value) || 0 }))} />
+              </div>
             </div>
 
+            {/* ── 奖金 ── */}
+            <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">🎁 奖金 <span className="text-xs text-green-600">均不计扣</span></h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="epf_rate">EPF 雇员比率 (%)</Label>
-                <Input
-                  id="epf_rate"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
+                <Label htmlFor="structure_bonus">固定奖金 (RM)</Label>
+                <Input id="structure_bonus" type="number" value={structureForm.bonus}
+                  onChange={(e) => setStructureForm(prev => ({ ...prev, bonus: parseFloat(e.target.value) || 0 }))} />
+              </div>
+            </div>
+            <div className="space-y-2 mt-2">
+              {(structureForm.custom_bonuses || []).map((cb, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <Input placeholder="名称" value={cb.name}
+                    onChange={(e) => {
+                      const updated = [...(structureForm.custom_bonuses || [])]
+                      updated[i] = { ...updated[i], name: e.target.value }
+                      setStructureForm(prev => ({ ...prev, custom_bonuses: updated }))
+                    }} className="w-40" />
+                  <Input type="number" placeholder="金额" value={cb.amount || ''}
+                    onChange={(e) => {
+                      const updated = [...(structureForm.custom_bonuses || [])]
+                      updated[i] = { ...updated[i], amount: parseFloat(e.target.value) || 0 }
+                      setStructureForm(prev => ({ ...prev, custom_bonuses: updated }))
+                    }} className="w-32" />
+                  <Button type="button" variant="ghost" size="sm" onClick={() => {
+                    setStructureForm(prev => ({ ...prev, 
+                      custom_bonuses: (prev.custom_bonuses || []).filter((_, j) => j !== i) 
+                    }))
+                  }}>✕</Button>
+                </div>
+              ))}
+              <Button type="button" variant="outline" size="sm" onClick={() => {
+                setStructureForm(prev => ({ ...prev, 
+                  custom_bonuses: [...(prev.custom_bonuses || []), { name: '', amount: 0 }] 
+                }))
+              }}>+ 加奖金</Button>
+            </div>
+
+            {/* ── EPF / 税务 ── */}
+            <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">🏛️ EPF / 税率</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="epf_rate">EPF 雇员 (%)</Label>
+                <Input id="epf_rate" type="number" step="0.1" min="0" max="100"
                   value={(structureForm.epf_rate * 100).toFixed(1)}
-                  onChange={(e) => setStructureForm(prev => ({ 
-                    ...prev, 
-                    epf_rate: (parseFloat(e.target.value) || 0) / 100 
-                  }))}
-                />
+                  onChange={(e) => setStructureForm(prev => ({ ...prev, epf_rate: (parseFloat(e.target.value) || 0) / 100 }))} />
               </div>
               <div>
-                <Label htmlFor="socso_rate">SOCSO 比率 (%)</Label>
-                <Input
-                  id="socso_rate"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={(structureForm.socso_rate * 100).toFixed(2)}
-                  onChange={(e) => setStructureForm(prev => ({ 
-                    ...prev, 
-                    socso_rate: (parseFloat(e.target.value) || 0) / 100 
-                  }))}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="eis_rate">EIS 比率 (%)</Label>
-                <Input
-                  id="eis_rate"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={(structureForm.eis_rate * 100).toFixed(2)}
-                  onChange={(e) => setStructureForm(prev => ({ 
-                    ...prev, 
-                    eis_rate: (parseFloat(e.target.value) || 0) / 100 
-                  }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="tax_rate">PCB 税率 (%)</Label>
-                <Input
-                  id="tax_rate"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  value={(structureForm.tax_rate * 100).toFixed(1)}
-                  onChange={(e) => setStructureForm(prev => ({ 
-                    ...prev, 
-                    tax_rate: (parseFloat(e.target.value) || 0) / 100 
-                  }))}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="epf_employer_rate">EPF 雇主比率 (%)</Label>
-                <Input
-                  id="epf_employer_rate"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
+                <Label htmlFor="epf_employer_rate">EPF 雇主 (%)</Label>
+                <Input id="epf_employer_rate" type="number" step="0.1" min="0" max="100"
                   value={(structureForm.epf_employer_rate * 100).toFixed(1)}
-                  onChange={(e) => setStructureForm(prev => ({ 
-                    ...prev, 
-                    epf_employer_rate: (parseFloat(e.target.value) || 0) / 100 
-                  }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="socso_employer_rate">SOCSO 雇主比率 (%)</Label>
-                <Input
-                  id="socso_employer_rate"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={(structureForm.socso_employer_rate * 100).toFixed(2)}
-                  onChange={(e) => setStructureForm(prev => ({ 
-                    ...prev, 
-                    socso_employer_rate: (parseFloat(e.target.value) || 0) / 100 
-                  }))}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="eis_employer_rate">EIS 雇主比率 (%)</Label>
-                <Input
-                  id="eis_employer_rate"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={(structureForm.eis_employer_rate * 100).toFixed(2)}
-                  onChange={(e) => setStructureForm(prev => ({ 
-                    ...prev, 
-                    eis_employer_rate: (parseFloat(e.target.value) || 0) / 100 
-                  }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="structure_bonus">每月奖金 (RM)</Label>
-                <Input
-                  id="structure_bonus"
-                  type="number"
-                  value={structureForm.bonus}
-                  onChange={(e) => setStructureForm(prev => ({ 
-                    ...prev, 
-                    bonus: parseFloat(e.target.value) || 0 
-                  }))}
-                />
+                  onChange={(e) => setStructureForm(prev => ({ ...prev, epf_employer_rate: (parseFloat(e.target.value) || 0) / 100 }))} />
               </div>
             </div>
 
