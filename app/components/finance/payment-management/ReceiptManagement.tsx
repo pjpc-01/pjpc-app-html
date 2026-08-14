@@ -22,7 +22,7 @@ import { useReceipts } from "@/hooks/useReceipts"
 import { useInvoices } from "@/hooks/useInvoices"
 import { useStudents } from "@/hooks/useStudents"
 import { usePayments } from "@/hooks/usePayments"
-import { downloadReceiptPDF, generateReceiptHTML } from "@/lib/pdf-generator"
+import { downloadReceiptPDF, generateReceiptPDF, generateReceiptHTML } from "@/lib/pdf-generator"
 import ReceiptSettingsManager, { type ReceiptSettingsPreset } from "@/app/components/finance/payment-management/ReceiptSettingsManager"
 
 
@@ -248,19 +248,57 @@ export default function ReceiptManagement() {
     setTimeout(() => printWindow.print(), 300)
   }
 
-  const handleSendReceipt = (receipt: any) => {
+  const handleSendReceipt = async (receipt: any) => {
     const studentName = getStudentName(receipt.studentId)
-    const message = encodeURIComponent(
-      `PJPC 收据通知\n\n` +
-      `收据号码: ${receipt.receiptNumber}\n` +
-      `学生: ${studentName}\n` +
-      `金额: RM ${receipt.totalAmount?.toLocaleString() || '0.00'}\n` +
-      `日期: ${formatDate(receipt.receipt_date)}\n` +
-      `状态: ${receipt.status === 'issued' ? '已开具' : receipt.status}\n\n` +
-      `感谢您的付款！`
-    )
-    const whatsappUrl = `https://wa.me/?text=${message}`
-    window.open(whatsappUrl, '_blank')
+    const student = students.find(s => s.id === receipt.studentId)
+    const phone = student?.mother_phone || student?.father_phone || student?.emergencyContact || student?.parentPhone || ''
+    const formattedPhone = phone ? phone.replace(/\s+/g, '').replace(/^0/, '60').replace(/^\+/, '') : ''
+    
+    if (!formattedPhone) {
+      alert('该学生没有家长电话号码，请先在student management 填上家长电话。')
+      return
+    }
+
+    try {
+      const message = `PJPC 收据通知\n\n收据号码: ${receipt.receiptNumber}\n学生: ${studentName}\n金额: RM ${receipt.totalAmount?.toLocaleString() || '0.00'}\n日期: ${formatDate(receipt.receipt_date)}\n\n感谢您的付款！`
+
+      // 1. Generate PDF blob
+      const pdfBlob = await generateReceiptPDF(receipt, getReceiptPresetForReceipt(receipt), studentName)
+      const pdfFile = new File([pdfBlob], `Receipt_${receipt.receiptNumber}.pdf`, { type: 'application/pdf' })
+
+      // 2. Try Web Share API (mobile — can share PDF directly)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        try {
+          await navigator.share({
+            files: [pdfFile],
+            title: `收据 ${receipt.receiptNumber}`,
+            text: message,
+          })
+          return
+        } catch {
+          // user cancelled share — fall through
+        }
+      }
+
+      // 3. Fallback: download PDF + open WhatsApp
+      const url = URL.createObjectURL(pdfBlob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Receipt_${receipt.receiptNumber}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+
+      const encodedMessage = encodeURIComponent(message + '\n\n📎 请贴上刚下载的收据PDF文件')
+      window.open(`https://wa.me/${formattedPhone}?text=${encodedMessage}`, '_blank')
+    } catch (error) {
+      console.error('Failed to send receipt:', error)
+      const msg = encodeURIComponent(
+        `PJPC 收据通知\n\n收据号码: ${receipt.receiptNumber}\n学生: ${studentName}\n金额: RM ${receipt.totalAmount?.toLocaleString() || '0.00'}\n日期: ${formatDate(receipt.receipt_date)}\n\n感谢您的付款！`
+      )
+      window.open(`https://wa.me/${formattedPhone}?text=${msg}`, '_blank')
+    }
   }
 
   const toggleExpand = (id: string) => {

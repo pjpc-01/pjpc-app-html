@@ -1475,6 +1475,78 @@ export const generatePayslipHTML = (
 </html>`
 }
 
+export const generatePayslipPDF = async (
+  record: PayslipRecord,
+  settings: PayslipSettingsPreset,
+  teacherName: string,
+  teacherInfo?: { epfNo?: number; socsoNo?: number; bankName?: string; bankAccountNo?: number }
+): Promise<Blob> => {
+  const html = generatePayslipHTML(record, settings, teacherName, teacherInfo)
+
+  const iframe = document.createElement('iframe')
+  iframe.style.position = 'fixed'
+  iframe.style.left = '-9999px'
+  iframe.style.top = '0'
+  iframe.style.width = '834px'
+  iframe.style.height = '2000px'
+  iframe.style.zIndex = '-1'
+  document.body.appendChild(iframe)
+
+  try {
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow!.document
+    iframeDoc.open()
+    iframeDoc.write(html)
+    iframeDoc.close()
+
+    await new Promise((r) => setTimeout(r, 600))
+
+    const wrapper = iframeDoc.querySelector('.payslip-wrapper') as HTMLElement
+    const canvas = await html2canvas(wrapper, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+    })
+
+    const A4_WIDTH_MM = 210
+    const A4_HEIGHT_MM = 297
+    const imgWidth = A4_WIDTH_MM
+    const imgHeight = (canvas.height * imgWidth) / canvas.width
+    const pageHeight = A4_HEIGHT_MM
+
+    const pdf = new jsPDF('p', 'mm', 'a4')
+
+    if (imgHeight <= pageHeight + 5) {
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight)
+    } else {
+      let remainingHeight = canvas.height
+      let srcY = 0
+      let pageNum = 0
+      while (remainingHeight > 0) {
+        if (pageNum > 0) pdf.addPage()
+        const srcH = Math.min(remainingHeight, Math.floor((pageHeight / imgHeight) * canvas.height))
+        const pageCanvas = document.createElement('canvas')
+        pageCanvas.width = canvas.width
+        pageCanvas.height = srcH
+        const ctx = pageCanvas.getContext('2d')!
+        ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH)
+        const pageImgData = pageCanvas.toDataURL('image/png')
+        const pageImgH = (pageCanvas.height * imgWidth) / pageCanvas.width
+        pdf.addImage(pageImgData, 'PNG', 0, 0, imgWidth, pageImgH)
+        srcY += srcH
+        remainingHeight -= srcH
+        pageNum++
+      }
+    }
+
+    return pdf.output('blob')
+  } finally {
+    if (iframe.parentNode) {
+      document.body.removeChild(iframe)
+    }
+  }
+}
+
 export const downloadPayslipPDF = async (
   record: PayslipRecord,
   settings: PayslipSettingsPreset,
@@ -1482,78 +1554,15 @@ export const downloadPayslipPDF = async (
   teacherInfo?: { epfNo?: number; socsoNo?: number; bankName?: string; bankAccountNo?: number }
 ): Promise<void> => {
   try {
-    const html = generatePayslipHTML(record, settings, teacherName, teacherInfo)
-
-    const iframe = document.createElement('iframe')
-    iframe.style.position = 'fixed'
-    iframe.style.left = '-9999px'
-    iframe.style.top = '0'
-    iframe.style.width = '834px'
-    iframe.style.height = '2000px'
-    iframe.style.zIndex = '-1'
-    document.body.appendChild(iframe)
-
-    try {
-      const iframeDoc = iframe.contentDocument || iframe.contentWindow!.document
-      iframeDoc.open()
-      iframeDoc.write(html)
-      iframeDoc.close()
-
-      await new Promise((r) => setTimeout(r, 600))
-
-      const wrapper = iframeDoc.querySelector('.payslip-wrapper') as HTMLElement
-      const canvas = await html2canvas(wrapper, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-      })
-
-      const A4_WIDTH_MM = 210
-      const A4_HEIGHT_MM = 297
-      const imgWidth = A4_WIDTH_MM
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-      const pageHeight = A4_HEIGHT_MM
-
-      const pdf = new jsPDF('p', 'mm', 'a4')
-
-      if (imgHeight <= pageHeight + 5) {
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight)
-      } else {
-        let remainingHeight = canvas.height
-        let srcY = 0
-        let pageNum = 0
-        while (remainingHeight > 0) {
-          if (pageNum > 0) pdf.addPage()
-          const srcH = Math.min(remainingHeight, Math.floor((pageHeight / imgHeight) * canvas.height))
-          const pageCanvas = document.createElement('canvas')
-          pageCanvas.width = canvas.width
-          pageCanvas.height = srcH
-          const ctx = pageCanvas.getContext('2d')!
-          ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH)
-          const pageImgData = pageCanvas.toDataURL('image/png')
-          const pageImgH = (pageCanvas.height * imgWidth) / pageCanvas.width
-          pdf.addImage(pageImgData, 'PNG', 0, 0, imgWidth, pageImgH)
-          srcY += srcH
-          remainingHeight -= srcH
-          pageNum++
-        }
-      }
-
-      const blob = pdf.output('blob')
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `Payslip_${teacherName.replace(/\\s+/g, '_')}_${record.year}_${record.month}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      setTimeout(() => URL.revokeObjectURL(url), 3000)
-    } finally {
-      if (iframe.parentNode) {
-        document.body.removeChild(iframe)
-      }
-    }
+    const blob = await generatePayslipPDF(record, settings, teacherName, teacherInfo)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `Payslip_${teacherName.replace(/\\s+/g, '_')}_${record.year}_${record.month}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 3000)
   } catch (e) {
     console.error('Payslip PDF download failed:', e)
     throw new Error('Payslip PDF download failed')

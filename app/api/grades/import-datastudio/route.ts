@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const center = body.center || ''
 
-    const cmd = `/tmp/.venv/bin/python3 /home/pjpc/pjpc-app-prod/scripts/datastudio_import.py "${center}"`
+    const cmd = `/home/pjpc/.hermes/hermes-agent/venv/bin/python3 /home/pjpc/pjpc-app-prod/scripts/datastudio_import.py "${center}"`
     const output = execSync(cmd, {
       encoding: 'utf-8',
       timeout: 600000, // 10 min

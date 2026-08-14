@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
             filter: recordTeacherIds.map(id => `id = "${id}"`).join(' || ')
           })
         : { items: [] }
-      const allTeacherMap = new Map(allTeachers.items.map(t => [t.id, { name: t.name, email: t.email, epfNo: t.epfNo, socsoNo: t.socsoNo, bankName: t.bankName, bankAccountNo: t.bankAccountNo }]))
+      const allTeacherMap = new Map(allTeachers.items.map(t => [t.id, { name: t.name, email: t.email, phone: t.phone || '', epfNo: t.epfNo, socsoNo: t.socsoNo, bankName: t.bankName, bankAccountNo: t.bankAccountNo }]))
 
       const recordsData = records.items.map(r => ({
         ...r,

@@ -58,10 +58,21 @@ export default function AttendanceSettings({ centerId }: AttendanceSettingsProps
   // 加载配置
   const loadConfig = async () => {
     try {
-      // 这里应该从API加载配置
-      // const response = await fetch(`/api/attendance/config?centerId=${centerId}`)
-      // const data = await response.json()
-      // setConfig(data)
+      const res = await fetch(`/api/attendance/settings?center=${centerId}`)
+      const data = await res.json()
+      const s = data.settings || {}
+      setConfig(prev => ({
+        ...prev,
+        checkInStartTime: s.checkin_deadline ? "08:00" : prev.checkInStartTime,
+        checkInEndTime: s.checkin_deadline || prev.checkInEndTime,
+        checkOutStartTime: s.checkout_minimum || prev.checkOutStartTime,
+        checkOutEndTime: s.checkout_minimum ? "18:00" : prev.checkOutEndTime,
+        enableNotifications: s.enable_points ?? prev.enableNotifications,
+        notificationEmail: prev.notificationEmail,
+        autoCheckOut: prev.autoCheckOut,
+        autoCheckOutTime: prev.autoCheckOutTime,
+        description: prev.description,
+      }))
     } catch (err) {
       console.error('加载配置失败:', err)
     }
@@ -73,20 +84,32 @@ export default function AttendanceSettings({ centerId }: AttendanceSettingsProps
     setError(null)
     
     try {
-      // 这里应该调用API保存配置
-      // const response = await fetch('/api/attendance/config', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(config)
-      // })
-      
-      // if (!response.ok) throw new Error('保存失败')
+      // Load existing settings first to preserve overrides
+      let existingSettings = {}
+      try {
+        const r = await fetch(`/api/attendance/settings?center=${centerId}`)
+        const d = await r.json()
+        existingSettings = d.settings || {}
+      } catch {}
+
+      const payload = {
+        ...existingSettings,
+        checkin_deadline: config.checkInEndTime,
+        checkout_minimum: config.checkOutStartTime,
+        enable_points: config.enableNotifications,
+      }
+      const res = await fetch('/api/attendance/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ center: centerId, config: payload }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error || '保存失败')
       
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
       
-    } catch (err) {
-      setError('保存配置失败')
+    } catch (err: any) {
+      setError(err.message || '保存配置失败')
     } finally {
       setLoading(false)
     }
