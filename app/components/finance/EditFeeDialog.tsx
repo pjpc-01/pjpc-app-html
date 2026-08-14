@@ -163,9 +163,11 @@ export const EditFeeDialog = ({
                   <SelectItem value="one-time">一次性费用 (One-time)</SelectItem>
                   <SelectItem value="annual">年费 (Annual)</SelectItem>
                   <SelectItem value="six-month">六月一次付 (6-Month)</SelectItem>
+                  <SelectItem value="daily">根据天数 (Per Day)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
 
             <div className="space-y-2">
               <Label htmlFor="edit-amount" className="text-sm font-semibold flex items-center gap-2">

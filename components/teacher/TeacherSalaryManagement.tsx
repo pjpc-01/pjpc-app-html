@@ -38,13 +38,12 @@ import {
   XCircle,
   Settings,
   TrendingUp,
-  Eye,
-} from "lucide-react"
+  Eye, Send, MessageCircle } from "lucide-react"
 
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { formatDate } from "@/lib/utils"
 import { toast } from "sonner"
-import { downloadPayslipPDF, generatePayslipHTML } from "@/lib/pdf-generator"
+import { downloadPayslipPDF, generatePayslipPDF, generatePayslipHTML } from "@/lib/pdf-generator"
 import PayslipSettingsManager, { type PayslipSettingsPreset } from "@/app/components/report/PayslipSettingsManager"
 
 const formatCurrency = (amount: number) => {
@@ -1278,6 +1277,53 @@ export default function TeacherSalaryManagement() {
                             }}
                           >
                             <FileDown className="w-4 h-4 text-blue-600" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={async () => {
+                              const teacher = record.expand?.teacher_id
+                              const phone = (teacher as any)?.phone || (teacher as any)?.whatsapp || ''
+                              const formatted = phone ? phone.replace(/\s+/g, '').replace(/^0/, '60').replace(/^\+/, '') : ''
+                              
+                              if (!formatted) {
+                                alert('该教师没有电话号码，请先在教师管理填上电话。')
+                                return
+                              }
+                              const teacherName = teacher?.name || '教师'
+                              const message = `PJPC 薪资单通知\n\n教师: ${teacherName}\n月份: ${record.year || ''}年${record.month || ''}月\n基本薪资: RM ${record.base_salary?.toFixed(2)}\n净薪: RM ${record.net_salary?.toFixed(2)}\n\n如有疑问请联系管理员。`
+                              
+                              try {
+                                const pdfBlob = await generatePayslipPDF(record, getPayslipPresetForRecord(record), teacherName, teacher ? { epfNo: (teacher as any).epfNo, socsoNo: (teacher as any).socsoNo, bankName: (teacher as any).bankName, bankAccountNo: (teacher as any).bankAccountNo } : undefined)
+                                const pdfFile = new File([pdfBlob], `Payslip_${teacherName}_${record.year}_${record.month}.pdf`, { type: 'application/pdf' })
+                                
+                                if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+                                  try {
+                                    await navigator.share({ files: [pdfFile], title: `薪资单 ${teacherName}`, text: message })
+                                    return
+                                  } catch { /* fall through */ }
+                                }
+                                
+                                // Fallback: download + open WhatsApp
+                                const url = URL.createObjectURL(pdfBlob)
+                                const a = document.createElement('a')
+                                a.href = url
+                                a.download = `Payslip_${teacherName}_${record.year}_${record.month}.pdf`
+                                document.body.appendChild(a)
+                                a.click()
+                                document.body.removeChild(a)
+                                setTimeout(() => URL.revokeObjectURL(url), 5000)
+                                
+                                const encodedMsg = encodeURIComponent(message + '\n\n📎 请贴上刚下载的薪资单PDF文件')
+                                window.open(`https://wa.me/${formatted}?text=${encodedMsg}`, '_blank')
+                              } catch (err) {
+                                console.error('Payslip send failed:', err)
+                                const encodedMsg = encodeURIComponent(message)
+                                window.open(`https://wa.me/${formatted}?text=${encodedMsg}`, '_blank')
+                              }
+                            }}
+                          >
+                            <Send className="w-4 h-4" />
                           </Button>
                         </div>
                       </TableCell>

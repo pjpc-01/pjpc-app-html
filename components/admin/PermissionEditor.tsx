@@ -12,29 +12,32 @@ import {
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 
-// Sidebar nav structure (must match AppShell.tsx)
 const NAV_TREE: Record<string, { label: string; icon?: string; children?: string[] }> = {
-  dashboard: { label: "仪表板" },
-  students: { label: "学生管理", children: ["students.list", "daily-logs", "grades", "pickup", "parents", "homework"] },
-  points: { label: "积分系统", children: ["points.operate", "points.records", "points.leaderboard"] },
-  teachers: { label: "教师管理", children: ["teachers.list", "teachers.report", "schedule"] },
-  finance: { label: "财务管理", children: ["finance.overview", "finance.fees", "finance.payments", "finance.bank", "finance.expenses", "finance.payroll", "finance.budget", "finance.reports", "inventory"] },
-  courses: { label: "课程管理", children: ["courses.schedule", "courses.list", "courses.classes", "courses.analytics"] },
-  attendance: { label: "考勤系统", children: ["attendance.checkin", "attendance.cards"] },
-  settings: { label: "系统设置", children: ["settings.general", "settings.users", "settings.centers"] },
+  overview: { label: "概览", children: ["overview.dashboard", "overview.slideshow"] },
+  education: { label: "教务", children: ["education.overview", "education.students", "education.reports", "education.parents", "education.homework", "education.grades", "education.pickup", "education.logs", "education.teachers", "education.teacher_attendance", "education.courses", "education.workspace", "education.teaching_report", "education.resources"] },
+  finance: { label: "财务", children: ["finance.overview", "finance.fees", "finance.student_fees", "finance.invoices", "finance.payments", "finance.receipts", "finance.payroll", "finance.expenses", "finance.bank", "finance.budget", "finance.reports", "finance.inventory"] },
+  system: { label: "系统", children: ["system.attendance", "system.cards", "system.points", "system.points_rules", "system.points_leaderboard", "system.users", "system.centers", "system.settings", "system.tv_board"] },
 }
 
 const CHILD_LABELS: Record<string, string> = {
-  "students.list": "学生列表", "daily-logs": "每日日志", "grades": "成绩管理",
-  "points.operate": "积分操作", "points.records": "积分记录", "points.leaderboard": "积分排行榜", "pickup": "接送管理", "parents": "家长管理",
-  "teachers.list": "教师列表", "teachers.report": "教学评估", "schedule": "教师排班",
-  "finance.overview": "财务概览", "finance.fees": "收费管理", "finance.payments": "发票付款",
-  "finance.bank": "银行对账", "finance.expenses": "支出管理", "finance.payroll": "薪资管理",
-  "finance.budget": "预算管理", "finance.reports": "财务报表", "inventory": "库存管理",
-  "courses.schedule": "课程表", "courses.list": "课程管理", "courses.classes": "班级管理",
-  "courses.analytics": "课程分析",
-  "attendance.checkin": "打卡记录", "attendance.cards": "卡片管理",
-  "settings.general": "系统设置", "settings.users": "用户管理", "settings.centers": "分院管理",
+  // Overview
+  "overview.dashboard": "仪表板", "overview.slideshow": "幻灯片",
+  // Education
+  "education.overview": "教务概览", "education.students": "学生管理", "education.reports": "学生报告",
+  "education.parents": "家长管理", "education.homework": "作业管理", "education.grades": "成绩管理",
+  "education.pickup": "接送管理", "education.logs": "每日日志", "education.teachers": "教师管理",
+  "education.teacher_attendance": "教师考勤", "education.courses": "课程管理",
+  "education.workspace": "教师工作台", "education.teaching_report": "教学评估", "education.resources": "资源库",
+  // Finance
+  "finance.overview": "财务概览", "finance.fees": "收费管理", "finance.student_fees": "学生费用",
+  "finance.invoices": "发票管理", "finance.payments": "付款管理", "finance.receipts": "收据管理",
+  "finance.payroll": "薪资管理", "finance.expenses": "支出管理", "finance.bank": "银行对账",
+  "finance.budget": "预算管理", "finance.reports": "财务报表", "finance.inventory": "库存管理",
+  // System
+  "system.attendance": "考勤中心", "system.cards": "卡片管理", "system.points": "积分操作",
+  "system.points_rules": "积分规则", "system.points_leaderboard": "积分排行",
+  "system.users": "用户管理", "system.centers": "分行管理", "system.settings": "系统设置",
+  "system.tv_board": "TV看板",
 }
 
 // Default permission templates for new roles

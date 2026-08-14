@@ -13,7 +13,7 @@ import {
   Package, CalendarDays, Utensils, Bus, FolderOpen, BookOpen, School,
   ClipboardList, Receipt, Banknote, ScrollText, Library, User
 } from "lucide-react"
-import { createElement, type ComponentType, useState } from "react"
+import { createElement, type ComponentType, useState, useEffect, useRef } from "react"
 import { Fee } from "@/types/fees"
 import { Student } from "@/hooks/useStudents"
 import type { StudentAdjustment } from "@/hooks/useStudentFees"
@@ -57,6 +57,49 @@ export const FeeCard = ({
   const [localEditMode, setLocalEditMode] = useState(false)
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set(Object.keys(groupedFees)))
   const [showInvoiceConfirm, setShowInvoiceConfirm] = useState(false)
+  const [dayQuantities, setDayQuantities] = useState<Record<string, number>>({})
+  const [savingQty, setSavingQty] = useState<Set<string>>(new Set())
+
+  // Load quantities for daily-type fees from PB (only on mount)
+  const loadedRef = useRef(false)
+  useEffect(() => {
+    if (loadedRef.current) return
+    loadedRef.current = true
+    fetch(`/api/pocketbase-proxy/api/collections/student_fees/records?perPage=1&filter=(student_id="${studentId}")`)
+      .then(r => r.json()).then(d => {
+        if (d.items?.[0]?.fee_items) {
+          const items = typeof d.items[0].fee_items === 'string' ? JSON.parse(d.items[0].fee_items) : d.items[0].fee_items
+          const qty: Record<string, number> = {}
+          items.forEach((fi: any) => { if (fi.active) qty[fi.id] = fi.quantity || 1 })
+          setDayQuantities(prev => {
+            // Only merge: keep any locally-set quantities that differ from PB
+            const merged = { ...qty, ...prev }
+            return merged
+          })
+        }
+      }).catch(() => {})
+  }, [studentId])
+
+  const updateDayQuantity = async (feeId: string, qty: number) => {
+    const newQty = Math.max(1, qty)
+    setDayQuantities(prev => ({ ...prev, [feeId]: newQty }))
+    setSavingQty(prev => new Set(prev).add(feeId))
+    try {
+      const r = await fetch(`/api/pocketbase-proxy/api/collections/student_fees/records?perPage=1&filter=(student_id="${studentId}")`)
+      const d = await r.json()
+      if (d.items?.[0]) {
+        let items = typeof d.items[0].fee_items === 'string' ? JSON.parse(d.items[0].fee_items) : d.items[0].fee_items
+        items = items.map((fi: any) => fi.id === feeId ? { ...fi, quantity: newQty } : fi)
+        await fetch(`/api/pocketbase-proxy/api/collections/student_fees/records/${d.items[0].id}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fee_items: JSON.stringify(items) }),
+        })
+      }
+    } catch {} finally {
+      setSavingQty(prev => { const s = new Set(prev); s.delete(feeId); return s })
+    }
+  }
+
 
   const adjustment = getLocalAdjustment?.(studentId) || { discount: 0, discount_type: 'amount' as const, six_month_fee_ids: [] as string[], six_month_pay_rate: 0, six_month_pay_rate_type: 'percent' as const }
   const initial = (student.student_name || "?")[0]
@@ -73,6 +116,14 @@ export const FeeCard = ({
   }
 
   const assignedCount = activeFees.filter(f => isAssigned?.(studentId, f.id)).length
+
+  // Local total that includes dayQuantities (bypasses stale PB cache)
+  const localTotal = activeFees
+    .filter(f => isAssigned?.(studentId, f.id))
+    .reduce((s, f) => {
+      const qty = f.type === 'daily' ? (dayQuantities[f.id] || 1) : 1
+      return s + (f.amount * qty)
+    }, 0)
 
   return (
     <Card className="overflow-hidden border border-slate-200 hover:shadow-md transition-shadow duration-200">
@@ -120,15 +171,15 @@ export const FeeCard = ({
       <div className="px-4 py-3 bg-slate-50/80 border-t border-b flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CreditCard className="h-4 w-4 text-emerald-500" />
-          <span className="text-lg font-bold text-emerald-600">RM {studentTotal}</span>
-          {studentTotal > 0 && (
+          <span className="text-lg font-bold text-emerald-600">RM {localTotal}</span>
+          {localTotal > 0 && (
             <span className="text-xs text-slate-400">({assignedCount}项)</span>
           )}
         </div>
         <div className="flex items-center gap-1">
           <Button
             variant="outline" size="sm" className="h-7 text-xs"
-            disabled={studentTotal === 0 || hasInvoice}
+            disabled={localTotal === 0 || hasInvoice}
             onClick={(e) => { e.stopPropagation(); onCreateInvoice?.(studentId) }}
           >
             <FileText className="h-3 w-3 mr-1" />
@@ -222,7 +273,10 @@ export const FeeCard = ({
             {Object.entries(groupedFees).map(([cat, fees]) => {
               const isCollapsed = collapsedCategories.has(cat)
               const catAssigned = fees.filter(f => isAssigned?.(studentId, f.id)).length
-              const catAmount = fees.filter(f => isAssigned?.(studentId, f.id)).reduce((s, f) => s + f.amount, 0)
+              const catAmount = fees.filter(f => isAssigned?.(studentId, f.id)).reduce((s, f) => {
+                const qty = f.type === 'daily' ? (dayQuantities[f.id] || 1) : 1
+                return s + (f.amount * qty)
+              }, 0)
               return (
                 <div key={cat} className="px-4 py-2">
                   <button
@@ -266,7 +320,29 @@ export const FeeCard = ({
                                   }`}
                                 >6月</button>
                               )}
-                              <span className="text-slate-400">RM{fee.amount}</span>
+                              {fee.type === 'daily' && assigned ? (
+                                <span className="flex items-center gap-0.5">
+                                  <input
+                                    type="number" min={1} step={1}
+                                    value={dayQuantities[fee.id] || 1}
+                                    onChange={(e) => {
+                                      e.stopPropagation()
+                                      setDayQuantities(prev => ({ ...prev, [fee.id]: Math.max(1, parseInt(e.target.value) || 1) }))
+                                    }}
+                                    onBlur={(e) => {
+                                      const v = Math.max(1, parseInt(e.target.value) || 1)
+                                      updateDayQuantity(fee.id, v)
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    disabled={savingQty.has(fee.id)}
+                                    className="w-10 h-5 text-[10px] text-center border rounded"
+                                  />
+                                  <span className="text-[10px] text-slate-400">天</span>
+                                </span>
+                              ) : null}
+                              <span className="text-slate-400">
+                                RM{fee.type === 'daily' ? fee.amount * (dayQuantities[fee.id] || 1) : fee.amount}
+                              </span>
                               <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
                                 assigned ? "bg-amber-500 border-amber-500 text-white" : "border-slate-300"
                               }`}>

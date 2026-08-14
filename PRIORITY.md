@@ -1,0 +1,13 @@
+# PJPC 优先事项
+
+| # | 事项 | 状态 | 说明 |
+|---|------|------|------|
+| 1 | NFC UID 统一 | ✅ | 已解决 |
+| 2 | 学生成绩 DataStudio 导入 | 🟡 | 科目分数错配，导入脚本反复修 |
+| 3 | Finance 全测试 | 🔴 | 薪资 SOCSO/EIS/PCB/EPF 没测完 |
+| 4 | 教师 agent profile | 🔴 | Alicia + 马老师各一个 Hermes profile |
+| 5 | 考勤积分 | 🔴 | 设置时间没生效，仍用默认全局，到点没加分 |
+
+## 附：未推改动
+- 成绩报表（全部学生+term切换+editable cell+DataStudio链接）
+- 导入脚本 v5 + API route Python 路径 fix

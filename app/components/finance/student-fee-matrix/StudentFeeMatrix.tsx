@@ -61,39 +61,41 @@ export const StudentFeeMatrix = () => {
     if (!student) return
     let adj = getLocalAdjustment(studentId)
     const assignedFees = allFees.filter(f => isAssigned(studentId, f.id))
+    let feeQuantities: Record<string, number> = {}
 
-    // Fallback: fetch discount from PB if not in edit mode (local state empty)
-    if (!adj.discount) {
-      try {
-        const r = await fetch(`/api/pocketbase-proxy/api/collections/student_fees/records?filter=(student_id='${studentId}')&perPage=1`)
-        if (r.ok) {
-          const data = await r.json()
-          if (data.items?.length > 0) {
-            adj = { ...adj, discount: data.items[0].discount || 0, discount_type: data.items[0].discount_type || 'amount' }
-          }
+    // Fetch discount + quantities from PB
+    try {
+      const r = await fetch(`/api/pocketbase-proxy/api/collections/student_fees/records?filter=(student_id='${studentId}')&perPage=1`)
+      if (r.ok) {
+        const data = await r.json()
+        if (data.items?.length > 0) {
+          adj = { ...adj, discount: data.items[0].discount || 0, discount_type: data.items[0].discount_type || 'amount' }
+          const items = typeof data.items[0].fee_items === 'string' ? JSON.parse(data.items[0].fee_items) : (data.items[0].fee_items || [])
+          items.forEach((fi: any) => { if (fi.active) feeQuantities[fi.id] = fi.quantity || 1 })
         }
-      } catch {}
-    }
+      }
+    } catch {}
 
-    let items = assignedFees.map(f => ({ name: f.name, amount: f.amount }))
+    let items = assignedFees.map(f => ({ name: f.name, amount: (f.amount || 0) * (feeQuantities[f.id] || 1) }))
 
     // Apply per-item six-month prepay logic
     const sixMonthFeeIds = adj.six_month_fee_ids || []
     let sixMonthPayRate = adj.six_month_pay_rate || 0
     const sixMonthPayRateType = adj.six_month_pay_rate_type || 'percent'
     if (sixMonthFeeIds.length > 0) {
-      // Rebuild items: only fees in sixMonthFeeIds get ×6
       const sixMonthItems: { name: string; amount: number }[] = []
       let sixMonthTotal = 0
 
       for (const fee of assignedFees) {
+        const qty = feeQuantities[fee.id] || 1
         if (sixMonthFeeIds.includes(fee.id)) {
-          const amount = (fee.amount || 0) * 6
+          const amount = (fee.amount || 0) * qty * 6
           sixMonthItems.push({ name: `${fee.name} (×6个月)`, amount })
           sixMonthTotal += amount
         } else {
-          sixMonthItems.push({ name: fee.name, amount: fee.amount || 0 })
-          sixMonthTotal += fee.amount || 0
+          const amount = (fee.amount || 0) * qty
+          sixMonthItems.push({ name: fee.name, amount })
+          sixMonthTotal += amount
         }
       }
 
@@ -130,7 +132,10 @@ export const StudentFeeMatrix = () => {
     }
 
     // Compute total from items (guarantees subtotal = total even with discount line)
-    const total = Math.round(items.reduce((sum, it) => sum + it.amount, 0) * 100) / 100
+    const itemsTotal = Math.round(items.reduce((sum, it) => sum + it.amount, 0) * 100) / 100
+    // Use getStudentAmount for consistency with card display
+    const cardTotal = getStudentAmount(studentId, allFees)
+    const total = cardTotal || itemsTotal
 
     // Get late payment rule from invoice_settings
     let latePaymentRule = ''

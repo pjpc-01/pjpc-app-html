@@ -183,7 +183,7 @@ export default function GradesManagementPage() {
           <Button key={c.code} size="sm" variant={centerFilter === c.code ? "default" : "outline"} onClick={() => setCenterFilter(c.code)} className="h-8 text-xs"><Building className="h-3 w-3 mr-1" />{c.name}</Button>
         ))}
         <div className="flex-1" />
-        <Button size="sm" variant="ghost" onClick={() => window.open("https://datastudio.google.com", "_blank")} className="h-8 text-xs text-blue-600"><ExternalLink className="h-3 w-3 mr-1" />DataStudio</Button>
+        <Button size="sm" variant="ghost" onClick={() => window.open("https://datastudio.google.com/u/0/reporting/5755410c-43ab-4d79-afa7-a770c11eef2a/page/bEQqD", "_blank")} className="h-8 text-xs text-blue-600"><ExternalLink className="h-3 w-3 mr-1" />DataStudio</Button>
         <Button size="sm" onClick={handleImport} disabled={importing} className="h-8 text-xs bg-green-600 hover:bg-green-700">
           {importing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}从 DataStudio 导入
         </Button>

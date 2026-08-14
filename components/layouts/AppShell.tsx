@@ -363,6 +363,9 @@ export default function AppShell({
   // Permission key mapping for nav items
   const PARENT_PERM: Record<string, string> = {
     "概览": "overview", "教务": "education", "财务": "finance", "系统": "system",
+    "我的工作台": "education.workspace", "学生签到": "system.attendance",
+    "每日日志": "education.logs", "我的学生": "education.students",
+    "教学评估": "education.teaching_report",
   }
   const CHILD_PERM: Record<string, string> = {
     "/": "overview.dashboard", "/dashboard/slideshow": "overview.slideshow",
@@ -383,22 +386,34 @@ export default function AppShell({
     "/points/leaderboard": "system.points_leaderboard",
     "/user-management": "system.users", "/center-management": "system.centers",
     "/settings": "system.settings",
+    "/teacher-workspace": "education.workspace",
+    "/teacher-teaching-report": "education.teaching_report",
+    "/resource-library": "education.resources",
+    "/tv-board": "system.tv_board",
+    "/dashboard/slideshow": "overview.slideshow",
   }
 
   // Filter nav items based on permissions
   const filterByPerms = (items: NavItem[]): NavItem[] => {
+    // Admin role: skip permission checks, show everything
+    if (userRole === 'admin') return items
+    
     return items.filter(item => {
       if (item.children) {
         // Parent item: check parent permission key
         const parentKey = PARENT_PERM[item.label]
-        if (parentKey && rolePerms[parentKey] === false) return false
+        // If parent key exists and not explicitly true, hide
+        if (parentKey && rolePerms[parentKey] !== true) return false
         // Filter children
-        item.children = filterByPerms(item.children)
-        return item.children.length > 0
+        const filteredChildren = filterByPerms(item.children)
+        if (filteredChildren.length === 0) return false
+        // Return new object to avoid mutating config
+        return { ...item, children: filteredChildren }
       }
       // Leaf item: check child permission key by href
       const childKey = item.href ? CHILD_PERM[item.href] : undefined
-      if (childKey && rolePerms[childKey] === false) return false
+      // If child key exists and not explicitly true, hide
+      if (childKey && rolePerms[childKey] !== true) return false
       return true
     })
   }

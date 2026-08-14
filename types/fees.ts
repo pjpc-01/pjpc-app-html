@@ -2,8 +2,8 @@
 export interface Fee {
   id: string
   name: string
-  amount: number
-  type: 'monthly' | 'one-time' | 'annual' | 'six-month'
+  amount: number  // 单价
+  type: 'monthly' | 'one-time' | 'annual' | 'six-month' | 'daily'
   description?: string
   status: 'active' | 'inactive'
   category?: string

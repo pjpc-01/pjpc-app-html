@@ -168,29 +168,31 @@ export function useStudentFees() {
     let baseAmount = 0;
     let discount = 0;
     let discountType: 'amount' | 'percent' = 'amount';
-    if (isEditMode) {
-      const studentAssignments = localFeeAssignments.get(studentId);
-      if (!studentAssignments || !allFees) return 0;
-      baseAmount = allFees
-        .filter(fee => studentAssignments.has(fee.id))
-        .reduce((total, fee) => total + (fee.amount || 0), 0);
-      const adj = localAdjustments.get(studentId);
-      discount = adj?.discount || 0;
-      discountType = adj?.discount_type || 'amount';
-    } else {
-      const assignment = feeByStudentId.get(studentId);
-      if (!assignment) return 0;
-      const activeItems = assignment.fee_items.filter((item: FeeItem) => item.active === true);
-      baseAmount = activeItems.reduce((total, item: FeeItem) => total + (item.amount || 0), 0);
-      // Prefer local adjustments (user may have set discount in FeeCard without entering global edit mode)
-      const localAdj = localAdjustments.get(studentId);
-      if (localAdj && (localAdj.discount > 0 || localAdj.discount_type !== 'amount')) {
-        discount = localAdj.discount;
-        discountType = localAdj.discount_type || 'amount';
-      } else {
-        discount = assignment.discount || 0;
-        discountType = assignment.discount_type || 'amount';
+    // Always read from PB fee_items (preserves per-student quantities)
+    const assignment = feeByStudentId.get(studentId);
+    if (!assignment) {
+      // Fallback to edit-mode local assignments
+      if (isEditMode && allFees) {
+        const studentAssignments = localFeeAssignments.get(studentId);
+        if (studentAssignments) {
+          baseAmount = allFees
+            .filter(fee => studentAssignments.has(fee.id))
+            .reduce((total, fee) => total + (fee.amount || 0), 0);
+        }
       }
+      if (!baseAmount) return 0;
+    } else {
+      const activeItems = assignment.fee_items.filter((item: FeeItem) => item.active === true);
+      baseAmount = activeItems.reduce((total, item: FeeItem) => total + ((item.amount || 0) * (item.quantity || 1)), 0);
+    }
+    // Prefer local adjustments
+    const localAdj = localAdjustments.get(studentId);
+    if (localAdj && (localAdj.discount > 0 || localAdj.discount_type !== 'amount')) {
+      discount = localAdj.discount;
+      discountType = localAdj.discount_type || 'amount';
+    } else if (assignment) {
+      discount = assignment.discount || 0;
+      discountType = assignment.discount_type || 'amount';
     }
     const discountAmount = discountType === 'percent' ? baseAmount * (discount / 100) : discount;
     return Math.max(0, baseAmount - discountAmount);
@@ -402,20 +404,22 @@ export function useStudentFees() {
         const discountType = adj?.discount_type || 'amount';
         const totalAmount = Math.max(0, baseAmount - (discountType === 'percent' ? baseAmount * (discount / 100) : discount));
 
-        // Create fee items array
+        // Create fee items array — preserve existing quantities from PB
+        const existingRecord = feeByStudentId.get(studentId);
+        const existingItems = existingRecord?.fee_items || []
+        const existingQty: Record<string, number> = {}
+        existingItems.forEach((fi: any) => { if (fi.quantity) existingQty[fi.id] = fi.quantity })
         const feeItems = allFees
           .filter((fee: any) => feeIds.has(fee.id))
           .map((fee: any) => ({
             id: fee.id,
             name: fee.name,
             amount: fee.amount,
+            quantity: existingQty[fee.id] || 1,
             active: true
           }));
 
         debugLog(`🔄 Saving for student ID: ${studentId}, Total: ${totalAmount}, Items: ${feeItems.length}`);
-
-        // Find existing record by student ID
-        const existingRecord = feeByStudentId.get(studentId);
 
         if (existingRecord) {
           // BUG #8: update branch also updates `status`. If fee items are
