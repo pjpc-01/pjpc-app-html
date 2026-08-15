@@ -5,6 +5,14 @@ import { getSocsoEmployee, getSocsoEmployer, getEisContribution, getPCB } from '
 // PCB — uses shared getPCB from perkeso-rates
 function calculateProgressivePCB(grossSalary: number): number { return getPCB(grossSalary) }
 
+// PCB 计算：勾选才扣。有固定金额用金额，否则用八仙率；都不填则用官方算法
+function calculatePCB(structure: any, grossSalary: number): number {
+  if (!structure.pcb_enabled) return 0
+  if (structure.pcb_amount && structure.pcb_amount > 0) return structure.pcb_amount
+  if (structure.pcb_rate && structure.pcb_rate > 0) return grossSalary * (structure.pcb_rate / 100)
+  return getPCB(grossSalary)
+}
+
 function calculateSOCSO(grossSalary: number): number { return getSocsoEmployee(grossSalary) }
 function calculateEmployerSOCSO(grossSalary: number): number { return getSocsoEmployer(grossSalary) }
 function calculateEIS(grossSalary: number): number { return getEisContribution(grossSalary) }
@@ -80,27 +88,103 @@ export async function POST(request: NextRequest) {
         const startDate = `${year}-${month.toString().padStart(2, '0')}-01`
         const endDate = new Date(year, month, 0).toISOString().split('T')[0] // 月末日期
 
-        const schedules = await pb.collection('schedules').getList(1, 100, {
+        const schedules = await pb.collection('schedules').getList(1, 200, {
           filter: `teacher_id = "${teacher.id}" && date >= "${startDate}" && date <= "${endDate}"`
         })
 
-        // 计算工作时长
+        // 计算工作时长：排班为主，打卡兜底
+        // 1) 有排班的用排班时间（start_time ~ end_time）
+        // 2) 没排班的用实际打卡（check_in ~ check_out，当天多次打卡累加）
+        // 3) 都没有则按默认月工时 160h 反推（月薪类型）
         let totalHours = 0
         let overtimeHours = 0
+
+        // 收集排班日期，避免同一老师同一天重复计算
+        const scheduledDates = new Set<string>()
+        const scheduleHoursByDate: Record<string, number> = {}
 
         schedules.items.forEach(schedule => {
           if (schedule.start_time && schedule.end_time) {
             const start = new Date(`2000-01-01T${schedule.start_time}`)
             const end = new Date(`2000-01-01T${schedule.end_time}`)
             const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-            
-            totalHours += hours
-            
-            // 检查是否加班（超过8小时）
-            if (hours > 8) {
-              overtimeHours += hours - 8
-            }
+            if (hours < 0 || hours > 24) return
+
+            const dateStr = (schedule.date || '').split(' ')[0]
+            scheduledDates.add(dateStr)
+            scheduleHoursByDate[dateStr] = (scheduleHoursByDate[dateStr] || 0) + hours
           }
+        })
+
+        // 打卡兜底：只补没有排班的日期
+        if (schedules.items.length > 0 && scheduledDates.size > 0) {
+          const attendanceList = await pb.collection('teacher_attendance').getList(1, 500, {
+            filter: `teacher_id = "${teacher.id}" && check_in >= "${startDate}" && check_in <= "${endDate}T23:59:59.999Z"`
+          })
+
+          attendanceList.items.forEach(att => {
+            const attDate = (att.check_in || '').split('T')[0]
+            if (scheduledDates.has(attDate)) return // 这天有排班，跳过
+
+            const checkIn = att.check_in ? new Date(att.check_in) : null
+            const checkOut = att.check_out ? new Date(att.check_out) : null
+            if (!checkIn || !checkOut) return
+
+            const hours = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60)
+            if (hours < 0 || hours > 24) return
+            totalHours += hours
+          })
+
+          // 加上排班工时
+          for (const dateStr of Object.keys(scheduleHoursByDate)) {
+            totalHours += scheduleHoursByDate[dateStr]
+          }
+        } else {
+          // 无排班：直接用打卡
+          const attendanceList = await pb.collection('teacher_attendance').getList(1, 500, {
+            filter: `teacher_id = "${teacher.id}" && check_in >= "${startDate}" && check_in <= "${endDate}T23:59:59.999Z"`
+          })
+
+          attendanceList.items.forEach(att => {
+            const checkIn = att.check_in ? new Date(att.check_in) : null
+            const checkOut = att.check_out ? new Date(att.check_out) : null
+            if (!checkIn || !checkOut) return
+
+            const hours = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60)
+            if (hours < 0 || hours > 24) return
+            totalHours += hours
+          })
+        }
+
+        // 都没有任何工时数据：月薪用默认 160h；时薪无法估算则记 0（避免乱发钱）
+        const hasHoursData = totalHours > 0
+        if (!hasHoursData) {
+          if (structure.salary_type === 'monthly') {
+            totalHours = 160 // 默认月工时
+          }
+        }
+
+        // 加班计算（超过 8 小时/天的部分）
+        overtimeHours = 0
+        for (const dateStr of Object.keys(scheduleHoursByDate)) {
+          const h = scheduleHoursByDate[dateStr]
+          if (h > 8) overtimeHours += h - 8
+        }
+        // 打卡日期也检查加班
+        const attendanceList2 = await pb.collection('teacher_attendance').getList(1, 500, {
+          filter: `teacher_id = "${teacher.id}" && check_in >= "${startDate}" && check_in <= "${endDate}T23:59:59.999Z"`
+        })
+        const seenAttDates = new Set<string>()
+        attendanceList2.items.forEach(att => {
+          const attDate = (att.check_in || '').split('T')[0]
+          if (seenAttDates.has(attDate)) return
+          seenAttDates.add(attDate)
+          if (scheduledDates.has(attDate)) return // 排班日期已算过加班
+          const checkIn = att.check_in ? new Date(att.check_in) : null
+          const checkOut = att.check_out ? new Date(att.check_out) : null
+          if (!checkIn || !checkOut) return
+          const h = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60)
+          if (h > 8) overtimeHours += h - 8
         })
 
         // 计算薪资
@@ -120,14 +204,22 @@ export async function POST(request: NextRequest) {
         const bonusItems: { name: string; amount: number; taxable: boolean }[] = structure.bonus_items || []
         const totalBonuses = bonusItems.reduce((sum, b) => sum + (b.amount || 0), 0)
         
-        // gross = 底薪 + 加班 + 应税津贴
-        const grossSalary = baseSalary + overtimePay + taxableAllowances
+        // gross 按薪资类型：
+        // - monthly: 底薪 + 加班 + 应税津贴
+        // - hourly:  时薪 × 工时 + 加班 + 应税津贴
+        // - commission: 底薪 + 加班 + 应税津贴（佣金另行处理）
+        let grossSalary: number
+        if (structure.salary_type === 'hourly') {
+          grossSalary = hourlyRate * totalHours + overtimePay + taxableAllowances
+        } else {
+          grossSalary = baseSalary + overtimePay + taxableAllowances
+        }
 
         // 计算扣除项（基于 grossSalary）
         const epfDeduction = grossSalary * (structure.epf_rate || 0.11)
         const socsoDeduction = calculateSOCSO(grossSalary)
         const eisDeduction = calculateEIS(grossSalary)
-        const taxDeduction = calculateProgressivePCB(grossSalary)
+        const taxDeduction = calculatePCB(structure, grossSalary)
 
         // 雇主缴纳（基于 grossSalary）
         const epfEmployer = grossSalary * (structure.epf_employer_rate || (grossSalary > 5000 ? 0.12 : 0.13))

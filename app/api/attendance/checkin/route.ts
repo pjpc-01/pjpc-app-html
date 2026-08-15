@@ -205,10 +205,11 @@ async function handlePointsIntegration(
   console.log(`[POINTS DEBUG] timeStr=${timeStr} deadline=${deadline} isLate=${isLate} points=${points}`)
 
   // Check if student already got points today (avoid duplicate)
+  // ⚠️ dedup on point_logs (has reason + student fields); points collection lacks reason field → 400
   const today = todayLocal()
-  const ptsFilter = `studentId="${studentId}" && created >= "${today} 00:00:00" && reason ~ "考勤"`
+  const ptsFilter = `student="${studentId}" && created >= "${today} 00:00:00" && reason ~ "考勤"`
   const existingPts = await fetch(
-    `${PB_URL}/api/collections/points/records?perPage=1&filter=${encodeURIComponent(ptsFilter)}`,
+    `${PB_URL}/api/collections/point_logs/records?perPage=1&filter=${encodeURIComponent(ptsFilter)}`,
     { headers: { Authorization: token } }
   ).then(r => r.json())
 

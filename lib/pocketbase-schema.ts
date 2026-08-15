@@ -464,6 +464,9 @@ export interface TeacherSalaryStructure {
   socso_rate: number
   eis_rate: number
   tax_rate: number
+  pcb_enabled?: boolean
+  pcb_rate?: number
+  pcb_amount?: number
   epf_employer_rate?: number
   salary_type: 'monthly' | 'hourly' | 'commission'
   effective_date: string

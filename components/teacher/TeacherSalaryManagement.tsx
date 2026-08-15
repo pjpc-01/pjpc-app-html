@@ -63,6 +63,9 @@ interface TeacherSalaryStructure {
   socso_rate: number
   eis_rate: number
   tax_rate: number
+  pcb_enabled?: boolean
+  pcb_rate?: number
+  pcb_amount?: number
   epf_employer_rate?: number
   socso_employer_rate?: number
   eis_employer_rate?: number
@@ -280,6 +283,9 @@ export default function TeacherSalaryManagement() {
     socso_rate: 0.005,
     eis_rate: 0.002,
     tax_rate: 0,
+    pcb_enabled: false,
+    pcb_rate: 0,
+    pcb_amount: 0,
     epf_employer_rate: 0.13,
     socso_employer_rate: 0.0175,
     eis_employer_rate: 0.002,
@@ -289,7 +295,7 @@ export default function TeacherSalaryManagement() {
     end_date: '',
     notes: ''
   })
-  
+
   const [recordForm, setRecordForm] = useState({
     teacher_id: '',
     salary_period: '',
@@ -305,6 +311,9 @@ export default function TeacherSalaryManagement() {
     socso_rate: 0.005,
     eis_rate: 0.002,
     tax_rate: 0,
+    pcb_enabled: false,
+    pcb_rate: 0,
+    pcb_amount: 0,
     epf_employer_rate: 0.13,
     epf_deduction: 0,
     socso_deduction: 0,
@@ -424,7 +433,17 @@ export default function TeacherSalaryManagement() {
     const epfDeduction = grossSalary * form.epf_rate
     const socsoDeduction = grossSalary * form.socso_rate
     const eisDeduction = grossSalary * form.eis_rate
-    const taxDeduction = grossSalary * form.tax_rate
+    // PCB: 勾选才扣；有固定金额用金额，否则用八仙率
+    let taxDeduction = 0
+    if (form.pcb_enabled) {
+      if (form.pcb_amount && form.pcb_amount > 0) {
+        taxDeduction = form.pcb_amount
+      } else if (form.pcb_rate && form.pcb_rate > 0) {
+        taxDeduction = grossSalary * (form.pcb_rate / 100)
+      } else {
+        taxDeduction = grossSalary * form.tax_rate
+      }
+    }
     const totalDeductions = epfDeduction + socsoDeduction + eisDeduction + taxDeduction
     const netSalary = grossSalary - totalDeductions
     const takeHome = netSalary + nonTaxableAllowances + bonuses
@@ -533,6 +552,9 @@ export default function TeacherSalaryManagement() {
           socso_rate: globalRates.socso,
           eis_rate: globalRates.eis,
           tax_rate: globalRates.tax,
+          pcb_enabled: false,
+          pcb_rate: 0,
+          pcb_amount: 0,
           epf_employer_rate: globalRates.epf_employer || 0.13,
           socso_employer_rate: globalRates.socso_employer || 0.0175,
           eis_employer_rate: globalRates.eis_employer || 0.002,
@@ -589,6 +611,9 @@ export default function TeacherSalaryManagement() {
       socso_rate: structure.socso_rate ?? globalRates.socso,
       eis_rate: structure.eis_rate ?? globalRates.eis,
       tax_rate: structure.tax_rate ?? globalRates.tax,
+      pcb_enabled: structure.pcb_enabled ?? false,
+      pcb_rate: structure.pcb_rate ?? 0,
+      pcb_amount: structure.pcb_amount ?? 0,
       epf_employer_rate: (structure.epf_employer_rate ?? globalRates.epf_employer) || 0.13,
       socso_employer_rate: (structure.socso_employer_rate ?? globalRates.socso_employer) || 0.0175,
       eis_employer_rate: (structure.eis_employer_rate ?? globalRates.eis_employer) || 0.002,
@@ -811,7 +836,17 @@ export default function TeacherSalaryManagement() {
     const epfEmployer = gross * (recordForm.epf_employer_rate || (gross > 5000 ? 0.12 : 0.13))
     const socsoEmployer = getSocsoEmployer(gross)
     const eisEmployer = getEisContribution(gross)
-    const tax = getPCB(gross)
+    // PCB: 勾选才扣；有固定金额用金额，否则用八仙率
+    let tax = 0
+    if (recordForm.pcb_enabled) {
+      if (recordForm.pcb_amount && recordForm.pcb_amount > 0) {
+        tax = recordForm.pcb_amount
+      } else if (recordForm.pcb_rate && recordForm.pcb_rate > 0) {
+        tax = gross * (recordForm.pcb_rate / 100)
+      } else {
+        tax = getPCB(gross)
+      }
+    }
     const totalDed = epf + socso + eis + tax + (recordForm.other_deductions || 0)
     const net = gross - totalDed
     const extra = nonTaxableAllowances + totalBonuses + (recordForm.commission || 0)
@@ -863,6 +898,9 @@ export default function TeacherSalaryManagement() {
           socso_rate: 0.005,
           eis_rate: 0.002,
           tax_rate: 0,
+          pcb_enabled: false,
+          pcb_rate: 0,
+          pcb_amount: 0,
           epf_employer_rate: 0.13,
           epf_deduction: 0,
           socso_deduction: 0,
@@ -1523,6 +1561,40 @@ export default function TeacherSalaryManagement() {
               </div>
             </div>
 
+            {/* ── PCB 预扣税 ── */}
+            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50/50 p-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!structureForm.pcb_enabled}
+                  onChange={(e) => setStructureForm(prev => ({ ...prev, pcb_enabled: e.target.checked }))}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <span className="text-sm font-medium text-gray-700">计算 PCB 预扣税</span>
+              </label>
+              <p className="text-xs text-gray-500 mt-1">勾选后才会扣除 PCB；不勾则 PCB 为 0</p>
+              {structureForm.pcb_enabled && (
+                <div className="grid grid-cols-2 gap-4 mt-3">
+                  <div>
+                    <Label htmlFor="pcb_rate">PCB 八仙率 (%)</Label>
+                    <Input id="pcb_rate" type="number" step="0.1" min="0" max="100"
+                      value={structureForm.pcb_rate || ''}
+                      placeholder="如 3"
+                      onChange={(e) => setStructureForm(prev => ({ ...prev, pcb_rate: parseFloat(e.target.value) || 0 }))} />
+                    <p className="text-xs text-gray-500 mt-1">按 gross × 八仙率</p>
+                  </div>
+                  <div>
+                    <Label htmlFor="pcb_amount">或固定金额 (RM)</Label>
+                    <Input id="pcb_amount" type="number" step="0.01" min="0"
+                      value={structureForm.pcb_amount || ''}
+                      placeholder="如 150"
+                      onChange={(e) => setStructureForm(prev => ({ ...prev, pcb_amount: parseFloat(e.target.value) || 0 }))} />
+                    <p className="text-xs text-gray-500 mt-1">固定数目优先于八仙率</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="effective_date">生效日期</Label>
@@ -1603,6 +1675,9 @@ export default function TeacherSalaryManagement() {
                     socso_rate: structure?.socso_rate || globalRates.socso,
                     eis_rate: structure?.eis_rate || globalRates.eis,
                     tax_rate: structure?.tax_rate || globalRates.tax,
+                    pcb_enabled: structure?.pcb_enabled ?? false,
+                    pcb_rate: structure?.pcb_rate ?? 0,
+                    pcb_amount: structure?.pcb_amount ?? 0,
                   }))
                 }}>
                   <SelectTrigger>
