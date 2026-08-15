@@ -116,8 +116,9 @@ const NAV_LABEL_MAP: Record<string, string> = {
 }
 
 const ROLE_CONFIGS: Record<string, RoleConfig> = {
-  admin: {
-    title: "管理后台",
+  // All roles share the same full nav tree — filterByPerms handles visibility
+  _default: {
+    title: "PJPC",
     navItems: [
       {
         label: "概览",
@@ -186,65 +187,6 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
       },
     ],
   },
-  teacher: {
-    title: "教师工作台",
-    navItems: [
-      { label: "我的工作台", href: "/teacher-workspace", icon: LayoutDashboard },
-      { label: "学生签到", href: "/attendance", icon: UserCheck },
-      { label: "每日日志", href: "/daily-logs", icon: FileEdit },
-      { label: "我的学生", href: "/student-management", icon: Users },
-      { label: "教学评估", href: "/teacher-teaching-report", icon: ClipboardCheck },
-    ],
-  },
-  parent: {
-    title: "家长门户",
-    navItems: [
-      {
-        label: "孩子总览",
-        href: "/parent/dashboard",
-        icon: LayoutDashboard,
-      },
-      {
-        label: "每日日志",
-        href: "/parent/dailylogs",
-        icon: FileEdit,
-      },
-      {
-        label: "成绩查询",
-        href: "/parent/grades",
-        icon: BarChart3,
-      },
-      {
-        label: "缴费记录",
-        href: "/parent/payments",
-        icon: CreditCard,
-      },
-      {
-        label: "出勤记录",
-        href: "/parent/attendance",
-        icon: ClipboardCheck,
-      },
-      {
-        label: "通知消息",
-        href: "/parent/notifications",
-        icon: Bell,
-      },
-    ],
-  },
-  accountant: {
-    title: "财务工作台",
-    navItems: [
-      { label: "财务概览", href: "/finance/overview", icon: LayoutDashboard },
-      { label: "收费管理", href: "/finance/fees", icon: Receipt },
-      { label: "学生费用", href: "/finance/student-fees", icon: GraduationCap },
-      { label: "发票管理", href: "/finance/invoices", icon: FileText },
-      { label: "付款管理", href: "/finance/payments", icon: CreditCard },
-      { label: "收据管理", href: "/finance/receipts", icon: ScrollText },
-      { label: "薪资管理", href: "/finance/payroll", icon: Wallet },
-      { label: "支出管理", href: "/finance/expenses", icon: Wallet },
-      { label: "财务报表", href: "/finance/reports", icon: BarChart3 },
-    ],
-  },
 }
 
 interface AppShellProps {
@@ -294,7 +236,7 @@ export default function AppShell({
       .catch(() => {})
   }, [])
 
-  // Load custom nav order from localStorage
+  // Load custom nav order from localStorage (top-level only)
   useEffect(() => {
     try {
       const saved = localStorage.getItem(`pjpc_nav_order_${userRole}`)
@@ -309,20 +251,40 @@ export default function AppShell({
   }
 
   // Apply custom order to nav items
+  // Top-level: use navOrder state
+  // Children: read per-parent localStorage key
   const applyNavOrder = (items: NavItem[]): NavItem[] => {
-    if (!navOrder.length) return items
-    const orderMap = new Map(navOrder.map((label, i) => [label, i]))
-    const sorted = [...items].sort((a, b) => {
-      const ai = orderMap.get(a.label) ?? 999
-      const bi = orderMap.get(b.label) ?? 999
-      return ai - bi
+    const sorted = navOrder.length ? [...items].sort((a, b) => {
+      const ai = navOrder.indexOf(a.label)
+      const bi = navOrder.indexOf(b.label)
+      return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi)
+    }) : [...items]
+    
+    return sorted.map(item => {
+      if (!item.children?.length) return item
+      // Read per-parent child order from localStorage
+      try {
+        const childOrderStr = typeof window !== 'undefined' 
+          ? localStorage.getItem(`pjpc_nav_order_${userRole}_${item.label}`) 
+          : null
+        if (!childOrderStr) return item
+        const childOrder: string[] = JSON.parse(childOrderStr)
+        const sortedChildren = [...item.children].sort((a, b) => {
+          const ai = childOrder.indexOf(a.label)
+          const bi = childOrder.indexOf(b.label)
+          return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi)
+        })
+        return { ...item, children: sortedChildren }
+      } catch {
+        return item
+      }
     })
-    return sorted
   }
 
   // Drag handlers
-  const handleDragStart = (e: React.DragEvent, label: string) => {
+  const handleDragStart = (e: React.DragEvent, label: string, parentLabel?: string) => {
     e.dataTransfer.setData("text/plain", label)
+    if (parentLabel) e.dataTransfer.setData("parent", parentLabel)
     e.dataTransfer.effectAllowed = "move"
   }
 
@@ -334,22 +296,48 @@ export default function AppShell({
 
   const handleDragLeave = () => setDragOver(null)
 
-  const handleDrop = (e: React.DragEvent, targetLabel: string) => {
+  const handleDrop = (e: React.DragEvent, targetLabel: string, parentLabel?: string) => {
     e.preventDefault()
     setDragOver(null)
     const draggedLabel = e.dataTransfer.getData("text/plain")
-    if (draggedLabel === targetLabel) return
+    const draggedParent = e.dataTransfer.getData("parent") || undefined
+    if (draggedLabel === targetLabel && draggedParent === parentLabel) return
+    // Only allow drag within same level
+    if (draggedParent !== parentLabel) return
 
     const items = applyNavOrder(filteredNavItems)
-    const labels = items.map(i => i.label)
-    const fromIdx = labels.indexOf(draggedLabel)
-    const toIdx = labels.indexOf(targetLabel)
+    let labels: string[]
+    let fromIdx: number
+    let toIdx: number
+
+    if (parentLabel) {
+      // Reordering children within a parent
+      const parent = items.find(i => i.label === parentLabel)
+      if (!parent?.children) return
+      labels = parent.children.map(c => c.label)
+      fromIdx = labels.indexOf(draggedLabel)
+      toIdx = labels.indexOf(targetLabel)
+    } else {
+      // Reordering top-level items
+      labels = items.map(i => i.label)
+      fromIdx = labels.indexOf(draggedLabel)
+      toIdx = labels.indexOf(targetLabel)
+    }
     if (fromIdx < 0 || toIdx < 0) return
 
     const newLabels = [...labels]
     newLabels.splice(fromIdx, 1)
     newLabels.splice(toIdx, 0, draggedLabel)
-    saveNavOrder(newLabels)
+
+    if (parentLabel) {
+      // Save child order with parent prefix
+      const orderKey = `pjpc_nav_order_${userRole}_${parentLabel}`
+      localStorage.setItem(orderKey, JSON.stringify(newLabels))
+    } else {
+      saveNavOrder(newLabels)
+    }
+    // Force re-render by toggling navOrder
+    setNavOrder([...newLabels])
   }
 
   const resetNavOrder = () => {
@@ -357,7 +345,7 @@ export default function AppShell({
     localStorage.removeItem(`pjpc_nav_order_${userRole}`)
   }
 
-  const config = ROLE_CONFIGS[userRole] || ROLE_CONFIGS.admin
+  const config = ROLE_CONFIGS._default
   const { logout, user, loading } = useAuth()
 
   // Permission key mapping for nav items
@@ -390,35 +378,34 @@ export default function AppShell({
     "/teacher-teaching-report": "education.teaching_report",
     "/resource-library": "education.resources",
     "/tv-board": "system.tv_board",
-    "/dashboard/slideshow": "overview.slideshow",
+    "/admin": "overview.admin_panel",
   }
 
-  // Filter nav items based on permissions
+  // Filter nav items based on permissions (whitelist mode)
   const filterByPerms = (items: NavItem[]): NavItem[] => {
     // Admin role: skip permission checks, show everything
     if (userRole === 'admin') return items
+    // Not loaded yet: show nothing to avoid flash
+    if (Object.keys(rolePerms).length === 0) return []
     
     return items.filter(item => {
       if (item.children) {
-        // Parent item: check parent permission key
+        // Parent: check parent key
         const parentKey = PARENT_PERM[item.label]
-        // If parent key exists and not explicitly true, hide
         if (parentKey && rolePerms[parentKey] !== true) return false
         // Filter children
         const filteredChildren = filterByPerms(item.children)
         if (filteredChildren.length === 0) return false
-        // Return new object to avoid mutating config
         return { ...item, children: filteredChildren }
       }
-      // Leaf item: check child permission key by href
+      // Leaf: MUST have mapping AND be true
       const childKey = item.href ? CHILD_PERM[item.href] : undefined
-      // If child key exists and not explicitly true, hide
-      if (childKey && rolePerms[childKey] !== true) return false
-      return true
+      if (!childKey) return false  // no mapping = hidden
+      return rolePerms[childKey] === true
     })
   }
 
-  const filteredNavItems = applyNavOrder(filterByPerms(config.navItems))
+  const filteredNavItems = applyNavOrder(filterByPerms(config?.navItems || []))
 
   const handleLogout = async () => {
     try {
@@ -497,17 +484,17 @@ export default function AppShell({
     return <>{children}</>
   }
 
-  const renderNavItem = (item: NavItem, depth = 0) => {
+  const renderNavItem = (item: NavItem, depth = 0, parentLabel?: string) => {
     const active = isActive(item.href)
     const hasChildren = item.children && item.children.length > 0
     const expanded = expandedMenus.has(item.label)
 
-    const dragProps = navEditMode && depth === 0 ? {
+    const dragProps = navEditMode ? {
       draggable: true,
-      onDragStart: (e: React.DragEvent) => handleDragStart(e, item.label),
+      onDragStart: (e: React.DragEvent) => handleDragStart(e, item.label, parentLabel),
       onDragOver: (e: React.DragEvent) => handleDragOver(e, item.label),
       onDragLeave: handleDragLeave,
-      onDrop: (e: React.DragEvent) => handleDrop(e, item.label),
+      onDrop: (e: React.DragEvent) => handleDrop(e, item.label, parentLabel),
     } : {}
 
     const isDragTarget = dragOver === item.label
@@ -518,7 +505,7 @@ export default function AppShell({
         {...dragProps}
       >
         <div className="flex items-center gap-1">
-          {navEditMode && depth === 0 && (
+          {navEditMode && (
             <GripVertical className="h-3.5 w-3.5 text-gray-300 cursor-grab active:cursor-grabbing flex-shrink-0" />
           )}
           <div className="flex-1 min-w-0">
@@ -542,9 +529,9 @@ export default function AppShell({
                 />
               </button>
             </div>
-            {expanded && (
+            {expanded && item.children && (
             <div className="ml-4 mt-1 space-y-1 border-l border-gray-200/30 pl-3">
-                {item.children.map((child) => renderNavItem(child, depth + 1))}
+                {item.children.map((child) => renderNavItem(child, depth + 1, item.label))}
               </div>
             )}
           </>
