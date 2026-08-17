@@ -15,14 +15,17 @@ export async function GET(request: NextRequest) {
     const q = request.nextUrl.searchParams.get('q') || ''
     if (q.length < 1) return NextResponse.json({ students: [], teachers: [] })
 
-    const filter = `name~"${q}"`
-    const encFilter = encodeURIComponent(filter)
+    // 学生/教师都只显示 active（排除 deleted/inactive/lost/graduated/withdrawn/transferred）
+    const studentFilter = `name~"${q}" && status="active"`
+    const teacherFilter = `name~"${q}" && status="active"`
+    const encStudent = encodeURIComponent(studentFilter)
+    const encTeacher = encodeURIComponent(teacherFilter)
 
     const [sRes, tRes] = await Promise.all([
-      fetch(`${PB_URL}/api/collections/students/records?perPage=8&filter=${encFilter}`, {
+      fetch(`${PB_URL}/api/collections/students/records?perPage=8&filter=${encStudent}`, {
         headers: { Authorization: token },
       }).then(r => r.json()),
-      fetch(`${PB_URL}/api/collections/teachers/records?perPage=8&filter=${encFilter}`, {
+      fetch(`${PB_URL}/api/collections/teachers/records?perPage=8&filter=${encTeacher}`, {
         headers: { Authorization: token },
       }).then(r => r.json()),
     ])
