@@ -48,6 +48,8 @@ export interface Student {
   emergency_contacts?: { name: string; phone: string; relation: string }[]
   healthInfo?: string
   pickupMethod?: 'parent' | 'guardian' | 'authorized' | 'public' | 'walking'
+  // 载送人动态列表 [{name, phone, relation}]
+  pickup_persons?: { name: string; phone: string; relation: string }[]
   
   // 接送安排
   authorizedPickup1Name?: string
@@ -117,6 +119,8 @@ export interface StudentCreateData {
   emergency_contacts?: { name: string; phone: string; relation: string }[]
   healthInfo?: string
   pickupMethod?: 'parent' | 'guardian' | 'authorized' | 'public' | 'walking'
+  // 载送人动态列表 [{name, phone, relation}]
+  pickup_persons?: { name: string; phone: string; relation: string }[]
   
   // 接送安排
   authorizedPickup1Name?: string
@@ -231,6 +235,7 @@ export const getAllStudents = async (): Promise<Student[]> => {
       emergencyPhone: student.emergencyPhone,
       healthInfo: student.healthInfo,
       pickupMethod: student.pickupMethod,
+      pickup_persons: student.pickup_persons,
       
       // 接送安排
       authorizedPickup1Name: student.authorizedPickup1Name,
@@ -465,6 +470,7 @@ export const updateStudent = async (id: string, studentData: any): Promise<Stude
     if (get('emergency_contacts') !== undefined) pbData.emergency_contacts = get('emergency_contacts')
     if (get('healthInfo') !== undefined) pbData.healthInfo = get('healthInfo')
     if (get('pickupMethod') !== undefined) pbData.pickupMethod = get('pickupMethod')
+    if (get('pickup_persons') !== undefined) pbData.pickup_persons = get('pickup_persons')
     
     // Address
     if (get('address', 'home_address') !== undefined) pbData.address = get('address', 'home_address')
@@ -586,6 +592,7 @@ export const getStudentById = async (id: string): Promise<Student | null> => {
       emergencyPhone: student.emergencyPhone,
       healthInfo: student.healthInfo,
       pickupMethod: student.pickupMethod,
+      pickup_persons: student.pickup_persons,
       
       // 接送安排
       authorizedPickup1Name: student.authorizedPickup1Name,

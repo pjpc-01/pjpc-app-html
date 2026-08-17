@@ -76,6 +76,7 @@ export default function StudentForm({
     emergency_contacts: [] as { name: string; phone: string; relation: string }[],
     healthInfo: '',
     pickupMethod: 'parent',
+    pickup_persons: [] as { name: string; phone: string; relation: string }[],
     // 接送安排 - 已改由 /pickup 页面管理（不再在表单填写）
     registrationDate: new Date().toISOString().split('T')[0],
     tuitionStatus: 'pending',
@@ -130,6 +131,7 @@ export default function StudentForm({
         emergency_contacts: student.emergency_contacts || [],
         healthInfo: student.healthInfo || '',
         pickupMethod: student.pickupMethod || 'parent',
+        pickup_persons: student.pickup_persons || [],
         // 接送安排 - 已改由 /pickup 页面管理（不再在表单填写）
         registrationDate: student.registrationDate || new Date().toISOString().split('T')[0],
         tuitionStatus: student.tuitionStatus || 'pending',
@@ -257,6 +259,7 @@ export default function StudentForm({
         emergency_contacts: formData.emergency_contacts || [],
         healthInfo: formData.healthInfo || '',
         pickupMethod: formData.pickupMethod || 'parent',
+        pickup_persons: formData.pickup_persons || [],
         registrationDate: formData.registrationDate || new Date().toISOString().split('T')[0],
         tuitionStatus: formData.tuitionStatus || 'pending',
       }
@@ -931,7 +934,80 @@ export default function StudentForm({
                 </Select>
               </div>
 
-              <p className="text-xs text-gray-500">载送人/接送记录请在「接送管理」页面登记</p>
+              {/* 载送人资料：选监护人或授权人时显示 */}
+              {(formData.pickupMethod === 'guardian' || formData.pickupMethod === 'authorized') && (
+                <div className="space-y-3 border rounded-lg p-3 bg-gray-50">
+                  <Label className="text-sm font-medium">
+                    {formData.pickupMethod === 'guardian' ? '监护人资料' : '授权人资料'}
+                  </Label>
+                  {(formData.pickup_persons || []).map((pp: any, idx: number) => (
+                    <div key={idx} className="border rounded-lg p-3 space-y-2 bg-white">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                          <Label>姓名</Label>
+                          <Input
+                            value={pp.name || ''}
+                            onChange={(e) => {
+                              const list = [...(formData.pickup_persons || [])]
+                              list[idx] = { ...list[idx], name: e.target.value }
+                              setFormData((prev: any) => ({ ...prev, pickup_persons: list }))
+                            }}
+                            placeholder="载送人姓名"
+                          />
+                        </div>
+                        <div>
+                          <Label>电话</Label>
+                          <Input
+                            value={pp.phone || ''}
+                            onChange={(e) => {
+                              const list = [...(formData.pickup_persons || [])]
+                              list[idx] = { ...list[idx], phone: e.target.value }
+                              setFormData((prev: any) => ({ ...prev, pickup_persons: list }))
+                            }}
+                            placeholder="联系电话"
+                          />
+                        </div>
+                        <div>
+                          <Label>关系</Label>
+                          <Input
+                            value={pp.relation || ''}
+                            onChange={(e) => {
+                              const list = [...(formData.pickup_persons || [])]
+                              list[idx] = { ...list[idx], relation: e.target.value }
+                              setFormData((prev: any) => ({ ...prev, pickup_persons: list }))
+                            }}
+                            placeholder="与学生关系"
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700"
+                        onClick={() => {
+                          const list = (formData.pickup_persons || []).filter((_: any, i: number) => i !== idx)
+                          setFormData((prev: any) => ({ ...prev, pickup_persons: list }))
+                        }}
+                      >
+                        移除
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const list = [...(formData.pickup_persons || []), { name: '', phone: '', relation: '' }]
+                      setFormData((prev: any) => ({ ...prev, pickup_persons: list }))
+                    }}
+                  >
+                    + 添加载送人
+                  </Button>
+                  <p className="text-xs text-gray-500">每天接送记录请在「接送管理」页面登记</p>
+                </div>
+              )}
             </div>
           </div>
 
