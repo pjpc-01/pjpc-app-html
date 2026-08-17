@@ -73,18 +73,10 @@ export default function StudentForm({
     school: '',
     emergencyContact: '',
     emergencyPhone: '',
+    emergency_contacts: [] as { name: string; phone: string; relation: string }[],
     healthInfo: '',
     pickupMethod: 'parent',
-    // 接送安排 - 方式A：固定字段（最多3个授权接送人）
-    authorizedPickup1Name: '',
-    authorizedPickup1Phone: '',
-    authorizedPickup1Relation: '',
-    authorizedPickup2Name: '',
-    authorizedPickup2Phone: '',
-    authorizedPickup2Relation: '',
-    authorizedPickup3Name: '',
-    authorizedPickup3Phone: '',
-    authorizedPickup3Relation: '',
+    // 接送安排 - 已改由 /pickup 页面管理（不再在表单填写）
     registrationDate: new Date().toISOString().split('T')[0],
     tuitionStatus: 'pending',
             birthCertificate: null,
@@ -135,18 +127,10 @@ export default function StudentForm({
         school: student.school || '',
         emergencyContact: student.emergencyContact || '',
         emergencyPhone: student.emergencyPhone || '',
+        emergency_contacts: student.emergency_contacts || [],
         healthInfo: student.healthInfo || '',
         pickupMethod: student.pickupMethod || 'parent',
-        // 接送安排 - 方式A：固定字段（最多3个授权接送人）
-        authorizedPickup1Name: student.authorizedPickup1Name || '',
-        authorizedPickup1Phone: student.authorizedPickup1Phone || '',
-        authorizedPickup1Relation: student.authorizedPickup1Relation || '',
-        authorizedPickup2Name: student.authorizedPickup2Name || '',
-        authorizedPickup2Phone: student.authorizedPickup2Phone || '',
-        authorizedPickup2Relation: student.authorizedPickup2Relation || '',
-        authorizedPickup3Name: student.authorizedPickup3Name || '',
-        authorizedPickup3Phone: student.authorizedPickup3Phone || '',
-        authorizedPickup3Relation: student.authorizedPickup3Relation || '',
+        // 接送安排 - 已改由 /pickup 页面管理（不再在表单填写）
         registrationDate: student.registrationDate || new Date().toISOString().split('T')[0],
         tuitionStatus: student.tuitionStatus || 'pending',
         points_enabled: student.points_enabled ?? true,
@@ -173,6 +157,7 @@ export default function StudentForm({
         school: '',
         emergencyContact: '',
         emergencyPhone: '',
+        emergency_contacts: [] as { name: string; phone: string; relation: string }[],
         healthInfo: '',
         pickupMethod: 'parent',
         registrationDate: new Date().toISOString().split('T')[0],
@@ -269,6 +254,7 @@ export default function StudentForm({
         school: formData.school || '',
         emergencyContact: formData.emergencyContact || '',
         emergencyPhone: formData.emergencyPhone || '',
+        emergency_contacts: formData.emergency_contacts || [],
         healthInfo: formData.healthInfo || '',
         pickupMethod: formData.pickupMethod || 'parent',
         registrationDate: formData.registrationDate || new Date().toISOString().split('T')[0],
@@ -841,30 +827,72 @@ export default function StudentForm({
           {/* 紧急联络人 */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">紧急联络人</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="emergencyContact">紧急联络人</Label>
-                <Input
-                  id="emergencyContact"
-                  value={formData.emergencyContact || ''}
-                  onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
-                  placeholder="紧急联络人姓名"
-                  className={errors.emergencyContact ? 'border-red-500' : ''}
-                />
-                {errors.emergencyContact && <p className="text-red-500 text-sm mt-1">{errors.emergencyContact}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="emergencyPhone">紧急联络电话</Label>
-                <Input
-                  id="emergencyPhone"
-                  value={formData.emergencyPhone || ''}
-                  onChange={(e) => handleInputChange('emergencyPhone', e.target.value)}
-                  placeholder="紧急联络电话"
-                  className={errors.emergencyPhone ? 'border-red-500' : ''}
-                />
-                {errors.emergencyPhone && <p className="text-red-500 text-sm mt-1">{errors.emergencyPhone}</p>}
-              </div>
+            <div className="space-y-3">
+              {(formData.emergency_contacts || []).map((ec: any, idx: number) => (
+                <div key={idx} className="border rounded-lg p-3 space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <Label>姓名</Label>
+                      <Input
+                        value={ec.name || ''}
+                        onChange={(e) => {
+                          const list = [...(formData.emergency_contacts || [])]
+                          list[idx] = { ...list[idx], name: e.target.value }
+                          setFormData((prev: any) => ({ ...prev, emergency_contacts: list }))
+                        }}
+                        placeholder="联系人姓名"
+                      />
+                    </div>
+                    <div>
+                      <Label>电话</Label>
+                      <Input
+                        value={ec.phone || ''}
+                        onChange={(e) => {
+                          const list = [...(formData.emergency_contacts || [])]
+                          list[idx] = { ...list[idx], phone: e.target.value }
+                          setFormData((prev: any) => ({ ...prev, emergency_contacts: list }))
+                        }}
+                        placeholder="联系电话"
+                      />
+                    </div>
+                    <div>
+                      <Label>关系</Label>
+                      <Input
+                        value={ec.relation || ''}
+                        onChange={(e) => {
+                          const list = [...(formData.emergency_contacts || [])]
+                          list[idx] = { ...list[idx], relation: e.target.value }
+                          setFormData((prev: any) => ({ ...prev, emergency_contacts: list }))
+                        }}
+                        placeholder="与学生关系"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-red-500 hover:text-red-700"
+                    onClick={() => {
+                      const list = (formData.emergency_contacts || []).filter((_: any, i: number) => i !== idx)
+                      setFormData((prev: any) => ({ ...prev, emergency_contacts: list }))
+                    }}
+                  >
+                    移除
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const list = [...(formData.emergency_contacts || []), { name: '', phone: '', relation: '' }]
+                  setFormData((prev: any) => ({ ...prev, emergency_contacts: list }))
+                }}
+              >
+                + 添加紧急联系人
+              </Button>
             </div>
           </div>
 
@@ -903,113 +931,7 @@ export default function StudentForm({
                 </Select>
               </div>
 
-              {/* 授权接送人信息 - 最多3个 */}
-              <div className="space-y-4">
-                <Label className="text-base font-medium">授权接送人信息</Label>
-                <p className="text-sm text-gray-600">最多可添加3个授权接送人</p>
-                
-                {/* 授权接送人1 */}
-                <div className="border rounded-lg p-4 space-y-3">
-                  <h4 className="font-medium text-gray-900">授权接送人 1</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                      <Label htmlFor="authorizedPickup1Name">{t('student.name')}</Label>
-                                             <Input
-                         id="authorizedPickup1Name"
-                         value={formData.authorizedPickup1Name || ''}
-                         onChange={(e) => handleInputChange('authorizedPickup1Name', e.target.value)}
-                         placeholder="接送人姓名"
-                       />
-                     </div>
-                     <div>
-                       <Label htmlFor="authorizedPickup1Phone">{t('report.phone')}</Label>
-                       <Input
-                         id="authorizedPickup1Phone"
-                         value={formData.authorizedPickup1Phone || ''}
-                         onChange={(e) => handleInputChange('authorizedPickup1Phone', e.target.value)}
-                         placeholder={t('student.contact_phone')}
-                       />
-                     </div>
-                     <div>
-                       <Label htmlFor="authorizedPickup1Relation">{t('student.relationship')}</Label>
-                       <Input
-                         id="authorizedPickup1Relation"
-                         value={formData.authorizedPickup1Relation || ''}
-                         onChange={(e) => handleInputChange('authorizedPickup1Relation', e.target.value)}
-                         placeholder="与学生关系"
-                       />
-                     </div>
-                   </div>
-                 </div>
-
-                 {/* 授权接送人2 */}
-                 <div className="border rounded-lg p-4 space-y-3">
-                   <h4 className="font-medium text-gray-900">授权接送人 2</h4>
-                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                     <div>
-                       <Label htmlFor="authorizedPickup2Name">{t('student.name')}</Label>
-                       <Input
-                         id="authorizedPickup2Name"
-                         value={formData.authorizedPickup2Name || ''}
-                         onChange={(e) => handleInputChange('authorizedPickup2Name', e.target.value)}
-                         placeholder="接送人姓名"
-                       />
-                     </div>
-                     <div>
-                       <Label htmlFor="authorizedPickup2Phone">{t('report.phone')}</Label>
-                       <Input
-                         id="authorizedPickup2Phone"
-                         value={formData.authorizedPickup2Phone || ''}
-                         onChange={(e) => handleInputChange('authorizedPickup2Phone', e.target.value)}
-                         placeholder={t('student.contact_phone')}
-                       />
-                     </div>
-                     <div>
-                       <Label htmlFor="authorizedPickup2Relation">{t('student.relationship')}</Label>
-                       <Input
-                         id="authorizedPickup2Relation"
-                         value={formData.authorizedPickup2Relation || ''}
-                         onChange={(e) => handleInputChange('authorizedPickup2Relation', e.target.value)}
-                         placeholder="与学生关系"
-                       />
-                     </div>
-                   </div>
-                 </div>
-
-                 {/* 授权接送人3 */}
-                 <div className="border rounded-lg p-4 space-y-3">
-                   <h4 className="font-medium text-gray-900">授权接送人 3</h4>
-                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                     <div>
-                       <Label htmlFor="authorizedPickup3Name">{t('student.name')}</Label>
-                       <Input
-                         id="authorizedPickup3Name"
-                         value={formData.authorizedPickup3Name || ''}
-                         onChange={(e) => handleInputChange('authorizedPickup3Name', e.target.value)}
-                         placeholder="接送人姓名"
-                       />
-                     </div>
-                     <div>
-                       <Label htmlFor="authorizedPickup3Phone">{t('report.phone')}</Label>
-                       <Input
-                         id="authorizedPickup3Phone"
-                         value={formData.authorizedPickup3Phone || ''}
-                         onChange={(e) => handleInputChange('authorizedPickup3Phone', e.target.value)}
-                         placeholder={t('student.contact_phone')}
-                       />
-                     </div>
-                     <div>
-                       <Label htmlFor="authorizedPickup3Relation">{t('student.relationship')}</Label>
-                       <Input
-                         id="authorizedPickup3Relation"
-                         value={formData.authorizedPickup3Relation || ''}
-                         onChange={(e) => handleInputChange('authorizedPickup3Relation', e.target.value)}
-                         placeholder="与学生关系"
-                       />
-                     </div>
-                   </div>
-                 </div>
-              </div>
+              <p className="text-xs text-gray-500">载送人/接送记录请在「接送管理」页面登记</p>
             </div>
           </div>
 

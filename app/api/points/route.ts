@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateIdentifierVariants } from '@/lib/uid-normalizer'
+import { assertPointsEnabled } from '@/lib/points-guard'
 
 const PB_URL = 'http://127.0.0.1:8090'
 const PB_ADMIN = { email: 'admin@pjpc.com', password: '1234567890' }
@@ -53,6 +54,12 @@ export async function POST(request: NextRequest) {
       if (card.type !== 'student' || !card.studentId) return NextResponse.json({ error: '仅支持学生卡' }, { status: 400 })
       student = card.expand?.studentId
       if (!student) return NextResponse.json({ error: '卡片未绑定学生' }, { status: 404 })
+    }
+
+    // 积分守卫：积分系统已关闭的学生拒绝加分/扣分
+    const guard = await assertPointsEnabled(student.id)
+    if (!guard.enabled) {
+      return NextResponse.json({ error: guard.message || '积分系统已关闭' }, { status: 403 })
     }
 
     const currentPoints = student.points || 0

@@ -13,14 +13,24 @@ async function pbAuth(): Promise<string> {
   return (await res.json()).token
 }
 
-async function pbGet(token: string, path: string) {
-  const res = await fetch(`${PB_URL}${path}`, { headers: { Authorization: token } })
+// pbGet: path 里带 filter 时传 { filter } 分开，避免 URL 编码问题
+async function pbGet(token: string, collection: string, query: Record<string, string> = {}) {
+  const params = new URLSearchParams()
+  for (const [k, v] of Object.entries(query)) params.set(k, v)
+  const qs = params.toString()
+  const url = `${PB_URL}/api/collections/${collection}/records${qs ? '?' + qs : ''}`
+  const res = await fetch(url, { headers: { Authorization: token } })
   return res.json()
 }
 
 function todayLocal() {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+}
+
+function isWeekend(d: Date) {
+  const day = d.getDay() // 0=Sun, 6=Sat
+  return day === 0 || day === 6
 }
 
 // POST — 处理今日缺勤扣分
@@ -30,16 +40,21 @@ export async function POST(request: NextRequest) {
     const center = body.center || ''
     const today = todayLocal()
 
+    // 周末不扣分（安亲班周末不上课，缺勤不算）
+    if (isWeekend(new Date())) {
+      return NextResponse.json({ success: true, message: '周末不执行缺勤扣分', absent: 0 })
+    }
+
     const token = await pbAuth()
 
     // 1. Get attendance settings
-    const settingsRes = await fetch(`${PB_URL}/api/collections/attendance_settings/records?perPage=1&filter=center="${encodeURIComponent(center || 'default')}"`, {
+    const settingsRes = await fetch(`${PB_URL}/api/collections/attendance_settings/records?perPage=1&filter=${encodeURIComponent(`center="${center || 'default'}"`)}`, {
       headers: { Authorization: token },
     }).then(r => r.json())
 
     let settings = settingsRes.items?.[0]?.config
     if (!settings) {
-      const fallback = await fetch(`${PB_URL}/api/collections/attendance_settings/records?perPage=1&filter=center="default"`, {
+      const fallback = await fetch(`${PB_URL}/api/collections/attendance_settings/records?perPage=1&filter=${encodeURIComponent('center="default"')}`, {
         headers: { Authorization: token },
       }).then(r => r.json())
       settings = fallback.items?.[0]?.config
@@ -55,7 +70,11 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Get all active students with points enabled
-    const allStudents = await pbGet(token, `/api/collections/students/records?perPage=500&fields=id,name,points,center&filter=status="active"&&points_enabled!=false`)
+    const allStudents = await pbGet(token, 'students', {
+      perPage: '500',
+      fields: 'id,name,points,center,points_enabled',
+      filter: 'status="active"&&points_enabled=true',
+    })
     const targetStudents = center
       ? (allStudents.items || []).filter((s: any) => s.center === center)
       : (allStudents.items || [])
@@ -65,7 +84,11 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Get students who checked in today
-        const checkins = await pbGet(token, `/api/collections/student_attendance/records?perPage=500&fields=student_id&filter=date>="${today} 00:00:00"`) 
+    const checkins = await pbGet(token, 'student_attendance', {
+      perPage: '500',
+      fields: 'student_id',
+      filter: `date>="${today} 00:00:00"`,
+    })
     const checkedInIds = new Set((checkins.items || []).map((r: any) => r.student_id))
 
     // 4. Find absent students
@@ -78,13 +101,21 @@ export async function POST(request: NextRequest) {
 
     // 5. Check if already deducted today
     const alreadyFilter = absentIds.map((id: string) => `student="${id}"`).join('||')
-    const existingLogs = await pbGet(token, `/api/collections/point_logs/records?perPage=500&fields=student&filter=(${encodeURIComponent(alreadyFilter)})&&reason~"缺勤"&&created>="${today} 00:00:00"`)
+    const fullFilter = `(${alreadyFilter})&&reason~"缺勤"&&created>="${today} 00:00:00"`
+    const existingLogs = await pbGet(token, 'point_logs', {
+      perPage: '500',
+      fields: 'student',
+      filter: fullFilter,
+    })
     const alreadyDeducted = new Set((existingLogs.items || []).map((r: any) => r.student))
 
     // 6. Deduct points for each absent student
     let processed = 0
     for (const s of absentStudents) {
       if (alreadyDeducted.has(s.id)) continue
+
+      // 积分守卫：积分系统已关闭的学生拒绝扣分
+      if (s.points_enabled === false) continue
 
       const currentPoints = s.points || 0
       const newPoints = currentPoints + pointsAbsent

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { assertPointsEnabled } from '@/lib/points-guard'
 
 const PB_URL = 'http://127.0.0.1:8090'
 const PB_ADMIN = { email: 'admin@pjpc.com', password: '1234567890' }
@@ -37,6 +38,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: '学生不存在' }, { status: 404 })
     }
     const student = await studentRes.json()
+
+    // 积分守卫：积分系统已关闭的学生拒绝加分/扣分
+    const guard = await assertPointsEnabled(student_id)
+    if (!guard.enabled) {
+      return NextResponse.json({ success: false, error: guard.message || '积分系统已关闭' }, { status: 403 })
+    }
+
     const currentPoints = student.points || 0
     const newPoints = currentPoints + amount
 
