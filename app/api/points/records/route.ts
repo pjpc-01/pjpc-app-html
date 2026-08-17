@@ -17,31 +17,35 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
 
     let filter = ''
-    if (center && center !== 'all') {
-      filter = `center="${encodeURIComponent(center)}"`
-    }
+        if (center && center !== 'all') {
+          filter = `center="${encodeURIComponent(center)}"`
+        }
 
-    const params = new URLSearchParams({
-      perPage: String(limit),
-      page: String(page),
-      sort: '-points,name',
-      fields: 'id,name,points,grade,center,status,student_id,avatar',
-    })
-    if (filter) params.set('filter', `${filter} && points_enabled!=false`)
-    else params.set('filter', 'points_enabled!=false')
+        // 积分榜只显示 active 学生
+        const baseFilter = `status="active"`
 
-    const res = await fetch(
-      `${PB_URL}/api/collections/students/records?${params}`,
-      { headers: { Authorization: token } }
-    ).then(r => r.json())
+        const params = new URLSearchParams({
+          perPage: String(limit),
+          page: String(page),
+          sort: '-points,name',
+          fields: 'id,name,points,grade,center,status,student_id,avatar',
+        })
+        if (filter) params.set('filter', `${filter} && points_enabled!=false && ${baseFilter}`)
+        else params.set('filter', `points_enabled!=false && ${baseFilter}`)
 
-    // Get total count
-    const countParams = new URLSearchParams({ perPage: '1' })
-    if (filter) countParams.set('filter', filter)
-    const countRes = await fetch(
-      `${PB_URL}/api/collections/students/records?${countParams}`,
-      { headers: { Authorization: token } }
-    ).then(r => r.json())
+        const res = await fetch(
+          `${PB_URL}/api/collections/students/records?${params}`,
+          { headers: { Authorization: token } }
+        ).then(r => r.json())
+
+        // Get total count
+        const countParams = new URLSearchParams({ perPage: '1' })
+        if (filter) countParams.set('filter', `${filter} && ${baseFilter}`)
+        else countParams.set('filter', baseFilter)
+        const countRes = await fetch(
+          `${PB_URL}/api/collections/students/records?${countParams}`,
+          { headers: { Authorization: token } }
+        ).then(r => r.json())
 
     return NextResponse.json({
       success: true,

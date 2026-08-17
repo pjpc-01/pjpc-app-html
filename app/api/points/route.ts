@@ -89,9 +89,9 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
 
     const res = await fetch(
-          `${PB_URL}/api/collections/students/records?perPage=${limit}&sort=-points&filter=points_enabled!=false&fields=id,name,points,center,grade,student_id,avatar`,
-          { headers: { Authorization: token } }
-        ).then(r => r.json())
+              `${PB_URL}/api/collections/students/records?perPage=${limit}&sort=-points&filter=points_enabled!=false%26%26status%3D%22active%22&fields=id,name,points,center,grade,student_id,avatar`,
+              { headers: { Authorization: token } }
+            ).then(r => r.json())
 
     return NextResponse.json({
       success: true,
