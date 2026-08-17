@@ -78,9 +78,10 @@ def save(token, sid, subj, score, letter):
     payload = json.dumps({"studentId": sid, "subject": subj, "term": "Term 1", "year": 2026, "score": score, "grade_letter": letter})
     try:
         # Check existing
+        f = f'(studentId="{sid}"&&subject="{subj}"&&term="Term 1"&&year=2026)'
         chk = subprocess.run(['curl', '-s',
-            f'{PB_URL}/api/collections/grades/records?perPage=1&filter=(studentId="{sid}"&&subject="{subj}"&&term="Term 1"&&year=2026)',
-            '-H', f'Authorization: {token}'],
+            f'{PB_URL}/api/collections/grades/records?perPage=1&filter={urllib.parse.quote(f)}',
+            '-H', f'Authorization: Bearer {token}'],
             capture_output=True, text=True)
         resp = json.loads(chk.stdout) if chk.stdout else {}
         existing = resp.get('items', [])
@@ -89,13 +90,13 @@ def save(token, sid, subj, score, letter):
             r = subprocess.run(['curl', '-s', '-X', 'PATCH',
                 f'{PB_URL}/api/collections/grades/records/{rid}',
                 '-H', 'Content-Type: application/json',
-                '-H', f'Authorization: {token}',
+                '-H', f'Authorization: Bearer {token}',
                 '-d', payload], capture_output=True, text=True)
         else:
             r = subprocess.run(['curl', '-s', '-X', 'POST',
                 f'{PB_URL}/api/collections/grades/records',
                 '-H', 'Content-Type: application/json',
-                '-H', f'Authorization: {token}',
+                '-H', f'Authorization: Bearer {token}',
                 '-d', payload], capture_output=True, text=True)
         result = json.loads(r.stdout) if r.stdout else {}
         return 'id' in result

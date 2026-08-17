@@ -37,13 +37,15 @@ export interface Student {
   // 🔄 中心关联 — 新系统使用 centerId (relation)，旧版兼容用 center (text)
   centerId?: string
   center?: string
-  
+
   // 扩展信息
   nric?: string
   school?: string
   parentPhone?: string
   emergencyContact?: string
   emergencyPhone?: string
+  // 紧急联系人动态列表 [{name, phone, relation}]
+  emergency_contacts?: { name: string; phone: string; relation: string }[]
   healthInfo?: string
   pickupMethod?: 'parent' | 'guardian' | 'authorized' | 'public' | 'walking'
   
@@ -104,13 +106,15 @@ export interface StudentCreateData {
   standard?: string
   level?: 'primary' | 'secondary'
   center?: 'WX 01' | 'WX 02' | 'WX 03' | 'WX 04'
-  
+
   // 扩展信息
   nric?: string
   school?: string
   parentPhone?: string
   emergencyContact?: string
   emergencyPhone?: string
+  // 紧急联系人动态列表 [{name, phone, relation}]
+  emergency_contacts?: { name: string; phone: string; relation: string }[]
   healthInfo?: string
   pickupMethod?: 'parent' | 'guardian' | 'authorized' | 'public' | 'walking'
   
@@ -458,6 +462,7 @@ export const updateStudent = async (id: string, studentData: any): Promise<Stude
     // Emergency / health
     if (get('emergencyContact') !== undefined) pbData.emergencyContact = get('emergencyContact')
     if (get('emergencyPhone') !== undefined) pbData.emergencyPhone = get('emergencyPhone')
+    if (get('emergency_contacts') !== undefined) pbData.emergency_contacts = get('emergency_contacts')
     if (get('healthInfo') !== undefined) pbData.healthInfo = get('healthInfo')
     if (get('pickupMethod') !== undefined) pbData.pickupMethod = get('pickupMethod')
     
@@ -681,6 +686,7 @@ export const searchStudents = async (query: string): Promise<Student[]> => {
       parentPhone: record.parentPhone,
       emergencyContact: record.emergencyContact,
       emergencyPhone: record.emergencyPhone,
+      emergency_contacts: record.emergency_contacts,
       healthInfo: record.healthInfo,
       pickupMethod: record.pickupMethod,
       
@@ -782,6 +788,7 @@ export const getStudentsByCenter = async (center: string): Promise<Student[]> =>
       parentPhone: record.parentPhone,
       emergencyContact: record.emergencyContact,
       emergencyPhone: record.emergencyPhone,
+      emergency_contacts: record.emergency_contacts,
       healthInfo: record.healthInfo,
       pickupMethod: record.pickupMethod,
       
@@ -883,6 +890,7 @@ export const getStudentsByStatus = async (status: string): Promise<Student[]> =>
       parentPhone: record.parentPhone,
       emergencyContact: record.emergencyContact,
       emergencyPhone: record.emergencyPhone,
+      emergency_contacts: record.emergency_contacts,
       healthInfo: record.healthInfo,
       pickupMethod: record.pickupMethod,
       

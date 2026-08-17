@@ -224,6 +224,12 @@ async function handlePointsIntegration(
     { headers: { Authorization: token } }
   ).then(r => r.json())
 
+  // 积分守卫：积分系统已关闭的学生不发考勤积分
+  if (student.points_enabled === false) {
+    console.log(`[POINTS DEBUG] 积分系统已关闭，跳过考勤加分: studentId=${studentId}`)
+    return { skipped: true, reason: '积分系统已关闭' }
+  }
+
   const currentPoints = student.points || 0
   const newPoints = currentPoints + points
 

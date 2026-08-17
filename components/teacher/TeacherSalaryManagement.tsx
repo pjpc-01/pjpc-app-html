@@ -302,6 +302,7 @@ export default function TeacherSalaryManagement() {
     year: new Date().getFullYear(),
     month: new Date().getMonth() + 1,
     base_salary: 0,
+    salary_type: 'monthly' as 'monthly' | 'hourly' | 'commission',
     hours_worked: 0,
     overtime_hours: 0,
     overtime_pay: 0,
@@ -829,16 +830,18 @@ export default function TeacherSalaryManagement() {
     const totalAllowances = taxableAllowances + nonTaxableAllowances
 
     const gross = base + taxableAllowances
-    
-    const epf = gross * (recordForm.epf_rate || 0.11)
-    const socso = getSocsoEmployee(gross)
-    const eis = getEisContribution(gross)
-    const epfEmployer = gross * (recordForm.epf_employer_rate || (gross > 5000 ? 0.12 : 0.13))
-    const socsoEmployer = getSocsoEmployer(gross)
-    const eisEmployer = getEisContribution(gross)
-    // PCB: 勾选才扣；有固定金额用金额，否则用八仙率
+
+    // 只有月薪类型才有 EPF/SOCSO/EIS/PCB 扣款；时薪/佣金不扣
+    const isMonthly = (recordForm as any).salary_type !== 'hourly' && (recordForm as any).salary_type !== 'commission'
+    const epf = isMonthly ? gross * (recordForm.epf_rate || 0.11) : 0
+    const socso = isMonthly ? getSocsoEmployee(gross) : 0
+    const eis = isMonthly ? getEisContribution(gross) : 0
+    const epfEmployer = isMonthly ? gross * (recordForm.epf_employer_rate || (gross > 5000 ? 0.12 : 0.13)) : 0
+    const socsoEmployer = isMonthly ? getSocsoEmployer(gross) : 0
+    const eisEmployer = isMonthly ? getEisContribution(gross) : 0
+    // PCB: 勾选才扣；有固定金额用金额，否则用八仙率（仅月薪）
     let tax = 0
-    if (recordForm.pcb_enabled) {
+    if (isMonthly && recordForm.pcb_enabled) {
       if (recordForm.pcb_amount && recordForm.pcb_amount > 0) {
         tax = recordForm.pcb_amount
       } else if (recordForm.pcb_rate && recordForm.pcb_rate > 0) {
@@ -865,7 +868,7 @@ export default function TeacherSalaryManagement() {
       socso_employer: socsoEmployer,
       eis_employer: eisEmployer,
     }))
-  }, [recordForm.base_salary, recordForm.allowances, recordForm.epf_rate, recordForm.socso_rate, recordForm.eis_rate, recordForm.tax_rate, recordForm.other_deductions, recordForm.bonus, recordForm.commission])
+  }, [recordForm.base_salary, recordForm.allowances, recordForm.epf_rate, recordForm.socso_rate, recordForm.eis_rate, recordForm.tax_rate, recordForm.other_deductions, recordForm.bonus, recordForm.commission, (recordForm as any).salary_type])
 
   // 处理薪资记录表单
   const handleRecordSubmit = async (e: React.FormEvent) => {
@@ -889,6 +892,7 @@ export default function TeacherSalaryManagement() {
           year: new Date().getFullYear(),
           month: new Date().getMonth() + 1,
           base_salary: 0,
+          salary_type: 'monthly' as 'monthly' | 'hourly' | 'commission',
           hours_worked: 0,
           overtime_hours: 0,
           overtime_pay: 0,
@@ -1156,9 +1160,9 @@ export default function TeacherSalaryManagement() {
                       </TableCell>
                       <TableCell>{formatCurrency(structure.base_salary)}</TableCell>
                       <TableCell>{formatCurrency((structure.allowance_items || []).reduce((s: number, a: any) => s + (a.amount || 0), 0))}</TableCell>
-                      <TableCell>{(structure.epf_rate * 100).toFixed(1)}%</TableCell>
-                      <TableCell>{(structure.socso_rate * 100).toFixed(2)}%</TableCell>
-                      <TableCell>{(structure.eis_rate * 100).toFixed(2)}%</TableCell>
+                      <TableCell>{structure.salary_type === 'monthly' ? `${(structure.epf_rate * 100).toFixed(1)}%` : '—'}</TableCell>
+                      <TableCell>{structure.salary_type === 'monthly' ? `${(structure.socso_rate * 100).toFixed(2)}%` : '—'}</TableCell>
+                      <TableCell>{structure.salary_type === 'monthly' ? `${(structure.eis_rate * 100).toFixed(2)}%` : '—'}</TableCell>
                       <TableCell>
                         <Badge variant={structure.status === 'active' ? 'default' : 'secondary'}>
                           {structure.status === 'active' ? '生效' : '失效'}
@@ -1449,21 +1453,34 @@ export default function TeacherSalaryManagement() {
             {/* ── 工资 ── */}
             <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">💰 工资</h4>
             <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="base_salary">基本薪资 (RM)</Label>
-                <Input id="base_salary" type="number" value={structureForm.base_salary}
-                  onChange={(e) => setStructureForm(prev => ({ ...prev, base_salary: parseFloat(e.target.value) || 0 }))} />
-              </div>
-              <div>
-                <Label htmlFor="hourly_rate">时薪 (RM/h)</Label>
-                <Input id="hourly_rate" type="number" value={structureForm.hourly_rate || ''}
-                  onChange={(e) => setStructureForm(prev => ({ ...prev, hourly_rate: parseFloat(e.target.value) || 0 }))} />
-              </div>
-              <div>
-                <Label htmlFor="overtime_rate">加班费率 (RM/h)</Label>
-                <Input id="overtime_rate" type="number" value={structureForm.overtime_rate || ''}
-                  onChange={(e) => setStructureForm(prev => ({ ...prev, overtime_rate: parseFloat(e.target.value) || 0 }))} />
-              </div>
+              {structureForm.salary_type === 'monthly' && (
+                <div>
+                  <Label htmlFor="base_salary">基本薪资 (RM)</Label>
+                  <Input id="base_salary" type="number" value={structureForm.base_salary}
+                    onChange={(e) => setStructureForm(prev => ({ ...prev, base_salary: parseFloat(e.target.value) || 0 }))} />
+                </div>
+              )}
+              {structureForm.salary_type === 'hourly' && (
+                <>
+                  <div>
+                    <Label htmlFor="hourly_rate">时薪 (RM/h)</Label>
+                    <Input id="hourly_rate" type="number" value={structureForm.hourly_rate || ''}
+                      onChange={(e) => setStructureForm(prev => ({ ...prev, hourly_rate: parseFloat(e.target.value) || 0 }))} />
+                  </div>
+                  <div>
+                    <Label htmlFor="overtime_rate">加班费率 (RM/h)</Label>
+                    <Input id="overtime_rate" type="number" value={structureForm.overtime_rate || ''}
+                      onChange={(e) => setStructureForm(prev => ({ ...prev, overtime_rate: parseFloat(e.target.value) || 0 }))} />
+                  </div>
+                </>
+              )}
+              {structureForm.salary_type === 'commission' && (
+                <div>
+                  <Label htmlFor="base_salary">底薪 (RM)</Label>
+                  <Input id="base_salary" type="number" value={structureForm.base_salary}
+                    onChange={(e) => setStructureForm(prev => ({ ...prev, base_salary: parseFloat(e.target.value) || 0 }))} />
+                </div>
+              )}
             </div>
 
             {/* ── 津贴 ── */}
@@ -1544,56 +1561,60 @@ export default function TeacherSalaryManagement() {
               }}>+ 加奖金</Button>
             </div>
 
-            {/* ── EPF / 税务 ── */}
-            <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">🏛️ EPF / 税率</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="epf_rate">EPF 雇员 (%)</Label>
-                <Input id="epf_rate" type="number" step="0.1" min="0" max="100"
-                  value={(structureForm.epf_rate * 100).toFixed(1)}
-                  onChange={(e) => setStructureForm(prev => ({ ...prev, epf_rate: (parseFloat(e.target.value) || 0) / 100 }))} />
-              </div>
-              <div>
-                <Label htmlFor="epf_employer_rate">EPF 雇主 (%)</Label>
-                <Input id="epf_employer_rate" type="number" step="0.1" min="0" max="100"
-                  value={(structureForm.epf_employer_rate * 100).toFixed(1)}
-                  onChange={(e) => setStructureForm(prev => ({ ...prev, epf_employer_rate: (parseFloat(e.target.value) || 0) / 100 }))} />
-              </div>
-            </div>
-
-            {/* ── PCB 预扣税 ── */}
-            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50/50 p-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={!!structureForm.pcb_enabled}
-                  onChange={(e) => setStructureForm(prev => ({ ...prev, pcb_enabled: e.target.checked }))}
-                  className="h-4 w-4 rounded border-gray-300"
-                />
-                <span className="text-sm font-medium text-gray-700">计算 PCB 预扣税</span>
-              </label>
-              <p className="text-xs text-gray-500 mt-1">勾选后才会扣除 PCB；不勾则 PCB 为 0</p>
-              {structureForm.pcb_enabled && (
-                <div className="grid grid-cols-2 gap-4 mt-3">
+            {structureForm.salary_type === 'monthly' && (
+              <>
+                {/* ── EPF / 税务 ── */}
+                <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">🏛️ EPF / 税率</h4>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="pcb_rate">PCB 八仙率 (%)</Label>
-                    <Input id="pcb_rate" type="number" step="0.1" min="0" max="100"
-                      value={structureForm.pcb_rate || ''}
-                      placeholder="如 3"
-                      onChange={(e) => setStructureForm(prev => ({ ...prev, pcb_rate: parseFloat(e.target.value) || 0 }))} />
-                    <p className="text-xs text-gray-500 mt-1">按 gross × 八仙率</p>
+                    <Label htmlFor="epf_rate">EPF 雇员 (%)</Label>
+                    <Input id="epf_rate" type="number" step="0.1" min="0" max="100"
+                      value={(structureForm.epf_rate * 100).toFixed(1)}
+                      onChange={(e) => setStructureForm(prev => ({ ...prev, epf_rate: (parseFloat(e.target.value) || 0) / 100 }))} />
                   </div>
                   <div>
-                    <Label htmlFor="pcb_amount">或固定金额 (RM)</Label>
-                    <Input id="pcb_amount" type="number" step="0.01" min="0"
-                      value={structureForm.pcb_amount || ''}
-                      placeholder="如 150"
-                      onChange={(e) => setStructureForm(prev => ({ ...prev, pcb_amount: parseFloat(e.target.value) || 0 }))} />
-                    <p className="text-xs text-gray-500 mt-1">固定数目优先于八仙率</p>
+                    <Label htmlFor="epf_employer_rate">EPF 雇主 (%)</Label>
+                    <Input id="epf_employer_rate" type="number" step="0.1" min="0" max="100"
+                      value={(structureForm.epf_employer_rate * 100).toFixed(1)}
+                      onChange={(e) => setStructureForm(prev => ({ ...prev, epf_employer_rate: (parseFloat(e.target.value) || 0) / 100 }))} />
                   </div>
                 </div>
-              )}
-            </div>
+
+                {/* ── PCB 预扣税 ── */}
+                <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50/50 p-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!!structureForm.pcb_enabled}
+                      onChange={(e) => setStructureForm(prev => ({ ...prev, pcb_enabled: e.target.checked }))}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <span className="text-sm font-medium text-gray-700">计算 PCB 预扣税</span>
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">勾选后才会扣除 PCB；不勾则 PCB 为 0</p>
+                  {structureForm.pcb_enabled && (
+                    <div className="grid grid-cols-2 gap-4 mt-3">
+                      <div>
+                        <Label htmlFor="pcb_rate">PCB 八仙率 (%)</Label>
+                        <Input id="pcb_rate" type="number" step="0.1" min="0" max="100"
+                          value={structureForm.pcb_rate || ''}
+                          placeholder="如 3"
+                          onChange={(e) => setStructureForm(prev => ({ ...prev, pcb_rate: parseFloat(e.target.value) || 0 }))} />
+                        <p className="text-xs text-gray-500 mt-1">按 gross × 八仙率</p>
+                      </div>
+                      <div>
+                        <Label htmlFor="pcb_amount">或固定金额 (RM)</Label>
+                        <Input id="pcb_amount" type="number" step="0.01" min="0"
+                          value={structureForm.pcb_amount || ''}
+                          placeholder="如 150"
+                          onChange={(e) => setStructureForm(prev => ({ ...prev, pcb_amount: parseFloat(e.target.value) || 0 }))} />
+                        <p className="text-xs text-gray-500 mt-1">固定数目优先于八仙率</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -1670,6 +1691,7 @@ export default function TeacherSalaryManagement() {
                     base_salary: structure?.base_salary || 0,
                     hourly_rate: structure?.hourly_rate || 0,
                     overtime_rate: structure?.overtime_rate || 0,
+                    salary_type: structure?.salary_type || 'monthly',
                     allowances: (structure?.allowance_items || []).reduce((s: number, a: any) => s + (a.amount || 0), 0),
                     epf_rate: structure?.epf_rate || globalRates.epf,
                     socso_rate: structure?.socso_rate || globalRates.socso,

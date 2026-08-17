@@ -216,15 +216,17 @@ export async function POST(request: NextRequest) {
         }
 
         // 计算扣除项（基于 grossSalary）
-        const epfDeduction = grossSalary * (structure.epf_rate || 0.11)
-        const socsoDeduction = calculateSOCSO(grossSalary)
-        const eisDeduction = calculateEIS(grossSalary)
-        const taxDeduction = calculatePCB(structure, grossSalary)
+        // 只有月薪类型才有 EPF/SOCSO/EIS/PCB 扣款；时薪/佣金不扣
+        const isMonthly = structure.salary_type !== 'hourly' && structure.salary_type !== 'commission'
+        const epfDeduction = isMonthly ? grossSalary * (structure.epf_rate || 0.11) : 0
+        const socsoDeduction = isMonthly ? calculateSOCSO(grossSalary) : 0
+        const eisDeduction = isMonthly ? calculateEIS(grossSalary) : 0
+        const taxDeduction = isMonthly ? calculatePCB(structure, grossSalary) : 0
 
-        // 雇主缴纳（基于 grossSalary）
-        const epfEmployer = grossSalary * (structure.epf_employer_rate || (grossSalary > 5000 ? 0.12 : 0.13))
-        const socsoEmployer = calculateEmployerSOCSO(grossSalary)
-        const eisEmployer = calculateEIS(grossSalary)
+        // 雇主缴纳（基于 grossSalary，仅月薪）
+        const epfEmployer = isMonthly ? grossSalary * (structure.epf_employer_rate || (grossSalary > 5000 ? 0.12 : 0.13)) : 0
+        const socsoEmployer = isMonthly ? calculateEmployerSOCSO(grossSalary) : 0
+        const eisEmployer = isMonthly ? calculateEIS(grossSalary) : 0
         
         const totalDeductions = epfDeduction + socsoDeduction + eisDeduction + taxDeduction
         const netSalary = grossSalary - totalDeductions
