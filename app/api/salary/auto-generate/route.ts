@@ -161,6 +161,15 @@ export async function POST(request: NextRequest) {
         if (!hasHoursData) {
           if (structure.salary_type === 'monthly') {
             totalHours = 160 // 默认月工时
+          } else {
+            // 时薪/佣金教师无工时数据：跳过，不生成 0 薪资记录（PB 必填校验会拒 0）
+            results.push({
+              teacher_id: teacher.id,
+              teacher_name: teacher.name,
+              status: 'skipped',
+              message: '无工时数据，跳过薪资生成'
+            })
+            continue
           }
         }
 
@@ -213,6 +222,17 @@ export async function POST(request: NextRequest) {
           grossSalary = hourlyRate * totalHours + overtimePay + taxableAllowances
         } else {
           grossSalary = baseSalary + overtimePay + taxableAllowances
+        }
+
+        // 薪资为 0 或负数：跳过（PB 必填校验会拒 0，且不应生成 0 薪资记录）
+        if (grossSalary <= 0) {
+          results.push({
+            teacher_id: teacher.id,
+            teacher_name: teacher.name,
+            status: 'skipped',
+            message: `薪资计算为 ${grossSalary}，跳过生成（请检查薪资结构）`
+          })
+          continue
         }
 
         // 计算扣除项（基于 grossSalary）
