@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getAdminToken } from '@/lib/pb-admin-token'
 
 const PB_URL = 'http://127.0.0.1:8090'
-const PB_ADMIN = { email: 'admin@pjpc.com', password: '1234567890' }
 
 async function pbAuth(): Promise<string> {
-  const res = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identity: PB_ADMIN.email, password: PB_ADMIN.password }),
-  })
-  if (!res.ok) throw new Error('Auth failed')
-  return (await res.json()).token
+  return getAdminToken()
 }
 
 // GET — 搜索学生/教师

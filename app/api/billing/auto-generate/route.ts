@@ -6,8 +6,8 @@ import { NextRequest, NextResponse } from "next/server"
 // 应用 per-student discount / six_month_pay / late_payment_fee
 
 const PB_URL = process.env.NEXT_PUBLIC_POCKETBASE_URL || "http://127.0.0.1:8090"
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@pjpc.com"
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "1234567890"
+const ADMIN_EMAIL = process.env.POCKETBASE_ADMIN_EMAIL || "final_admin@test.com"
+const ADMIN_PASSWORD = process.env.POCKETBASE_ADMIN_PASSWORD || "final_pass"
 
 async function getAdminToken() {
   const res = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`, {
