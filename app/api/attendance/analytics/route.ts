@@ -43,10 +43,10 @@ export async function GET(request: NextRequest) {
 
   try {
     // Connect to PocketBase at localhost
-    const pb = new PocketBase('http://127.0.0.1:8090')
+    const pb = new PocketBase(process.env.POCKETBASE_URL || 'http://127.0.0.1:8090')
 
     // Admin authentication
-    await pb.admins.authWithPassword('admin@pjpc.com', '***REMOVED***')
+    await pb.admins.authWithPassword(process.env.POCKETBASE_ADMIN_EMAIL || '***REMOVED***', process.env.POCKETBASE_ADMIN_PASSWORD || '***REMOVED***')
     console.log('✅ API: PocketBase管理员认证成功')
 
     // Get date range
