@@ -5,7 +5,7 @@
 | 1 | 学生成绩 DataStudio 导入 | 🟡 | 查重修复验证✅ 零重复；23 学生已导入；9 人无数据（6 人 DataStudio 无记录 + 3 人 NRIC=000000000 等用户提供） |
 | 2 | Finance 全测试 | 🔴 | 薪资 SOCSO/EIS/PCB/EPF 没测完 |
 | 3 | 考勤缺勤扣分异常 | ✅ | 已修复：dedup filter 编码 + 周末跳过 + 积分守卫（4 入口） |
-| 4 | 学生紧急联系人 + 载送人 | 🟡 | 紧急联系人动态列表 + 载送人资料填框（监护/授权时显示）已完成，待 test |
+| 4 | 学生紧急联系人 + 载送人 | 🟡 | 紧急联系人动态列表 + 载送人资料填框（监护/授权时显示）；API 层自测✅，页面 UI 待用户 test |
 | 5 | 教师排班 | 🟡 | 排班功能须 test |
 | 6 | 重复模块页面确认 | 🟡 | student-report vs student-reports 单复数并存，确认哪个在用、哪个删 |
 | 7 | 备份文件加密 | 🟡 | 备份 zip 含 .env.local 密钥裸放 D 盘，建议加密码或排除密钥文件 |
@@ -14,7 +14,7 @@
 - 积分守卫：points_enabled=false 学生拒绝任何加分/扣分
 - 缺勤扣分：周末不扣 + 同日 dedup 防重复
 - 学生表单：紧急联系人动态列表 + 载送人资料填框（pickup_persons 字段）
-- 薪资结构：按薪资类型切换显示（时薪/佣金不扣 EPF/SOCSO/EIS/PCB）
+- 薪资结构：按薪资类型切换显示（时薪/佣金不扣 EPF/SOCSO/EIS/PCB）+ auto-generate 0值跳过修复（a458193 仅 adrian）
 - 备份：开机后 2 分钟 + 每天 18:00 自动备份（含全部 profile）
 - 凭证迁移：25 个 API 硬编码密码 → 共享 lib/pb-admin-token.ts（改密码只改 .env.local 一处）
 - 僵尸 API 删除：student-attendance-only（零引用）
