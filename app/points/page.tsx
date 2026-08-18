@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
+import { classifySchoolLevel } from "@/lib/utils"
 import PointsNfcScanner from "@/components/attendance/PointsNfcScanner"
 
 interface PointLog {
@@ -23,7 +24,7 @@ interface PointLog {
 
 interface Transaction {
   id: string; amount: number; reason: string
-  teacher_name: string; student_name: string; student_id: string; created: string
+  teacher_name: string; student_name: string; student_id: string; student_grade?: string; created: string
 }
 
 const TX_PAGE_SIZE = 30
@@ -62,6 +63,7 @@ export default function PointsPage() {
   const [txPage, setTxPage] = useState(1)
   const [txTotalPages, setTxTotalPages] = useState(1)
   const [txTotal, setTxTotal] = useState(0)
+  const [txLevel, setTxLevel] = useState<"all" | "primary" | "secondary">("all")
   const [batchMode, setBatchMode] = useState(false)
   const [batchStudents, setBatchStudents] = useState<any[]>([])
   const [batchAmount, setBatchAmount] = useState("1")
@@ -95,14 +97,14 @@ export default function PointsPage() {
   const fetchTransactions = useCallback(async (p: number) => {
     setTxLoading(true)
     try {
-      const res = await fetch(`/api/points/log?limit=${TX_PAGE_SIZE}&page=${p}`)
+      const res = await fetch(`/api/points/log?limit=${TX_PAGE_SIZE}&page=${p}&level=${txLevel}`)
       const data = await res.json()
       setTxLogs(data.logs || [])
       setTxTotalPages(data.totalPages || 1)
       setTxTotal(data.total || 0)
     } catch (err) { console.error(err) }
     finally { setTxLoading(false) }
-  }, [])
+  }, [txLevel])
 
   useEffect(() => {
     if (studentIdParam) loadStudent(studentIdParam, studentNameParam || undefined)
@@ -458,6 +460,26 @@ export default function PointsPage() {
                 <span>今日 <span className={`font-bold ${todayTotal > 0 ? "text-green-600" : todayTotal < 0 ? "text-red-500" : ""}`}>{todayTotal > 0 ? "+" : ""}{todayTotal}</span></span>
                 <span>{txTotal} 条</span>
               </span>
+            </div>
+            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5 mt-2 w-fit">
+              <button
+                onClick={() => { setTxLevel("all"); setTxPage(1) }}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  txLevel === "all" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >全部</button>
+              <button
+                onClick={() => { setTxLevel("primary"); setTxPage(1) }}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  txLevel === "primary" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >小学</button>
+              <button
+                onClick={() => { setTxLevel("secondary"); setTxPage(1) }}
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  txLevel === "secondary" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >中学</button>
             </div>
           </CardHeader>
           <CardContent className="p-0">

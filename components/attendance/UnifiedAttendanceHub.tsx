@@ -9,6 +9,7 @@ import {
   Loader2, GraduationCap, User, LogIn, LogOut, BarChart3, ChevronLeft, ChevronRight, CalendarDays,
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
+import { classifySchoolLevel } from "@/lib/utils"
 import NfcTapReader from "./NfcTapReader"
 
 // ─── Types ─────────────────────────────────────────────
@@ -233,24 +234,56 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
   absentStudents: AbsentStudent[]
 }) {
   const { t } = useLanguage()
+  const [levelFilter, setLevelFilter] = useState<"all" | "primary" | "secondary">("all")
   // Merge: present students first, then absent students at bottom
   const allRows: { person_name: string; person_type: string; center: string; grade?: string; check_in_time: string | null; check_out_time: string | null; is_late: boolean; is_early: boolean; status: string; _isAbsent: boolean }[] = [
     ...report.map(r => ({ ...r, _isAbsent: false })),
     ...absentStudents.map(a => ({ person_name: a.person_name, person_type: a.person_type, center: a.center, grade: a.grade, check_in_time: null, check_out_time: null, is_late: false, is_early: false, status: "absent", _isAbsent: true })),
   ]
 
-  const totalPeople = allRows.length
-  const checkedIn = allRows.filter(r => !r._isAbsent && r.check_in_time).length
+  const filteredRows = allRows.filter(r => {
+    if (levelFilter === "all") return true
+    // 教师始终显示；学生按年级分类
+    if (r.person_type === "teacher") return true
+    const level = classifySchoolLevel(r.grade)
+    return level === levelFilter
+  })
+
+  const totalPeople = filteredRows.length
+  const checkedIn = filteredRows.filter(r => !r._isAbsent && r.check_in_time).length
+  const lateCount = filteredRows.filter(r => !r._isAbsent && r.is_late).length
+  const absentCount = filteredRows.filter(r => r._isAbsent).length
 
   return (
     <>
       {/* Compact header bar */}
-      <div className="flex items-center gap-4 px-4 py-2.5 bg-white border-b">
+      <div className="flex items-center gap-4 px-4 py-2.5 bg-white border-b flex-wrap">
+        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+          <button
+            onClick={() => setLevelFilter("all")}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+              levelFilter === "all" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >全部</button>
+          <button
+            onClick={() => setLevelFilter("primary")}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+              levelFilter === "primary" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >小学</button>
+          <button
+            onClick={() => setLevelFilter("secondary")}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+              levelFilter === "secondary" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >中学</button>
+        </div>
+        <div className="flex items-center gap-4 ml-auto">
         {[
           { label: "总人数", value: totalPeople, color: "text-blue-600" },
           { label: "已签到", value: checkedIn, color: "text-green-600" },
-          { label: "迟到", value: reportStats.late, color: "text-orange-500" },
-          { label: "缺勤", value: absentStudents.length, color: "text-gray-400" },
+          { label: "迟到", value: lateCount, color: "text-orange-500" },
+          { label: "缺勤", value: absentCount, color: "text-gray-400" },
         ].map((s, i) => (
           <div key={i} className="flex items-center gap-1.5">
             <span className="text-[11px] text-gray-400">{s.label}</span>
@@ -258,10 +291,11 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
             {i < 3 && <span className="text-gray-200">|</span>}
           </div>
         ))}
+        </div>
       </div>
 
       {reportLoading ? <div className="text-center py-8"><Loader2 className="h-5 w-5 mx-auto animate-spin text-blue-500" /></div>
-      : allRows.length === 0 ? <div className="text-center py-8 text-gray-400 text-sm">当日暂无考勤数据</div>
+      : filteredRows.length === 0 ? <div className="text-center py-8 text-gray-400 text-sm">当日暂无考勤数据</div>
       : <div className="max-h-[360px] overflow-y-auto">
           <table className="w-full text-sm">
             <thead><tr className="bg-gray-50/80 border-b sticky top-0 backdrop-blur">
@@ -270,7 +304,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
               ))}
             </tr></thead>
             <tbody>
-              {allRows.map((item, idx) => (
+              {filteredRows.map((item, idx) => (
                 <tr key={idx} className={`border-b border-gray-50 transition-colors ${item._isAbsent ? "bg-gray-50/50 opacity-60" : "hover:bg-gray-50/50"}`}>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2.5">

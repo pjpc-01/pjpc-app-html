@@ -565,3 +565,15 @@ export const formatGrade = (grade: string | undefined | null, isPeralihan?: bool
   const base = GRADE_NAME_MAP[grade] || grade
   return applyPeralihan(base, isPeralihan)
 }
+
+// 学段分类: 'primary'(小学 Standard/Peralihan) | 'secondary'(中学 Form)
+export type SchoolLevel = 'primary' | 'secondary'
+export const classifySchoolLevel = (grade: string | undefined | null): SchoolLevel | null => {
+  if (!grade) return null
+  const normalized = (GRADE_NAME_MAP[grade] || grade).toLowerCase()
+  if (/form|中一|中二|中三|中四|中五|中六/.test(normalized)) return 'secondary'
+  if (/standard|peralihan|一年级|二年级|三年级|四年级|五年级|六年级/.test(normalized)) return 'primary'
+  const num = parseInt(grade)
+  if (!isNaN(num)) return num >= 7 ? 'secondary' : 'primary'
+  return null
+}

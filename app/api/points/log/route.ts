@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '100')
     const page = parseInt(searchParams.get('page') || '1')
     const center = searchParams.get('center') || ''
+    const level = searchParams.get('level') || ''
 
     let filter = ''
     if (studentId) {
@@ -26,6 +27,13 @@ export async function GET(request: NextRequest) {
     if (center && center !== 'all') {
       const cf = `student.center="${center}"`
       filter = filter ? `${filter}&&${cf}` : cf
+    }
+    if (level && level !== 'all') {
+      // PB 字符串字段数值比较会失效，只用关键词匹配（数据已标准化为 Form X / Standard X）
+      const lf = level === 'primary'
+        ? `(student.grade~"Standard" || student.grade~"Peralihan")`
+        : `student.grade~"Form"`
+      filter = filter ? `${filter}&&${lf}` : lf
     }
 
     const params = new URLSearchParams({
@@ -51,6 +59,7 @@ export async function GET(request: NextRequest) {
       teacher_name: item.expand?.teacher?.name || '系统',
       student_name: item.expand?.student?.name || '未知',
       student_id: item.student || '',
+      student_grade: item.expand?.student?.grade || '',
       created: item.created,
     }))
 
