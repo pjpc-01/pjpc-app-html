@@ -319,7 +319,7 @@ Prospek Cemerlang`,
           const cloudRes = await fetch('/api/invoice/whatsapp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ to: formattedPhone, message, pdfUrl, invoiceNumber: invoice.invoiceNumber })
+            body: JSON.stringify({ to: formattedPhone, pdfUrl, invoiceNumber: invoice.invoiceNumber })
           })
           const cloudJson = await cloudRes.json()
           if (cloudJson.success) {
@@ -340,7 +340,6 @@ Prospek Cemerlang`,
           await navigator.share({
             files: [pdfFile],
             title: `发票 ${invoice.invoiceNumber}`,
-            text: message
           })
           updateInvoiceStatus(invoice.id, 'issued')
           setIsSendMessageDialogOpen(false)
@@ -361,7 +360,7 @@ Prospek Cemerlang`,
       document.body.removeChild(a)
       setTimeout(() => URL.revokeObjectURL(url), 5000)
 
-      const encodedMessage = encodeURIComponent(message + '\n\n📎 请贴上刚下载的发票PDF文件')
+      const encodedMessage = encodeURIComponent('📎 请贴上刚下载的发票PDF文件')
       window.open(`https://wa.me/${formattedPhone}?text=${encodedMessage}`, '_blank')
       
       updateInvoiceStatus(invoice.id, 'issued')

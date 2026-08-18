@@ -260,9 +260,7 @@ export default function ReceiptManagement() {
     }
 
     try {
-      const message = `PJPC 收据通知\n\n收据号码: ${receipt.receiptNumber}\n学生: ${studentName}\n金额: RM ${receipt.totalAmount?.toLocaleString() || '0.00'}\n日期: ${formatDate(receipt.receipt_date)}\n\n感谢您的付款！`
-
-      // 1. Generate PDF blob
+      // 只发 PDF，不带字段文本（发票内容已在 PDF 里）
       const pdfBlob = await generateReceiptPDF(receipt, getReceiptPresetForReceipt(receipt), studentName)
       const pdfFile = new File([pdfBlob], `Receipt_${receipt.receiptNumber}.pdf`, { type: 'application/pdf' })
 
@@ -272,7 +270,6 @@ export default function ReceiptManagement() {
           await navigator.share({
             files: [pdfFile],
             title: `收据 ${receipt.receiptNumber}`,
-            text: message,
           })
           return
         } catch {
@@ -290,13 +287,11 @@ export default function ReceiptManagement() {
       document.body.removeChild(a)
       setTimeout(() => URL.revokeObjectURL(url), 5000)
 
-      const encodedMessage = encodeURIComponent(message + '\n\n📎 请贴上刚下载的收据PDF文件')
+      const encodedMessage = encodeURIComponent('📎 请贴上刚下载的收据PDF文件')
       window.open(`https://wa.me/${formattedPhone}?text=${encodedMessage}`, '_blank')
     } catch (error) {
       console.error('Failed to send receipt:', error)
-      const msg = encodeURIComponent(
-        `PJPC 收据通知\n\n收据号码: ${receipt.receiptNumber}\n学生: ${studentName}\n金额: RM ${receipt.totalAmount?.toLocaleString() || '0.00'}\n日期: ${formatDate(receipt.receipt_date)}\n\n感谢您的付款！`
-      )
+      const msg = encodeURIComponent('📎 请贴上刚下载的收据PDF文件')
       window.open(`https://wa.me/${formattedPhone}?text=${msg}`, '_blank')
     }
   }

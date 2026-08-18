@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const WHATSAPP_API = 'https://graph.facebook.com/v21.0'
 
-// POST: Send WhatsApp message with PDF document
+// POST: Send WhatsApp PDF document ONLY (no text field message)
 export async function POST(req: NextRequest) {
   try {
-    const { to, message, pdfUrl, invoiceNumber } = await req.json()
+    const { to, pdfUrl, invoiceNumber } = await req.json()
 
     const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID
     const accessToken = process.env.WHATSAPP_ACCESS_TOKEN
@@ -23,29 +23,7 @@ export async function POST(req: NextRequest) {
 
     const toNumber = to.replace(/\s+/g, '').replace(/^0/, '60').replace(/^\+/, '')
 
-    // 1. Send text message first
-    const textRes = await fetch(`${WHATSAPP_API}/${phoneNumberId}/messages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to: toNumber,
-        type: 'text',
-        text: { body: message }
-      })
-    })
-
-    if (!textRes.ok) {
-      const err = await textRes.json()
-      console.error('WhatsApp text send failed:', err)
-      return NextResponse.json({ error: 'Text send failed', detail: err }, { status: 500 })
-    }
-
-    // 2. Send PDF document (WhatsApp downloads from the URL)
+    // Send PDF document only (WhatsApp downloads from the URL)
     const docRes = await fetch(`${WHATSAPP_API}/${phoneNumberId}/messages`, {
       method: 'POST',
       headers: {
@@ -67,7 +45,7 @@ export async function POST(req: NextRequest) {
     if (!docRes.ok) {
       const err = await docRes.json()
       console.error('WhatsApp document send failed:', err)
-      return NextResponse.json({ error: 'Document send failed (text was sent)', detail: err }, { status: 500 })
+      return NextResponse.json({ error: 'Document send failed', detail: err }, { status: 500 })
     }
 
     const result = await docRes.json()
