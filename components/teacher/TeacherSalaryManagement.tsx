@@ -1333,7 +1333,6 @@ export default function TeacherSalaryManagement() {
                                 return
                               }
                               const teacherName = teacher?.name || '教师'
-                              const message = `PJPC 薪资单通知\n\n教师: ${teacherName}\n月份: ${record.year || ''}年${record.month || ''}月\n基本薪资: RM ${record.base_salary?.toFixed(2)}\n净薪: RM ${record.net_salary?.toFixed(2)}\n\n如有疑问请联系管理员。`
                               
                               try {
                                 const pdfBlob = await generatePayslipPDF(record, getPayslipPresetForRecord(record), teacherName, teacher ? { epfNo: (teacher as any).epfNo, socsoNo: (teacher as any).socsoNo, bankName: (teacher as any).bankName, bankAccountNo: (teacher as any).bankAccountNo } : undefined)
@@ -1341,7 +1340,7 @@ export default function TeacherSalaryManagement() {
                                 
                                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
                                   try {
-                                    await navigator.share({ files: [pdfFile], title: `薪资单 ${teacherName}`, text: message })
+                                    await navigator.share({ files: [pdfFile], title: `薪资单 ${teacherName}` })
                                     return
                                   } catch { /* fall through */ }
                                 }
@@ -1356,11 +1355,11 @@ export default function TeacherSalaryManagement() {
                                 document.body.removeChild(a)
                                 setTimeout(() => URL.revokeObjectURL(url), 5000)
                                 
-                                const encodedMsg = encodeURIComponent(message + '\n\n📎 请贴上刚下载的薪资单PDF文件')
+                                const encodedMsg = encodeURIComponent('📎 请贴上刚下载的薪资单PDF文件')
                                 window.open(`https://wa.me/${formatted}?text=${encodedMsg}`, '_blank')
                               } catch (err) {
                                 console.error('Payslip send failed:', err)
-                                const encodedMsg = encodeURIComponent(message)
+                                const encodedMsg = encodeURIComponent('📎 请贴上刚下载的薪资单PDF文件')
                                 window.open(`https://wa.me/${formatted}?text=${encodedMsg}`, '_blank')
                               }
                             }}

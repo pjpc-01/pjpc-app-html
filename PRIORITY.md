@@ -8,7 +8,8 @@
 | 4 | 学生紧急联系人 + 载送人 | 🟡 | 紧急联系人动态列表 + 载送人资料填框（监护/授权时显示）；API 层自测✅，页面 UI 待用户 test |
 | 5 | 教师排班 | 🟡 | 排班功能须 test |
 | 6 | 重复模块页面确认 | 🟡 | student-report vs student-reports 单复数并存，确认哪个在用、哪个删 |
-| 7 | 备份文件加密 | 🟡 | 备份 zip 含 .env.local 密钥裸放 D 盘，建议加密码或排除密钥文件 |
+| 7 | 备份文件加密 | ✅ | 2026-08-18 改为排除模式：备份重打包排除 .env/creds.json/session/config.yaml.bak/request_dump（10912 个敏感文件），明文 zip 放 D 盘无需密码，验证通过 |
+| 8 | WhatsApp 发送需要字段 | ✅ | 2026-08-18 完成：invoice/receipt/payslip 发 WhatsApp 只发 PDF，不再附带字段文本（发票内容在 PDF 里）|
 
 ## 已完成（2026-08-17 已推送 adrian/stable/main d1da28c）
 - 积分守卫：points_enabled=false 学生拒绝任何加分/扣分
