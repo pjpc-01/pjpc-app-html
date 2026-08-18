@@ -149,6 +149,17 @@ export default function GradesManagementPage() {
     })).sort((a, b) => b.avg - a.avg)
   }, [analysisGrades])
 
+  const studentSubjectMap = useMemo(() => {
+    const map: Record<string, Record<string, {score:number;letter:string}>> = {}
+    for (const g of allGrades) {
+      if (g.term !== reportTerm) continue
+      if (g.score == null) continue
+      if (!map[g.studentId]) map[g.studentId] = {}
+      map[g.studentId][g.subject] = { score: g.score!, letter: g.grade_letter }
+    }
+    return map
+  }, [allGrades, reportTerm])
+
   const studentRanking = useMemo(() => {
     const map: Record<string, { scores: number[]; grade: string; name: string }> = {}
     for (const g of allGrades) {
@@ -253,14 +264,6 @@ export default function GradesManagementPage() {
 
       {activeTab === "report" && (() => {
         const gradeSubjects = ["华文", "国文", "英文", "科学", "数学", "历史", "地理", "伊斯兰教育", "道德", "RBT", "美术", "体育", "电脑"]
-        // Build per-student subject map
-        const studentSubjectMap: Record<string, Record<string, {score:number;letter:string}>> = {}
-        for (const g of allGrades) {
-          if (g.term !== reportTerm) continue
-          if (g.score == null) continue
-          if (!studentSubjectMap[g.studentId]) studentSubjectMap[g.studentId] = {}
-          studentSubjectMap[g.studentId][g.subject] = { score: g.score!, letter: g.grade_letter }
-        }
         const order = {"标准1":1,"标准2":2,"标准3":3,"标准4":4,"标准5":5,"标准6":6,"Peralihan":7,"中一":8,"中二":9,"中三":10,"中四":11,"中五":12}
         const centerStudents = students
           .filter((s) => {
@@ -381,7 +384,7 @@ export default function GradesManagementPage() {
                           return <div key={l} className="flex-1 flex flex-col items-center"><div className="w-full bg-gray-100 rounded h-4 relative"><div className={`h-full rounded ${gradeBarCls(l)}`} style={{ width: `${(c / max) * 100}%`, minWidth: c ? '4px' : '0' }} /></div><span className="text-[10px] text-slate-500 mt-0.5">{l}:{c}</span></div>
                         })}
                       </div>
-                      <div className="w-16 text-xs text-right"><span className="font-semibold">{(() => { const subjects = studentSubjectMap[s.id] || {}; const scores = Object.values(subjects).filter((d) => !isNaN(d.score)).map((d) => d.score); const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length * 10) / 10 : 0; return avg > 0 ? avg : "-" })()}</span><span className="text-slate-400 ml-1">{s.passRate}%</span></div>
+                      <div className="w-16 text-xs text-right"><span className="font-semibold">{s.avg > 0 ? s.avg : "-"}</span><span className="text-slate-400 ml-1">{s.passRate}%</span></div>
                     </div>
                   )
                 })}
@@ -402,7 +405,7 @@ export default function GradesManagementPage() {
                           <TableCell className="text-xs">{i < 3 ? <Medal className={`h-3.5 w-3.5 ${i === 0 ? "text-amber-500" : i === 1 ? "text-slate-400" : "text-orange-400"}`} /> : i + 1}</TableCell>
                           <TableCell className="font-medium text-sm">{s.name || s.student_name}</TableCell>
                           <TableCell className="text-xs text-slate-500">{s.standard || s.grade}</TableCell>
-                          <TableCell className={`text-xs text-right font-bold ${s.avg >= 70 ? "text-emerald-600" : s.avg >= 50 ? "text-blue-600" : "text-amber-600"}`}>{(() => { const subjects = studentSubjectMap[s.id] || {}; const scores = Object.values(subjects).filter((d) => !isNaN(d.score)).map((d) => d.score); const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length * 10) / 10 : 0; return avg > 0 ? avg : "-" })()}</TableCell>
+                          <TableCell className={`text-xs text-right font-bold ${s.avg >= 70 ? "text-emerald-600" : s.avg >= 50 ? "text-blue-600" : "text-amber-600"}`}>{s.avg > 0 ? s.avg : "-"}</TableCell>
                         </TableRow>
                       ))
                     }
@@ -422,7 +425,7 @@ export default function GradesManagementPage() {
                           <TableCell className="text-xs text-slate-400">{studentRanking.length - i}</TableCell>
                           <TableCell className="font-medium text-sm">{s.name || s.student_name}</TableCell>
                           <TableCell className="text-xs text-slate-500">{s.standard || s.grade}</TableCell>
-                          <TableCell className={`text-xs text-right font-bold ${s.avg < 40 ? "text-red-600" : "text-amber-600"}`}>{(() => { const subjects = studentSubjectMap[s.id] || {}; const scores = Object.values(subjects).filter((d) => !isNaN(d.score)).map((d) => d.score); const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length * 10) / 10 : 0; return avg > 0 ? avg : "-" })()}</TableCell>
+                          <TableCell className={`text-xs text-right font-bold ${s.avg < 40 ? "text-red-600" : "text-amber-600"}`}>{s.avg > 0 ? s.avg : "-"}</TableCell>
                         </TableRow>
                       ))
                     }
@@ -444,7 +447,7 @@ export default function GradesManagementPage() {
                         <TableCell className="text-xs text-slate-400">{i + 1}</TableCell>
                         <TableCell className="font-medium text-sm">{s.name || s.student_name}</TableCell>
                         <TableCell className="text-xs text-slate-500">{s.standard || s.grade}</TableCell>
-                        <TableCell className={`text-xs text-right font-bold ${s.avg >= 70 ? "text-emerald-600" : s.avg >= 50 ? "text-blue-600" : s.avg < 40 ? "text-red-600" : "text-amber-600"}`}>{(() => { const subjects = studentSubjectMap[s.id] || {}; const scores = Object.values(subjects).filter((d) => !isNaN(d.score)).map((d) => d.score); const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length * 10) / 10 : 0; return avg > 0 ? avg : "-" })()}</TableCell>
+                        <TableCell className={`text-xs text-right font-bold ${s.avg >= 70 ? "text-emerald-600" : s.avg >= 50 ? "text-blue-600" : s.avg < 40 ? "text-red-600" : "text-amber-600"}`}>{s.avg > 0 ? s.avg : "-"}</TableCell>
                         <TableCell className="text-xs text-right text-slate-400">{s.subjects}</TableCell>
                       </TableRow>
                     ))}
