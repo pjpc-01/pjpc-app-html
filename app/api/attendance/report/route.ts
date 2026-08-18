@@ -160,6 +160,7 @@ export async function GET(request: NextRequest) {
         person_name: p.person_name,
         person_type: p.person_type,
         center: p.center,
+        grade: studentGrades[p.student_id] || '',
         check_in: firstIn?.iso || null,
         check_in_time: firstIn?.time || null,
         check_out: lastOut?.iso || null,

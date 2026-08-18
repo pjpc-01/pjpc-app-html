@@ -235,6 +235,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
 }) {
   const { t } = useLanguage()
   const [levelFilter, setLevelFilter] = useState<"all" | "primary" | "secondary">("all")
+  const [statusFilter, setStatusFilter] = useState<"all" | "checked_in" | "not_checked_in">("all")
   // Merge: present students first, then absent students at bottom
   const allRows: { person_name: string; person_type: string; center: string; grade?: string; check_in_time: string | null; check_out_time: string | null; is_late: boolean; is_early: boolean; status: string; _isAbsent: boolean }[] = [
     ...report.map(r => ({ ...r, _isAbsent: false })),
@@ -242,11 +243,17 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
   ]
 
   const filteredRows = allRows.filter(r => {
-    if (levelFilter === "all") return true
-    // 教师始终显示；学生按年级分类
-    if (r.person_type === "teacher") return true
-    const level = classifySchoolLevel(r.grade)
-    return level === levelFilter
+    // 学段 filter：教师始终显示；学生按年级分类
+    if (levelFilter !== "all") {
+      if (r.person_type !== "teacher") {
+        const level = classifySchoolLevel(r.grade)
+        if (level !== levelFilter) return false
+      }
+    }
+    // 签到状态 filter
+    if (statusFilter === "checked_in" && (r._isAbsent || !r.check_in_time)) return false
+    if (statusFilter === "not_checked_in" && !r._isAbsent && r.check_in_time) return false
+    return true
   })
 
   const totalPeople = filteredRows.length
@@ -277,6 +284,26 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
               levelFilter === "secondary" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
             }`}
           >中学</button>
+        </div>
+        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+          <button
+            onClick={() => setStatusFilter("all")}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+              statusFilter === "all" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >全部</button>
+          <button
+            onClick={() => setStatusFilter("checked_in")}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+              statusFilter === "checked_in" ? "bg-white shadow text-green-700" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >已签到</button>
+          <button
+            onClick={() => setStatusFilter("not_checked_in")}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+              statusFilter === "not_checked_in" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >未签到</button>
         </div>
         <div className="flex items-center gap-4 ml-auto">
         {[
