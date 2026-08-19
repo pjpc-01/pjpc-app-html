@@ -13,6 +13,10 @@ async function pbAuth(): Promise<string> {
  * Scans all teacher NFC cards and creates PocketBase user accounts
  * for any teacher who doesn't already have one.
  *
+ * Dedup logic: by TEACHER (not card) so each teacher gets exactly ONE
+ * account. Extra cards for the same teacher are attached to the existing
+ * account instead of creating duplicates.
+ *
  * Returns: { success, created, skipped, total }
  */
 export async function GET(_request: NextRequest) {
@@ -34,7 +38,47 @@ export async function GET(_request: NextRequest) {
     let skipped = 0
 
     for (const card of cards) {
-      // 2. Check if a user already exists bound to this card
+      // Skip cards with no teacher record
+      if (!card.teacherId) {
+        skipped++
+        continue
+      }
+
+      // 2. Dedup by TEACHER (not card) — prevent multiple accounts per teacher.
+      //    Check if ANY user is already bound to this teacher.
+      const teacherUserFilter = `teacher_id="${card.teacherId}"`
+      const teacherUserRes = await fetch(
+        `${PB_URL}/api/collections/users/records?perPage=1&filter=${encodeURIComponent(teacherUserFilter)}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      )
+      if (teacherUserRes.ok) {
+        const teacherUserData = await teacherUserRes.json()
+        if (teacherUserData.items?.length > 0) {
+          // Teacher already has an account — skip. If this card isn't on it yet,
+          // attach the card to the existing account so it can still log in.
+          const existingUserId = teacherUserData.items[0].id
+          const existingCardId = teacherUserData.items[0].card_id
+          if (!existingCardId || existingCardId !== card.id) {
+            const linkRes = await fetch(
+              `${PB_URL}/api/collections/users/records/${existingUserId}`,
+              {
+                method: 'PATCH',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ card_id: card.id }),
+              },
+            )
+            if (!linkRes.ok) {
+              console.error(
+                `Failed to attach card ${card.id} to existing teacher ${card.teacherId}: ${linkRes.status}`,
+              )
+            }
+          }
+          skipped++
+          continue
+        }
+      }
+
+      // 2b. Backward-safety: if the teacher check errored, fall back to card check
       const userFilter = `card_id="${card.id}"`
       const userCheckRes = await fetch(
         `${PB_URL}/api/collections/users/records?perPage=1&filter=${encodeURIComponent(userFilter)}`,
