@@ -573,43 +573,45 @@ export default function CourseScheduling() {
         </CardContent>
       </Card>
 
-      {/* 每周课程表网格 — 行=时间段（左竖排），列=星期（顶横排） */}
+      {/* 每周课程表网格 — 行=星期几，列=时间段（时间横排） */}
       <div className="overflow-x-auto">
         <div
-          className="grid gap-px bg-gray-200 rounded-lg overflow-hidden min-w-[640px]"
+          className="grid gap-px bg-gray-200 rounded-lg overflow-hidden min-w-[860px]"
           style={{
-            gridTemplateColumns: `110px repeat(${DAYS.length}, minmax(150px, 1fr))`,
+            gridTemplateColumns: `90px repeat(${timeSlots.length}, minmax(150px, 1fr))`,
           }}
         >
           {/* 表头第一行 */}
           <div className="bg-gray-100 p-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            时间段
+            星期
           </div>
-          {DAYS.map(day => (
+          {timeSlots.map(slot => (
             <div
-              key={`h-${day}`}
+              key={`h-${slot.id}`}
               className="bg-gray-100 p-3 text-center font-semibold text-gray-700"
             >
-              <div>{DAY_LABELS[day]}</div>
-              <div className="text-xs text-gray-400 font-normal mt-0.5">
-                {scheduleEntries.filter(e => e.day_of_week === day).length} 节
-              </div>
+              <span className="flex items-center justify-center gap-1">
+                <Clock className="h-3 w-3 text-indigo-500" />
+                {slot.start}-{slot.end}
+              </span>
             </div>
           ))}
 
-          {/* 每行一个时间段 */}
-          {timeSlots.map(slot => (
-            <div key={`row-${slot.id}`} className="contents">
-              {/* 时间段列（左竖排） */}
-              <div className="bg-white p-2 text-xs text-gray-500 font-medium flex items-center justify-center border-r border-gray-100">
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {slot.start}-{slot.end}
-                </span>
+          {/* 每行一个星期 */}
+          {DAYS.map(day => (
+            <div key={`row-${day}`} className="contents">
+              {/* 星期列 */}
+              <div className="bg-gray-50 p-2 text-sm font-semibold text-gray-700 flex items-center justify-center border-b border-gray-100">
+                <div className="text-center">
+                  <div>{DAY_LABELS[day]}</div>
+                  <div className="text-xs text-gray-400 font-normal mt-0.5">
+                    {scheduleEntries.filter(e => e.day_of_week === day).length} 节
+                  </div>
+                </div>
               </div>
 
-              {/* 该时段各星期格子 */}
-              {DAYS.map(day => {
+              {/* 该星期各时间段格子 */}
+              {timeSlots.map(slot => {
                 const entry = getEntry(day, slot.start, slot.end)
                 const hasCourse = hasCourseInSlot(day, slot.start, slot.end)
                 const cellKey = `${day}-${slot.id}`
@@ -623,7 +625,7 @@ export default function CourseScheduling() {
                   return (
                     <div
                       key={cellKey}
-                      className={`bg-white p-1.5 min-h-[72px] cursor-pointer border-2 rounded-sm transition-colors relative group ${colorClass} ${
+                      className={`bg-white p-1.5 min-h-[76px] cursor-pointer border-2 rounded-sm transition-colors relative group ${colorClass} ${
                         noTeacher ? 'ring-1 ring-amber-300' : ''
                       }`}
                       onClick={() => openAssignTeacher(entry)}
@@ -676,11 +678,11 @@ export default function CourseScheduling() {
                 return (
                   <div
                     key={cellKey}
-                    className="bg-white p-1.5 min-h-[72px] cursor-pointer hover:bg-indigo-50 hover:border-indigo-300 transition-all border border-dashed border-gray-200 group relative"
+                    className="bg-white p-1.5 min-h-[76px] cursor-pointer hover:bg-indigo-50 hover:border-indigo-300 transition-all border border-dashed border-gray-200 group relative"
                     onClick={() => openAssignCourse(day, slot)}
                     title="点击放入课程"
                   >
-                    <div className="text-[10px] text-gray-300 text-center pt-4">
+                    <div className="text-[10px] text-gray-300 text-center pt-6">
                       {hasCourse ? '时段已占用' : '+'}
                     </div>
                   </div>
