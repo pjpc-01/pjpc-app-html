@@ -324,7 +324,7 @@ export const FeeCard = ({
                                   }`}
                                 >6月</button>
                               )}
-                              {fee.type === 'daily' && assigned ? (
+                              {(editMode || localEditMode) && fee.type === 'daily' && assigned ? (
                                 <span className="flex items-center gap-0.5">
                                   <input
                                     type="number" min={1} step={1}
