@@ -44,14 +44,15 @@ interface FeeCardProps {
   toggleLocalSixMonthFeeId: (studentId: string, feeId: string) => void
   setLocalSixMonthPayRate: (studentId: string, rate: number) => void
   setLocalSixMonthPayRateType: (studentId: string, rateType: 'amount' | 'percent') => void
+  onRefreshFees?: () => Promise<void>
 }
 
 export const FeeCard = ({
   student, activeFees, groupedFees, studentTotal,
   onCreateInvoice, editMode, isAssigned,
   assignFeeToStudent, removeFeeFromStudent, hasInvoiceThisMonth,
-  getLocalAdjustment, setLocalDiscount, toggleLocalSixMonthFeeId, setLocalSixMonthPayRate, setLocalSixMonthPayRateType,
-}: FeeCardProps) => {
+  getLocalAdjustment, setLocalDiscount, toggleLocalSixMonthFeeId, setLocalSixMonthPayRate, setLocalSixMonthPayRateType, onRefreshFees,
+ }: FeeCardProps) => {
   const studentId = student.id
   const [expanded, setExpanded] = useState(false)
   const [localEditMode, setLocalEditMode] = useState(false)
@@ -94,6 +95,9 @@ export const FeeCard = ({
           method: 'PATCH', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fee_items: JSON.stringify(items) }),
         })
+        // Refresh global student-fees state so getStudentAmount / invoice totals
+        // pick up the new quantity immediately (otherwise stays at old 1).
+        await onRefreshFees?.()
       }
     } catch {} finally {
       setSavingQty(prev => { const s = new Set(prev); s.delete(feeId); return s })
