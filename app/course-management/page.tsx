@@ -3,7 +3,6 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import PageLayout from "@/components/layouts/PageLayout"
-import CourseManagement from "@/components/courses/CourseManagement"
 import ClassManagement from "@/components/courses/ClassManagement"
 import CourseScheduling from "@/components/courses/CourseScheduling"
 import SimpleScheduleManager from "@/app/components/attendance/SimpleScheduleManager"
@@ -90,11 +89,6 @@ export default function CourseManagementPage() {
       <div className="space-y-6">
         <section>
           <h2 className="text-lg font-semibold mb-3">{t('course.course_management')}</h2>
-          <CourseManagement />
-        </section>
-
-        <section>
-          <h2 className="text-lg font-semibold mb-3">班级管理</h2>
           <ClassManagement />
         </section>
 
