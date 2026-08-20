@@ -15,7 +15,7 @@ export const StudentFeeMatrix = () => {
   const { fees } = useFees()
   const { students } = useStudents()
   const { isAssigned, getStudentAmount, assignFeeToStudent, removeFeeFromStudent, enterEditMode, exitEditMode,
-    loading: studentFeesLoading, error: studentFeesError,
+    loading: studentFeesLoading, error: studentFeesError, fetchStudentFees,
     setLocalDiscount, toggleLocalSixMonthFeeId, setLocalSixMonthPayRate, setLocalSixMonthPayRateType, getLocalAdjustment, isEditMode: hookEditMode } = useStudentFees()
   const { createInvoice: createInvoiceFromHook, invoices } = useInvoices()
 
@@ -216,6 +216,7 @@ export const StudentFeeMatrix = () => {
               toggleLocalSixMonthFeeId={toggleLocalSixMonthFeeId}
               setLocalSixMonthPayRate={setLocalSixMonthPayRate}
               setLocalSixMonthPayRateType={setLocalSixMonthPayRateType}
+              onRefreshFees={fetchStudentFees}
             />
           ))}
         </div>
