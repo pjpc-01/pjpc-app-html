@@ -193,7 +193,7 @@ export const buildClassGroups = (courses: Course[], teacherMap?: Record<string, 
 // 获取教师姓名映射
 export const fetchTeachers = async (): Promise<Record<string, string>> => {
   try {
-    const response = await fetch('/api/teachers/list')
+    const response = await fetch('/api/teachers')
     if (!response.ok) return {}
     const result = await response.json()
     if (!result.success) return {}
