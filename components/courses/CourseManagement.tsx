@@ -248,7 +248,7 @@ function CourseFormDialog({
 
           {/* 授课教师 */}
           <div className="grid gap-2">
-            <Label htmlFor="teacher_id">授课教师</Label>
+            <Label htmlFor="teacher_id">授课教师 <span className="text-xs text-gray-400 font-normal">(可选，可在排课时指定)</span></Label>
             <Select
               value={form.teacher_id || ''}
               onValueChange={(v) => setForm({ ...form, teacher_id: v })}
