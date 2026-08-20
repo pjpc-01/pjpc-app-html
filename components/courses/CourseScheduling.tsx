@@ -46,6 +46,7 @@ interface Course {
   title: string
   subject: string
   grade_level?: string
+  duration?: number // 分钟
   status?: string
 }
 
@@ -62,9 +63,7 @@ interface CourseScheduleEntry {
   day_of_week: DayOfWeek
   start_time: string
   end_time: string
-  /** 课程名称 (展开/缓存) */
   course_title?: string
-  /** 教师名称 (展开/缓存) */
   teacher_name?: string
   course_subject?: string
   course_grade?: string
@@ -81,16 +80,11 @@ const DAY_LABELS: Record<DayOfWeek, string> = {
   Fri: '周五',
 }
 
-/** 默认时间段 */
-const DEFAULT_TIME_SLOTS = [
-  { start: '08:00', end: '08:45' },
-  { start: '09:00', end: '09:45' },
-  { start: '10:00', end: '10:45' },
-  { start: '11:00', end: '11:45' },
-  { start: '14:00', end: '14:45' },
-  { start: '15:00', end: '15:45' },
-  { start: '16:00', end: '16:45' },
-]
+interface TimeSlot {
+  id: string
+  start: string
+  end: string
+}
 
 // ============================================================
 // PB Proxy 工具函数
@@ -114,13 +108,22 @@ async function pbRequest(path: string, options?: RequestInit) {
 }
 
 // ============================================================
-// 时间段选项
+// 时间工具
 // ============================================================
+
+/** 时间字符串 + 分钟数 → 新时间字符串 (HH:mm) */
+function addMinutes(time: string, minutes: number): string {
+  const [h, m] = time.split(':').map(Number)
+  const total = h * 60 + m + minutes
+  const nh = Math.floor(total / 60)
+  const nm = total % 60
+  return `${String(nh).padStart(2, '0')}:${String(nm).padStart(2, '0')}`
+}
 
 function getTimeOptions() {
   const options: string[] = []
-  for (let h = 7; h <= 18; h++) {
-    for (const m of ['00', '30']) {
+  for (let h = 7; h <= 19; h++) {
+    for (const m of ['00', '15', '30', '45']) {
       const t = `${String(h).padStart(2, '0')}:${m}`
       options.push(t)
     }
@@ -141,18 +144,35 @@ export default function CourseScheduling() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 选择状态
-  const [selectedCourseId, setSelectedCourseId] = useState<string>('')
-  const [selectedTeacherId, setSelectedTeacherId] = useState<string>('')
+  // 自定义时间段集合 (可增删)
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([
+    { id: 's1', start: '08:00', end: '09:30' },
+    { id: 's2', start: '09:30', end: '11:00' },
+    { id: 's3', start: '11:00', end: '12:30' },
+    { id: 's4', start: '14:00', end: '15:30' },
+    { id: 's5', start: '15:30', end: '17:00' },
+  ])
 
-  // 对话框状态
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [editingEntry, setEditingEntry] = useState<CourseScheduleEntry | null>(null)
-
-  // 新建对话框
-  const [newSlotDay, setNewSlotDay] = useState<DayOfWeek>('Mon')
+  // 新增时间段输入
   const [newSlotStart, setNewSlotStart] = useState('08:00')
   const [newSlotEnd, setNewSlotEnd] = useState('08:45')
+
+  // 弹窗状态
+  const [assignCourseDialog, setAssignCourseDialog] = useState(false)
+  const [targetDay, setTargetDay] = useState<DayOfWeek>('Mon')
+  const [targetSlot, setTargetSlot] = useState<TimeSlot | null>(null)
+  const [assignCourseId, setAssignCourseId] = useState('')
+  const [assignStartTime, setAssignStartTime] = useState('08:00')
+  const assignEndTime = (() => {
+    const course = courses.find(c => c.id === assignCourseId)
+    const dur = course?.duration || 60
+    return addMinutes(assignStartTime, dur)
+  })()
+
+  // 选老师弹窗
+  const [assignTeacherDialog, setAssignTeacherDialog] = useState(false)
+  const [targetEntry, setTargetEntry] = useState<CourseScheduleEntry | null>(null)
+  const [assignTeacherId, setAssignTeacherId] = useState('')
 
   // ============================================================
   // 数据加载
@@ -162,14 +182,12 @@ export default function CourseScheduling() {
     setLoading(true)
     setError(null)
     try {
-      // 并行加载课程、教师、已存在排课
       const [coursesRes, teachersRes, schedulesRes] = await Promise.all([
         fetch('/api/courses'),
         fetch('/api/teachers?limit=200'),
         pbRequest(`${PROXY_BASE}?filter=(schedule_type="course_schedule")&sort=start_time&perPage=200`),
       ])
 
-      // 课程
       const coursesData = await coursesRes.json()
       let courseList: Course[] = []
       if (coursesData.success && Array.isArray(coursesData.data?.items)) {
@@ -181,23 +199,21 @@ export default function CourseScheduling() {
       }
       setCourses(courseList.filter((c: Course) => c.status !== 'archived') || [])
 
-      // 教师
       const teachersData = await teachersRes.json()
       let teacherList: Teacher[] = []
       if (teachersData.success && Array.isArray(teachersData.data)) {
-        teacherList = teachersData.data.map((t: any) => ({
-          id: t.id,
-          name: t.name || t.teacher_name || '',
+        teacherList = teachersData.data.map((tt: any) => ({
+          id: tt.id,
+          name: tt.name || tt.teacher_name || '',
         }))
       } else if (Array.isArray(teachersData)) {
-        teacherList = teachersData.map((t: any) => ({
-          id: t.id,
-          name: t.name || '',
+        teacherList = teachersData.map((tt: any) => ({
+          id: tt.id,
+          name: tt.name || '',
         }))
       }
-      setTeachers(teacherList.filter((t: Teacher) => t.name) || [])
+      setTeachers(teacherList.filter((tt: Teacher) => tt.name) || [])
 
-      // 排课记录
       const pbsItems = schedulesRes?.items || []
       const entries: CourseScheduleEntry[] = pbsItems.map((item: any) => ({
         id: item.id,
@@ -224,13 +240,13 @@ export default function CourseScheduling() {
     loadData()
   }, [loadData])
 
-  // 从 date 推导 day_of_week (向后兼容)
   function getDayFromDate(dateStr: string): DayOfWeek | null {
     if (!dateStr) return null
     try {
       const d = new Date(dateStr)
-      const days: DayOfWeek[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-      return days[d.getDay()] as DayOfWeek || null
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+      const day = days[d.getDay()]
+      return DAYS.includes(day as DayOfWeek) ? (day as DayOfWeek) : null
     } catch {
       return null
     }
@@ -241,81 +257,146 @@ export default function CourseScheduling() {
   // ============================================================
 
   const courseMap = new Map(courses.map(c => [c.id, c]))
-  const teacherMap = new Map(teachers.map(t => [t.id, t]))
+  const teacherMap = new Map(teachers.map(tt => [tt.id, tt]))
 
   function getCourseTitle(courseId: string): string {
     return courseMap.get(courseId)?.title || courseId.slice(0, 8)
   }
-
   function getCourseSubject(courseId: string): string {
     return courseMap.get(courseId)?.subject || ''
   }
-
   function getCourseGrade(courseId: string): string {
     return courseMap.get(courseId)?.grade_level || ''
   }
-
   function getTeacherName(teacherId: string): string {
     return teacherMap.get(teacherId)?.name || teacherId.slice(0, 8)
+  }
+
+  // ============================================================
+  // 时间段增删
+  // ============================================================
+
+  function handleAddTimeSlot() {
+    if (!newSlotStart || !newSlotEnd) {
+      toast.error('请填写开始和结束时间')
+      return
+    }
+    if (newSlotStart >= newSlotEnd) {
+      toast.error('结束时间必须晚于开始时间')
+      return
+    }
+    setTimeSlots(prev => [...prev, {
+      id: `s-${Date.now()}`,
+      start: newSlotStart,
+      end: newSlotEnd,
+    }])
+  }
+
+  function handleRemoveTimeSlot(id: string) {
+    // 检查该时间段是否已有排课
+    const slot = timeSlots.find(s => s.id === id)
+    if (slot) {
+      const used = scheduleEntries.some(e => e.start_time === slot.start && e.end_time === slot.end)
+      if (used) {
+        toast.error('该时间段已有排课，无法删除')
+        return
+      }
+    }
+    setTimeSlots(prev => prev.filter(s => s.id !== id))
   }
 
   // ============================================================
   // 排课 CRUD
   // ============================================================
 
-  /** 创建排课记录 */
-  async function handleCreate(day: DayOfWeek, start: string, end: string) {
-    if (!selectedCourseId) {
-      toast.error('请先选择课程')
-      return
-    }
-    if (!selectedTeacherId) {
-      toast.error('请先选择教师')
-      return
-    }
+  /** 第一步：点空格 → 选课程 + 开始时间 → 自动算结束 */
+  function openAssignCourse(day: DayOfWeek, slot: TimeSlot) {
+    setTargetDay(day)
+    setTargetSlot(slot)
+    setAssignCourseId('')
+    setAssignStartTime(slot.start)
+    setAssignCourseDialog(true)
+  }
 
-    // 检查该时间段是否已被占用
-    const conflict = scheduleEntries.find(
-      e => e.day_of_week === day && e.start_time === start && e.end_time === end
-    )
+  async function handleAssignCourse() {
+    if (!targetDay || !targetSlot) return
+    if (!assignCourseId) {
+      toast.error('请选择课程')
+      return
+    }
+    // 冲突检查：同一天同一时间（时间段重叠）
+    const start = assignStartTime
+    const end = assignEndTime
+    const conflict = scheduleEntries.find(e => {
+      if (e.day_of_week !== targetDay) return false
+      // 时间段重叠判断
+      return start < e.end_time && e.start_time < end
+    })
     if (conflict) {
-      toast.error('该时间段已被占用，请先删除或修改现有排课')
+      toast.error('该时间段已被占用')
       return
     }
 
     try {
-      const course = courseMap.get(selectedCourseId)
-      const teacher = teacherMap.get(selectedTeacherId)
-
+      const course = courseMap.get(assignCourseId)
       await pbRequest(PROXY_BASE, {
         method: 'POST',
         body: JSON.stringify({
-          course_id: selectedCourseId,
-          teacher_id: selectedTeacherId,
-          day_of_week: day,
-          date: '2026-01-05', // placeholder — 对于课程排课不重要
+          course_id: assignCourseId,
+          teacher_id: '', // 课程先行，老师后面再排
+          day_of_week: targetDay,
+          date: '2026-01-05',
           start_time: start,
           end_time: end,
           schedule_type: 'course_schedule',
           status: 'scheduled',
           center: '',
           course_title: course?.title || '',
-          teacher_name: teacher?.name || '',
+          teacher_name: '',
           course_subject: course?.subject || '',
           course_grade: course?.grade_level || '',
-          class_id: selectedCourseId, // 同时存储到 class_id 向下兼容
-          notes: day, // 向下兼容: notes 存 day_of_week
+          class_id: assignCourseId,
+          notes: targetDay,
         }),
       })
-
-      toast.success('排课已创建')
+      toast.success('课程已放入时间表')
+      setAssignCourseDialog(false)
       loadData()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '创建排课失败')
     }
   }
 
-  /** 删除排课记录 */
+  /** 第二步：点已放课程的格子 → 选老师 */
+  function openAssignTeacher(entry: CourseScheduleEntry) {
+    setTargetEntry(entry)
+    setAssignTeacherId(entry.teacher_id || '')
+    setAssignTeacherDialog(true)
+  }
+
+  async function handleAssignTeacher() {
+    if (!targetEntry) return
+    if (!assignTeacherId) {
+      toast.error('请选择教师')
+      return
+    }
+    try {
+      const teacher = teacherMap.get(assignTeacherId)
+      await pbRequest(`${PROXY_BASE}/${targetEntry.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          teacher_id: assignTeacherId,
+          teacher_name: teacher?.name || '',
+        }),
+      })
+      toast.success('已指定教师')
+      setAssignTeacherDialog(false)
+      loadData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '指定教师失败')
+    }
+  }
+
   async function handleDelete(entry: CourseScheduleEntry) {
     try {
       await pbRequest(`${PROXY_BASE}/${entry.id}`, { method: 'DELETE' })
@@ -330,10 +411,16 @@ export default function CourseScheduling() {
   // 网格构建
   // ============================================================
 
-  /** 获取某天某时间段的排课 */
   function getEntry(day: DayOfWeek, start: string, end: string): CourseScheduleEntry | undefined {
     return scheduleEntries.find(
       e => e.day_of_week === day && e.start_time === start && e.end_time === end
+    )
+  }
+
+  function hasCourseInSlot(day: DayOfWeek, start: string, end: string): boolean {
+    return scheduleEntries.some(e =>
+      e.day_of_week === day &&
+      start < e.end_time && e.start_time < end
     )
   }
 
@@ -393,71 +480,12 @@ export default function CourseScheduling() {
       <div>
         <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
           <Calendar className="h-5 w-5 text-indigo-500" />
-          排课管理 (方案B)
+          排课管理
         </h2>
         <p className="text-sm text-gray-500 mt-1">
-          选择课程和教师，点击时间格子完成排课
+          先把课程放入时间表（选课程 + 开始时间，自动算结束），再为每个时段指定教师
         </p>
       </div>
-
-      {/* 选择器 */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* 课程选择 */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-1.5 block">
-                选择课程 <span className="text-red-500">*</span>
-              </Label>
-              <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="选择要排课的课程" />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses.map(course => (
-                    <SelectItem key={course.id} value={course.id}>
-                      {course.title}{course.grade_level ? ` (${course.grade_level})` : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* 教师选择 */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-1.5 block">
-                选择教师 <span className="text-red-500">*</span>
-              </Label>
-              <Select value={selectedTeacherId} onValueChange={setSelectedTeacherId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="选择授课教师" />
-                </SelectTrigger>
-                <SelectContent>
-                  {teachers.map(teacher => (
-                    <SelectItem key={teacher.id} value={teacher.id}>
-                      {teacher.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* 选中预览 */}
-          {selectedCourseId && selectedTeacherId && (
-            <div className="mt-3 flex items-center gap-3 text-sm text-gray-600 bg-indigo-50 rounded-lg p-3">
-              <BookOpen className="h-4 w-4 text-indigo-500" />
-              <span className="font-medium">{getCourseTitle(selectedCourseId)}</span>
-              <span className="text-gray-300">→</span>
-              <UserCheck className="h-4 w-4 text-indigo-500" />
-              <span className="font-medium">{getTeacherName(selectedTeacherId)}</span>
-              <span className="text-xs text-gray-400 ml-auto">
-                点击下方时间格子完成排课
-              </span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* 统计 */}
       <div className="flex flex-wrap gap-3 text-sm">
@@ -478,14 +506,79 @@ export default function CourseScheduling() {
         </Badge>
       </div>
 
-      {/* ================================================================ */}
-      {/*         每周课程表网格                                          */}
-      {/* ================================================================ */}
+      {/* 时间段管理（可增删） */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Clock className="h-4 w-4 text-indigo-500" />
+            时间段管理
+          </CardTitle>
+          <CardDescription>添加或删除时间表上的时间段（网格行）</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2">
+              <div>
+                <Label className="text-[10px] text-gray-500 block mb-1">开始</Label>
+                <select
+                  value={newSlotStart}
+                  onChange={e => setNewSlotStart(e.target.value)}
+                  className="h-8 text-xs border rounded px-2"
+                >
+                  {getTimeOptions().map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <span className="text-gray-400 text-xs mt-4">—</span>
+              <div>
+                <Label className="text-[10px] text-gray-500 block mb-1">结束</Label>
+                <select
+                  value={newSlotEnd}
+                  onChange={e => setNewSlotEnd(e.target.value)}
+                  className="h-8 text-xs border rounded px-2"
+                >
+                  {getTimeOptions().map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-4"
+              onClick={handleAddTimeSlot}
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              添加时间段
+            </Button>
+          </div>
+
+          {/* 现有时段 */}
+          <div className="flex flex-wrap gap-2">
+            {timeSlots.map(slot => (
+              <div
+                key={slot.id}
+                className="flex items-center gap-1.5 bg-slate-50 border rounded-full px-3 py-1 text-xs"
+              >
+                <Clock className="h-3 w-3 text-indigo-500" />
+                <span className="font-medium">{slot.start} - {slot.end}</span>
+                <button
+                  className="text-red-400 hover:text-red-600 ml-1"
+                  onClick={() => handleRemoveTimeSlot(slot.id)}
+                  title="删除时间段"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 每周课程表网格 */}
       <div className="overflow-x-auto">
         <div
           className="grid gap-px bg-gray-200 rounded-lg overflow-hidden min-w-[640px]"
           style={{
-            gridTemplateColumns: `100px repeat(${DAYS.length}, 1fr)`,
+            gridTemplateColumns: `120px repeat(${DAYS.length}, 1fr)`,
           }}
         >
           {/* 表头 */}
@@ -505,15 +598,12 @@ export default function CourseScheduling() {
           ))}
 
           {/* 时间格子 */}
-          {DEFAULT_TIME_SLOTS.map(slot => {
+          {timeSlots.map(slot => {
             const key = `${slot.start}-${slot.end}`
             return (
-              <>
+              <div key={key} className="contents">
                 {/* 时间列 */}
-                <div
-                  key={`time-${key}`}
-                  className="bg-white p-2 text-xs text-gray-500 font-medium flex items-center justify-center border-r border-gray-100"
-                >
+                <div className="bg-white p-2 text-xs text-gray-500 font-medium flex items-center justify-center border-r border-gray-100">
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     {slot.start}-{slot.end}
@@ -523,32 +613,44 @@ export default function CourseScheduling() {
                 {/* 每天格子 */}
                 {DAYS.map(day => {
                   const entry = getEntry(day, slot.start, slot.end)
+                  const hasCourse = hasCourseInSlot(day, slot.start, slot.end)
                   const cellKey = `${day}-${key}`
 
                   if (entry) {
                     const course = courseMap.get(entry.course_id)
                     const subject = course?.subject || entry.course_subject || ''
                     const colorClass = getSubjectColor(subject)
+                    const noTeacher = !entry.teacher_id
 
                     return (
                       <div
                         key={cellKey}
-                        className={`bg-white p-1.5 min-h-[72px] cursor-pointer border border-transparent hover:border-indigo-300 transition-colors group relative ${colorClass} border-2 rounded-sm`}
-                        onClick={() => {
-                          setEditingEntry(entry)
-                          setDialogOpen(true)
-                        }}
-                        title={`${getCourseTitle(entry.course_id)} · ${getTeacherName(entry.teacher_id)}`}
+                        className={`bg-white p-1.5 min-h-[72px] cursor-pointer border-2 rounded-sm transition-colors relative group ${colorClass} ${
+                          noTeacher ? 'ring-1 ring-amber-300' : ''
+                        }`}
+                        onClick={() => openAssignTeacher(entry)}
+                        title={noTeacher ? '点击指定教师' : `点击更换教师`}
                       >
                         {/* 课程名称 */}
                         <div className="font-semibold text-xs leading-tight mb-0.5 truncate">
                           {getCourseTitle(entry.course_id)}
                         </div>
 
-                        {/* 教师 + 科目 */}
-                        <div className="flex items-center gap-1 text-[10px] text-gray-500">
-                          <UserCheck className="h-2.5 w-2.5 shrink-0" />
-                          <span className="truncate">{getTeacherName(entry.teacher_id)}</span>
+                        {/* 时长 */}
+                        <div className="text-[10px] text-gray-400">
+                          {course?.duration ? `${course.duration}分` : ''}
+                        </div>
+
+                        {/* 教师 */}
+                        <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-0.5">
+                          {noTeacher ? (
+                            <span className="text-amber-600 font-medium italic truncate">待排教师</span>
+                          ) : (
+                            <>
+                              <UserCheck className="h-2.5 w-2.5 shrink-0" />
+                              <span className="truncate">{getTeacherName(entry.teacher_id)}</span>
+                            </>
+                          )}
                         </div>
 
                         {subject && (
@@ -572,47 +674,27 @@ export default function CourseScheduling() {
                     )
                   }
 
-                  // 空格子 — 可点击创建
+                  // 空格子 — 点击放入课程
                   return (
                     <div
                       key={cellKey}
-                      className={`bg-white p-1.5 min-h-[72px] cursor-pointer hover:bg-indigo-50 hover:border-indigo-300 transition-all border border-dashed border-gray-200 group relative ${
-                        selectedCourseId && selectedTeacherId
-                          ? 'hover:border-indigo-400 hover:bg-indigo-50/50'
-                          : ''
-                      }`}
-                      onClick={() => {
-                        if (selectedCourseId && selectedTeacherId) {
-                          handleCreate(day, slot.start, slot.end)
-                        } else {
-                          toast.info('请先在上方选择课程和教师')
-                        }
-                      }}
+                      className="bg-white p-1.5 min-h-[72px] cursor-pointer hover:bg-indigo-50 hover:border-indigo-300 transition-all border border-dashed border-gray-200 group relative"
+                      onClick={() => openAssignCourse(day, slot)}
+                      title="点击放入课程"
                     >
-                      {/* 空状态提示 */}
-                      {selectedCourseId && selectedTeacherId && (
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Plus className="h-5 w-5 text-indigo-300" />
-                        </div>
-                      )}
-                      {!selectedCourseId || !selectedTeacherId ? (
-                        <div className="text-[10px] text-gray-300 text-center pt-4">
-                          选择课程+教师后点击添加
-                        </div>
-                      ) : null}
+                      <div className="text-[10px] text-gray-300 text-center pt-4">
+                        {hasCourse ? '时段已占用' : '+'}
+                      </div>
                     </div>
                   )
                 })}
-              </>
+              </div>
             )
           })}
         </div>
       </div>
 
-      {/* ================================================================ */}
-      {/*         排课列表 (底部)                                         */}
-      {/* ================================================================ */}
-
+      {/* 排课列表（底部） */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
@@ -626,7 +708,7 @@ export default function CourseScheduling() {
             <div className="text-center py-8 text-gray-400">
               <Calendar className="h-10 w-10 mx-auto mb-2 text-gray-300" />
               <p className="text-sm">暂无排课数据</p>
-              <p className="text-xs mt-1">选择课程和教师后点击时间格子添加排课</p>
+              <p className="text-xs mt-1">点击时间表格子，选课程放入时间表</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -635,6 +717,7 @@ export default function CourseScheduling() {
                 .map(entry => {
                   const subject = getCourseSubject(entry.course_id)
                   const colorClass = getSubjectColor(subject)
+                  const noTeacher = !entry.teacher_id
                   return (
                     <div
                       key={entry.id}
@@ -665,7 +748,9 @@ export default function CourseScheduling() {
                           <div className="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
                             <span className="flex items-center gap-1">
                               <UserCheck className="h-3 w-3" />
-                              {getTeacherName(entry.teacher_id)}
+                              {noTeacher
+                                ? <span className="text-amber-600 italic">待排教师</span>
+                                : getTeacherName(entry.teacher_id)}
                             </span>
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
@@ -683,6 +768,17 @@ export default function CourseScheduling() {
 
                       {/* 操作 */}
                       <div className="flex items-center gap-1 shrink-0">
+                        {noTeacher && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-8"
+                            onClick={() => openAssignTeacher(entry)}
+                          >
+                            <UserCheck className="h-3 w-3 mr-1" />
+                            排教师
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -702,57 +798,118 @@ export default function CourseScheduling() {
       </Card>
 
       {/* ================================================================ */}
-      {/*         编辑/查看对话框                                         */}
+      {/* 弹窗：给空格子放课程（第一步） */}
       {/* ================================================================ */}
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={assignCourseDialog} onOpenChange={setAssignCourseDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>排课详情</DialogTitle>
+            <DialogTitle>放入课程</DialogTitle>
             <DialogDescription>
-              查看和删除当前排课记录
+              {targetDay ? `${DAY_LABELS[targetDay]} · ${targetSlot?.start}-${targetSlot?.end}` : ''}
             </DialogDescription>
           </DialogHeader>
 
-          {editingEntry && (
-            <div className="space-y-3 py-2">
-              <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">{t('course.course')}</span>
-                  <span className="font-medium">{getCourseTitle(editingEntry.course_id)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">{t('teacher.teacher')}</span>
-                  <span className="font-medium">{getTeacherName(editingEntry.teacher_id)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">{t('course.week')}</span>
-                  <span className="font-medium">{DAY_LABELS[editingEntry.day_of_week]}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">{t('announcement.time')}</span>
-                  <span className="font-medium">{editingEntry.start_time} - {editingEntry.end_time}</span>
-                </div>
-              </div>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                选择课程 <span className="text-red-500">*</span>
+              </Label>
+              <Select value={assignCourseId} onValueChange={setAssignCourseId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择要排课的课程" />
+                </SelectTrigger>
+                <SelectContent>
+                  {courses.map(course => (
+                    <SelectItem key={course.id} value={course.id}>
+                      {course.title}{course.grade_level ? ` (${course.grade_level})` : ''}
+                      {course.duration ? ` · ${course.duration}分` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
+
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                开始时间 <span className="text-red-500">*</span>
+              </Label>
+              <select
+                value={assignStartTime}
+                onChange={e => setAssignStartTime(e.target.value)}
+                className="h-10 w-full text-sm border rounded px-3"
+              >
+                {getTimeOptions().map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+
+            {/* 自动算出的结束时间 */}
+            {assignCourseId && (
+              <div className="bg-indigo-50 rounded-lg p-3 flex items-center justify-between text-sm">
+                <span className="text-gray-600">结束时间（自动）</span>
+                <span className="font-bold text-indigo-700">
+                  {assignEndTime}
+                  <span className="text-xs text-gray-500 ml-2">
+                    ({courseMap.get(assignCourseId)?.duration || 60}分)
+                  </span>
+                </span>
+              </div>
+            )}
+          </div>
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              关闭
+            <Button variant="outline" onClick={() => setAssignCourseDialog(false)}>
+              取消
             </Button>
-            {editingEntry && (
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  handleDelete(editingEntry)
-                  setDialogOpen(false)
-                }}
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                删除排课
-              </Button>
-            )}
+            <Button onClick={handleAssignCourse}>
+              <Plus className="h-4 w-4 mr-1" />
+              放入时间表
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ================================================================ */}
+      {/* 弹窗：给已排课程指定教师（第二步） */}
+      {/* ================================================================ */}
+      <Dialog open={assignTeacherDialog} onOpenChange={setAssignTeacherDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>指定教师</DialogTitle>
+            <DialogDescription>
+              {targetEntry ? (
+                <>为「{getCourseTitle(targetEntry.course_id)}」选择授课教师</>
+              ) : ''}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                选择教师 <span className="text-red-500">*</span>
+              </Label>
+              <Select value={assignTeacherId} onValueChange={setAssignTeacherId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择授课教师" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teachers.map(teacher => (
+                    <SelectItem key={teacher.id} value={teacher.id}>
+                      {teacher.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setAssignTeacherDialog(false)}>
+              取消
+            </Button>
+            <Button onClick={handleAssignTeacher}>
+              <UserCheck className="h-4 w-4 mr-1" />
+              确认指定
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
