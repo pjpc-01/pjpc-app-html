@@ -10,6 +10,8 @@
 | 6 | 重复模块页面确认 | 🟡 | student-report vs student-reports 单复数并存，确认哪个在用、哪个删 |
 | 7 | 备份文件加密 | ✅ | 2026-08-18 用户决定保持原样：全量明文备份，不加密不排除（无需密码）|
 | 8 | WhatsApp 发送需要字段 | ✅ | 2026-08-18 完成：invoice/receipt/payslip 发 WhatsApp 只发 PDF，不再附带字段文本（发票内容在 PDF 里）|
+| 9 | 课程管理-时间表 | 🟡 | 新增年级筛选 + 修复标准课表布局；待用户实机test（a46ffb8） |
+| 10 | 年级时间表甘特图 | 🟡 | 甘特图显示全部年级时间表，可按年级随意 filter（迭代中） |
 
 ## 已完成（2026-08-17 已推送 adrian/stable/main d1da28c）
 - 积分守卫：points_enabled=false 学生拒绝任何加分/扣分
