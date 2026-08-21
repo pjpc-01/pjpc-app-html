@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/pocketbase-auth-context"
 import PageLayout from "@/components/layouts/PageLayout"
 import ClassManagement from "@/components/courses/ClassManagement"
 import CourseScheduling from "@/components/courses/CourseScheduling"
+import GradeGanttChart from "@/components/courses/GradeGanttChart"
 import SimpleScheduleManager from "@/app/components/attendance/SimpleScheduleManager"
 import CalendarScheduleView from "@/app/components/attendance/CalendarScheduleView"
 import { useAttendanceStats } from "@/hooks/useAttendanceStats"
@@ -95,6 +96,11 @@ export default function CourseManagementPage() {
         <section>
           <h2 className="text-lg font-semibold mb-3">排课管理</h2>
           <CourseScheduling />
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold mb-3">年级时间表（甘特图）</h2>
+          <GradeGanttChart />
         </section>
 
         <section>
