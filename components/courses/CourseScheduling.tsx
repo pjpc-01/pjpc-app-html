@@ -157,6 +157,9 @@ export default function CourseScheduling() {
   const [newSlotStart, setNewSlotStart] = useState('08:00')
   const [newSlotEnd, setNewSlotEnd] = useState('08:45')
 
+  // 年级筛选
+  const [gradeFilter, setGradeFilter] = useState('all')
+
   // 弹窗状态
   const [assignCourseDialog, setAssignCourseDialog] = useState(false)
   const [targetDay, setTargetDay] = useState<DayOfWeek>('Mon')
@@ -258,6 +261,22 @@ export default function CourseScheduling() {
 
   const courseMap = new Map(courses.map(c => [c.id, c]))
   const teacherMap = new Map(teachers.map(tt => [tt.id, tt]))
+
+  // 年级选项（从课程提取）
+  const gradeOptions = Array.from(
+    new Set(courses.map(c => c.grade_level).filter(Boolean))
+  ) as string[]
+
+  // 按年级过滤的课程
+  const filteredCourses = gradeFilter === 'all'
+    ? courses
+    : courses.filter(c => c.grade_level === gradeFilter)
+
+  // 按年级过滤的排课条目（网格 + 统计 + 列表共用）
+  // 用 courseMap 的 grade_level 做源头归一化（不依赖 POST 写入的 course_grade 快照）
+  const filteredEntries = gradeFilter === 'all'
+    ? scheduleEntries
+    : scheduleEntries.filter(e => (courseMap.get(e.course_id)?.grade_level || e.course_grade) === gradeFilter)
 
   function getCourseTitle(courseId: string): string {
     return courseMap.get(courseId)?.title || courseId.slice(0, 8)
@@ -412,13 +431,13 @@ export default function CourseScheduling() {
   // ============================================================
 
   function getEntry(day: DayOfWeek, start: string, end: string): CourseScheduleEntry | undefined {
-    return scheduleEntries.find(
+    return filteredEntries.find(
       e => e.day_of_week === day && e.start_time === start && e.end_time === end
     )
   }
 
   function hasCourseInSlot(day: DayOfWeek, start: string, end: string): boolean {
-    return scheduleEntries.some(e =>
+    return filteredEntries.some(e =>
       e.day_of_week === day &&
       start < e.end_time && e.start_time < end
     )
@@ -487,23 +506,41 @@ export default function CourseScheduling() {
         </p>
       </div>
 
-      {/* 统计 */}
-      <div className="flex flex-wrap gap-3 text-sm">
-        <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 gap-1">
-          <BookOpen className="h-3 w-3" />
-          {courses.length} 课程
-        </Badge>
-        <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 gap-1">
-          <Users className="h-3 w-3" />
-          {teachers.length} 教师
-        </Badge>
-        <Badge variant="secondary" className="bg-amber-50 text-amber-700 gap-1">
-          <Clock className="h-3 w-3" />
-          {scheduleEntries.length} 排课
-        </Badge>
-        <Badge variant="secondary" className="bg-blue-50 text-blue-700 gap-1">
-          {DAYS.filter(d => scheduleEntries.some(e => e.day_of_week === d)).length}/5 天
-        </Badge>
+      {/* 统计 + 年级筛选 */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap gap-3 text-sm">
+          <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 gap-1">
+            <BookOpen className="h-3 w-3" />
+            {filteredCourses.length} 课程
+          </Badge>
+          <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 gap-1">
+            <Users className="h-3 w-3" />
+            {teachers.length} 教师
+          </Badge>
+          <Badge variant="secondary" className="bg-amber-50 text-amber-700 gap-1">
+            <Clock className="h-3 w-3" />
+            {filteredEntries.length} 排课
+          </Badge>
+          <Badge variant="secondary" className="bg-blue-50 text-blue-700 gap-1">
+            {DAYS.filter(d => filteredEntries.some(e => e.day_of_week === d)).length}/5 天
+          </Badge>
+        </div>
+
+        {/* 年级筛选 */}
+        <div className="flex items-center gap-2 ml-auto">
+          <GraduationCap className="h-4 w-4 text-gray-400" />
+          <Select value={gradeFilter} onValueChange={setGradeFilter}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="全部年级" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部年级</SelectItem>
+              {gradeOptions.map(g => (
+                <SelectItem key={g} value={g}>{g}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* 时间段管理（可增删） */}
@@ -587,7 +624,7 @@ export default function CourseScheduling() {
             <div key={`h-${day}`} className="bg-gray-100 p-3 text-center font-semibold text-gray-700">
               <div>{DAY_LABELS[day]}</div>
               <div className="text-xs text-gray-400 font-normal mt-0.5">
-                {scheduleEntries.filter(e => e.day_of_week === day).length} 节
+                {filteredEntries.filter(e => e.day_of_week === day).length} 节
               </div>
             </div>
           ))}
@@ -691,12 +728,17 @@ export default function CourseScheduling() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Clock className="h-4 w-4 text-indigo-500" />
-            所有排课 ({scheduleEntries.length})
+            所有排课 ({filteredEntries.length})
+            {gradeFilter !== 'all' && (
+              <Badge variant="secondary" className="text-xs bg-indigo-50 text-indigo-700">
+                {gradeFilter}
+              </Badge>
+            )}
           </CardTitle>
           <CardDescription>当前学期课程安排总览</CardDescription>
         </CardHeader>
         <CardContent>
-          {scheduleEntries.length === 0 ? (
+          {filteredEntries.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               <Calendar className="h-10 w-10 mx-auto mb-2 text-gray-300" />
               <p className="text-sm">暂无排课数据</p>
@@ -704,7 +746,7 @@ export default function CourseScheduling() {
             </div>
           ) : (
             <div className="space-y-2">
-              {scheduleEntries
+              {filteredEntries
                 .sort((a, b) => DAYS.indexOf(a.day_of_week) - DAYS.indexOf(b.day_of_week) || a.start_time.localeCompare(b.start_time))
                 .map(entry => {
                   const subject = getCourseSubject(entry.course_id)
@@ -811,12 +853,15 @@ export default function CourseScheduling() {
                   <SelectValue placeholder="选择要排课的课程" />
                 </SelectTrigger>
                 <SelectContent>
-                  {courses.map(course => (
+                  {filteredCourses.map(course => (
                     <SelectItem key={course.id} value={course.id}>
                       {course.title}{course.grade_level ? ` (${course.grade_level})` : ''}
                       {course.duration ? ` · ${course.duration}分` : ''}
                     </SelectItem>
                   ))}
+                  {filteredCourses.length === 0 && (
+                    <SelectItem value="__none__" disabled>该年级暂无课程</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
