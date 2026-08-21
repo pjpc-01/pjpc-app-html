@@ -573,124 +573,117 @@ export default function CourseScheduling() {
         </CardContent>
       </Card>
 
-      {/* 每周课程表网格 — 行=星期几，列=时间段（时间横排） */}
-      <div className="overflow-x-auto">
+      {/* 每周课程表网格 — 行=时间段（左竖排），列=星期（顶横排） */}
+      <div className="grid gap-px bg-gray-200 rounded-lg overflow-hidden min-w-[680px]">
+        {/* 表头行：左列标题 + 星期横排 */}
         <div
-          className="grid gap-px bg-gray-200 rounded-lg overflow-hidden min-w-[860px]"
-          style={{
-            gridTemplateColumns: `90px repeat(${timeSlots.length}, minmax(150px, 1fr))`,
-          }}
+          className="grid items-stretch"
+          style={{ gridTemplateColumns: `110px repeat(${DAYS.length}, minmax(140px, 1fr))`, minWidth: 680 }}
         >
-          {/* 表头第一行 */}
           <div className="bg-gray-100 p-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            星期
+            时间段
           </div>
-          {timeSlots.map(slot => (
-            <div
-              key={`h-${slot.id}`}
-              className="bg-gray-100 p-3 text-center font-semibold text-gray-700"
-            >
-              <span className="flex items-center justify-center gap-1">
-                <Clock className="h-3 w-3 text-indigo-500" />
-                {slot.start}-{slot.end}
-              </span>
-            </div>
-          ))}
-
-          {/* 每行一个星期 */}
           {DAYS.map(day => (
-            <div key={`row-${day}`} className="contents">
-              {/* 星期列 */}
-              <div className="bg-gray-50 p-2 text-sm font-semibold text-gray-700 flex items-center justify-center border-b border-gray-100">
-                <div className="text-center">
-                  <div>{DAY_LABELS[day]}</div>
-                  <div className="text-xs text-gray-400 font-normal mt-0.5">
-                    {scheduleEntries.filter(e => e.day_of_week === day).length} 节
-                  </div>
-                </div>
+            <div key={`h-${day}`} className="bg-gray-100 p-3 text-center font-semibold text-gray-700">
+              <div>{DAY_LABELS[day]}</div>
+              <div className="text-xs text-gray-400 font-normal mt-0.5">
+                {scheduleEntries.filter(e => e.day_of_week === day).length} 节
               </div>
-
-              {/* 该星期各时间段格子 */}
-              {timeSlots.map(slot => {
-                const entry = getEntry(day, slot.start, slot.end)
-                const hasCourse = hasCourseInSlot(day, slot.start, slot.end)
-                const cellKey = `${day}-${slot.id}`
-
-                if (entry) {
-                  const course = courseMap.get(entry.course_id)
-                  const subject = course?.subject || entry.course_subject || ''
-                  const colorClass = getSubjectColor(subject)
-                  const noTeacher = !entry.teacher_id
-
-                  return (
-                    <div
-                      key={cellKey}
-                      className={`bg-white p-1.5 min-h-[76px] cursor-pointer border-2 rounded-sm transition-colors relative group ${colorClass} ${
-                        noTeacher ? 'ring-1 ring-amber-300' : ''
-                      }`}
-                      onClick={() => openAssignTeacher(entry)}
-                      title={noTeacher ? '点击指定教师' : '点击更换教师'}
-                    >
-                      {/* 课程名称 */}
-                      <div className="font-semibold text-xs leading-tight mb-0.5 truncate">
-                        {getCourseTitle(entry.course_id)}
-                      </div>
-
-                      {/* 时长 */}
-                      <div className="text-[10px] text-gray-400">
-                        {course?.duration ? `${course.duration}分` : ''}
-                      </div>
-
-                      {/* 教师 */}
-                      <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-0.5">
-                        {noTeacher ? (
-                          <span className="text-amber-600 font-medium italic truncate">待排教师</span>
-                        ) : (
-                          <>
-                            <UserCheck className="h-2.5 w-2.5 shrink-0" />
-                            <span className="truncate">{getTeacherName(entry.teacher_id)}</span>
-                          </>
-                        )}
-                      </div>
-
-                      {subject && (
-                        <div className="text-[10px] text-gray-400 mt-0.5 truncate">
-                          {subject}{course?.grade_level ? ` · ${course.grade_level}` : ''}
-                        </div>
-                      )}
-
-                      {/* 悬停删除 */}
-                      <button
-                        className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 bg-white/80 rounded-full p-0.5 text-red-400 hover:text-red-600 transition-all"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDelete(entry)
-                        }}
-                        title="删除排课"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  )
-                }
-
-                // 空格子 — 点击放入课程
-                return (
-                  <div
-                    key={cellKey}
-                    className="bg-white p-1.5 min-h-[76px] cursor-pointer hover:bg-indigo-50 hover:border-indigo-300 transition-all border border-dashed border-gray-200 group relative"
-                    onClick={() => openAssignCourse(day, slot)}
-                    title="点击放入课程"
-                  >
-                    <div className="text-[10px] text-gray-300 text-center pt-6">
-                      {hasCourse ? '时段已占用' : '+'}
-                    </div>
-                  </div>
-                )
-              })}
             </div>
           ))}
         </div>
+
+        {/* 每行一个时间段 */}
+        {timeSlots.map(slot => (
+          <div
+            key={`row-${slot.id}`}
+            className="grid items-stretch"
+            style={{ gridTemplateColumns: `110px repeat(${DAYS.length}, minmax(140px, 1fr))`, minWidth: 680 }}
+          >
+            {/* 时间段列（左竖排） */}
+            <div className="bg-white p-2 text-xs text-gray-500 font-medium flex items-center justify-center border-r border-gray-100">
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {slot.start}-{slot.end}
+              </span>
+            </div>
+
+            {/* 该时段各星期格子 */}
+            {DAYS.map(day => {
+              const entry = getEntry(day, slot.start, slot.end)
+              const hasCourse = hasCourseInSlot(day, slot.start, slot.end)
+              const cellKey = `${day}-${slot.id}`
+
+              if (entry) {
+                const course = courseMap.get(entry.course_id)
+                const subject = course?.subject || entry.course_subject || ''
+                const colorClass = getSubjectColor(subject)
+                const noTeacher = !entry.teacher_id
+
+                return (
+                  <div
+                    key={cellKey}
+                    className={`bg-white p-1.5 min-h-[72px] cursor-pointer border-2 rounded-sm transition-colors relative group ${colorClass} ${
+                      noTeacher ? 'ring-1 ring-amber-300' : ''
+                    }`}
+                    onClick={() => openAssignTeacher(entry)}
+                    title={noTeacher ? '点击指定教师' : '点击更换教师'}
+                  >
+                    <div className="font-semibold text-xs leading-tight mb-0.5 truncate">
+                      {getCourseTitle(entry.course_id)}
+                    </div>
+
+                    <div className="text-[10px] text-gray-400">
+                      {course?.duration ? `${course.duration}分` : ''}
+                    </div>
+
+                    <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-0.5">
+                      {noTeacher ? (
+                        <span className="text-amber-600 font-medium italic truncate">待排教师</span>
+                      ) : (
+                        <>
+                          <UserCheck className="h-2.5 w-2.5 shrink-0" />
+                          <span className="truncate">{getTeacherName(entry.teacher_id)}</span>
+                        </>
+                      )}
+                    </div>
+
+                    {subject && (
+                      <div className="text-[10px] text-gray-400 mt-0.5 truncate">
+                        {subject}{course?.grade_level ? ` · ${course.grade_level}` : ''}
+                      </div>
+                    )}
+
+                    <button
+                      className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 bg-white/80 rounded-full p-0.5 text-red-400 hover:text-red-600 transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDelete(entry)
+                      }}
+                      title="删除排课"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )
+              }
+
+              // 空格子 — 点击放入课程
+              return (
+                <div
+                  key={cellKey}
+                  className="bg-white p-1.5 min-h-[72px] cursor-pointer hover:bg-indigo-50 hover:border-indigo-300 transition-all border border-dashed border-gray-200 group relative"
+                  onClick={() => openAssignCourse(day, slot)}
+                  title="点击放入课程"
+                >
+                  <div className="text-[10px] text-gray-300 text-center pt-4">
+                    {hasCourse ? '时段已占用' : '+'}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ))}
       </div>
 
       {/* 排课列表（底部） */}
