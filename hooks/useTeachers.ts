@@ -42,7 +42,7 @@ export interface Teacher {
   updated?: string
 }
 
-export const useTeachers = () => {
+export const useTeachers = (includeInactive = false) => {
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -51,7 +51,7 @@ export const useTeachers = () => {
     try {
       setLoading(true)
       setError(null)
-      const data = await getAllTeachers()
+      const data = await getAllTeachers(includeInactive)
       setTeachers(data)
     } catch (err: any) {
       console.error('获取教师数据失败:', err)
@@ -59,7 +59,7 @@ export const useTeachers = () => {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [includeInactive])
 
   useEffect(() => {
     fetchTeachers()
