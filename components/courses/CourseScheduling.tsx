@@ -343,10 +343,11 @@ export default function CourseScheduling() {
       toast.error('请选择课程')
       return
     }
-    // 冲突检查：同一天同一时间（时间段重叠）
+    // 冲突检查：同一天同一时间（时间段重叠）——仅限当前筛选年级内判断
+    // 不同年级的课表相互独立，同时间可并存
     const start = assignStartTime
     const end = assignEndTime
-    const conflict = scheduleEntries.find(e => {
+    const conflict = filteredEntries.find(e => {
       if (e.day_of_week !== targetDay) return false
       // 时间段重叠判断
       return start < e.end_time && e.start_time < end
