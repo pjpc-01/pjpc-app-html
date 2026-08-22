@@ -267,6 +267,13 @@ export default function CourseScheduling() {
     new Set(courses.map(c => c.grade_level).filter(Boolean))
   ) as string[]
 
+  // 数据加载后若无有效年级（或仍在 all），自动选中第一个年级
+  useEffect(() => {
+    if (gradeFilter === 'all' && gradeOptions.length > 0) {
+      setGradeFilter(gradeOptions[0])
+    }
+  }, [gradeOptions, gradeFilter])
+
   // 按年级过滤的课程
   const filteredCourses = gradeFilter === 'all'
     ? courses
@@ -527,18 +534,20 @@ export default function CourseScheduling() {
           </Badge>
         </div>
 
-        {/* 年级筛选 */}
+        {/* 年级筛选（排课表按当前年级编辑，无"全部"选项） */}
         <div className="flex items-center gap-2 ml-auto">
           <GraduationCap className="h-4 w-4 text-gray-400" />
           <Select value={gradeFilter} onValueChange={setGradeFilter}>
             <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="全部年级" />
+              <SelectValue placeholder="选择年级" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部年级</SelectItem>
               {gradeOptions.map(g => (
                 <SelectItem key={g} value={g}>{g}</SelectItem>
               ))}
+              {gradeOptions.length === 0 && (
+                <SelectItem value="all" disabled>暂无年级</SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>
