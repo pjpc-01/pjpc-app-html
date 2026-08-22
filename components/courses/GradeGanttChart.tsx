@@ -17,6 +17,7 @@ interface GanttCourse {
   subject: string
   grade_level?: string
   duration?: number
+  status?: string
 }
 
 interface GanttEntry {
@@ -105,8 +106,8 @@ export default function GradeGanttChart() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 年级多选 filter
-  const [selectedGrades, setSelectedGrades] = useState<Set<string>>(new Set())
+  // 被隐藏的年级（空 = 全部显示）
+  const [hiddenGrades, setHiddenGrades] = useState<Set<string>>(new Set())
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -152,8 +153,8 @@ export default function GradeGanttChart() {
   // 年级选项（用 courseMap 归一化，不依赖 course_grade 快照）
   const gradeOptions = Array.from(new Set(courses.map((c) => c.grade_level).filter(Boolean))) as string[]
 
-  // 当前选中的年级（默认全选）
-  const activeGrades = selectedGrades.size === 0 ? gradeOptions : gradeOptions.filter((g) => selectedGrades.has(g))
+  // 当前显示的年级 = 全部年级 减 被隐藏的年级
+  const activeGrades = gradeOptions.filter((g) => !hiddenGrades.has(g))
 
   // 过滤出该年级的排课
   const visibleEntries = entries.filter((e) => {
@@ -161,25 +162,19 @@ export default function GradeGanttChart() {
     return activeGrades.includes(grade as string)
   })
 
-  // 按年级分组（用于行维度）
-  const entriesByGrade = activeGrades.reduce((acc, grade) => {
-    acc[grade] = visibleEntries.filter((e) => (courseMap.get(e.course_id)?.grade_level || e.course_grade) === grade)
-    return acc
-  }, {} as Record<string, GanttEntry[]>)
-
   const totalMinutes = (END_HOUR - START_HOUR) * 60
 
   const toggleGrade = (grade: string) => {
-    setSelectedGrades(prev => {
+    setHiddenGrades(prev => {
       const next = new Set(prev)
-      if (next.has(grade)) next.delete(grade)
-      else next.add(grade)
+      if (next.has(grade)) next.delete(grade)   // 再点 = 恢复显示
+      else next.add(grade)                       // 点 = 隐藏该年级
       return next
     })
   }
 
-  // 全选 = 清空集合（空集合表示全部显示）
-  const selectAll = () => setSelectedGrades(new Set())
+  // 全选 = 清空隐藏集合（全部显示）
+  const selectAll = () => setHiddenGrades(new Set())
 
   if (loading) {
     return (
@@ -217,7 +212,7 @@ export default function GradeGanttChart() {
           <GraduationCap className="h-4 w-4 text-indigo-500" />
           年级时间表甘特图
         </CardTitle>
-        <CardDescription>横轴为一天时间，每个年级一行，色块 = 课程的开始至结束时段（可点色块查看详情）</CardDescription>
+        <CardDescription>统一时间表（行=星期、列=一天时间），各年级课程平铺显示；用年级 filter 开关想看哪些年级</CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -258,97 +253,85 @@ export default function GradeGanttChart() {
           </div>
         )}
 
-        {/* 甘特图主体 */}
+        {/* 甘特图主体：统一一张时间表，行=星期，列=一天时间，选中年级的课平铺 */}
         {gradeOptions.length > 0 && (
-          <div className="space-y-6 overflow-x-auto">
-            {activeGrades.map((grade) => {
-              const gradeEntries = entriesByGrade[grade] || []
-              return (
-                <div key={grade} className="min-w-[900px]">
-                  {/* 年级行标题 */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge className="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5">
-                      {grade}
-                    </Badge>
-                    <span className="text-xs text-gray-400">{gradeEntries.length} 节</span>
-                  </div>
-
-                  {/* 时间刻度头 */}
-                  <div
-                    className="relative h-6 mb-1 border-b border-gray-200"
-                    style={{ width: "100%" }}
-                  >
-                    {hourTicks.map((tick, i) => (
-                      <div
-                        key={tick}
-                        className="absolute text-[9px] text-gray-400"
-                        style={{ left: `${((toMinutes(tick) - START_HOUR * 60) / totalMinutes) * 100}%` }}
-                      >
-                        {tick}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* 按星期分区（周一~周五，每个星期一个子块） */}
-                  {DAYS.map((day) => {
-                    const dayEntries = gradeEntries.filter((e) => e.day_of_week === day)
-                    return (
-                      <div key={day}>
-                        {/* 星期标签 + 轨道 */}
-                        <div className="flex items-start gap-2">
-                          <div className="w-12 shrink-0 pt-1 text-xs font-medium text-gray-500">
-                            {DAY_LABELS[day]}
-                          </div>
-                          <div className="relative flex-1">
-                            {/* 背景时间网格 */}
-                            <div
-                              className="absolute inset-0 grid pointer-events-none"
-                              style={{ gridTemplateColumns: `repeat(${hourTicks.length - 1}, 1fr)` }}
-                            >
-                              {hourTicks.slice(0, -1).map((tick) => (
-                                <div key={tick} className="border-l border-gray-100" />
-                              ))}
-                            </div>
-
-                            {/* 该星期的课程 bar */}
-                            <div
-                              className="relative"
-                              style={{ minHeight: Math.max(dayEntries.length * 28 + 4, 26) }}
-                            >
-                              {dayEntries.length === 0 ? (
-                                <div className="h-[26px] border border-dashed border-gray-100 rounded" />
-                              ) : (
-                                dayEntries.map((entry, idx) => {
-                                  const { left, width } = computeBar(entry.start_time, entry.end_time, totalMinutes)
-                                  const course = courseMap.get(entry.course_id)
-                                  const subject = course?.subject || ""
-                                  const { bg } = getSubjectColor(subject)
-                                  return (
-                                    <div
-                                      key={entry.id}
-                                      className={`absolute h-[24px] rounded ${bg} text-white text-[10px] px-1.5 flex items-center overflow-hidden shadow-sm cursor-pointer`}
-                                      style={{ left: `${left}%`, width: `${width}%`, top: idx * 28 }}
-                                      title={`${course?.title || entry.course_title} · ${DAY_LABELS[day]} ${entry.start_time}-${entry.end_time}`}
-                                    >
-                                      <span className="truncate font-medium">
-                                        {course?.title || entry.course_title || entry.course_id.slice(0, 8)}
-                                      </span>
-                                      <span className="ml-auto shrink-0 pl-1">
-                                        {entry.start_time}-{entry.end_time}
-                                      </span>
-                                    </div>
-                                  )
-                                })
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
+          <div className="overflow-x-auto">
+            <div className="min-w-[900px]">
+              {/* 时间刻度头 */}
+              <div className="flex">
+                <div className="w-14 shrink-0" />
+                <div className="relative flex-1 h-6 border-b border-gray-200">
+                  {hourTicks.map((tick) => (
+                    <div
+                      key={tick}
+                      className="absolute text-[9px] text-gray-400"
+                      style={{ left: `${((toMinutes(tick) - START_HOUR * 60) / totalMinutes) * 100}%` }}
+                    >
+                      {tick}
+                    </div>
+                  ))}
                 </div>
-              )
-            })}
+              </div>
+
+              {/* 按星期分区（周一~周五，每行一个，选中年级的课都平铺在这行时间轴上） */}
+              {DAYS.map((day) => {
+                const dayEntries = visibleEntries.filter((e) => e.day_of_week === day)
+                return (
+                  <div key={day} className="flex items-start gap-2">
+                    {/* 星期标签 */}
+                    <div className="w-14 shrink-0 pt-1 text-xs font-medium text-gray-500">
+                      {DAY_LABELS[day]}
+                    </div>
+
+                    <div className="relative flex-1">
+                      {/* 背景时间网格 */}
+                      <div
+                        className="absolute inset-0 grid pointer-events-none"
+                        style={{ gridTemplateColumns: `repeat(${hourTicks.length - 1}, 1fr)` }}
+                      >
+                        {hourTicks.slice(0, -1).map((tick) => (
+                          <div key={tick} className="border-l border-gray-100" />
+                        ))}
+                      </div>
+
+                      {/* 该星期的课程 bar */}
+                      <div
+                        className="relative"
+                        style={{ minHeight: Math.max(dayEntries.length * 28 + 4, 26) }}
+                      >
+                        {dayEntries.length === 0 ? (
+                          <div className="h-[26px] border border-dashed border-gray-100 rounded" />
+                        ) : (
+                          dayEntries.map((entry, idx) => {
+                            const { left, width } = computeBar(entry.start_time, entry.end_time, totalMinutes)
+                            const course = courseMap.get(entry.course_id)
+                            const subject = course?.subject || ""
+                            const grade = courseMap.get(entry.course_id)?.grade_level || entry.course_grade || ""
+                            const { bg } = getSubjectColor(subject)
+                            return (
+                              <div
+                                key={entry.id}
+                                className={`absolute h-[24px] rounded ${bg} text-white text-[10px] px-1.5 flex items-center overflow-hidden shadow-sm cursor-pointer`}
+                                style={{ left: `${left}%`, width: `${width}%`, top: idx * 28 }}
+                                title={`${course?.title || entry.course_title} · ${grade} · ${DAY_LABELS[day]} ${entry.start_time}-${entry.end_time}`}
+                              >
+                                <span className="font-semibold shrink-0 mr-1">{grade}</span>
+                                <span className="truncate font-medium">
+                                  {course?.title || entry.course_title || entry.course_id.slice(0, 8)}
+                                </span>
+                                <span className="ml-auto shrink-0 pl-1">
+                                  {entry.start_time}-{entry.end_time}
+                                </span>
+                              </div>
+                            )
+                          })
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
       </CardContent>
