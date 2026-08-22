@@ -32,6 +32,7 @@ import {
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import TeacherScheduleSection from "@/app/components/attendance/TeacherScheduleSection"
+import TeacherLeaveManagement from "@/components/teacher/TeacherLeaveManagement"
 import { format, parseISO, startOfDay, endOfDay, subDays, subWeeks, subMonths, subYears } from "date-fns"
 import { zhCN } from "date-fns/locale"
 
@@ -428,6 +429,12 @@ export default function TeacherAttendanceReportsPage() {
         <section>
           <h2 className="text-lg font-semibold mb-3">教师排班管理</h2>
           <TeacherScheduleSection />
+        </section>
+
+        {/* 请假管理 */}
+        <section>
+          <h2 className="text-lg font-semibold mb-3">请假管理</h2>
+          <TeacherLeaveManagement />
         </section>
 
         {/* 筛选条件 */}
