@@ -32,7 +32,7 @@ interface TeachersTabProps {
 
 export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
   const { t } = useLanguage()
-  const { teachers, loading: teachersLoading, refetch: refetchTeachers, addTeacher, updateTeacher, deleteTeacher } = useTeachers()
+  const { teachers, loading: teachersLoading, refetch: refetchTeachers, addTeacher, updateTeacher, deleteTeacher } = useTeachers(true)
   const { userProfile } = useAuth()
 
   // 状态管理

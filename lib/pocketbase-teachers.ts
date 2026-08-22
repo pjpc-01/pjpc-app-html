@@ -83,7 +83,7 @@ export interface TeacherUpdateData extends Partial<TeacherCreateData> {
 }
 
 // 获取所有教师
-export const getAllTeachers = async (): Promise<Teacher[]> => {
+export const getAllTeachers = async (includeInactive = false): Promise<Teacher[]> => {
   try {
     const pb = await getPb()
     
@@ -96,12 +96,16 @@ export const getAllTeachers = async (): Promise<Teacher[]> => {
       throw new Error('无法认证访问教师数据')
     }
     
-    // 获取教师数据
-    const response = await pb.collection('teachers').getList(1, 1000, {
+    // 获取教师数据（默认隐藏停职教师 status="inactive"，除非 includeInactive=true）
+    const options: any = {
       sort: 'name',
       expand: 'centerId',
       $autoCancel: false
-    })
+    }
+    if (!includeInactive) {
+      options.filter = `status!="inactive"`
+    }
+    const response = await pb.collection('teachers').getList(1, 1000, options)
     
     console.log(`✅ 获取到 ${response.items.length} 个教师数据`)
     console.log('原始数据示例:', response.items[0])
