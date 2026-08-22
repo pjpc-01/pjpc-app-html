@@ -31,6 +31,7 @@ import {
   GraduationCap
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
+import TeacherScheduleSection from "@/app/components/attendance/TeacherScheduleSection"
 import { format, parseISO, startOfDay, endOfDay, subDays, subWeeks, subMonths, subYears } from "date-fns"
 import { zhCN } from "date-fns/locale"
 
@@ -415,14 +416,20 @@ export default function TeacherAttendanceReportsPage() {
 
   return (
     <PageLayout
-      title="教师考勤记录查询"
-      description="查看和管理所有教师考勤记录，支持多种时间范围查询"
+      title="教师考勤与排班"
+      description="教师排班管理 + 考勤记录查询，支持多种时间范围"
       backUrl="/"
       userRole="admin"
       status="系统正常"
       background="from-green-50 to-emerald-100"
     >
       <div className="space-y-6">
+        {/* 排班管理（周/月视图 + 统计） */}
+        <section>
+          <h2 className="text-lg font-semibold mb-3">教师排班管理</h2>
+          <TeacherScheduleSection />
+        </section>
+
         {/* 筛选条件 */}
         <Card>
           <CardHeader>
