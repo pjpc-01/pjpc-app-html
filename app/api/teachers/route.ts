@@ -5,6 +5,7 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get('limit') || '100')
   const id = searchParams.get('id')
   const email = searchParams.get('email')
+  const includeInactive = searchParams.get('includeInactive') === '1'
   
   try {
     // Auth with local PocketBase
@@ -17,12 +18,14 @@ export async function GET(request: NextRequest) {
     const token = authData.token
     if (!token) throw new Error('Auth failed')
 
-    // Build filter
+    // Build filter. 默认隐藏停职教师(status="inactive")，除非 includeInactive=1
     let filter = ''
     if (id) {
       filter = `id="${id}"`
     } else if (email) {
       filter = `email="${email}"`
+    } else if (!includeInactive) {
+      filter = `status!="inactive"`
     }
     const filterParam = filter ? `&filter=${encodeURIComponent(filter)}` : ''
 
