@@ -6,30 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import PageLayout from "@/components/layouts/PageLayout"
 import TeachersTab from "@/app/components/dashboards/teachers-tab"
-import TeacherLeaveManagement from "@/components/teacher/TeacherLeaveManagement"
-import TeacherPerformanceManagement from "@/components/teacher/TeacherPerformanceManagement"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Users, CalendarCheck, BarChart3 } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
-
-type TabKey = "teachers" | "leave" | "performance"
 
 export default function TeacherManagementPage() {
   const { t } = useLanguage()
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { userProfile, loading } = useAuth()
-
-  // Read tab from URL param — sidebar links use ?tab=leave / ?tab=performance
-  const tabParam = searchParams?.get("tab") as TabKey | null
-  const [activeTab, setActiveTab] = useState<TabKey>(tabParam || "teachers")
-
-  // Sync URL param changes
-  useEffect(() => {
-    if (tabParam && tabParam !== activeTab) {
-      setActiveTab(tabParam)
-    }
-  }, [tabParam])
 
   // ===========================================================================
   // DEV MODE: FULL AUTH BYPASS
@@ -85,18 +69,10 @@ export default function TeacherManagementPage() {
     )
   }
 
-  // Page config by tab — no tab bar UI, controlled entirely by sidebar URL
-  const tabConfig: Record<TabKey, { title: string; description: string }> = {
-    teachers: { title: t('teacher.teacher_list'), description: "管理所有教师信息、权限和教学安排" },
-    leave:    { title: "请假管理", description: "审核和管理教师请假申请" },
-    performance: { title: "绩效管理", description: "查看和管理教师绩效考核" },
-  }
-  const current = tabConfig[activeTab]
-
   return (
     <PageLayout
-      title={current.title}
-      description={current.description}
+      title={t('teacher.teacher_list')}
+      description="管理所有教师信息、权限和教学安排"
       userRole="admin"
       status="系统正常"
       background="bg-gray-50"
@@ -111,10 +87,7 @@ export default function TeacherManagementPage() {
         </Button>
       }
     >
-      {/* No Tabs bar — switching is done via sidebar navigation */}
-      {activeTab === "teachers" && <TeachersTab setActiveTab={setActiveTab} />}
-      {activeTab === "leave" && <TeacherLeaveManagement />}
-      {activeTab === "performance" && <TeacherPerformanceManagement />}
+      <TeachersTab setActiveTab={() => {}} />
     </PageLayout>
   )
 }
