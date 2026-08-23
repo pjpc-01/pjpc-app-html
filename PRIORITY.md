@@ -14,6 +14,7 @@
 | 10 | 年级时间表甘特图 | ✅ | 已改：统一时间表(行=星期)+年级filter开关（878ae49） |
 | 11 | 教师排班整合 | ✅ | 统计卡片+周/月视图+请假并入教师考勤与排班页；绩效拉独立导航页（706b979） |
 | 12 | 绩效管理-集合缺失 | 🔴 | PB 无 teacher_performance_evaluation 集合→接口500。用户决定暂不动，待想清绩效记录方案 (2026-08-22) |
+| 13 | 迁移 Hermes Desktop | 🟡 | 了解清楚了：Desktop 与 WSL CLI 共用同一份 ~/.hermes/（记忆/技能/会话零迁移）。待用户实际执行 hermes desktop（待会再做） |
 
 ## 已完成（2026-08-17 已推送 adrian/stable/main d1da28c）
 - 积分守卫：points_enabled=false 学生拒绝任何加分/扣分
