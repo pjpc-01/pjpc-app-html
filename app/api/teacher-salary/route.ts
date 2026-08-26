@@ -162,6 +162,7 @@ export async function POST(request: NextRequest) {
         salary_period: data.salary_period,
         year: data.year,
         month: data.month,
+        payment_date: data.payment_date || null,
         base_salary: data.base_salary,
         hours_worked: data.hours_worked || 0,
         overtime_hours: data.overtime_hours || 0,
