@@ -301,6 +301,7 @@ export default function TeacherSalaryManagement() {
     salary_period: '',
     year: new Date().getFullYear(),
     month: new Date().getMonth() + 1,
+    payment_date: '',
     base_salary: 0,
     salary_type: 'monthly' as 'monthly' | 'hourly' | 'commission',
     hours_worked: 0,
@@ -891,6 +892,7 @@ export default function TeacherSalaryManagement() {
           salary_period: '',
           year: new Date().getFullYear(),
           month: new Date().getMonth() + 1,
+          payment_date: '',
           base_salary: 0,
           salary_type: 'monthly' as 'monthly' | 'hourly' | 'commission',
           hours_worked: 0,
@@ -1295,6 +1297,9 @@ export default function TeacherSalaryManagement() {
                         <div>
                           <p className="font-medium">{record.year}年{record.month}月</p>
                           <p className="text-sm text-gray-500">{record.salary_period}</p>
+                          {record.payment_date && (
+                            <p className="text-xs text-emerald-600">发薪：{String(record.payment_date).slice(0, 10)}</p>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -1717,15 +1722,51 @@ export default function TeacherSalaryManagement() {
               </div>
               
               <div>
-                <Label htmlFor="salary_period">薪资期间</Label>
+                <Label htmlFor="record_year">薪资年份</Label>
                 <Input
-                  id="salary_period"
-                  value={recordForm.salary_period}
-                  onChange={(e) => setRecordForm(prev => ({ 
-                    ...prev, 
-                    salary_period: e.target.value 
+                  id="record_year"
+                  type="number"
+                  value={recordForm.year || ''}
+                  onChange={(e) => setRecordForm(prev => ({
+                    ...prev,
+                    year: parseInt(e.target.value) || 0,
+                    salary_period: `${parseInt(e.target.value) || 0}年${prev.month || 0}月`
                   }))}
-                  placeholder="例如：2024年1月"
+                  placeholder="例如：2026"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="record_month">薪资月份</Label>
+                <Select value={String(recordForm.month || '')} onValueChange={(v) => {
+                  const m = parseInt(v)
+                  setRecordForm(prev => ({
+                    ...prev,
+                    month: m,
+                    salary_period: `${prev.year || 0}年${m}月`
+                  }))
+                }}>
+                  <SelectTrigger id="record_month">
+                    <SelectValue placeholder="选择月份" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({length: 12}, (_, i) => i + 1).map(m => (
+                      <SelectItem key={m} value={String(m)}>{m}月</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="salary_period">发薪日期</Label>
+                <Input
+                  id="payment_date"
+                  type="date"
+                  value={recordForm.payment_date}
+                  onChange={(e) => setRecordForm(prev => ({
+                    ...prev,
+                    payment_date: e.target.value
+                  }))}
                 />
               </div>
               
