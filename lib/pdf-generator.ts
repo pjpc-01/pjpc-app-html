@@ -7,6 +7,7 @@ import { type ReceiptSettingsPreset } from '@/app/components/finance/payment-man
 import { type PayslipSettingsPreset } from '@/app/components/report/PayslipSettingsManager'
 import { StudentReport, ReportSubject } from '@/hooks/useStudentReports'
 import { getSocsoEmployer, getEisContribution } from '@/lib/perkeso-rates'
+import { scoreToGrade } from '@/lib/utils'
 
 export type { InvoiceSettingsPreset } from '@/app/components/finance/invoice-management/InvoiceSettingsManager'
 export type { ReceiptSettingsPreset } from '@/app/components/finance/payment-management/ReceiptSettingsManager'
@@ -748,14 +749,15 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
   const overallAvg = report.overall_avg ?? (midtermAvg !== null && finalAvg !== null ? Math.round((midtermAvg + finalAvg) / 2 * 10) / 10 : null)
 
   const subjectRows = subjects.map(subj => {
-    const evalText = subj.evaluation || scoreToEval(subj.final)
-    const evalClass = evalText === "优秀" ? "eval-excellent" : evalText === "良好" ? "eval-good" : evalText === "及格" ? "eval-pass" : "eval-fail"
+    const evalText = subj.evaluation || scoreToGrade(subj.final)
+    const midGrade = subj.midterm != null ? scoreToGrade(subj.midterm) : null
+    const finalGrade = subj.final != null ? scoreToGrade(subj.final) : null
     return `
       <tr>
         <td style="font-weight:600;color:#374151;">${subj.name}</td>
-        <td style="text-align:center;">${subj.midterm ?? "—"}</td>
-        <td style="text-align:center;">${subj.final ?? "—"}</td>
-        <td style="text-align:center;"><span class="eval-badge ${evalClass}">${evalText}</span></td>
+        <td style="text-align:center;">${subj.midterm ?? "—"}${midGrade ? ` <span class="grade-badge grade-${midGrade}">${midGrade}</span>` : ''}</td>
+        <td style="text-align:center;">${subj.final ?? "—"}${finalGrade ? ` <span class="grade-badge grade-${finalGrade}">${finalGrade}</span>` : ''}</td>
+        <td style="text-align:center;"><span class="eval-badge eval-grade">${evalText}</span></td>
       </tr>`
   }).join('')
 
@@ -851,6 +853,17 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
   .eval-good { background:#dbeafe; color:#1e40af; }
   .eval-pass { background:#fef3c7; color:#92400e; }
   .eval-fail { background:#fee2e2; color:#991b1b; }
+  .eval-grade { background:#eef2ff; color:#3730a3; }
+  .grade-badge {
+    display:inline-block; min-width:20px; padding:1px 6px; border-radius:6px;
+    font-size:10px; font-weight:700; text-align:center;
+  }
+  .grade-A { background:#dcfce7; color:#166534; }
+  .grade-B { background:#dbeafe; color:#1e40af; }
+  .grade-C { background:#fef9c3; color:#854d0e; }
+  .grade-D { background:#ffedd5; color:#9a3412; }
+  .grade-E { background:#fde68a; color:#92400e; }
+  .grade-F { background:#fee2e2; color:#991b1b; }
   .stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
   .stat {
     background:${color}; color:#fff; border-radius:10px; padding:14px; text-align:center;
@@ -950,6 +963,11 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
     <div style="margin-top:10px;">
       <p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">老师评语：</p>
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;font-size:13px;color:#4b5563;">${report.teacher_comment}</div>
+    </div>` : ''}
+    ${report.homework_comment ? `
+    <div style="margin-top:10px;">
+      <p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">功课班评语：</p>
+      <div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:10px 14px;font-size:13px;color:#4b5563;">${report.homework_comment}</div>
     </div>` : ''}
   </div>
 
@@ -1332,7 +1350,7 @@ export const generatePayslipHTML = (
         <div class="info-block" style="text-align:right;">
           <h3>薪资期间 Period</h3>
           <p class="highlight">${record.year}年 ${monthName}</p>
-          <p style="font-size:12px;color:#9ca3af;margin-top:2px;">${record.salary_period || ''}</p>
+          ${record.payment_date ? `<p style="font-size:11px;color:#374151;margin-top:3px;">发薪日: ${String(record.payment_date).slice(0, 10)}</p>` : ''}
         </div>
       </div>
 
@@ -1444,18 +1462,12 @@ export const generatePayslipHTML = (
         </tbody>
       </table>
 
-      ${(record.payment_date || record.payment_method) ? `
+      ${record.payment_method ? `
       <div class="payment-info">
-        ${record.payment_date ? `
-        <div>
-          <h4>📅 发放日期 Payment Date</h4>
-          <p>${record.payment_date}</p>
-        </div>` : ''}
-        ${record.payment_method ? `
         <div>
           <h4>🏦 发放方式 Payment Method</h4>
           <p>${record.payment_method}</p>
-        </div>` : ''}
+        </div>
       </div>` : ''}
 
       ${record.notes ? `
