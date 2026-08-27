@@ -80,17 +80,27 @@ export const fetchSecureData = async <T>(
 ): Promise<T> => {
   try {
     if (options.fullList) {
-      // 获取完整列表时使用较大的perPage
-      options.perPage = options.perPage || 200
+      // 获取完整列表：循环翻页拿全(单页200可能截断>200的数据)
+      const perPage = options.perPage || 200
+      const allItems: any[] = []
+      let page = 1
+      let totalItems = 1
+      let guard = 0
+      while (allItems.length < totalItems && guard < 50) {
+        guard++
+        const url = buildApiUrl(collectionName, { ...options, page, perPage })
+        const result: any = await fetchFromAPI(url)
+        const items = result?.items || []
+        allItems.push(...items)
+        totalItems = result?.totalItems ?? allItems.length
+        if (items.length === 0) break
+        page++
+      }
+      return allItems as T
     }
 
     const url = buildApiUrl(collectionName, options)
     const result = await fetchFromAPI(url)
-    
-    // 如果请求的是fullList，返回items数组，否则返回完整结果
-    if (options.fullList && result && typeof result === 'object' && 'items' in result) {
-      return (result as any).items as T
-    }
     
     return result as T
   } catch (error) {
