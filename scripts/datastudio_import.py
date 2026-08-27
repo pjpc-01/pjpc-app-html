@@ -75,10 +75,10 @@ def get_token():
 
 def save(token, sid, subj, score, letter):
     subj = SUBJECT_MAP.get(subj, subj)
-    payload = json.dumps({"studentId": sid, "subject": subj, "term": "Term 1", "year": 2026, "score": score, "grade_letter": letter})
+    payload = json.dumps({"studentId": sid, "subject": subj, "term": "midterm", "year": 2026, "score": score, "grade_letter": letter})
     try:
         # Check existing
-        f = f'(studentId="{sid}"&&subject="{subj}"&&term="Term 1"&&year=2026)'
+        f = f'(studentId="{sid}"&&subject="{subj}"&&term="midterm"&&year=2026)'
         chk = subprocess.run(['curl', '-s',
             f'{PB_URL}/api/collections/grades/records?perPage=1&filter={urllib.parse.quote(f)}',
             '-H', f'Authorization: Bearer {token}'],
@@ -159,7 +159,8 @@ async def scrape_one(p, ic, grade_str=""):
 async def main(center_filter=""):
     from playwright.async_api import async_playwright
 
-    sf = 'status="active"'
+    # 只拉中学生（DataStudio 只有中学数据）
+    sf = 'status="active" && (grade~"Form" || grade~"Peralihan" || grade~"中" || grade~"F")'
     if center_filter:
         sf += f' && center="{urllib.parse.quote(center_filter)}"'
     u = f"{PB_URL}/api/collections/students/records?perPage=500&fields=id,nric,name,grade,center&filter={urllib.parse.quote(sf)}"
