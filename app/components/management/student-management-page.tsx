@@ -194,6 +194,9 @@ const applySorting = (a: Student, b: Student, sortBy: string, sortOrder: 'asc' |
         case 'grade':
           aValue = a.standard || ''
           bValue = b.standard || ''
+          // 明年新生得分沉底
+          if (aValue === '明年新生') aValue = '~明年新生'
+          if (bValue === '明年新生') bValue = '~明年新生'
           break
         case 'status':
           aValue = a.status || ''
@@ -425,7 +428,7 @@ export default function StudentManagementPage() {
     // Build subjects from settings or fallback
     const subjectNames = settings?.defaultSubjects?.length > 0
       ? settings.defaultSubjects
-      : ["华文", "国文", "英文", "数学", "科学", "地理", "历史", "道德", "美术", "体育"]
+      : ["华文", "国文", "英文", "科学", "数学"]
     const subjects = subjectNames.map((name: string) => ({
       name, midterm: null, final: null, evaluation: ""
     }))
