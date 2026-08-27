@@ -16,7 +16,7 @@ import { Trophy, BarChart3, Search, Save, AlertCircle, GraduationCap, Building, 
 import { useLanguage } from "@/contexts/language-context"
 
 const SUBJECTS = ["华文", "国文", "英文", "数学", "科学", "历史", "地理", "道德", "美术", "音乐", "体育", "其他"]
-const TERMS = ["Term 1", "Term 2", "Term 3", "Final"]
+const TERMS = ["midterm", "final"]
 const CURRENT_YEAR = new Date().getFullYear()
 
 const CENTERS = [
@@ -44,8 +44,8 @@ export default function GradesManagementPage() {
   const { students, loading: studentsLoading, fetchStudents } = useStudents()
 
   const [subject, setSubject] = useState("数学")
-  const [term, setTerm] = useState("Term 1")
-  const [reportTerm, setReportTerm] = useState("Term 1")
+  const [term, setTerm] = useState("midterm")
+  const [reportTerm, setReportTerm] = useState("midterm")
   const [year, setYear] = useState(CURRENT_YEAR)
   const [grades, setGrades] = useState<GradeRecord[]>([])
   const [allGrades, setAllGrades] = useState<GradeRecord[]>([]) // all subjects for analysis
@@ -264,15 +264,16 @@ export default function GradesManagementPage() {
 
       {activeTab === "report" && (() => {
         const gradeSubjects = ["华文", "国文", "英文", "科学", "数学", "历史", "地理", "伊斯兰教育", "道德", "RBT", "美术", "体育", "电脑"]
-        const order = {"标准1":1,"标准2":2,"标准3":3,"标准4":4,"标准5":5,"标准6":6,"Peralihan":7,"中一":8,"中二":9,"中三":10,"中四":11,"中五":12}
+        const std = (s: any) => s.grade || s.standard || ""
+        const order: Record<string, number> = {"Standard 1":1,"Standard 2":2,"Standard 3":3,"Standard 4":4,"Standard 5":5,"Standard 6":6,"标准1":1,"标准2":2,"标准3":3,"标准4":4,"标准5":5,"标准6":6,"1":1,"2":2,"3":3,"4":4,"5":5,"6":6,"Peralihan":7,"Form 1":8,"Form 2":9,"Form 3":10,"Form 4":11,"Form 5":12,"中一":8,"中二":9,"中三":10,"中四":11,"中五":12,"明年新生":99}
         const centerStudents = students
-          .filter((s) => {
-            if (centerFilter !== "all" && s.center !== centerFilter) return false
+          .filter((s: any) => {
+            if (centerFilter !== "all" && (s.center || s.centerId || "") !== centerFilter) return false
             if (s.status === "graduated" || s.status === "dropped") return false
-            if (reportGradeFilter !== "all" && s.standard !== reportGradeFilter) return false
+            if (reportGradeFilter !== "all" && std(s) !== reportGradeFilter) return false
             return true
           })
-          .sort((a, b) => (order[a.standard] || 0) - (order[b.standard] || 0))
+          .sort((a: any, b: any) => (order[std(a)] || 0) - (order[std(b)] || 0))
         return (
           <Card className="mb-6">
             <CardHeader className="pb-2">
@@ -289,6 +290,12 @@ export default function GradesManagementPage() {
                   <SelectTrigger className="w-28 h-7 text-xs"><SelectValue placeholder="全部年级" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">全部年级</SelectItem>
+                    <SelectItem value="Standard 1">Standard 1</SelectItem>
+                    <SelectItem value="Standard 2">Standard 2</SelectItem>
+                    <SelectItem value="Standard 3">Standard 3</SelectItem>
+                    <SelectItem value="Standard 4">Standard 4</SelectItem>
+                    <SelectItem value="Standard 5">Standard 5</SelectItem>
+                    <SelectItem value="Standard 6">Standard 6</SelectItem>
                     <SelectItem value="Peralihan">Peralihan</SelectItem>
                     <SelectItem value="Form 1">Form 1</SelectItem>
                     <SelectItem value="Form 2">Form 2</SelectItem>
@@ -309,6 +316,7 @@ export default function GradesManagementPage() {
                       <TableHead className="text-xs w-16">年级</TableHead>
                       {gradeSubjects.map(s => <TableHead key={s} className="text-xs text-center w-16">{s}</TableHead>)}
                       <TableHead className="text-xs text-right w-14">平均</TableHead>
+                      <TableHead className="text-xs w-14">核对</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -338,6 +346,23 @@ export default function GradesManagementPage() {
                             )
                           })}
                           <TableCell className={`text-xs text-right font-bold ${s.avg >= 70 ? "text-emerald-600" : s.avg >= 50 ? "text-slate-700" : "text-red-600"}`}>{(() => { const subjects = studentSubjectMap[s.id] || {}; const scores = Object.values(subjects).filter((d) => !isNaN(d.score)).map((d) => d.score); const avg = scores.length ? Math.round(scores.reduce((a,b) => a+b, 0) / scores.length * 10) / 10 : 0; return avg > 0 ? avg : "-" })()}</TableCell>
+                          <TableCell className="text-center">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                const ic = (s as any).nric || ''
+                                if (ic) {
+                                  navigator.clipboard?.writeText(ic.replace(/\s+/g, '')).catch(() => {})
+                                  alert(`已复制该生IC: ${ic}\n\n点击确定后，在打开的 DataStudio 页面输入框内直接粘贴(Ctrl+V)并回车，即可看到该生成绩`)
+                                }
+                                window.open("https://datastudio.google.com/u/0/reporting/5755410c-43ab-4d79-afa7-a770c11eef2a/page/bEQqD", "_blank")
+                              }}
+                              className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded border border-slate-200 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600"
+                            >
+                              <ExternalLink className="h-3 w-3" />核对
+                            </button>
+                          </TableCell>
                         </TableRow>
                       )
                     })}

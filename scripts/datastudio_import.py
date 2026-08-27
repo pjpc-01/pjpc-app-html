@@ -25,41 +25,35 @@ def gl(s): return "A" if s>=80 else "B" if s>=70 else "C" if s>=60 else "D" if s
 
 def parse(text):
     """Parse the DataStudio page text for subjects and scores"""
+    # DataStudio 渲染：分数数字显示在「科目标题的上方一行」，即数字属于其「下方最近的那个科目」
+    # 顶部孤立数字(第一科标题前) = 第一个科目(国文)的分数
+    # 处理:维护 pending_score，遇到科目标题时把暂存的数字赋给该科目
     lines = [l.strip() for l in text.split('\n')]
     
-    # Find subjects: lines matching "1.  BAHASA MELAYU" pattern
-    # Each subject has: number, name, then next lines may have score or "No data"
     subjects = []
-    i = 0
-    while i < len(lines):
-        m = re.match(r'^(\d{1,2})\.\s+(.+)', lines[i])
+    pending_score = None
+    for line in lines:
+        m = re.match(r'^(\d{1,2})\.\s+(.+)', line)
         if m:
             subj_name = m.group(2).strip()
-            # Look at next lines for score
-            score = None
-            grade = ""
-            j = i + 1
-            while j < len(lines) and j < i + 10:
-                nxt = lines[j].strip()
-                if nxt == "No data":
-                    break  # skip this subject
-                if nxt.isdigit() and 0 <= int(nxt) <= 100:
-                    score = int(nxt)
-                    j += 1
-                    # Next line might be grade letter
-                    if j < len(lines) and lines[j].strip() in "ABCDEF":
-                        grade = lines[j].strip()
-                    break
-                if re.match(r'^\d{1,2}\.\s+', nxt):  # next subject
-                    break
-                if any(k in nxt for k in ("RUMUSAN","JUMLAH","PURATA","ANALISIS","MATA PELAJARAN")):
-                    break
-                j += 1
-            if score is not None:
-                subjects.append({"name": subj_name, "score": score, "grade": grade or gl(score)})
-        i += 1
+            subjects.append({"name": subj_name, "score": pending_score, "grade": gl(pending_score) if pending_score is not None else ""})
+            pending_score = None  # 已消费
+        elif line == "No data":
+            pass
+        elif line.isdigit() and 0 <= int(line) <= 100:
+            pending_score = int(line)
     
-    return subjects if subjects else None
+    # 过滤无分数的科目
+    out = [s for s in subjects if s["score"] is not None]
+    # 修正:如果 BAHASA TAMIL 有分 但 BAHASA CINA 无分,把分数归给华文(DataStudio末尾渲染把华文分数错贴到TAMIL)
+    cina = next((s for s in subjects if "BAHASA CINA" in s["name"]), None)
+    tamil = next((s for s in subjects if "BAHASA TAMIL" in s["name"]), None)
+    if cina and tamil and cina.get("score") is None and tamil.get("score") is not None:
+        cina["score"] = tamil["score"]
+        cina["grade"] = gl(tamil["score"])
+        tamil["score"] = None
+        out = [s for s in subjects if s["score"] is not None]
+    return out if out else None
 
 def get_token():
     auth = subprocess.run(['curl', '-s', '-X', 'POST',
