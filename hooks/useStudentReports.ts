@@ -24,6 +24,7 @@ export interface StudentReport {
   activities: string[]
   self_evaluation: string
   teacher_comment: string
+  homework_comment: string
   problems: string[]
   improvements: string[]
   future_goals_academic: string

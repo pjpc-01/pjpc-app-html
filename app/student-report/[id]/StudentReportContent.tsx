@@ -13,6 +13,9 @@ import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useStudentReports, StudentReport, ReportSubject } from "@/hooks/useStudentReports"
 import { useStudents } from "@/hooks/useStudents"
+import { useAuth } from "@/contexts/pocketbase-auth-context"
+import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
+import { scoreToGrade, gradeColorClass, formatGrade } from "@/lib/utils"
 import {
   ArrowLeft, Printer, Download, Save, Edit3, FileText,
   Loader2, Settings, X, PlusCircle
@@ -20,7 +23,7 @@ import {
 import ReportSettingsManager, { type ReportSettingsPreset } from "@/app/components/report/ReportSettingsManager"
 import { downloadReportPDF, generateReportHTML } from "@/lib/pdf-generator"
 
-const DEFAULT_SUBJECTS = ["华文", "国文", "英文", "数学", "科学", "地理", "历史"]
+const DEFAULT_SUBJECTS = ["华文", "国文", "英文", "科学", "数学"]
 const SETTINGS_KEY = "student_report_default_subjects"
 
 const loadDefaultSubjects = (): string[] => {
@@ -57,10 +60,59 @@ export default function StudentReportContent() {
   const reportId = params?.id as string
   const { loading, getReport, saveReport, deleteReport } = useStudentReports()
   const { students, loading: studentsLoading } = useStudents()
+  const { user } = useAuth()
+  const { teacher: currentTeacher, loading: teacherLoading } = useCurrentTeacher()
   const [report, setReport] = useState<StudentReport | null>(null)
   const [editMode, setEditMode] = useState(false)
   const [saving, setSaving] = useState(false)
   const printRef = useRef<any>(null)
+
+  // ─── 老师只能改自己教的科目（按科目 + 学生年级）───
+  // 从 courses 推导当前老师教的（科目, 年级）对；没该年级课程 → 该科只读
+  const isTeacher = !!(user && user.role === 'teacher')
+  const [teacherSubjects, setTeacherSubjects] = useState<string[] | null>(null)
+  const [teacherCourseGrades, setTeacherCourseGrades] = useState<Record<string, string[]>>({})
+
+  useEffect(() => {
+    if (!isTeacher || !currentTeacher?.id) {
+      setTeacherSubjects(null)
+      setTeacherCourseGrades({})
+      return
+    }
+    let cancelled = false
+    fetch(`/api/pocketbase-proxy/api/collections/courses/records?perPage=200&filter=(teacher_id='${currentTeacher.id}')`)
+      .then(r => r.json())
+      .then(d => {
+        if (cancelled) return
+        const subs = Array.from(new Set(
+          (d.items || []).map((c: any) => c.subject).filter(Boolean)
+        )) as string[]
+        setTeacherSubjects(subs)
+        // 科目 -> 该老师教的年级集合（归一化）
+        const gradeMap: Record<string, string[]> = {}
+        ;(d.items || []).forEach((c: any) => {
+          if (!c.subject) return
+          const g = formatGrade(c.grade_level, c.is_peralihan) || ''
+          if (!gradeMap[c.subject]) gradeMap[c.subject] = []
+          if (g && !gradeMap[c.subject].includes(g)) gradeMap[c.subject].push(g)
+        })
+        setTeacherCourseGrades(gradeMap)
+      })
+      .catch(() => { if (!cancelled) { setTeacherSubjects(null); setTeacherCourseGrades({}) } })
+    return () => { cancelled = true }
+  }, [isTeacher, currentTeacher?.id])
+
+  // 科目是否可被当前用户编辑：老师角色时，只允许自己教的（且匹配该学生年级的）科
+  const canEditSubject = (subjName: string) => {
+    if (!isTeacher) return true
+    if (!teacherSubjects || teacherSubjects.length === 0) return true // 该老师没排课：不限制
+    // 需匹配学生年级（student 在渲染时已就绪）
+    const stu = student as any
+    const stuGrade = formatGrade(stu?.grade, stu?.is_peralihan)
+    if (!stuGrade) return true // 学生无年级：不限制（避免误伤）
+    const grades = teacherCourseGrades[subjName] || []
+    return grades.includes(stuGrade)
+  }
 
   // Subject settings dialog
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -73,7 +125,7 @@ export default function StudentReportContent() {
     schoolAddress: "", schoolPhone: "", schoolEmail: "", primaryColor: "#3b82f6",
     headerTitle: "学生报告", headerSubtitle: "— 全面发展 · 健康成长 · 追求卓越 —",
     footerText: "自信自强 | 勤学善思 | 合作共进 | 全面发展",
-    defaultSubjects: ["华文","国文","英文","数学","科学","地理","历史","道德","美术","体育"],
+    defaultSubjects: ["华文","国文","英文","科学","数学"],
     growthMessage: "成长不在于做得最好，而在于愿意不断尝试、不断进步。{studentName}，继续加油！",
     problems: ["在理科学习中，解题思路不够灵活，需加强思维训练。","有时会因拖延导致作业完成质量不高。","阅读量不足，知识面有待拓宽。"],
     improvements: ["制定学习计划，提高学习效率，减少拖延。","多做练习题，总结解题方法和技巧。","每天阅读，拓宽知识面，做好读书笔记。","遇到问题及时请教老师或同学，加强理解与应用。"],
@@ -111,7 +163,7 @@ export default function StudentReportContent() {
               headerTitle: r.headerTitle || "学生报告",
               headerSubtitle: r.headerSubtitle || "— 全面发展 · 健康成长 · 追求卓越 —",
               footerText: r.footerText || "自信自强 | 勤学善思 | 合作共进 | 全面发展",
-              defaultSubjects: r.defaultSubjects || ["华文","国文","英文","数学","科学","地理","历史","道德","美术","体育"],
+              defaultSubjects: r.defaultSubjects || ["华文", "国文", "英文", "科学", "数学"],
               growthMessage: r.growthMessage || "成长不在于做得最好，而在于愿意不断尝试、不断进步。{studentName}，继续加油！",
               problems: r.problems || ["在理科学习中，解题思路不够灵活，需加强思维训练。","有时会因拖延导致作业完成质量不高。","阅读量不足，知识面有待拓宽。"],
               improvements: r.improvements || ["制定学习计划，提高学习效率，减少拖延。","多做练习题，总结解题方法和技巧。","每天阅读，拓宽知识面，做好读书笔记。","遇到问题及时请教老师或同学，加强理解与应用。"],
@@ -341,8 +393,8 @@ export default function StudentReportContent() {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-1/3">学科</TableHead>
-                        <TableHead className="text-center">期中</TableHead>
-                        <TableHead className="text-center">期末</TableHead>
+                        <TableHead className="text-center">期中 (等级)</TableHead>
+                        <TableHead className="text-center">期末 (等级)</TableHead>
                         <TableHead className="text-center">评价</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -350,25 +402,38 @@ export default function StudentReportContent() {
                       {(report.subjects || []).map((subj: any, idx: number) => (
                         <TableRow key={idx}>
                           <TableCell>
-                            <Input value={subj.name} onChange={e => {
-                              const subs = [...report.subjects]; subs[idx] = {...subs[idx], name: e.target.value}; 
-                              setReport({...report, subjects: subs});
-                            }} className="h-8 text-sm" />
+                            <Input
+                              value={subj.name}
+                              disabled={!canEditSubject(subj.name)}
+                              onChange={e => {
+                                const subs = [...report.subjects]; subs[idx] = {...subs[idx], name: e.target.value}; 
+                                setReport({...report, subjects: subs});
+                              }} className="h-8 text-sm" />
                           </TableCell>
                           <TableCell className="text-center">
-                            <Input type="number" min={0} max={100} value={subj.midterm ?? ''} onChange={e => {
+                            <Input type="number" min={0} max={100} value={subj.midterm ?? ''} disabled={!canEditSubject(subj.name)} onChange={e => {
                               const subs = [...report.subjects]; subs[idx] = {...subs[idx], midterm: e.target.value ? parseInt(e.target.value) : null};
                               setReport({...report, subjects: subs});
                             }} className="w-16 h-8 text-sm text-center mx-auto" />
+                            {subj.midterm != null && (
+                              <span className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${gradeColorClass(scoreToGrade(subj.midterm))}`}>
+                                {scoreToGrade(subj.midterm)}
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell className="text-center">
-                            <Input type="number" min={0} max={100} value={subj.final ?? ''} onChange={e => {
+                            <Input type="number" min={0} max={100} value={subj.final ?? ''} disabled={!canEditSubject(subj.name)} onChange={e => {
                               const subs = [...report.subjects]; subs[idx] = {...subs[idx], final: e.target.value ? parseInt(e.target.value) : null};
                               setReport({...report, subjects: subs});
                             }} className="w-16 h-8 text-sm text-center mx-auto" />
+                            {subj.final != null && (
+                              <span className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${gradeColorClass(scoreToGrade(subj.final))}`}>
+                                {scoreToGrade(subj.final)}
+                              </span>
+                            )}
                           </TableCell>
                           <TableCell className="text-center">
-                            <Input value={subj.evaluation || ''} onChange={e => {
+                            <Input value={subj.evaluation || ''} disabled={!canEditSubject(subj.name)} onChange={e => {
                               const subs = [...report.subjects]; subs[idx] = {...subs[idx], evaluation: e.target.value};
                               setReport({...report, subjects: subs});
                             }} className="w-20 h-8 text-sm text-center mx-auto" />
@@ -378,6 +443,28 @@ export default function StudentReportContent() {
                     </TableBody>
                   </Table>
                 </div>
+              </div>
+
+              {/* 老师评语 */}
+              <div>
+                <Label className="text-xs font-semibold">老师评语</Label>
+                <Textarea
+                  value={report.teacher_comment || ''}
+                  onChange={e => setReport({...report, teacher_comment: e.target.value})}
+                  className="text-sm mt-1" rows={3}
+                  placeholder="填写老师对学生的评语..."
+                />
+              </div>
+
+              {/* 功课班评语 */}
+              <div>
+                <Label className="text-xs font-semibold">功课班评语</Label>
+                <Textarea
+                  value={report.homework_comment || ''}
+                  onChange={e => setReport({...report, homework_comment: e.target.value})}
+                  className="text-sm mt-1" rows={3}
+                  placeholder="填写功课班评语..."
+                />
               </div>
 
               {/* Problems */}

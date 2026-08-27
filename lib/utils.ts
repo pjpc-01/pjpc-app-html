@@ -548,6 +548,8 @@ const GRADE_NAME_MAP: Record<string, string> = {
   'remove': 'Peralihan', 'peralihan': 'Peralihan',
   'y3': 'Standard 3', 'y4': 'Standard 4', 'y5': 'Standard 5', 'y6': 'Standard 6',
   'y7': 'Form 1', 'y8': 'Form 2', 'y9': 'Form 3', 'y10': 'Form 4', 'y11': 'Form 5', 'y12': 'Form 6',
+  // 明年新生（预留入学，不按当前年级计入，排序沉底）
+  '明年新生': '明年新生', 'upcoming': '明年新生', 'NXT': '明年新生',
 }
 
 // Peralihan shift: Form 1→Peralihan, Form 2→Form 1, etc.
@@ -576,4 +578,28 @@ export const classifySchoolLevel = (grade: string | undefined | null): SchoolLev
   const num = parseInt(grade)
   if (!isNaN(num)) return num >= 7 ? 'secondary' : 'primary'
   return null
+}
+
+// 期中/期末分数 → A-F 等级（82-100 A, 66-81 B, 60-65 C, 35-49 D, 20-34 E, 0-19 F）
+export const scoreToGrade = (score: number | null | undefined): string => {
+  if (score === null || score === undefined || isNaN(score as number)) return "-"
+  if (score >= 82) return "A"
+  if (score >= 66) return "B"
+  if (score >= 60) return "C"
+  if (score >= 35) return "D"
+  if (score >= 20) return "E"
+  return "F"
+}
+
+// A-F 等级对应的徽章颜色类
+export const gradeColorClass = (grade: string): string => {
+  switch (grade) {
+    case "A": return "bg-green-500 text-white"
+    case "B": return "bg-blue-500 text-white"
+    case "C": return "bg-yellow-400 text-black"
+    case "D": return "bg-orange-500 text-white"
+    case "E": return "bg-orange-700 text-white"
+    case "F": return "bg-red-500 text-white"
+    default: return "bg-gray-200 text-gray-700"
+  }
 }
