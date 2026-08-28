@@ -140,6 +140,20 @@ export default function TeacherSalaryManagement() {
   const [recordTotal, setRecordTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // ── Recycle bin state (薪资记录) ──
+  const [binMode, setBinMode] = useState(false)
+  const [deletedRecords, setDeletedRecords] = useState<any[]>([])
+  const [binLoading, setBinLoading] = useState(false)
+
+  const fetchDeletedRecords = useCallback(async () => {
+    setBinLoading(true)
+    try {
+      const res = await fetch(`/api/teacher-salary?type=record&deleted=1&perPage=200&page=1`)
+      const result = await res.json()
+      setDeletedRecords(result?.data || [])
+    } catch { setDeletedRecords([]) } finally { setBinLoading(false) }
+  }, [])
   const [isGenerating, setIsGenerating] = useState(false)
   const [isAdjusting, setIsAdjusting] = useState(false)
   
@@ -674,11 +688,11 @@ export default function TeacherSalaryManagement() {
     if (!recordToDelete) return
     try {
       const response = await fetch(`/api/teacher-salary?type=record&id=${recordToDelete}`, {
-        method: 'DELETE',
+        method: 'DELETE', // 默认 soft:移入回收站
       })
       const result = await response.json()
       if (result.success) {
-        toast.success('薪资记录已删除')
+        toast.success('薪资记录已移入回收站')
         fetchSalaryRecords()
       } else {
         toast.error('删除失败', { description: result.error })
@@ -1223,11 +1237,48 @@ export default function TeacherSalaryManagement() {
         </div>
         <div className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>薪资记录列表</CardTitle>
-              <CardDescription>查看和管理教师的薪资发放记录</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>薪资记录列表</CardTitle>
+                <CardDescription>查看和管理教师的薪资发放记录</CardDescription>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => { setBinMode(true); fetchDeletedRecords(); }}>
+                🗑️ 回收站 {deletedRecords.length > 0 ? `(${deletedRecords.length})` : ""}
+              </Button>
             </CardHeader>
             <CardContent>
+            {binMode ? (
+            <div className="py-4 space-y-2">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-sm">回收站（已删除的薪资记录）</h3>
+                <Button size="sm" variant="outline" onClick={() => setBinMode(false)}>← 返回列表</Button>
+              </div>
+              {binLoading ? (
+                <div className="py-16 text-center text-gray-400 text-sm">加载中...</div>
+              ) : deletedRecords.length === 0 ? (
+                <div className="py-16 text-center text-gray-400 text-sm border rounded-lg bg-white">回收站为空</div>
+              ) : (
+                <div className="space-y-2">
+                  {deletedRecords.map((r: any) => (
+                    <div key={r.id} className="flex items-center justify-between p-3 rounded-lg border bg-white">
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm">{r.expand?.teacher_id?.name || r.teacher_id} · {r.year}年{r.month}月</div>
+                        <div className="text-xs text-gray-500 mt-0.5">RM {Number(r.net_salary||0).toLocaleString()} · 删除于 {new Date(r.updated).toLocaleDateString("zh-CN")}</div>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={async () => { await fetch(`/api/teacher-salary?type=record&id=${r.id}&action=restore`, { method: "DELETE" }); fetchDeletedRecords(); fetchSalaryRecords(1); }}>
+                          恢复
+                        </Button>
+                        <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={async () => { if (!confirm("确定要永久删除这条薪资记录吗？此操作不可恢复！")) return; await fetch(`/api/teacher-salary?type=record&id=${r.id}&action=permanent`, { method: "DELETE" }); fetchDeletedRecords(); }}>
+                          永久删除
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            ) : (<>
               {/* ── Batch action bar for records ── */}
               {someRecordsSelected && (
                 <div className="flex items-center justify-between mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
@@ -1399,6 +1450,8 @@ export default function TeacherSalaryManagement() {
                 </div>
               </div>
             )}
+            </>
+              )}
             </CardContent>
           </Card>
         </div>
