@@ -52,6 +52,20 @@ export function InvoiceList({
   const [isBatchDeleteOpen, setIsBatchDeleteOpen] = useState(false)
   const [isBatchDeleting, setIsBatchDeleting] = useState(false)
 
+  // ── Recycle bin state ──
+  const [binMode, setBinMode] = useState(false)
+  const [deletedInvoices, setDeletedInvoices] = useState<any[]>([])
+  const [binLoading, setBinLoading] = useState(false)
+
+  const fetchDeletedInvoices = async () => {
+    setBinLoading(true)
+    try {
+      const res = await fetch("/api/pocketbase-proxy/api/collections/invoices/records?filter=" + encodeURIComponent("deleted=true") + "&sort=-updated&perPage=200")
+      const data = await res.json()
+      setDeletedInvoices(data?.items || [])
+    } catch { setDeletedInvoices([]) } finally { setBinLoading(false) }
+  }
+
   const allIds = invoices.map(inv => inv.id)
   const allSelected = allIds.length > 0 && selectedIds.size === allIds.length
   const someSelected = selectedIds.size > 0
@@ -161,15 +175,89 @@ export function InvoiceList({
     }).format(amount)
   }
 
-  return (
-    <>
+    // ── Recycle bin view ──
+    if (binMode) {
+      return (
+        <Card className="bg-gray-50">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                <div>
+                  <CardTitle>回收站</CardTitle>
+                  <CardDescription>已删除的发票，可恢复或永久删除</CardDescription>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBinMode(false)}
+                className="px-3 py-1.5 text-xs font-medium border rounded-lg bg-white text-gray-600 hover:bg-gray-50"
+              >
+                ← 返回列表
+              </button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {binLoading ? (
+              <div className="py-16 text-center text-gray-400 text-sm">加载中...</div>
+            ) : deletedInvoices.length === 0 ? (
+              <div className="py-16 text-center text-gray-400 text-sm">回收站为空</div>
+            ) : (
+              <div className="space-y-2">
+                {deletedInvoices.map((inv) => (
+                  <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg border bg-white">
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm">{inv.invoiceNumber} · {inv.studentName}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {inv.studentGrade || ""} · {formatCurrency(inv.totalAmount)} · 删除于 {formatDate(inv.updated)}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <Button size="sm" variant="outline" className="h-8 text-xs" onClick={async () => { await fetch("/api/pocketbase-proxy/api/collections/invoices/" + inv.id, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deleted: false }) }); fetchDeletedInvoices(); }}>
+                        恢复
+                      </Button>
+                      <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={async () => { if (!confirm("确定要永久删除这张发票吗？此操作不可恢复！")) return; await fetch("/api/pocketbase-proxy/api/collections/invoices/" + inv.id, { method: "DELETE" }); fetchDeletedInvoices(); }}>
+                        永久删除
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )
+    }
+
+    return (
+      <>`
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            发票列表
-          </CardTitle>
-          <CardDescription>管理所有发票记录</CardDescription>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              <div>
+                <CardTitle>发票列表</CardTitle>
+                <CardDescription>管理所有发票记录</CardDescription>
+              </div>
+            </div>
+            <div className="flex gap-1 border rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => { setBinMode(false); }}
+                className={`px-3 py-1.5 text-xs font-medium ${!binMode ? "bg-primary text-primary-foreground" : "text-gray-600 hover:bg-gray-50"}`}
+              >
+                列表
+              </button>
+              <button
+                type="button"
+                onClick={() => { setBinMode(true); fetchDeletedInvoices(); }}
+                className={`px-3 py-1.5 text-xs font-medium ${binMode ? "bg-primary text-primary-foreground" : "text-gray-600 hover:bg-gray-50"}`}
+              >
+                🗑️ 回收站 {deletedInvoices.length > 0 ? `(${deletedInvoices.length})` : ""}
+              </button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {/* Filters */}

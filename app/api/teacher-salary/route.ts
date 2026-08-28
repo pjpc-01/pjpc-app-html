@@ -49,7 +49,11 @@ export async function GET(request: NextRequest) {
       })
     } else {
       // 获取薪资记录
-      let filter = '1=1'
+      let filter = 'deleted != true'
+      const deleted = searchParams.get('deleted')
+      if (deleted === '1') {
+        filter = 'deleted = true'
+      }
       if (teacherId) {
         filter += ` && teacher_id = "${teacherId}"`
       }
@@ -268,7 +272,13 @@ export async function DELETE(request: NextRequest) {
     if (type === 'structure') {
       await pb.collection('teacher_salary_structures').delete(id)
     } else if (type === 'record') {
-      await pb.collection('teacher_salary_records').delete(id)
+      // 软删除:默认移入回收站;action=restore 还原;action=permanent 彻底删
+      const action = searchParams.get('action') || 'soft'
+      if (action === 'permanent') {
+        await pb.collection('teacher_salary_records').delete(id)
+      } else {
+        await pb.collection('teacher_salary_records').update(id, { deleted: action !== 'restore' })
+      }
     }
 
     return NextResponse.json({

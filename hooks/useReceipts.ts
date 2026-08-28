@@ -27,7 +27,8 @@ export const useReceipts = () => {
       setError(null)
       const data = await fetchSecureData<Receipt[]>('receipts', {
         fullList: true,
-        sort: '-receipt_date'
+        sort: '-receipt_date',
+        filter: 'deleted=false'
       })
       setReceipts(data || [])
       setIsMockMode(false)
@@ -97,11 +98,19 @@ export const useReceipts = () => {
 
   const deleteReceipt = useCallback(async (receiptId: string) => {
     try {
-      await deleteRecord('receipts', receiptId)
+      await updateRecord('receipts', receiptId, { deleted: true })
       setReceipts(prev => prev.filter(receipt => receipt.id !== receiptId))
     } catch (err) {
       throw err
     }
+  }, [])
+
+  const restoreReceipt = useCallback(async (receiptId: string) => {
+    await updateRecord('receipts', receiptId, { deleted: false })
+  }, [])
+
+  const permanentDeleteReceipt = useCallback(async (receiptId: string) => {
+    await deleteRecord('receipts', receiptId)
   }, [])
 
   const getFilteredReceipts = useCallback(() => {
@@ -167,6 +176,8 @@ export const useReceipts = () => {
     createReceipt,
     updateReceipt,
     deleteReceipt,
+    restoreReceipt,
+    permanentDeleteReceipt,
     getFilteredReceipts,
     getReceiptByPayment,
     generateReceiptFromPayment,

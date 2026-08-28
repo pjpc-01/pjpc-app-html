@@ -42,7 +42,8 @@ export const useInvoices = () => {
       setError(null)
       const data = await fetchSecureData<Invoice[]>('invoices', {
         fullList: true,
-        sort: '-created'
+        sort: '-created',
+        filter: 'deleted=false'
       })
       setInvoices(data || [])
     } catch (err) {
@@ -91,8 +92,16 @@ export const useInvoices = () => {
   }, [])
 
   const deleteInvoice = useCallback(async (invoiceId: string) => {
-    await deleteRecord('invoices', invoiceId)
+    await updateRecord('invoices', invoiceId, { deleted: true })
     setInvoices(prev => prev.filter(invoice => invoice.id !== invoiceId))
+  }, [])
+
+  const restoreInvoice = useCallback(async (invoiceId: string) => {
+    await updateRecord('invoices', invoiceId, { deleted: false })
+  }, [])
+
+  const permanentDeleteInvoice = useCallback(async (invoiceId: string) => {
+    await deleteRecord('invoices', invoiceId)
   }, [])
 
   const updateInvoiceStatus = useCallback(async (invoiceId: string, status: Invoice['status']) => {
@@ -206,6 +215,8 @@ export const useInvoices = () => {
     createInvoice,
     updateInvoice,
     deleteInvoice,
+    restoreInvoice,
+    permanentDeleteInvoice,
     updateInvoiceStatus,
     getFilteredInvoices,
     generateInvoiceFromStudentFees,

@@ -78,6 +78,20 @@ export default function ReceiptManagement() {
   const [selectedReceipt, setSelectedReceipt] = useState<any>(null)
   const [expandedReceiptIds, setExpandedReceiptIds] = useState<Set<string>>(new Set())
 
+  // ── Recycle bin state ──
+  const [binMode, setBinMode] = useState(false)
+  const [deletedReceipts, setDeletedReceipts] = useState<any[]>([])
+  const [binLoading, setBinLoading] = useState(false)
+
+  const fetchDeletedReceipts = async () => {
+    setBinLoading(true)
+    try {
+      const res = await fetch("/api/pocketbase-proxy/api/collections/receipts/records?filter=" + encodeURIComponent("deleted=true") + "&sort=-updated&perPage=200")
+      const data = await res.json()
+      setDeletedReceipts(data?.items || [])
+    } catch { setDeletedReceipts([]) } finally { setBinLoading(false) }
+  }
+
   // PDF settings for receipt generation
   const [pdfSettings, setPdfSettings] = useState<ReceiptSettingsPreset>({
     id: "default", name: "默认设置", schoolName: "智慧教育学校", schoolNameEn: "",
@@ -305,8 +319,56 @@ export default function ReceiptManagement() {
     })
   }
 
-  return (
-    <div className="space-y-6">
+    // ── Recycle bin view ──
+    if (binMode) {
+      const fmtD = (d: string) => new Date(d).toLocaleDateString("zh-CN")
+      return (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-bold">收据回收站</h2>
+              <p className="text-sm text-gray-500">已删除的收据，可恢复或永久删除</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setBinMode(false)}
+              className="px-3 py-1.5 text-xs font-medium border rounded-lg bg-white text-gray-600 hover:bg-gray-50"
+            >
+              ← 返回列表
+            </button>
+          </div>
+          {binLoading ? (
+            <div className="py-16 text-center text-gray-400 text-sm">加载中...</div>
+          ) : deletedReceipts.length === 0 ? (
+            <div className="py-16 text-center text-gray-400 text-sm border rounded-lg bg-white">回收站为空</div>
+          ) : (
+            <div className="space-y-2">
+              {deletedReceipts.map((r) => (
+                <div key={r.id} className="flex items-center justify-between p-3 rounded-lg border bg-white">
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm">{r.receiptNumber} · {r.studentId}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      RM {Number(r.totalAmount||0).toLocaleString()} · 删除于 {fmtD(r.updated)}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button size="sm" variant="outline" className="h-8 text-xs" onClick={async () => { await fetch("/api/pocketbase-proxy/api/collections/receipts/" + r.id, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deleted: false }) }); fetchDeletedReceipts(); }}>
+                      恢复
+                    </Button>
+                    <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={async () => { if (!confirm("确定要永久删除这张收据吗？此操作不可恢复！")) return; await fetch("/api/pocketbase-proxy/api/collections/receipts/" + r.id, { method: "DELETE" }); fetchDeletedReceipts(); }}>
+                      永久删除
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    return (
+      <div className="space-y-6">`
              {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -317,6 +379,9 @@ export default function ReceiptManagement() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => { setBinMode(true); fetchDeletedReceipts(); }}>
+            🗑️ 回收站 {deletedReceipts.length > 0 ? `(${deletedReceipts.length})` : ""}
+          </Button>
           <Button variant="outline" onClick={() => setIsSettingsDialogOpen(true)}>
             <Settings className="h-4 w-4 mr-2" />
             设置
