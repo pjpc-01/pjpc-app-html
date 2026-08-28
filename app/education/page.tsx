@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo, useCallback } from "react"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -48,9 +49,11 @@ function todayStr(): string {
 function MonthCalendar({
   schedules,
   loading,
+  activities = [],
 }: {
   schedules: Schedule[]
   loading: boolean
+  activities?: { id: string; title: string; date: string; center: string }[]
 }) {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
@@ -106,6 +109,18 @@ function MonthCalendar({
 
   // Selected day details
   const selectedSchedules = selectedDate ? (scheduleMap[selectedDate] || []) : []
+
+  // Index activities by date
+  const activityMap = useMemo(() => {
+    const map: Record<string, { id: string; title: string; center: string }[]> = {}
+    for (const a of activities) {
+      const d = a.date.split("T")[0].split(" ")[0]
+      if (!map[d]) map[d] = []
+      map[d].push(a)
+    }
+    return map
+  }, [activities])
+  const selectedActivities = selectedDate ? (activityMap[selectedDate] || []) : []
 
   return (
     <Card className="overflow-hidden">
@@ -197,6 +212,19 @@ function MonthCalendar({
                             </span>
                           </div>
                         ))}
+                        {(activityMap[dateStr] || []).slice(0, 3).map((act) => (
+                          <div key={`act-${act.id}`} className="flex items-center gap-1" title={act.title}>
+                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${act.center === 'all' ? 'bg-amber-400' : 'bg-violet-400'}`} />
+                            <span className="text-[10px] text-gray-600 truncate leading-tight">
+                              {(act.title || "活动").length > 8 ? (act.title || "活动").slice(0, 8) + "…" : (act.title || "活动")}
+                            </span>
+                          </div>
+                        ))}
+                        {(activityMap[dateStr] || []).length > 3 && (
+                          <span className="text-[10px] text-gray-400">
+                            +{(activityMap[dateStr] || []).length - 3} 活动
+                          </span>
+                        )}
                         {uniqueClasses.length > 3 && (
                           <span className="text-[10px] text-gray-400">
                             +{uniqueClasses.length - 3} 更多
@@ -223,7 +251,7 @@ function MonthCalendar({
                     <X className="h-3.5 w-3.5" />
                   </Button>
                 </div>
-                {selectedSchedules.length === 0 ? (
+                {selectedSchedules.length === 0 && selectedActivities.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">
                     <Calendar className="h-6 w-6 mx-auto mb-1 opacity-30" />
                     <p className="text-xs">当日无课程安排</p>
@@ -274,6 +302,23 @@ function MonthCalendar({
                       ))}
                   </div>
                 )}
+                {selectedActivities.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <div className="text-[11px] font-semibold text-gray-500 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" /> 活动
+                    </div>
+                    {selectedActivities.map(a => (
+                      <div key={a.id} className="bg-white rounded-lg border p-2.5 hover:shadow-sm transition-shadow">
+                        <div className="font-medium text-xs">{a.title}</div>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span className={`text-[10px] px-1.5 py-0 rounded-full border ${a.center === 'all' ? "border-amber-300 bg-amber-50 text-amber-700" : "border-violet-300 bg-violet-50 text-violet-700"}`}>
+                            {a.center === 'all' ? "全中心" : (a.center === 'PU1' ? "中学PU1" : "小学BATU14")}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -296,6 +341,21 @@ export default function EducationOverviewPage() {
   const { teachers, loading: teacherLoading } = useTeachers()
   const { announcements, loading: announceLoading } = useAnnouncements()
 
+  // Activities
+  const [activities, setActivities] = useState<{ id: string; title: string; date: string; center: string }[]>([])
+  useEffect(() => {
+    // load current & next month activities
+    fetch(`/api/pocketbase-proxy/api/collections/activities/records?sort=date&perPage=200`)
+      .then(r => r.json())
+      .then(d => {
+        const items = (d?.items || []).map((a: any) => ({
+          id: a.id, title: a.title, date: String(a.date).slice(0, 10), center: a.center || 'all',
+        }))
+        setActivities(items)
+      })
+      .catch(() => {})
+  }, [])
+
   const loading = schedLoading || classLoading || courseLoading || studentLoading || teacherLoading
 
   // Stats
@@ -312,8 +372,17 @@ export default function EducationOverviewPage() {
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">教育概览</h1>
-        <p className="text-gray-500 mt-1">课程表 · 班级总览 · 公告动态</p>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">教育概览</h1>
+            <p className="text-gray-500 mt-1">课程表 · 班级总览 · 公告动态</p>
+          </div>
+          <Link href="/activities">
+            <Button variant="outline" size="sm" className="h-9 gap-1.5">
+              <Calendar className="h-4 w-4" />管理活动
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* ── Quick Stats ── */}
@@ -344,7 +413,7 @@ export default function EducationOverviewPage() {
       {/* ═══════════════════════════════ */}
       {/*  📅 月度课程日历               */}
       {/* ═══════════════════════════════ */}
-      <MonthCalendar schedules={schedules} loading={schedLoading} />
+      <MonthCalendar schedules={schedules} loading={schedLoading} activities={activities} />
 
       {/* ═══════════════════════════════ */}
       {/* 班级总览 + 公告               */}
