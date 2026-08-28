@@ -311,11 +311,16 @@ export default function CourseScheduling() {
       toast.error('结束时间必须晚于开始时间')
       return
     }
-    setTimeSlots(prev => [...prev, {
-      id: `s-${Date.now()}`,
-      start: newSlotStart,
-      end: newSlotEnd,
-    }])
+    setTimeSlots(prev => {
+      const next = [...prev, {
+        id: `s-${Date.now()}`,
+        start: newSlotStart,
+        end: newSlotEnd,
+      }]
+      // 按开始时间排序，确保时段按时间先后排列
+      next.sort((a, b) => a.start.localeCompare(b.start))
+      return next
+    })
   }
 
   function handleRemoveTimeSlot(id: string) {
