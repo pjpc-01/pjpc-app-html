@@ -256,6 +256,25 @@ function SlideshowOverlay({
 }) {
   const [idx, setIdx] = useState(0)
   const [paused, setPaused] = useState(false)
+  const [events, setEvents] = useState<{ title: string; date: string; center: string }[]>([])
+
+  // 映射中心：名称→code（大屏播放时拉活动用）
+  const centerCode = centerName.includes("中学") ? "PU1" : centerName.includes("小学") ? "BATU14" : centerName
+
+  // 从 activities 集合拉取即将到来的活动（本中心 or 全中心）
+  useEffect(() => {
+    const todayStr = new Date().toISOString().slice(0, 10)
+    // 直接读全中心活动，前端过滤
+    fetch(`/api/pocketbase-proxy/api/collections/activities/records?filter=${encodeURIComponent(`date >= "${todayStr}"`)}&sort=date&perPage=100`)
+      .then(r => r.json())
+      .then(d => {
+        const items = (d?.items || [])
+          .filter((a: any) => a.center === "all" || a.center === centerCode || !a.center)
+          .map((a: any) => ({ title: a.title, date: String(a.date).slice(0, 10), center: a.center || "all" }))
+        setEvents(items)
+      })
+      .catch(() => {})
+  }, [centerCode])
   const [headerVisible, setHeaderVisible] = useState(true)
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const interval = 8000
@@ -344,7 +363,8 @@ function SlideshowOverlay({
         return <LeaderboardList students={pageStudents} variant="light" multiColumn={true} startRank={startRank} />
       }
       case "birthdays": return <BirthdayWidget students={centerStudents} />
-      case "events": return <EventsWidget events={eventsByWidget[w.id] || w.settings.events || []} />
+      case "events": return <EventsWidget
+        events={events.length > 0 ? events : (eventsByWidget[w.id] || w.settings.events || [])} />
       case "announcement": return <AnnouncementWidget text={announcementsByWidget[w.id] || w.settings.text || ""} />
       default: return null
     }
@@ -432,35 +452,78 @@ function DashboardContent() {
   // Dynamic data for editable widgets (stored per widget id)
   const [eventsByWidget, setEventsByWidget] = useState<Record<string, any[]>>({})
   const [announcementsByWidget, setAnnouncementsByWidget] = useState<Record<string, string>>({})
+  const [widgetRecordId, setWidgetRecordId] = useState<string | null>(null)
 
-  // Load from localStorage
+  // Load from PocketBase (per center)
   useEffect(() => {
-    const key = `dashboard_widgets_${selectedCenter}`
-    try {
-      const saved = localStorage.getItem(key)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        setWidgets(parsed.widgets || DEFAULT_WIDGETS)
-        setEventsByWidget(parsed.events || {})
-        setAnnouncementsByWidget(parsed.announcements || {})
-      } else {
+    const key = selectedCenter
+    const loadFromPB = async () => {
+      try {
+        // try fetch existing per-center record
+        const res = await fetch(`/api/pocketbase-proxy/api/collections/dashboard_widgets/records?filter=${encodeURIComponent(`center="${key}"`)}&perPage=1`)
+        const data = await res.json()
+        const rec = data?.items?.[0]
+        if (rec) {
+          setWidgets(rec.widgets || DEFAULT_WIDGETS)
+          setEventsByWidget(rec.events || {})
+          setAnnouncementsByWidget(rec.announcements || {})
+          setWidgetRecordId(rec.id)
+        } else {
+          // Fallback to localStorage (legacy migration), if any
+          const legacyKey = `dashboard_widgets_${selectedCenter}`
+          try {
+            const saved = localStorage.getItem(legacyKey)
+            if (saved) {
+              const parsed = JSON.parse(saved)
+              setWidgets(parsed.widgets || DEFAULT_WIDGETS)
+              setEventsByWidget(parsed.events || {})
+              setAnnouncementsByWidget(parsed.announcements || {})
+            } else {
+              setWidgets(DEFAULT_WIDGETS)
+              setEventsByWidget({})
+              setAnnouncementsByWidget({})
+            }
+          } catch {
+            setWidgets(DEFAULT_WIDGETS)
+            setEventsByWidget({})
+            setAnnouncementsByWidget({})
+          }
+        }
+      } catch {
         setWidgets(DEFAULT_WIDGETS)
         setEventsByWidget({})
         setAnnouncementsByWidget({})
       }
-    } catch {
-      setWidgets(DEFAULT_WIDGETS)
     }
+    loadFromPB()
   }, [selectedCenter])
 
-  // Save to localStorage
+  // Save to PocketBase (upsert per center)
   const saveWidgets = useCallback((w: WidgetConfig[], e: Record<string, any[]>, a: Record<string, string>) => {
-    const key = `dashboard_widgets_${selectedCenter}`
-    localStorage.setItem(key, JSON.stringify({ widgets: w, events: e, announcements: a }))
+    const key = selectedCenter
+    // 本地乐观更新
     setWidgets(w)
     setEventsByWidget(e)
     setAnnouncementsByWidget(a)
-  }, [selectedCenter])
+    // 同步到 PocketBase
+    const payload = JSON.stringify({ center: key, widgets: w, events: e, announcements: a })
+    if (widgetRecordId) {
+      fetch(`/api/pocketbase-proxy/api/collections/dashboard_widgets/records/${widgetRecordId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+      }).catch(err => console.error('保存 widget 失败', err))
+    } else {
+      fetch(`/api/pocketbase-proxy/api/collections/dashboard_widgets/records`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+      })
+        .then(r => r.json())
+        .then(d => { if (d?.id) setWidgetRecordId(d.id) })
+        .catch(err => console.error('创建 widget 失败', err))
+    }
+  }, [selectedCenter, widgetRecordId])
 
   // Fetch centers
   useEffect(() => {
