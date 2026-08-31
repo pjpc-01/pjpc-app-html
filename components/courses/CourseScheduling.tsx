@@ -355,17 +355,17 @@ export default function CourseScheduling() {
       toast.error('请选择课程')
       return
     }
-    // 冲突检查：同一天同一时间（时间段重叠）——仅限当前筛选年级内判断
-    // 不同年级的课表相互独立，同时间可并存
+    // 冲突检查：同一时间段可排多班（允许同一天同一时间同一年级排两个班）
+    // 不同课程/班级同时间可以并存，不做阻止
     const start = assignStartTime
     const end = assignEndTime
-    const conflict = filteredEntries.find(e => {
-      if (e.day_of_week !== targetDay) return false
-      // 时间段重叠判断
-      return start < e.end_time && e.start_time < end
-    })
+    const conflict = filteredEntries.find(e =>
+      e.day_of_week === targetDay &&
+      e.course_id === assignCourseId && // 仅阻止同一课程重复排同一时间
+      start < e.end_time && e.start_time < end
+    )
     if (conflict) {
-      toast.error('该时间段已被占用')
+      toast.error('该课程在该时间段已排过')
       return
     }
 

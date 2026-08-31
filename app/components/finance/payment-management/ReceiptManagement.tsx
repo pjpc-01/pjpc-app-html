@@ -582,8 +582,9 @@ export default function ReceiptManagement() {
                               {receipt.receiptNumber}
                             </span>
                             <Link className="h-3 w-3 text-gray-400 flex-shrink-0" />
-                            <span className="text-sm text-gray-600 truncate">
-                              {getInvoiceNumber(receipt.paymentId)}
+                            <span className="text-sm text-gray-500 flex items-center gap-1 truncate">
+                              <span className="text-[10px] text-gray-400 uppercase">发票</span>
+                              <span className="text-gray-600 font-mono">{getInvoiceNumber(receipt.paymentId)}</span>
                             </span>
                           </div>
                           <span className="text-sm font-medium min-w-[60px]">
