@@ -63,14 +63,19 @@ export const useInvoices = () => {
     const now = new Date()
     const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
     try {
-      // Query PB for existing invoice numbers in this month
       const prefix = `INV-${yearMonth}-`
-      const res = await fetch(`/api/pocketbase-proxy/api/collections/invoices/records?perPage=1&filter=invoiceNumber~'${prefix}'`)
+      const res = await fetch(`/api/pocketbase-proxy/api/collections/invoices/records?perPage=200&filter=${encodeURIComponent(`invoiceNumber~'${prefix}'`)}`)
       const data = await res.json()
-      const count = (data.totalItems || 0) + 1
-      return `INV-${yearMonth}-${String(count).padStart(3, '0')}`
+      // 拉取本月全部发票号码，解析序号，找最小未使用的空号（复用被删除/空缺的号码）
+      const used = new Set<number>()
+      ;(data?.items || []).forEach((inv: any) => {
+        const m = (inv.invoiceNumber || '').match(/^INV-\d{6}-(\d+)$/)
+        if (m) used.add(parseInt(m[1], 10))
+      })
+      let seq = 1
+      while (used.has(seq)) seq++
+      return `${prefix}${String(seq).padStart(3, '0')}`
     } catch {
-      // Fallback: use timestamp-based
       return `INV-${yearMonth}-${String(Date.now() % 1000).padStart(3, '0')}`
     }
   }, [])

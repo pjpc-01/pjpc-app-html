@@ -81,6 +81,8 @@ export default function PaymentManagement() {
   
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  // 选择发票下拉内的独立搜索（不干扰顶部搜索）
+  const [invoiceSearch, setInvoiceSearch] = useState("")
   const [selectedInvoiceId, setSelectedInvoiceId] = useState("")
   const [paymentAmount, setPaymentAmount] = useState("")
   const [paymentMethod, setPaymentMethod] = useState("Bank Transfer")
@@ -335,12 +337,31 @@ export default function PaymentManagement() {
                     <SelectTrigger>
                       <SelectValue placeholder="请选择发票" />
                     </SelectTrigger>
-                    <SelectContent>
-                      {filteredInvoices.map(inv => (
+                    <SelectContent className="max-h-[300px]">
+                      <div className="px-2 py-1.5 border-b mb-1">
+                        <Input
+                          className="h-7 text-xs"
+                          placeholder="搜索学生姓名或发票号..."
+                          value={invoiceSearch}
+                          onChange={(e) => setInvoiceSearch(e.target.value)}
+                        />
+                      </div>
+                      {(invoiceSearch
+                        ? filteredInvoices.filter(inv =>
+                            inv.studentName.toLowerCase().includes(invoiceSearch.toLowerCase()) ||
+                            inv.invoiceNumber.toLowerCase().includes(invoiceSearch.toLowerCase()))
+                        : filteredInvoices
+                      ).map(inv => (
                         <SelectItem key={inv.id} value={inv.id}>
                           {inv.studentName} - {inv.invoiceNumber}
                         </SelectItem>
                       ))}
+                      {invoiceSearch && filteredInvoices.filter(inv =>
+                        inv.studentName.toLowerCase().includes(invoiceSearch.toLowerCase()) ||
+                        inv.invoiceNumber.toLowerCase().includes(invoiceSearch.toLowerCase())
+                      ).length === 0 && (
+                        <div className="py-4 text-center text-xs text-gray-400">无匹配发票</div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
