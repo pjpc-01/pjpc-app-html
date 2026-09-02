@@ -17,7 +17,6 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle,
-  Zap,
   AlertTriangle,
   ShieldAlert,
   Loader2
@@ -274,69 +273,6 @@ export default function SimpleScheduleManager() {
     }
   }
 
-  // 快速排班 - 使用模板
-  const handleQuickSchedule = async (teacherId: string, templateId: string) => {
-    const teacher = teachers.find(t => t.id === teacherId)
-    const template = templates.find(t => t.id === templateId)
-
-    if (!teacher || !template) return
-
-    setSaving(true)
-    const newSchedules: Schedule[] = []
-
-    try {
-      for (const workDay of template.work_days) {
-        const date = addDays(startOfWeek(currentWeek), workDay === 0 ? 6 : workDay - 1)
-        const dateStr = format(date, 'yyyy-MM-dd')
-
-        // 检查是否已存在排班
-        const existingSchedule = schedules.find(s =>
-          s.teacher_id === teacherId && s.date === dateStr
-        )
-
-        if (!existingSchedule) {
-          const res = await fetch('/api/schedule', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              teacher_id: teacherId,
-              teacher_name: teacher.teacher_name || teacher.name || '',
-              date: dateStr,
-              start_time: template.start_time,
-              end_time: template.end_time,
-              status: 'scheduled',
-              notes: `快速排班 - ${template.name}`,
-              userId: 'admin',
-              userName: '系统管理员',
-              userRole: 'admin',
-            }),
-          })
-          const data = await res.json()
-          if (data.success && data.schedule) {
-            newSchedules.push({
-              id: data.schedule.id,
-              teacher_id: teacherId,
-              teacher_name: teacher.teacher_name || teacher.name || '',
-              date: dateStr,
-              start_time: template.start_time,
-              end_time: template.end_time,
-              status: 'scheduled',
-              notes: `快速排班 - ${template.name}`,
-            })
-          }
-        }
-      }
-
-      if (newSchedules.length > 0) {
-        setSchedules(prev => [...prev, ...newSchedules])
-      }
-    } catch (error) {
-      console.error('快速排班失败:', error)
-    } finally {
-      setSaving(false)
-    }
-  }
-
   const teacherName = (t: Teacher) => t.teacher_name || t.name || '未知'
 
   return (
@@ -430,62 +366,6 @@ export default function SimpleScheduleManager() {
               关闭
             </Button>
           </CardFooter>
-        </Card>
-      )}
-
-      {/* 快速排班 */}
-      {!teachersLoading && teachers.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-yellow-600" />
-              快速排班
-            </CardTitle>
-            <CardDescription>基于时间模板一键为教师安排整周排班</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {teachers.map(teacher => (
-                <div key={teacher.id} className="border rounded-lg p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Users className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="font-medium">{teacherName(teacher)}</div>
-                      <div className="text-sm text-gray-500">
-                        {getTypeName(teacher)}
-                        {teacher.subjects && teacher.subjects.length > 0 && ` · ${teacher.subjects.join(', ')}`}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {templates.map(template => (
-                      <Button
-                        key={template.id}
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleQuickSchedule(teacher.id, template.id)}
-                        className="text-xs"
-                        style={{ borderColor: template.color }}
-                        disabled={saving}
-                      >
-                        <div
-                          className="w-2 h-2 rounded-full mr-2"
-                          style={{ backgroundColor: template.color }}
-                        />
-                        {template.name}
-                        <span className="ml-1 text-gray-500">
-                          ({template.start_time}-{template.end_time})
-                        </span>
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
         </Card>
       )}
 

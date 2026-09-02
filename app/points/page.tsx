@@ -17,6 +17,22 @@ import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
 import { classifySchoolLevel } from "@/lib/utils"
 import PointsNfcScanner from "@/components/attendance/PointsNfcScanner"
 
+// 年级中文显示映射 — 兼容各种 raw grade 格式
+const GRADE_DISPLAY: Record<string, string> = {
+  "Standard 1": "一年级", "Standard 2": "二年级", "Standard 3": "三年级",
+  "Standard 4": "四年级", "Standard 5": "五年级", "Standard 6": "六年级",
+  "Form 1": "中一", "Form 2": "中二", "Form 3": "中三",
+  "Form 4": "中四", "Form 5": "中五", "Form 6": "中六",
+  "Peralihan": "预备班",
+  "1": "一年级", "2": "二年级", "3": "三年级",
+  "4": "四年级", "5": "五年级", "6": "六年级",
+  "7": "中一", "8": "中二", "9": "中三",
+  "10": "中四", "11": "中五", "12": "中六",
+  "y7": "中一", "y8": "中二", "y9": "中三",
+  "y10": "中四", "y11": "中五", "y12": "中六",
+}
+const toGradeDisplay = (grade: string): string => GRADE_DISPLAY[grade] || grade
+
 interface PointLog {
   id: string; amount: number; reason: string; points_before: number
   points_after: number; teacher_name: string; created: string
@@ -338,7 +354,7 @@ export default function PointsPage() {
                     <GraduationCap className="h-4 w-4 text-gray-400 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-gray-700 truncate">{s.name}</div>
-                      <div className="text-[10px] text-gray-400">{s.student_id} · {s.grade} · {s.center}</div>
+                      <div className="text-[10px] text-gray-400">{s.student_id} · {toGradeDisplay(s.grade)} · {s.center}</div>
                     </div>
                     <Star className="h-3 w-3 text-amber-400 shrink-0" />
                     <span className="text-xs text-amber-600 font-medium">{s.points || 0}</span>
@@ -382,7 +398,7 @@ export default function PointsPage() {
                   <GraduationCap className="h-7 w-7 text-green-600" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900">{currentStudent.name}</h3>
-                <p className="text-xs text-gray-400">{currentStudent.grade} · {currentStudent.center}</p>
+                <p className="text-xs text-gray-400">{toGradeDisplay(currentStudent.grade)} · {currentStudent.center}</p>
                 <div className="mt-1 inline-flex items-center gap-1 bg-amber-100 rounded-full px-3 py-0.5">
                   <Star className="h-3.5 w-3.5 text-amber-500" />
                   <span className="font-bold text-amber-700 text-sm">{currentStudent.points} 分</span>

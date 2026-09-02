@@ -51,10 +51,13 @@ export async function GET(request: NextRequest) {
       success: true,
       students: (res.items || []).map((s: any) => {
         const gm: Record<string, string> = {
+          '1': '一年级', '2': '二年级', '3': '三年级', '4': '四年级', '5': '五年级', '6': '六年级',
           'Standard 1': '一年级', 'Standard 2': '二年级', 'Standard 3': '三年级',
           'Standard 4': '四年级', 'Standard 5': '五年级', 'Standard 6': '六年级',
           'Peralihan': '预备班',
+          '7': '中一', '8': '中二', '9': '中三', '10': '中四', '11': '中五', '12': '中六',
           'Form 1': '中一', 'Form 2': '中二', 'Form 3': '中三', 'Form 4': '中四', 'Form 5': '中五',
+          'y7': '中一', 'y8': '中二', 'y9': '中三', 'y10': '中四', 'y11': '中五', 'y12': '中六',
         }
         return {
           id: s.id,
