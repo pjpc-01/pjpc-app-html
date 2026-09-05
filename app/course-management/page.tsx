@@ -34,11 +34,6 @@ export default function CourseManagementPage() {
     >
       <div className="space-y-6">
         <section>
-          <h2 className="text-lg font-semibold mb-3">{t('course.course_management')}</h2>
-          <ClassManagement />
-        </section>
-
-        <section>
           <h2 className="text-lg font-semibold mb-3">排课管理</h2>
           <CourseScheduling />
         </section>
@@ -46,6 +41,11 @@ export default function CourseManagementPage() {
         <section>
           <h2 className="text-lg font-semibold mb-3">年级时间表（甘特图）</h2>
           <GradeGanttChart />
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold mb-3">{t('course.course_management')}</h2>
+          <ClassManagement />
         </section>
       </div>
     </PageLayout>

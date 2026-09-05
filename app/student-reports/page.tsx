@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation"
 import { useStudents } from "@/hooks/useStudents"
 import { formatGrade } from "@/lib/utils"
 import ReportSettingsManager, { type ReportSettingsPreset } from "@/app/components/report/ReportSettingsManager"
+import { REPORT_EN_DEFAULT } from "@/lib/pdf-generator"
 
 export default function StudentReportsPage() {
   const { t } = useLanguage()
@@ -54,6 +55,7 @@ export default function StudentReportsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterGrade, setFilterGrade] = useState("")
   const [creating, setCreating] = useState(false)
+  const [createLang, setCreateLang] = useState<'zh' | 'en'>('zh')
 
   // 列表页按年级筛选
   const [listGrade, setListGrade] = useState("")
@@ -122,9 +124,16 @@ export default function StudentReportsPage() {
       : ["华文", "国文", "英文", "科学", "数学"]
     const subjects = subjectNames.map((name: string) => ({ name, midterm: null, final: null, evaluation: "" }))
 
-    const growthMessage = settings?.growthMessage
-      ? settings.growthMessage.replace('{studentName}', studentName)
-      : `成长不在于做得最好，而在于愿意不断尝试、不断进步。${studentName}，继续加油！`
+    const isEn = createLang === 'en'
+    const growthMessage = isEn
+      ? REPORT_EN_DEFAULT.growthMessage.replace('{studentName}', studentName)
+      : (settings?.growthMessage ? settings.growthMessage.replace('{studentName}', studentName) : `成长不在于做得最好，而在于愿意不断尝试、不断进步。${studentName}，继续加油！`)
+    const problems = isEn ? REPORT_EN_DEFAULT.problems : (settings?.problems || ["在理科学习中，解题思路不够灵活，需加强思维训练。","有时会因拖延导致作业完成质量不高。","阅读量不足，知识面有待拓宽。"])
+    const improvements = isEn ? REPORT_EN_DEFAULT.improvements : (settings?.improvements || ["制定学习计划，提高学习效率，减少拖延。","多做练习题，总结解题方法和技巧。","每天阅读，拓宽知识面，做好读书笔记。","遇到问题及时请教老师或同学，加强理解与应用。"])
+    const goalAcademic = isEn ? REPORT_EN_DEFAULT.goalAcademic : (settings?.futureGoalAcademic || "提高各科成绩，争取进入班级前列。")
+    const goalAbility = isEn ? REPORT_EN_DEFAULT.goalAbility : (settings?.futureGoalAbility || "积极参与更多课外活动，提升自己的组织和沟通能力。")
+    const goalCharacter = isEn ? REPORT_EN_DEFAULT.goalCharacter : (settings?.futureGoalCharacter || "培养良好的学习和生活习惯，做一个全面发展的学生。")
+    const summaryText = isEn ? REPORT_EN_DEFAULT.summary : (settings?.summary || "本学期，我在学习和生活中都取得了一定的进步，但也认识到自己的不足。在未来的日子里，我将以更高的标准要求自己，不断超越自我，实现自己的目标，成为更好的自己！")
 
     try {
       setCreating(true)
@@ -134,16 +143,17 @@ export default function StudentReportsPage() {
         term: "Term 1",
         year: now.getFullYear(),
         report_date: now.toISOString().split('T')[0],
+        language: createLang,
         growth_message: growthMessage,
         subjects,
         activities: [],
         homework_comment: "",
-        problems: settings?.problems || ["在理科学习中，解题思路不够灵活，需加强思维训练。","有时会因拖延导致作业完成质量不高。","阅读量不足，知识面有待拓宽。"],
-        improvements: settings?.improvements || ["制定学习计划，提高学习效率，减少拖延。","多做练习题，总结解题方法和技巧。","每天阅读，拓宽知识面，做好读书笔记。","遇到问题及时请教老师或同学，加强理解与应用。"],
-        future_goals_academic: settings?.futureGoalAcademic || "提高各科成绩，争取进入班级前列。",
-        future_goals_ability: settings?.futureGoalAbility || "积极参与更多课外活动，提升自己的组织和沟通能力。",
-        future_goals_character: settings?.futureGoalCharacter || "培养良好的学习和生活习惯，做一个全面发展的学生。",
-        summary: settings?.summary || "本学期，我在学习和生活中都取得了一定的进步，但也认识到自己的不足。在未来的日子里，我将以更高的标准要求自己，不断超越自我，实现自己的目标，成为更好的自己！",
+        problems,
+        improvements,
+        future_goals_academic: goalAcademic,
+        future_goals_ability: goalAbility,
+        future_goals_character: goalCharacter,
+        summary: summaryText,
         status: "draft",
       }
       const createRes = await fetch("/api/pocketbase-proxy/api/collections/student_reports/records", {
@@ -320,6 +330,18 @@ export default function StudentReportsPage() {
                 autoFocus
               />
             </div>
+          </div>
+          <div className="flex gap-2 mb-3 items-center">
+            <span className="text-sm text-gray-500 shrink-0">报告语言:</span>
+            <select
+              value={createLang}
+              onChange={(e) => setCreateLang(e.target.value as 'zh' | 'en')}
+              className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 min-w-[120px]"
+            >
+              <option value="zh">中文</option>
+              <option value="en">English</option>
+            </select>
+            <span className="text-xs text-gray-400">友族学生建议选 English</span>
           </div>
           <div className="max-h-[50vh] overflow-y-auto border rounded-lg">
             {studentsLoading ? (

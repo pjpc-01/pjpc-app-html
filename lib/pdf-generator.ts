@@ -725,8 +725,26 @@ const formatDate = (d: string) => {
   } catch { return d }
 }
 
-export const generateReportHTML = (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }, options?: { hideGrowth?: boolean }): string => {
+// English default content for the report body (shared: new-report prefill + PDF fallback)
+export const REPORT_EN_DEFAULT = {
+  growthMessage: 'Growth is not about being the best, but about being willing to keep trying and improving. {studentName}, keep going!',
+  problems: ['Problem-solving in Science is not flexible enough and needs more thinking training.', 'Sometimes delays work, which affects its quality.', 'Reading is limited; the breadth of knowledge needs to be widened.'],
+  improvements: ['Make a study plan to improve efficiency and reduce delay.', 'Do more practice and summarise problem-solving methods.', 'Read every day to broaden knowledge and keep reading notes.', 'Ask teachers or classmates promptly when facing problems.'],
+  goalAcademic: 'Work hard to improve results in all subjects and aim for the top of the class.',
+  goalAbility: 'Take part in more activities to improve organisational and communication skills.',
+  goalCharacter: 'Develop good learning and life habits and become an all-round student.',
+  summary: 'This term I made progress in both studies and life, but also realised my weaknesses. I will hold myself to a higher standard and keep improving!',
+}
+
+export const generateReportHTML = (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }, options?: { hideGrowth?: boolean; lang?: 'zh' | 'en' }): string => {
   const color = settings.primaryColor || "#3b82f6"
+  const lang: 'zh' | 'en' = options?.lang || ((report as any).language === 'en' ? 'en' : 'zh')
+  const isEn = lang === 'en'
+  const L = (zh: string, en: string) => isEn ? en : zh
+
+  // ── English template support ──
+  const EN_SUBJECT_NAMES: Record<string, string> = { '华文': 'Chinese', '国文': 'Bahasa Melayu', '英文': 'English', '科学': 'Science', '数学': 'Mathematics', '地理': 'Geography', '历史': 'History', '美术': 'Art', '音乐': 'Music', '体育': 'Physical Education', '道德': 'Moral Education' }
+  const subjectLabel = (name: string) => isEn ? (EN_SUBJECT_NAMES[name] || name) : name
 
   // Use preset subjects as template, match scores from report
   const presetSubjects: string[] = (settings as any).defaultSubjects || []
@@ -754,7 +772,7 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
     const finalGrade = subj.final != null ? scoreToGrade(subj.final) : null
     return `
       <tr>
-        <td style="font-weight:600;color:#374151;">${subj.name}</td>
+        <td style="font-weight:600;color:#374151;">${subjectLabel(subj.name)}</td>
         <td style="text-align:center;">${subj.midterm ?? "—"}${midGrade ? ` <span class="grade-badge grade-${midGrade}">${midGrade}</span>` : ''}</td>
         <td style="text-align:center;">${subj.final ?? "—"}${finalGrade ? ` <span class="grade-badge grade-${finalGrade}">${finalGrade}</span>` : ''}</td>
         <td style="text-align:center;"><span class="eval-badge eval-grade">${evalText}</span></td>
@@ -763,15 +781,19 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
 
   // Use preset content, fall back to report data
   const studentName = student?.name || ''
-  const growthMessage = (settings as any).growthMessage
-    ? (settings as any).growthMessage.replace('{studentName}', studentName)
-    : (report.growth_message || '')
-  const problems = (settings as any).problems?.length > 0 ? (settings as any).problems : (report.problems || [])
-  const improvements = (settings as any).improvements?.length > 0 ? (settings as any).improvements : (report.improvements || [])
-  const goalAcademic = (settings as any).futureGoalAcademic || report.future_goals_academic || ''
-  const goalAbility = (settings as any).futureGoalAbility || report.future_goals_ability || ''
-  const goalCharacter = (settings as any).futureGoalCharacter || report.future_goals_character || ''
-  const summary = (settings as any).summary || report.summary || ''
+  const growthMessage = isEn
+    ? (report.growth_message || REPORT_EN_DEFAULT.growthMessage.replace('{studentName}', studentName))
+    : ((settings as any).growthMessage ? (settings as any).growthMessage.replace('{studentName}', studentName) : (report.growth_message || ''))
+  const problems = isEn
+    ? ((report.problems?.length ? report.problems : REPORT_EN_DEFAULT.problems))
+    : ((settings as any).problems?.length > 0 ? (settings as any).problems : (report.problems || []))
+  const improvements = isEn
+    ? ((report.improvements?.length ? report.improvements : REPORT_EN_DEFAULT.improvements))
+    : ((settings as any).improvements?.length > 0 ? (settings as any).improvements : (report.improvements || []))
+  const goalAcademic = isEn ? (report.future_goals_academic || REPORT_EN_DEFAULT.goalAcademic) : ((settings as any).futureGoalAcademic || report.future_goals_academic || '')
+  const goalAbility = isEn ? (report.future_goals_ability || REPORT_EN_DEFAULT.goalAbility) : ((settings as any).futureGoalAbility || report.future_goals_ability || '')
+  const goalCharacter = isEn ? (report.future_goals_character || REPORT_EN_DEFAULT.goalCharacter) : ((settings as any).futureGoalCharacter || report.future_goals_character || '')
+  const summary = isEn ? (report.summary || REPORT_EN_DEFAULT.summary) : ((settings as any).summary || report.summary || '')
 
   const activitiesHTML = (report.activities || []).map(a =>
     `<li style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#4b5563;margin-bottom:4px;">
@@ -797,7 +819,7 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
     let age = today.getFullYear() - birth.getFullYear()
     const m = today.getMonth() - birth.getMonth()
     if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
-    return age + "岁"
+    return age + (isEn ? " yrs old" : "岁")
   })() : "—"
 
   const logoBlock = settings.schoolLogo
@@ -901,9 +923,9 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
 <div class="report">
   <div class="header">
     ${logoBlock}
-    <h1>${settings.headerTitle || '学生报告'}</h1>
+    <h1>${isEn ? 'Student Report' : (settings.headerTitle || '学生报告')}</h1>
     ${settings.schoolName ? `<p class="school-name">${settings.schoolName}</p>` : ''}
-    <p class="subtitle">${settings.headerSubtitle || '— 全面发展 · 健康成长 · 追求卓越 —'}</p>
+    <p class="subtitle">${isEn ? '— All-Round Development · Healthy Growth · Pursuit of Excellence —' : (settings.headerSubtitle || '— 全面发展 · 健康成长 · 追求卓越 —')}</p>
   </div>
 
   <!-- Student Info -->
@@ -914,9 +936,9 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
       </div>
       <div class="info-grid">
         <b>${student?.name || "—"}</b><br/>
-        编号: ${student?.student_id || student?.code || "—"} · 年级: ${student?.grade || "—"}<br/>
-        年龄: ${age}<br/>
-        报告日期: ${report.report_date ? formatDate(report.report_date) : "—"}
+        ${L('编号','ID No.')}: ${student?.student_id || student?.code || "—"} · ${L('年级','Grade')}: ${student?.grade || "—"}<br/>
+        ${L('年龄','Age')}: ${age}<br/>
+        ${L('报告日期','Report Date')}: ${report.report_date ? formatDate(report.report_date) : "—"}
       </div>
     </div>
     ${(() => {
@@ -935,38 +957,38 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
 
   <!-- Section 1: Academic -->
   <div class="card">
-    <div class="section-label">📚 一、学业表现</div>
+    <div class="section-label">📚 ${L('一、学业表现','1. Academic Performance')}</div>
     <table>
-      <tr><th>学科</th><th>期中</th><th>期末</th><th>评价</th></tr>
+      <tr><th>${L('学科','Subject')}</th><th>${L('期中','Midterm')}</th><th>${L('期末','Final')}</th><th>${L('评价','Evaluation')}</th></tr>
       ${subjectRows}
     </table>
     ${overallAvg !== null ? `
     <div class="stat-row">
-      <div class="stat"><div class="num">${overallAvg}</div><div class="label">平均分</div></div>
-      <div class="stat"><div class="num">${report.class_rank || "—"}</div><div class="label">班级排名</div></div>
-      <div class="stat"><div class="num">${report.improvement || "—"}</div><div class="label">进步幅度</div></div>
+      <div class="stat"><div class="num">${overallAvg}</div><div class="label">${L('平均分','Average Score')}</div></div>
+      <div class="stat"><div class="num">${report.class_rank || "—"}</div><div class="label">${L('班级排名','Class Rank')}</div></div>
+      <div class="stat"><div class="num">${report.improvement || "—"}</div><div class="label">${L('进步幅度','Improvement')}</div></div>
     </div>` : ''}
   </div>
 
   <!-- Section 2: Comprehensive -->
   <div class="card">
-    <div class="section-label">⭐ 二、综合素质</div>
+    <div class="section-label">⭐ ${L('二、综合素质','2. Overall Development')}</div>
     ${(report.activities || []).length > 0 ? `
-    <p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">活动参与：</p>
+    <p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">${L('活动参与','Activities')}：</p>
     <ul>${activitiesHTML}</ul>` : ''}
     ${report.self_evaluation ? `
     <div style="margin-top:10px;">
-      <p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">自我评价：</p>
+      <p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">${L('自我评价','Self-Evaluation')}：</p>
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;font-size:13px;color:#4b5563;">${report.self_evaluation}</div>
     </div>` : ''}
     ${report.teacher_comment ? `
     <div style="margin-top:10px;">
-      <p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">老师评语：</p>
+      <p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">${L('老师评语',"Teacher's Comment")}：</p>
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;font-size:13px;color:#4b5563;">${report.teacher_comment}</div>
     </div>` : ''}
     ${report.homework_comment ? `
     <div style="margin-top:10px;">
-      <p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">功课班评语：</p>
+      <p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">${L('功课班评语','Homework Class Comment')}：</p>
       <div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:10px 14px;font-size:13px;color:#4b5563;">${report.homework_comment}</div>
     </div>` : ''}
   </div>
@@ -982,35 +1004,35 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
       switch(section.type) {
         case 'problems':
           return `<div class="card">
-            <div class="section-label orange">⚠ ${section.title}</div>
+            <div class="section-label orange">⚠ ${isEn ? 'Areas for Improvement' : section.title}</div>
             ${problems.length > 0 ? `<ul>${problemsHTML}</ul>` : '<p style="font-size:13px;color:#9ca3af;">暂无记录</p>'}
           </div>`
         case 'improvements':
           return `<div class="card">
-            <div class="section-label green">✓ ${section.title}</div>
+            <div class="section-label green">✓ ${isEn ? 'Suggestions & Plans' : section.title}</div>
             ${improvements.length > 0 ? `<ul>${improvementsHTML}</ul>` : '<p style="font-size:13px;color:#9ca3af;">暂无记录</p>'}
           </div>`
         case 'goals':
           return `<div class="card">
-            <div class="section-label" style="background:${color}">🏁 ${section.title}</div>
+            <div class="section-label" style="background:${color}">🏁 ${isEn ? 'Future Goals' : section.title}</div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
               <div class="goal-box">
-                <h4>📖 学业提升</h4>
+                <h4>📖 ${L('学业提升','Academic Improvement')}</h4>
                 <p>${goalAcademic || "提高各科成绩，争取进入班级前列。"}</p>
               </div>
               <div class="goal-box">
-                <h4>🌟 综合能力</h4>
+                <h4>🌟 ${L('综合能力','Overall Ability')}</h4>
                 <p>${goalAbility || "积极参与更多课外活动，提升自己的组织和沟通能力。"}</p>
               </div>
               <div class="goal-box">
-                <h4>💖 品格发展</h4>
+                <h4>💖 ${L('品格发展','Character Development')}</h4>
                 <p>${goalCharacter || "培养良好的学习和生活习惯，做一个全面发展的学生。"}</p>
               </div>
             </div>
           </div>`
         case 'summary':
           return `<div class="card">
-            <div class="section-label" style="background:${color}">📝 ${section.title}</div>
+            <div class="section-label" style="background:${color}">📝 ${isEn ? 'Summary' : section.title}</div>
             <p style="font-size:13px;color:#4b5563;line-height:1.6;">${summary || "—"}</p>
           </div>`
         case 'text':
@@ -1030,7 +1052,7 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
   <div style="background:#f9fafb;border-radius:10px;padding:10px 16px;font-size:11px;color:#6b7280;text-align:center;margin-bottom:12px;">
     ${settings.schoolAddress || ''} ${settings.schoolAddress && settings.schoolPhone ? '·' : ''} ${settings.schoolPhone || ''}
   </div>` : ''}
-  <div class="footer">${settings.footerText || ''}</div>
+  <div class="footer">${settings.footerText || L('自信自强 | 勤学善思 | 合作共进 | 全面发展','Confidence | Diligence | Cooperation | All-Round Development')}</div>
 </div>
 </body></html>`
 }

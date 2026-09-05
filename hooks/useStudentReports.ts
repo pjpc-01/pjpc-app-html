@@ -35,6 +35,7 @@ export interface StudentReport {
   parent_signature: string
   parent_date: string
   status: 'draft' | 'published'
+  language?: 'zh' | 'en'
   created?: string
   updated?: string
   expand?: {
