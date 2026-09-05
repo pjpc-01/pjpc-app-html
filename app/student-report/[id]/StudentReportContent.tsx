@@ -375,6 +375,18 @@ export default function StudentReportContent() {
           <Card>
             <CardHeader><CardTitle className="text-base">编辑报告内容</CardTitle></CardHeader>
             <CardContent className="space-y-4">
+              {/* 报告语言 */}
+              <div>
+                <Label className="text-xs font-semibold">报告语言 / Report Language</Label>
+                <select
+                  value={report.language || 'zh'}
+                  onChange={e => setReport({ ...report, language: (e.target.value as 'zh' | 'en') })}
+                  className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 min-w-[140px] mt-1"
+                >
+                  <option value="zh">中文</option>
+                  <option value="en">English</option>
+                </select>
+              </div>
               {/* Growth Message */}
               <div>
                 <Label className="text-xs font-semibold">成长寄语</Label>

@@ -32,6 +32,8 @@ import {
   X,
   UserCheck,
   GraduationCap,
+  Check,
+  Pencil,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
@@ -91,6 +93,8 @@ interface TimeSlot {
 // ============================================================
 
 const PROXY_BASE = '/api/pocketbase-proxy/api/collections/schedules/records'
+// 每年级时段集合
+const SLOT_BASE = '/api/pocketbase-proxy/api/collections/course_time_slots/records'
 
 async function pbRequest(path: string, options?: RequestInit) {
   const res = await fetch(path, {
@@ -144,18 +148,32 @@ export default function CourseScheduling() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 自定义时间段集合 (可增删)
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([
+  const DEFAULT_SLOTS: TimeSlot[] = [
     { id: 's1', start: '08:00', end: '09:30' },
     { id: 's2', start: '09:30', end: '11:00' },
     { id: 's3', start: '11:00', end: '12:30' },
     { id: 's4', start: '14:00', end: '15:30' },
     { id: 's5', start: '15:30', end: '17:00' },
-  ])
+  ]
+  // 当前年级的时段（网格用）
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(DEFAULT_SLOTS)
+  // 每年级时段缓存 { grade: TimeSlot[] }
+  const [slotMap, setSlotMap] = useState<Record<string, TimeSlot[]>>({})
+  // 每年级时段是否已加载过（避免重复建默认）
+  const [slotLoaded, setSlotLoaded] = useState<Record<string, boolean>>({})
 
   // 新增时间段输入
   const [newSlotStart, setNewSlotStart] = useState('08:00')
   const [newSlotEnd, setNewSlotEnd] = useState('08:45')
+
+  // 就地编辑时段
+  const [editingSlotId, setEditingSlotId] = useState<string | null>(null)
+  const [editSlotStart, setEditSlotStart] = useState('')
+  const [editSlotEnd, setEditSlotEnd] = useState('')
+  // 就地新增（网格底部加号）
+  const [inlineAdding, setInlineAdding] = useState(false)
+  const [inlineNewStart, setInlineNewStart] = useState('08:00')
+  const [inlineNewEnd, setInlineNewEnd] = useState('08:45')
 
   // 年级筛选
   const [gradeFilter, setGradeFilter] = useState('all')
@@ -274,6 +292,40 @@ export default function CourseScheduling() {
     }
   }, [gradeOptions, gradeFilter])
 
+  // 时段按年级独立加载（切年级 → 加载该年级时段；无则用默认）
+  const loadGradeSlots = useCallback(async (grade: string) => {
+    if (!grade || grade === 'all') return
+    // 已在缓存
+    if (slotLoaded[grade]) {
+      setTimeSlots(slotMap[grade] || DEFAULT_SLOTS)
+      return
+    }
+    try {
+      const res = await pbRequest(`${SLOT_BASE}?filter=${encodeURIComponent(`grade="${grade}"`)}&sort=sort&perPage=50`)
+      const items = res?.items || []
+      const slots: TimeSlot[] = items.map((it: any, i: number) => ({
+        id: it.id,
+        start: it.start || '',
+        end: it.end || '',
+      }))
+      const list = slots.length > 0 ? slots : [...DEFAULT_SLOTS]
+      setSlotMap(prev => ({ ...prev, [grade]: list }))
+      setSlotLoaded(prev => ({ ...prev, [grade]: true }))
+      setTimeSlots(list)
+    } catch (e) {
+      console.error('加载年级时段失败:', grade, e)
+      setTimeSlots(DEFAULT_SLOTS)
+    }
+  }, [slotLoaded, slotMap])
+
+  // 年级变化 → 重新加载该年级时段
+  useEffect(() => {
+    if (gradeFilter !== 'all') {
+      loadGradeSlots(gradeFilter)
+    }
+  }, [gradeFilter])
+
+
   // 按年级过滤的课程
   const filteredCourses = gradeFilter === 'all'
     ? courses
@@ -302,29 +354,41 @@ export default function CourseScheduling() {
   // 时间段增删
   // ============================================================
 
-  function handleAddTimeSlot() {
-    if (!newSlotStart || !newSlotEnd) {
-      toast.error('请填写开始和结束时间')
-      return
+  // 同步当前年级时段到 slotMap（供切回时缓存）
+  function commitSlots(grade: string, slots: TimeSlot[]) {
+    const sorted = [...slots].sort((a, b) => a.start.localeCompare(b.start))
+    setTimeSlots(sorted)
+    if (grade && grade !== 'all') {
+      setSlotMap(prev => ({ ...prev, [grade]: sorted }))
     }
-    if (newSlotStart >= newSlotEnd) {
-      toast.error('结束时间必须晚于开始时间')
-      return
-    }
-    setTimeSlots(prev => {
-      const next = [...prev, {
-        id: `s-${Date.now()}`,
-        start: newSlotStart,
-        end: newSlotEnd,
-      }]
-      // 按开始时间排序，确保时段按时间先后排列
-      next.sort((a, b) => a.start.localeCompare(b.start))
-      return next
-    })
   }
 
-  function handleRemoveTimeSlot(id: string) {
-    // 检查该时间段是否已有排课
+  // 确保该年级时段已入库，返回入库后的时段列表（默认时段首次编辑时落地为真实记录）
+  async function ensureSlotsPersisted(): Promise<TimeSlot[]> {
+    const grade = gradeFilter
+    if (!grade || grade === 'all') return timeSlots
+    // PB 记录 id 为 15-25 位字母数字；默认临时 id（s1..s5、s-<ts>）不符合 → 需先入库
+    const isRealId = (id: string) => /^[A-Za-z0-9]{15,25}$/.test(id)
+    const hasTemp = timeSlots.some(s => !isRealId(s.id))
+    if (hasTemp) {
+      // 把当前列表整体重建入库
+      const persisted: TimeSlot[] = []
+      for (let i = 0; i < timeSlots.length; i++) {
+        const s = timeSlots[i]
+        const rec = await pbRequest(SLOT_BASE, {
+          method: 'POST',
+          body: JSON.stringify({ grade, start: s.start, end: s.end, sort: i }),
+        })
+        persisted.push({ id: rec.id, start: s.start, end: s.end })
+      }
+      commitSlots(grade, persisted)
+      setSlotLoaded(prev => ({ ...prev, [grade]: true }))
+      return persisted
+    }
+    return timeSlots
+  }
+
+  async function handleRemoveTimeSlot(id: string) {
     const slot = timeSlots.find(s => s.id === id)
     if (slot) {
       const used = scheduleEntries.some(e => e.start_time === slot.start && e.end_time === slot.end)
@@ -333,7 +397,81 @@ export default function CourseScheduling() {
         return
       }
     }
-    setTimeSlots(prev => prev.filter(s => s.id !== id))
+    try {
+      const grade = gradeFilter
+      const persisted = await ensureSlotsPersisted()
+      const target = persisted.find(s => s.id === id)
+      if (target) {
+        await pbRequest(`${SLOT_BASE}/${target.id}`, { method: 'DELETE' })
+      }
+      commitSlots(grade, persisted.filter(s => s.id !== id))
+      toast.success('已删除时间段')
+    } catch (e) {
+      console.error('删除时段失败:', e)
+      toast.error('删除失败')
+    }
+  }
+
+  function startEditSlot(slot: TimeSlot) {
+    setEditingSlotId(slot.id)
+    setEditSlotStart(slot.start)
+    setEditSlotEnd(slot.end)
+  }
+
+  async function saveEditSlot() {
+    if (!editSlotStart || !editSlotEnd) {
+      toast.error('请填写开始和结束时间')
+      return
+    }
+    if (editSlotStart >= editSlotEnd) {
+      toast.error('结束时间必须晚于开始时间')
+      return
+    }
+    try {
+      const grade = gradeFilter
+      const persisted = await ensureSlotsPersisted()
+      const edited = persisted.map(s => s.id === editingSlotId ? { ...s, start: editSlotStart, end: editSlotEnd } : s)
+      const target = edited.find(s => s.id === editingSlotId)
+      if (target) {
+        await pbRequest(`${SLOT_BASE}/${target.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ start: editSlotStart, end: editSlotEnd }),
+        })
+      }
+      commitSlots(grade, edited)
+      setEditingSlotId(null)
+      toast.success('已更新时间段')
+    } catch (e) {
+      console.error('编辑时段失败:', e)
+      toast.error('保存失败')
+    }
+  }
+
+  async function addInlineSlot() {
+    if (!inlineNewStart || !inlineNewEnd) {
+      toast.error('请填写开始和结束时间')
+      return
+    }
+    if (inlineNewStart >= inlineNewEnd) {
+      toast.error('结束时间必须晚于开始时间')
+      return
+    }
+    try {
+      const grade = gradeFilter
+      const persisted = await ensureSlotsPersisted()
+      const rec = await pbRequest(SLOT_BASE, {
+        method: 'POST',
+        body: JSON.stringify({ grade, start: inlineNewStart, end: inlineNewEnd, sort: persisted.length }),
+      })
+      commitSlots(grade, [...persisted, { id: rec.id, start: inlineNewStart, end: inlineNewEnd }])
+      setInlineAdding(false)
+      setInlineNewStart('08:00')
+      setInlineNewEnd('08:45')
+      toast.success('已添加时间段')
+    } catch (e) {
+      console.error('添加时段失败:', e)
+      toast.error('添加失败')
+    }
   }
 
   // ============================================================
@@ -444,15 +582,17 @@ export default function CourseScheduling() {
   // ============================================================
 
   function getEntry(day: DayOfWeek, start: string, end: string): CourseScheduleEntry | undefined {
+    // 课程显示在其「开始时间」所属的时段行：start <= 课程.start < end
+    // （时段行是骨架，课程时间可能不完全等于时段行起止，用开始时间定位）
     return filteredEntries.find(
-      e => e.day_of_week === day && e.start_time === start && e.end_time === end
+      e => e.day_of_week === day && e.start_time >= start && e.start_time < end
     )
   }
 
   function hasCourseInSlot(day: DayOfWeek, start: string, end: string): boolean {
+    // 与 getEntry 一致：以课程开始时间所属时段行判断
     return filteredEntries.some(e =>
-      e.day_of_week === day &&
-      start < e.end_time && e.start_time < end
+      e.day_of_week === day && e.start_time >= start && e.start_time < end
     )
   }
 
@@ -558,73 +698,6 @@ export default function CourseScheduling() {
         </div>
       </div>
 
-      {/* 时间段管理（可增删） */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Clock className="h-4 w-4 text-indigo-500" />
-            时间段管理
-          </CardTitle>
-          <CardDescription>添加或删除时间表上的时间段（网格行）</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2">
-              <div>
-                <Label className="text-[10px] text-gray-500 block mb-1">开始</Label>
-                <select
-                  value={newSlotStart}
-                  onChange={e => setNewSlotStart(e.target.value)}
-                  className="h-8 text-xs border rounded px-2"
-                >
-                  {getTimeOptions().map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <span className="text-gray-400 text-xs mt-4">—</span>
-              <div>
-                <Label className="text-[10px] text-gray-500 block mb-1">结束</Label>
-                <select
-                  value={newSlotEnd}
-                  onChange={e => setNewSlotEnd(e.target.value)}
-                  className="h-8 text-xs border rounded px-2"
-                >
-                  {getTimeOptions().map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-4"
-              onClick={handleAddTimeSlot}
-            >
-              <Plus className="h-3 w-3 mr-1" />
-              添加时间段
-            </Button>
-          </div>
-
-          {/* 现有时段 */}
-          <div className="flex flex-wrap gap-2">
-            {timeSlots.map(slot => (
-              <div
-                key={slot.id}
-                className="flex items-center gap-1.5 bg-slate-50 border rounded-full px-3 py-1 text-xs"
-              >
-                <Clock className="h-3 w-3 text-indigo-500" />
-                <span className="font-medium">{slot.start} - {slot.end}</span>
-                <button
-                  className="text-red-400 hover:text-red-600 ml-1"
-                  onClick={() => handleRemoveTimeSlot(slot.id)}
-                  title="删除时间段"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* 每周课程表网格 — 行=时间段（左竖排），列=星期（顶横排） */}
       <div className="grid gap-px bg-gray-200 rounded-lg overflow-hidden min-w-[680px]">
         {/* 表头行：左列标题 + 星期横排 */}
@@ -652,12 +725,51 @@ export default function CourseScheduling() {
             className="grid items-stretch"
             style={{ gridTemplateColumns: `110px repeat(${DAYS.length}, minmax(140px, 1fr))`, minWidth: 680 }}
           >
-            {/* 时间段列（左竖排） */}
-            <div className="bg-white p-2 text-xs text-gray-500 font-medium flex items-center justify-center border-r border-gray-100">
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {slot.start}-{slot.end}
-              </span>
+            {/* 时间段列（左竖排）— 点击原地编辑 */}
+            <div className="bg-white p-1.5 text-xs text-gray-500 font-medium flex items-center justify-center border-r border-gray-100">
+              {editingSlotId === slot.id ? (
+                <div className="flex items-center gap-1">
+                  <select
+                    value={editSlotStart}
+                    onChange={e => setEditSlotStart(e.target.value)}
+                    className="h-7 w-[54px] text-[11px] border rounded px-1"
+                  >
+                    {getTimeOptions().map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <span className="text-gray-300">-</span>
+                  <select
+                    value={editSlotEnd}
+                    onChange={e => setEditSlotEnd(e.target.value)}
+                    className="h-7 w-[54px] text-[11px] border rounded px-1"
+                  >
+                    {getTimeOptions().map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <button
+                    className="text-green-600 hover:text-green-700 ml-0.5"
+                    onClick={saveEditSlot}
+                    title="保存"
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    className="text-gray-400 hover:text-gray-600"
+                    onClick={() => setEditingSlotId(null)}
+                    title="取消"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  className="group flex items-center gap-1 w-full justify-center hover:text-indigo-600"
+                  onClick={() => startEditSlot(slot)}
+                  title="点击修改时间段"
+                >
+                  <Clock className="h-3 w-3" />
+                  <span>{slot.start}-{slot.end}</span>
+                  <Pencil className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 text-indigo-400" />
+                </button>
+              )}
             </div>
 
             {/* 该时段各星期格子 */}
@@ -736,6 +848,51 @@ export default function CourseScheduling() {
             })}
           </div>
         ))}
+
+        {/* 添加时段行（网格底部加号） */}
+        {inlineAdding ? (
+          <div className="grid items-stretch" style={{ gridTemplateColumns: `110px repeat(${DAYS.length}, minmax(140px, 1fr))`, minWidth: 680 }}>
+            <div className="bg-white p-1.5 flex items-center justify-center border-r border-gray-100">
+              <div className="flex items-center gap-1">
+                <select
+                  value={inlineNewStart}
+                  onChange={e => setInlineNewStart(e.target.value)}
+                  className="h-7 w-[54px] text-[11px] border rounded px-1"
+                >
+                  {getTimeOptions().map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <span className="text-gray-300">-</span>
+                <select
+                  value={inlineNewEnd}
+                  onChange={e => setInlineNewEnd(e.target.value)}
+                  className="h-7 w-[54px] text-[11px] border rounded px-1"
+                >
+                  {getTimeOptions().map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <button className="text-green-600 hover:text-green-700 ml-0.5" onClick={addInlineSlot} title="保存时段">
+                  <Check className="h-3.5 w-3.5" />
+                </button>
+                <button className="text-gray-400 hover:text-gray-600" onClick={() => setInlineAdding(false)} title="取消">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+            <div className="col-span-7 bg-gray-50 text-[10px] text-gray-400 flex items-center justify-center">
+              新时段将按时间自动排序
+            </div>
+          </div>
+        ) : (
+          <div className="grid items-stretch" style={{ gridTemplateColumns: `110px repeat(${DAYS.length}, minmax(140px, 1fr))`, minWidth: 680 }}>
+            <button
+              className="bg-gray-50 hover:bg-indigo-50 text-indigo-500 flex items-center justify-center gap-1 py-2 border-r border-gray-100 text-xs font-medium transition-colors"
+              onClick={() => setInlineAdding(true)}
+              title="添加时间段"
+            >
+              <Plus className="h-3.5 w-3.5" /> 时段
+            </button>
+            <div className="col-span-7 bg-gray-50" />
+          </div>
+        )}
       </div>
 
       {/* 排课列表（底部） */}

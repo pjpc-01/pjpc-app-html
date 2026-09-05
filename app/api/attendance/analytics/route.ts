@@ -113,13 +113,13 @@ export async function GET(request: NextRequest) {
     // Late arrivals & early departures
     let lateArrivals = 0
     let earlyDepartures = 0
-    const expectedStartHour = 8 // 8:00 AM
+    const expectedStartHour = 7 // 7:00 AM
     const expectedEndHour = 17  // 5:00 PM
 
     for (const record of attendanceRecords) {
       if (record.check_in) {
         const checkInHour = new Date(record.check_in).getHours()
-        if (checkInHour >= expectedStartHour + 1) {
+        if (checkInHour >= expectedStartHour + 2) {
           lateArrivals++
         }
       }
