@@ -12,7 +12,7 @@
 | 8 | 学生成绩 DataStudio 导入 | 🟡 | 查重✅零重复；23 学生已导入；9 人无数据（6 人 DataStudio 无记录 + 3 人 NRIC=000000000 等提供） |
 | 9 | 学生紧急联系人 + 载送人 | 🟡 | API 自测✅，页面 UI 待 test |
 | 10 | 教师排班 | 🟡 | 快速排班已删；待实机 test 完整流程 |
-| 11 | 重复模块页面确认 | 🟡 | student-report vs student-reports 单复数并存，确认哪个在用、哪个删 |
+| 11 | 重复模块页面确认 | ✅ | 已确认非重复：/student-reports=列表页(导航入口)，/student-report/[id]=详情页，两者配套，都在用不需要删 |
 | 12 | 课程管理-时间表 | ✅ | 时段已按年级独立存 PB + 时间表/甘特图移到页面上方 + 网格显示课程修复 + 就地加/改/排序时段 |
 | 13 | 迁移 Hermes Desktop | ✅ | 2026-09-02 完成：WSL 升 v0.21；serve systemd 常驻(9119,basic_auth admin/1234567890)；Desktop 连 WSL serve。WSL2 IP 重启可能变 `hostname -I`。IP 暂不配死 |
 
