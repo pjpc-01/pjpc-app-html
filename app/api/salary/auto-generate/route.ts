@@ -21,7 +21,7 @@ function calculateEIS(grossSalary: number): number { return getEisContribution(g
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
-    const { year, month, teacher_id, created_by } = data
+    const { year, month, teacher_id, created_by, payment_date } = data
 
     if (!year || !month || !created_by) {
       return NextResponse.json(
@@ -288,6 +288,7 @@ export async function POST(request: NextRequest) {
           take_home: takeHome,
           bank_reference: payslipNo,
           status: 'paid',
+          ...(payment_date ? { payment_date } : {}),
           created_by,
           notes: `自动生成 - 基于${schedules.items.length}个排班记录`
         }

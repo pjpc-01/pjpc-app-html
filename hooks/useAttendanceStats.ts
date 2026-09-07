@@ -7,6 +7,7 @@ interface AttendanceStats {
   todayAbsent: number
   weekSchedules: number
   attendanceRate: number
+  monthHours: number
   loading: boolean
   error: string | null
 }
@@ -17,6 +18,7 @@ export function useAttendanceStats() {
     todayAbsent: 0,
     weekSchedules: 0,
     attendanceRate: 0,
+    monthHours: 0,
     loading: true,
     error: null
   })
@@ -55,6 +57,34 @@ export function useAttendanceStats() {
       // 计算本周排班数量
       const weekSchedules = scheduleData.success ? (scheduleData.schedules || []).length : 0
 
+      // 计算本月总工时（纯按排班：start_time ~ end_time 累加）
+      let monthHours = 0
+      try {
+        const now = new Date()
+        const y = now.getFullYear()
+        const m = String(now.getMonth() + 1).padStart(2, '0')
+        const startDate = `${y}-${m}-01`
+        const endDate = new Date(y, now.getMonth() + 1, 0).toISOString().split('T')[0]
+        const schRes = await fetch(
+          `/api/pocketbase-proxy/api/collections/schedules/records?perPage=200&filter=${encodeURIComponent(`date >= "${startDate}" && date <= "${endDate}"`)}`
+        )
+        if (schRes.ok) {
+          const sd = await schRes.json()
+          const items = sd?.items || []
+          items.forEach((s: any) => {
+            if (s.start_time && s.end_time) {
+              const hs = new Date(`2000-01-01T${s.start_time}`).getTime()
+              const he = new Date(`2000-01-01T${s.end_time}`).getTime()
+              const h = (he - hs) / 3600000
+              if (h > 0 && h <= 24) monthHours += h
+            }
+          })
+          monthHours = Math.round(monthHours * 100) / 100
+        }
+      } catch (e) {
+        console.error('计算本月工时失败:', e)
+      }
+
       // 计算出勤率
       const totalTodayRecords = todayPresent + todayAbsent
       const attendanceRate = totalTodayRecords > 0 ? Math.round((todayPresent / totalTodayRecords) * 100) : 0
@@ -64,6 +94,7 @@ export function useAttendanceStats() {
         todayAbsent,
         weekSchedules,
         attendanceRate,
+        monthHours,
         loading: false,
         error: null
       })

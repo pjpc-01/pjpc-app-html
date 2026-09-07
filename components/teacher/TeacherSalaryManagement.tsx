@@ -155,6 +155,10 @@ export default function TeacherSalaryManagement() {
     } catch { setDeletedRecords([]) } finally { setBinLoading(false) }
   }, [])
   const [isGenerating, setIsGenerating] = useState(false)
+  // 批量生成薪资的年/月/发薪日期（默认当前月）
+  const [genYear, setGenYear] = useState(new Date().getFullYear())
+  const [genMonth, setGenMonth] = useState(new Date().getMonth() + 1)
+  const [genPayDate, setGenPayDate] = useState('')
   const [isAdjusting, setIsAdjusting] = useState(false)
   
   // Global salary settings (EPF/SOCSO/EIS/TAX rates)
@@ -467,13 +471,12 @@ export default function TeacherSalaryManagement() {
     return { grossSalary, epfDeduction, socsoDeduction, eisDeduction, taxDeduction, totalDeductions, netSalary, takeHome }
   }, [])
 
-  // 自动生成薪资
+  // 自动生成薪资（可批量选年/月 + 发薪日期）
   const handleAutoGenerateSalary = async () => {
     setIsGenerating(true)
     try {
-      const currentDate = new Date()
-      const year = currentDate.getFullYear()
-      const month = currentDate.getMonth() + 1
+      const year = genYear
+      const month = genMonth
       
       const response = await fetch('/api/salary/auto-generate', {
         method: 'POST',
@@ -481,6 +484,7 @@ export default function TeacherSalaryManagement() {
         body: JSON.stringify({
           year,
           month,
+          payment_date: genPayDate || null,
           created_by: userProfile?.id || 'system'
         })
       })
@@ -1212,7 +1216,7 @@ export default function TeacherSalaryManagement() {
       <section id="records">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">薪资记录</h2>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               size="sm"
               variant="outline"
@@ -1221,16 +1225,42 @@ export default function TeacherSalaryManagement() {
               <Plus className="w-4 h-4 mr-1" />
               新建薪资记录
             </Button>
-            <Button 
+            <div className="flex items-center gap-1 text-xs">
+              <input
+                type="number"
+                value={genYear}
+                onChange={e => setGenYear(Number(e.target.value))}
+                className="w-16 h-8 border rounded px-2 text-sm"
+                placeholder="年"
+              />
+              <span className="text-gray-400">年</span>
+              <select
+                value={genMonth}
+                onChange={e => setGenMonth(Number(e.target.value))}
+                className="h-8 border rounded px-2 text-sm"
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                  <option key={m} value={m}>{m}月</option>
+                ))}
+              </select>
+              <input
+                type="date"
+                value={genPayDate}
+                onChange={e => setGenPayDate(e.target.value)}
+                className="h-8 border rounded px-2 text-sm"
+                title="发薪日期（可选）"
+              />
+            </div>
+            <Button
               size="sm"
               onClick={handleAutoGenerateSalary}
               disabled={isGenerating}
               className="bg-green-600 hover:bg-green-700"
             >
               {isGenerating ? (
-                <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />{t('teacher.generating')}</>
+                <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />生成中...</>
               ) : (
-                <><Calculator className="mr-1 h-3.5 w-3.5" />生成本月薪资</>
+                <><Calculator className="mr-1 h-3.5 w-3.5" />批量生成薪资</>
               )}
             </Button>
           </div>
