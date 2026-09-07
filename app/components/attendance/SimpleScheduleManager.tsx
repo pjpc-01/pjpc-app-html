@@ -60,6 +60,8 @@ export default function SimpleScheduleManager() {
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  // 每个教师的本月教学工时 { teacherId: 小时 }
+  const [monthHoursMap, setMonthHoursMap] = useState<Record<string, number>>({})
 
   // 从 PocketBase 获取真实教师数据
   const { teachers, loading: teachersLoading } = useTeachers()
@@ -79,6 +81,7 @@ export default function SimpleScheduleManager() {
   // 获取当前周排班
   useEffect(() => {
     fetchSchedules()
+    fetchMonthHours()
   }, [currentWeek])
 
   const fetchSchedules = async () => {
@@ -108,6 +111,45 @@ export default function SimpleScheduleManager() {
       console.error('获取排班失败:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // 加载每个教师的本月工时（按课程时间表排班 start~end 累计，教师从课程记录取）
+  const fetchMonthHours = async () => {
+    try {
+      const [schRes, courseRes] = await Promise.all([
+        fetch(`/api/pocketbase-proxy/api/collections/schedules/records?perPage=300&filter=${encodeURIComponent('schedule_type="course_schedule"')}`),
+        fetch('/api/courses'),
+      ])
+      if (!schRes.ok) return
+      const schData = await schRes.json()
+
+      // course_id → teacher_id 映射（教师存在 course 记录，不在一一对应到排班）
+      const courseMap: Record<string, string> = {}
+      try {
+        const cd = await courseRes.json()
+        const cList = cd?.data?.items || cd?.items || []
+        cList.forEach((c: any) => {
+          if (c.id && c.teacher_id) courseMap[c.id] = c.teacher_id
+        })
+      } catch (e) { console.error('加载课程映射失败:', e) }
+
+      const items = schData?.items || []
+      const map: Record<string, number> = {}
+      items.forEach((s: any) => {
+        if (!s.start_time || !s.end_time) return
+        const teacherId = s.teacher_id || courseMap[s.course_id]
+        if (!teacherId) return
+        const hs = new Date(`2000-01-01T${s.start_time}`).getTime()
+        const he = new Date(`2000-01-01T${s.end_time}`).getTime()
+        const h = (he - hs) / 3600000
+        if (h > 0 && h <= 24) {
+          map[teacherId] = Math.round(((map[teacherId] || 0) + h) * 100) / 100
+        }
+      })
+      setMonthHoursMap(map)
+    } catch (e) {
+      console.error('加载本月工时失败:', e)
     }
   }
 
@@ -418,6 +460,11 @@ export default function SimpleScheduleManager() {
                             <div className="font-medium">{teacherName(teacher)}</div>
                             <div className="text-sm text-gray-500">
                               {getTypeName(teacher)}
+                              {monthHoursMap[teacher.id] !== undefined && (
+                                <span className="ml-2 text-cyan-600 font-medium">
+                                  本月 {monthHoursMap[teacher.id]}h
+                                </span>
+                              )}
                             </div>
                             {teacher.subjects && teacher.subjects.length > 0 && (
                               <div className="text-xs text-gray-400">

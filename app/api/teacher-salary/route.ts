@@ -122,8 +122,8 @@ export async function POST(request: NextRequest) {
       // 创建薪资结构
       const salaryStructure: Partial<TeacherSalaryStructure> = {
         teacher_id: data.teacher_id,
-        base_salary: data.base_salary,
-        hourly_rate: data.hourly_rate,
+        base_salary: data.base_salary ?? 0,
+        hourly_rate: data.hourly_rate ?? 0,
         overtime_rate: data.overtime_rate,
         allowance_items: data.allowance_items || [],
         bonus_items: data.bonus_items || [],

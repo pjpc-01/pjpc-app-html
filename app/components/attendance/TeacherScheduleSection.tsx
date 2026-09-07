@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { UserCheck, UserX, Calendar, BarChart3, Grid3X3, CalendarDays, RefreshCw } from "lucide-react"
+import { UserCheck, UserX, Calendar, BarChart3, Grid3X3, CalendarDays, RefreshCw, Clock } from "lucide-react"
 import { useAttendanceStats } from "@/hooks/useAttendanceStats"
 import SimpleScheduleManager from "@/app/components/attendance/SimpleScheduleManager"
 import CalendarScheduleView from "@/app/components/attendance/CalendarScheduleView"
@@ -21,6 +21,7 @@ export default function TeacherScheduleSection() {
     todayAbsent,
     weekSchedules,
     attendanceRate,
+    monthHours,
     loading,
     refetch,
   } = useAttendanceStats()
@@ -54,11 +55,18 @@ export default function TeacherScheduleSection() {
       color: "bg-purple-100",
       description: "整体出勤率",
     },
+    {
+      title: "本月教学工时",
+      value: loading ? "..." : `${monthHours} h`,
+      icon: Clock,
+      color: "bg-cyan-100",
+      description: "本月课程排班总时长",
+    },
   ]
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {stats.map((stat, index) => (
           <Card key={index}>
             <CardContent className="flex items-center gap-4 p-6">
