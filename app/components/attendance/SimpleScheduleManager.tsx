@@ -99,7 +99,7 @@ export default function SimpleScheduleManager() {
         id: item.id,
         teacher_id: item.teacher_id || '',
         teacher_name: item.teacher_name || '',
-        date: item.date || '',
+        date: (item.date || '').split(' ')[0],  // 切成 yyyy-MM-dd，与 getEmployeeSchedule 的 format 匹配
         start_time: item.start_time || '',
         end_time: item.end_time || '',
         status: item.status || 'scheduled',

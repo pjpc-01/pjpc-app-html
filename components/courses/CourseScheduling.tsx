@@ -34,6 +34,7 @@ import {
   GraduationCap,
   Check,
   Pencil,
+  Save,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
@@ -174,6 +175,10 @@ export default function CourseScheduling() {
   const [inlineAdding, setInlineAdding] = useState(false)
   const [inlineNewStart, setInlineNewStart] = useState('08:00')
   const [inlineNewEnd, setInlineNewEnd] = useState('08:45')
+
+  // 时间表编辑态：非编辑态只读，编辑态才能改动，保存时触发自动生成排班
+  const [isEditing, setIsEditing] = useState(false)
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false)
 
   // 年级筛选
   const [gradeFilter, setGradeFilter] = useState('all')
@@ -389,6 +394,7 @@ export default function CourseScheduling() {
   }
 
   async function handleRemoveTimeSlot(id: string) {
+    if (!ensureEditing()) return
     const slot = timeSlots.find(s => s.id === id)
     if (slot) {
       const used = scheduleEntries.some(e => e.start_time === slot.start && e.end_time === slot.end)
@@ -413,6 +419,7 @@ export default function CourseScheduling() {
   }
 
   function startEditSlot(slot: TimeSlot) {
+    if (!ensureEditing()) return
     setEditingSlotId(slot.id)
     setEditSlotStart(slot.start)
     setEditSlotEnd(slot.end)
@@ -480,6 +487,7 @@ export default function CourseScheduling() {
 
   /** 第一步：点空格 → 选课程 + 开始时间 → 自动算结束 */
   function openAssignCourse(day: DayOfWeek, slot: TimeSlot) {
+    if (!ensureEditing()) return
     setTargetDay(day)
     setTargetSlot(slot)
     setAssignCourseId('')
@@ -488,6 +496,7 @@ export default function CourseScheduling() {
   }
 
   async function handleAssignCourse() {
+    if (!ensureEditing()) return
     if (!targetDay || !targetSlot) return
     if (!assignCourseId) {
       toast.error('请选择课程')
@@ -539,12 +548,14 @@ export default function CourseScheduling() {
 
   /** 第二步：点已放课程的格子 → 选老师 */
   function openAssignTeacher(entry: CourseScheduleEntry) {
+    if (!ensureEditing()) return
     setTargetEntry(entry)
     setAssignTeacherId(entry.teacher_id || '')
     setAssignTeacherDialog(true)
   }
 
   async function handleAssignTeacher() {
+    if (!ensureEditing()) return
     if (!targetEntry) return
     if (!assignTeacherId) {
       toast.error('请选择教师')
@@ -568,6 +579,7 @@ export default function CourseScheduling() {
   }
 
   async function handleDelete(entry: CourseScheduleEntry) {
+    if (!ensureEditing()) return
     try {
       await pbRequest(`${PROXY_BASE}/${entry.id}`, { method: 'DELETE' })
       toast.success('排课已删除')
@@ -575,6 +587,31 @@ export default function CourseScheduling() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '删除排课失败')
     }
+  }
+
+  // 保存时间表 → 触发自动生成排班（时薪+有课程排班老师，本月真实日期，已过不动）
+  async function handleSaveTimetable() {
+    const res = await fetch('/api/schedule/generate-monthly', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+    const data = await res.json()
+    if (!data.success) {
+      throw new Error(data.error || '生成排班失败')
+    }
+    setIsEditing(false)
+    loadData()
+    return data
+  }
+
+  // 非编辑态：锁定所有改动入口
+  function ensureEditing(): boolean {
+    if (!isEditing) {
+      toast.info('请先点击右上角「编辑」进入编辑状态')
+      return false
+    }
+    return true
   }
 
   // ============================================================
@@ -681,6 +718,35 @@ export default function CourseScheduling() {
 
         {/* 年级筛选（排课表按当前年级编辑，无"全部"选项） */}
         <div className="flex items-center gap-2 ml-auto">
+          {isEditing ? (
+            <>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  setIsSavingSchedule(true)
+                  try {
+                    await handleSaveTimetable()
+                    toast.success('时间表已保存，排班已更新')
+                  } catch (e) {
+                    toast.error('保存失败')
+                  } finally {
+                    setIsSavingSchedule(false)
+                  }
+                }}
+                disabled={isSavingSchedule}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isSavingSchedule ? <><Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />保存中...</> : <><Save className="h-3.5 w-3.5 mr-1" />保存</>}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
+                <X className="h-3.5 w-3.5 mr-1" />取消编辑
+              </Button>
+            </>
+          ) : (
+            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+              <Pencil className="h-3.5 w-3.5 mr-1" />编辑
+            </Button>
+          )}
           <GraduationCap className="h-4 w-4 text-gray-400" />
           <Select value={gradeFilter} onValueChange={setGradeFilter}>
             <SelectTrigger className="w-[150px]">
