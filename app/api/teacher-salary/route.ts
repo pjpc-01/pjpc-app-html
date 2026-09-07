@@ -47,6 +47,53 @@ export async function GET(request: NextRequest) {
         data,
         total: records.totalItems
       })
+    } else if (type === 'hours') {
+      // 按老师+年月计算工时（排班为主、打卡兜底，与 auto-generate 一致）
+      const teacherId = searchParams.get('teacher_id')
+      const year = parseInt(searchParams.get('year') || '0')
+      const month = parseInt(searchParams.get('month') || '0')
+      if (!teacherId || !year || !month) {
+        return NextResponse.json({ success: false, error: '缺少必要参数' }, { status: 400 })
+      }
+      const startDate = `${year}-${month.toString().padStart(2, '0')}-01`
+      const endDate = new Date(year, month, 0).toISOString().split('T')[0]
+      const schedules = await pb.collection('schedules').getList(1, 200, {
+        filter: `teacher_id = "${teacherId}" && date >= "${startDate}" && date <= "${endDate}"`
+      })
+      let totalHours = 0
+      let overtimeHours = 0
+      const scheduledDates = new Set<string>()
+      const scheduleHoursByDate: Record<string, number> = {}
+      schedules.items.forEach(schedule => {
+        if (schedule.start_time && schedule.end_time) {
+          const start = new Date(`2000-01-01T${schedule.start_time}`)
+          const end = new Date(`2000-01-01T${schedule.end_time}`)
+          const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+          if (hours < 0 || hours > 24) return
+          const dateStr = (schedule.date || '').split(' ')[0]
+          scheduledDates.add(dateStr)
+          scheduleHoursByDate[dateStr] = (scheduleHoursByDate[dateStr] || 0) + hours
+          if (hours > 8) overtimeHours += hours - 8
+        }
+      })
+      for (const dateStr of Object.keys(scheduleHoursByDate)) totalHours += scheduleHoursByDate[dateStr]
+      // 打卡兜底（无排班的日期）
+      if (schedules.items.length > 0 && scheduledDates.size > 0) {
+        const attendanceList = await pb.collection('teacher_attendance').getList(1, 500, {
+          filter: `teacher_id = "${teacherId}" && check_in >= "${startDate}" && check_in <= "${endDate}T23:59:59.999Z"`
+        })
+        attendanceList.items.forEach(att => {
+          const attDate = (att.check_in || '').split('T')[0]
+          if (scheduledDates.has(attDate)) return
+          const checkIn = att.check_in ? new Date(att.check_in) : null
+          const checkOut = att.check_out ? new Date(att.check_out) : null
+          if (!checkIn || !checkOut) return
+          const h = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60)
+          if (h < 0 || h > 24) return
+          totalHours += h
+        })
+      }
+      return NextResponse.json({ success: true, data: { totalHours: Math.round(totalHours * 100) / 100, overtimeHours } })
     } else {
       // 获取薪资记录
       let filter = 'deleted != true'
@@ -172,6 +219,8 @@ export async function POST(request: NextRequest) {
         overtime_hours: data.overtime_hours || 0,
         overtime_pay: data.overtime_pay || 0,
         allowances: data.allowances || 0,
+        allowance_items: data.allowance_items || [],
+        bonus_items: data.bonus_items || [],
         gross_salary: grossSalary,
         epf_deduction: data.epf_deduction || 0,
         socso_deduction: data.socso_deduction || 0,

@@ -155,7 +155,8 @@ export default function TeacherSalaryManagement() {
     } catch { setDeletedRecords([]) } finally { setBinLoading(false) }
   }, [])
   const [isGenerating, setIsGenerating] = useState(false)
-  // 批量生成薪资的年/月/发薪日期（默认当前月）
+  // 批量生成薪资的年/月/发薪日期（弹窗确认后生成）
+  const [genDialogOpen, setGenDialogOpen] = useState(false)
   const [genYear, setGenYear] = useState(new Date().getFullYear())
   const [genMonth, setGenMonth] = useState(new Date().getMonth() + 1)
   const [genPayDate, setGenPayDate] = useState('')
@@ -322,10 +323,14 @@ export default function TeacherSalaryManagement() {
     payment_date: '',
     base_salary: 0,
     salary_type: 'monthly' as 'monthly' | 'hourly' | 'commission',
+    hourly_rate: 0,
+    overtime_rate: 0,
     hours_worked: 0,
     overtime_hours: 0,
     overtime_pay: 0,
     allowances: 0,
+    allowance_items: [] as { name: string; amount: number; taxable: boolean }[],
+    bonus_items: [] as { name: string; amount: number; taxable: boolean }[],
     gross_salary: 0,
     epf_rate: 0.11,
     socso_rate: 0.005,
@@ -840,7 +845,9 @@ export default function TeacherSalaryManagement() {
 
   // 自动计算薪资记录数字
   useEffect(() => {
-    const base = recordForm.base_salary || 0
+    const base = (recordForm as any).salary_type === 'hourly'
+      ? (recordForm.hourly_rate || 0) * (recordForm.hours_worked || 0)
+      : (recordForm.base_salary || 0)
     const allowanceItems = (recordForm as any).allowance_items || []
     const taxableAllowances = allowanceItems.filter((a: any) => a.taxable !== false).reduce((s: number, a: any) => s + (a.amount || 0), 0)
     const nonTaxableAllowances = allowanceItems.filter((a: any) => a.taxable === false).reduce((s: number, a: any) => s + (a.amount || 0), 0)
@@ -848,7 +855,7 @@ export default function TeacherSalaryManagement() {
     const totalBonuses = bonusItems.reduce((s: number, b: any) => s + (b.amount || 0), 0)
     const totalAllowances = taxableAllowances + nonTaxableAllowances
 
-    const gross = base + taxableAllowances
+    const gross = base + (recordForm.overtime_pay || 0) + taxableAllowances
 
     // 只有月薪类型才有 EPF/SOCSO/EIS/PCB 扣款；时薪/佣金不扣
     const isMonthly = (recordForm as any).salary_type !== 'hourly' && (recordForm as any).salary_type !== 'commission'
@@ -887,7 +894,7 @@ export default function TeacherSalaryManagement() {
       socso_employer: socsoEmployer,
       eis_employer: eisEmployer,
     }))
-  }, [recordForm.base_salary, recordForm.allowances, recordForm.epf_rate, recordForm.socso_rate, recordForm.eis_rate, recordForm.tax_rate, recordForm.other_deductions, recordForm.bonus, recordForm.commission, (recordForm as any).salary_type])
+  }, [recordForm.base_salary, (recordForm as any).hourly_rate, recordForm.hours_worked, recordForm.overtime_pay, recordForm.allowances, recordForm.epf_rate, recordForm.socso_rate, recordForm.eis_rate, recordForm.tax_rate, recordForm.other_deductions, recordForm.bonus, recordForm.commission, (recordForm as any).salary_type])
 
   // 处理薪资记录表单
   const handleRecordSubmit = async (e: React.FormEvent) => {
@@ -913,10 +920,14 @@ export default function TeacherSalaryManagement() {
           payment_date: '',
           base_salary: 0,
           salary_type: 'monthly' as 'monthly' | 'hourly' | 'commission',
+          hourly_rate: 0,
+          overtime_rate: 0,
           hours_worked: 0,
           overtime_hours: 0,
           overtime_pay: 0,
           allowances: 0,
+          allowance_items: [] as { name: string; amount: number; taxable: boolean }[],
+          bonus_items: [] as { name: string; amount: number; taxable: boolean }[],
           gross_salary: 0,
           epf_rate: 0.11,
           socso_rate: 0.005,
@@ -1225,43 +1236,14 @@ export default function TeacherSalaryManagement() {
               <Plus className="w-4 h-4 mr-1" />
               新建薪资记录
             </Button>
-            <div className="flex items-center gap-1 text-xs">
-              <input
-                type="number"
-                value={genYear}
-                onChange={e => setGenYear(Number(e.target.value))}
-                className="w-16 h-8 border rounded px-2 text-sm"
-                placeholder="年"
-              />
-              <span className="text-gray-400">年</span>
-              <select
-                value={genMonth}
-                onChange={e => setGenMonth(Number(e.target.value))}
-                className="h-8 border rounded px-2 text-sm"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                  <option key={m} value={m}>{m}月</option>
-                ))}
-              </select>
-              <input
-                type="date"
-                value={genPayDate}
-                onChange={e => setGenPayDate(e.target.value)}
-                className="h-8 border rounded px-2 text-sm"
-                title="发薪日期（可选）"
-              />
-            </div>
             <Button
               size="sm"
-              onClick={handleAutoGenerateSalary}
+              onClick={() => setGenDialogOpen(true)}
               disabled={isGenerating}
               className="bg-green-600 hover:bg-green-700"
             >
-              {isGenerating ? (
-                <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />生成中...</>
-              ) : (
-                <><Calculator className="mr-1 h-3.5 w-3.5" />批量生成薪资</>
-              )}
+              <Calculator className="w-4 h-4 mr-1" />
+              批量生成薪资
             </Button>
           </div>
         </div>
@@ -1755,6 +1737,64 @@ export default function TeacherSalaryManagement() {
       </Dialog>
 
       {/* 薪资记录对话框 */}
+      <Dialog open={genDialogOpen} onOpenChange={setGenDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>批量生成薪资</DialogTitle>
+            <DialogDescription>选择要生成的月份和发薪日期，确认后为所有教师生成当月薪资</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs text-gray-500 block mb-1">年份</Label>
+                <input
+                  type="number"
+                  value={genYear}
+                  onChange={e => setGenYear(Number(e.target.value))}
+                  className="w-full h-9 border rounded px-2 text-sm"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-gray-500 block mb-1">月份</Label>
+                <select
+                  value={genMonth}
+                  onChange={e => setGenMonth(Number(e.target.value))}
+                  className="w-full h-9 border rounded px-2 text-sm"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                    <option key={m} value={m}>{m}月</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500 block mb-1">发薪日期（可选）</Label>
+              <input
+                type="date"
+                value={genPayDate}
+                onChange={e => setGenPayDate(e.target.value)}
+                className="w-full h-9 border rounded px-2 text-sm"
+              />
+            </div>
+            <p className="text-xs text-amber-600">
+              将按每位教师的薪资类型生成：月薪按月薪算，时薪按时薪 × 工时算。
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setGenDialogOpen(false)}>
+                取消
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleAutoGenerateSalary}
+                disabled={isGenerating}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isGenerating ? <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />生成中...</> : <>确认生成</>}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       <Dialog open={recordDialogOpen} onOpenChange={setRecordDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -1765,10 +1805,11 @@ export default function TeacherSalaryManagement() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="record_teacher_id">{t('teacher.select_teacher')}</Label>
-                <Select value={recordForm.teacher_id} onValueChange={(value) => {
+                <Select value={recordForm.teacher_id} onValueChange={async (value) => {
                   const structure = salaryStructures.find(s => s.teacher_id === value)
                   const now = new Date()
                   const period = `${now.getFullYear()}年${now.getMonth()+1}月`
+                  const hourly = structure?.salary_type === 'hourly'
                   setRecordForm(prev => ({
                     ...prev,
                     teacher_id: value,
@@ -1779,7 +1820,10 @@ export default function TeacherSalaryManagement() {
                     hourly_rate: structure?.hourly_rate || 0,
                     overtime_rate: structure?.overtime_rate || 0,
                     salary_type: structure?.salary_type || 'monthly',
+                    hours_worked: 0,
                     allowances: (structure?.allowance_items || []).reduce((s: number, a: any) => s + (a.amount || 0), 0),
+                    allowance_items: structure?.allowance_items || [],
+                    bonus_items: structure?.bonus_items || [],
                     epf_rate: structure?.epf_rate || globalRates.epf,
                     socso_rate: structure?.socso_rate || globalRates.socso,
                     eis_rate: structure?.eis_rate || globalRates.eis,
@@ -1788,6 +1832,14 @@ export default function TeacherSalaryManagement() {
                     pcb_rate: structure?.pcb_rate ?? 0,
                     pcb_amount: structure?.pcb_amount ?? 0,
                   }))
+                  // 时薪老师：自动从排班拉本月工时
+                  if (hourly) {
+                    const res = await fetch(`/api/teacher-salary?type=hours&teacher_id=${value}&year=${now.getFullYear()}&month=${now.getMonth() + 1}`)
+                    const result = await res.json()
+                    if (result.success) {
+                      setRecordForm(prev => ({ ...prev, hours_worked: result.data.totalHours || 0 }))
+                    }
+                  }
                 }}>
                   <SelectTrigger>
                     <SelectValue placeholder={t('teacher.select_teacher')} />
@@ -1821,13 +1873,22 @@ export default function TeacherSalaryManagement() {
 
               <div>
                 <Label htmlFor="record_month">薪资月份</Label>
-                <Select value={String(recordForm.month || '')} onValueChange={(v) => {
+                <Select value={String(recordForm.month || '')} onValueChange={async (v) => {
                   const m = parseInt(v)
+                  const hourly = (recordForm as any).salary_type === 'hourly'
                   setRecordForm(prev => ({
                     ...prev,
                     month: m,
                     salary_period: `${prev.year || 0}年${m}月`
                   }))
+                  // 时薪老师：切月份时重新拉工时
+                  if (hourly && recordForm.teacher_id && recordForm.year) {
+                    const res = await fetch(`/api/teacher-salary?type=hours&teacher_id=${recordForm.teacher_id}&year=${recordForm.year}&month=${m}`)
+                    const result = await res.json()
+                    if (result.success) {
+                      setRecordForm(prev => ({ ...prev, hours_worked: result.data.totalHours || 0 }))
+                    }
+                  }
                 }}>
                   <SelectTrigger id="record_month">
                     <SelectValue placeholder="选择月份" />
@@ -1853,6 +1914,20 @@ export default function TeacherSalaryManagement() {
                 />
               </div>
               
+              {(recordForm as any).salary_type === 'hourly' ? (
+                <div>
+                  <Label htmlFor="hours_worked">工时 (小时) <span className="text-xs text-gray-400">自动从排班读取·不可手填</span></Label>
+                  <Input
+                    id="hours_worked"
+                    type="number"
+                    readOnly
+                    value={recordForm.hours_worked || ''}
+                    className="bg-gray-50"
+                    placeholder="本月总工时"
+                  />
+                </div>
+              ) : null}
+
               <div>
                 <Label htmlFor="bonus">奖金 (RM)</Label>
                 <Input

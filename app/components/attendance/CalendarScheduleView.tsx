@@ -93,7 +93,7 @@ export default function CalendarScheduleView() {
   const eventsByDate = useMemo(() => {
     const map = new Map<string, ScheduleEvent[]>()
     events.forEach((evt) => {
-      const key = evt.date
+      const key = (evt.date || '').split(' ')[0]  // 切成 yyyy-MM-dd，与日历格 format 匹配
       if (!map.has(key)) map.set(key, [])
       map.get(key)!.push(evt)
     })

@@ -537,6 +537,12 @@ Prospek Cemerlang`,
     }
   }, [])
 
+  // 金额统计：开票总额 / 已收金额 / 未收金额（排除草稿和已取消）
+  const activeInvoices = useMemo(() => invoices.filter(inv => inv.status !== 'draft' && inv.status !== 'cancelled'), [invoices])
+  const totalInvoiced = useMemo(() => activeInvoices.reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0), [activeInvoices])
+  const totalPaid = useMemo(() => activeInvoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0), [activeInvoices])
+  const totalUnpaid = Math.max(totalInvoiced - totalPaid, 0)
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -626,6 +632,45 @@ Prospek Cemerlang`,
                 <p className="text-2xl font-bold">
                   {invoices.filter(inv => inv.status === 'overdue').length}
                 </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 金额统计：开票总额 / 已收 / 未收 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="text-sm text-gray-600">开票总额 (RM)</p>
+                <p className="text-2xl font-bold text-blue-700">RM {totalInvoiced.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <div>
+                <p className="text-sm text-gray-600">已收金额 (RM)</p>
+                <p className="text-2xl font-bold text-green-700">RM {totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <div>
+                <p className="text-sm text-gray-600">未收金额 (RM)</p>
+                <p className="text-2xl font-bold text-red-700">RM {totalUnpaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
             </div>
           </CardContent>
