@@ -180,7 +180,7 @@ export default function ReceiptManagement() {
   const [isBatchDeleting, setIsBatchDeleting] = useState(false)
 
   // Get filtered receipts
-  const filteredReceipts = getFilteredReceipts()
+  const filteredReceipts = getFilteredReceipts(students)
   const receiptStats = getReceiptStatistics()
 
   // ── Batch delete computed values & handlers ──

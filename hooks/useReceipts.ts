@@ -113,7 +113,7 @@ export const useReceipts = () => {
     await deleteRecord('receipts', receiptId)
   }, [])
 
-  const getFilteredReceipts = useCallback(() => {
+  const getFilteredReceipts = useCallback((students?: any[]) => {
     return receipts.filter(receipt => {
       const matchesStatus = !filters.status || receipt.status === filters.status
       
@@ -125,8 +125,26 @@ export const useReceipts = () => {
         matchesDateRange = receiptDate >= startDate && receiptDate <= endDate
       }
 
-      const matchesStudentName = !filters.studentName ||
-        receipt.studentId.toLowerCase().includes(filters.studentName.toLowerCase())
+      // 按姓名过滤：学生名匹配其 studentId（收据只存 studentId）
+      const matchStudentName = (nameQ: string) => {
+        const q = nameQ.toLowerCase()
+        // 直接匹配 ID
+        if ((receipt.studentId || '').toLowerCase().includes(q)) return true
+        // 匹配姓名
+        if ((receipt as any).studentName) {
+          if (String((receipt as any).studentName).toLowerCase().includes(q)) return true
+        }
+        // 从 students 列表按名字找所属 ID
+        if (Array.isArray(students) && students.length > 0) {
+          const names = [students.find((s: any) => s.id === receipt.studentId)]
+            .filter(Boolean)
+            .map((s: any) => [s.studentName, s.name, s.fullName].filter(Boolean).map((n: any) => String(n).toLowerCase()))
+            .flat()
+          return names.some(n => n.includes(q))
+        }
+        return false
+      }
+      const matchesStudentName = !filters.studentName || matchStudentName(filters.studentName)
       
       const matchesReceiptNumber = !filters.receiptNumber ||
         receipt.receiptNumber.toLowerCase().includes(filters.receiptNumber.toLowerCase())
