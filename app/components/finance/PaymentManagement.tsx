@@ -117,14 +117,23 @@ export default function PaymentManagement() {
   })
   
   // Center filter for payments: payment.invoiceId → invoice.studentId → student.centerId
-  const filteredPayments = centerFilter && centerFilter !== "all"
-    ? payments.filter(payment => {
-        const invoice = invoices.find(inv => inv.id === payment.invoiceId)
-        if (!invoice) return false
-        const student = students.find(s => s.id === invoice.studentId)
-        return student?.centerId === centerFilter
-      })
-    : payments
+  const filteredPayments = payments.filter(payment => {
+    const invoice = invoices.find(inv => inv.id === payment.invoiceId)
+    if (!invoice) return false
+    // 搜索：按学生姓名或发票号过滤
+    const q = searchQuery.trim().toLowerCase()
+    if (q) {
+      const studentName = (invoice.studentName || '').toLowerCase()
+      const invoiceNumber = (invoice.invoiceNumber || '').toLowerCase()
+      if (!studentName.includes(q) && !invoiceNumber.includes(q)) return false
+    }
+    // 中心过滤
+    if (centerFilter && centerFilter !== "all") {
+      const student = students.find(s => s.id === invoice.studentId)
+      if (!student || student.centerId !== centerFilter) return false
+    }
+    return true
+  })
 
   // ── Batch delete computed values ──
   const allPaymentIds = filteredPayments.map(p => p.id)
@@ -343,6 +352,8 @@ export default function PaymentManagement() {
                           className="h-7 text-xs"
                           placeholder="搜索学生姓名或发票号..."
                           value={invoiceSearch}
+                          autoFocus
+                          onKeyDown={(e) => e.stopPropagation()}
                           onChange={(e) => setInvoiceSearch(e.target.value)}
                         />
                       </div>

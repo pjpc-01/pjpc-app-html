@@ -287,6 +287,22 @@ export function InvoiceList({
                 </SelectContent>
               </Select>
             </div>
+            <div className="w-40">
+              <Label>学段</Label>
+              <Select 
+                value={filters.level || "all"} 
+                onValueChange={(value) => setFilters((prev: any) => ({ ...prev, level: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部学段</SelectItem>
+                  <SelectItem value="primary">小学</SelectItem>
+                  <SelectItem value="secondary">中学</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="w-48">
               <Label>{t('student.grade')}</Label>
               <Select 
@@ -298,12 +314,11 @@ export function InvoiceList({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">所有年级</SelectItem>
-                  <SelectItem value="一年级">{t('student.year_1')}</SelectItem>
-                  <SelectItem value="二年级">{t('student.year_2')}</SelectItem>
-                  <SelectItem value="三年级">{t('student.year_3')}</SelectItem>
-                  <SelectItem value="四年级">{t('student.year_4')}</SelectItem>
-                  <SelectItem value="五年级">{t('student.year_5')}</SelectItem>
-                  <SelectItem value="六年级">{t('student.year_6')}</SelectItem>
+                  {Array.from(new Set(invoices.map(inv => inv.studentGrade || inv.grade || '').filter(Boolean)))
+                    .sort()
+                    .map(g => (
+                      <SelectItem key={g} value={g}>{formatGrade(g)}</SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

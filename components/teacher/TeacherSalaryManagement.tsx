@@ -308,6 +308,7 @@ export default function TeacherSalaryManagement() {
     epf_employer_rate: 0.13,
     socso_employer_rate: 0.0175,
     eis_employer_rate: 0.002,
+    no_statutory: false,
     bonus: 0,
     salary_type: 'monthly' as 'monthly' | 'hourly' | 'commission',
     effective_date: '',
@@ -339,6 +340,7 @@ export default function TeacherSalaryManagement() {
     pcb_enabled: false,
     pcb_rate: 0,
     pcb_amount: 0,
+    no_statutory: false,
     epf_employer_rate: 0.13,
     epf_deduction: 0,
     socso_deduction: 0,
@@ -583,6 +585,7 @@ export default function TeacherSalaryManagement() {
           epf_employer_rate: globalRates.epf_employer || 0.13,
           socso_employer_rate: globalRates.socso_employer || 0.0175,
           eis_employer_rate: globalRates.eis_employer || 0.002,
+          no_statutory: false,
           effective_date: '',
           end_date: '',
           notes: ''
@@ -639,9 +642,10 @@ export default function TeacherSalaryManagement() {
       pcb_enabled: structure.pcb_enabled ?? false,
       pcb_rate: structure.pcb_rate ?? 0,
       pcb_amount: structure.pcb_amount ?? 0,
-      epf_employer_rate: (structure.epf_employer_rate ?? globalRates.epf_employer) || 0.13,
-      socso_employer_rate: (structure.socso_employer_rate ?? globalRates.socso_employer) || 0.0175,
-      eis_employer_rate: (structure.eis_employer_rate ?? globalRates.eis_employer) || 0.002,
+      epf_employer_rate: structure.epf_employer_rate ?? globalRates.epf_employer,
+      socso_employer_rate: structure.socso_employer_rate ?? globalRates.socso_employer,
+      eis_employer_rate: structure.eis_employer_rate ?? globalRates.eis_employer,
+      no_statutory: !!(structure as any).no_statutory,
       salary_type: structure.salary_type as 'monthly' | 'hourly' | 'commission',
       effective_date: structure.effective_date?.split(' ')[0] || '',
       end_date: structure.end_date?.split(' ')[0] || '',
@@ -859,15 +863,16 @@ export default function TeacherSalaryManagement() {
 
     // 只有月薪类型才有 EPF/SOCSO/EIS/PCB 扣款；时薪/佣金不扣
     const isMonthly = (recordForm as any).salary_type !== 'hourly' && (recordForm as any).salary_type !== 'commission'
-    const epf = isMonthly ? gross * (recordForm.epf_rate || 0.11) : 0
-    const socso = isMonthly ? getSocsoEmployee(gross) : 0
-    const eis = isMonthly ? getEisContribution(gross) : 0
-    const epfEmployer = isMonthly ? gross * (recordForm.epf_employer_rate || (gross > 5000 ? 0.12 : 0.13)) : 0
-    const socsoEmployer = isMonthly ? getSocsoEmployer(gross) : 0
-    const eisEmployer = isMonthly ? getEisContribution(gross) : 0
+    const noStatutory = !!(recordForm as any).no_statutory
+    const epf = isMonthly && !noStatutory ? gross * (recordForm.epf_rate || 0.11) : 0
+    const socso = isMonthly && !noStatutory ? getSocsoEmployee(gross) : 0
+    const eis = isMonthly && !noStatutory ? getEisContribution(gross) : 0
+    const epfEmployer = isMonthly && !noStatutory ? gross * (recordForm.epf_employer_rate || (gross > 5000 ? 0.12 : 0.13)) : 0
+    const socsoEmployer = isMonthly && !noStatutory ? getSocsoEmployer(gross) : 0
+    const eisEmployer = isMonthly && !noStatutory ? getEisContribution(gross) : 0
     // PCB: 勾选才扣；有固定金额用金额，否则用八仙率（仅月薪）
     let tax = 0
-    if (isMonthly && recordForm.pcb_enabled) {
+    if (isMonthly && !noStatutory && recordForm.pcb_enabled) {
       if (recordForm.pcb_amount && recordForm.pcb_amount > 0) {
         tax = recordForm.pcb_amount
       } else if (recordForm.pcb_rate && recordForm.pcb_rate > 0) {
@@ -936,6 +941,7 @@ export default function TeacherSalaryManagement() {
           pcb_enabled: false,
           pcb_rate: 0,
           pcb_amount: 0,
+          no_statutory: false,
           epf_employer_rate: 0.13,
           epf_deduction: 0,
           socso_deduction: 0,
@@ -1189,7 +1195,9 @@ export default function TeacherSalaryManagement() {
                            structure.salary_type === 'hourly' ? '时薪' : '佣金'}
                         </Badge>
                       </TableCell>
-                      <TableCell>{formatCurrency(structure.base_salary)}</TableCell>
+                      <TableCell>{structure.salary_type === 'hourly'
+                        ? <span>RM {structure.hourly_rate || 0} <span className="text-xs text-gray-400">/时</span></span>
+                        : formatCurrency(structure.base_salary)}</TableCell>
                       <TableCell>{formatCurrency((structure.allowance_items || []).reduce((s: number, a: any) => s + (a.amount || 0), 0))}</TableCell>
                       <TableCell>{structure.salary_type === 'monthly' ? `${(structure.epf_rate * 100).toFixed(1)}%` : '—'}</TableCell>
                       <TableCell>{structure.salary_type === 'monthly' ? `${(structure.socso_rate * 100).toFixed(2)}%` : '—'}</TableCell>
@@ -1632,20 +1640,42 @@ export default function TeacherSalaryManagement() {
 
             {structureForm.salary_type === 'monthly' && (
               <>
+                {/* ── 无法定扣款 ── */}
+                <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50/50 p-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!!(structureForm as any).no_statutory}
+                      onChange={(e) => setStructureForm(prev => ({ ...prev, no_statutory: e.target.checked }))}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <span className="text-sm font-medium text-gray-700">该员工无 EPF/SOCSO/EIS 扣款（外籍/佣工等）</span>
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">勾选后，生成薪资和薪资单不扣 EPF、SOCSO、EIS、PCB（雇员与雇主都不算）</p>
+                </div>
+
                 {/* ── EPF / 税务 ── */}
                 <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">🏛️ EPF / 税率</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="epf_rate">EPF 雇员 (%)</Label>
-                    <Input id="epf_rate" type="number" step="0.1" min="0" max="100"
-                      value={(structureForm.epf_rate * 100).toFixed(1)}
-                      onChange={(e) => setStructureForm(prev => ({ ...prev, epf_rate: (parseFloat(e.target.value) || 0) / 100 }))} />
+                    {(structureForm as any).no_statutory ? (
+                      <div className="flex h-9 items-center rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-400">-</div>
+                    ) : (
+                      <Input id="epf_rate" type="number" step="0.1" min="0" max="100"
+                        value={(structureForm.epf_rate * 100).toFixed(1)}
+                        onChange={(e) => setStructureForm(prev => ({ ...prev, epf_rate: (parseFloat(e.target.value) || 0) / 100 }))} />
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="epf_employer_rate">EPF 雇主 (%)</Label>
-                    <Input id="epf_employer_rate" type="number" step="0.1" min="0" max="100"
-                      value={(structureForm.epf_employer_rate * 100).toFixed(1)}
-                      onChange={(e) => setStructureForm(prev => ({ ...prev, epf_employer_rate: (parseFloat(e.target.value) || 0) / 100 }))} />
+                    {(structureForm as any).no_statutory ? (
+                      <div className="flex h-9 items-center rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-400">-</div>
+                    ) : (
+                      <Input id="epf_employer_rate" type="number" step="0.1" min="0" max="100"
+                        value={(structureForm.epf_employer_rate * 100).toFixed(1)}
+                        onChange={(e) => setStructureForm(prev => ({ ...prev, epf_employer_rate: (parseFloat(e.target.value) || 0) / 100 }))} />
+                    )}
                   </div>
                 </div>
 
@@ -1831,6 +1861,7 @@ export default function TeacherSalaryManagement() {
                     pcb_enabled: structure?.pcb_enabled ?? false,
                     pcb_rate: structure?.pcb_rate ?? 0,
                     pcb_amount: structure?.pcb_amount ?? 0,
+                    no_statutory: !!(structure as any)?.no_statutory,
                   }))
                   // 时薪老师：自动从排班拉本月工时
                   if (hourly) {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchSecureData, createRecord, updateRecord, deleteRecord } from '@/lib/secure-api-client'
+import { classifySchoolLevel } from '@/lib/utils'
 
 export interface Invoice {
   id: string
@@ -25,6 +26,7 @@ export interface InvoiceFilters {
   studentName: string
   search?: string
   grade?: string
+  level?: string
 }
 
 export const useInvoices = () => {
@@ -134,11 +136,17 @@ export const useInvoices = () => {
         invoice.studentGrade === filters.grade ||
         invoice.grade === filters.grade
 
+      // Level filter (primary/secondary)
+      let matchesLevel = true
+      if (filters.level && filters.level !== 'all') {
+        matchesLevel = classifySchoolLevel(invoice.studentGrade || invoice.grade) === filters.level
+      }
+
       // Legacy studentName filter (fallback)
       const matchesStudent = !filters.studentName || 
         invoice.studentName.toLowerCase().includes(filters.studentName.toLowerCase())
 
-      return matchesStatus && matchesSearch && matchesGrade && matchesStudent
+      return matchesStatus && matchesSearch && matchesGrade && matchesLevel && matchesStudent
     })
   }, [invoices, filters])
 
