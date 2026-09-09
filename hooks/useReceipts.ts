@@ -138,7 +138,7 @@ export const useReceipts = () => {
         if (Array.isArray(students) && students.length > 0) {
           const names = [students.find((s: any) => s.id === receipt.studentId)]
             .filter(Boolean)
-            .map((s: any) => [s.studentName, s.name, s.fullName].filter(Boolean).map((n: any) => String(n).toLowerCase()))
+            .map((s: any) => [s.studentName, s.student_name, s.name, s.fullName].filter(Boolean).map((n: any) => String(n).toLowerCase()))
             .flat()
           return names.some(n => n.includes(q))
         }
