@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -51,6 +51,14 @@ export function InvoiceList({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [isBatchDeleteOpen, setIsBatchDeleteOpen] = useState(false)
   const [isBatchDeleting, setIsBatchDeleting] = useState(false)
+
+  // ── Pagination ──
+  const INVOICE_PER_PAGE = 15
+  const [invoicePage, setInvoicePage] = useState(1)
+  const activeInvoices = invoices.filter(i => i.status !== 'draft' && i.status !== 'cancelled')
+  const totalInvoicePages = Math.max(1, Math.ceil(activeInvoices.length / INVOICE_PER_PAGE))
+  useEffect(() => { setInvoicePage(1) }, [filters, invoices.length])
+  const paginatedInvoices = activeInvoices.slice((invoicePage - 1) * INVOICE_PER_PAGE, invoicePage * INVOICE_PER_PAGE)
 
   // ── Recycle bin state ──
   const [binMode, setBinMode] = useState(false)
@@ -376,7 +384,7 @@ export function InvoiceList({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoices.map((invoice) => (
+                {paginatedInvoices.map((invoice) => (
                   <TableRow key={invoice.id} className={selectedIds.has(invoice.id) ? "bg-red-50/50" : ""}>
                     <TableCell>
                       <Checkbox
@@ -445,6 +453,22 @@ export function InvoiceList({
               </TableBody>
             </Table>
           </div>
+
+          {/* Invoice Pagination */}
+          {totalInvoicePages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <span className="text-sm text-gray-500">
+                共 {activeInvoices.length} 条，每页 {INVOICE_PER_PAGE} 条
+              </span>
+              <div className="flex gap-1">
+                <Button size="sm" variant="outline" disabled={invoicePage===1} onClick={() => setInvoicePage(p=>Math.max(1,p-1))}>上一页</Button>
+                {Array.from({length: totalInvoicePages}, (_,i)=>i+1).map(p=>(
+                  <Button key={p} size="sm" variant={p===invoicePage?"default":"outline"} onClick={()=>setInvoicePage(p)} className="min-w-[32px] h-8">{p}</Button>
+                ))}
+                <Button size="sm" variant="outline" disabled={invoicePage===totalInvoicePages} onClick={() => setInvoicePage(p=>Math.min(totalInvoicePages,p+1))}>下一页</Button>
+              </div>
+            </div>
+          )}
 
           {/* Summary */}
           <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">

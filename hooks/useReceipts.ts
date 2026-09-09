@@ -128,9 +128,7 @@ export const useReceipts = () => {
       // 按姓名过滤：学生名匹配其 studentId（收据只存 studentId）
       const matchStudentName = (nameQ: string) => {
         const q = nameQ.toLowerCase()
-        // 直接匹配 ID
-        if ((receipt.studentId || '').toLowerCase().includes(q)) return true
-        // 匹配姓名
+        // 匹配姓名（收据自身可能带姓名）
         if ((receipt as any).studentName) {
           if (String((receipt as any).studentName).toLowerCase().includes(q)) return true
         }

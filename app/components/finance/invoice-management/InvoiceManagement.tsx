@@ -78,6 +78,9 @@ export default function InvoiceManagement() {
   // State
   const [isCreateInvoiceDialogOpen, setIsCreateInvoiceDialogOpen] = useState(false)
 
+  // Center filter (全部/PU1中学/BATU14小学) - 参照积分榜 tab
+  const [centerFilter, setCenterFilter] = useState("all")
+
   const [isInvoiceDetailDialogOpen, setIsInvoiceDetailDialogOpen] = useState(false)
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
   const [settingsTab, setSettingsTab] = useState<'school-settings' | 'message-formats'>('school-settings')
@@ -245,6 +248,14 @@ Prospek Cemerlang`,
       amount: calculateStudentTotal(student.id)
     }))
   }, [availableStudents, calculateStudentTotal, activeFees])
+
+  // Center-filtered invoices: invoice.studentId → student.center (code: PU1/BATU14)
+  const centerFilteredInvoices = useMemo(() => {
+    const base = getFilteredInvoices()
+    if (!centerFilter || centerFilter === "all") return base
+    const centerMap = new Map(students.map((s: any) => [s.id, s.center]))
+    return base.filter(inv => centerMap.get(inv.studentId) === centerFilter)
+  }, [getFilteredInvoices, students, centerFilter])
 
   // Event handlers
   const handleDownloadInvoice = async (invoice: any) => {
@@ -581,6 +592,34 @@ Prospek Cemerlang`,
         </div>
       </div>
 
+      {/* Center tabs (参照积分榜: 全部/PU1中学/BATU14小学) */}
+      <div className="flex items-center gap-2 flex-wrap mb-4">
+        <Button
+          size="sm"
+          variant={centerFilter === "all" ? "default" : "outline"}
+          onClick={() => setCenterFilter("all")}
+          className="h-8"
+        >
+          全部
+        </Button>
+        <Button
+          size="sm"
+          variant={centerFilter === "PU1" ? "default" : "outline"}
+          onClick={() => setCenterFilter("PU1")}
+          className="h-8"
+        >
+          中学（PU1）
+        </Button>
+        <Button
+          size="sm"
+          variant={centerFilter === "BATU14" ? "default" : "outline"}
+          onClick={() => setCenterFilter("BATU14")}
+          className="h-8"
+        >
+          小学（BATU14）
+        </Button>
+      </div>
+
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -679,7 +718,7 @@ Prospek Cemerlang`,
 
       {/* Invoice List */}
       <InvoiceList
-        invoices={getFilteredInvoices()}
+        invoices={centerFilteredInvoices}
         filters={invoiceFilters}
         setFilters={setInvoiceFilters}
         onDownload={handleDownloadInvoice}

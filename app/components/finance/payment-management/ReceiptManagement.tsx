@@ -73,6 +73,9 @@ export default function ReceiptManagement() {
 
   const { students } = useStudents()
 
+  // 中心 tab（参照积分榜：全部/PU1中学/BATU14小学）— 用 code 过滤
+  const [centerTab, setCenterTab] = useState("all")
+
   // State
   const [isReceiptDetailDialogOpen, setIsReceiptDetailDialogOpen] = useState(false)
   const [selectedReceipt, setSelectedReceipt] = useState<any>(null)
@@ -182,6 +185,20 @@ export default function ReceiptManagement() {
   // Get filtered receipts
   const filteredReceipts = getFilteredReceipts(students)
   const receiptStats = getReceiptStatistics()
+
+  // Center-filtered receipts: receipt.studentId → student.center (code: PU1/BATU14)
+  const centerReceipts = useMemo(() => {
+    if (!centerTab || centerTab === "all") return filteredReceipts
+    const centerMap = new Map(students.map((s: any) => [s.id, s.center]))
+    return filteredReceipts.filter(r => centerMap.get(r.studentId) === centerTab)
+  }, [filteredReceipts, students, centerTab])
+
+  // ── Pagination ──
+  const RECEIPT_PER_PAGE = 15
+  const [receiptPage, setReceiptPage] = useState(1)
+  useEffect(() => { setReceiptPage(1) }, [receiptFilters, centerTab])
+  const totalReceiptPages = Math.max(1, Math.ceil(centerReceipts.length / RECEIPT_PER_PAGE))
+  const paginatedReceipts = centerReceipts.slice((receiptPage - 1) * RECEIPT_PER_PAGE, receiptPage * RECEIPT_PER_PAGE)
 
   // ── Batch delete computed values & handlers ──
   const allReceiptIds = filteredReceipts.map(r => r.id)
@@ -440,6 +457,19 @@ export default function ReceiptManagement() {
         </Card>
       </div>
 
+      {/* Center tabs (参照积分榜: 全部/PU1中学/BATU14小学) */}
+      <div className="flex items-center gap-2 flex-wrap mb-4">
+        <Button size="sm" variant={centerTab === "all" ? "default" : "outline"} onClick={() => setCenterTab("all")} className="h-8">
+          全部
+        </Button>
+        <Button size="sm" variant={centerTab === "PU1" ? "default" : "outline"} onClick={() => setCenterTab("PU1")} className="h-8">
+          中学（PU1）
+        </Button>
+        <Button size="sm" variant={centerTab === "BATU14" ? "default" : "outline"} onClick={() => setCenterTab("BATU14")} className="h-8">
+          小学（BATU14）
+        </Button>
+      </div>
+
       {/* Filters */}
       <Card>
         <CardHeader>
@@ -551,7 +581,7 @@ export default function ReceiptManagement() {
 
               {/* ── Receipt Document Cards ── */}
               <div className="space-y-4">
-                {filteredReceipts.map((receipt) => {
+                {paginatedReceipts.map((receipt) => {
                   const isExpanded = expandedReceiptIds.has(receipt.id)
                   const isSelected = selectedReceiptIds.has(receipt.id)
                   const preset = getReceiptPresetForReceipt(receipt)
@@ -669,6 +699,22 @@ export default function ReceiptManagement() {
                   )
                 })}
               </div>
+
+              {/* Receipt Pagination */}
+              {totalReceiptPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <span className="text-sm text-gray-500">
+                    共 {centerReceipts.length} 条，每页 {RECEIPT_PER_PAGE} 条
+                  </span>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="outline" disabled={receiptPage===1} onClick={() => setReceiptPage(p=>Math.max(1,p-1))}>上一页</Button>
+                    {Array.from({length: totalReceiptPages}, (_,i)=>i+1).map(p=>(
+                      <Button key={p} size="sm" variant={p===receiptPage?"default":"outline"} onClick={()=>setReceiptPage(p)} className="min-w-[32px] h-8">{p}</Button>
+                    ))}
+                    <Button size="sm" variant="outline" disabled={receiptPage===totalReceiptPages} onClick={() => setReceiptPage(p=>Math.min(totalReceiptPages,p+1))}>下一页</Button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </CardContent>
