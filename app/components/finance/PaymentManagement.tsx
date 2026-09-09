@@ -78,6 +78,9 @@ export default function PaymentManagement() {
   const searchParams = useSearchParams()
   const centerFilter = searchParams.get("center")
   const { students } = useStudents()
+
+  // 中心 tab（参照积分榜：全部/PU1中学/BATU14小学）— 用 code 过滤
+  const [centerTab, setCenterTab] = useState("all")
   
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -127,16 +130,29 @@ export default function PaymentManagement() {
       const invoiceNumber = (invoice.invoiceNumber || '').toLowerCase()
       if (!studentName.includes(q) && !invoiceNumber.includes(q)) return false
     }
-    // 中心过滤
+    // 中心 tab 过滤（用 code：PU1/BATU14）
+    if (centerTab && centerTab !== "all") {
+      const student = students.find(s => s.id === invoice.studentId)
+      if (!student || student.center !== centerTab) return false
+    }
+    // 兼容旧 URL center 参数（UUID 或 code）
     if (centerFilter && centerFilter !== "all") {
       const student = students.find(s => s.id === invoice.studentId)
-      if (!student || student.centerId !== centerFilter) return false
+      if (!student) return false
+      if (student.centerId !== centerFilter && student.center !== centerFilter) return false
     }
     return true
   })
 
   // ── Batch delete computed values ──
   const allPaymentIds = filteredPayments.map(p => p.id)
+
+  // ── Pagination ──
+  const PAYMENT_PER_PAGE = 15
+  const [paymentPage, setPaymentPage] = useState(1)
+  useEffect(() => { setPaymentPage(1) }, [searchQuery, centerTab, centerFilter, payments.length])
+  const totalPaymentPages = Math.max(1, Math.ceil(filteredPayments.length / PAYMENT_PER_PAGE))
+  const paginatedPayments = filteredPayments.slice((paymentPage - 1) * PAYMENT_PER_PAGE, paymentPage * PAYMENT_PER_PAGE)
   const allSelected = allPaymentIds.length > 0 && selectedIds.size === allPaymentIds.length
   const someSelected = selectedIds.size > 0
 
@@ -315,6 +331,19 @@ export default function PaymentManagement() {
             付款管理
           </h2>
           <p className="text-slate-500">处理学生缴费，自动生成收据并更新发票状态</p>
+        </div>
+
+        {/* Center tabs（参照积分榜：全部/PU1中学/BATU14小学） */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant={centerTab === "all" ? "default" : "outline"} onClick={() => setCenterTab("all")} className="h-8">
+            全部
+          </Button>
+          <Button size="sm" variant={centerTab === "PU1" ? "default" : "outline"} onClick={() => setCenterTab("PU1")} className="h-8">
+            中学（PU1）
+          </Button>
+          <Button size="sm" variant={centerTab === "BATU14" ? "default" : "outline"} onClick={() => setCenterTab("BATU14")} className="h-8">
+            小学（BATU14）
+          </Button>
         </div>
         <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
           <DialogTrigger asChild>
@@ -548,7 +577,7 @@ export default function PaymentManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPayments.map((payment) => {
+                {paginatedPayments.map((payment) => {
                   const inv = invoices.find(i => i.id === payment.invoiceId)
                   const partial = isPaymentPartial(payment)
                   return (
@@ -593,6 +622,22 @@ export default function PaymentManagement() {
                 })}
               </TableBody>
             </Table>
+          )}
+
+          {/* Payment Pagination */}
+          {totalPaymentPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <span className="text-sm text-gray-500">
+                共 {filteredPayments.length} 条，每页 {PAYMENT_PER_PAGE} 条
+              </span>
+              <div className="flex gap-1">
+                <Button size="sm" variant="outline" disabled={paymentPage===1} onClick={() => setPaymentPage(p=>Math.max(1,p-1))}>上一页</Button>
+                {Array.from({length: totalPaymentPages}, (_,i)=>i+1).map(p=>(
+                  <Button key={p} size="sm" variant={p===paymentPage?"default":"outline"} onClick={()=>setPaymentPage(p)} className="min-w-[32px] h-8">{p}</Button>
+                ))}
+                <Button size="sm" variant="outline" disabled={paymentPage===totalPaymentPages} onClick={() => setPaymentPage(p=>Math.min(totalPaymentPages,p+1))}>下一页</Button>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
