@@ -213,6 +213,7 @@ export const getAllStudents = async (): Promise<Student[]> => {
       // 基本信息
       student_id: student.student_id,
       student_name: student.name,
+      name: student.name,
       dob: student.dob,
       father_name: student.fatherName,
       mother_name: student.motherName,
@@ -570,6 +571,7 @@ export const getStudentById = async (id: string): Promise<Student | null> => {
       // 基本信息
       student_id: student.student_id,
       student_name: student.name,
+      name: student.name,
       dob: student.dob,
       father_name: student.fatherName,
       mother_name: student.motherName,

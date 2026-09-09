@@ -517,7 +517,16 @@ export function getCardUidSearchTerms(raw: string): string[] {
   // Also include the canonical value as hex (8-char)
   const canonicalNum = parseInt(canonical, 10)
   if (!isNaN(canonicalNum) && canonicalNum > 0) {
+    // canonical decimal (no leading zeros)
+    terms.add(String(canonicalNum))
+    // zero-padded to 10 digits (matches how cards are often stored, e.g. "0026460164")
+    terms.add(String(canonicalNum).padStart(10, '0'))
+    // hex 8-char form
     terms.add(canonicalNum.toString(16).toUpperCase().padStart(8, '0'))
+    // also a zero-padded hex (8-char with leading 0s) — some records stored padded
+    const hx = canonicalNum.toString(16).toUpperCase()
+    if (hx.length < 8) terms.add(hx.padStart(8, '0'))
+    if (hx.length < 10) terms.add(hx.padStart(10, '0'))
   }
 
   return [...terms]
