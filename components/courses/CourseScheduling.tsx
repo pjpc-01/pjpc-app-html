@@ -70,6 +70,8 @@ interface CourseScheduleEntry {
   teacher_name?: string
   course_subject?: string
   course_grade?: string
+  /** 是否时间表模板记录(原始 day_of_week 有值)。date生成的月度排班为 false，不进网格 */
+  isTemplate: boolean
 }
 
 type DayOfWeek = 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri'
@@ -241,18 +243,24 @@ export default function CourseScheduling() {
       setTeachers(teacherList.filter((tt: Teacher) => tt.name) || [])
 
       const pbsItems = schedulesRes?.items || []
-      const entries: CourseScheduleEntry[] = pbsItems.map((item: any) => ({
-        id: item.id,
-        course_id: item.course_id || item.class_id || '',
-        teacher_id: item.teacher_id || '',
-        day_of_week: (item.day_of_week || getDayFromDate(item.date) || 'Mon') as DayOfWeek,
-        start_time: item.start_time || '',
-        end_time: item.end_time || '',
-        course_title: item.course_title || '',
-        teacher_name: item.teacher_name || '',
-        course_subject: item.course_subject || '',
-        course_grade: item.course_grade || '',
-      }))
+      const DAYS_SET = new Set(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])
+      const entries: CourseScheduleEntry[] = pbsItems.map((item: any) => {
+        const hasRawDay = DAYS_SET.has(item.day_of_week || '')
+        return {
+          id: item.id,
+          course_id: item.course_id || item.class_id || '',
+          teacher_id: item.teacher_id || '',
+          day_of_week: (item.day_of_week || getDayFromDate(item.date) || 'Mon') as DayOfWeek,
+          start_time: item.start_time || '',
+          end_time: item.end_time || '',
+          course_title: item.course_title || '',
+          teacher_name: item.teacher_name || '',
+          course_subject: item.course_subject || '',
+          course_grade: item.course_grade || '',
+          // 只有原始 day_of_week 是真实星期的才算"时间表模板"，date 生成的月度排班(isTemplate=false)不进网格
+          isTemplate: hasRawDay,
+        }
+      })
       setScheduleEntries(entries)
     } catch (err) {
       console.error('加载排课数据失败:', err)
@@ -338,9 +346,11 @@ export default function CourseScheduling() {
 
   // 按年级过滤的排课条目（网格 + 统计 + 列表共用）
   // 用 courseMap 的 grade_level 做源头归一化（不依赖 POST 写入的 course_grade 快照）
-  const filteredEntries = gradeFilter === 'all'
+  // 只保留时间表模板(isTemplate=true)——date 生成的月度排班不属于时间表编辑器，不在此页显示
+  const filteredEntries = (gradeFilter === 'all'
     ? scheduleEntries
     : scheduleEntries.filter(e => (courseMap.get(e.course_id)?.grade_level || e.course_grade) === gradeFilter)
+  ).filter(e => e.isTemplate !== false)
 
   function getCourseTitle(courseId: string): string {
     return courseMap.get(courseId)?.title || courseId.slice(0, 8)
@@ -620,10 +630,10 @@ export default function CourseScheduling() {
 
   function getEntries(day: DayOfWeek, start: string, end: string): CourseScheduleEntry[] {
     // 课程显示在其「开始时间」所属的时段行：start <= 课程.start < end
-    // （时段行是骨架，课程时间可能不完全等于时段行起止，用开始时间定位）
-    // 一个时段行可在该格子里堆叠多个课程（不同课程/班级同时间可并存）
+    // 只显示时间表模板(isTemplate=true)；date 生成的月度排班不渲染进时间表网格
     return filteredEntries.filter(
-      e => e.day_of_week === day && e.start_time >= start && e.start_time < end
+      e => e.isTemplate !== false &&
+        e.day_of_week === day && e.start_time >= start && e.start_time < end
     ).sort((a, b) => a.start_time.localeCompare(b.start_time) || a.course_id.localeCompare(b.course_id))
   }
 
