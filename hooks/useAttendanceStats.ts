@@ -57,7 +57,7 @@ export function useAttendanceStats() {
       // 计算本周排班数量
       const weekSchedules = scheduleData.success ? (scheduleData.schedules || []).length : 0
 
-      // 计算本月总工时（纯按排班：start_time ~ end_time 累加）
+      // 计算本月总工时（按真实占用时间去重：同一老师同一天的排班时段合并后求占用小时）
       let monthHours = 0
       try {
         const now = new Date()
@@ -71,13 +71,32 @@ export function useAttendanceStats() {
         if (schRes.ok) {
           const sd = await schRes.json()
           const items = sd?.items || []
+          // 按 (老师, 日期) 分组，组内合并重叠/重复时段，只计实际占用小时
+          const byTeacherDate = new Map<string, { s: number; e: number }[]>()
           items.forEach((s: any) => {
-            if (s.start_time && s.end_time) {
-              const hs = new Date(`2000-01-01T${s.start_time}`).getTime()
-              const he = new Date(`2000-01-01T${s.end_time}`).getTime()
-              const h = (he - hs) / 3600000
-              if (h > 0 && h <= 24) monthHours += h
+            if (!s.teacher_id || !s.start_time || !s.end_time) return
+            const day = (s.date || '').split(' ')[0]
+            const key = `${s.teacher_id}|${day}`
+            let h1 = 0, m1 = 0, h2 = 0, m2 = 0
+            try { [h1, m1] = s.start_time.split(':').map(Number); [h2, m2] = s.end_time.split(':').map(Number) } catch { return }
+            const st = h1 * 60 + m1
+            const en = h2 * 60 + m2
+            if (en <= st) return
+            if (!byTeacherDate.has(key)) byTeacherDate.set(key, [])
+            byTeacherDate.get(key)!.push({ s: st, e: en })
+          })
+          // 对每组合并交叠并求和
+          byTeacherDate.forEach((spans, _key) => {
+            spans.sort((a, b) => a.s - b.s)
+            let merged: { s: number; e: number }[] = []
+            for (const sp of spans) {
+              if (merged.length && sp.s < merged[merged.length - 1].e) {
+                merged[merged.length - 1].e = Math.max(merged[merged.length - 1].e, sp.e)
+              } else {
+                merged.push({ ...sp })
+              }
             }
+            monthHours += merged.reduce((sum, sp) => sum + (sp.e - sp.s), 0) / 60
           })
           monthHours = Math.round(monthHours * 100) / 100
         }

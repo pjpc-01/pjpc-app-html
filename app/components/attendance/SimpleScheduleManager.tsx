@@ -22,6 +22,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { useLanguage } from "@/contexts/language-context"
+import { toast } from 'sonner'
 
 // 冲突检测
 import { detectAllConflicts, getConflictBadge, type Conflict } from '@/lib/schedule-conflicts'
@@ -146,9 +147,17 @@ export default function SimpleScheduleManager() {
       } catch (e) { console.error('加载课程映射失败:', e) }
 
       const items = schData?.items || []
+      // 只统计当前周所属月份的工时(date 属于该月)；模板记录(date=2026-01-05 占位)不算
+      const now = currentWeek || new Date()
+      const y = now.getFullYear()
+      const m = String(now.getMonth() + 1).padStart(2, '0')
+      const prefix = `${y}-${m}`
       const map: Record<string, number> = {}
       items.forEach((s: any) => {
         if (!s.start_time || !s.end_time) return
+        // 只算当前月内的排班
+        const day = (s.date || '').split(' ')[0]
+        if (!day.startsWith(prefix)) return
         const teacherId = s.teacher_id || courseMap[s.course_id]
         if (!teacherId) return
         const hs = new Date(`2000-01-01T${s.start_time}`).getTime()
@@ -238,12 +247,18 @@ export default function SimpleScheduleManager() {
           start_time: '09:00',
           end_time: '17:00',
           status: 'scheduled',
+          schedule_type: 'regular',
+          notes: '手动排班',
           userId: 'admin',
           userName: '系统管理员',
           userRole: 'admin',
         }),
       })
       const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || '添加排班失败')
+        return
+      }
       if (data.success && data.schedule) {
         const newSchedule: Schedule = {
           id: data.schedule.id,
@@ -253,7 +268,8 @@ export default function SimpleScheduleManager() {
           start_time: '09:00',
           end_time: '17:00',
           status: 'scheduled',
-          notes: '',
+          notes: '手动排班',
+          course_name: '',
         }
         setSchedules([...schedules, newSchedule])
       } else {
