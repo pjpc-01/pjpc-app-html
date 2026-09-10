@@ -79,7 +79,7 @@ export default function PointsPage() {
   const [txPage, setTxPage] = useState(1)
   const [txTotalPages, setTxTotalPages] = useState(1)
   const [txTotal, setTxTotal] = useState(0)
-  const [txLevel, setTxLevel] = useState<"all" | "primary" | "secondary">("all")
+  const [txCenter, setTxCenter] = useState<"all" | "PU1" | "BATU14">("all")
   const [batchMode, setBatchMode] = useState(false)
   const [batchStudents, setBatchStudents] = useState<any[]>([])
   const [batchAmount, setBatchAmount] = useState("1")
@@ -113,14 +113,14 @@ export default function PointsPage() {
   const fetchTransactions = useCallback(async (p: number) => {
     setTxLoading(true)
     try {
-      const res = await fetch(`/api/points/log?limit=${TX_PAGE_SIZE}&page=${p}&level=${txLevel}`)
+      const res = await fetch(`/api/points/log?limit=${TX_PAGE_SIZE}&page=${p}&center=${txCenter}`)
       const data = await res.json()
       setTxLogs(data.logs || [])
       setTxTotalPages(data.totalPages || 1)
       setTxTotal(data.total || 0)
     } catch (err) { console.error(err) }
     finally { setTxLoading(false) }
-  }, [txLevel])
+  }, [txCenter])
 
   useEffect(() => {
     if (studentIdParam) loadStudent(studentIdParam, studentNameParam || undefined)
@@ -479,23 +479,23 @@ export default function PointsPage() {
             </div>
             <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5 mt-2 w-fit">
               <button
-                onClick={() => { setTxLevel("all"); setTxPage(1) }}
+                onClick={() => { setTxCenter("all"); setTxPage(1) }}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                  txLevel === "all" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+                  txCenter === "all" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
                 }`}
               >全部</button>
               <button
-                onClick={() => { setTxLevel("primary"); setTxPage(1) }}
+                onClick={() => { setTxCenter("PU1"); setTxPage(1) }}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                  txLevel === "primary" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+                  txCenter === "PU1" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
                 }`}
-              >小学</button>
+              >中学 PU1</button>
               <button
-                onClick={() => { setTxLevel("secondary"); setTxPage(1) }}
+                onClick={() => { setTxCenter("BATU14"); setTxPage(1) }}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                  txLevel === "secondary" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+                  txCenter === "BATU14" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
                 }`}
-              >中学</button>
+              >小学 BATU14</button>
             </div>
           </CardHeader>
           <CardContent className="p-0">

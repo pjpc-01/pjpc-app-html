@@ -2,7 +2,7 @@
 """Helper script for the utility-bills API route - reads from SQLite and outputs JSON."""
 import sqlite3, json, sys, os
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'pb_data_store', 'data.db')
+DB_PATH = os.path.join('/home/pjpc', 'pb_data_store', 'data.db')
 
 try:
     conn = sqlite3.connect(DB_PATH)
