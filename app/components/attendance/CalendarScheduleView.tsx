@@ -92,8 +92,8 @@ export default function CalendarScheduleView() {
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentMonth)
     const monthEnd = endOfMonth(currentMonth)
-    const calStart = startOfWeek(monthStart)
-    const calEnd = endOfWeek(monthEnd)
+    const calStart = startOfWeek(monthStart, { weekStartsOn: 1 })
+    const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 })
     
     const days: Date[] = []
     let day = calStart
@@ -180,9 +180,9 @@ export default function CalendarScheduleView() {
                       className={`text-[10px] leading-tight px-1 py-0.5 rounded truncate mt-0.5 border ${
                         statusColors[evt.status] || "bg-gray-50"
                       }`}
-                      title={`${evt.course_name ? evt.course_name + ' · ' : ''}${evt.teacher_name} ${evt.start_time}-${evt.end_time}`}
+                      title={`${evt.teacher_name} ${evt.start_time}-${evt.end_time}${evt.course_name ? ' · ' + evt.course_name : ''}`}
                     >
-                      {evt.start_time} {evt.course_name || evt.teacher_name}
+                      {evt.start_time} {evt.teacher_name}
                     </div>
                   ))}
                   {dayEvents.length > 3 && (
@@ -224,9 +224,8 @@ export default function CalendarScheduleView() {
                       <div>
                         <div className="font-medium text-sm">{evt.course_name || evt.teacher_name}</div>
                         <div className="text-xs text-muted-foreground">
-                          {evt.course_name && `${evt.teacher_name} · `}
-                          {evt.room && `${evt.room} · `}
-                          {evt.schedule_type || "常规"}
+                          {evt.teacher_name && evt.course_name && `${evt.teacher_name} · `}
+                          {evt.room && `${evt.room}`}
                         </div>
                       </div>
                     </div>
