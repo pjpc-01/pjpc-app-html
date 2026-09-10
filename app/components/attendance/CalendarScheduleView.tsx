@@ -20,7 +20,7 @@ import { zhCN } from "date-fns/locale"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react"
+import { ChevronLeft, ChevronRight, CalendarDays, Trash2 } from "lucide-react"
 
 interface ScheduleEvent {
   id: string
@@ -49,6 +49,7 @@ export default function CalendarScheduleView() {
   const [events, setEvents] = useState<ScheduleEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchSchedules()
@@ -85,6 +86,28 @@ export default function CalendarScheduleView() {
       console.error("Failed to fetch schedules", err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // 删除单条排班
+  const handleDelete = async (evt: ScheduleEvent) => {
+    if (!window.confirm(`确定删除这条排班吗？\n${evt.date?.split(' ')[0]} ${evt.start_time}-${evt.end_time} ${evt.teacher_name || evt.course_name || ''}`)) return
+    setDeletingId(evt.id)
+    try {
+      const res = await fetch(`/api/pocketbase-proxy/api/collections/schedules/records/${evt.id}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        window.alert(d?.error || '删除失败，请重试')
+        return
+      }
+      setEvents((prev) => prev.filter((e) => e.id !== evt.id))
+    } catch (err) {
+      console.error('删除排班失败', err)
+      window.alert('删除失败，请重试')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -232,6 +255,16 @@ export default function CalendarScheduleView() {
                     <Badge variant={evt.status === "confirmed" ? "default" : "secondary"}>
                       {evt.status === "scheduled" ? "已排班" : evt.status === "confirmed" ? "已确认" : evt.status === "completed" ? "已完成" : evt.status}
                     </Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                      onClick={() => handleDelete(evt)}
+                      disabled={deletingId === evt.id}
+                      title="删除排班"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 ))}
               </div>

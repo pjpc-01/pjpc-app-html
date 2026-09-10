@@ -85,6 +85,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 手动排班规则：只能排「已过/今天」的时间，未来一律走时间表课程编排，禁止手动插班
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const scheduleDate = data.date ? new Date(String(data.date).split(' ')[0] + 'T00:00:00') : null
+    if (scheduleDate && !isNaN(scheduleDate.getTime()) && scheduleDate > todayStart) {
+      return NextResponse.json(
+        { success: false, error: '未来的时间不能手动排班，请通过课程时间表编排课程' },
+        { status: 400 }
+      )
+    }
+
+    // 手动排班必须有名字：schedule_type 或 notes 至少一个
+    if (!data.schedule_type && !data.notes) {
+      return NextResponse.json(
+        { success: false, error: '手动排班必须填写班别/备注（名字），不能留空' },
+        { status: 400 }
+      )
+    }
+
     // 暂时跳过权限和冲突检查，直接创建排班
     
     const scheduleData = {
