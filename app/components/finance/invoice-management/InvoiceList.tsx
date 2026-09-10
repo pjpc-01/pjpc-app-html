@@ -470,70 +470,7 @@ export function InvoiceList({
             </div>
           )}
 
-          {/* Summary */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">总发票数</p>
-                    <p className="text-2xl font-bold">{invoices.length}</p>
-                  </div>
-                  <FileText className="h-8 w-8 text-blue-600" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">待缴费</p>
-                    <p className="text-2xl font-bold text-yellow-600">
-                      {invoices.filter(invoice => {
-                        const invoicePayments = payments.filter(payment => payment.invoiceId === invoice.id)
-                        const completedPayments = invoicePayments.filter(p => p.status === 'completed')
-                        const totalPaid = completedPayments.reduce((sum, p) => sum + p.amountPaid, 0)
-                        return totalPaid === 0
-                      }).length}
-                    </p>
-                  </div>
-                  <AlertCircle className="h-8 w-8 text-yellow-600" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">已缴费</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {invoices.filter(invoice => {
-                        const invoicePayments = payments.filter(payment => payment.invoiceId === invoice.id)
-                        const completedPayments = invoicePayments.filter(p => p.status === 'completed')
-                        const totalPaid = completedPayments.reduce((sum, p) => sum + p.amountPaid, 0)
-                        return totalPaid >= invoice.totalAmount
-                      }).length}
-                    </p>
-                  </div>
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">{t('student.overdue')}</p>
-                    <p className="text-2xl font-bold text-red-600">
-                      {invoices.filter(i => i.status === 'overdue').length}
-                    </p>
-                  </div>
-                  <AlertCircle className="h-8 w-8 text-red-600" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </CardContent>
+          </CardContent>
       </Card>
 
       {/* Single Delete Confirmation Dialog */}

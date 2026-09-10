@@ -548,11 +548,11 @@ Prospek Cemerlang`,
     }
   }, [])
 
-  // 金额统计：开票总额 / 已收金额 / 未收金额（排除草稿和已取消）
-  const activeInvoices = useMemo(() => invoices.filter(inv => inv.status !== 'draft' && inv.status !== 'cancelled'), [invoices])
-  const totalInvoiced = useMemo(() => activeInvoices.reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0), [activeInvoices])
-  const totalPaid = useMemo(() => activeInvoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0), [activeInvoices])
-  const totalUnpaid = Math.max(totalInvoiced - totalPaid, 0)
+  // 金额统计：开票总额 / 已收金额 / 未收金额（排除草稿和已取消）- 随中心 tab 一起算
+  const centerActiveInvoices = useMemo(() => centerFilteredInvoices.filter(inv => inv.status !== 'draft' && inv.status !== 'cancelled'), [centerFilteredInvoices])
+  const centerTotalInvoiced = useMemo(() => centerActiveInvoices.reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0), [centerActiveInvoices])
+  const centerTotalPaid = useMemo(() => centerActiveInvoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0), [centerActiveInvoices])
+  const centerTotalUnpaid = Math.max(centerTotalInvoiced - centerTotalPaid, 0)
 
   return (
     <div className="space-y-6">
@@ -620,7 +620,7 @@ Prospek Cemerlang`,
         </Button>
       </div>
 
-      {/* Statistics */}
+      {/* Statistics - 随中心 tab 一起计算，只用上面这一排 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -628,7 +628,7 @@ Prospek Cemerlang`,
               <FileText className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-sm text-gray-600">总发票数</p>
-                <p className="text-2xl font-bold">{invoices.length}</p>
+                <p className="text-2xl font-bold">{centerFilteredInvoices.length}</p>
               </div>
             </div>
           </CardContent>
@@ -641,7 +641,7 @@ Prospek Cemerlang`,
               <div>
                 <p className="text-sm text-gray-600">{t('student.paid')}</p>
                 <p className="text-2xl font-bold">
-                  {invoices.filter(inv => inv.status === 'paid').length}
+                  {centerFilteredInvoices.filter(inv => inv.status === 'paid').length}
                 </p>
               </div>
             </div>
@@ -655,7 +655,7 @@ Prospek Cemerlang`,
               <div>
                 <p className="text-sm text-gray-600">{t('student.pending_payment')}</p>
                 <p className="text-2xl font-bold">
-                  {invoices.filter(inv => inv.status === 'issued').length}
+                  {centerFilteredInvoices.filter(inv => inv.status === 'issued').length}
                 </p>
               </div>
             </div>
@@ -669,7 +669,7 @@ Prospek Cemerlang`,
               <div>
                 <p className="text-sm text-gray-600">{t('student.overdue')}</p>
                 <p className="text-2xl font-bold">
-                  {invoices.filter(inv => inv.status === 'overdue').length}
+                  {centerFilteredInvoices.filter(inv => inv.status === 'overdue').length}
                 </p>
               </div>
             </div>
@@ -677,7 +677,7 @@ Prospek Cemerlang`,
         </Card>
       </div>
 
-      {/* 金额统计：开票总额 / 已收 / 未收 */}
+      {/* 金额统计：开票总额 / 已收 / 未收 - 随中心 tab 一起算 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -685,7 +685,7 @@ Prospek Cemerlang`,
               <FileText className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-sm text-gray-600">开票总额 (RM)</p>
-                <p className="text-2xl font-bold text-blue-700">RM {totalInvoiced.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p className="text-2xl font-bold text-blue-700">RM {centerTotalInvoiced.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
             </div>
           </CardContent>
@@ -697,7 +697,7 @@ Prospek Cemerlang`,
               <CheckCircle className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600">已收金额 (RM)</p>
-                <p className="text-2xl font-bold text-green-700">RM {totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p className="text-2xl font-bold text-green-700">RM {centerTotalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
             </div>
           </CardContent>
@@ -709,7 +709,7 @@ Prospek Cemerlang`,
               <AlertCircle className="h-5 w-5 text-red-600" />
               <div>
                 <p className="text-sm text-gray-600">未收金额 (RM)</p>
-                <p className="text-2xl font-bold text-red-700">RM {totalUnpaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p className="text-2xl font-bold text-red-700">RM {centerTotalUnpaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
             </div>
           </CardContent>
