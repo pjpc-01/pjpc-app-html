@@ -246,6 +246,10 @@ export default function CourseScheduling() {
       const DAYS_SET = new Set(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])
       const entries: CourseScheduleEntry[] = pbsItems.map((item: any) => {
         const hasRawDay = DAYS_SET.has(item.day_of_week || '')
+        // 模板 = 原始 day_of_week 是真实星期，且 date 是占位值(2026-01-05 或非当前排班月份)
+        // 防生成记录被误标 day_of_week 而当模板(历史曾发生)：真实日期的生成记录一律不当模板
+        const isPlaceholderDate = !(item.date && /^20\d{2}-(0[1-9]|1[0-2])-\d{2}/.test(String(item.date).split(' ')[0]) && String(item.date).split(' ')[0] !== '2026-01-05')
+        const isTemplate = hasRawDay && isPlaceholderDate
         return {
           id: item.id,
           course_id: item.course_id || item.class_id || '',
@@ -257,8 +261,8 @@ export default function CourseScheduling() {
           teacher_name: item.teacher_name || '',
           course_subject: item.course_subject || '',
           course_grade: item.course_grade || '',
-          // 只有原始 day_of_week 是真实星期的才算"时间表模板"，date 生成的月度排班(isTemplate=false)不进网格
-          isTemplate: hasRawDay,
+          // 只有原始 day_of_week 是真实星期且 date 为模板占位(2026-01-05)才算"时间表模板"
+          isTemplate,
         }
       })
       setScheduleEntries(entries)
