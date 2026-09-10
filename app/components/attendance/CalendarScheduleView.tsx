@@ -33,6 +33,7 @@ interface ScheduleEvent {
   center?: string
   room?: string
   schedule_type?: string
+  course_name?: string
 }
 
 const statusColors: Record<string, string> = {
@@ -65,7 +66,21 @@ export default function CalendarScheduleView() {
         `/api/pocketbase-proxy/api/collections/schedules/records?filter=(date>%3D'${filterStart}'%26%26date<%3D'${filterEnd}')&sort=date,start_time&perPage=200`
       )
       const data = await res.json()
-      setEvents(data?.items || [])
+
+      // Build course_id -> title map (course_id is plain TEXT field, expand won't work)
+      let courseMap: Record<string, string> = {}
+      try {
+        const cres = await fetch('/api/courses')
+        const cdata = await cres.json()
+        const items = cdata?.data?.items || cdata?.items || []
+        items.forEach((c: any) => { if (c.id && c.title) courseMap[c.id] = c.title })
+      } catch {}
+
+      const mapped = (data?.items || []).map((evt: any) => ({
+        ...evt,
+        course_name: courseMap[evt.course_id] || evt.course_name || '',
+      }))
+      setEvents(mapped)
     } catch (err) {
       console.error("Failed to fetch schedules", err)
     } finally {
@@ -165,9 +180,9 @@ export default function CalendarScheduleView() {
                       className={`text-[10px] leading-tight px-1 py-0.5 rounded truncate mt-0.5 border ${
                         statusColors[evt.status] || "bg-gray-50"
                       }`}
-                      title={`${evt.teacher_name} ${evt.start_time}-${evt.end_time}`}
+                      title={`${evt.course_name ? evt.course_name + ' · ' : ''}${evt.teacher_name} ${evt.start_time}-${evt.end_time}`}
                     >
-                      {evt.start_time} {evt.teacher_name}
+                      {evt.start_time} {evt.course_name || evt.teacher_name}
                     </div>
                   ))}
                   {dayEvents.length > 3 && (
@@ -207,8 +222,9 @@ export default function CalendarScheduleView() {
                         <div className="text-xs text-muted-foreground">{evt.end_time}</div>
                       </div>
                       <div>
-                        <div className="font-medium text-sm">{evt.teacher_name}</div>
+                        <div className="font-medium text-sm">{evt.course_name || evt.teacher_name}</div>
                         <div className="text-xs text-muted-foreground">
+                          {evt.course_name && `${evt.teacher_name} · `}
                           {evt.room && `${evt.room} · `}
                           {evt.schedule_type || "常规"}
                         </div>

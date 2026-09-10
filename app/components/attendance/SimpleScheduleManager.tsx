@@ -38,6 +38,7 @@ interface Schedule {
   end_time: string
   status: 'scheduled' | 'confirmed' | 'completed'
   notes?: string
+  course_name?: string
 }
 
 interface ScheduleTemplate {
@@ -95,6 +96,15 @@ export default function SimpleScheduleManager() {
       )
       const data = await res.json()
 
+      // Build course_id -> title map (course_id is plain TEXT field, expand won't work)
+      let courseMap: Record<string, string> = {}
+      try {
+        const cres = await fetch('/api/courses')
+        const cdata = await cres.json()
+        const items = cdata?.data?.items || cdata?.items || []
+        items.forEach((c: any) => { if (c.id && c.title) courseMap[c.id] = c.title })
+      } catch {}
+
       const mappedSchedules = (data?.items || []).map((item: any) => ({
         id: item.id,
         teacher_id: item.teacher_id || '',
@@ -104,6 +114,7 @@ export default function SimpleScheduleManager() {
         end_time: item.end_time || '',
         status: item.status || 'scheduled',
         notes: item.notes || '',
+        course_name: courseMap[item.course_id] || item.course_name || '',
       }))
 
       setSchedules(mappedSchedules)
@@ -483,6 +494,11 @@ export default function SimpleScheduleManager() {
                           <td key={date.toISOString()} className="p-2 text-center">
                             {schedule ? (
                               <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                                {schedule.course_name && (
+                                  <div className="text-xs font-semibold text-blue-700 truncate mb-0.5">
+                                    {schedule.course_name}
+                                  </div>
+                                )}
                                 <div className="text-sm font-medium">
                                   {schedule.start_time} - {schedule.end_time}
                                 </div>
@@ -547,6 +563,9 @@ export default function SimpleScheduleManager() {
               <div>
                 <Label>{t('teacher.teacher')}</Label>
                 <div className="text-sm text-gray-600">{editingSchedule.teacher_name}</div>
+                {editingSchedule.course_name && (
+                  <div className="text-sm font-medium text-blue-700 mt-1">{editingSchedule.course_name}</div>
+                )}
               </div>
 
               <div>
