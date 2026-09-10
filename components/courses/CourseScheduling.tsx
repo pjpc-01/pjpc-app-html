@@ -618,19 +618,17 @@ export default function CourseScheduling() {
   // 网格构建
   // ============================================================
 
-  function getEntry(day: DayOfWeek, start: string, end: string): CourseScheduleEntry | undefined {
+  function getEntries(day: DayOfWeek, start: string, end: string): CourseScheduleEntry[] {
     // 课程显示在其「开始时间」所属的时段行：start <= 课程.start < end
     // （时段行是骨架，课程时间可能不完全等于时段行起止，用开始时间定位）
-    return filteredEntries.find(
+    // 一个时段行可在该格子里堆叠多个课程（不同课程/班级同时间可并存）
+    return filteredEntries.filter(
       e => e.day_of_week === day && e.start_time >= start && e.start_time < end
-    )
+    ).sort((a, b) => a.start_time.localeCompare(b.start_time) || a.course_id.localeCompare(b.course_id))
   }
 
   function hasCourseInSlot(day: DayOfWeek, start: string, end: string): boolean {
-    // 与 getEntry 一致：以课程开始时间所属时段行判断
-    return filteredEntries.some(e =>
-      e.day_of_week === day && e.start_time >= start && e.start_time < end
-    )
+    return getEntries(day, start, end).length > 0
   }
 
   // ============================================================
@@ -838,77 +836,79 @@ export default function CourseScheduling() {
               )}
             </div>
 
-            {/* 该时段各星期格子 */}
+            {/* 该时段各星期格子 — 一个格子可堆叠多个课程 */}
             {DAYS.map(day => {
-              const entry = getEntry(day, slot.start, slot.end)
-              const hasCourse = hasCourseInSlot(day, slot.start, slot.end)
+              const entries = getEntries(day, slot.start, slot.end)
+              const hasCourse = entries.length > 0
               const cellKey = `${day}-${slot.id}`
 
-              if (entry) {
-                const course = courseMap.get(entry.course_id)
-                const subject = course?.subject || entry.course_subject || ''
-                const colorClass = getSubjectColor(subject)
-                const noTeacher = !entry.teacher_id
-
-                return (
-                  <div
-                    key={cellKey}
-                    className={`bg-white p-1.5 min-h-[72px] cursor-pointer border-2 rounded-sm transition-colors relative group ${colorClass} ${
-                      noTeacher ? 'ring-1 ring-amber-300' : ''
-                    }`}
-                    onClick={() => openAssignTeacher(entry)}
-                    title={noTeacher ? '点击指定教师' : '点击更换教师'}
-                  >
-                    <div className="font-semibold text-xs leading-tight mb-0.5 truncate">
-                      {getCourseTitle(entry.course_id)}
-                    </div>
-
-                    <div className="text-[10px] text-gray-400">
-                      {course?.duration ? `${course.duration}分` : ''}
-                    </div>
-
-                    <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-0.5">
-                      {noTeacher ? (
-                        <span className="text-amber-600 font-medium italic truncate">待排教师</span>
-                      ) : (
-                        <>
-                          <UserCheck className="h-2.5 w-2.5 shrink-0" />
-                          <span className="truncate">{getTeacherName(entry.teacher_id)}</span>
-                        </>
-                      )}
-                    </div>
-
-                    {subject && (
-                      <div className="text-[10px] text-gray-400 mt-0.5 truncate">
-                        {subject}{course?.grade_level ? ` · ${course.grade_level}` : ''}
-                      </div>
-                    )}
-
-                    <button
-                      className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 bg-white/80 rounded-full p-0.5 text-red-400 hover:text-red-600 transition-all"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDelete(entry)
-                      }}
-                      title="删除排课"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                )
-              }
-
-              // 空格子 — 点击放入课程
               return (
                 <div
                   key={cellKey}
-                  className="bg-white p-1.5 min-h-[72px] cursor-pointer hover:bg-indigo-50 hover:border-indigo-300 transition-all border border-dashed border-gray-200 group relative"
-                  onClick={() => openAssignCourse(day, slot)}
-                  title="点击放入课程"
+                  className={`bg-white p-1 min-h-[84px] border rounded-sm flex flex-col gap-1 ${
+                    hasCourse ? 'border-gray-200' : 'border-dashed border-gray-200 hover:bg-indigo-50 hover:border-indigo-300 transition-all'
+                  }`}
                 >
-                  <div className="text-[10px] text-gray-300 text-center pt-4">
-                    {hasCourse ? '时段已占用' : '+'}
-                  </div>
+                  {/* 堆叠的课程卡片（一个格子多个） */}
+                  {entries.map(entry => {
+                    const course = courseMap.get(entry.course_id)
+                    const subject = course?.subject || entry.course_subject || ''
+                    const colorClass = getSubjectColor(subject)
+                    const noTeacher = !entry.teacher_id
+                    return (
+                      <div
+                        key={entry.id}
+                        className={`px-1.5 py-1 rounded-sm cursor-pointer border ${colorClass} relative group ${
+                          noTeacher ? 'ring-1 ring-amber-300' : ''
+                        }`}
+                        onClick={() => openAssignTeacher(entry)}
+                        title={noTeacher ? '点击指定教师' : '点击更换教师'}
+                      >
+                        <div className="font-semibold text-[11px] leading-tight truncate">
+                          {getCourseTitle(entry.course_id)}
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-0.5">
+                          {noTeacher ? (
+                            <span className="text-amber-600 font-medium italic truncate">待排教师</span>
+                          ) : (
+                            <>
+                              <UserCheck className="h-2.5 w-2.5 shrink-0" />
+                              <span className="truncate">{getTeacherName(entry.teacher_id)}</span>
+                            </>
+                          )}
+                        </div>
+                        {subject && (
+                          <div className="text-[10px] text-gray-400 mt-0.5 truncate">
+                            {subject}{course?.grade_level ? ` · ${course.grade_level}` : ''}
+                          </div>
+                        )}
+                        <button
+                          className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 bg-white/80 rounded-full p-0.5 text-red-400 hover:text-red-600 transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDelete(entry)
+                          }}
+                          title="删除排课"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )
+                  })}
+
+                  {/* 空/追加按钮 — 无课程显示「+」，有课程底部也保留「+」继续添加 */}
+                  <button
+                    className={`flex items-center justify-center ${
+                      hasCourse
+                        ? 'mt-auto text-[10px] text-gray-300 hover:text-indigo-500 hover:bg-indigo-50 rounded py-0.5 transition-colors'
+                        : 'flex-1 text-gray-300 hover:text-indigo-500 text-sm'
+                    }`}
+                    onClick={() => openAssignCourse(day, slot)}
+                    title="点击放入课程"
+                  >
+                    <Plus className={`${hasCourse ? 'h-3 w-3' : 'h-4 w-4'} mr-0.5`} />
+                    <span className={hasCourse ? 'text-[10px]' : 'text-xs'}>{hasCourse ? '添加' : '添加课程'}</span>
+                  </button>
                 </div>
               )
             })}
