@@ -9,7 +9,6 @@ import {
   Loader2, GraduationCap, User, LogIn, LogOut, BarChart3, ChevronLeft, ChevronRight, CalendarDays, Download,
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
-import { classifySchoolLevel } from "@/lib/utils"
 import NfcTapReader from "./NfcTapReader"
 
 // ─── Types ─────────────────────────────────────────────
@@ -286,7 +285,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
   absentStudents: AbsentStudent[]
 }) {
   const { t } = useLanguage()
-  const [levelFilter, setLevelFilter] = useState<"all" | "primary" | "secondary">("all")
+  const [centerFilter, setCenterFilter] = useState<"all" | "PU1" | "BATU14" | "teacher">("all")
   const [statusFilter, setStatusFilter] = useState<"all" | "checked_in" | "not_checked_in">("all")
   // Merge: present students first, then absent students at bottom
   const allRows: { person_name: string; person_type: string; center: string; grade?: string; check_in_time: string | null; check_out_time: string | null; is_late: boolean; is_early: boolean; status: string; _isAbsent: boolean }[] = [
@@ -295,12 +294,13 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
   ]
 
   const filteredRows = allRows.filter(r => {
-    // 学段 filter：教师始终显示；学生按年级分类
-    if (levelFilter !== "all") {
-      if (r.person_type !== "teacher") {
-        const level = classifySchoolLevel(r.grade)
-        if (level !== levelFilter) return false
-      }
+    // 中心 / 教师 filter：教师分支只看教师；PU1/BATU14 分支只看该中心的学生（不含教师）
+    if (centerFilter === "teacher") {
+      if (r.person_type !== "teacher") return false
+    } else if (centerFilter === "PU1") {
+      if (r.person_type !== "student" || r.center !== "PU1") return false
+    } else if (centerFilter === "BATU14") {
+      if (r.person_type !== "student" || r.center !== "BATU14") return false
     }
     // 签到状态 filter
     if (statusFilter === "checked_in" && (r._isAbsent || !r.check_in_time)) return false
@@ -319,23 +319,29 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
       <div className="flex items-center gap-4 px-4 py-2.5 bg-white border-b flex-wrap">
         <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
           <button
-            onClick={() => setLevelFilter("all")}
+            onClick={() => setCenterFilter("all")}
             className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-              levelFilter === "all" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+              centerFilter === "all" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
             }`}
           >全部</button>
           <button
-            onClick={() => setLevelFilter("primary")}
+            onClick={() => setCenterFilter("PU1")}
             className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-              levelFilter === "primary" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+              centerFilter === "PU1" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
             }`}
-          >小学</button>
+          >PU1</button>
           <button
-            onClick={() => setLevelFilter("secondary")}
+            onClick={() => setCenterFilter("BATU14")}
             className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-              levelFilter === "secondary" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+              centerFilter === "BATU14" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
             }`}
-          >中学</button>
+          >BATU14</button>
+          <button
+            onClick={() => setCenterFilter("teacher")}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+              centerFilter === "teacher" ? "bg-white shadow text-indigo-600 text-indigo-700" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >教师</button>
         </div>
         <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
           <button
