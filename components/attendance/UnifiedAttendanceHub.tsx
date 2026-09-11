@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   SmartphoneNfc, Users, Clock, RefreshCw, Search, X,
-  Loader2, GraduationCap, User, LogIn, LogOut, BarChart3, ChevronLeft, ChevronRight, CalendarDays,
+  Loader2, GraduationCap, User, LogIn, LogOut, BarChart3, ChevronLeft, ChevronRight, CalendarDays, Download,
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { classifySchoolLevel } from "@/lib/utils"
@@ -49,8 +49,47 @@ export default function UnifiedAttendanceHub() {
   const [report, setReport] = useState<ReportItem[]>([])
   const [reportStats, setReportStats] = useState<ReportStats>({ total: 0, checkedIn: 0, checkedOut: 0, notCheckedIn: 0, late: 0, early: 0, absent: 0 })
   const [reportLoading, setReportLoading] = useState(true)
-  const [reportTab, setReportTab] = useState<"today" | "calendar">("today")
+  const [reportTab, setReportTab] = useState<"today" | "calendar" | "filter">("today")
   const [absentStudents, setAbsentStudents] = useState<AbsentStudent[]>([])
+  // 筛选报表状态
+  const [filterRows, setFilterRows] = useState<ScanRecord[]>([])
+  const [filterLoading, setFilterLoading] = useState(false)
+  const [filterStart, setFilterStart] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() - 6)
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  })
+  const [filterEnd, setFilterEnd] = useState(() => `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`)
+  const [filterType, setFilterType] = useState("all")
+
+  const fetchFilterReport = useCallback(async () => {
+    if (!filterStart || !filterEnd) return
+    setFilterLoading(true)
+    try {
+      const params = new URLSearchParams({ startDate: filterStart, endDate: filterEnd, type: filterType, pageSize: "1000" })
+      const res = await fetch(`/api/attendance/logs?${params}`)
+      const data = await res.json()
+      if (data.success) setFilterRows(data.records || [])
+    } catch (err) { console.error(err) }
+    finally { setFilterLoading(false) }
+  }, [filterStart, filterEnd, filterType])
+
+  // 导出筛选报表 CSV
+  const exportFilterCSV = useCallback(() => {
+    if (filterRows.length === 0) return
+    const header = "姓名,身份,中心,动作,时间,日期,方式"
+    const lines = filterRows.map(r => [
+      r.person_name, r.person_type === "teacher" ? "教师" : "学生", r.center,
+      r.action, new Date(r.timestamp).toLocaleString("zh-CN", { hour12: false }) || r.timestamp,
+      r.date, r.method || "nfc"
+    ].join(","))
+    const blob = new Blob(["\ufeff" + [header, ...lines].join("\n")], { type: "text/csv;charset=utf-8" })
+    const link = document.createElement("a")
+    const url = URL.createObjectURL(blob)
+    link.href = url
+    link.download = `考勤记录_${filterStart}_至_${filterEnd}.csv`
+    document.body.appendChild(link); link.click(); document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }, [filterRows, filterStart, filterEnd])
 
   const fetchRecords = useCallback(async () => {
     try {
@@ -204,6 +243,12 @@ export default function UnifiedAttendanceHub() {
                     reportTab === "calendar" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
                   }`}
                 >考勤日历</button>
+                <button
+                  onClick={() => setReportTab("filter")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    reportTab === "filter" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >筛选报表</button>
               </div>
               {reportTab === "today" && (
                 <input
@@ -217,8 +262,15 @@ export default function UnifiedAttendanceHub() {
           <CardContent className="p-0">
             {reportTab === "today" ? (
               <TodayReport report={report} reportStats={reportStats} reportLoading={reportLoading} fmtTime={fmtTime} calcDuration={calcDuration} absentStudents={absentStudents} />
-            ) : (
+            ) : reportTab === "calendar" ? (
               <CalendarReport />
+            ) : (
+              <FilterReport
+                start={filterStart} end={filterEnd} type={filterType}
+                onStart={setFilterStart} onEnd={setFilterEnd} onType={setFilterType}
+                rows={filterRows} loading={filterLoading} onQuery={fetchFilterReport} onExport={exportFilterCSV}
+                fmtTimeSec={fmtTimeSec}
+              />
             )}
           </CardContent>
         </Card>
@@ -590,6 +642,79 @@ function CalendarReport() {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── 筛选报表 ──────────────────────────────────────────
+
+function FilterReport({ start, end, type, onStart, onEnd, onType, rows, loading, onQuery, onExport, fmtTimeSec }: {
+  start: string; end: string; type: string
+  onStart: (v: string) => void; onEnd: (v: string) => void; onType: (v: string) => void
+  rows: ScanRecord[]; loading: boolean; onQuery: () => void; onExport: () => void
+  fmtTimeSec: (iso: string) => string
+}) {
+  const checkIns = rows.filter(r => r.action_key === "check_in").length
+  const checkOuts = rows.filter(r => r.action_key === "check_out").length
+  const teachers = rows.filter(r => r.person_type === "teacher").length
+
+  return (
+    <div>
+      {/* 筛选控制条 */}
+      <div className="flex items-center gap-2 px-4 py-3 bg-white border-b flex-wrap">
+        <label className="text-xs text-gray-500">从</label>
+        <input type="date" value={start} onChange={e => onStart(e.target.value)} className="text-xs border rounded px-2 py-1 h-7 bg-white" />
+        <label className="text-xs text-gray-500">至</label>
+        <input type="date" value={end} onChange={e => onEnd(e.target.value)} className="text-xs border rounded px-2 py-1 h-7 bg-white" />
+        <select value={type} onChange={e => onType(e.target.value)} className="text-xs border rounded px-2 py-1 h-7 bg-white">
+          <option value="all">全部</option>
+          <option value="student">学生</option>
+          <option value="teacher">教师</option>
+        </select>
+        <Button size="sm" onClick={onQuery} className="h-7 gap-1"><Clock className="h-3.5 w-3.5" />查询</Button>
+        <Button size="sm" variant="outline" onClick={onExport} disabled={rows.length === 0} className="h-7 gap-1">
+          <Download className="h-3.5 w-3.5" />导出 CSV
+        </Button>
+        <span className="ml-auto text-[11px] text-gray-400">
+          共 {rows.length} 条 · 签到{checkIns} 签退{checkOuts} · 教师{teachers}
+        </span>
+      </div>
+
+      {loading ? <div className="text-center py-10"><Loader2 className="h-5 w-5 mx-auto animate-spin text-blue-500" /></div>
+      : rows.length === 0 ? <div className="text-center py-10 text-gray-400 text-sm">所选区间暂无打卡记录</div>
+      : <div className="max-h-[420px] overflow-y-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="bg-gray-50/80 border-b sticky top-0 backdrop-blur">
+              {["姓名","身份","中心","动作","时间","方式"].map(h => (
+                <th key={h} className="text-left px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {rows.map((r, idx) => (
+                <tr key={r.id || idx} className="border-b border-gray-50 hover:bg-gray-50/50">
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${r.person_type === "teacher" ? "bg-purple-50" : "bg-blue-50"}`}>
+                        {r.person_type === "teacher" ? <User className="h-3 w-3 text-purple-400" /> : <GraduationCap className="h-3 w-3 text-blue-400" />}
+                      </div>
+                      <span className="font-medium text-xs">{r.person_name}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <Badge variant="outline" className="text-[10px]">{r.person_type === "teacher" ? "教师" : "学生"}</Badge>
+                  </td>
+                  <td className="px-4 py-2.5 text-xs text-gray-500">{r.center}</td>
+                  <td className="px-4 py-2.5">
+                    <Badge className={`text-[10px] ${r.action_key === "check_in" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>{r.action}</Badge>
+                  </td>
+                  <td className="px-4 py-2.5 font-mono text-[11px] text-gray-600">{fmtTimeSec(r.timestamp)}</td>
+                  <td className="px-4 py-2.5 text-[11px] text-gray-400">{r.date}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      }
     </div>
   )
 }
