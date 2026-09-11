@@ -20,7 +20,11 @@ import { zhCN } from "date-fns/locale"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, ChevronRight, CalendarDays, Trash2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
+import { ChevronLeft, ChevronRight, CalendarDays, Trash2, Plus } from "lucide-react"
 
 interface ScheduleEvent {
   id: string
@@ -36,6 +40,22 @@ interface ScheduleEvent {
   course_name?: string
 }
 
+interface Course {
+  id: string
+  title: string
+  teacher_id?: string
+  teacher_name?: string
+  subject?: string
+  grade_level?: string
+}
+
+interface Teacher {
+  id: string
+  name: string
+  teacher_name?: string
+  center?: string
+}
+
 const statusColors: Record<string, string> = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
   confirmed: "bg-green-100 text-green-800 border-green-200",
@@ -43,17 +63,46 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-red-100 text-red-800 border-red-200",
 }
 
-export default function CalendarScheduleView() {
+export default function CalendarScheduleView({
+  month,
+  onMonthChange,
+}: {
+  month?: Date
+  onMonthChange?: (m: Date) => void
+}) {
   const { t } = useLanguage()
-  const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [currentMonth, setCurrentMonth] = useState(month || new Date())
   const [events, setEvents] = useState<ScheduleEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [courses, setCourses] = useState<Course[]>([])
+  const [teachers, setTeachers] = useState<Teacher[]>([])
+  const [form, setForm] = useState({ courseId: '', teacherId: '', start: '', end: '' })
 
   useEffect(() => {
     fetchSchedules()
   }, [currentMonth])
+
+  // Load available courses + teachers for the add dialog
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const cres = await fetch('/api/courses')
+        const cdata = await cres.json()
+        const items = cdata?.data?.items || cdata?.items || []
+        setCourses(items)
+      } catch {}
+      try {
+        const tres = await fetch('/api/teachers?limit=200')
+        const tdata = await tres.json()
+        const tlist = tdata?.data || tdata?.items || []
+        setTeachers(tlist)
+      } catch {}
+    })()
+  }, [])
 
   const fetchSchedules = async () => {
     setLoading(true)
@@ -111,6 +160,60 @@ export default function CalendarScheduleView() {
     }
   }
 
+  // 添加排班（指定日期 + 课程管理里的课程 + 老师 + 时间段）
+  const handleAddSchedule = async () => {
+    if (!selectedDate || !form.courseId || !form.teacherId || !form.start || !form.end) {
+      window.alert('请选择课程、老师并填写时间')
+      return
+    }
+    setSaving(true)
+    try {
+      const course = courses.find(c => c.id === form.courseId)
+      const teacher = teachers.find(t => t.id === form.teacherId)
+      const dateStr = format(selectedDate, "yyyy-MM-dd")
+      const body = {
+        teacher_id: form.teacherId,
+        teacher_name: (teacher?.name || teacher?.teacher_name || '').trim(),
+        course_id: course?.id || '',
+        class_id: course?.id || '',
+        date: dateStr,
+        start_time: form.start,
+        end_time: form.end,
+        schedule_type: 'course_schedule',
+        status: 'scheduled',
+        course_title: course?.title || '',
+        course_subject: course?.subject || '',
+        course_grade: course?.grade_level || '',
+        center: teacher?.center || '',
+        day_of_week: '', // 具体日期排班，非时间表模板
+      }
+      const res = await fetch('/api/pocketbase-proxy/api/collections/schedules/records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!d?.id) {
+        window.alert(d?.message || '添加失败，请重试')
+        return
+      }
+      setAddOpen(false)
+      setForm({ courseId: '', teacherId: '', start: '', end: '' })
+      await fetchSchedules()
+    } catch (err) {
+      console.error('添加排班失败', err)
+      window.alert('添加排班失败: ' + ((err as Error).message || '未知错误'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // 选课程时自动带出该课程的老师（若课程有指定老师）
+  const handleCourseChange = (courseId: string) => {
+    const course = courses.find(c => c.id === courseId)
+    setForm((f) => ({ ...f, courseId, teacherId: course?.teacher_id || f.teacherId }))
+  }
+
   // Generate calendar grid
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentMonth)
@@ -145,19 +248,28 @@ export default function CalendarScheduleView() {
   const weekDays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
 
   return (
-    <div className="space-y-4">
-      {/* Month Navigation */}
-      <Card>
+    <div className="flex flex-col lg:flex-row items-start gap-4">
+      {/* Month Calendar (left) */}
+      <div className="flex-1 min-w-0">
+        <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <Button variant="outline" size="sm" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+            <Button variant="outline" size="sm" onClick={() => {
+              const nm = subMonths(currentMonth, 1)
+              setCurrentMonth(nm)
+              onMonthChange?.(nm)
+            }}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <CardTitle className="text-lg flex items-center gap-2">
               <CalendarDays className="h-5 w-5" />
               {format(currentMonth, "yyyy 年 M 月", { locale: zhCN })}
             </CardTitle>
-            <Button variant="outline" size="sm" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+            <Button variant="outline" size="sm" onClick={() => {
+              const nm = addMonths(currentMonth, 1)
+              setCurrentMonth(nm)
+              onMonthChange?.(nm)
+            }}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -219,15 +331,22 @@ export default function CalendarScheduleView() {
           </div>
         </CardContent>
       </Card>
+      </div>
 
-      {/* Selected date events */}
+      {/* Selected date events (right panel) */}
       {selectedDate && (
+        <div className="lg:w-80 shrink-0 lg:border-l lg:border-gray-200 lg:pl-4 mt-4 lg:mt-0">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">
-              {format(selectedDate, "M 月 d 日 EEEE", { locale: zhCN })}
-              {isToday(selectedDate) && <Badge className="ml-2">{t('attendance.today')}</Badge>}
-            </CardTitle>
+            <div className="flex items-center justify-between w-full">
+              <CardTitle className="text-base">
+                {format(selectedDate, "M 月 d 日 EEEE", { locale: zhCN })}
+                {isToday(selectedDate) && <Badge className="ml-2">{t('attendance.today')}</Badge>}
+              </CardTitle>
+              <Button size="sm" onClick={() => setAddOpen(true)} className="gap-1 h-8">
+                <Plus className="h-3.5 w-3.5" />添加排班
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {selectedDateEvents.length === 0 ? (
@@ -271,7 +390,63 @@ export default function CalendarScheduleView() {
             )}
           </CardContent>
         </Card>
+        </div>
       )}
+
+      {/* Add schedule dialog */}
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-4 w-4" /> 添加排班
+              {selectedDate && <span className="text-sm font-normal text-gray-500">· {format(selectedDate, "yyyy-MM-dd")}</span>}
+            </DialogTitle>
+            <DialogDescription>从课程管理选择课程，添加到选中日期</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label className="text-xs">课程</Label>
+              <Select value={form.courseId} onValueChange={handleCourseChange}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="选择课程" /></SelectTrigger>
+                <SelectContent>
+                  {courses.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.title}{c.grade_level ? ` · ${c.grade_level}` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">老师</Label>
+              <Select value={form.teacherId} onValueChange={(v) => setForm((f) => ({ ...f, teacherId: v }))}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="选择老师" /></SelectTrigger>
+                <SelectContent>
+                  {teachers.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{(t.name || t.teacher_name || '').trim()}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">开始时间</Label>
+                <Input type="time" value={form.start} onChange={(e) => setForm((f) => ({ ...f, start: e.target.value }))} className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs">结束时间</Label>
+                <Input type="time" value={form.end} onChange={(e) => setForm((f) => ({ ...f, end: e.target.value }))} className="mt-1" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddOpen(false)} disabled={saving}>取消</Button>
+            <Button onClick={handleAddSchedule} disabled={saving || !form.courseId || !form.teacherId || !form.start || !form.end}>
+              {saving ? '添加中...' : '添加'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
