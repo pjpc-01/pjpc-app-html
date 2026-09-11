@@ -13,15 +13,37 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const d = new Date()
     const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-    const date = searchParams.get('date') || today
+    const date = searchParams.get('date') || ''
+    const startDate = searchParams.get('startDate') || null
+    const endDate = searchParams.get('endDate') || null
     const type = searchParams.get('type') || 'all'
-    const pageSize = parseInt(searchParams.get('pageSize') || '50')
+    const pageSize = parseInt(searchParams.get('pageSize') || '500')
+
+    // date 单日：date 区间；否则用 startDate~endDate 区间。
+    // 优先用 startDate/endDate（区间查询），无则退回单日 date
+    let lo: string, hi: string
+    if (startDate && endDate) {
+      lo = `${startDate} 00:00:00`
+      hi = `${endDate} 23:59:59`
+    } else if (date) {
+      lo = `${date} 00:00:00`
+      hi = `${date} 23:59:59`
+    } else {
+      // 默认今天
+      lo = `${today} 00:00:00`
+      hi = `${today} 23:59:59`
+    }
+    const loDay = lo.split(' ')[0]
+    const hiDay = hi.split(' ')[0]
+    // date 字段区间（按天）用 (date >= "loDay" && date <= "hiDay")
+    const dayFilter = `date >= "${loDay}" && date <= "${hiDay}"`
+    const createdFilter = `created >= "${lo}" && created <= "${hi}"`
 
     const records: any[] = []
 
     // ── Student records ─────────────────────────
     if (type === 'all' || type === 'student') {
-      const filter = `date >= "${date} 00:00:00" && date <= "${date} 23:59:59"`
+      const filter = dayFilter
       const url = `${PB_URL}/api/collections/student_attendance/records?perPage=${pageSize}&sort=-created&filter=${encodeURIComponent(filter)}`
       const res = await fetch(url, { headers: { Authorization: token } }).then(r => r.json())
 
@@ -46,7 +68,7 @@ export async function GET(request: NextRequest) {
 
     // ── Teacher records ─────────────────────────
     if (type === 'all' || type === 'teacher') {
-      const filter = `created >= "${date} 00:00:00" && created <= "${date} 23:59:59"`
+      const filter = createdFilter
       const url = `${PB_URL}/api/collections/teacher_attendance/records?perPage=${pageSize}&sort=-created&filter=${encodeURIComponent(filter)}`
       const res = await fetch(url, { headers: { Authorization: token } }).then(r => r.json())
 
