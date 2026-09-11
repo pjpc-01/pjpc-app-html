@@ -48,13 +48,15 @@ export async function GET(request: NextRequest) {
     const globalDeadline = settings.checkin_deadline
     const globalMinimum = settings.checkout_minimum
 
-    // ── Pre-fetch student grades (for per-grade deadlines) ──
+    // ── Pre-fetch student grades (for per-grade deadlines) + center ──
     const studentGrades: Record<string, string> = {}
+    const studentCenters: Record<string, string> = {}
     try {
-      const studentsUrl = `${PB_URL}/api/collections/students/records?perPage=500&fields=id,grade`
+      const studentsUrl = `${PB_URL}/api/collections/students/records?perPage=500&fields=id,grade,center`
       const studentsRes = await fetch(studentsUrl, { headers: { Authorization: token } }).then(r => r.json())
       for (const s of (studentsRes.items || [])) {
         studentGrades[s.id] = s.grade || ''
+        studentCenters[s.id] = s.center || ''
       }
     } catch { /* ignore */ }
 
@@ -159,7 +161,7 @@ export async function GET(request: NextRequest) {
         person_id: p.person_id,
         person_name: p.person_name,
         person_type: p.person_type,
-        center: p.center,
+        center: studentCenters[p.student_id] || p.center || '',
         grade: studentGrades[p.student_id] || '',
         check_in: firstIn?.iso || null,
         check_in_time: firstIn?.time || null,
