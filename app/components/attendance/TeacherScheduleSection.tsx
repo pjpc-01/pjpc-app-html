@@ -3,19 +3,20 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { UserCheck, UserX, Calendar, BarChart3, Grid3X3, CalendarDays, RefreshCw, Clock } from "lucide-react"
+import { UserCheck, UserX, Calendar, BarChart3, RefreshCw, Clock } from "lucide-react"
 import { useAttendanceStats } from "@/hooks/useAttendanceStats"
-import SimpleScheduleManager from "@/app/components/attendance/SimpleScheduleManager"
 import CalendarScheduleView from "@/app/components/attendance/CalendarScheduleView"
+import TeacherMonthHours from "@/app/components/attendance/TeacherMonthHours"
 import { useLanguage } from "@/contexts/language-context"
 
 /**
- * 教师排班管理区块：统计卡片 + 周/月视图切换 + 排班管理 + 日历视图
- * 从课程管理页移入考勤报表页，编排在考勤记录上方。
+ * 教师排班管理区块：统计卡片 + 月视图 + 教师本月工时面板
+ * 周视图已移除，月视图为主视图；工时独立面板显示在月视图下方（有间距分隔）。
  */
 export default function TeacherScheduleSection() {
   const { t } = useLanguage()
-  const [view, setView] = useState<"week" | "month">("week")
+  // 月份状态（月视图和工时面板共享，跟随切换）
+  const [month, setMonth] = useState(new Date())
   const {
     todayPresent,
     todayAbsent,
@@ -83,24 +84,8 @@ export default function TeacherScheduleSection() {
         ))}
       </div>
 
-      {/* 视图切换和刷新 */}
+      {/* 刷新 */}
       <div className="flex items-center gap-2">
-        <Button
-          variant={view === "week" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setView("week")}
-        >
-          <Grid3X3 className="h-4 w-4 mr-1" />
-          周视图
-        </Button>
-        <Button
-          variant={view === "month" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setView("month")}
-        >
-          <CalendarDays className="h-4 w-4 mr-1" />
-          月视图
-        </Button>
         <Button
           variant="outline"
           onClick={refetch}
@@ -115,12 +100,13 @@ export default function TeacherScheduleSection() {
         </Button>
       </div>
 
-      {/* 周视图 / 月视图 */}
-      {view === "week" ? (
-        <SimpleScheduleManager />
-      ) : (
-        <CalendarScheduleView />
-      )}
+      {/* 月视图（月份状态提升，工时面板跟随切换） */}
+      <CalendarScheduleView month={month} onMonthChange={setMonth} />
+
+      {/* 教师当月工时（独立面板，与月视图有间距分隔，不连着；随月视图切换月份） */}
+      <div className="mt-10">
+        <TeacherMonthHours month={month} />
+      </div>
     </div>
   )
 }
