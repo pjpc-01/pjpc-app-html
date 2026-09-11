@@ -137,23 +137,29 @@ export function InvoiceList({
 
   const getPaymentStatusBadge = (invoiceId: string) => {
     const invoicePayments = payments.filter(payment => payment.invoiceId === invoiceId)
-    
-    if (invoicePayments.length === 0) {
-      return <Badge variant="outline">未缴费</Badge>
-    }
-    
-    const completedPayments = invoicePayments.filter(p => p.status === 'completed')
-    const totalPaid = completedPayments.reduce((sum, p) => sum + p.amountPaid, 0)
     const invoice = invoices.find(inv => inv.id === invoiceId)
-    
+
     if (!invoice) {
       return <Badge variant="outline">{t('teacher.unknown')}</Badge>
     }
-    
+
+    if (invoicePayments.length === 0) {
+      return invoice.status === 'overdue'
+        ? <Badge variant="destructive">逾期</Badge>
+        : <Badge variant="outline">未缴费</Badge>
+    }
+
+    const completedPayments = invoicePayments.filter(p => p.status === 'completed')
+    const totalPaid = completedPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+
     if (totalPaid >= invoice.totalAmount) {
       return <Badge variant="default">已缴费</Badge>
+    } else if (totalPaid > 0) {
+      return <Badge variant="secondary">半缴费</Badge>
     } else {
-      return <Badge variant="secondary">待缴费</Badge>
+      return invoice.status === 'overdue'
+        ? <Badge variant="destructive">逾期</Badge>
+        : <Badge variant="outline">未缴费</Badge>
     }
   }
 
@@ -292,41 +298,6 @@ export function InvoiceList({
                   <SelectItem value="all">所有缴费状态</SelectItem>
                   <SelectItem value="unpaid">未缴费</SelectItem>
                   <SelectItem value="paid">已缴费</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="w-40">
-              <Label>学段</Label>
-              <Select 
-                value={filters.level || "all"} 
-                onValueChange={(value) => setFilters((prev: any) => ({ ...prev, level: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部学段</SelectItem>
-                  <SelectItem value="primary">小学</SelectItem>
-                  <SelectItem value="secondary">中学</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="w-48">
-              <Label>{t('student.grade')}</Label>
-              <Select 
-                value={filters.grade || "all"} 
-                onValueChange={(value) => setFilters((prev: any) => ({ ...prev, grade: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">所有年级</SelectItem>
-                  {Array.from(new Set(invoices.map(inv => inv.studentGrade || inv.grade || '').filter(Boolean)))
-                    .sort()
-                    .map(g => (
-                      <SelectItem key={g} value={g}>{formatGrade(g)}</SelectItem>
-                    ))}
                 </SelectContent>
               </Select>
             </div>

@@ -548,8 +548,8 @@ Prospek Cemerlang`,
     }
   }, [])
 
-  // 金额统计：开票总额 / 已收金额 / 未收金额（排除草稿和已取消）- 随中心 tab 一起算
-  const centerActiveInvoices = useMemo(() => centerFilteredInvoices.filter(inv => inv.status !== 'draft' && inv.status !== 'cancelled'), [centerFilteredInvoices])
+  // 金额统计：开票总额 / 已收金额 / 未收金额（排除草稿、已取消和已删除） - 随中心 tab 一起算
+    const centerActiveInvoices = useMemo(() => centerFilteredInvoices.filter(inv => inv.status !== 'draft' && inv.status !== 'cancelled' && !inv.deleted), [centerFilteredInvoices])
   const centerTotalInvoiced = useMemo(() => centerActiveInvoices.reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0), [centerActiveInvoices])
   const centerTotalPaid = useMemo(() => centerActiveInvoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0), [centerActiveInvoices])
   const centerTotalUnpaid = Math.max(centerTotalInvoiced - centerTotalPaid, 0)
