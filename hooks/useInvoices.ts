@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchSecureData, createRecord, updateRecord, deleteRecord } from '@/lib/secure-api-client'
-import { classifySchoolLevel } from '@/lib/utils'
 
 export interface Invoice {
   id: string
@@ -9,7 +8,7 @@ export interface Invoice {
   studentGrade: string
   issueDate: string
   dueDate: string
-  status: 'issued' | 'paid' | 'overdue' | 'cancelled' | 'draft' | 'sent' | 'pending'
+  status: 'issued' | 'paid' | 'overdue' | 'cancelled' | 'draft' | 'sent' | 'pending' | 'partially_paid'
   items: { name: string; amount: number }[]
   totalAmount: number
   notes: string
@@ -117,10 +116,12 @@ export const useInvoices = () => {
 
   const getFilteredInvoices = useCallback(() => {
     return invoices.filter(invoice => {
+      // 排除已删除发票（软删除）
+      if (invoice.deleted) return false
       // Status filter: "all" = no filter, "paid" = status === 'paid', "unpaid" = issued/overdue
       const matchesStatus = !filters.status || filters.status === 'all' || (
         filters.status === 'paid' ? invoice.status === 'paid'
-        : filters.status === 'unpaid' ? (invoice.status === 'issued' || invoice.status === 'overdue' || invoice.status === 'draft' || invoice.status === 'pending')
+        : filters.status === 'unpaid' ? (invoice.status === 'issued' || invoice.status === 'overdue' || invoice.status === 'draft' || invoice.status === 'pending' || invoice.status === 'partially_paid')
         : invoice.status === filters.status
       )
 
@@ -131,22 +132,11 @@ export const useInvoices = () => {
         (invoice.studentName && invoice.studentName.toLowerCase().includes(query)) ||
         (invoice.student && invoice.student.toLowerCase().includes(query))
 
-      // Grade filter
-      const matchesGrade = !filters.grade || filters.grade === 'all' ||
-        invoice.studentGrade === filters.grade ||
-        invoice.grade === filters.grade
-
-      // Level filter (primary/secondary)
-      let matchesLevel = true
-      if (filters.level && filters.level !== 'all') {
-        matchesLevel = classifySchoolLevel(invoice.studentGrade || invoice.grade) === filters.level
-      }
-
       // Legacy studentName filter (fallback)
       const matchesStudent = !filters.studentName || 
         invoice.studentName.toLowerCase().includes(filters.studentName.toLowerCase())
 
-      return matchesStatus && matchesSearch && matchesGrade && matchesLevel && matchesStudent
+      return matchesStatus && matchesSearch && matchesStudent
     })
   }, [invoices, filters])
 
