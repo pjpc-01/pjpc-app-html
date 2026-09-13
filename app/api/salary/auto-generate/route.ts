@@ -86,10 +86,13 @@ export async function POST(request: NextRequest) {
 
         // 获取该月的排班记录
         const startDate = `${year}-${month.toString().padStart(2, '0')}-01`
-        const endDate = new Date(year, month, 0).toISOString().split('T')[0] // 月末日期
+        // 月末用排他上限「下月1日」：PB date 存成带空格的字符串，date <= "月末" 会比不掉最后一天
+        const nextMonth = month === 12 ? 1 : month + 1
+        const nextYear = month === 12 ? year + 1 : year
+        const endExclusive = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`
 
-        const schedules = await pb.collection('schedules').getList(1, 200, {
-          filter: `teacher_id = "${teacher.id}" && date >= "${startDate}" && date <= "${endDate}"`
+        const schedules = await pb.collection('schedules').getList(1, 500, {
+          filter: `teacher_id = "${teacher.id}" && date >= "${startDate}" && date < "${endExclusive}"`
         })
 
         // 计算工作时长：排班为主，打卡兜底
@@ -102,6 +105,7 @@ export async function POST(request: NextRequest) {
         // 收集排班日期，避免同一老师同一天重复计算
         const scheduledDates = new Set<string>()
         const scheduleHoursByDate: Record<string, number> = {}
+        const seenSlots = new Set<string>()
 
         schedules.items.forEach(schedule => {
           if (schedule.start_time && schedule.end_time) {
@@ -111,6 +115,10 @@ export async function POST(request: NextRequest) {
             if (hours < 0 || hours > 24) return
 
             const dateStr = (schedule.date || '').split(' ')[0]
+            // 同一老师同一天同时段重复排班(如两条不同课程撞时段)只算一次，避免双算
+            const slotKey = `${dateStr}|${schedule.start_time}|${schedule.end_time}`
+            if (seenSlots.has(slotKey)) return
+            seenSlots.add(slotKey)
             scheduledDates.add(dateStr)
             scheduleHoursByDate[dateStr] = (scheduleHoursByDate[dateStr] || 0) + hours
           }
@@ -119,7 +127,7 @@ export async function POST(request: NextRequest) {
         // 打卡兜底：只补没有排班的日期
         if (schedules.items.length > 0 && scheduledDates.size > 0) {
           const attendanceList = await pb.collection('teacher_attendance').getList(1, 500, {
-            filter: `teacher_id = "${teacher.id}" && check_in >= "${startDate}" && check_in <= "${endDate}T23:59:59.999Z"`
+            filter: `teacher_id = "${teacher.id}" && check_in >= "${startDate}" && check_in < "${endExclusive}T23:59:59.999Z"`
           })
 
           attendanceList.items.forEach(att => {
@@ -142,7 +150,7 @@ export async function POST(request: NextRequest) {
         } else {
           // 无排班：直接用打卡
           const attendanceList = await pb.collection('teacher_attendance').getList(1, 500, {
-            filter: `teacher_id = "${teacher.id}" && check_in >= "${startDate}" && check_in <= "${endDate}T23:59:59.999Z"`
+            filter: `teacher_id = "${teacher.id}" && check_in >= "${startDate}" && check_in < "${endExclusive}T23:59:59.999Z"`
           })
 
           attendanceList.items.forEach(att => {
@@ -181,7 +189,7 @@ export async function POST(request: NextRequest) {
         }
         // 打卡日期也检查加班
         const attendanceList2 = await pb.collection('teacher_attendance').getList(1, 500, {
-          filter: `teacher_id = "${teacher.id}" && check_in >= "${startDate}" && check_in <= "${endDate}T23:59:59.999Z"`
+          filter: `teacher_id = "${teacher.id}" && check_in >= "${startDate}" && check_in < "${endExclusive}T23:59:59.999Z"`
         })
         const seenAttDates = new Set<string>()
         attendanceList2.items.forEach(att => {
