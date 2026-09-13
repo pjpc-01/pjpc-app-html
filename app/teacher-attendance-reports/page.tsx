@@ -13,7 +13,7 @@ import TeacherLeaveManagement from "@/components/teacher/TeacherLeaveManagement"
 export default function TeacherAttendanceReportsPage() {
   return (
     <PageLayout
-      title="教师考勤与排班"
+      title="教师排班"
       description="教师排班管理 + 请假管理，考勤记录查询请到考勤中心"
       backUrl="/"
       userRole="admin"
