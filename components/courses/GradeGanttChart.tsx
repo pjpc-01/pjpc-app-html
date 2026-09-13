@@ -115,7 +115,7 @@ export default function GradeGanttChart() {
     try {
       const [coursesRes, schedulesRes] = await Promise.all([
         fetch("/api/courses"),
-        pbRequest(`${PROXY_BASE}?filter=(schedule_type="course_schedule")&sort=start_time&perPage=200`),
+        pbRequest(`${PROXY_BASE}?filter=(schedule_type="course_schedule")&sort=start_time&perPage=500`),
       ])
 
       const coursesData = await coursesRes.json()
@@ -256,15 +256,15 @@ export default function GradeGanttChart() {
         {/* 甘特图主体：统一一张时间表，行=星期，列=一天时间，选中年级的课平铺 */}
         {gradeOptions.length > 0 && (
           <div className="overflow-x-auto">
-            <div className="min-w-[900px]">
+            <div className="min-w-[1280px]">
               {/* 时间刻度头 */}
               <div className="flex">
                 <div className="w-14 shrink-0" />
-                <div className="relative flex-1 h-6 border-b border-gray-200">
+                <div className="relative flex-1 h-7 border-b border-gray-200">
                   {hourTicks.map((tick) => (
                     <div
                       key={tick}
-                      className="absolute text-[9px] text-gray-400"
+                      className="absolute text-[10px] text-gray-400"
                       style={{ left: `${((toMinutes(tick) - START_HOUR * 60) / totalMinutes) * 100}%` }}
                     >
                       {tick}
@@ -297,10 +297,10 @@ export default function GradeGanttChart() {
                       {/* 该星期的课程 bar */}
                       <div
                         className="relative"
-                        style={{ minHeight: Math.max(dayEntries.length * 28 + 4, 26) }}
+                        style={{ minHeight: Math.max(dayEntries.length * 36 + 6, 34) }}
                       >
                         {dayEntries.length === 0 ? (
-                          <div className="h-[26px] border border-dashed border-gray-100 rounded" />
+                          <div className="h-[34px] border border-dashed border-gray-100 rounded" />
                         ) : (
                           dayEntries.map((entry, idx) => {
                             const { left, width } = computeBar(entry.start_time, entry.end_time, totalMinutes)
@@ -311,15 +311,15 @@ export default function GradeGanttChart() {
                             return (
                               <div
                                 key={entry.id}
-                                className={`absolute h-[24px] rounded ${bg} text-white text-[10px] px-1.5 flex items-center overflow-hidden shadow-sm cursor-pointer`}
-                                style={{ left: `${left}%`, width: `${width}%`, top: idx * 28 }}
+                                className={`absolute h-[32px] rounded-md ${bg} text-white text-[11px] px-2 flex items-center overflow-hidden shadow-sm cursor-pointer`}
+                                style={{ left: `${left}%`, width: `${width}%`, top: idx * 36 }}
                                 title={`${course?.title || entry.course_title} · ${grade} · ${DAY_LABELS[day]} ${entry.start_time}-${entry.end_time}`}
                               >
-                                <span className="font-semibold shrink-0 mr-1">{grade}</span>
+                                <span className="font-bold shrink-0 mr-1.5">{grade}</span>
                                 <span className="truncate font-medium">
                                   {course?.title || entry.course_title || entry.course_id.slice(0, 8)}
                                 </span>
-                                <span className="ml-auto shrink-0 pl-1">
+                                <span className="ml-auto shrink-0 pl-1.5 text-[10px] opacity-90">
                                   {entry.start_time}-{entry.end_time}
                                 </span>
                               </div>
