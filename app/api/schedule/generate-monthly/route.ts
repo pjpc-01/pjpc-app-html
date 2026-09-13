@@ -42,8 +42,49 @@ export async function POST(request: NextRequest) {
       existing.map((e: any) => `${e.teacher_id}|${(e.date || '').split(' ')[0]}|${e.course_id || ''}`)
     )
 
+    // 4.1) 公假（马来西亚联邦 + 雪州）：这些日期整体不排课
+    const holidaySet = new Set<string>()
+    try {
+      const holidays = await pb.collection('public_holidays').getFullList()
+      holidays.forEach((h: any) => {
+        const d = (h.date || '').split('T')[0].split(' ')[0]
+        if (d) holidaySet.add(d)
+      })
+    } catch (e) {
+      console.warn('获取公假失败，按无公假继续:', e)
+    }
+
+    // 4.2) 已批准请假：该教师请假日期不排其课
+    const leaveByTeacher = new Map<string, Set<string>>()
+    try {
+      const approvedLeaves = await pb.collection('teacher_leave_record').getFullList({
+        filter: 'status = "approved"',
+      })
+      approvedLeaves.forEach((l: any) => {
+        let s = (l.start_date || '').split('T')[0].split(' ')[0]
+        let e = (l.end_date || '').split('T')[0].split(' ')[0]
+        if (!s || !e) return
+        const tid = l.teacher_id
+        if (!leaveByTeacher.has(tid)) leaveByTeacher.set(tid, new Set())
+        const set = leaveByTeacher.get(tid)!
+        let cur = new Date(s + 'T00:00:00')
+        const endD = new Date(e + 'T00:00:00')
+        let guard = 0
+        while (cur <= endD && guard < 500) {
+          const ds = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`
+          set.add(ds)
+          cur.setDate(cur.getDate() + 1)
+          guard++
+        }
+      })
+    } catch (e) {
+      console.warn('获取请假记录失败，按无请假继续:', e)
+    }
+
     let generated = 0
     let skipped = 0
+    let skippedHoliday = 0
+    let skippedLeave = 0
 
     // 5) 对本月每个日期（今天起），匹配时间表生成
     for (let d = now.getDate(); d <= daysInMonth; d++) {
@@ -51,8 +92,19 @@ export async function POST(request: NextRequest) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
       const weekday = WEEKDAYS[dateObj.getDay()]
 
+      // 公假：当天整体跳过（无课程、无排班）
+      if (holidaySet.has(dateStr)) {
+        skippedHoliday++
+        continue
+      }
+
       for (const t of timetable) {
         if (t.day_of_week !== weekday && DAY_INDEX[t.day_of_week] !== dateObj.getDay()) continue
+        // 该教师已批准请假：这天不排他的课
+        if (leaveByTeacher.get(t.teacher_id)?.has(dateStr)) {
+          skippedLeave++
+          continue
+        }
         const key = `${t.teacher_id}|${dateStr}|${t.course_id}`
         if (existingKeys.has(key)) { skipped++; continue }
 
@@ -82,9 +134,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `排班生成完成：新增 ${generated} 条，重复跳过 ${skipped} 条`,
+      message: `排班生成完成：新增 ${generated} 条，公假跳过 ${skippedHoliday} 天，批假跳过 ${skippedLeave} 条，重复跳过 ${skipped} 条`,
       generated,
       skipped,
+      skippedHoliday,
+      skippedLeave,
       teacherCount: hourlyTeacherIds.size,
     })
   } catch (error) {
