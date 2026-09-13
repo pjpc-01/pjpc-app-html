@@ -213,7 +213,7 @@ export default function CourseScheduling() {
       const [coursesRes, teachersRes, schedulesRes] = await Promise.all([
         fetch('/api/courses'),
         fetch('/api/teachers?limit=200'),
-        pbRequest(`${PROXY_BASE}?filter=(schedule_type="course_schedule")&sort=start_time&perPage=200`),
+        pbRequest(`${PROXY_BASE}?filter=(schedule_type="course_schedule")&sort=start_time&perPage=500`),
       ])
 
       const coursesData = await coursesRes.json()
