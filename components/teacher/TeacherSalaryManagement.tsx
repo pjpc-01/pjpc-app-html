@@ -38,7 +38,7 @@ import {
   XCircle,
   Settings,
   TrendingUp,
-  Eye, Send, MessageCircle } from "lucide-react"
+  Eye, Send, MessageCircle, CheckCircle, Clock } from "lucide-react"
 
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { formatDate } from "@/lib/utils"
@@ -140,6 +140,10 @@ export default function TeacherSalaryManagement() {
   const [recordTotal, setRecordTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // ── 每月应付薪资汇总 ──
+  const [monthlySalaryYear, setMonthlySalaryYear] = useState(() => new Date().getFullYear())
+  const [monthlySalary, setMonthlySalary] = useState<any[]>([])
 
   // ── Recycle bin state (薪资记录) ──
   const [binMode, setBinMode] = useState(false)
@@ -447,6 +451,41 @@ export default function TeacherSalaryManagement() {
     }
     loadData()
   }, [fetchTeachers, fetchSalaryStructures, fetchSalaryRecords])
+
+  // 每月应付薪资汇总（整年所有记录按月份聚合）
+  const fetchMonthlySalarySummary = useCallback(async (year: number) => {
+    try {
+      const agg = new Map<number, any>()
+      let page = 1
+      let totalPages = 1
+      do {
+        const res = await fetch(`/api/teacher-salary?type=record&year=${year}&page=${page}&limit=500`)
+        const js = await res.json()
+        if (!js.success) break
+        totalPages = js.totalPages || 1
+        ;(js.data || []).forEach((r: any) => {
+          const m = Number(r.month)
+          if (!m) return
+          const cur = agg.get(m) || { month: m, count: 0, gross: 0, net: 0, paid: 0, unpaid: 0 }
+          cur.count += 1
+          const g = Number(r.gross_salary) || 0
+          cur.gross += g
+          cur.net += Number(r.net_salary) || 0
+          if (r.status === 'paid') cur.paid += g
+          else cur.unpaid += g
+          agg.set(m, cur)
+        })
+        page++
+      } while (page <= totalPages)
+      setMonthlySalary([...agg.values()].sort((a, b) => a.month - b.month))
+    } catch (e) {
+      console.error('获取每月薪资汇总失败:', e)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchMonthlySalarySummary(monthlySalaryYear)
+  }, [fetchMonthlySalarySummary, monthlySalaryYear])
 
   // 计算薪资（预览用）
   const calculateSalary = useCallback((form: typeof structureForm) => {
@@ -1057,6 +1096,58 @@ export default function TeacherSalaryManagement() {
         </Card>
       </div>
 
+      {/* 每月应付薪资汇总（卡片式） */}
+      <Card>
+        <CardHeader className="pb-2 flex flex-row items-center justify-between flex-wrap gap-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            每月应付薪资
+          </CardTitle>
+          <Select value={String(monthlySalaryYear)} onValueChange={(v) => setMonthlySalaryYear(Number(v))}>
+            <SelectTrigger className="w-24 h-8"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {[2025, 2026, 2027, 2028].map((y) => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {monthlySalary.length === 0 ? (
+              <Card className="col-span-full">
+                <CardContent className="p-6 text-center text-muted-foreground text-sm">该年暂无薪资记录（用「批量生成」生成后会出现）</CardContent>
+              </Card>
+            ) : (
+              monthlySalary.map((r) => (
+                <Card key={r.month}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-gray-600">{monthlySalaryYear} 年 {r.month} 月</p>
+                      <Badge variant="outline" className="text-[10px]">{r.count} 名教师</Badge>
+                    </div>
+                    <p className="text-xl font-bold mt-1">RM {r.gross.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                    <p className="text-xs text-gray-500 mb-1">应付总额</p>
+                    <div className="flex items-center gap-2 text-sm mt-1">
+                      <Calculator className="h-4 w-4 text-blue-600" />
+                      <span className="text-gray-700 font-medium">净额 RM {r.net.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm mt-1">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-green-700 font-medium">已发 RM {r.paid.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm mt-1">
+                      <Clock className="h-4 w-4 text-amber-500" />
+                      <span className="text-amber-700 font-medium">待发 RM {r.unpaid.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* 全局薪资参数设置 */}
       <Card className="mb-6 border-blue-200 bg-blue-50/30">
         <CardHeader className="pb-2">
@@ -1449,27 +1540,25 @@ export default function TeacherSalaryManagement() {
                 </TableBody>
               </Table>
             </div>
-            {/* Pagination */}
-            {recordTotalPages > 1 && (
-              <div className="flex items-center justify-between mt-4">
-                <span className="text-sm text-gray-500">
-                  共 {recordTotal} 条，每页 20 条
-                </span>
-                <div className="flex gap-1">
-                  {Array.from({ length: recordTotalPages }, (_, i) => i + 1).map(p => (
-                    <Button
-                      key={p}
-                      size="sm"
-                      variant={p === recordPage ? "default" : "outline"}
-                      onClick={() => fetchSalaryRecords(p)}
-                      className="min-w-[32px] h-8"
-                    >
-                      {p}
-                    </Button>
-                  ))}
-                </div>
+            {/* Pagination - 始终显示，1 页时也可见 */}
+            <div className="flex items-center justify-between mt-4">
+              <span className="text-sm text-gray-500">
+                共 {recordTotal} 条，每页 20 条
+              </span>
+              <div className="flex gap-1">
+                {Array.from({ length: Math.max(recordTotalPages, 1) }, (_, i) => i + 1).map(p => (
+                  <Button
+                    key={p}
+                    size="sm"
+                    variant={p === recordPage ? "default" : "outline"}
+                    onClick={() => fetchSalaryRecords(p)}
+                    className="min-w-[32px] h-8"
+                  >
+                    {p}
+                  </Button>
+                ))}
               </div>
-            )}
+            </div>
             </>
               )}
             </CardContent>
