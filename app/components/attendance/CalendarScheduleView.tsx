@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
-import { ChevronLeft, ChevronRight, CalendarDays, Trash2, Plus, CalendarX2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, CalendarDays, Trash2, Plus, CalendarX2, Pencil } from "lucide-react"
 
 interface ScheduleEvent {
   id: string
@@ -38,6 +38,7 @@ interface ScheduleEvent {
   room?: string
   schedule_type?: string
   course_name?: string
+  day_of_week?: string
 }
 
 interface Course {
@@ -107,6 +108,7 @@ export default function CalendarScheduleView({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [editingEvent, setEditingEvent] = useState<ScheduleEvent | null>(null)
   const [holidayOpen, setHolidayOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [courses, setCourses] = useState<Course[]>([])
@@ -230,7 +232,7 @@ export default function CalendarScheduleView({
     }
   }
 
-  // 添加排班（指定日期 + 课程管理里的课程 + 老师 + 时间段）
+  // 添加排班（指定日期 + 课程管理里的课程 + 老师 + 时间段）;编辑时复用
   const handleAddSchedule = async () => {
     if (!selectedDate || !form.courseId || !form.teacherId || !form.start || !form.end) {
       window.alert('请选择课程、老师并填写时间')
@@ -238,6 +240,7 @@ export default function CalendarScheduleView({
     }
     setSaving(true)
     try {
+      const isEdit = !!editingEvent
       const course = courses.find(c => c.id === form.courseId)
       const teacher = teachers.find(t => t.id === form.teacherId)
       const dateStr = format(selectedDate, "yyyy-MM-dd")
@@ -249,33 +252,49 @@ export default function CalendarScheduleView({
         date: dateStr,
         start_time: form.start,
         end_time: form.end,
-        schedule_type: 'course_schedule',
-        status: 'scheduled',
-        course_title: course?.title || '',
+        schedule_type: editingEvent?.schedule_type || 'course_schedule',
+        status: editingEvent?.status || 'scheduled',
+        course_title: course?.title || editingEvent?.course_name || '',
         course_subject: course?.subject || '',
         course_grade: course?.grade_level || '',
-        center: teacher?.center || '',
-        day_of_week: '', // 具体日期排班，非时间表模板
+        center: teacher?.center || editingEvent?.center || '',
+        day_of_week: editingEvent?.day_of_week || '', // 具体日期排班，非时间表模板
       }
-      const res = await fetch('/api/pocketbase-proxy/api/collections/schedules/records', {
-        method: 'POST',
+      const url = isEdit
+        ? `/api/pocketbase-proxy/api/collections/schedules/records/${editingEvent!.id}`
+        : '/api/pocketbase-proxy/api/collections/schedules/records'
+      const res = await fetch(url, {
+        method: isEdit ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
       const d = await res.json().catch(() => ({}))
       if (!d?.id) {
-        window.alert(d?.message || '添加失败，请重试')
+        window.alert(d?.message || (isEdit ? '保存失败，请重试' : '添加失败，请重试'))
         return
       }
       setAddOpen(false)
+      setEditingEvent(null)
       setForm({ courseId: '', teacherId: '', start: '', end: '' })
       await fetchSchedules()
+      await fetchHolidaysAndLeaves()
     } catch (err) {
-      console.error('添加排班失败', err)
-      window.alert('添加排班失败: ' + ((err as Error).message || '未知错误'))
+      console.error('保存排班失败', err)
+      window.alert('保存排班失败: ' + ((err as Error).message || '未知错误'))
     } finally {
       setSaving(false)
     }
+  }
+
+  // 打开编辑对话框（预填当前排班）
+  const openEdit = (evt: ScheduleEvent) => {
+    setEditingEvent(evt)
+    setForm({
+      courseId: (evt as any).course_id || '',
+      teacherId: evt.teacher_id || '',
+      start: evt.start_time || '',
+      end: evt.end_time || '',
+    })
   }
 
   // 选课程时自动带出该课程的老师（若课程有指定老师）
@@ -601,9 +620,15 @@ export default function CalendarScheduleView({
                         </div>
                       </div>
                     </div>
-                    <Badge variant={evt.status === "confirmed" ? "default" : "secondary"}>
-                      {evt.status === "scheduled" ? "已排班" : evt.status === "confirmed" ? "已确认" : evt.status === "completed" ? "已完成" : evt.status}
-                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-blue-600 hover:bg-blue-50"
+                      onClick={() => openEdit(evt)}
+                      title="编辑排班"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -623,15 +648,18 @@ export default function CalendarScheduleView({
         </div>
       )}
 
-      {/* Add schedule dialog */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      {/* Add / Edit schedule dialog */}
+      <Dialog open={addOpen || !!editingEvent} onOpenChange={(o) => {
+        setAddOpen(o)
+        if (!o) setEditingEvent(null)
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-4 w-4" /> 添加排班
+              <Plus className="h-4 w-4" /> {editingEvent ? "编辑排班" : "添加排班"}
               {selectedDate && <span className="text-sm font-normal text-gray-500">· {format(selectedDate, "yyyy-MM-dd")}</span>}
             </DialogTitle>
-            <DialogDescription>从课程管理选择课程，添加到选中日期</DialogDescription>
+            <DialogDescription>{editingEvent ? "修改课程、老师或时间段" : "从课程管理选择课程，添加到选中日期"}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div>
@@ -670,9 +698,9 @@ export default function CalendarScheduleView({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)} disabled={saving}>取消</Button>
+            <Button variant="outline" onClick={() => { setAddOpen(false); setEditingEvent(null) }} disabled={saving}>取消</Button>
             <Button onClick={handleAddSchedule} disabled={saving || !form.courseId || !form.teacherId || !form.start || !form.end}>
-              {saving ? '添加中...' : '添加'}
+              {saving ? '保存中...' : (editingEvent ? '保存' : '添加')}
             </Button>
           </DialogFooter>
         </DialogContent>
