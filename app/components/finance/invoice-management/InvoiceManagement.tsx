@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useLanguage } from "@/contexts/language-context"
-import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Edit, Settings, Loader2, Zap, BarChart3 } from "lucide-react"
+import { FileText, Plus, Download, Printer, Send, CheckCircle, AlertCircle, Eye, Edit, Settings, Loader2, Zap, BarChart3, Calendar } from "lucide-react"
 import { useInvoices } from "@/hooks/useInvoices"
 import { downloadInvoicePDF, printInvoicePDF, generateInvoiceHTML, generateInvoicePDF } from "@/lib/pdf-generator"
 import { useStudents } from "@/hooks/useStudents"
@@ -600,6 +600,22 @@ Prospek Cemerlang`,
     return { rows, totals }
   }, [centerActiveInvoices, payments, paidByInvoice, summaryYear])
 
+  // 当月（当前系统月份）: 开票 / 已收 / 未收 —— 顶部卡片用
+  const currentMonthSummary = useMemo(() => {
+    const now = new Date()
+    const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const activeIds = new Set(centerActiveInvoices.map(i => i.id))
+    let collected = 0
+    payments.forEach(p => {
+      if (p.status !== 'completed' || !activeIds.has(p.invoiceId)) return
+      if ((p.date || '').split(' ')[0].slice(0, 7) === ym) collected += Number(p.amount) || 0
+    })
+    const invs = centerActiveInvoices.filter(i => (i.issueDate || '').slice(0, 7) === ym)
+    const invoiced = invs.reduce((s, i) => s + (Number(i.totalAmount) || 0), 0)
+    const outstanding = invs.reduce((s, i) => s + Math.max((Number(i.totalAmount) || 0) - (paidByInvoice.get(i.id) || 0), 0), 0)
+    return { ym, label: `${now.getFullYear()} 年 ${now.getMonth() + 1} 月`, invoiced, collected, outstanding, count: invs.length }
+  }, [centerActiveInvoices, payments, paidByInvoice])
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -723,8 +739,8 @@ Prospek Cemerlang`,
         </Card>
       </div>
 
-      {/* 金额统计：开票总额 / 已收 / 未收 - 随中心 tab 一起算 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* 金额统计：开票总额 / 已收 / 未收 / 本月未收 - 随中心 tab 一起算 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -760,82 +776,21 @@ Prospek Cemerlang`,
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      {/* 每月统计：开票 / 已收 / 未收（卡片式） */}
-      <Card>
-        <CardHeader className="pb-2 flex flex-row items-center justify-between flex-wrap gap-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            每月开票与收款（{centerFilter === "all" ? "全部中心" : centerFilter === "PU1" ? "中学（PU1）" : "小学（BATU14）"}）
-          </CardTitle>
-          <Select value={String(summaryYear)} onValueChange={(v) => setSummaryYear(Number(v))}>
-            <SelectTrigger className="w-24 h-8"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {[2025, 2026, 2027, 2028].map((y) => (
-                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {monthlySummary.rows.length === 0 ? (
-              <Card className="col-span-full">
-                <CardContent className="p-6 text-center text-muted-foreground text-sm">该年暂无发票数据</CardContent>
-              </Card>
-            ) : (
-              monthlySummary.rows.map((r) => (
-                <Card key={r.ym}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-gray-600">{r.label}</p>
-                      <Badge variant="outline" className="text-[10px]">{r.count} 张发票</Badge>
-                    </div>
-                    <p className="text-xl font-bold mt-1">RM {r.invoiced.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                    <p className="text-xs text-gray-500 mb-1">开票金额</p>
-                    <div className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="text-green-700 font-medium">已收 RM {r.collected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm mt-1">
-                      <AlertCircle className="h-4 w-4 text-red-600" />
-                      <span className="text-red-700 font-medium">未收 RM {r.outstanding.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                    </div>
-                    <div className="mt-2 pt-2 border-t flex items-center justify-between text-xs text-gray-500">
-                      <span>收款率</span>
-                      <span className="font-semibold text-gray-700">{r.rate}%</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-            {monthlySummary.rows.length > 0 && (
-              <Card className="bg-gray-900 text-white">
-                <CardContent className="p-4">
-                  <p className="text-sm font-medium text-gray-300">全年合计</p>
-                  <p className="text-xl font-bold mt-1">RM {monthlySummary.totals.invoiced.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                  <p className="text-xs text-gray-400 mb-1">开票金额</p>
-                  <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-400" />
-                    <span className="text-green-300 font-medium">已收 RM {monthlySummary.totals.collected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm mt-1">
-                    <AlertCircle className="h-4 w-4 text-red-400" />
-                    <span className="text-red-300 font-medium">未收 RM {monthlySummary.totals.outstanding.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="mt-2 pt-2 border-t border-gray-700 flex items-center justify-between text-xs text-gray-400">
-                    <span>收款率</span>
-                    <span className="font-semibold text-white">
-                      {monthlySummary.totals.invoiced > 0 ? Math.round(((monthlySummary.totals.invoiced - monthlySummary.totals.outstanding) / monthlySummary.totals.invoiced) * 100) : 0}%
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        {/* 本月（当前月）该收的 */}
+        <Card className="border-red-200 bg-red-50/40">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-red-600" />
+              <div className="min-w-0">
+                <p className="text-sm text-gray-600">本月未收 ({currentMonthSummary.label})</p>
+                <p className="text-2xl font-bold text-red-700">RM {currentMonthSummary.outstanding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">开票 {currentMonthSummary.count} 张 · RM {currentMonthSummary.invoiced.toLocaleString(undefined, { maximumFractionDigits: 2 })} · 已收 RM {currentMonthSummary.collected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Invoice List */}
       <InvoiceList
