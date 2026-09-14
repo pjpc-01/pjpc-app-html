@@ -26,8 +26,13 @@ export default function TeacherMonthHours({
   const fetchMonthHours = async () => {
     setLoading(true)
     try {
+      // 统计本月【全部排班】（含无课程的“上班时段”排班），口径与薪资工时(type=hours)保持一致；
+      // 之前只取 schedule_type="course_schedule" 导致和其它页面的工时对不上
+      const nxt = new Date(y, month.getMonth() + 1, 1)
+      const nextKey = `${nxt.getFullYear()}-${String(nxt.getMonth() + 1).padStart(2, '0')}-01`
+      const monthFilter = `date >= "${prefix}-01" && date < "${nextKey}"`
       const [schRes, courseRes] = await Promise.all([
-        fetch(`/api/pocketbase-proxy/api/collections/schedules/records?perPage=300&filter=${encodeURIComponent('schedule_type="course_schedule"')}`),
+        fetch(`/api/pocketbase-proxy/api/collections/schedules/records?perPage=1000&filter=${encodeURIComponent(monthFilter)}`),
         fetch('/api/courses'),
       ])
       if (!schRes.ok) return
@@ -56,10 +61,12 @@ export default function TeacherMonthHours({
         const he = new Date(`2000-01-01T${s.end_time}`).getTime()
         const h = (he - hs) / 3600000
         if (h > 0 && h <= 24) {
-          map[teacherId] = Math.round(((map[teacherId] || 0) + h) * 100) / 100
+          map[teacherId] = (map[teacherId] || 0) + h   // 先累加，最后再统一四舍五入（与薪资口径一致）
         }
       })
-      setMonthHoursMap(map)
+      const rounded: Record<string, number> = {}
+      Object.entries(map).forEach(([k, v]) => { rounded[k] = Math.round(v * 100) / 100 })
+      setMonthHoursMap(rounded)
     } catch (e) {
       console.error('加载本月工时失败:', e)
     } finally {

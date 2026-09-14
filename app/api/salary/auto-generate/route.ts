@@ -51,9 +51,9 @@ export async function POST(request: NextRequest) {
 
     for (const teacher of teachers) {
       try {
-        // 检查是否已存在该月的薪资记录
+        // 检查是否已存在该月的薪资记录（只看未软删的；软删的不算，允许重新生成）
         const existingRecord = await pb.collection('teacher_salary_records').getList(1, 1, {
-          filter: `teacher_id = "${teacher.id}" && year = ${year} && month = ${month}`
+          filter: `teacher_id = "${teacher.id}" && year = ${year} && month = ${month} && deleted != true`
         })
 
         if (existingRecord.items.length > 0) {

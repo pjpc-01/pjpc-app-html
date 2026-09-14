@@ -1313,9 +1313,9 @@ export default function TeacherSalaryManagement() {
                         ? <span>RM {structure.hourly_rate || 0} <span className="text-xs text-gray-400">/时</span></span>
                         : formatCurrency(structure.base_salary)}</TableCell>
                       <TableCell>{formatCurrency((structure.allowance_items || []).reduce((s: number, a: any) => s + (a.amount || 0), 0))}</TableCell>
-                      <TableCell>{structure.salary_type === 'monthly' ? `${(structure.epf_rate * 100).toFixed(1)}%` : '—'}</TableCell>
-                      <TableCell>{structure.salary_type === 'monthly' ? `${(structure.socso_rate * 100).toFixed(2)}%` : '—'}</TableCell>
-                      <TableCell>{structure.salary_type === 'monthly' ? `${(structure.eis_rate * 100).toFixed(2)}%` : '—'}</TableCell>
+                      <TableCell>{structure.salary_type === 'monthly' && !(structure as any).no_statutory ? `${((structure.epf_rate ?? 0.11) * 100).toFixed(1)}%` : '—'}</TableCell>
+                      <TableCell>{structure.salary_type === 'monthly' && !(structure as any).no_statutory ? `${((structure.socso_rate ?? 0.005) * 100).toFixed(2)}%` : '—'}</TableCell>
+                      <TableCell>{structure.salary_type === 'monthly' && !(structure as any).no_statutory ? `${((structure.eis_rate ?? 0.002) * 100).toFixed(2)}%` : '—'}</TableCell>
                       <TableCell>
                         <Badge variant={structure.status === 'active' ? 'default' : 'secondary'}>
                           {structure.status === 'active' ? '生效' : '失效'}
@@ -1488,7 +1488,12 @@ export default function TeacherSalaryManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="default">{t('teacher.paid')}</Badge>
+                        <Badge variant={record.status === 'paid' ? 'default' : record.status === 'approved' ? 'secondary' : 'outline'}>
+                          {record.status === 'paid' ? t('teacher.paid')
+                            : record.status === 'approved' ? '已批准'
+                            : record.status === 'draft' ? '草稿'
+                            : record.status || t('teacher.paid')}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
@@ -1977,7 +1982,10 @@ export default function TeacherSalaryManagement() {
                   }))
                   // 时薪老师：自动从排班拉本月工时
                   if (hourly) {
-                    const res = await fetch(`/api/teacher-salary?type=hours&teacher_id=${value}&year=${now.getFullYear()}&month=${now.getMonth() + 1}`)
+                    // ⚠️ 用表单里选的年月（原来固定用“当前年月”，选 8 月却显示当前月的工时）
+                    const hy = recordForm.year || now.getFullYear()
+                    const hm = recordForm.month || (now.getMonth() + 1)
+                    const res = await fetch(`/api/teacher-salary?type=hours&teacher_id=${value}&year=${hy}&month=${hm}`)
                     const result = await res.json()
                     if (result.success) {
                       setRecordForm(prev => ({ ...prev, hours_worked: result.data.totalHours || 0 }))
@@ -2005,11 +2013,17 @@ export default function TeacherSalaryManagement() {
                   id="record_year"
                   type="number"
                   value={recordForm.year || ''}
-                  onChange={(e) => setRecordForm(prev => ({
-                    ...prev,
-                    year: parseInt(e.target.value) || 0,
-                    salary_period: `${parseInt(e.target.value) || 0}年${prev.month || 0}月`
-                  }))}
+                  onChange={async (e) => {
+                    const yv = parseInt(e.target.value) || 0
+                    setRecordForm(prev => ({ ...prev, year: yv, salary_period: `${yv}年${prev.month || 0}月` }))
+                    // 时薪老师：改年份也要重拉工时（原来只有改月份才重拉）
+                    const hourly = (recordForm as any).salary_type === 'hourly'
+                    if (hourly && recordForm.teacher_id && yv) {
+                      const res = await fetch(`/api/teacher-salary?type=hours&teacher_id=${recordForm.teacher_id}&year=${yv}&month=${recordForm.month || (new Date().getMonth() + 1)}`)
+                      const result = await res.json()
+                      if (result.success) setRecordForm(prev => ({ ...prev, hours_worked: result.data.totalHours || 0 }))
+                    }
+                  }}
                   placeholder="例如：2026"
                 />
               </div>
