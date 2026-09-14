@@ -28,12 +28,12 @@ export async function checkForUpdates() {
     await authenticateAdmin(pb)
     
     // 检查最新的积分交易
-    const latestTransactions = await pb.collection('point_transactions').getList(1, 1, {
+    const latestTransactions = await pb.collection('point_logs').getList(1, 1, {
       sort: '-created'
     })
     
     // 检查最新的学生积分
-    const latestPoints = await pb.collection('student_points').getList(1, 1, {
+    const latestPoints = await pb.collection('points').getList(1, 1, {
       sort: '-updated'
     })
     
