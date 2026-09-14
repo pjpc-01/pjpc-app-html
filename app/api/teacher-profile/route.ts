@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     if (type === 'leave') {
       // 获取教师请假记录
-      const leaveRecords = await pb.collection('teacher_leave').getList(1, 50, {
+      const leaveRecords = await pb.collection('teacher_leave_record').getList(1, 50, {
         filter: `teacher_id = "${teacherId}"`,
         sort: '-created'
       })
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 创建请假申请
-    const leaveRequest = await pb.collection('teacher_leave').create({
+    const leaveRequest = await pb.collection('teacher_leave_record').create({
       teacher_id: teacherId,
       leave_type: leaveType,
       start_date: startDate,

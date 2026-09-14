@@ -16,7 +16,7 @@ export async function GET() {
       fetch(`${PB_URL}/api/collections/nfc_cards/records?perPage=500&sort=-created`, {
         headers: { Authorization: token },
       }).then(r => r.json()),
-      fetch(`${PB_URL}/api/collections/students/records?perPage=200&fields=id,name,cardNumber,center,status,student_name,grade`, {
+      fetch(`${PB_URL}/api/collections/students/records?perPage=500&fields=id,name,cardNumber,center,status,student_name,grade`, {
         headers: { Authorization: token },
       }).then(r => r.json()),
       fetch(`${PB_URL}/api/collections/teachers/records?perPage=200&fields=id,name,cardNumber`, {

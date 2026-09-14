@@ -134,6 +134,13 @@ export const checkPocketBaseConnection = async () => {
 export const pb = typeof window !== 'undefined' 
   ? new PocketBase('/api/pocketbase-proxy')
   : new PocketBase(process.env.POCKETBASE_URL || 'http://127.0.0.1:8090')
+
+// 服务端是模块级单例，多个并发请求若访问同一 collection，
+// PB JS SDK 会互相 autocancel（ClientResponseError 0: The request was aborted），
+// 造成随机「获取XXX失败」。服务端一律关掉自动取消。
+if (typeof window === 'undefined') {
+  pb.autoCancellation(false)
+}
 export * from './pocketbase-schema'
 export type { Student as StudentFromStudents, StudentCreateData, StudentUpdateData } from './pocketbase-students'
 export { getAllStudents, addStudent, updateStudent, deleteStudent, getStudentById, searchStudents, getStudentsByCenter, getStudentsByStatus } from './pocketbase-students'

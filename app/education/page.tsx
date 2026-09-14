@@ -12,12 +12,11 @@ import {
 } from "lucide-react"
 
 // ── Hooks ──
+import { formatGrade } from "@/lib/utils"
 import { useSchedule, Schedule } from "@/hooks/useSchedule"
-import { useClasses } from "@/hooks/useClasses"
 import { useCourses } from "@/hooks/useCourses"
 import { useStudents } from "@/hooks/useStudents"
 import { useTeachers } from "@/hooks/useTeachers"
-import { useAnnouncements } from "@/hooks/useAnnouncements"
 
 // ── Constants ──
 const WEEKDAYS_SHORT = ["日", "一", "二", "三", "四", "五", "六"]
@@ -335,11 +334,9 @@ export default function EducationOverviewPage() {
   const today = todayStr()
 
   const { schedules, loading: schedLoading } = useSchedule()
-  const { classes, loading: classLoading } = useClasses()
   const { courses, loading: courseLoading } = useCourses()
   const { students, loading: studentLoading } = useStudents()
   const { teachers, loading: teacherLoading } = useTeachers()
-  const { announcements, loading: announceLoading } = useAnnouncements()
 
   // Activities
   const [activities, setActivities] = useState<{ id: string; title: string; date: string; center: string }[]>([])
@@ -356,7 +353,28 @@ export default function EducationOverviewPage() {
       .catch(() => {})
   }, [])
 
-  const loading = schedLoading || classLoading || courseLoading || studentLoading || teacherLoading
+  const loading = schedLoading || courseLoading || studentLoading || teacherLoading
+
+  // 按年级分组的「班级」（PB 无 classes 表：班级 = 年级 + 该年级课程）
+  const gradeGroups = useMemo<{ grade: string; students: number; courses: string[] }[]>(() => {
+    const m = new Map<string, { grade: string; students: number; courses: string[] }>()
+    students.forEach((s: any) => {
+      const g = String(s.grade || "未分年级").trim()
+      const cur = m.get(g) || { grade: g, students: 0, courses: [] as string[] }
+      cur.students += 1
+      m.set(g, cur)
+    })
+    courses.forEach((c: any) => {
+      const g = String(formatGrade(c.grade_level || c.grade) || "未分年级").trim()
+      const cur = m.get(g) || { grade: g, students: 0, courses: [] as string[] }
+      const title = String(c.title || c.name || "")
+      if (title && !cur.courses.includes(title)) cur.courses.push(title)
+      m.set(g, cur)
+    })
+    const out: { grade: string; students: number; courses: string[] }[] = []
+    m.forEach(v => out.push(v))
+    return out.sort((a, b) => b.students - a.students)
+  }, [students, courses])
 
   // Stats
   const todayClasses = schedules.filter((s: Schedule) => s.date === today).length
@@ -364,7 +382,7 @@ export default function EducationOverviewPage() {
   const stats = {
     totalStudents: students.length,
     totalTeachers: teachers.length,
-    totalClasses: classes.length,
+    totalClasses: gradeGroups.length,
     totalCourses: courses.length,
     todayClasses,
   }
@@ -431,36 +449,33 @@ export default function EducationOverviewPage() {
           <CardContent>
             {loading ? (
               <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
-            ) : classes.length === 0 ? (
+            ) : gradeGroups.length === 0 ? (
               <div className="text-center py-8 text-gray-400">
                 <School className="h-8 w-8 mx-auto mb-2 opacity-30" />
                 <p>暂无班级数据</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {classes.slice(0, 10).map((cls: any) => (
-                  <div key={cls.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 transition-colors">
+                {gradeGroups.slice(0, 10).map((g) => (
+                  <div key={g.grade} className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 transition-colors">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <Users className="h-4 w-4 text-primary" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{cls.name}</p>
+                        <p className="font-medium text-sm truncate">{g.grade}</p>
                         <p className="text-xs text-gray-500 truncate">
-                          {cls.expand?.teacher_id?.name || "未分配"}{cls.room ? ` · ${cls.room}` : ""}
+                          {g.courses.length > 0 ? g.courses.slice(0, 2).join("、") : "未设课程"}
+                          {g.courses.length > 2 ? ` 等 ${g.courses.length} 门` : ""}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
                       <Badge variant="outline" className="text-xs">
-                        {cls.current_students}/{cls.max_capacity}
+                        {g.students} 人
                       </Badge>
-                      <Badge variant="secondary" className={`text-xs ${
-                        cls.current_students >= cls.max_capacity ? "bg-red-100 text-red-700" :
-                        cls.current_students > 0 ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
-                      }`}>
-                        {cls.current_students >= cls.max_capacity ? "满员" :
-                         cls.current_students > 0 ? "进行中" : "空置"}
+                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                        {g.courses.length} 门课
                       </Badge>
                     </div>
                   </div>
@@ -470,33 +485,30 @@ export default function EducationOverviewPage() {
           </CardContent>
         </Card>
 
-        {/* 最新公告 */}
+        {/* 最新公告（活动 = 公告动态，与 /activities 同源） */}
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-primary" />
               <CardTitle>最新公告</CardTitle>
             </div>
-            <CardDescription>通知与动态</CardDescription>
+            <CardDescription>活动与通知动态（同「管理活动」）</CardDescription>
           </CardHeader>
           <CardContent>
-            {announceLoading ? (
-              <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>
-            ) : announcements.length === 0 ? (
+            {activities.length === 0 ? (
               <div className="text-center py-8 text-gray-400">
                 <Bell className="h-8 w-8 mx-auto mb-2 opacity-30" />
                 <p>暂无公告</p>
               </div>
             ) : (
               <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                {announcements.slice(0, 8).map((a: any) => (
+                {activities.slice(0, 8).map((a) => (
                   <div key={a.id} className="flex gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors">
                     <div className="flex-shrink-0 mt-1"><div className="w-2 h-2 rounded-full bg-primary" /></div>
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm">{a.title}</p>
-                      <p className="text-xs text-gray-500 line-clamp-2 mt-0.5">{a.content || a.body}</p>
                       <p className="text-[10px] text-gray-400 mt-1">
-                        {a.created ? new Date(a.created).toLocaleDateString("zh-CN") : ""}
+                        {a.date}{a.center && a.center !== "all" ? ` · ${a.center}` : ""}
                       </p>
                     </div>
                   </div>
