@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchSecureData, createRecord, updateRecord, deleteRecord } from '@/lib/secure-api-client'
+import { toLocalMonthKey } from "@/lib/utils"
 
 export interface Invoice {
   id: string
@@ -173,7 +174,7 @@ export const useInvoices = () => {
   }, [])
 
   const generateMonthlyInvoices = useCallback(async (targetMonth?: string) => {
-    const month = targetMonth || new Date().toISOString().slice(0, 7)
+    const month = targetMonth || toLocalMonthKey()
     await generateInvoicesForAllStudents(month)
   }, [generateInvoicesForAllStudents])
 

@@ -64,9 +64,12 @@ export function useAttendanceStats() {
         const y = now.getFullYear()
         const m = String(now.getMonth() + 1).padStart(2, '0')
         const startDate = `${y}-${m}-01`
-        const endDate = new Date(y, now.getMonth() + 1, 0).toISOString().split('T')[0]
+        // 上限用「下月 1 日」排他：toISOString 是 UTC，会本地月末少算一天
+        const nextMonthStart = now.getMonth() + 1 === 12
+          ? `${y + 1}-01-01`
+          : `${y}-${String(now.getMonth() + 2).padStart(2, '0')}-01`
         const schRes = await fetch(
-          `/api/pocketbase-proxy/api/collections/schedules/records?perPage=200&filter=${encodeURIComponent(`date >= "${startDate}" && date <= "${endDate}"`)}`
+          `/api/pocketbase-proxy/api/collections/schedules/records?perPage=500&filter=${encodeURIComponent(`date >= "${startDate}" && date < "${nextMonthStart}"`)}`
         )
         if (schRes.ok) {
           const sd = await schRes.json()

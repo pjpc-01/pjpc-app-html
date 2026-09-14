@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminToken } from '@/lib/pb-admin-token'
+import { toLocalMonthKey } from "@/lib/utils"
 
 const PB_URL = 'http://127.0.0.1:8090'
 
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const person_id = searchParams.get('person_id')
     const person_type = searchParams.get('person_type') || 'student'
-    const month = searchParams.get('month') || new Date().toISOString().slice(0, 7)
+    const month = searchParams.get('month') || toLocalMonthKey()
 
     if (!person_id) {
       return NextResponse.json({ error: '缺少 person_id' }, { status: 400 })
@@ -26,13 +27,15 @@ export async function GET(request: NextRequest) {
     const idField = isTeacher ? 'teacher_id' : 'student_id'
 
     // Fetch all records for this person in the given month
+    // 用 date（考勤日期）过滤而不是 created（写入时间，补录会串月）；
+    // 上限用「下月 1 日」排他，避免 toISOString 的 UTC 偏移把月末最后一天漏掉
     const startDate = `${month}-01`
     const [y, m] = month.split('-').map(Number)
-    const endDate = new Date(y, m, 0).toISOString().split('T')[0] // last day of month
+    const nextMonthStart = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`
 
-    const filter = `${idField}="${person_id}" && created >= "${startDate} 00:00:00" && created <= "${endDate} 23:59:59"`
+    const filter = `${idField}="${person_id}" && date >= "${startDate}" && date < "${nextMonthStart}"`
 
-    const url = `${PB_URL}/api/collections/${collection}/records?perPage=100&sort=created&filter=${encodeURIComponent(filter)}`
+    const url = `${PB_URL}/api/collections/${collection}/records?perPage=500&sort=date,created&filter=${encodeURIComponent(filter)}`
     const res = await fetch(url, { headers: { Authorization: token } }).then(r => r.json())
 
     // Build calendar map: date → { check_ins: [...], check_outs: [...] }

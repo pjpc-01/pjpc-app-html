@@ -612,3 +612,11 @@ export const gradeColorClass = (grade: string): string => {
     default: return "bg-gray-200 text-gray-700"
   }
 }
+
+/** 本地时区的 YYYY-MM。⚠️ 不要用 toISOString().slice(0,7)：那是 UTC，本地早上 8 点前会取到上个月 */
+export const toLocalMonthKey = (d: Date = new Date()): string =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+
+/** 本地时区的 YYYY-MM-DD */
+export const toLocalDateKey = (d: Date = new Date()): string =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`

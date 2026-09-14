@@ -9,6 +9,7 @@ import { StudentFeeMatrixHeader } from "./StudentFeeMatrixHeader"
 import { SearchAndFilter } from "./SearchAndFilter"
 import { FeeCard } from "./FeeCard"
 import { useLanguage } from "@/contexts/language-context"
+import { toLocalMonthKey } from "@/lib/utils"
 
 export const StudentFeeMatrix = () => {
   const { t } = useLanguage()
@@ -164,7 +165,7 @@ export const StudentFeeMatrix = () => {
   }
 
   const hasInvoiceThisMonth = (studentId: string) => {
-    const m = new Date().toISOString().slice(0, 7)
+    const m = toLocalMonthKey()
     return invoices.some(i => i.studentId === studentId && i.issueDate.startsWith(m))
   }
 

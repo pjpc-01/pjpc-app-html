@@ -55,7 +55,7 @@ import { Badge } from "@/components/ui/badge"
 import { useExpenses } from "@/hooks/useExpenses"
 import { useSearchParams } from "next/navigation"
 import { useCenters } from "@/hooks/useCenters"
-import { formatDate } from "@/lib/utils"
+import { formatDate, toLocalMonthKey } from "@/lib/utils"
 import UtilityBillsCard from "./UtilityBillsCard"
 
 
@@ -186,7 +186,7 @@ export default function ExpenseManagement() {
 
   // Month filter
   const [monthFilter, setMonthFilter] = useState("all")
-  const currentMonth = new Date().toISOString().slice(0, 7)
+  const currentMonth = toLocalMonthKey()
   const months = [...new Set(safeExpenses.map(e => (e.date || "").slice(0, 7)).filter(Boolean))].sort().reverse()
 
   const filteredExpenses = safeExpenses.filter(e => {
