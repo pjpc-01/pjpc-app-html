@@ -487,6 +487,63 @@ export default function TeacherSalaryManagement() {
     fetchMonthlySalarySummary(monthlySalaryYear)
   }, [fetchMonthlySalarySummary, monthlySalaryYear])
 
+  // 本月应发薪资（按薪资结构总额计算，方便预估每月薪资支出）
+  const [monthlyExpected, setMonthlyExpected] = useState({
+    total: 0, monthly: 0, hourly: 0, monthlyCount: 0, hourlyCount: 0, loading: true,
+  })
+
+  const fetchMonthlyExpected = useCallback(async () => {
+    const now = new Date()
+    const y = now.getFullYear()
+    const m = now.getMonth() + 1
+    try {
+      const res = await fetch('/api/teacher-salary?type=structure')
+      const js = await res.json()
+      const list: any[] = (js.success ? js.data : []) || []
+      const active = list.filter(s => (s.status || 'active') === 'active' && !s.deleted)
+
+      const structGross = (s: any) => {
+        const items = Array.isArray(s.allowance_items) ? s.allowance_items : []
+        const itemsSum = items.reduce((x: number, a: any) => x + (Number(a?.amount) || 0), 0)
+        const fixed =
+          (Number(s.allowance_fixed) || 0) + (Number(s.allowance_meal) || 0) +
+          (Number(s.allowance_other) || 0) + (Number(s.allowance_transport) || 0) +
+          (Number(s.allowance_travel) || 0)
+        return itemsSum || fixed
+      }
+
+      const monthlyList = active.filter(s => s.salary_type !== 'hourly')
+      const hourlyList = active.filter(s => s.salary_type === 'hourly')
+
+      const monthlyTotal = monthlyList.reduce((sum, s) => sum + (Number(s.base_salary) || 0) + structGross(s), 0)
+
+      // 时薪老师：按当月排班工时 × 时薪
+      const hourlyAmounts = await Promise.all(hourlyList.map(async (s) => {
+        try {
+          const r = await fetch(`/api/teacher-salary?type=hours&teacher_id=${s.teacher_id}&year=${y}&month=${m}`)
+          const d = await r.json()
+          const hrs = Number(d?.data?.totalHours) || 0
+          return hrs * (Number(s.hourly_rate) || 0) + structGross(s)
+        } catch { return 0 }
+      }))
+      const hourlyTotal = hourlyAmounts.reduce((a, b) => a + b, 0)
+
+      setMonthlyExpected({
+        total: monthlyTotal + hourlyTotal,
+        monthly: monthlyTotal,
+        hourly: hourlyTotal,
+        monthlyCount: monthlyList.length,
+        hourlyCount: hourlyList.length,
+        loading: false,
+      })
+    } catch (e) {
+      console.error('计算本月应发薪资失败:', e)
+      setMonthlyExpected(prev => ({ ...prev, loading: false }))
+    }
+  }, [])
+
+  useEffect(() => { fetchMonthlyExpected() }, [fetchMonthlyExpected])
+
   // 计算薪资（预览用）
   const calculateSalary = useCallback((form: typeof structureForm) => {
     const baseSalary = form.base_salary
@@ -1046,7 +1103,25 @@ export default function TeacherSalaryManagement() {
       </div>
 
       {/* 统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* 本月（当前月）应发薪资 —— 按薪资结构总额计算 */}
+        <Card className="border-blue-200 bg-blue-50/40">
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Calendar className="h-8 w-8 text-blue-600" />
+              <div className="ml-4 min-w-0">
+                <p className="text-sm font-medium text-gray-600">本月应发薪资（按结构）</p>
+                <p className="text-2xl font-bold text-blue-700">
+                  {monthlyExpected.loading ? '计算中...' : formatCurrency(monthlyExpected.total)}
+                </p>
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  月薪 {monthlyExpected.monthlyCount} 人 {formatCurrency(monthlyExpected.monthly)} · 时薪 {monthlyExpected.hourlyCount} 人 {formatCurrency(monthlyExpected.hourly)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
@@ -1095,58 +1170,6 @@ export default function TeacherSalaryManagement() {
           </CardContent>
         </Card>
       </div>
-
-      {/* 每月应付薪资汇总（卡片式） */}
-      <Card>
-        <CardHeader className="pb-2 flex flex-row items-center justify-between flex-wrap gap-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            每月应付薪资
-          </CardTitle>
-          <Select value={String(monthlySalaryYear)} onValueChange={(v) => setMonthlySalaryYear(Number(v))}>
-            <SelectTrigger className="w-24 h-8"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {[2025, 2026, 2027, 2028].map((y) => (
-                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {monthlySalary.length === 0 ? (
-              <Card className="col-span-full">
-                <CardContent className="p-6 text-center text-muted-foreground text-sm">该年暂无薪资记录（用「批量生成」生成后会出现）</CardContent>
-              </Card>
-            ) : (
-              monthlySalary.map((r) => (
-                <Card key={r.month}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-gray-600">{monthlySalaryYear} 年 {r.month} 月</p>
-                      <Badge variant="outline" className="text-[10px]">{r.count} 名教师</Badge>
-                    </div>
-                    <p className="text-xl font-bold mt-1">RM {r.gross.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                    <p className="text-xs text-gray-500 mb-1">应付总额</p>
-                    <div className="flex items-center gap-2 text-sm mt-1">
-                      <Calculator className="h-4 w-4 text-blue-600" />
-                      <span className="text-gray-700 font-medium">净额 RM {r.net.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm mt-1">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="text-green-700 font-medium">已发 RM {r.paid.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm mt-1">
-                      <Clock className="h-4 w-4 text-amber-500" />
-                      <span className="text-amber-700 font-medium">待发 RM {r.unpaid.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* 全局薪资参数设置 */}
       <Card className="mb-6 border-blue-200 bg-blue-50/30">
