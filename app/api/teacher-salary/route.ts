@@ -123,7 +123,8 @@ export async function GET(request: NextRequest) {
       }
 
       const page = parseInt(searchParams.get('page') || '1')
-      const limit = parseInt(searchParams.get('limit') || '20')
+      // 兼容 limit / perPage / per_page（前端历史上三种叫法都出现过）
+      const limit = parseInt(searchParams.get('limit') || searchParams.get('perPage') || searchParams.get('per_page') || '20')
 
       const records = await pb.collection('teacher_salary_records').getList(page, limit, {
         filter,
@@ -190,8 +191,9 @@ export async function POST(request: NextRequest) {
         pcb_enabled: data.pcb_enabled ?? false,
         pcb_rate: data.pcb_rate ?? 0,
         pcb_amount: data.pcb_amount ?? 0,
+        no_statutory: data.no_statutory ?? false,
         salary_type: data.salary_type || 'monthly',
-        effective_date: data.effective_date,
+        effective_date: data.effective_date || new Date().toISOString().slice(0, 10),
         end_date: data.end_date,
         status: 'active',
         notes: data.notes
@@ -260,10 +262,14 @@ export async function POST(request: NextRequest) {
       { success: false, error: '无效的请求类型' },
       { status: 400 }
     )
-  } catch (error) {
-    console.error('创建教师薪资数据失败:', error)
+  } catch (error: any) {
+    // 打印 PB 的具体校验错误，方便定位（原来看不到原因）
+    console.error('创建教师薪资数据失败:', error?.response || error)
+    const detail = error?.response?.errors
+      ? Object.entries(error.response.errors).map(([k, v]: any) => `${k}: ${v?.message || ''}`).join('; ')
+      : (error?.message || '未知错误')
     return NextResponse.json(
-      { success: false, error: '创建教师薪资数据失败' },
+      { success: false, error: `创建薪资数据失败: ${detail}` },
       { status: 500 }
     )
   }
