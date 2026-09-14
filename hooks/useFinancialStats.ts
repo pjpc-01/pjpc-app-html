@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/pocketbase-auth-context'
 import { fetchSecureData } from '@/lib/secure-api-client'
+import { toLocalMonthKey } from "@/lib/utils"
 
 export interface Transaction {
   id: string
@@ -94,7 +95,7 @@ export const useFinancialStats = () => {
         console.warn('⚠️ Expenses fetch failed:', e)
       }
       
-      const currentMonth = new Date().toISOString().slice(0, 7)
+      const currentMonth = toLocalMonthKey()
       const safeInvoicesList = Array.isArray(invoices) ? invoices : []
 
       // Calculate Monthly Revenue

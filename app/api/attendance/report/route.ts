@@ -103,7 +103,8 @@ export async function GET(request: NextRequest) {
 
     // ── Fetch teacher records ─────────────────────
     if (type === 'all' || type === 'teacher') {
-      const filter = `created >= "${date} 00:00:00" && created <= "${date} 23:59:59"`
+      // 用 date（考勤日期）而不是 created（UTC 写入时间，会漏本地 00:00-08:00 的记录）
+      const filter = `date >= "${date} 00:00:00" && date <= "${date} 23:59:59"`
       const url = `${PB_URL}/api/collections/teacher_attendance/records?perPage=500&sort=created&filter=${encodeURIComponent(filter)}`
       const res = await fetch(url, { headers: { Authorization: token } }).then(r => r.json())
 

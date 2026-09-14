@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import NfcTapReader from "./NfcTapReader"
+import { toLocalMonthKey } from "@/lib/utils"
 
 // ─── Types ─────────────────────────────────────────────
 
@@ -446,7 +447,7 @@ function CalendarReport() {
   const [search, setSearch] = useState("")
   const [results, setResults] = useState<any[]>([])
   const [selected, setSelected] = useState<{ id: string; name: string; type: string } | null>(null)
-  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7))
+  const [month, setMonth] = useState(() => toLocalMonthKey())
   const [calendar, setCalendar] = useState<Record<string, { check_ins: string[]; check_outs: string[] }>>({})
   const [loading, setLoading] = useState(false)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
@@ -479,8 +480,8 @@ function CalendarReport() {
   const d = new Date()
   const todayStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 
-  const prevMonth = () => { const d = new Date(y, mn - 2, 1); setMonth(d.toISOString().slice(0, 7)) }
-  const nextMonth = () => { const d = new Date(y, mn, 1); setMonth(d.toISOString().slice(0, 7)) }
+  const prevMonth = () => setMonth(toLocalMonthKey(new Date(y, mn - 2, 1)))
+  const nextMonth = () => setMonth(toLocalMonthKey(new Date(y, mn, 1)))
 
   const fmtDayTime = (iso: string) => {
     try { return new Date(iso).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) }

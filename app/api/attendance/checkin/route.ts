@@ -54,7 +54,10 @@ export async function POST(request: NextRequest) {
     const today = todayLocal()
 
     // ── Determine action ─────────────────────────
-    const dateFilter = `${idField}="${person_id}" && created >= "${today} 00:00:00"`
+    // 用 date 字段（todayLocal() 写入的本地日期）判断“今天已有的记录”。
+    // ⚠️ 不要用 created 比较：PB 的 created 是 UTC，本地 00:00-08:00 打卡的记录会被漏掉，
+    // 导致同一天被判定成两次“签到”（而不是签到+签退），积分也会重复发。
+    const dateFilter = `${idField}="${person_id}" && date = "${today}"`
     const prevRes = await fetch(
       `${PB_URL}/api/collections/${collectionName}/records?perPage=10&sort=-created&filter=${encodeURIComponent(dateFilter)}`,
       { headers: { Authorization: token } }
@@ -201,7 +204,11 @@ async function handlePointsIntegration(
   // Check if student already got points today (avoid duplicate)
   // ⚠️ dedup on point_logs (has reason + student fields); points collection lacks reason field → 400
   const today = todayLocal()
-  const ptsFilter = `student="${studentId}" && created >= "${today} 00:00:00" && reason ~ "考勤"`
+  // ⚠️ point_logs 的 created 是 UTC：本地“今天”对应 UTC [昨天16:00, 今天16:00)。
+  // 直接用 "${today} 00:00:00" 会漏掉本地 00:00-08:00 的记录 → 早上打卡的积分会被重复发放。
+  const localDayStart = new Date(`${today}T00:00:00+08:00`)
+  const utcFmt = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ')
+  const ptsFilter = `student="${studentId}" && created >= "${utcFmt(localDayStart)}" && created < "${utcFmt(new Date(localDayStart.getTime() + 86400000))}" && reason ~ "考勤"`
   const existingPts = await fetch(
     `${PB_URL}/api/collections/point_logs/records?perPage=1&filter=${encodeURIComponent(ptsFilter)}`,
     { headers: { Authorization: token } }

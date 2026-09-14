@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminToken } from '@/lib/pb-admin-token'
+import { toLocalMonthKey } from "@/lib/utils"
 
 const PB_URL = 'http://127.0.0.1:8090'
 
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     const token = await pbAuth()
     const { searchParams } = new URL(request.url)
-    const month = searchParams.get('month') || new Date().toISOString().slice(0, 7)
+    const month = searchParams.get('month') || toLocalMonthKey()
     const center = searchParams.get('center') || ''
     const type = searchParams.get('type') || 'student'
 
