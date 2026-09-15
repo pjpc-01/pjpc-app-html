@@ -37,9 +37,10 @@ export async function checkForUpdates() {
       sort: '-updated'
     })
     
-    // 检查最新的公告
-    const latestAnnouncements = await pb.collection('announcements').getList(1, 1, {
-      sort: '-created'
+    // 检查最新的公告（公告数据源已统一到 activities，PB 无 announcements 集合）
+    // ⚠️ activities 集合没有 created/updated 字段，只能按 date 排序（用 -created 会 400）
+    const latestAnnouncements = await pb.collection('activities').getList(1, 1, {
+      sort: '-date'
     })
     
     const updateData = {
