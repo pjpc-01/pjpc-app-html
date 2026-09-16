@@ -434,6 +434,14 @@ export default function ExpenseManagement() {
           <CardHeader className="pb-2">
             <CardDescription className="text-slate-500 font-medium">记录笔数</CardDescription>
             <CardTitle className="text-3xl font-bold text-slate-900">{safeExpenses.length} 笔</CardTitle>
+            {(() => {
+              const n = safeExpenses.filter(e => !e.receipt).length
+              return n > 0 ? (
+                <p className="text-xs text-red-600 mt-1 font-medium">{n} 笔缺收据凭证（报税要举证）</p>
+              ) : (
+                <p className="text-xs text-green-600 mt-1">收据齐全 ✅</p>
+              )
+            })()}
           </CardHeader>
         </Card>
         <Card>
@@ -551,7 +559,9 @@ export default function ExpenseManagement() {
                           <Eye className="h-3.5 w-3.5" />
                         </a>
                       ) : (
-                        <span className="text-slate-300">—</span>
+                        <span className="inline-flex items-center rounded-full bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 text-[10px] font-medium" title="没有收据附件，报税时无法举证">
+                          缺
+                        </span>
                       )}
                     </TableCell>
                     <TableCell className="text-right font-bold text-red-600">
