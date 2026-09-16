@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     // 4. 获取所有 payments
     const paymentsRes = await fetch(
-      `${PB_URL}/api/collections/payments/records?perPage=2000`,
+      `${PB_URL}/api/collections/payments/records?perPage=2000&filter=deleted%3Dfalse`,
       { headers }
     )
     const payments = paymentsRes.ok ? (await paymentsRes.json()).items : []

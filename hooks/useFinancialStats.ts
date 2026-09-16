@@ -89,9 +89,13 @@ export const useFinancialStats = () => {
       setLoading(true)
       setError(null)
 
+      // 只有带 deleted 字段的集合才能过滤；否则 PB 遇到未知字段会直接报错，这里 catch 后静默返回空
+      const HAS_DELETED = new Set(['invoices', 'payments', 'receipts', 'refunds', 'teacher_salary_records'])
       const grab = async (coll: string, sort: string): Promise<any[]> => {
         try {
-          const r = await fetchSecureData<any>(coll, { fullList: true, sort })
+          const opts: any = { fullList: true, sort }
+          if (HAS_DELETED.has(coll)) opts.filter = 'deleted=false'
+          const r = await fetchSecureData<any>(coll, opts)
           return Array.isArray(r) ? r : (r?.items || [])
         } catch (e) {
           console.warn(`⚠️ ${coll} fetch failed:`, e)
