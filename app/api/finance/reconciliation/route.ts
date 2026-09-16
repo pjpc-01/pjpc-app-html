@@ -3,24 +3,17 @@ import { NextRequest, NextResponse } from "next/server"
 // Bank reconciliation auto-match API
 // Matches unreconciled bank transactions against invoices, payments, and expenses
 
-const PB_URL = process.env.NEXT_PUBLIC_POCKETBASE_URL || "http://127.0.0.1:8090"
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "final_admin@test.com"
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "final_pass"
+import { getAdminToken } from "@/lib/pb-admin-token"
+
+// Bank reconciliation auto-match API
+// Matches unreconciled bank transactions against invoices, payments, and expenses
+
+const PB_URL = process.env.POCKETBASE_URL || "http://127.0.0.1:8090"
 
 const AMOUNT_TOLERANCE = 0.02 // allow ±$0.02 difference
 
-async function getAdminToken(): Promise<string> {
-  const res = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ identity: ADMIN_EMAIL, password: ADMIN_PASSWORD }),
-  })
-  if (!res.ok) throw new Error("Admin auth failed")
-  const data = await res.json()
-  return data.token
-}
-
 async function getAdminHeaders(): Promise<Record<string, string>> {
+  // 统一走共享 token 模块，凭证只在 .env.local 维护一份
   const token = await getAdminToken()
   return {
     Authorization: `Bearer ${token}`,
