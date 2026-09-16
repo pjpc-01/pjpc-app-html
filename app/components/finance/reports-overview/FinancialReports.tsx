@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -39,7 +40,11 @@ export default function FinancialReports() {
   const { payments } = usePayments()
   const { expenses } = useExpenses()
   const [selectedReportType, setSelectedReportType] = useState("monthly")
-  const [selectedPeriod, setSelectedPeriod] = useState("2026")
+  // 选中的月份（默认当前月）—— 像翻日历一样看某个月的财务状况
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const n = new Date()
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`
+  })
 
   const reportTypes = [
     { id: "monthly", name: "月度收入报告", icon: Calendar },
@@ -53,6 +58,13 @@ export default function FinancialReports() {
   const safePayments = Array.isArray(payments) ? payments : []
   const safeExpenses = Array.isArray(expenses) ? expenses : []
 
+  // 发票归属月：账期(period)优先，没填才用开票日 —— 与财务报表口径一致
+  const invMonthOf = (i: any): string => {
+    const pp = String(i?.period || "")
+    if (/^\d{4}-\d{2}/.test(pp)) return pp.slice(0, 7)
+    return String(i?.issueDate || i?.created || "").slice(0, 7)
+  }
+
   // Revenue data from real stats
   const revenueByMonth = financialStats.revenueByMonth || {}
   const revenueEntries = Object.entries(revenueByMonth)
@@ -61,7 +73,7 @@ export default function FinancialReports() {
 
   // 月度数据 —— 口径统一来自 useFinancialStats.monthlySeries
   // 收入=实收(收款日,已扣退款) | 支出=expenses | 薪资=净发+雇主EPF/SOCSO/EIS(按发放日) | 利润=收入-总成本
-  const monthlyReportData = (financialStats.monthlySeries || []).slice(-6).map(m => ({
+  const allMonths = (financialStats.monthlySeries || []).map(m => ({
     month: m.month,
     revenue: m.revenue,
     expense: m.expense,
@@ -70,10 +82,30 @@ export default function FinancialReports() {
     profit: m.profit,
     invoices: m.invoices,
     invoiceAmount: m.invoiceAmount,
+    // 缴费学生数：同样按【账期】归月，与收入口径一致
     students: new Set(safePayments
-      .filter(p => (p.date || p.created || "").startsWith(m.month))
+      .filter(p => (p.status ? p.status === "completed" : true))
+      .filter(p => {
+        const inv = safeInvoices.find(i => i.id === p.invoiceId)
+        const pm = inv ? invMonthOf(inv) : String(p.date || p.created || "").slice(0, 7)
+        return pm === m.month
+      })
       .map(p => p.invoiceId)).size,
   }))
+
+  // 图表只用最近 6 个月，避免太挤
+  const monthlyReportData = allMonths.slice(-6)
+
+  // 选中月份的显示名，如 "2026年8月"
+  const monthLabel = (() => {
+    const m = String(selectedMonth || "").match(/^(\d{4})-(\d{2})/)
+    return m ? `${m[1]}年${Number(m[2])}月` : String(selectedMonth || "")
+  })()
+
+  // 选中月份的数据（顶部卡片 + 利润分析都用它，不再用累计总额）
+  const cur = allMonths.find(m => m.month === selectedMonth) || {
+    month: selectedMonth, revenue: 0, expense: 0, salary: 0, cost: 0, profit: 0, invoices: 0, invoiceAmount: 0, students: 0,
+  }
 
   // Fee analysis from real fee items in payments
   const feeAnalysis = (() => {
@@ -208,17 +240,12 @@ export default function FinancialReports() {
               </Button>
             </div>
             <div className="flex-1">
-              <Label>统计期间</Label>
-              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {["2026", "2025", "2024"].map(p => (
-                    <SelectItem key={p} value={p}>{p}年</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>选择月份</Label>
+              <Input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+              />
             </div>
           </div>
         </CardContent>
@@ -232,7 +259,7 @@ export default function FinancialReports() {
             收支概览
           </CardTitle>
           <CardDescription>
-            {financialLoading ? "加载中..." : `基于 ${financialSummary.totalPayments} 笔缴费记录和 ${safeExpenses.length} 笔支出记录`}
+            {financialLoading ? "加载中..." : `以下是 ${monthLabel} 的经营数据（收入按账期归月，成本含教师薪资）`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -245,28 +272,28 @@ export default function FinancialReports() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">{t('finance.total_income')}</p>
-                  <p className="text-2xl font-bold text-green-600">RM {fmtMoney(financialSummary.totalIncome)}</p>
-                  <p className="text-xs text-gray-500">{financialSummary.successfulPayments} 笔成功缴费</p>
-                </div>
-                <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">{t('finance.total_expenses')}</p>
-                  <p className="text-2xl font-bold text-red-600">RM {fmtMoney(financialSummary.totalExpenses)}</p>
-                  <p className="text-xs text-gray-500">{safeExpenses.length} 笔支出记录</p>
-                </div>
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">净利润</p>
-                  <p className={`text-2xl font-bold ${financialSummary.netProfit >= 0 ? "text-blue-600" : "text-red-600"}`}>
-                    RM {fmtMoney(financialSummary.netProfit)}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {financialSummary.totalIncome > 0 ? `利润率 ${financialSummary.profitMargin.toFixed(1)}%` : "利润率 —"}
-                  </p>
+                  <p className="text-sm font-medium text-gray-600">{monthLabel} 收入</p>
+                  <p className="text-2xl font-bold text-green-600">RM {fmtMoney(cur.revenue)}</p>
+                  <p className="text-xs text-gray-500">{cur.students} 位学生缴费</p>
                 </div>
                 <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">发票总数</p>
-                  <p className="text-2xl font-bold text-purple-600">{safeInvoices.length}</p>
-                  <p className="text-xs text-gray-500">{reconciliationStatus.paidInvoices} 已缴 / {reconciliationStatus.unpaidInvoices} 未缴</p>
+                  <p className="text-sm font-medium text-gray-600">{monthLabel} 薪资</p>
+                  <p className="text-2xl font-bold text-purple-600">RM {fmtMoney(cur.salary)}</p>
+                  <p className="text-xs text-gray-500">教师薪资（最大成本）</p>
+                </div>
+                <div className="text-center p-4 bg-red-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-600">{monthLabel} 其他支出</p>
+                  <p className="text-2xl font-bold text-red-600">RM {fmtMoney(cur.expense)}</p>
+                  <p className="text-xs text-gray-500">水电、杂项等</p>
+                </div>
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-600">{monthLabel} 净利润</p>
+                  <p className={`text-2xl font-bold ${cur.profit >= 0 ? "text-blue-600" : "text-red-600"}`}>
+                    RM {fmtMoney(cur.profit)}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {cur.revenue > 0 ? `利润率 ${((cur.profit / cur.revenue) * 100).toFixed(1)}%` : "利润率 —"}
+                  </p>
                 </div>
               </div>
 
@@ -427,22 +454,7 @@ export default function FinancialReports() {
               <div className="text-center py-8 text-gray-500">暂无月度数据</div>
             ) : (
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">
-                      RM {fmtMoney((monthlyReportData[0]?.revenue || 0))}
-                    </div>
-                    <div className="text-sm text-gray-600">最近月份收入</div>
-                  </div>
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">{monthlyReportData[0]?.students || 0}</div>
-                    <div className="text-sm text-gray-600">缴费学生数</div>
-                  </div>
-                  <div className="text-center p-4 border rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">{monthlyReportData[0]?.invoices || 0}</div>
-                    <div className="text-sm text-gray-600">开具发票数</div>
-                  </div>
-                </div>
+
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -576,7 +588,6 @@ export default function FinancialReports() {
                           <div className={`font-medium ${parseFloat(String(growth)) >= 0 ? "text-green-600" : "text-red-600"}`}>
                             {parseFloat(String(growth)) >= 0 ? "+" : ""}{growth}%
                           </div>
-                          <div className="text-sm text-gray-600">{data.invoices} 张发票</div>
                         </div>
                       </div>
                     )
@@ -606,21 +617,21 @@ export default function FinancialReports() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">累计收入</p>
-                  <p className="text-2xl font-bold text-green-600">RM {fmtMoney(financialSummary.totalIncome)}</p>
-                  <p className="text-xs text-gray-600">{financialSummary.successfulPayments} 笔成功缴费</p>
+                  <p className="text-sm font-medium text-gray-600">{monthLabel} 收入</p>
+                  <p className="text-2xl font-bold text-green-600">RM {fmtMoney(cur.revenue)}</p>
+                  <p className="text-xs text-gray-600">{cur.students} 位学生缴费</p>
                 </div>
                 <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">累计支出</p>
-                  <p className="text-2xl font-bold text-red-600">RM {fmtMoney(financialSummary.totalExpenses)}</p>
-                  <p className="text-xs text-gray-600">运营成本</p>
+                  <p className="text-sm font-medium text-gray-600">{monthLabel} 总成本</p>
+                  <p className="text-2xl font-bold text-red-600">RM {fmtMoney(cur.cost)}</p>
+                  <p className="text-xs text-gray-600">薪资 + 其他支出</p>
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">净利润</p>
-                  <p className={`text-2xl font-bold ${financialSummary.netProfit >= 0 ? "text-blue-600" : "text-red-600"}`}>
-                    RM {fmtMoney(financialSummary.netProfit)}
+                  <p className="text-sm font-medium text-gray-600">{monthLabel} 净利润</p>
+                  <p className={`text-2xl font-bold ${cur.profit >= 0 ? "text-blue-600" : "text-red-600"}`}>
+                    RM {fmtMoney(cur.profit)}
                   </p>
-                  <p className="text-xs text-gray-600">利润率 {financialSummary.profitMargin.toFixed(1)}%</p>
+                  <p className="text-xs text-gray-600">{cur.revenue > 0 ? `利润率 ${((cur.profit / cur.revenue) * 100).toFixed(1)}%` : "利润率 —"}</p>
                 </div>
               </div>
 
@@ -651,7 +662,7 @@ export default function FinancialReports() {
                       ))}
                       <TableRow className="bg-gray-50">
                         <TableCell className="font-semibold">{t('finance.total')}</TableCell>
-                        <TableCell className="font-semibold text-red-600">RM {fmtMoney(financialSummary.totalExpenses)}</TableCell>
+                        <TableCell className="font-semibold text-red-600">RM {fmtMoney(cur.cost)}</TableCell>
                         <TableCell className="font-semibold">100%</TableCell>
                         <TableCell className="font-semibold">
                           {financialSummary.totalIncome > 0
@@ -734,55 +745,6 @@ export default function FinancialReports() {
         </CardContent>
       </Card>
 
-      {/* 底部快速统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">年度收入</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">RM {fmtMoney(financialSummary.totalIncome)}</div>
-            <p className="text-xs text-muted-foreground">累计收入</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">平均月收入</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              RM {monthlyReportData.length > 0
-                ? Math.round(monthlyReportData.reduce((s, d) => s + d.revenue, 0) / monthlyReportData.length).toLocaleString()
-                : 0}
-            </div>
-            <p className="text-xs text-muted-foreground">最近 {monthlyReportData.length} 个月平均</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">总发票数</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{safeInvoices.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {safeInvoices.filter(inv => inv.status === "paid").length} 已缴 / {safeInvoices.filter(inv => inv.status !== "paid").length} 未缴
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">总支出笔数</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{safeExpenses.length}</div>
-            <p className="text-xs text-muted-foreground">经营成本记录</p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchSecureData, createRecord, updateRecord, deleteRecord } from '@/lib/secure-api-client'
 import { toLocalMonthKey } from "@/lib/utils"
 
@@ -61,12 +61,16 @@ export const useInvoices = () => {
     fetchInvoices()
   }, [fetchInvoices])
 
+  // 本次会话内已分配的序号 —— 防止批量/并发开票时多个请求查到同一个"最小空号"
+  const allocatedSeqRef = useRef<Set<number>>(new Set())
+
   const generateInvoiceNumber = useCallback(async (): Promise<string> => {
     const now = new Date()
     const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
     try {
       const prefix = `INV-${yearMonth}-`
-      const res = await fetch(`/api/pocketbase-proxy/api/collections/invoices/records?perPage=200&filter=${encodeURIComponent(`invoiceNumber~'${prefix}'`)}`)
+      // perPage 拉大，避免当月发票超过 200 张时漏号
+      const res = await fetch(`/api/pocketbase-proxy/api/collections/invoices/records?perPage=1000&filter=${encodeURIComponent(`invoiceNumber~'${prefix}'`)}`)
       const data = await res.json()
       // 拉取本月全部发票号码，解析序号，找最小未使用的空号（复用被删除/空缺的号码）
       const used = new Set<number>()
@@ -74,8 +78,11 @@ export const useInvoices = () => {
         const m = (inv.invoiceNumber || '').match(/^INV-\d{6}-(\d+)$/)
         if (m) used.add(parseInt(m[1], 10))
       })
+      // 关键：把本次会话已分配但可能尚未落库的号也算"已用"，避免并发拿到同一个号
+      allocatedSeqRef.current.forEach((n: number) => used.add(n))
       let seq = 1
       while (used.has(seq)) seq++
+      allocatedSeqRef.current.add(seq)
       return `${prefix}${String(seq).padStart(3, '0')}`
     } catch {
       return `INV-${yearMonth}-${String(Date.now() % 1000).padStart(3, '0')}`
@@ -83,11 +90,22 @@ export const useInvoices = () => {
   }, [])
 
   const createInvoice = useCallback(async (invoiceData: Omit<Invoice, 'id' | 'invoiceNumber'>) => {
-    const invoiceNumber = await generateInvoiceNumber()
-    const data = { ...invoiceData, invoiceNumber }
-    const result = await createRecord('invoices', data)
-    setInvoices(prev => [...prev, result])
-    return result
+    // 票号有数据库唯一约束；万一撞号（并发），自动换号重试，绝不静默写重复号
+    let lastError: any = null
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const invoiceNumber = await generateInvoiceNumber()
+      try {
+        const result = await createRecord('invoices', { ...invoiceData, invoiceNumber })
+        setInvoices(prev => [...prev, result])
+        return result
+      } catch (e: any) {
+        lastError = e
+        const msg = String(e?.message || e?.data?.message || e || '')
+        if (/invoiceNumber|unique|2067|已被占用|validation/i.test(msg)) continue
+        throw e
+      }
+    }
+    throw lastError
   }, [generateInvoiceNumber])
 
   const updateInvoice = useCallback(async (invoiceId: string, updates: Partial<Invoice>) => {
