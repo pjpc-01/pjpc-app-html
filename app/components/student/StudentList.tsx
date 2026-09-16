@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Edit, Eye, Trash2, MoreHorizontal, FileText } from "lucide-react"
+import { Edit, Eye, Trash2, MoreHorizontal, FileText, UserX, UserCheck } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Student } from "@/hooks/useStudents"
 import { convertGradeToChinese } from "./utils"
@@ -23,6 +23,7 @@ interface StudentListProps {
   onViewStudent: (student: Student) => void
   onDeleteStudent: (studentId: string) => void
   onViewReport?: (student: Student) => void
+  onToggleStatus?: (student: Student) => void
   userRole?: UserRole
 }
 
@@ -36,6 +37,7 @@ export default function StudentList({
   onViewStudent,
   onDeleteStudent,
   onViewReport,
+  onToggleStatus,
   userRole = 'admin'
 }: StudentListProps) {
   const { t } = useLanguage()
@@ -219,7 +221,27 @@ export default function StudentList({
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
-                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center justify-end gap-1">
+                  {/* 停学/复学 —— 常显,不用先勾选学生 */}
+                  {onToggleStatus && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`h-8 px-2 text-xs gap-1 ${student.status === 'active'
+                        ? "border-orange-200 text-orange-600 hover:bg-orange-50"
+                        : "border-green-200 text-green-600 hover:bg-green-50"}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleStatus(student);
+                      }}
+                      title={student.status === 'active' ? '标记为已停学' : '恢复在读'}
+                    >
+                      {student.status === 'active'
+                        ? <><UserX className="h-3.5 w-3.5" />停学</>
+                        : <><UserCheck className="h-3.5 w-3.5" />复学</>}
+                    </Button>
+                  )}
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   {onViewReport && (
                     <Button
                       variant="ghost"
@@ -260,6 +282,7 @@ export default function StudentList({
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </PermissionGate>
+                  </div>
                 </div>
               </TableCell>
             </TableRow>
