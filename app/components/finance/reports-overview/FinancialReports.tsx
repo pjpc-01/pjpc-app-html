@@ -93,6 +93,32 @@ export default function FinancialReports() {
       .map(p => p.invoiceId)).size,
   }))
 
+
+  // 资产负债概览数字
+  const balanceSheet = (() => {
+    const paidByInv = new Map<string, number>()
+    safePayments.filter(pp => !pp.status || pp.status === 'completed').forEach(pp => {
+      paidByInv.set(pp.invoiceId, (paidByInv.get(pp.invoiceId) || 0) + (Number(pp.amount) || 0))
+    })
+    let receivable = 0
+    safeInvoices.forEach(iv => {
+      const due = Number(iv.totalAmount || 0); const got = paidByInv.get(iv.id) || 0
+      if (due - got > 0.01) receivable += due - got
+    })
+    const income = safePayments.filter(pp => !pp.status || pp.status === 'completed').reduce((a, pp) => a + (Number(pp.amount) || 0), 0)
+    const expensesTotal = safeExpenses.reduce((a, e) => a + (Number(e.amount) || 0), 0)
+    const salaryCost = financialStats.totalCost || 0
+    const salaryOnly = Math.max(0, salaryCost - expensesTotal)
+    const cost = expensesTotal + salaryOnly
+    // 应付薪资:当月已生成但发薪日在未来的
+    const now = new Date()
+    const curYm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const payableSalary = (financialStats.monthlySeries || [])
+      .filter(m => m.month === curYm)
+      .reduce((a, m) => a + (m.salary || 0), 0)
+    return { receivable, payableSalary, income, cost, profit: income - cost }
+  })()
+
   // 图表只用最近 6 个月，避免太挤
   const monthlyReportData = allMonths.slice(-6)
 
@@ -744,6 +770,75 @@ export default function FinancialReports() {
           })()}
         </CardContent>
       </Card>
+      {/* 资产负债概览 —— 会计三大表里的第二张 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            资产负债概览
+          </CardTitle>
+          <CardDescription>
+            应收 / 应付 / 累计损益（银行与现金栏需先在「银行对账」导入真实流水）
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* 资产 */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-slate-900 border-b pb-2">资产</h4>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">应收账款（未收发票）</span>
+                <span className="font-medium">RM {fmtMoney(balanceSheet.receivable)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">银行 + 现金</span>
+                <span className="text-slate-400 text-xs">待导入流水</span>
+              </div>
+              <div className="flex justify-between text-sm pt-2 border-t font-semibold">
+                <span>资产合计（已知）</span>
+                <span>RM {fmtMoney(balanceSheet.receivable)}</span>
+              </div>
+            </div>
+            {/* 负债 */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-slate-900 border-b pb-2">负债</h4>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">应付薪资（当月未发）</span>
+                <span className="font-medium">RM {fmtMoney(balanceSheet.payableSalary)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">应付供应商</span>
+                <span className="text-slate-400 text-xs">暂无记录</span>
+              </div>
+              <div className="flex justify-between text-sm pt-2 border-t font-semibold">
+                <span>负债合计</span>
+                <span>RM {fmtMoney(balanceSheet.payableSalary)}</span>
+              </div>
+            </div>
+            {/* 权益 / 损益 */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-slate-900 border-b pb-2">累计损益</h4>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">累计收入（实收）</span>
+                <span className="font-medium text-green-600">RM {fmtMoney(balanceSheet.income)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">累计成本（支出 + 薪资）</span>
+                <span className="font-medium text-red-600">RM {fmtMoney(balanceSheet.cost)}</span>
+              </div>
+              <div className={`flex justify-between text-sm pt-2 border-t font-semibold ${balanceSheet.profit >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                <span>累计利润</span>
+                <span>RM {fmtMoney(balanceSheet.profit)}</span>
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 mt-4">
+            注：这是一张「简版」资产负债概览。完整资产负债表需要银行余额、现金、固定资产与应付账款 —— 先在「银行对账」导入真实银行流水后可补齐。
+          </p>
+        </CardContent>
+      </Card>
+
+
 
     </div>
   )
