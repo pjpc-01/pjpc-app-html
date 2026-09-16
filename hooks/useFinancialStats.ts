@@ -14,16 +14,43 @@ export interface Transaction {
   paymentMethod: string
 }
 
+export interface MonthPoint {
+  month: string        // YYYY-MM
+  revenue: number      // 当月实收（收款 - 退款）
+  expense: number      // 当月支出（expenses）
+  salary: number       // 当月薪资（净发 + 雇主 EPF/SOCSO/EIS）
+  cost: number         // 当月总成本 = expense + salary
+  profit: number       // 当月利润 = revenue - cost
+  invoices: number     // 当月开票张数
+  invoiceAmount: number // 当月开票金额（应收）
+}
+
 export interface FinancialStats {
-  monthlyRevenue: number
-  totalRevenue: number
-  pendingPayments: number
-  overduePayments: number
+  // ── 口径（2026-09-16 与用户确认）──
+  // 收入：按【收款日】算，只认真的到账的钱（payments.status='completed'），减去退款
+  // 成本：支出(expenses) + 薪资(teacher_salary_records，净发+雇主法定缴款)，薪资按【发放日 payment_date】归月
+  // 应收：发票总额（invoices.totalAmount，排除已删），未收 = 应收 - 实收
+  monthlyRevenue: number       // 本月实收（净）
+  totalRevenue: number         // 累计实收（净）
+  monthlyExpenses: number      // 本月支出
+  monthlySalary: number        // 本月薪资成本
+  monthlyCost: number          // 本月总成本
+  netProfit: number            // 本月利润
+  totalCost: number            // 累计总成本
+
+  totalReceivable: number      // 累计应收（开票总额）
+  totalReceived: number        // 累计实收
+  totalUnreceived: number      // 未收 = 应收 - 实收
+  pendingPayments: number      // 未缴发票张数
+  overduePayments: number      // 逾期发票张数
+  pendingAmount: number        // 未缴金额
+  overdueAmount: number        // 逾期金额
+
+  monthlySeries: MonthPoint[]  // 月度序列（图表用）
+
   recentTransactions: Transaction[]
   revenueByMonth: Record<string, number>
   cashBalance: number
-  monthlyExpenses: number
-  netProfit: number
   cashFlowHistory: CashFlowRecord[]
 }
 
@@ -37,19 +64,22 @@ export interface CashFlowRecord {
   balance: number
 }
 
+const monthOf = (v: any): string => {
+  if (!v) return ''
+  const s = String(v)
+  // 本地化：'2026-09-14 14:43:34.934Z' / '2026-09-14' 都取前 7 位
+  return s.slice(0, 7)
+}
+
 export const useFinancialStats = () => {
   const { user, userProfile } = useAuth()
   const [stats, setStats] = useState<FinancialStats>({
-    monthlyRevenue: 0,
-    totalRevenue: 0,
-    pendingPayments: 0,
-    overduePayments: 0,
-    recentTransactions: [],
-    revenueByMonth: {},
-    cashBalance: 0,
-    monthlyExpenses: 0,
-    netProfit: 0,
-    cashFlowHistory: []
+    monthlyRevenue: 0, totalRevenue: 0,
+    monthlyExpenses: 0, monthlySalary: 0, monthlyCost: 0, netProfit: 0, totalCost: 0,
+    totalReceivable: 0, totalReceived: 0, totalUnreceived: 0,
+    pendingPayments: 0, overduePayments: 0, pendingAmount: 0, overdueAmount: 0,
+    monthlySeries: [],
+    recentTransactions: [], revenueByMonth: {}, cashBalance: 0, cashFlowHistory: []
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -58,115 +88,153 @@ export const useFinancialStats = () => {
     try {
       setLoading(true)
       setError(null)
-      
-      // 1. Fetch Invoices
-      let invoices: any[] = []
-      try {
-        const invResult = await fetchSecureData<any>('invoices', {
-          fullList: true,
-          sort: '-created'
-        })
-        invoices = Array.isArray(invResult) ? invResult : (invResult?.items || [])
-      } catch (e) {
-        console.warn('⚠️ Invoices fetch failed:', e)
-      }
-      
-      // 2. Fetch Payments
-      let payments: any[] = []
-      try {
-        const payResult = await fetchSecureData<any>('payments', {
-          fullList: true,
-          sort: '-created'
-        })
-        payments = Array.isArray(payResult) ? payResult : (payResult?.items || [])
-      } catch (e) {
-        console.warn('⚠️ Payments fetch failed:', e)
+
+      const grab = async (coll: string, sort: string): Promise<any[]> => {
+        try {
+          const r = await fetchSecureData<any>(coll, { fullList: true, sort })
+          return Array.isArray(r) ? r : (r?.items || [])
+        } catch (e) {
+          console.warn(`⚠️ ${coll} fetch failed:`, e)
+          return []
+        }
       }
 
-      // 3. Fetch Expenses
-      let expenses: any[] = []
-      try {
-        const expResult = await fetchSecureData<any>('expenses', {
-          fullList: true,
-          sort: '-date'
-        })
-        expenses = Array.isArray(expResult) ? expResult : (expResult?.items || [])
-      } catch (e) {
-        console.warn('⚠️ Expenses fetch failed:', e)
-      }
-      
+      const [invoices, payments, expenses, salaries, refunds] = await Promise.all([
+        grab('invoices', '-created'),
+        grab('payments', '-date'),
+        grab('expenses', '-date'),
+        grab('teacher_salary_records', '-payment_date'),
+        grab('refunds', '-created'),
+      ])
+
       const currentMonth = toLocalMonthKey()
-      const safeInvoicesList = Array.isArray(invoices) ? invoices : []
 
-      // Calculate Monthly Revenue
-      const monthlyInvoices = safeInvoicesList.filter(invoice => 
-        invoice.created && invoice.created.startsWith(currentMonth)
-      )
-      const monthlyRevenue = monthlyInvoices.reduce((sum, invoice) => 
-        sum + (Number(invoice.total_amount) || 0), 0
-      )
-      
-      // Calculate Total Revenue
-      const totalRevenue = safeInvoicesList.reduce((sum, invoice) => 
-        sum + (Number(invoice.total_amount) || 0), 0
-      )
+      // ── 实收（按收款日）──
+      const payByMonth: Record<string, number> = {}
+      let receivedTotal = 0
+      for (const p of payments) {
+        if (p?.status && p.status !== 'completed') continue
+        const m = monthOf(p.date || p.created)
+        if (!m) continue
+        const amt = Number(p.amount) || 0
+        payByMonth[m] = (payByMonth[m] || 0) + amt
+        receivedTotal += amt
+      }
+      // 退款（减少实收）
+      const refByMonth: Record<string, number> = {}
+      let refundTotal = 0
+      for (const r of refunds) {
+        if (r?.status && r.status !== 'completed') continue
+        const m = monthOf(r.created)
+        if (!m) continue
+        const amt = Number(r.amount) || 0
+        refByMonth[m] = (refByMonth[m] || 0) + amt
+        refundTotal += amt
+      }
+      const netRevenue = (m: string) => (payByMonth[m] || 0) - (refByMonth[m] || 0)
 
-      // Calculate Monthly Expenses
-      const monthlyExpenses = expenses
-        .filter(exp => exp.date && exp.date.startsWith(currentMonth))
-        .reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0)
+      // ── 支出（按费用日期）──
+      const expByMonth: Record<string, number> = {}
+      for (const e of expenses) {
+        const m = monthOf(e.date || e.created)
+        if (!m) continue
+        expByMonth[m] = (expByMonth[m] || 0) + (Number(e.amount) || 0)
+      }
 
-      // Calculate Net Profit
-      const netProfit = monthlyRevenue - monthlyExpenses
+      // ── 薪资（按【所属月份】，2026-09-16 用户确认）──
+      // 看「每月该付多少人工」比看付款日直观；付款日容易跨月（7月的钱 8/7、9/7 才发）
+      // 成本口径 = 净发 + 雇主 EPF/SOCSO/EIS（公司真实支出）
+      const salByMonth: Record<string, number> = {}
+      for (const s of salaries) {
+        if (s?.deleted) continue
+        const m = s.year ? `${s.year}-${String(s.month).padStart(2, '0')}` : monthOf(s.payment_date)
+        if (!m) continue
+        const cost = (Number(s.net_salary) || 0)
+          + (Number(s.epf_employer) || 0)
+          + (Number(s.socso_employer) || 0)
+          + (Number(s.eis_employer) || 0)
+        salByMonth[m] = (salByMonth[m] || 0) + cost
+      }
 
-      // Pending and Overdue
-      const pendingPayments = safeInvoicesList.filter(invoice => 
-        invoice.status === 'issued' || invoice.status === 'pending'
-      ).length
-      
-      const overduePayments = safeInvoicesList.filter(invoice => {
-        if (!invoice.due_date) return false
-        const dueDate = new Date(invoice.due_date)
-        const today = new Date()
-        return dueDate < today && (invoice.status === 'issued' || invoice.status === 'pending')
-      }).length
+      // ── 发票（应收 + 未收）──
+      const invByMonth: Record<string, number> = {}
+      const invCountByMonth: Record<string, number> = {}
+      let receivable = 0
+      let pendingCount = 0, overdueCount = 0, pendingAmt = 0, overdueAmt = 0
+      const today = new Date(); today.setHours(0, 0, 0, 0)
+      for (const i of invoices) {
+        if (i?.deleted) continue
+        const amt = Number(i.totalAmount ?? i.total_amount) || 0
+        const m = monthOf(i.issueDate || i.created)
+        receivable += amt
+        if (m) {
+          invByMonth[m] = (invByMonth[m] || 0) + amt
+          invCountByMonth[m] = (invCountByMonth[m] || 0) + 1
+        }
+        const unpaid = i.status === 'issued' || i.status === 'pending' || i.status === 'unpaid'
+        if (unpaid) {
+          pendingCount++; pendingAmt += amt
+          const due = i.dueDate || i.due_date
+          if (due) {
+            const d = new Date(due)
+            if (d < today) { overdueCount++; overdueAmt += amt }
+          }
+        }
+      }
 
-      // Recent Transactions
-      const safePaymentsList = Array.isArray(payments) ? payments : []
-      const recentTransactions: Transaction[] = safePaymentsList.slice(0, 10).map(payment => ({
-        id: payment.id,
-        amount: Number(payment.amount) || 0,
-        status: 'completed' as const,
-        type: 'payment' as const,
-        date: new Date(payment.date || payment.created),
-        description: `付款 #${payment.id}`,
-        studentName: '学生',
-        paymentMethod: payment.method || '银行转账'
-      }))
+      // ── 月度序列 ──
+      const months = Array.from(new Set([
+        ...Object.keys(payByMonth), ...Object.keys(refByMonth),
+        ...Object.keys(expByMonth), ...Object.keys(salByMonth), ...Object.keys(invByMonth)
+      ])).filter(Boolean).sort()
+      const monthlySeries: MonthPoint[] = months.map(m => {
+        const revenue = netRevenue(m)
+        const expense = expByMonth[m] || 0
+        const salary = salByMonth[m] || 0
+        const cost = expense + salary
+        return { month: m, revenue, expense, salary, cost, profit: revenue - cost, invoices: invCountByMonth[m] || 0, invoiceAmount: invByMonth[m] || 0 }
+      })
 
-      // Revenue Trend
+      // ── 本月 ──
+      const monthlyRevenue = netRevenue(currentMonth)
+      const monthlyExpenses = expByMonth[currentMonth] || 0
+      const monthlySalary = salByMonth[currentMonth] || 0
+      const monthlyCost = monthlyExpenses + monthlySalary
+      const netProfit = monthlyRevenue - monthlyCost
+      const totalCost = Object.values(expByMonth).reduce((a, b) => a + b, 0)
+        + Object.values(salByMonth).reduce((a, b) => a + b, 0)
+      const totalReceived = receivedTotal - refundTotal
+
       const revenueByMonth: Record<string, number> = {}
-      safeInvoicesList.forEach(invoice => {
-        if (invoice.created) {
-          const month = invoice.created.slice(0, 7)
-          revenueByMonth[month] = (revenueByMonth[month] || 0) + (Number(invoice.total_amount) || 0)
+      for (const m of months) revenueByMonth[m] = netRevenue(m)
+
+      // 最近交易（带真实学生名，从发票反查）
+      const invById: Record<string, any> = {}
+      for (const i of invoices) invById[i.id] = i
+      const recentTransactions: Transaction[] = payments.slice(0, 10).map(p => {
+        const inv = invById[p.invoiceId] || {}
+        return {
+          id: p.id,
+          amount: Number(p.amount) || 0,
+          status: 'completed' as const,
+          type: 'payment' as const,
+          date: new Date(p.date || p.created),
+          description: inv.invoiceNumber ? `发票 ${inv.invoiceNumber}` : `收款 #${p.id}`,
+          studentName: inv.studentName || p.studentName || '—',
+          paymentMethod: p.method || '银行转账'
         }
       })
 
-      const totalPaid = safePaymentsList.reduce((sum, payment) => 
-        sum + (Number(payment.amount) || 0), 0
-      )
-      
       setStats({
-        monthlyRevenue,
-        totalRevenue,
-        pendingPayments,
-        overduePayments,
-        recentTransactions,
-        revenueByMonth,
-        cashBalance: totalPaid,
-        monthlyExpenses,
-        netProfit,
+        monthlyRevenue, totalRevenue: totalReceived,
+        monthlyExpenses, monthlySalary, monthlyCost, netProfit, totalCost,
+        totalReceivable: receivable, totalReceived,
+        totalUnreceived: Math.max(0, receivable - totalReceived),
+        pendingPayments: pendingCount, overduePayments: overdueCount,
+        pendingAmount: pendingAmt, overdueAmount: overdueAmt,
+        monthlySeries,
+        recentTransactions, revenueByMonth,
+        cashBalance: totalReceived,
         cashFlowHistory: []
       })
     } catch (err) {
@@ -181,10 +249,5 @@ export const useFinancialStats = () => {
     fetchAllFinancialStats()
   }, [fetchAllFinancialStats])
 
-  return {
-    stats,
-    loading,
-    error,
-    refetch: fetchAllFinancialStats
-  }
+  return { stats, loading, error, refetch: fetchAllFinancialStats }
 }

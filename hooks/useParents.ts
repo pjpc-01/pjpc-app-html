@@ -42,9 +42,39 @@ export function useParents() {
   const fetchParents = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch("/api/pocketbase-proxy/api/collections/parents/records?perPage=200&sort=-created&expand=students")
-      const data = await res.json()
-      setParents(data?.items || [])
+      // 家长 + 关联表一起拉。
+      // ⚠️ 关联的唯一数据源是 student_parents（人工维护，含 isPrimary/relationship）。
+      //    不要用 parents 表上的字段做 expand —— 那样会变成两套关联、互相不同步。
+      const [pRes, spRes] = await Promise.all([
+        fetch("/api/pocketbase-proxy/api/collections/parents/records?perPage=500&sort=-created"),
+        fetch("/api/pocketbase-proxy/api/collections/student_parents/records?perPage=1000&expand=studentId"),
+      ])
+      const pData = await pRes.json()
+      const spData = await spRes.json()
+      const list: Parent[] = pData?.items || []
+      const links: any[] = spData?.items || []
+
+      // 按 parentId 归组
+      const byParent = new Map<string, { id: string; name: string; grade: string }[]>()
+      for (const l of links) {
+        const pid = l.parentId
+        if (!pid) continue
+        const stu = l.expand?.studentId
+        const entry = stu
+          ? { id: stu.id, name: stu.name || "", grade: stu.grade || "" }
+          : { id: l.studentId || "", name: "", grade: "" }
+        const arr = byParent.get(pid)
+        if (arr) {
+          if (!arr.some(x => x.id === entry.id)) arr.push(entry)
+        } else {
+          byParent.set(pid, [entry])
+        }
+      }
+
+      setParents(list.map(p => {
+        const students = byParent.get(p.id) || []
+        return { ...p, studentCount: students.length, expand: { students } }
+      }))
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to fetch parents")
     } finally {

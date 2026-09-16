@@ -29,6 +29,9 @@ const CATEGORY_LABELS: Record<string, string> = {
   misc: "其他杂项",
 }
 
+// 金额统一显示 2 位小数
+const fmtMoney = (n: number) => (Number(n) || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
 export default function FinancialReports() {
   const { t } = useLanguage()
   const { stats: financialStats, loading: financialLoading } = useFinancialStats()
@@ -56,26 +59,21 @@ export default function FinancialReports() {
     .sort(([a], [b]) => a.localeCompare(b))
     .slice(-6)
 
-  // Build monthly report data from real stats
-  const monthlyReportData = revenueEntries.map(([month, revenue]) => {
-    const monthPayments = safePayments.filter(p => {
-      const pDate = p.date || p.created || ""
-      return pDate.startsWith(month)
-    })
-    const uniqueStudents = new Set(safePayments
-      .filter(p => {
-        const pDate = p.date || p.created || ""
-        return pDate.startsWith(month)
-      })
-      .map(p => p.invoiceId)
-    )
-    return {
-      month,
-      revenue,
-      students: uniqueStudents.size || safeInvoices.filter(inv => (inv.created || "").startsWith(month)).length,
-      invoices: safeInvoices.filter(inv => (inv.created || "").startsWith(month)).length,
-    }
-  })
+  // 月度数据 —— 口径统一来自 useFinancialStats.monthlySeries
+  // 收入=实收(收款日,已扣退款) | 支出=expenses | 薪资=净发+雇主EPF/SOCSO/EIS(按发放日) | 利润=收入-总成本
+  const monthlyReportData = (financialStats.monthlySeries || []).slice(-6).map(m => ({
+    month: m.month,
+    revenue: m.revenue,
+    expense: m.expense,
+    salary: m.salary,
+    cost: m.cost,
+    profit: m.profit,
+    invoices: m.invoices,
+    invoiceAmount: m.invoiceAmount,
+    students: new Set(safePayments
+      .filter(p => (p.date || p.created || "").startsWith(m.month))
+      .map(p => p.invoiceId)).size,
+  }))
 
   // Fee analysis from real fee items in payments
   const feeAnalysis = (() => {
@@ -104,6 +102,9 @@ export default function FinancialReports() {
       const cat = CATEGORY_LABELS[e.category] || e.category || "其他"
       cats[cat] = (cats[cat] || 0) + (Number(e.amount) || 0)
     })
+    // 薪资是最大成本项，单列出来；否则「支出分布」只剩水电杂项这点零头，看不出真实成本结构
+    const salaryTotal = Math.max(0, (financialStats.totalCost || 0) - Object.values(cats).reduce((s, v) => s + v, 0))
+    if (salaryTotal > 0) cats["薪资"] = salaryTotal
     const total = Object.values(cats).reduce((s, v) => s + v, 0)
     return Object.entries(cats).map(([category, amount]) => ({
       category,
@@ -115,7 +116,8 @@ export default function FinancialReports() {
   // Reconciliation
   const reconciliationStatus = (() => {
     const totalInvoiced = safeInvoices.reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0)
-    const totalPaid = safePayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
+    // 用「实收(已扣退款)」而非缴费流水原额，差额才是真实未收；否则退款会被算成"差异"
+    const totalPaid = financialStats.totalReceived
     const paidInvoices = safeInvoices.filter(inv => {
       const invoicePayments = safePayments.filter(p => p.invoiceId === inv.id)
       const paid = invoicePayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
@@ -136,8 +138,9 @@ export default function FinancialReports() {
   // Financial summary
   const financialSummary = (() => {
     const completedPayments = safePayments.filter(p => p.status === "completed")
-    const totalIncome = completedPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
-    const totalExpenses = safeExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
+    // 口径统一来自 useFinancialStats：收入=实收(收款日,扣退款)；成本=支出+薪资(含雇主法定缴款)
+    const totalIncome = financialStats.totalReceived
+    const totalExpenses = financialStats.totalCost
     const netProfit = totalIncome - totalExpenses
     const profitMargin = totalIncome > 0 ? (netProfit / totalIncome * 100) : 0
     return {
@@ -243,20 +246,22 @@ export default function FinancialReports() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="text-center p-4 bg-green-50 rounded-lg">
                   <p className="text-sm font-medium text-gray-600">{t('finance.total_income')}</p>
-                  <p className="text-2xl font-bold text-green-600">RM {financialSummary.totalIncome.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-green-600">RM {fmtMoney(financialSummary.totalIncome)}</p>
                   <p className="text-xs text-gray-500">{financialSummary.successfulPayments} 笔成功缴费</p>
                 </div>
                 <div className="text-center p-4 bg-red-50 rounded-lg">
                   <p className="text-sm font-medium text-gray-600">{t('finance.total_expenses')}</p>
-                  <p className="text-2xl font-bold text-red-600">RM {financialSummary.totalExpenses.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-red-600">RM {fmtMoney(financialSummary.totalExpenses)}</p>
                   <p className="text-xs text-gray-500">{safeExpenses.length} 笔支出记录</p>
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
                   <p className="text-sm font-medium text-gray-600">净利润</p>
                   <p className={`text-2xl font-bold ${financialSummary.netProfit >= 0 ? "text-blue-600" : "text-red-600"}`}>
-                    RM {financialSummary.netProfit.toLocaleString()}
+                    RM {fmtMoney(financialSummary.netProfit)}
                   </p>
-                  <p className="text-xs text-gray-500">利润率 {financialSummary.profitMargin.toFixed(1)}%</p>
+                  <p className="text-xs text-gray-500">
+                    {financialSummary.totalIncome > 0 ? `利润率 ${financialSummary.profitMargin.toFixed(1)}%` : "利润率 —"}
+                  </p>
                 </div>
                 <div className="text-center p-4 bg-purple-50 rounded-lg">
                   <p className="text-sm font-medium text-gray-600">发票总数</p>
@@ -268,17 +273,16 @@ export default function FinancialReports() {
               {/* 图表区 */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                 {monthlyReportData.length > 0 && (
-                  <RevenueChart data={monthlyReportData.map(d => ({ month: d.month.slice(5), amount: d.revenue }))} />
+                  <RevenueChart data={monthlyReportData.map(d => ({ month: d.month.slice(5), amount: Math.round(d.revenue) }))} />
                 )}
                 {expenseBreakdown.length > 0 && (
-                  <ExpenseChart data={expenseBreakdown.map(e => ({ name: e.category, value: e.amount }))} />
+                  <ExpenseChart data={expenseBreakdown.map(e => ({ name: e.category, value: Math.round(e.amount) }))} />
                 )}
               </div>
               {monthlyReportData.length > 0 && (
                 <div className="mt-6">
                   <ProfitChart data={monthlyReportData.map(d => {
-                    const monthlyExp = safeExpenses.filter(e => (e.date || "").startsWith(d.month)).reduce((s, e) => s + (Number(e.amount) || 0), 0)
-                    return { month: d.month.slice(5), profit: d.revenue - monthlyExp }
+                    return { month: d.month.slice(5), profit: Math.round(d.profit) }
                   })} />
                 </div>
               )}
@@ -294,7 +298,7 @@ export default function FinancialReports() {
                           <p className="font-medium">{exp.category}</p>
                           <p className="text-sm text-gray-600">{exp.percentage}%</p>
                         </div>
-                        <p className="text-lg font-semibold text-red-600">RM {exp.amount.toLocaleString()}</p>
+                        <p className="text-lg font-semibold text-red-600">RM {fmtMoney(exp.amount)}</p>
                       </div>
                     ))}
                   </div>
@@ -307,26 +311,26 @@ export default function FinancialReports() {
                   <h3 className="font-semibold text-lg mb-4">月度收支对比</h3>
                   <div className="space-y-3">
                     {monthlyReportData.map(data => {
-                      const monthlyExp = safeExpenses
-                        .filter(e => (e.date || "").startsWith(data.month))
-                        .reduce((s, e) => s + (Number(e.amount) || 0), 0)
-                      const monthlyProfit = data.revenue - monthlyExp
+                      const monthlyExp = data.expense
+                      const monthlySalary = data.salary
+                      const monthlyProfit = data.profit
                       return (
                         <div key={data.month} className="flex justify-between items-center p-3 border rounded-lg">
                           <div className="flex-1">
                             <p className="font-medium">{data.month}</p>
                             <div className="flex gap-4 text-sm text-gray-600">
-                              <span>收入: RM {data.revenue.toLocaleString()}</span>
-                              <span>支出: RM {monthlyExp.toLocaleString()}</span>
-                              <span>发票: {data.invoices} 张</span>
+                              <span>实收: RM {fmtMoney(data.revenue)}</span>
+                              <span>支出: RM {fmtMoney(monthlyExp)}</span>
+                              <span>薪资: RM {fmtMoney(monthlySalary)}</span>
+                              <span>开票: {data.invoices} 张 / RM {fmtMoney(data.invoiceAmount)}</span>
                             </div>
                           </div>
                           <div className="text-right">
                             <p className={`font-semibold ${monthlyProfit >= 0 ? "text-green-600" : "text-red-600"}`}>
-                              RM {monthlyProfit.toLocaleString()}
+                              RM {fmtMoney(monthlyProfit)}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {data.revenue > 0 ? ((monthlyProfit / data.revenue) * 100).toFixed(1) : 0}% 利润率
+                              {data.revenue > 0 ? `${((monthlyProfit / data.revenue) * 100).toFixed(1)}% 利润率` : "利润率 —"}
                             </p>
                           </div>
                         </div>
@@ -358,10 +362,10 @@ export default function FinancialReports() {
                   {reconciliationStatus.isBalanced ? (
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   ) : (
-                    <AlertCircle className="h-4 w-4 text-red-600" />
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
                   )}
-                  <span className={`text-sm font-medium ${reconciliationStatus.isBalanced ? "text-green-600" : "text-red-600"}`}>
-                    {reconciliationStatus.isBalanced ? "数据一致" : "发现差异"}
+                  <span className={`text-sm font-medium ${reconciliationStatus.isBalanced ? "text-green-600" : "text-amber-600"}`}>
+                    {reconciliationStatus.isBalanced ? "已对平" : "尚有未收款"}
                   </span>
                 </div>
               </div>
@@ -369,20 +373,20 @@ export default function FinancialReports() {
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
                 <p className="text-sm font-medium text-gray-600">发票总金额</p>
-                <p className="text-lg font-semibold">RM {reconciliationStatus.totalInvoiced.toLocaleString()}</p>
+                <p className="text-lg font-semibold">RM {fmtMoney(reconciliationStatus.totalInvoiced)}</p>
               </div>
             </div>
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
                 <p className="text-sm font-medium text-gray-600">缴费总金额</p>
-                <p className="text-lg font-semibold">RM {reconciliationStatus.totalPaid.toLocaleString()}</p>
+                <p className="text-lg font-semibold">RM {fmtMoney(reconciliationStatus.totalPaid)}</p>
               </div>
             </div>
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-gray-600">差异金额</p>
+                <p className="text-sm font-medium text-gray-600">未收金额</p>
                 <p className={`text-lg font-semibold ${reconciliationStatus.difference >= 0 ? "text-green-600" : "text-red-600"}`}>
-                  RM {Math.abs(reconciliationStatus.difference).toLocaleString()}
+                  RM {fmtMoney(Math.abs(reconciliationStatus.difference))}
                 </p>
               </div>
             </div>
@@ -426,7 +430,7 @@ export default function FinancialReports() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="text-center p-4 border rounded-lg">
                     <div className="text-2xl font-bold text-blue-600">
-                      RM {(monthlyReportData[0]?.revenue || 0).toLocaleString()}
+                      RM {fmtMoney((monthlyReportData[0]?.revenue || 0))}
                     </div>
                     <div className="text-sm text-gray-600">最近月份收入</div>
                   </div>
@@ -453,7 +457,7 @@ export default function FinancialReports() {
                     {monthlyReportData.map(data => (
                       <TableRow key={data.month}>
                         <TableCell className="font-medium">{data.month}</TableCell>
-                        <TableCell>RM {data.revenue.toLocaleString()}</TableCell>
+                        <TableCell>RM {fmtMoney(data.revenue)}</TableCell>
                         <TableCell>{data.students}</TableCell>
                         <TableCell>{data.invoices}</TableCell>
                         <TableCell>RM {data.students > 0 ? Math.round(data.revenue / data.students).toLocaleString() : 0}</TableCell>
@@ -485,7 +489,7 @@ export default function FinancialReports() {
                   {feeAnalysis.map(fee => (
                     <div key={fee.item} className="text-center p-4 border rounded-lg">
                       <div className="text-lg font-semibold">{fee.item}</div>
-                      <div className="text-2xl font-bold text-blue-600">RM {fee.revenue.toLocaleString()}</div>
+                      <div className="text-2xl font-bold text-blue-600">RM {fmtMoney(fee.revenue)}</div>
                       <div className="text-sm text-gray-600">{fee.students} 笔</div>
                       <div className="text-xs text-gray-500">{fee.percentage}%</div>
                     </div>
@@ -505,7 +509,7 @@ export default function FinancialReports() {
                     {feeAnalysis.map(fee => (
                       <TableRow key={fee.item}>
                         <TableCell className="font-medium">{fee.item}</TableCell>
-                        <TableCell>RM {fee.revenue.toLocaleString()}</TableCell>
+                        <TableCell>RM {fmtMoney(fee.revenue)}</TableCell>
                         <TableCell>{fee.students}</TableCell>
                         <TableCell>{fee.percentage}%</TableCell>
                         <TableCell>RM {fee.students > 0 ? Math.round(fee.revenue / fee.students).toLocaleString() : 0}</TableCell>
@@ -552,7 +556,7 @@ export default function FinancialReports() {
                   </div>
                   <div className="text-center p-4 border rounded-lg">
                     <div className="text-2xl font-bold text-purple-600">
-                      RM {(monthlyReportData[0]?.revenue || 0).toLocaleString()}
+                      RM {fmtMoney((monthlyReportData[0]?.revenue || 0))}
                     </div>
                     <div className="text-sm text-gray-600">当前月收入</div>
                   </div>
@@ -566,7 +570,7 @@ export default function FinancialReports() {
                       <div key={data.month} className="flex justify-between items-center p-3 border rounded-lg">
                         <div>
                           <div className="font-medium">{data.month}</div>
-                          <div className="text-sm text-gray-600">RM {data.revenue.toLocaleString()}</div>
+                          <div className="text-sm text-gray-600">RM {fmtMoney(data.revenue)}</div>
                         </div>
                         <div className="text-right">
                           <div className={`font-medium ${parseFloat(String(growth)) >= 0 ? "text-green-600" : "text-red-600"}`}>
@@ -586,7 +590,7 @@ export default function FinancialReports() {
 
       {/* 收入趋势图表 */}
       {selectedReportType === "trend" && monthlyReportData.length > 0 && (
-        <RevenueChart data={monthlyReportData.map(d => ({ month: d.month, amount: d.revenue }))} />
+        <RevenueChart data={monthlyReportData.map(d => ({ month: d.month, amount: Math.round(d.revenue) }))} />
       )}
 
       {/* 收支利润分析 */}
@@ -603,18 +607,18 @@ export default function FinancialReports() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-green-50 rounded-lg">
                   <p className="text-sm font-medium text-gray-600">累计收入</p>
-                  <p className="text-2xl font-bold text-green-600">RM {financialSummary.totalIncome.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-green-600">RM {fmtMoney(financialSummary.totalIncome)}</p>
                   <p className="text-xs text-gray-600">{financialSummary.successfulPayments} 笔成功缴费</p>
                 </div>
                 <div className="text-center p-4 bg-red-50 rounded-lg">
                   <p className="text-sm font-medium text-gray-600">累计支出</p>
-                  <p className="text-2xl font-bold text-red-600">RM {financialSummary.totalExpenses.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-red-600">RM {fmtMoney(financialSummary.totalExpenses)}</p>
                   <p className="text-xs text-gray-600">运营成本</p>
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
                   <p className="text-sm font-medium text-gray-600">净利润</p>
                   <p className={`text-2xl font-bold ${financialSummary.netProfit >= 0 ? "text-blue-600" : "text-red-600"}`}>
-                    RM {financialSummary.netProfit.toLocaleString()}
+                    RM {fmtMoney(financialSummary.netProfit)}
                   </p>
                   <p className="text-xs text-gray-600">利润率 {financialSummary.profitMargin.toFixed(1)}%</p>
                 </div>
@@ -636,7 +640,7 @@ export default function FinancialReports() {
                       {expenseBreakdown.map(exp => (
                         <TableRow key={exp.category}>
                           <TableCell className="font-medium">{exp.category}</TableCell>
-                          <TableCell className="text-red-600">RM {exp.amount.toLocaleString()}</TableCell>
+                          <TableCell className="text-red-600">RM {fmtMoney(exp.amount)}</TableCell>
                           <TableCell>{exp.percentage}%</TableCell>
                           <TableCell>
                             {financialSummary.totalIncome > 0
@@ -647,7 +651,7 @@ export default function FinancialReports() {
                       ))}
                       <TableRow className="bg-gray-50">
                         <TableCell className="font-semibold">{t('finance.total')}</TableCell>
-                        <TableCell className="font-semibold text-red-600">RM {financialSummary.totalExpenses.toLocaleString()}</TableCell>
+                        <TableCell className="font-semibold text-red-600">RM {fmtMoney(financialSummary.totalExpenses)}</TableCell>
                         <TableCell className="font-semibold">100%</TableCell>
                         <TableCell className="font-semibold">
                           {financialSummary.totalIncome > 0
@@ -666,12 +670,12 @@ export default function FinancialReports() {
 
       {/* 净利润图表 */}
       {selectedReportType === "profit" && monthlyReportData.length > 0 && (
-        <ProfitChart data={monthlyReportData.map(d => ({ month: d.month, profit: d.revenue - (financialSummary.totalExpenses / Math.max(monthlyReportData.length, 1)) }))} />
+        <ProfitChart data={monthlyReportData.map(d => ({ month: d.month, profit: Math.round(d.profit) }))} />
       )}
 
       {/* 支出分类图表 */}
       {selectedReportType === "profit" && expenseBreakdown.length > 0 && (
-        <ExpenseChart data={expenseBreakdown.map(e => ({ name: e.category, value: e.amount }))} />
+        <ExpenseChart data={expenseBreakdown.map(e => ({ name: e.category, value: Math.round(e.amount) }))} />
       )}
 
       {/* AR 账龄分析 */}
@@ -717,7 +721,7 @@ export default function FinancialReports() {
                     <div key={i} className="p-3 rounded-lg border text-center">
                       <div className={`w-2 h-2 rounded-full ${bucket.color} mx-auto mb-2`}></div>
                       <p className="text-xs text-slate-500">{bucket.label}</p>
-                      <p className="text-lg font-bold text-slate-900">RM {bucket.value.toLocaleString()}</p>
+                      <p className="text-lg font-bold text-slate-900">RM {fmtMoney(bucket.value)}</p>
                     </div>
                   ))}
                 </div>
@@ -738,7 +742,7 @@ export default function FinancialReports() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">RM {financialSummary.totalIncome.toLocaleString()}</div>
+            <div className="text-2xl font-bold">RM {fmtMoney(financialSummary.totalIncome)}</div>
             <p className="text-xs text-muted-foreground">累计收入</p>
           </CardContent>
         </Card>
