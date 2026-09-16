@@ -387,15 +387,15 @@ export default function FinancialReports() {
                         <div key={data.month} className="flex justify-between items-center p-3 border rounded-lg">
                           <div className="flex-1">
                             <p className="font-medium">{data.month}</p>
-                            <div className="flex gap-4 text-sm text-gray-600">
-                              <span>实收: RM {fmtMoney(data.revenue)}</span>
-                              <span>支出: RM {fmtMoney(monthlyExp)}</span>
-                              <span>薪资: RM {fmtMoney(monthlySalary)}</span>
-                              <span className="text-slate-700">开票: {data.invoices} 张 / RM {fmtMoney(data.invoiceAmount)}</span>
+                            <div className="flex flex-wrap gap-4 text-sm">
+                              <span className="text-green-700">实收: <span className="font-medium">RM {fmtMoney(data.revenue)}</span></span>
+                              <span className="text-red-600">支出: <span className="font-medium">RM {fmtMoney(monthlyExp)}</span></span>
+                              <span className="text-orange-600">薪资: <span className="font-medium">RM {fmtMoney(monthlySalary)}</span></span>
+                              <span className="text-blue-700">开票: <span className="font-medium">{data.invoices} 张 / RM {fmtMoney(data.invoiceAmount)}</span></span>
                               {(() => {
                                 const unpaid = unpaidOfMonth(data.month)
                                 return (
-                                  <span className={unpaid > 0.01 ? "text-red-600 font-medium" : "text-green-600"}>
+                                  <span className={unpaid > 0.01 ? "text-red-700 font-semibold" : "text-slate-400"}>
                                     未收: RM {fmtMoney(unpaid)}
                                   </span>
                                 )
