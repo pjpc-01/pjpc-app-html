@@ -9,6 +9,7 @@ import { Edit, Eye, Trash2, MoreHorizontal, FileText, UserX, UserCheck } from "l
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Student } from "@/hooks/useStudents"
 import { convertGradeToChinese } from "./utils"
+import { studentAvatarUrl } from "@/lib/utils"
 import PermissionGate from "@/components/shared/PermissionGate"
 import type { UserRole } from "@/lib/permissions"
 import { useLanguage } from "@/contexts/language-context"
@@ -179,7 +180,7 @@ export default function StudentList({
               <TableCell className="font-medium text-foreground">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={student.avatar || undefined} />
+                    <AvatarImage src={studentAvatarUrl(student)} />
                     <AvatarFallback className="bg-gradient-to-br from-[#e6be1e] to-[#d4a817] text-white text-xs font-semibold">
                       {student.student_name?.[0] || '?'}
                     </AvatarFallback>

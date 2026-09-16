@@ -890,7 +890,7 @@ export default function StudentManagementPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3 flex-1">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={student.avatar || undefined} />
+                      <AvatarImage src={studentAvatarUrl(student)} />
                       <AvatarFallback className="bg-gradient-to-br from-[#e6be1e] to-[#d4a817] text-white text-sm font-semibold">
                         {student.student_name?.[0] || '?'}
                       </AvatarFallback>
