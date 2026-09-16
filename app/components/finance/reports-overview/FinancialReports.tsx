@@ -129,6 +129,18 @@ export default function FinancialReports() {
     return m ? `${m[1]}年${Number(m[2])}月` : String(selectedMonth || "")
   })()
 
+  // 某月「未收金额」= 该月开票的票里，至今尚未收完的部分（跨月累计欠款）
+  const unpaidOfMonth = (ym: string): number => {
+    let unpaid = 0
+    safeInvoices.filter(iv => invMonthOf(iv) === ym).forEach(iv => {
+      const got = safePayments
+        .filter(pp => pp.invoiceId === iv.id && (!pp.status || pp.status === "completed"))
+        .reduce((a, pp) => a + (Number(pp.amount) || 0), 0)
+      unpaid += Math.max((Number(iv.totalAmount) || 0) - got, 0)
+    })
+    return unpaid
+  }
+
   // 选中月份的数据（顶部卡片 + 利润分析都用它，不再用累计总额）
   const cur = allMonths.find(m => m.month === selectedMonth) || {
     month: selectedMonth, revenue: 0, expense: 0, salary: 0, cost: 0, profit: 0, invoices: 0, invoiceAmount: 0, students: 0,
@@ -379,7 +391,15 @@ export default function FinancialReports() {
                               <span>实收: RM {fmtMoney(data.revenue)}</span>
                               <span>支出: RM {fmtMoney(monthlyExp)}</span>
                               <span>薪资: RM {fmtMoney(monthlySalary)}</span>
-                              <span>开票: {data.invoices} 张 / RM {fmtMoney(data.invoiceAmount)}</span>
+                              <span className="text-slate-700">开票: {data.invoices} 张 / RM {fmtMoney(data.invoiceAmount)}</span>
+                              {(() => {
+                                const unpaid = unpaidOfMonth(data.month)
+                                return (
+                                  <span className={unpaid > 0.01 ? "text-red-600 font-medium" : "text-green-600"}>
+                                    未收: RM {fmtMoney(unpaid)}
+                                  </span>
+                                )
+                              })()}
                             </div>
                           </div>
                           <div className="text-right">
