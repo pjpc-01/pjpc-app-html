@@ -98,16 +98,44 @@ export const useInvoices = () => {
     return result
   }, [])
 
+  // 级联：一张发票下的 payment + receipt 跟着一起进/出回收站
+  // 用户要求：删的时候一起进回收站，恢复时一并恢复 —— 否则会出现"孤儿收款"（报表把没收到的钱算成收入）
+  const cascadeInvoiceChildren = useCallback(async (invoiceId: string, deleted: boolean) => {
+    try {
+      const pays = await fetchSecureData<any>('payments', { fullList: true, filter: `invoiceId="${invoiceId}"` })
+      for (const pay of pays || []) {
+        await updateRecord('payments', pay.id, { deleted })
+        const recs = await fetchSecureData<any>('receipts', { fullList: true, filter: `paymentId="${pay.id}"` })
+        for (const rc of recs || []) await updateRecord('receipts', rc.id, { deleted })
+      }
+    } catch (e) {
+      console.error('级联处理关联收款/收据失败:', e)
+    }
+  }, [])
+
   const deleteInvoice = useCallback(async (invoiceId: string) => {
     await updateRecord('invoices', invoiceId, { deleted: true })
+    await cascadeInvoiceChildren(invoiceId, true)
     setInvoices(prev => prev.filter(invoice => invoice.id !== invoiceId))
-  }, [])
+  }, [cascadeInvoiceChildren])
 
   const restoreInvoice = useCallback(async (invoiceId: string) => {
     await updateRecord('invoices', invoiceId, { deleted: false })
-  }, [])
+    await cascadeInvoiceChildren(invoiceId, false)
+  }, [cascadeInvoiceChildren])
 
   const permanentDeleteInvoice = useCallback(async (invoiceId: string) => {
+    // 永久删除：连带收款/收据一起物理删掉
+    try {
+      const pays = await fetchSecureData<any>('payments', { fullList: true, filter: `invoiceId="${invoiceId}"` })
+      for (const pay of pays || []) {
+        const recs = await fetchSecureData<any>('receipts', { fullList: true, filter: `paymentId="${pay.id}"` })
+        for (const rc of recs || []) await deleteRecord('receipts', rc.id)
+        await deleteRecord('payments', pay.id)
+      }
+    } catch (e) {
+      console.error('永久删除关联收款/收据失败:', e)
+    }
     await deleteRecord('invoices', invoiceId)
   }, [])
 
