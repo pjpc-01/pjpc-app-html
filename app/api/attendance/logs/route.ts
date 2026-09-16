@@ -21,23 +21,29 @@ export async function GET(request: NextRequest) {
 
     // date 单日：date 区间；否则用 startDate~endDate 区间。
     // 优先用 startDate/endDate（区间查询），无则退回单日 date
-    let lo: string, hi: string
+    let loDay: string, hiDay: string
     if (startDate && endDate) {
-      lo = `${startDate} 00:00:00`
-      hi = `${endDate} 23:59:59`
+      loDay = startDate
+      hiDay = endDate
     } else if (date) {
-      lo = `${date} 00:00:00`
-      hi = `${date} 23:59:59`
+      loDay = date
+      hiDay = date
     } else {
       // 默认今天
-      lo = `${today} 00:00:00`
-      hi = `${today} 23:59:59`
+      loDay = today
+      hiDay = today
     }
-    const loDay = lo.split(' ')[0]
-    const hiDay = hi.split(' ')[0]
-    // date 字段区间（按天）用 (date >= "loDay" && date <= "hiDay")
-    const dayFilter = `date >= "${loDay}" && date <= "${hiDay}"`
-    const createdFilter = `created >= "${lo}" && created <= "${hi}"`
+    // ⚠️ 时区陷阱（踩过）：PB 的 date 字段实际存成 "YYYY-MM-DD 00:00:00.000Z"，
+    //   created 则是真实 UTC 时刻。若用 created 过滤，本地早上 8 点前的打卡其 UTC 还落在前一天 → 捞不到人。
+    //   统一改用 date 字段，并用【排他上限 = 次日 00:00:00.000Z】，避免字符串比较漏掉带时分秒的值。
+    const addDays = (day: string, n: number) => {
+      const dt = new Date(`${day}T00:00:00.000Z`)
+      dt.setUTCDate(dt.getUTCDate() + n)
+      return dt.toISOString().slice(0, 10)
+    }
+    const lo = `${loDay} 00:00:00.000Z`
+    const hiExclusive = `${addDays(hiDay, 1)} 00:00:00.000Z`
+    const dayFilter = `date >= "${lo}" && date < "${hiExclusive}"`
 
     const records: any[] = []
 
@@ -68,7 +74,8 @@ export async function GET(request: NextRequest) {
 
     // ── Teacher records ─────────────────────────
     if (type === 'all' || type === 'teacher') {
-      const filter = createdFilter
+      // 同样用 date 字段（原用 created，会因 UTC 偏移漏掉早上 8 点前的打卡）
+      const filter = dayFilter
       const url = `${PB_URL}/api/collections/teacher_attendance/records?perPage=${pageSize}&sort=-created&filter=${encodeURIComponent(filter)}`
       const res = await fetch(url, { headers: { Authorization: token } }).then(r => r.json())
 
