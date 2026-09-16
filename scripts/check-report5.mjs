@@ -1,0 +1,23 @@
+
+import { chromium } from 'playwright';
+const PROXY='http://127.0.0.1:3001/api/pocketbase-proxy/api';
+const uid=(await (await fetch(`${PROXY}/collections/users/records?perPage=1&filter=email%3D%22admin%40pjpc.com%22`)).json()).items[0].id;
+const imp=await (await fetch(`${PROXY}/collections/users/impersonate/${uid}`,{method:'POST'})).json();
+const b=await chromium.launch({headless:true,args:['--no-sandbox']});
+const ctx=await b.newContext({viewport:{width:1600,height:1100},locale:'zh-CN'});
+await ctx.addInitScript(({t,m})=>{localStorage.setItem('pocketbase_auth',JSON.stringify({token:t,model:m}));},{t:imp.token,m:imp.record});
+const pg=await ctx.newPage();
+await pg.goto('http://127.0.0.1:3001/finance/reports',{waitUntil:'domcontentloaded'});
+await pg.waitForTimeout(6000);
+const show=async(label)=>{ const t=await pg.evaluate(()=>document.body.innerText); const j=t.indexOf('收支概览'); const k=t.indexOf('收入趋势'); console.log('=== '+label+' ==='); console.log(t.slice(j,k).replace(/\n{2,}/g,'\n').trim()); };
+await show('默认月份');
+console.log('月份选择器:', JSON.stringify(await pg.$$eval('input[type=month]',e=>e.map(x=>x.value))));
+await pg.fill('input[type=month]','2026-08');
+await pg.dispatchEvent('input[type=month]','change');
+await pg.waitForTimeout(2500);
+await show('切到 2026-08');
+await pg.fill('input[type=month]','2026-07');
+await pg.dispatchEvent('input[type=month]','change');
+await pg.waitForTimeout(2500);
+await show('切到 2026-07');
+await b.close();
