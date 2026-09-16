@@ -620,3 +620,21 @@ export const toLocalMonthKey = (d: Date = new Date()): string =>
 /** 本地时区的 YYYY-MM-DD */
 export const toLocalDateKey = (d: Date = new Date()): string =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+
+/**
+ * 学生头像 URL —— students.avatar 字段只存文件名（如 333195832626_xxx.jpeg），
+ * 直接当 src 用会被浏览器当相对路径请求 → 404，一页 100+ 个无效请求把页面拖卡。
+ * 统一在这里拼成 PB 文件端点。
+ */
+export function studentAvatarUrl(
+  student: { id?: string; avatar?: string | null } | null | undefined
+): string | undefined {
+  if (!student) return undefined
+  const a = String(student.avatar ?? '').trim()
+  if (!a || a === 'null' || a === 'undefined') return undefined
+  if (/^https?:\/\//i.test(a)) return a   // 已是完整外链
+  if (a.startsWith('/')) return a           // 已是绝对路径
+  if (!student.id) return undefined
+  return `/api/pocketbase-proxy/api/files/students/${student.id}/${a}`
+}

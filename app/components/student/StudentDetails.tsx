@@ -83,7 +83,7 @@ export default function StudentDetails({
                   <div className="w-20 h-20 rounded-2xl border-4 border-white bg-white shadow-lg overflow-hidden">
                     {student.avatar && student.avatar !== 'null' ? (
                       <img 
-                        src={student.avatar} 
+                        src={studentAvatarUrl(student)} 
                         alt={student.student_name} 
                         className="w-full h-full object-cover" 
                       />
