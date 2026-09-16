@@ -94,7 +94,7 @@ export default function FinancialReports() {
   }))
 
 
-  // 资产负债概览数字
+  // 资产负债概览（累计）数字
   const balanceSheet = (() => {
     const paidByInv = new Map<string, number>()
     safePayments.filter(pp => !pp.status || pp.status === 'completed').forEach(pp => {
@@ -406,7 +406,7 @@ export default function FinancialReports() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5" />
-            财务对账状态
+            财务总览（全部）
           </CardTitle>
           <CardDescription>发票与缴费数据一致性检查</CardDescription>
         </CardHeader>
@@ -782,7 +782,7 @@ export default function FinancialReports() {
             资产负债概览
           </CardTitle>
           <CardDescription>
-            截至 {monthLabel}：应收 / 应付 / 累计损益（银行与现金栏需先在「银行对账」导入真实流水）
+        时点报表 · 截至数据最新日（累计口径，不随上方月份切换）：应收 / 应付 / 累计损益（银行与现金栏需先在「银行对账」导入真实流水）
           </CardDescription>
         </CardHeader>
         <CardContent>
