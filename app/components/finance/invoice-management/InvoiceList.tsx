@@ -367,7 +367,8 @@ export function InvoiceList({
                   <TableHead>{t('student.grade')}</TableHead>
                   <TableHead>{t('finance.amount')}</TableHead>
                   <TableHead>缴费状态</TableHead>
-                  <TableHead>开具日期</TableHead>
+                  <TableHead>开票日期</TableHead>
+                  <TableHead>账期</TableHead>
                   <TableHead>到期日期</TableHead>
                   <TableHead>{t('teacher.actions')}</TableHead>
                 </TableRow>
@@ -396,6 +397,12 @@ export function InvoiceList({
                       {getPaymentStatusBadge(invoice.id)}
                     </TableCell>
                     <TableCell>{formatDate(invoice.issueDate)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{
+                      (() => {
+                        const m = String((invoice as any).period || '').match(/^(\d{4})-(\d{2})/)
+                        return m ? `${m[1]}年${Number(m[2])}月` : '—'
+                      })()
+                    }</TableCell>
                     <TableCell>{formatDate(invoice.dueDate)}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">

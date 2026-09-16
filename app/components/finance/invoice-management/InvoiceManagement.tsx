@@ -476,7 +476,7 @@ Prospek Cemerlang`,
     }
   }
 
-  const handleDirectCreate = async (student: any, dueDate: string, notes: string) => {
+  const handleDirectCreate = async (student: any, dueDate: string, notes: string, period?: string) => {
     const invoiceItems = activeFees
       .filter(fee => isAssigned(student.id, fee.id))
       .map(fee => ({ name: fee.name, amount: fee.amount }))
@@ -515,6 +515,7 @@ Prospek Cemerlang`,
       issueDate: new Date().toISOString().split('T')[0],
       dueDate: dueDate,
       notes: notes || '',
+      period: period || undefined,
       totalAmount: totalAmount || 0,
       discount: discount || undefined,
       discountType: discount > 0 ? discountType : undefined,
@@ -555,6 +556,13 @@ Prospek Cemerlang`,
   const centerTotalPaid = useMemo(() => centerActiveInvoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0), [centerActiveInvoices])
   const centerTotalUnpaid = Math.max(centerTotalInvoiced - centerTotalPaid, 0)
 
+  // 发票归属月：账期(period)优先，没填才用开票日 —— 与财务报表口径一致
+  const invMonthOf = (i: any): string => {
+    const p = String(i?.period || '')
+    if (/^\d{4}-\d{2}/.test(p)) return p.slice(0, 7)
+    return String(i?.issueDate || i?.created || '').slice(0, 7)
+  }
+
   // 每月统计:开票(按发票月份) / 已收(按收款月份) / 未收(该月发票未收合计)
   const paidByInvoice = useMemo(() => {
     const map = new Map<string, number>()
@@ -567,9 +575,11 @@ Prospek Cemerlang`,
   const monthlySummary = useMemo(() => {
     const activeIds = new Set(centerActiveInvoices.map(i => i.id))
     const paidByMonth = new Map<string, number>()
+    const invById = new Map(centerActiveInvoices.map(i => [i.id, i]))
     payments.forEach(p => {
       if (p.status !== 'completed' || !activeIds.has(p.invoiceId)) return
-      const ym = (p.date || '').split(' ')[0].slice(0, 7)
+      const inv = invById.get(p.invoiceId)
+      const ym = inv ? invMonthOf(inv) : (p.date || '').split(' ')[0].slice(0, 7)
       if (!/^\d{4}-\d{2}$/.test(ym)) return
       paidByMonth.set(ym, (paidByMonth.get(ym) || 0) + (Number(p.amount) || 0))
     })
@@ -578,7 +588,7 @@ Prospek Cemerlang`,
     const totals = { count: 0, invoiced: 0, collected: 0, outstanding: 0 }
     for (let m = 1; m <= 12; m++) {
       const ym = `${summaryYear}-${String(m).padStart(2, '0')}`
-      const invs = centerActiveInvoices.filter(i => (i.issueDate || '').slice(0, 7) === ym)
+      const invs = centerActiveInvoices.filter(i => invMonthOf(i) === ym)
       const invoiced = invs.reduce((s, i) => s + (Number(i.totalAmount) || 0), 0)
       const collected = paidByMonth.get(ym) || 0
       const outstanding = invs.reduce((s, i) => s + Math.max((Number(i.totalAmount) || 0) - (paidByInvoice.get(i.id) || 0), 0), 0)
@@ -606,11 +616,14 @@ Prospek Cemerlang`,
     const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
     const activeIds = new Set(centerActiveInvoices.map(i => i.id))
     let collected = 0
+    const invById2 = new Map(centerActiveInvoices.map(i => [i.id, i]))
     payments.forEach(p => {
       if (p.status !== 'completed' || !activeIds.has(p.invoiceId)) return
-      if ((p.date || '').split(' ')[0].slice(0, 7) === ym) collected += Number(p.amount) || 0
+      const inv = invById2.get(p.invoiceId)
+      const payYm = inv ? invMonthOf(inv) : (p.date || '').split(' ')[0].slice(0, 7)
+      if (payYm === ym) collected += Number(p.amount) || 0
     })
-    const invs = centerActiveInvoices.filter(i => (i.issueDate || '').slice(0, 7) === ym)
+    const invs = centerActiveInvoices.filter(i => invMonthOf(i) === ym)
     const invoiced = invs.reduce((s, i) => s + (Number(i.totalAmount) || 0), 0)
     const outstanding = invs.reduce((s, i) => s + Math.max((Number(i.totalAmount) || 0) - (paidByInvoice.get(i.id) || 0), 0), 0)
     return { ym, label: `${now.getFullYear()} 年 ${now.getMonth() + 1} 月`, invoiced, collected, outstanding, count: invs.length }
@@ -838,6 +851,7 @@ Prospek Cemerlang`,
               issueDate: new Date().toISOString().split('T')[0],
               dueDate: formData.dueDate || new Date(Date.now() + 14*86400000).toISOString().split('T')[0],
               notes: formData.notes || '',
+              period: formData.period || undefined,
               totalAmount: totalAmount || 0
             } as any)
           })

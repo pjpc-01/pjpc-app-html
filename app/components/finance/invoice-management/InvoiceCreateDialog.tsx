@@ -25,7 +25,7 @@ interface InvoiceCreateDialogProps {
   activeFees: any[]
   isFeeAssigned: (studentId: string, feeId: string) => boolean
   calculateStudentTotal: (studentId: string) => number
-  onDirectCreate: (student: any, dueDate: string, notes: string) => void
+  onDirectCreate: (student: any, dueDate: string, notes: string, period: string) => void
   onBulkCreate: (selectedGrades: string[], formData: any) => void
 }
 
@@ -44,6 +44,11 @@ export function InvoiceCreateDialog({
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [dueDate, setDueDate] = useState("")
   const [notes, setNotes] = useState("")
+  // 账期 = 这张票属于哪个月（学费月份），默认本月；用本地时区取年月，避免 UTC 偏移
+  const [period, setPeriod] = useState(() => {
+    const n = new Date()
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`
+  })
   
   const gradeOrder = [
     '一年级', '二年级', '三年级', '四年级', '五年级', '六年级',
@@ -92,11 +97,11 @@ export function InvoiceCreateDialog({
     if (selectedStudents.length === 1) {
       const student = selectedStudentObjects[0]
       if (student) {
-        onDirectCreate(student, dueDate, notes)
+        onDirectCreate(student, dueDate, notes, period)
       }
     } else {
       const grades = [...new Set(selectedStudentObjects.map((s: any) => s.grade || s.standard))]
-      onBulkCreate(grades, { dueDate, notes: notes || '' })
+      onBulkCreate(grades, { dueDate, notes: notes || '', period })
     }
     
     onOpenChange(false)
@@ -263,6 +268,19 @@ export function InvoiceCreateDialog({
 
           {/* Invoice Details Form */}
           <div className="grid grid-cols-1 gap-3 pt-2 border-t">
+            <div>
+              <Label htmlFor="period">账期（这张票属于哪个月）</Label>
+              <Input
+                id="period"
+                type="month"
+                value={period}
+                onChange={(e) => setPeriod(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                报表按账期算收入。例如 8 月的学费即使 9 月才开票，选 2026-08 就计入 8 月。
+              </p>
+            </div>
             <div>
               <Label htmlFor="dueDate">到期日期 *</Label>
               <Input

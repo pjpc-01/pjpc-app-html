@@ -113,12 +113,24 @@ export const useFinancialStats = () => {
 
       const currentMonth = toLocalMonthKey()
 
-      // ── 实收（按收款日）──
+      // 发票月映射：收款按【发票所属月】归集
+      // 用户 2026-09-16 确认：8 月开的票，钱 9 月才到账也要算 8 月（老板看的是"当月做了多少生意"）
+      const invMonth = new Map<string, string>()
+      for (const i of invoices) {
+        if (i?.deleted) continue
+        // 账期(period)优先 —— 它代表"这票是哪个月的学费"；没填才退回开票日
+        const m = (i.period && /^\d{4}-\d{2}/.test(String(i.period)))
+          ? String(i.period).slice(0, 7)
+          : monthOf(i.issueDate || i.created)
+        if (i?.id && m) invMonth.set(i.id, m)
+      }
+
+      // ── 实收（按发票所属月；找不到对应发票时退回收款日）──
       const payByMonth: Record<string, number> = {}
       let receivedTotal = 0
       for (const p of payments) {
         if (p?.status && p.status !== 'completed') continue
-        const m = monthOf(p.date || p.created)
+        const m = invMonth.get(p.invoiceId) || monthOf(p.date || p.created)
         if (!m) continue
         const amt = Number(p.amount) || 0
         payByMonth[m] = (payByMonth[m] || 0) + amt
@@ -129,7 +141,7 @@ export const useFinancialStats = () => {
       let refundTotal = 0
       for (const r of refunds) {
         if (r?.status && r.status !== 'completed') continue
-        const m = monthOf(r.created)
+        const m = invMonth.get(r.invoiceId) || monthOf(r.created)
         if (!m) continue
         const amt = Number(r.amount) || 0
         refByMonth[m] = (refByMonth[m] || 0) + amt
@@ -169,7 +181,10 @@ export const useFinancialStats = () => {
       for (const i of invoices) {
         if (i?.deleted) continue
         const amt = Number(i.totalAmount ?? i.total_amount) || 0
-        const m = monthOf(i.issueDate || i.created)
+        // 开票也按账期归月（与收款归月口径一致）
+        const m = (i.period && /^\d{4}-\d{2}/.test(String(i.period)))
+          ? String(i.period).slice(0, 7)
+          : monthOf(i.issueDate || i.created)
         receivable += amt
         if (m) {
           invByMonth[m] = (invByMonth[m] || 0) + amt
