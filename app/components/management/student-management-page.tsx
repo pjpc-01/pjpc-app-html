@@ -78,7 +78,6 @@ import StudentDetails from "../student/StudentDetails"
 import StudentList from "../student/StudentList"
 import AdvancedFilters from "../student/AdvancedFilters"
 import StudentAnalytics from "../student/StudentAnalytics"
-import BulkOperations from "../student/BulkOperations"
 
 interface FilterState {
   // 基本信息筛选
@@ -476,32 +475,6 @@ export default function StudentManagementPage() {
     }
   }
 
-  const handleBulkDelete = async () => {
-    try {
-      for (const studentId of selectedStudents) {
-        await deleteStudent(studentId)
-      }
-      setSelectedStudents(new Set())
-      refetch()
-      alert(`已删除 ${selectedStudents.length} 名学生`)
-    } catch (error) {
-      console.error("Error bulk deleting students:", error)
-      alert("批量删除失败: " + (error instanceof Error ? error.message : "未知错误"))
-    }
-  }
-
-  const handleBulkUpdate = async (updates: Partial<Student>) => {
-    try {
-      for (const studentId of selectedStudents) {
-        await updateStudent(studentId, updates)
-      }
-      setSelectedStudents(new Set())
-      refetch()
-    } catch (error) {
-      console.error("Error bulk updating students:", error)
-    }
-  }
-
   const handleBulkExport = async () => {
     try {
       const response = await fetch('/api/students/export')
@@ -538,23 +511,24 @@ export default function StudentManagementPage() {
     }
   }
 
-  const handleBulkMessage = async (message: string, type: 'email' | 'sms') => {
-    const selectedStudentData = students.filter(student => selectedStudents.has(student.id))
-    console.log(`Sending ${type} message to ${selectedStudentData.length} students: ${message}`)
-    // 这里可以实现实际的消息发送逻辑
-  }
-
-  const handleBulkStatusChange = async (status: string) => {
-    const ids = Array.from(selectedStudents)
-    await Promise.all(ids.map(id =>
-      fetch(`/api/pocketbase-proxy/api/collections/students/records/${id}`, {
+  // 单个学生停学/复学（学生列表行内按钮）
+  const handleToggleStatus = async (student: any) => {
+    const next = student.status === 'active' ? 'withdrawn' : 'active'
+    if (next === 'withdrawn') {
+      const name = student.student_name || student.name || '这位学生'
+      if (!confirm(`确定把「${name}」标记为已停学吗？`)) return
+    }
+    try {
+      const res = await fetch(`/api/pocketbase-proxy/api/collections/students/records/${student.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status: next }),
       })
-    ))
-    setSelectedStudents(new Set())
-    refetch()
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      await refetch()
+    } catch (e) {
+      alert('操作失败: ' + (e as Error).message)
+    }
   }
 
   const handleSelectStudent = (studentId: string, checked: boolean) => {
@@ -803,18 +777,7 @@ export default function StudentManagementPage() {
         onClear={clearFilters}
       />
 
-      {/* 批量操作组件 */}
-      <BulkOperations
-        selectedStudents={students.filter(student => selectedStudents.has(student.id))}
-        onClearSelection={() => setSelectedStudents(new Set())}
-        onBulkUpdate={handleBulkUpdate}
-        onBulkDelete={handleBulkDelete}
-        onBulkExport={handleBulkExport}
-        onBulkImport={handleBulkImport}
-        onBulkMessage={handleBulkMessage}
-        onBulkStatusChange={handleBulkStatusChange}
-      />
-
+      
         {/* 视图模式切换和统计信息 */}
         <div className="bg-white/80 backdrop-blur-sm border border-amber-200/30 rounded-2xl shadow-md p-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -908,6 +871,7 @@ export default function StudentManagementPage() {
               onViewStudent={(s) => setViewingStudent(s)}
               onDeleteStudent={handleDeleteStudent}
               onViewReport={handleViewReport}
+              onToggleStatus={handleToggleStatus}
             />
           </CardContent>
         </Card>

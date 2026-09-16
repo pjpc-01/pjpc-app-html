@@ -34,17 +34,23 @@
 - **财务 5 个入口概念重叠**，用户难分辨钱该在哪录：收费管理 / 学生费用 / 发票管理 / 付款管理 / 收据管理
 - **单页按钮过多**（每行操作列重复堆）：家长管理 543 个、学生费用 248、学生列表 232、薪资管理 174、课程管理 161
 
-### 数据质量
-- 6 个学生**学号不完整**（缺中心前缀或号码），待补正确学号：
-  - 郑凯昇 Tee Khai Shen → `B`（只有一个字母）
-  - 帝韦尼 Dhivnesh bin Umaganthan → `B27`
-  - 安藤豊大 Miharu Ando → `T`
-  - 阿吉拉非 Muhammad Akid Rafif bin Mohd Rozaidi → `T13`
-  - JOANNA TING SHIN YU → `G1`
-  - 黄俊鸿 Ethan Ng Junn Hong → `PU E`（缺号码）
-- JOANNA TING SHIN YU 疑似**重复学生记录**（`BT G12` 和 `G1` 两条），待确认清理
+### 数据质量（2026-09-16 全量扫描 132 名学生）
+- **学号不完整 6 人**（要定正确学号，建议补成完整格式）：
+  - 阿吉拉非 Muhammad Akid Rafif → `T13`（建议 `BT T13`）
+  - 帝韦尼 Dhivnesh bin Umaganthan → `B27`（建议 `BT B27`）
+  - 郑凯昇 Tee Khai Shen → `B`（**缺号码**）
+  - 黄俊鸿 Ethan Ng Junn Hong → `PU E`（**缺号码**）
+  - JOANNA TING SHIN YU → `G1`（建议 `BT G01`）
+  - 安藤豊大 Miharu Ando → `T`（**缺号码**）
+- **JOANNA TING SHIN YU 重复 2 条**：`陈芯妤 JOANNA TING SHIN YU`(BT G12) 与 `JOANNA TING SHIN YU`(G1)，待合并（两条都缺家长电话）
+- **年级空缺 14 人**（PU1 的 BK 那批）：全莉莉 BK G12、THAM YU HWA BK B7、张巧琳 BK G2、张巧恩 BK G1、林晨晰 BK G7、詹嘉敏 BK G10、马弘懿 BK B2、马如恩 BK G5、亚当 BK T1、刘晓彤 BK G4、法奇 BK B11、林珂萱 BK G8、刘维德 BK B3、陆光铭 BK B05
+- **卡号空 18 人**（NFC 刷不了）：郑凯昇 + 上述 BK 14 人 + 黄俊鸿 + JOANNA + 安藤豊大
+- **NRIC 空 18 人**（拉不到成绩）：上述 BK 14 人 + 加华 BT T11、刘芝榛 BT T19、杨凯欐 BT T13、安藤豊大 T
+- **家长电话空 6 人**：叶浩凯 Anders Yap、杜晨曦 XAVERIA TOH、JOANNA(两条)、杨凯欐、安藤豊大
+- ✅ **centerId 空 14 人已补齐**（2026-09-16，按 center code 映射；备份 `pjpc-backup-students-centerid-20260916-151426.json`）
+- **BK 含义已确认**：BK = 之前另一间分行（已关闭），那批学生**暂时保留不动**
 - 家长-学生关联：还有 **44 个家长 / 46 个学生**未关联（学生端家长姓名/电话对不上），之后手动补
-- 学号编码疑问：PU1 同时存在 `PU G06` 与 `BK B05` 两套写法，BK 含义待确认
 - 3 个 PU1 学生 NRIC=000000000（李芯妍、罗貹劼、林捷葇）无法拉成绩，等 NRIC
 - 6 个 PU1 学生 DataStudio 无成绩记录（李凯文、张展铭、黄之语、黄俊鸿、曾令丰、黄脩竣）
 - Anders（10 岁但 grade=Standard 1）疑似年级录入错误，待确认
+- **年级格式混乱**：数字（`7`/`8`/`3`/`4`/`2`/`1` 共 41 人）与英文（`Standard N`/`Form N`）混用 —— 显示层已用 `formatGrade()` 归一化，数据层未统一
