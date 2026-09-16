@@ -120,7 +120,8 @@ export default function FinancialReports() {
   })()
 
   // 图表只用最近 6 个月，避免太挤
-  const monthlyReportData = allMonths.slice(-6)
+  // 全部月份都可查看（不再截断成最近 6 个月）
+  const monthlyReportData = allMonths
 
   // 选中月份的显示名，如 "2026年8月"
   const monthLabel = (() => {
@@ -156,12 +157,15 @@ export default function FinancialReports() {
   // Expense breakdown from real expenses
   const expenseBreakdown = (() => {
     const cats: Record<string, number> = {}
-    safeExpenses.forEach(e => {
-      const cat = CATEGORY_LABELS[e.category] || e.category || "其他"
-      cats[cat] = (cats[cat] || 0) + (Number(e.amount) || 0)
-    })
-    // 薪资是最大成本项，单列出来；否则「支出分布」只剩水电杂项这点零头，看不出真实成本结构
-    const salaryTotal = Math.max(0, (financialStats.totalCost || 0) - Object.values(cats).reduce((s, v) => s + v, 0))
+    // 只统计【所选月份】的支出（原来用的是全部累计）
+    safeExpenses
+      .filter(e => String(e.date || e.created || "").slice(0, 7) === selectedMonth)
+      .forEach(e => {
+        const cat = CATEGORY_LABELS[e.category] || e.category || "其他"
+        cats[cat] = (cats[cat] || 0) + (Number(e.amount) || 0)
+      })
+    // 薪资是最大成本项，单列出来；取所选月份的薪资成本
+    const salaryTotal = cur.salary || 0
     if (salaryTotal > 0) cats["薪资"] = salaryTotal
     const total = Object.values(cats).reduce((s, v) => s + v, 0)
     return Object.entries(cats).map(([category, amount]) => ({
@@ -680,8 +684,8 @@ export default function FinancialReports() {
                           <TableCell className="text-red-600">RM {fmtMoney(exp.amount)}</TableCell>
                           <TableCell>{exp.percentage}%</TableCell>
                           <TableCell>
-                            {financialSummary.totalIncome > 0
-                              ? ((exp.amount / financialSummary.totalIncome) * 100).toFixed(1)
+                            {cur.revenue > 0
+                              ? ((exp.amount / cur.revenue) * 100).toFixed(1)
                               : 0}%
                           </TableCell>
                         </TableRow>
@@ -778,7 +782,7 @@ export default function FinancialReports() {
             资产负债概览
           </CardTitle>
           <CardDescription>
-            应收 / 应付 / 累计损益（银行与现金栏需先在「银行对账」导入真实流水）
+            截至 {monthLabel}：应收 / 应付 / 累计损益（银行与现金栏需先在「银行对账」导入真实流水）
           </CardDescription>
         </CardHeader>
         <CardContent>
