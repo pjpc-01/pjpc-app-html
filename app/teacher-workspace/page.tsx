@@ -83,34 +83,8 @@ export default function TeacherWorkspace() {
         }
       } catch {}
 
-      // Fallback mock notifications
-      const mockNotifications = [
-        {
-          id: "1",
-          title: "新作业提交",
-          message: "李四提交了英语作业",
-          time: "10分钟前",
-          type: "assignment",
-          read: false
-        },
-        {
-          id: "2",
-          title: "课程提醒",
-          message: "数学课将在15分钟后开始",
-          time: "5分钟前",
-          type: "schedule",
-          read: false
-        },
-        {
-          id: "3",
-          title: "家长消息",
-          message: "张三的家长发来消息",
-          time: "1小时前",
-          type: "message",
-          read: true
-        }
-      ]
-      setNotifications(mockNotifications)
+      // 没有待批改作业 → 无通知（不显示任何假数据）
+      setNotifications([])
     } catch (error) {
       console.error('加载通知失败:', error)
     }
