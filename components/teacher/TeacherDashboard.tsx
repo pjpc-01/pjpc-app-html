@@ -143,6 +143,17 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
       }))
       setTodaySchedule(list)
 
+      // 我教的年级（来自 courses.grade_level，按 GRADE 归一化）
+      const GRADE_MAP: Record<string, string> = {
+        '1': 'Standard 1', '一年级': 'Standard 1', '2': 'Standard 2', '二年级': 'Standard 2',
+        '3': 'Standard 3', '三年级': 'Standard 3', '4': 'Standard 4', '四年级': 'Standard 4',
+        '5': 'Standard 5', '五年级': 'Standard 5', '6': 'Standard 6', '六年级': 'Standard 6',
+        '7': 'Form 1', '8': 'Form 2', '9': 'Form 3', '10': 'Form 4', '11': 'Form 5', '12': 'Form 6',
+      }
+      const normG = (g: any) => { const v = String(g ?? '').trim(); return GRADE_MAP[v] || GRADE_MAP[v.toLowerCase()] || v }
+      const myCourses = await j(`${B}/collections/courses/records?perPage=200&filter=` + esc(`teacher_id="${teacherId}"`))
+      const myGrades = Array.from(new Set((myCourses?.items || []).map((c: any) => normG(c.grade_level)).filter(Boolean)))
+
       // 今日学生出勤数
       const att = await j(`${B}/collections/student_attendance/records?perPage=1&filter=` + esc(dayRange))
       const todayAttendance = att?.totalItems || 0
@@ -151,8 +162,21 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
       const hw = await j(`${B}/collections/homework_submissions/records?perPage=1&filter=` + esc('status="submitted"'))
       const pending = hw?.totalItems || 0
 
+      // 所教年级的学生数（口径：这些年级的在校学生，非精确到班）
+      let gradeStudentCount = 0
+      if (myGrades.length) {
+        const inList = myGrades.map((g) => `"${g}"`).join(',')
+        // students.grade 存法不统一，需按各写法分别统计后用前端归一化去重 → 这里直接全量拉取再本地归一化
+        const all = await j(`${B}/collections/students/records?perPage=1000&fields=id,grade,is_peralihan,status`)
+        const gm = new Set(myGrades)
+        gradeStudentCount = (all?.items || []).filter((x: any) => {
+          const g = x.is_peralihan ? 'Peralihan' : normG(x.grade)
+          return gm.has(g)
+        }).length
+      }
+
       setStats({
-        totalStudents: 0,          // 无可靠关联数据源，不填假数
+        totalStudents: gradeStudentCount,
         todayAttendance,
         attendanceRate: 0,
         pendingAssignments: pending,
@@ -209,7 +233,7 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">{t('dashboard.total_students')}</p>
+                <p className="text-sm font-medium text-gray-600">所教年级学生</p>
                 <p className="text-2xl font-bold text-blue-600">{stats.totalStudents}</p>
               </div>
               <Users className="h-8 w-8 text-blue-600" />
