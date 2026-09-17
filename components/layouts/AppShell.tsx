@@ -151,7 +151,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
           { label: "活动管理", href: "/activities", icon: CalendarCheck },
           { label: "课程管理", href: "/course-management", icon: BookOpen },
           { label: "教学评估", href: "/teacher-teaching-report", icon: ClipboardCheck },
-          { label: "绩效管理", href: "/teacher-performance", icon: Award, disabled: true },
+          { label: "绩效管理", href: "/teacher-performance", icon: Award },
         ],
       },
       {

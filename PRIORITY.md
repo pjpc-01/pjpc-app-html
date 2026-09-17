@@ -95,3 +95,14 @@
 ### 其它含硬编码假数据的页面（待决定）
 - `simple-course-management.tsx`（张老师/李老师/王老师）、`user-management.tsx`、`admin/enterprise-user-approval.tsx`、`systems/communication-system.tsx`、`dashboards/modern-parent-dashboard.tsx`、`teacher/TeacherDashboard.tsx`、`teacher-workspace/page.tsx`（"李四提交了英语作业"等假动态）、`course/AdvancedCourseFilters.tsx`（假老师筛选选项）
 - ⚠️ 保留不动（属于演示占位/示例）：`BankReconciliation.tsx` CSV 粘贴示例、`systems/ReadWriteDialog.tsx` 演示数据、`PayslipSettingsManager.tsx` 的 "张老师" 占位
+
+### ✅ 绩效管理已启用（2026-09-17）
+- **做了什么**：新建 PB 集合 `teacher_performance_evaluation`（20 字段：teacher_id/evaluator_id 关联、year/quarter、6 项评分 teaching_quality/student_satisfaction/attendance/punctuality/teamwork/communication、overall_score、strengths/areas_for_improvement/goals_next_period/recommendations 四个 json、status、evaluation_date、notes）
+- **结果**：`/api/teacher-performance` 由 **500 → 200**；菜单 `teacher-performance` 取消置灰可正常使用
+### ✅ 教师工作台假通知已清（2026-09-17）
+- `app/teacher-workspace/page.tsx` 原在无待批改作业时 fallback 显示 3 条假通知（"李四提交了英语作业"等）→ 已改为不显示任何假数据
+### ⚠️ 重要：多个"假数据组件"实为死代码（无任何页面引用）
+- 经全项目引用扫描确认，以下文件**没有任何页面 import**，用户完全看不到，其内部假数据不影响运行：
+  `simple-course-management.tsx`、`management/user-management.tsx`（真页面 `/user-management/page.tsx` 自己实现了真数据版本）、`admin/enterprise-user-approval.tsx`、`systems/communication-system.tsx`、`dashboards/modern-parent-dashboard.tsx`、`teacher/TeacherDashboard.tsx`、`course/AdvancedCourseFilters.tsx`
+- **教训**：改之前必须先确认「导航 → 目标页面 → 实际组件」链路；本次曾误改死文件 `management/user-management.tsx`，发现后已 `git checkout` 回滚
+- **待用户决定**：是否删除这 7 个死文件
