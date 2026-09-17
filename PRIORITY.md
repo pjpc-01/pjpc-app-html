@@ -106,3 +106,13 @@
   `simple-course-management.tsx`、`management/user-management.tsx`（真页面 `/user-management/page.tsx` 自己实现了真数据版本）、`admin/enterprise-user-approval.tsx`、`systems/communication-system.tsx`、`dashboards/modern-parent-dashboard.tsx`、`teacher/TeacherDashboard.tsx`、`course/AdvancedCourseFilters.tsx`
 - **教训**：改之前必须先确认「导航 → 目标页面 → 实际组件」链路；本次曾误改死文件 `management/user-management.tsx`，发现后已 `git checkout` 回滚
 - **待用户决定**：是否删除这 7 个死文件
+
+### ✅ 假数据大清理（2026-09-17）
+**删除的死文件（经全类型引用扫描确认无任何 import）**：
+- `app/components/management/simple-course-management.tsx`、`management/user-management.tsx`、`management/admin/enterprise-user-approval.tsx`、`systems/communication-system.tsx`、`course/AdvancedCourseFilters.tsx`、`systems/index.ts`（barrel 本身已引用不存在的 `attendance-system`，早已损坏且无人使用）、`dashboards/modern-parent-dashboard.tsx`（首页家长分支实际已 redirect 到真实的 `/parent/dashboard`）
+**修复的活页面**：
+- `components/teacher/TeacherDashboard.tsx`（教师工作台第一个 tab）：原整页假数据（45 学生/张三签到/三年级A班课表）→ 改为接真实数据：今日课表取 `schedules`（按 teacher_id + 当天 date 排他区间）、今日出勤取 `student_attendance`、待批作业取 `homework_submissions`；无数据源的项（总学生数/平均分/最近活动）留 0 或空，**不再编造**
+- `app/teacher-workspace/page.tsx`：无待批改作业时的 3 条假通知 → 清空
+**⚠️ 排查教训（重要）**：
+- **扫描引用必须覆盖 `.ts` 与 `.tsx` 全部类型**。本次首轮只搜 `*.tsx`，误判 4 个文件为死代码（其中 `modern-parent-dashboard` 实被首页 `app/page.tsx` 引用）；第二轮用 `grep -rl` 全类型复核才发现
+- **改之前必须先确认链路：导航配置 → 目标 page.tsx → 实际渲染的组件**。本次曾误改死文件 `management/user-management.tsx`（真实页面 `/user-management/page.tsx` 自己实现了真数据版本），已 `git checkout` 回滚

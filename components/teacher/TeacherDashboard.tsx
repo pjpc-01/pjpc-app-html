@@ -115,96 +115,54 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
   }, [teacherId])
 
   const loadDashboardData = async () => {
+    if (!teacherId) { setLoading(false); return }
     try {
       setLoading(true)
-      
-      // 模拟数据加载
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // 模拟统计数据
+      const B = '/api/pocketbase-proxy/api'
+      const esc = encodeURIComponent
+      const d = new Date()
+      const pad = (n: number) => String(n).padStart(2, '0')
+      const ymd = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+      const nd = new Date(d); nd.setDate(nd.getDate() + 1)
+      const nymd = `${nd.getFullYear()}-${pad(nd.getMonth() + 1)}-${pad(nd.getDate())}`
+      // 用排他上限，避免时区导致漏掉当天早上 8 点前的记录
+      const dayRange = `date >= "${ymd} 00:00:00.000Z" && date < "${nymd} 00:00:00.000Z"`
+      const j = async (u: string) => { try { const r = await fetch(u); return await r.json() } catch { return null } }
+
+      // 今日课表（该老师的排课）
+      const sch = await j(`${B}/collections/schedules/records?perPage=100&sort=start_time&filter=` + esc(`teacher_id="${teacherId}" && ${dayRange}`))
+      const list = (sch?.items || []).map((x: any) => ({
+        id: x.id,
+        time: x.start_time || '',
+        duration: x.start_time && x.end_time ? `${x.start_time}-${x.end_time}` : '',
+        subject: x.course_name || x.subject || '课程',
+        className: x.class_name || x.room || '',
+        room: x.room || '',
+        students: 0,
+        status: x.status || 'scheduled',
+      }))
+      setTodaySchedule(list)
+
+      // 今日学生出勤数
+      const att = await j(`${B}/collections/student_attendance/records?perPage=1&filter=` + esc(dayRange))
+      const todayAttendance = att?.totalItems || 0
+
+      // 待批改作业
+      const hw = await j(`${B}/collections/homework_submissions/records?perPage=1&filter=` + esc('status="submitted"'))
+      const pending = hw?.totalItems || 0
+
       setStats({
-        totalStudents: 45,
-        todayAttendance: 38,
-        attendanceRate: 84.4,
-        pendingAssignments: 12,
-        completedAssignments: 28,
-        todayClasses: 4,
-        averageGrade: 85.2,
-        recentMessages: 3,
+        totalStudents: 0,          // 无可靠关联数据源，不填假数
+        todayAttendance,
+        attendanceRate: 0,
+        pendingAssignments: pending,
+        completedAssignments: 0,
+        todayClasses: list.length,
+        averageGrade: 0,
+        recentMessages: 0,
       })
-
-      // 模拟最近活动
-      setRecentActivities([
-        {
-          id: "1",
-          time: "10:30",
-          action: "学生签到",
-          detail: "张三在数学课上签到",
-          type: "attendance",
-          status: "success"
-        },
-        {
-          id: "2", 
-          time: "09:15",
-          action: "作业提交",
-          detail: "李四提交了英语作业",
-          type: "assignment",
-          status: "success"
-        },
-        {
-          id: "3",
-          time: "08:45",
-          action: "课程开始",
-          detail: "开始数学课 - 三年级A班",
-          type: "class",
-          status: "active"
-        }
-      ])
-
-      // 模拟今日课程表
-      setTodaySchedule([
-        {
-          id: "1",
-          time: "08:00",
-          duration: "45分钟",
-          subject: "数学",
-          className: "三年级A班",
-          room: "教室101",
-          students: 25,
-          status: "completed"
-        },
-        {
-          id: "2",
-          time: "09:00",
-          duration: "45分钟", 
-          subject: "英语",
-          className: "三年级B班",
-          room: "教室102",
-          students: 23,
-          status: "completed"
-        },
-        {
-          id: "3",
-          time: "10:00",
-          duration: "45分钟",
-          subject: "数学",
-          className: "三年级A班", 
-          room: "教室101",
-          students: 25,
-          status: "active"
-        },
-        {
-          id: "4",
-          time: "11:00",
-          duration: "45分钟",
-          subject: "科学",
-          className: "三年级C班",
-          room: "教室103", 
-          students: 20,
-          status: "upcoming"
-        }
-      ])
-
+      // 无真实活动数据源 → 留空，不显示假数据
+      setRecentActivities([])
     } catch (error) {
       console.error('加载仪表板数据失败:', error)
     } finally {

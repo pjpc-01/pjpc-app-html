@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { GraduationCap, Bell, Settings, LogOut, UserCheck, Wifi, WifiOff, AlertTriangle, CreditCard, Menu, X, Loader2 } from "lucide-react"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import ModernAdminDashboard from "./components/dashboards/modern-admin-dashboard"
-import ModernParentDashboard from "./components/dashboards/modern-parent-dashboard"
 import AccountantDashboard from "./components/dashboards/accountant-dashboard"
 import ErrorBoundary from "@/components/shared/error-boundary"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -67,7 +66,15 @@ export default function Dashboard() {
       case "teacher":
         return <TeacherWorkspace />
       case "parent":
-        return <ModernParentDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
+        // 家长一律走 /parent/dashboard（见上方 useEffect redirect）
+        return (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-500">
+              <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
+              <p>正在跳转家长门户...</p>
+            </div>
+          </div>
+        )
       case "accountant":
         return <AccountantDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
       default:
