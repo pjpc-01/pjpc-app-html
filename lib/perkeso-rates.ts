@@ -165,8 +165,10 @@ const PCB_BRACKETS = [
 
 export function getPCB(grossSalary: number): number {
   const epfMonthly = Math.min(grossSalary * 0.11, 333.33)
+  // 法定减免：员工 SOCSO 年缴额（上限 RM350/年，仅适用受雇者）
+  const socsoAnnual = Math.min(getSocsoEmployee(grossSalary) * 12, 350)
   const netMonthly = grossSalary - epfMonthly
-  const P = Math.max(netMonthly * 12 - 9000, 0)
+  const P = Math.max(netMonthly * 12 - socsoAnnual - 9000, 0)
   
   for (const bracket of PCB_BRACKETS) {
     if (P <= bracket.max) {
