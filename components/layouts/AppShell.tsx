@@ -145,7 +145,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
           { label: "成绩管理", href: "/grades", icon: GraduationCap },
           { label: "接送管理", href: "/pickup", icon: Truck },
           { label: "每日日志", href: "/daily-logs", icon: FileEdit },
-          { label: "资源库", href: "/resource-library", icon: BookOpen },
+          { label: "资源库", href: "/resource-library", icon: BookOpen, disabled: true },
           { label: "教师列表", href: "/teacher-management", icon: UserCog },
           { label: "教师排班", href: "/teacher-attendance-reports", icon: CalendarCheck },
           { label: "活动管理", href: "/activities", icon: CalendarCheck },
