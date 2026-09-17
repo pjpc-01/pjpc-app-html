@@ -42,7 +42,7 @@
   - 黄俊鸿 Ethan Ng Junn Hong → `PU E`（**缺号码**）
   - JOANNA TING SHIN YU → `G1`（建议 `BT G01`）
   - 安藤豊大 Miharu Ando → `T`（**缺号码**）
-- **JOANNA TING SHIN YU 重复 2 条**：`陈芯妤 JOANNA TING SHIN YU`(BT G12) 与 `JOANNA TING SHIN YU`(G1)，待合并（两条都缺家长电话）
+- ✅ **JOANNA TING SHIN YU 重复已消除**（2026-09-17 核实）：现仅剩 1 条 `陈芯妤 JOANNA TING SHIN YU`(BATU14, grade=1)——重复那条已被删除，无需再合并
 - **年级空缺 14 人**（PU1 的 BK 那批）：全莉莉 BK G12、THAM YU HWA BK B7、张巧琳 BK G2、张巧恩 BK G1、林晨晰 BK G7、詹嘉敏 BK G10、马弘懿 BK B2、马如恩 BK G5、亚当 BK T1、刘晓彤 BK G4、法奇 BK B11、林珂萱 BK G8、刘维德 BK B3、陆光铭 BK B05
 - **卡号空 18 人**（NFC 刷不了）：郑凯昇 + 上述 BK 14 人 + 黄俊鸿 + JOANNA + 安藤豊大
 - **NRIC 空 18 人**（拉不到成绩）：上述 BK 14 人 + 加华 BT T11、刘芝榛 BT T19、杨凯欐 BT T13、安藤豊大 T
