@@ -84,3 +84,14 @@
 - **现象**：财务菜单 11 个页面，其中 5 个与「收费」相关且命名易混——收费管理(设价) / 学生费用分配(分给学生) / 发票管理(开票) / **付款管理(实为收款记录，名字易被误解为"付钱出去")** / 收据管理
 - **用户决定（2026-09-17）**：`暂不改（选 C）`——先不改名也不合并，用久了自然熟悉；如日后仍困扰再处理
 - **可选方案留档**：A 只改名（付款管理→收款记录 / 收费管理→收费标准 / 学生费用分配→学生收费标准，风险近零）；B 合并成 1 个页面 3 个 tab（发票/收款/收据，工程量中等）
+
+### 资源库（假数据空壳）— ✅ 已置灰（2026-09-17）
+- **实情**：`app/components/features/resource-library.tsx` 共 308 行**全部为硬编码假数据**（"三年级数学教案/分数运算专题/张老师/23次下载"），无 fetch、无 API、无 PB 集合；「上传资源」按钮无任何功能；4 个 tab 全为静态假内容
+- **处理（用户选 B）**：菜单置灰不可点 —— `components/layouts/AppShell.tsx` 资源库项加 `disabled: true`（沿用既有机制：不隐藏、只灰掉）
+- **若要真做**：需建 PB 集合 + 上传/下载/搜索 API + 权限，工程量较大，待用户提出再做
+### 绩效管理 — 有代码、缺数据库表
+- 页面 `components/teacher/TeacherPerformanceManagement.tsx` 与 `/api/teacher-performance` 均已完成，调用 `/api/teacher-performance` 报 **500**（根因：PB 缺 `teacher_performance_evaluation` 集合，schema 定义已在 `lib/pocketbase-schema.ts` 中）
+- **菜单当前已置灰**（`teacher-performance` 项 `disabled: true`）→ **待用户决定是否建表启用**
+### 其它含硬编码假数据的页面（待决定）
+- `simple-course-management.tsx`（张老师/李老师/王老师）、`user-management.tsx`、`admin/enterprise-user-approval.tsx`、`systems/communication-system.tsx`、`dashboards/modern-parent-dashboard.tsx`、`teacher/TeacherDashboard.tsx`、`teacher-workspace/page.tsx`（"李四提交了英语作业"等假动态）、`course/AdvancedCourseFilters.tsx`（假老师筛选选项）
+- ⚠️ 保留不动（属于演示占位/示例）：`BankReconciliation.tsx` CSV 粘贴示例、`systems/ReadWriteDialog.tsx` 演示数据、`PayslipSettingsManager.tsx` 的 "张老师" 占位
