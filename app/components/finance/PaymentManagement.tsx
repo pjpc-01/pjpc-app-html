@@ -570,6 +570,7 @@ export default function PaymentManagement() {
                   <TableHead>{t('finance.date')}</TableHead>
                   <TableHead>{t('common.student')}</TableHead>
                   <TableHead>{t('finance.invoice_no')}</TableHead>
+                  <TableHead>凭证号</TableHead>
                   <TableHead>支付方式</TableHead>
                   <TableHead className="text-right">实付金额</TableHead>
                   <TableHead className="text-center">{t('teacher.status')}</TableHead>
@@ -592,6 +593,7 @@ export default function PaymentManagement() {
                       <TableCell className="text-slate-600">{formatDate(payment.date)}</TableCell>
                       <TableCell className="font-medium">{inv?.studentName || "未知学生"}</TableCell>
                       <TableCell className="text-slate-500 font-mono text-xs">{inv?.invoiceNumber || "N/A"}</TableCell>
+                      <TableCell className="text-slate-500 font-mono text-xs">{(payment as any).voucher_no || "—"}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="font-normal">{payment.method}</Badge>
                       </TableCell>

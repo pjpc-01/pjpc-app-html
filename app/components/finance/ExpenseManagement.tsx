@@ -520,6 +520,7 @@ export default function ExpenseManagement() {
                   <TableHead>{t('finance.description')}</TableHead>
                   <TableHead className="w-[100px]">分行</TableHead>
                   <TableHead className="w-[100px]">方式</TableHead>
+                  <TableHead className="w-[120px]">凭证号</TableHead>
                   <TableHead className="w-[60px] text-center">凭证</TableHead>
                   <TableHead className="text-right w-[120px]">{t('finance.amount')}</TableHead>
                   <TableHead className="text-center w-[80px]">{t('teacher.actions')}</TableHead>
@@ -547,6 +548,7 @@ export default function ExpenseManagement() {
                       })()}
                     </TableCell>
                     <TableCell className="text-slate-500 text-xs">{expense.method}</TableCell>
+                    <TableCell className="text-slate-500 font-mono text-xs">{(expense as any).voucher_no || "—"}</TableCell>
                     <TableCell className="text-center">
                       {expense.receipt ? (
                         <a 
