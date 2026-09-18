@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,6 +19,57 @@ export default function AdminDashboard() {
   const [role, setRole] = useState('teacher')
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<{ type: 'success' | 'error'; message: string; tempPassword?: string } | null>(null)
+
+  // 统计卡片数据（原来硬编码 "—"）
+  const [stats, setStats] = useState({ students: '—', unpaid: '—', teachers: '—' })
+
+  useEffect(() => {
+    let cancelled = false
+    const loadStats = async () => {
+      const B = '/api/pocketbase-proxy/api'
+      const count = async (url: string): Promise<number | null> => {
+        try {
+          const r = await fetch(url)
+          const d = await r.json()
+          return typeof d.totalItems === 'number' ? d.totalItems : null
+        } catch {
+          return null
+        }
+      }
+      const [studentCount, teacherCount] = await Promise.all([
+        count(`/api/pocketbase-proxy/api/collections/students/records?perPage=1`),
+        count(`/api/pocketbase-proxy/api/collections/teachers/records?perPage=1&filter=${encodeURIComponent('status="active"')}`),
+      ])
+      // 待缴费用 = 未结清发票的「票额 − 已收」
+      let unpaid: number | null = null
+      try {
+        const invRes = await fetch(`${B}/collections/invoices/records?perPage=300&filter=${encodeURIComponent('status != "paid" && deleted != true')}`)
+        const invData = await invRes.json()
+        if (Array.isArray(invData.items)) {
+          const payRes = await fetch(`${B}/collections/payments/records?perPage=500`)
+          const payData = await payRes.json()
+          const paidByInvoice: Record<string, number> = {}
+          for (const p of payData.items || []) {
+            const key = p.invoiceId || p.invoice
+            if (key) paidByInvoice[key] = (paidByInvoice[key] || 0) + (p.amount || 0)
+          }
+          unpaid = invData.items.reduce(
+            (sum: number, x: any) => sum + Math.max(0, (x.totalAmount || x.amount || 0) - (paidByInvoice[x.id] || 0)),
+            0
+          )
+        }
+      } catch {}
+      if (!cancelled) {
+        setStats({
+          students: studentCount != null ? String(studentCount) : '—',
+          unpaid: unpaid != null ? `RM ${unpaid.toFixed(2)}` : '—',
+          teachers: teacherCount != null ? String(teacherCount) : '—',
+        })
+      }
+    }
+    loadStats()
+    return () => { cancelled = true }
+  }, [])
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -83,9 +134,9 @@ export default function AdminDashboard() {
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard title="学生总数" value="—" description="全中心统计" color="bg-amber-500" />
-        <StatCard title="待缴费用" value="—" description="本月待收" color="bg-rose-500" />
-        <StatCard title="教师人数" value="—" description="今日在岗" color="bg-emerald-500" />
+        <StatCard title="学生总数" value={stats.students} description="全中心统计" color="bg-amber-500" />
+        <StatCard title="待缴费用" value={stats.unpaid} description="未结清发票合计" color="bg-rose-500" />
+        <StatCard title="教师人数" value={stats.teachers} description="在职教师" color="bg-emerald-500" />
       </div>
 
       {/* 用户管理 */}
