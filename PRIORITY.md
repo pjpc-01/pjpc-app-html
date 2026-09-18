@@ -173,3 +173,22 @@
 
 **CZY 老师已确认身份**：`czysolp80d4la8z` = **SITI NUR MAULIDIYAH**（外籍，NRIC `E0698423`，系统标注 Citizen: No / Married: No，账号 `teacher_czysolp8@pjpc.local`，月薪 RM2000）。
 - 其 `no_statutory = True`（17 条结构中唯一一条）→ **外籍员工按规定不缴 EPF/EIS，此设置合理**；若不符合实际（月薪制外籍在马来西亚可选缴 EPF），告知后改开关并重算 8/9 月。
+
+### ✅ 低风险小修批次（2026-09-18）
+**① 删除垃圾集合 `_test_tmp_coll`** — PB 里只有 1 个 `id` 字段、0 条记录的空壳测试集合。已备份 schema 后删除（65 → 64 个集合）。
+
+**② 修 2 处 SSR 崩溃**（服务端日志一直刷 `window is not defined` / `localStorage is not defined`）
+- `app/tv-board/services/api.ts`：`loadCacheFromStorage` / `saveCacheToStorage` / `clearCache` 直接调 `localStorage`，而构造函数在服务端也会执行 → 加 `typeof window` 守卫
+- `lib/usb-nfc-reader.ts`：`WebNFCReader.checkConnection()` 用 `'NDEFReader' in window`，构造函数调用 → 加 SSR 守卫（USB/Serial 两个 reader 本来就有 try-catch，不受影响）
+- 结果：journalctl 里这两条警告消失（验证过）
+
+**③ 管理中心统计卡片接真实数据**（`app/admin/page.tsx`）
+- 原来三个卡片全是硬编码 `—`：学生总数 / 待缴费用 / 教师人数
+- 现在：学生总数 = `students` 总数（**131**）；待缴费用 = 未结清发票的「票额 − 已收」合计（**RM 1,729.00**，5 张：INV-024/069/095/131/027）；教师人数 = `teachers` 中 `status="active"`（**17**）
+- 注意坑：`invoices` 过滤必须带 `deleted != true`，否则把软删发票也算进去（会多算 RM 9,790）
+- 卡片描述同步更正：「本月待收」→「未结清发票合计」、「今日在岗」→「在职教师」
+
+**④ 删除 NFC 模拟系统整块死代码（6 个文件）**
+- 链路：`lib/nfc-rfid.ts`（整文件是内存模拟：张三/李四/STU001）← `hooks/useNFC.ts` ← `app/components/systems/nfc-attendance-system.tsx` ← `nfc-overview-tab.tsx` / `nfc-cards-tab.tsx`，外加一个假 API `app/api/nfc/attendance/route.ts`（实机返回 `data: []`）
+- **全类型引用扫描确认：6 个文件互相引用、零外部引用**（这套跟真实 NFC 无关，真 NFC 走 GlobalCardScanner/USB + `/api/nfc/tap`）
+- 已 `git rm` 6 文件，构建通过、页面全 200
