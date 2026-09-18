@@ -155,3 +155,21 @@
 - 全是水电费：TNB 电费 4 笔（PU1 Daycare ×2、BATU14 101A ×2）+ Air Selangor 水费 6 笔（101A / 98B / PU1）
 - 脚本已就绪：`scripts/airselangor_history.py`、`scripts/tnb_scraper.py`、`scripts/utility_bills_upsert.py`，但需水电账号凭据（环境变量 `AIR_LOGIN_ID`/`AIR_PASSWORD`），**凭据不在配置里，需用户自行运行**
 - 页面已有红色「缺」标记 + 顶部计数提醒
+
+### ✅ 水电费自动拉取（2026-09-18 用户要求执行）
+**凭据位置（重要，别再忘）**：
+- **TNB**：`.env.local` → `TNB_EMAIL` / `TNB_PASSWORD`（`scripts/tnb_scraper.py` 自动读取）
+- **Air Selangor**：`.hermes/skills/software-development/pjpc-development-standards/references/malaysia-utility-bill-integration.md` → `AIR_SELANGOR_NRIC=010101101345` / `AIR_SELANGOR_PASSWORD`（脚本读环境变量 `AIR_LOGIN_ID`/`AIR_PASSWORD`）
+
+**本次执行结果**：
+- **TNB 3 账户抓取成功**：BATU 98B `#220077824105` RM **-568.22**(Inactive，负数为 credit) / BATU14 101A `#220077881101` RM **362.63**(账单日 09-Sep) / PU1 Daycare `#220104544209` RM **348.11**(08-Sep)
+- **Air Selangor 3 账户登录成功**：BATU14 101A `#9834001000`、BATU14 98B `#1363880000`、PU1 `#2837070000` —— **9 月均已付清 RM 0.00**（9/10 各付 126.70 / 149.65），下期账单未出
+- **入库**：`utility_bills` 新增 `2026-09-09 BATU14 101A RM362.63`（8→9 条）
+- **补账**：`expenses` 新增同笔 `2026-09-09 utilities RM362.63`（centerId=BATU14 `zwdm8bd190uiwhv`），13→14 条
+- **差异核对**：TNB 101A 的 9 月账单此前完全没入账（系统只有 8/9 的 519.47）→ **已补**
+- 备份：`/home/pjpc/backups/expenses_before_tnb_20260918_154209.json`、`/home/pjpc/backups/pb-data-before-utilbill-*.db`
+
+**⚠️ 仍未解决**：「支出凭证缺失」的**账单 PDF 附件**——抓取脚本产出的是数据不是 PDF，PDF 在邮箱里，需人工下载上传（页面已有红色「缺」标记）。
+
+**CZY 老师已确认身份**：`czysolp80d4la8z` = **SITI NUR MAULIDIYAH**（外籍，NRIC `E0698423`，系统标注 Citizen: No / Married: No，账号 `teacher_czysolp8@pjpc.local`，月薪 RM2000）。
+- 其 `no_statutory = True`（17 条结构中唯一一条）→ **外籍员工按规定不缴 EPF/EIS，此设置合理**；若不符合实际（月薪制外籍在马来西亚可选缴 EPF），告知后改开关并重算 8/9 月。
