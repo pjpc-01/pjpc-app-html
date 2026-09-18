@@ -6,7 +6,7 @@ async function getAdminToken(): Promise<string> {
   const res = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ identity: '***REMOVED***', password: '***REMOVED***' }),
+    body: JSON.stringify({ identity: (process.env.POCKETBASE_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '***REMOVED***'), password: (process.env.POCKETBASE_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '') }),
   })
   if (!res.ok) {
     const text = await res.text()

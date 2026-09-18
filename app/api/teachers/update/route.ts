@@ -16,8 +16,8 @@ export async function POST(request: NextRequest) {
     
     // Authenticate as admin before updating
     await pb.admins.authWithPassword(
-      process.env.POCKETBASE_ADMIN_EMAIL || '***REMOVED***',
-      process.env.POCKETBASE_ADMIN_PASSWORD || '***REMOVED***'
+      process.env.POCKETBASE_ADMIN_EMAIL || (process.env.POCKETBASE_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '***REMOVED***'),
+      process.env.POCKETBASE_ADMIN_PASSWORD || ''
     )
     
     console.log('🔧 使用API路由更新教师，绕过权限检查')
