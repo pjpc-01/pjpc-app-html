@@ -128,3 +128,30 @@
 ### ⚠️ 待查（用户点名）
 - `app/api/utility-bills-test/route.ts` — 测试用路由，是否需要在生产保留
 - `app/api/teacher-accounts/*` — 教师账号生成/绑卡流程，待实机 test
+
+### ✅ 待办推进（2026-09-18 续）
+**#6 Finance 全测试 — ✅ 完成**
+- 用 `lib/perkeso-rates.ts` 真实代码批量验算 9 月全部 17 条薪资记录 → **16/17 完全正确**
+- 唯一「不一致」的是 CZY 老师（`czysolp80d4la8z`）：其薪资结构 `no_statutory = True`（全 17 条中仅此一条开启）→ 按配置不扣法定缴款，**是设置而非算法错误**
+- 验算脚本留存：`scripts/verify-salary.ts`（`npx tsx scripts/verify-salary.ts`）
+- 已确认正确：EPF 11%/13%（≤5000）、SOCSO 波段（1800→员工8.75/雇主30.65）、EIS 波段（1800→3.50）、PCB 累进、净薪 = 毛 − 四项扣款
+- **⏳ 待用户确认**：CZY 老师是否应扣法定缴款？若应扣，把该结构 `no_statutory` 改为 false 并重算其 8/9 月薪资即可
+
+**#9 学生紧急联系人 + 载送人 — ✅ UI 实测通过**
+- 真浏览器实测「添加学生」表单：**紧急联络人**区块存在，「添加紧急联系人」按钮点击后正常新增输入行（姓名/关系/电话三项）
+- **接送信息**区块存在（接送方式下拉）
+- 载送人资料**已按设计移至 `/pickup` 页面**管理，不在学生表单内（代码注释明确）→ 非缺陷
+
+**#10 教师排班 — ✅ 实机验证通过**
+- `/course-management` 页面正常：**时段 / 星期 / 课程 / 教师 / 甘特图 / 时间表** 全部渲染，无 JS 错误
+- `/teacher-attendance-reports`（考勤排班页）正常：含排班 + 出勤
+- 注：`/schedule` 路径不存在（404），也无任何导航指向它 → 无影响
+
+**清理 — ✅**
+- 删除孤儿测试路由 `app/api/utility-bills-test/route.ts`（5 行，全项目零引用）
+- `app/api/teacher-accounts/generate` 实测正常（幂等：17 张教师卡 ↔ 17 个用户全部配对，`created:0, skipped:17` 为正确行为）
+
+**⏳ 支出凭证缺失 10 笔（需用户运行抓取脚本）**
+- 全是水电费：TNB 电费 4 笔（PU1 Daycare ×2、BATU14 101A ×2）+ Air Selangor 水费 6 笔（101A / 98B / PU1）
+- 脚本已就绪：`scripts/airselangor_history.py`、`scripts/tnb_scraper.py`、`scripts/utility_bills_upsert.py`，但需水电账号凭据（环境变量 `AIR_LOGIN_ID`/`AIR_PASSWORD`），**凭据不在配置里，需用户自行运行**
+- 页面已有红色「缺」标记 + 顶部计数提醒
