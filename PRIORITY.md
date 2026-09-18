@@ -192,3 +192,26 @@
 - 链路：`lib/nfc-rfid.ts`（整文件是内存模拟：张三/李四/STU001）← `hooks/useNFC.ts` ← `app/components/systems/nfc-attendance-system.tsx` ← `nfc-overview-tab.tsx` / `nfc-cards-tab.tsx`，外加一个假 API `app/api/nfc/attendance/route.ts`（实机返回 `data: []`）
 - **全类型引用扫描确认：6 个文件互相引用、零外部引用**（这套跟真实 NFC 无关，真 NFC 走 GlobalCardScanner/USB + `/api/nfc/tap`）
 - 已 `git rm` 6 文件，构建通过、页面全 200
+
+### ✅ 死代码全项目扫描与清理（2026-09-18）
+**方法**：扫描 `app/components`、`components`、`hooks`、`lib`、`contexts`、`utils` 下全部 `.ts/.tsx`（252 个），对每个文件在**全类型**（`.ts/.tsx/.js/.mjs`）源码中查 import 引用；再做**二次人工核实**（排除变量名、字符串路径等假阳性）。
+
+**删除 24 个文件（7064 行）**：
+- `app/components/admin/`：AIControlPanel、UserManagementTable
+- `app/components/attendance/`：DraggableScheduleItem、ScheduleManagement、ScheduleTemplateManager、SimpleSchedule
+- `app/components/dashboards/students-tab.tsx`
+- `app/components/management/`：admin/unified-user-approval、admin/user-approval、birthdays-panel、simple-student-management
+- `app/components/settings/BackupRestore.tsx`
+- `app/components/systems/`：ReadWriteDialog、exam-system、security-monitoring
+- `components/`：ModuleErrorBoundary、attendance/TeacherMobileCheckin、layouts/PageHeader、shared/MobileWrapper、teacher/NFCReplacementCard
+- `components/ui/`：PermissionButton、empty-state
+- `lib/schedule-conflicts.ts`（185 行完整冲突检测库，但真实 API `/api/schedule/conflicts` 用的是自己的实现 → 弃用）
+- `contexts/theme-context.tsx`（9 行 stub，注释写明 theme system 已移除）
+
+**保守保留（二次核实疑似有引用，未删）**：
+`admin/ApprovalStats.tsx`、`attendance/AttendanceRecords.tsx`、`attendance/AttendanceReport.tsx`、`attendance/AttendanceSettings.tsx`、`attendance/DeviceManagement.tsx`、`management/course-management.tsx`、`systems/AttendanceRecords.tsx`、`systems/DeviceManagement.tsx`、`systems/auth/login-form.tsx`
+—— 多数是变量名（`attendanceRecords`）、字符串路径（`/course-management?tab=`）或**同名不同文件**（`secure-login-form` vs `login-form`）造成的假阳性；宁可留错不删错。
+
+**保留不动**：`components/ui/*`（shadcn 组件库，15 个未被 import 但属标准库，删了以后要用还得装回来）
+
+**验证**：`next build` 通过、页面全 200、体检 4 项通过 0 异常
