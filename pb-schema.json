@@ -1215,6 +1215,11 @@
           "name": "updated",
           "type": "autodate",
           "required": false
+        },
+        {
+          "name": "voucher_no",
+          "type": "text",
+          "required": false
         }
       ]
     },
@@ -1275,6 +1280,11 @@
         {
           "name": "deleted",
           "type": "bool",
+          "required": false
+        },
+        {
+          "name": "voucher_no",
+          "type": "text",
           "required": false
         }
       ]
@@ -1666,6 +1676,11 @@
         {
           "name": "deleted",
           "type": "bool",
+          "required": false
+        },
+        {
+          "name": "voucher_no",
+          "type": "text",
           "required": false
         }
       ]

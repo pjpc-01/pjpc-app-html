@@ -120,3 +120,50 @@ onRecordAfterDeleteSuccess((e) => {
   }
   e.next();
 });
+
+// ============================================================================
+// 凭证编号自动生成 —— payments / expenses / refunds 创建时自动填 voucher_no
+//   格式：RCV-YYYYMM-001（收款）/ EXP-YYYYMM-001（支出）/ REF-YYYYMM-001（退款）
+//   发票 INV-、收据 RCP-、薪资 PS- 已有各自生成逻辑，此处不重复。
+//   已有的 invoiceNumber 等字段保持不动，voucher_no 只补缺失的单据类型。
+// ============================================================================
+onRecordCreateRequest((e) => {
+  try {
+    const rec = e.record;
+    let cname = "";
+    try { cname = rec && rec.collection ? rec.collection().name : ""; } catch (x0) {}
+    if (rec && cname) {
+      let prefix = "";
+      if (cname === "payments") { prefix = "RCV"; }
+      else if (cname === "expenses") { prefix = "EXP"; }
+      else if (cname === "refunds") { prefix = "REF"; }
+      if (prefix !== "") {
+        let cur = "";
+        try { cur = String(rec.get("voucher_no") || ""); } catch (xg) {}
+        if (cur === "") {
+          const d = new Date();
+          let mm = String(d.getMonth() + 1);
+          if (mm.length < 2) { mm = "0" + mm; }
+          const head = prefix + "-" + String(d.getFullYear()) + mm + "-";
+          let n = 0;
+          try {
+            const list = $app.findRecordsByFilter(cname, "voucher_no ~ '" + head + "'", "-voucher_no", 1, 0);
+            if (list && list.length > 0) {
+              const last = String(list[0].get("voucher_no") || "");
+              const tail = last.substring(head.length);
+              const num = parseInt(tail, 10);
+              if (!isNaN(num)) { n = num; }
+            }
+          } catch (x2) {}
+          n = n + 1;
+          let seq = String(n);
+          while (seq.length < 3) { seq = "0" + seq; }
+          rec.set("voucher_no", head + seq);
+        }
+      }
+    }
+  } catch (err) {
+    console.log("[voucher] 生成失败(已忽略): " + err);
+  }
+  e.next();
+});
