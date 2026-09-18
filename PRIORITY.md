@@ -116,3 +116,15 @@
 **⚠️ 排查教训（重要）**：
 - **扫描引用必须覆盖 `.ts` 与 `.tsx` 全部类型**。本次首轮只搜 `*.tsx`，误判 4 个文件为死代码（其中 `modern-parent-dashboard` 实被首页 `app/page.tsx` 引用）；第二轮用 `grep -rl` 全类型复核才发现
 - **改之前必须先确认链路：导航配置 → 目标 page.tsx → 实际渲染的组件**。本次曾误改死文件 `management/user-management.tsx`（真实页面 `/user-management/page.tsx` 自己实现了真数据版本），已 `git checkout` 回滚
+
+### ✅ 安全加固 + 学生报告修复（2026-09-18）
+**① 学生报告「存在的问题/改进措施」改了不更新** — 根因：`lib/pdf-generator.ts` 中文分支优先级写反（模板 > 本份报告），英文分支却是对的。影响不止第二/三项，还包括成长寄语、四、未来目标、五、总结。已改为统一「本份报告 > 模板默认 > 内置默认」。实测含自定义内容的报告已正常显示。
+**② pre-commit schema 导出一直失败** — 根因：`scripts/export-pb-schema.py` 硬编码旧管理员账号 + 使用 PB 0.23+ 已废弃的 `/api/admins/auth-with-password`。已改为走代理入口（零凭据）→ 实测 `✅ Exported 65 collections`。
+**③ 全仓硬编码管理员凭据（19 文件）** — `lib/pocketbase.ts`、`lib/auth-utils.ts`、`lib/points-guard.ts`、代理路由、考勤/财务/教师 API 等全部写死账号密码。已全部改读环境变量（`POCKETBASE_ADMIN_EMAIL` / `POCKETBASE_ADMIN_PASSWORD`）。
+**④ `.env.local` 一直在 git 仓库里** — 管理员密码长期暴露在版本历史。已从版本控制移除 + `.gitignore` 加 `.env.*`（白名单保留 `.env.example`）。
+**⑤ 管理员密码轮换** — 因曾入库，共轮换 3 次；已验证历史旧密码 `final_pass` 登录失败（400）。**决定不动 git 历史**（旧值已全部失效）。
+**⑥ 失误记录** — 删 superuser 账号前未查引用，导致 50 个路由短暂 `Auth failed`（代理 500）。已用 PB CLI 重建账号并恢复。**教训：删账号/改数据前必须先 grep 引用**。
+
+### ⚠️ 待查（用户点名）
+- `app/api/utility-bills-test/route.ts` — 测试用路由，是否需要在生产保留
+- `app/api/teacher-accounts/*` — 教师账号生成/绑卡流程，待实机 test
