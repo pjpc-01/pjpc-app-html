@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminToken } from '@/lib/pb-admin-token'
 
+// 新建教师账号的初始密码（可经环境变量覆盖，不要在此写死）
+const INITIAL_TEACHER_PASSWORD = process.env.INITIAL_TEACHER_PASSWORD || 'pjpc123456'
+
 const PB_URL = 'http://127.0.0.1:8090'
 
 async function pbAuth(): Promise<string> {
@@ -124,8 +127,8 @@ export async function GET(_request: NextRequest) {
         },
         body: JSON.stringify({
           email,
-          password: 'pjpc123456',
-          passwordConfirm: 'pjpc123456',
+          password: INITIAL_TEACHER_PASSWORD,
+          passwordConfirm: INITIAL_TEACHER_PASSWORD,
           name: teacherName,
           role: 'teacher',
           teacher_id: card.teacherId || '',
