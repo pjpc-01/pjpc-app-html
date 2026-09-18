@@ -2,8 +2,12 @@
 // 防止 points_enabled=false（积分系统已关闭）的学生仍被扣分/加分
 // 即使查询 filter 有 bug，写入前这一层也能拦住
 
-const PB_URL = 'http://127.0.0.1:8090'
-const PB_ADMIN = { email: 'admin@pjpc.com', password: '1234567890' }
+const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
+// ⚠️ 不要硬编码凭据；走环境变量（.env.local 不入库）
+const PB_ADMIN = {
+  email: process.env.POCKETBASE_ADMIN_EMAIL || process.env.ADMIN_EMAIL || 'final_admin@test.com',
+  password: process.env.POCKETBASE_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '',
+}
 
 let cachedToken: string | null = null
 let tokenExpiry = 0
