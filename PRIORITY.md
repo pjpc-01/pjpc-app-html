@@ -215,3 +215,27 @@
 **保留不动**：`components/ui/*`（shadcn 组件库，15 个未被 import 但属标准库，删了以后要用还得装回来）
 
 **验证**：`next build` 通过、页面全 200、体检 4 项通过 0 异常
+
+### ✅ 凭证编号体系（2026-09-18）
+**问题**：账套缺口之一——发票/收据/薪资各有编号，但 **收款、支出、退款三类单据完全没有编号**，无法做会计凭证追溯。
+
+**现状盘点（改前）**
+- `invoices.invoiceNumber` → `INV-202609-027` ✅
+- `receipts.receiptNumber` → `RCP-2026-121` ✅
+- `teacher_salary_records.bank_reference` → `PS-202609-044` ✅
+- `payments` / `expenses` / `refunds` → **❌ 无编号**（且这三类是前端直接写 PB，没有后端 API）
+
+**实现**
+1. **加字段**：给 `payments` / `expenses` / `refunds` 加 `voucher_no`（text，先备份 3 个集合 schema → `/home/pjpc/backups/pb-schemas-before-voucher-*.json`）
+2. **PB hook 自动生成**（`pb_hooks/main.pb.js` 追加 `onRecordCreateRequest`）：新增这三类记录时若 `voucher_no` 为空则自动填 `RCV/EXP/REF-YYYYMM-NNN`，序号取当月最大号 +1
+   - ⚠️ **坑**：hook 名不能用 `onRecordBeforeCreateRequest`（PB 0.39 不存在此名，会导致**整个 main.pb.js 加载失败、审计 hook 一起挂掉**）。正确名是 **`onRecordCreateRequest`**（已用 `strings pocketbase-0.39.6` 核对过全部可用 hook 名）
+3. **回填历史**：134 条（payments 115 + expenses 14 + refunds 5）全部补号，已备份 → `/home/pjpc/backups/finance-records-before-voucher-backfill-*.json`
+4. **前端显示**：`PaymentManagement.tsx` 与 `ExpenseManagement.tsx` 表格加「凭证号」列
+
+**验证结果**
+- 编号全部连续、无重复：`RCV-202608` 25 张 / `RCV-202609` 90 张；`EXP-202607/08/09` 共 14 张；`REF-202606` 3 张 + `REF-202609` 2 张
+- 覆盖情况：invoices 139/139、receipts 121/121、payments 115/115、expenses 14/14、refunds 5/5；薪资 97/99（缺的 2 条是 `test_teacher` 已软删测试数据）
+- 真浏览器实测：收款页显示 `RCV-202609-090…086`，支出页正常，无 JS 错误
+- 新建记录实测：自动得到 `RCV-202609-001` / `EXP-202609-001`（测试数据已清理）
+
+**剩余账套缺口**：预收款概念、固定资产与折旧、应付账款、税务报表（PCB/SST 汇总）
