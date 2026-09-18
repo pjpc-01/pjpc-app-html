@@ -781,19 +781,21 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
 
   // Use preset content, fall back to report data
   const studentName = student?.name || ''
+  // ⚠️ 正确优先级：本份报告自己的内容 > 模板默认值 > 代码内置默认
+  //   （中文原先写反了：模板优先，导致老师在单个报告里改的"存在问题/改进措施"永远被模板覆盖）
   const growthMessage = isEn
     ? (report.growth_message || REPORT_EN_DEFAULT.growthMessage.replace('{studentName}', studentName))
-    : ((settings as any).growthMessage ? (settings as any).growthMessage.replace('{studentName}', studentName) : (report.growth_message || ''))
+    : ((report.growth_message || (settings as any).growthMessage || '').replace('{studentName}', studentName))
   const problems = isEn
     ? ((report.problems?.length ? report.problems : REPORT_EN_DEFAULT.problems))
-    : ((settings as any).problems?.length > 0 ? (settings as any).problems : (report.problems || []))
+    : ((report.problems?.length ? report.problems : ((settings as any).problems?.length ? (settings as any).problems : [])))
   const improvements = isEn
     ? ((report.improvements?.length ? report.improvements : REPORT_EN_DEFAULT.improvements))
-    : ((settings as any).improvements?.length > 0 ? (settings as any).improvements : (report.improvements || []))
-  const goalAcademic = isEn ? (report.future_goals_academic || REPORT_EN_DEFAULT.goalAcademic) : ((settings as any).futureGoalAcademic || report.future_goals_academic || '')
-  const goalAbility = isEn ? (report.future_goals_ability || REPORT_EN_DEFAULT.goalAbility) : ((settings as any).futureGoalAbility || report.future_goals_ability || '')
-  const goalCharacter = isEn ? (report.future_goals_character || REPORT_EN_DEFAULT.goalCharacter) : ((settings as any).futureGoalCharacter || report.future_goals_character || '')
-  const summary = isEn ? (report.summary || REPORT_EN_DEFAULT.summary) : ((settings as any).summary || report.summary || '')
+    : ((report.improvements?.length ? report.improvements : ((settings as any).improvements?.length ? (settings as any).improvements : [])))
+  const goalAcademic = isEn ? (report.future_goals_academic || REPORT_EN_DEFAULT.goalAcademic) : (report.future_goals_academic || (settings as any).futureGoalAcademic || '')
+  const goalAbility = isEn ? (report.future_goals_ability || REPORT_EN_DEFAULT.goalAbility) : (report.future_goals_ability || (settings as any).futureGoalAbility || '')
+  const goalCharacter = isEn ? (report.future_goals_character || REPORT_EN_DEFAULT.goalCharacter) : (report.future_goals_character || (settings as any).futureGoalCharacter || '')
+  const summary = isEn ? (report.summary || REPORT_EN_DEFAULT.summary) : (report.summary || (settings as any).summary || '')
 
   const activitiesHTML = (report.activities || []).map(a =>
     `<li style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#4b5563;margin-bottom:4px;">
@@ -801,13 +803,13 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
     </li>`
   ).join('')
 
-  const problemsHTML = (problems || []).map(p =>
+  const problemsHTML = (problems || []).map((p: string) =>
     `<li style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#4b5563;margin-bottom:4px;">
       <span style="color:#f97316;flex-shrink:0;">⚠</span>${p}
     </li>`
   ).join('')
 
-  const improvementsHTML = (improvements || []).map(imp =>
+  const improvementsHTML = (improvements || []).map((imp: string) =>
     `<li style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#4b5563;margin-bottom:4px;">
       <span style="color:#22c55e;flex-shrink:0;">✓</span>${imp}
     </li>`
