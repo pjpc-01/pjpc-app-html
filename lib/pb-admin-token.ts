@@ -3,8 +3,8 @@
 // 凭证只在 .env.local 维护一份
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
-const ADMIN_EMAIL = process.env.POCKETBASE_ADMIN_EMAIL || 'final_admin@test.com'
-const ADMIN_PASSWORD = process.env.POCKETBASE_ADMIN_PASSWORD || 'final_pass'
+const ADMIN_EMAIL = process.env.POCKETBASE_ADMIN_EMAIL || (process.env.POCKETBASE_ADMIN_EMAIL || process.env.ADMIN_EMAIL || 'final_admin@test.com')
+const ADMIN_PASSWORD = process.env.POCKETBASE_ADMIN_PASSWORD || ''
 
 let cachedToken: string | null = null
 let tokenExpiry = 0

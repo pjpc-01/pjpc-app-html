@@ -52,8 +52,8 @@ export async function getPocketBase(): Promise<PocketBase> {
     // 如果环境变量有问题，使用硬编码凭据作为fallback
     if (!adminEmail || !adminPassword || adminEmail.includes('') || adminPassword.includes('')) {
       console.log('⚠️ 环境变量有问题，使用备用凭据')
-      adminEmail = 'final_admin@test.com'
-      adminPassword = 'final_pass'
+      adminEmail = (process.env.POCKETBASE_ADMIN_EMAIL || process.env.ADMIN_EMAIL || 'final_admin@test.com')
+      adminPassword = (process.env.POCKETBASE_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '')
     }
     
     if (!adminEmail || !adminPassword) {

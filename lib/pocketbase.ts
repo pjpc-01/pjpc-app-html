@@ -307,8 +307,8 @@ export const authenticateAdmin = async (): Promise<void> => {
   authLock = true
   try {
     await pb.collection('_superusers').authWithPassword(
-      process.env.POCKETBASE_ADMIN_EMAIL || 'final_admin@test.com',
-      process.env.POCKETBASE_ADMIN_PASSWORD || 'final_pass'
+      process.env.POCKETBASE_ADMIN_EMAIL || (process.env.POCKETBASE_ADMIN_EMAIL || process.env.ADMIN_EMAIL || 'final_admin@test.com'),
+      process.env.POCKETBASE_ADMIN_PASSWORD || ''
     )
     isAuthenticated = true
   } catch (error) {

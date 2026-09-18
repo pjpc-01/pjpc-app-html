@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     const pb = new PocketBase(process.env.POCKETBASE_URL || 'http://127.0.0.1:8090')
     
     // 管理员认证
-    await pb.admins.authWithPassword(process.env.POCKETBASE_ADMIN_EMAIL || 'final_admin@test.com', process.env.POCKETBASE_ADMIN_PASSWORD || 'final_pass')
+    await pb.admins.authWithPassword(process.env.POCKETBASE_ADMIN_EMAIL || (process.env.POCKETBASE_ADMIN_EMAIL || process.env.ADMIN_EMAIL || 'final_admin@test.com'), process.env.POCKETBASE_ADMIN_PASSWORD || '')
     console.log('✅ API: PocketBase管理员认证成功')
     
     // 检查今日考勤记录（支持check-in和check-out）

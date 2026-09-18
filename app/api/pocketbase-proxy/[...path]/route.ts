@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const POCKETBASE_URL = 'http://127.0.0.1:8090'
-const ADMIN_EMAIL = 'final_admin@test.com'
-const ADMIN_PASSWORD = 'final_pass'
+const ADMIN_EMAIL = (process.env.POCKETBASE_ADMIN_EMAIL || process.env.ADMIN_EMAIL || 'final_admin@test.com')
+const ADMIN_PASSWORD = (process.env.POCKETBASE_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '')
 
 // Token cache — avoid re-auth on every request
 let cachedToken: string | null = null

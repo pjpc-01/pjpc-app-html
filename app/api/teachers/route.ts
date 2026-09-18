@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const authRes = await fetch('http://127.0.0.1:8090/api/collections/_superusers/auth-with-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identity: process.env.POCKETBASE_ADMIN_EMAIL || 'final_admin@test.com', password: process.env.POCKETBASE_ADMIN_PASSWORD || 'final_pass' }),
+      body: JSON.stringify({ identity: process.env.POCKETBASE_ADMIN_EMAIL || (process.env.POCKETBASE_ADMIN_EMAIL || process.env.ADMIN_EMAIL || 'final_admin@test.com'), password: process.env.POCKETBASE_ADMIN_PASSWORD || '' }),
     })
     const authData = await authRes.json()
     const token = authData.token
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     const authRes = await fetch('http://127.0.0.1:8090/api/collections/_superusers/auth-with-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identity: process.env.POCKETBASE_ADMIN_EMAIL || 'final_admin@test.com', password: process.env.POCKETBASE_ADMIN_PASSWORD || 'final_pass' }),
+      body: JSON.stringify({ identity: process.env.POCKETBASE_ADMIN_EMAIL || (process.env.POCKETBASE_ADMIN_EMAIL || process.env.ADMIN_EMAIL || 'final_admin@test.com'), password: process.env.POCKETBASE_ADMIN_PASSWORD || '' }),
     })
     const authData = await authRes.json()
     const token = authData.token

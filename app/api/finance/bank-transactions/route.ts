@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 
 const PB_URL = process.env.NEXT_PUBLIC_POCKETBASE_URL || "http://127.0.0.1:8090"
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "final_admin@test.com"
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "final_pass"
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || (process.env.POCKETBASE_ADMIN_EMAIL || process.env.ADMIN_EMAIL || "final_admin@test.com")
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || process.env.POCKETBASE_ADMIN_PASSWORD || ''
 
 async function getAdminToken(): Promise<string> {
   const res = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`, {
