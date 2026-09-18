@@ -59,6 +59,10 @@ export class WebNFCReader implements NFCReader {
   }
 
   private async checkConnection() {
+    if (typeof window === 'undefined') {   // SSR 保护：服务端没有 window
+      this.isConnected = false
+      return
+    }
     try {
       if ('NDEFReader' in window) {
         this.isConnected = true

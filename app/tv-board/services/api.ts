@@ -34,6 +34,7 @@ class ApiService {
   }
 
   private loadCacheFromStorage() {
+    if (typeof window === 'undefined') return   // SSR 保护：服务端没有 localStorage
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY)
       if (stored) {
@@ -47,6 +48,7 @@ class ApiService {
   }
 
   private saveCacheToStorage() {
+    if (typeof window === 'undefined') return   // SSR 保护
     try {
       const obj = Object.fromEntries(this.cache)
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(obj))
@@ -58,7 +60,7 @@ class ApiService {
   // 清除缓存
   clearCache() {
     this.cache.clear()
-    localStorage.removeItem(this.STORAGE_KEY)
+    if (typeof window !== 'undefined') localStorage.removeItem(this.STORAGE_KEY)
     console.log('[API] 缓存已清除')
   }
 

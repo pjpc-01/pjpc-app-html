@@ -4363,17 +4363,6 @@
       ]
     },
     {
-      "name": "_test_tmp_coll",
-      "type": "base",
-      "fields": [
-        {
-          "name": "id",
-          "type": "text",
-          "required": true
-        }
-      ]
-    },
-    {
       "name": "public_holidays",
       "type": "base",
       "fields": [
