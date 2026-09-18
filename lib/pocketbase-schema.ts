@@ -540,77 +540,8 @@ export interface TeacherPerformanceEvaluation {
 }
 
 // ============================================================================
-// 集合名称常量
-// ============================================================================
-
-export const COLLECTION_NAMES = {
-  STUDENTS: 'students',
-  TEACHERS: 'teachers',
-  USERS: 'users',
-  CENTERS: 'centers',
-  STUDENT_ATTENDANCE: 'student_attendance',
-  TEACHER_ATTENDANCE: 'teacher_attendance',
-  STUDENT_POINTS: 'student_points',
-  POINT_TRANSACTIONS: 'point_transactions',
-  FEE_ITEMS: 'fee_items',
-  INVOICES: 'invoices',
-  PAYMENTS: 'payments',
-  RECEIPTS: 'receipts',
-  STUDENT_FEE_MATRIX: 'student_fee_matrix',
-  SCHEDULES: 'schedules',
-  SCHEDULE_TEMPLATES: 'schedule_templates',
-  SCHEDULE_LOGS: 'schedule_logs',
-  WIFI_NETWORKS: 'wifi_networks',
-  NFC_CARDS: 'nfc_cards',
-  ENCRYPTION_KEYS: 'encryption_keys',
-  ALERTS: 'alerts',
-  ANNOUNCEMENTS: 'announcements',
-  NOTIFICATIONS: 'notifications',
-  NOTIFICATION_TEMPLATES: 'notification_templates',
-  ASSIGNMENTS: 'assignments',
-  ASSIGNMENT_RECORDS: 'assignment_records',
-  COURSES: 'courses',
-  CLASSES: 'classes',
-  CLASS_ENROLLMENTS: 'class_enrollments',
-  DEVICES: 'devices',
-  REMINDERS: 'reminders',
-  INVOICES_BACKUP: 'invoices_backup',
-  PAYMENTS_BACKUP: 'payments_backup',
-  RECEIPTS_BACKUP: 'receipts_backup',
-  REMINDERS_BACKUP: 'reminders_backup'
-} as const
-
-// ============================================================================
-// 字段统计信息
-// ============================================================================
-
-export const FIELD_STATISTICS = {
-  totalCollections: 35,
-  totalFields: 251,
-  fieldTypes: {
-    string: 207,
-    number: 35,
-    boolean: 5,
-    object: 4
-  },
-  commonFields: {
-    status: 10,
-    name: 5,
-    center: 4,
-    cardNumber: 3,
-    student_id: 3,
-    email: 3,
-    description: 3,
-    date: 3,
-    teacher_id: 3
-  }
-} as const
-
-// ============================================================================
 // 类型映射
 // ============================================================================
-
-export type CollectionName = typeof COLLECTION_NAMES[keyof typeof COLLECTION_NAMES]
 
 export type CollectionType = 
   | Student
