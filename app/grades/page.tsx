@@ -15,6 +15,9 @@ import { useStudents } from "@/hooks/useStudents"
 import { Trophy, BarChart3, Search, Save, AlertCircle, GraduationCap, Building, Download, Loader2, Medal, AlertTriangle, ExternalLink } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 
+// 吸顶表头样式：滚动长名单时保持「学生 / 年级 / 各科目」始终可见
+const STICKY_TH = "bg-slate-50"
+
 const SUBJECTS = ["华文", "国文", "英文", "数学", "科学", "历史", "地理", "道德", "美术", "音乐", "体育", "其他"]
 const TERMS = ["midterm", "final"]
 const CURRENT_YEAR = new Date().getFullYear()
@@ -306,17 +309,18 @@ export default function GradesManagementPage() {
                 </Select>
               </div>
             </CardHeader>
-            <CardContent className="p-0 overflow-auto">
-              <div className="min-w-[900px]">
+            <CardContent className="p-0">
+              {/* 滚动容器：必须中和 shadcn Table 自带的 overflow-auto 内层 div，否则 sticky 表头失效 */}
+              <div className="grades-table-scroll max-h-[70vh] overflow-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs w-10">#</TableHead>
-                      <TableHead className="text-xs w-28">学生</TableHead>
-                      <TableHead className="text-xs w-16">年级</TableHead>
-                      {gradeSubjects.map(s => <TableHead key={s} className="text-xs text-center w-16">{s}</TableHead>)}
-                      <TableHead className="text-xs text-right w-14">平均</TableHead>
-                      <TableHead className="text-xs w-14">核对</TableHead>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className={STICKY_TH + " text-xs w-10"}>#</TableHead>
+                      <TableHead className={STICKY_TH + " text-xs w-28"}>学生</TableHead>
+                      <TableHead className={STICKY_TH + " text-xs w-16"}>年级</TableHead>
+                      {gradeSubjects.map(s => <TableHead key={s} className={STICKY_TH + " text-xs text-center w-16"}>{s}</TableHead>)}
+                      <TableHead className={STICKY_TH + " text-xs text-right w-14"}>平均</TableHead>
+                      <TableHead className={STICKY_TH + " text-xs w-14"}>核对</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

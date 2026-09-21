@@ -324,3 +324,21 @@
   border-right: 1px solid rgba(0,0,0,0.08);
   box-shadow: 2px 0 24px rgba(0,0,0,0.06);
 }
+
+/* ============================================================================
+   成绩管理表格：吸顶表头
+   shadcn 的 <Table> 自带一层 div.relative.w-full.overflow-auto，它没有高度上限、
+   永远不滚动，会成为 position:sticky 的参照物导致表头吸顶失效。
+   这里把它中和掉，让外层 .grades-table-scroll 成为唯一滚动容器。
+   ============================================================================ */
+.grades-table-scroll > div {
+  overflow: visible !important;
+  min-width: 900px;
+}
+.grades-table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #f8fafc;
+  box-shadow: inset 0 -1px 0 0 #e2e8f0;
+}
