@@ -837,7 +837,7 @@ export default function CourseScheduling() {
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
-              ) : (
+              ) : isEditing ? (
                 <button
                   className="group flex items-center gap-1 w-full justify-center hover:text-indigo-600"
                   onClick={() => startEditSlot(slot)}
@@ -847,6 +847,11 @@ export default function CourseScheduling() {
                   <span>{slot.start}-{slot.end}</span>
                   <Pencil className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 text-indigo-400" />
                 </button>
+              ) : (
+                <span className="flex items-center gap-1 text-gray-600">
+                  <Clock className="h-3 w-3 text-gray-400" />
+                  <span>{slot.start}-{slot.end}</span>
+                </span>
               )}
             </div>
 
@@ -860,7 +865,11 @@ export default function CourseScheduling() {
                 <div
                   key={cellKey}
                   className={`bg-white p-1 min-h-[84px] border rounded-sm flex flex-col gap-1 ${
-                    hasCourse ? 'border-gray-200' : 'border-dashed border-gray-200 hover:bg-indigo-50 hover:border-indigo-300 transition-all'
+                    hasCourse
+                      ? 'border-gray-200'
+                      : isEditing
+                        ? 'border-dashed border-gray-200 hover:bg-indigo-50 hover:border-indigo-300 transition-all'
+                        : 'border-dashed border-gray-100'
                   }`}
                 >
                   {/* 堆叠的课程卡片（一个格子多个） */}
@@ -872,11 +881,11 @@ export default function CourseScheduling() {
                     return (
                       <div
                         key={entry.id}
-                        className={`px-1.5 py-1 rounded-sm cursor-pointer border ${colorClass} relative group ${
-                          noTeacher ? 'ring-1 ring-amber-300' : ''
-                        }`}
-                        onClick={() => openAssignTeacher(entry)}
-                        title={noTeacher ? '点击指定教师' : '点击更换教师'}
+                        className={`px-1.5 py-1 rounded-sm border ${colorClass} relative group ${
+                          isEditing ? 'cursor-pointer' : ''
+                        } ${noTeacher ? 'ring-1 ring-amber-300' : ''}`}
+                        onClick={isEditing ? () => openAssignTeacher(entry) : undefined}
+                        title={isEditing ? (noTeacher ? '点击指定教师' : '点击更换教师') : undefined}
                       >
                         <div className="font-semibold text-[11px] leading-tight truncate">
                           {getCourseTitle(entry.course_id)}
@@ -896,41 +905,45 @@ export default function CourseScheduling() {
                             {subject}{course?.grade_level ? ` · ${course.grade_level}` : ''}
                           </div>
                         )}
-                        <button
-                          className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 bg-white/80 rounded-full p-0.5 text-red-400 hover:text-red-600 transition-all"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDelete(entry)
-                          }}
-                          title="删除排课"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
+                        {isEditing && (
+                          <button
+                            className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 bg-white/80 rounded-full p-0.5 text-red-400 hover:text-red-600 transition-all"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(entry)
+                            }}
+                            title="删除排课"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        )}
                       </div>
                     )
                   })}
 
-                  {/* 空/追加按钮 — 无课程显示「+」，有课程底部也保留「+」继续添加 */}
-                  <button
-                    className={`flex items-center justify-center ${
-                      hasCourse
-                        ? 'mt-auto text-[10px] text-gray-300 hover:text-indigo-500 hover:bg-indigo-50 rounded py-0.5 transition-colors'
-                        : 'flex-1 text-gray-300 hover:text-indigo-500 text-sm'
-                    }`}
-                    onClick={() => openAssignCourse(day, slot)}
-                    title="点击放入课程"
-                  >
-                    <Plus className={`${hasCourse ? 'h-3 w-3' : 'h-4 w-4'} mr-0.5`} />
-                    <span className={hasCourse ? 'text-[10px]' : 'text-xs'}>{hasCourse ? '添加' : '添加课程'}</span>
-                  </button>
+                  {/* 空/追加按钮 — 仅编辑态显示 */}
+                  {isEditing && (
+                    <button
+                      className={`flex items-center justify-center ${
+                        hasCourse
+                          ? 'mt-auto text-[10px] text-gray-300 hover:text-indigo-500 hover:bg-indigo-50 rounded py-0.5 transition-colors'
+                          : 'flex-1 text-gray-300 hover:text-indigo-500 text-sm'
+                      }`}
+                      onClick={() => openAssignCourse(day, slot)}
+                      title="点击放入课程"
+                    >
+                      <Plus className={`${hasCourse ? 'h-3 w-3' : 'h-4 w-4'} mr-0.5`} />
+                      <span className={hasCourse ? 'text-[10px]' : 'text-xs'}>{hasCourse ? '添加' : '添加课程'}</span>
+                    </button>
+                  )}
                 </div>
               )
             })}
           </div>
         ))}
 
-        {/* 添加时段行（网格底部加号） */}
-        {inlineAdding ? (
+        {/* 添加时段行（网格底部加号）— 仅编辑态显示 */}
+        {!isEditing ? null : inlineAdding ? (
           <div className="grid items-stretch" style={{ gridTemplateColumns: `110px repeat(${DAYS.length}, minmax(140px, 1fr))`, minWidth: 680 }}>
             <div className="bg-white p-1.5 flex items-center justify-center border-r border-gray-100">
               <div className="flex items-center gap-1">
@@ -1052,7 +1065,8 @@ export default function CourseScheduling() {
                         </div>
                       </div>
 
-                      {/* 操作 */}
+                      {/* 操作 — 仅编辑态显示 */}
+                      {isEditing && (
                       <div className="flex items-center gap-1 shrink-0">
                         {noTeacher && (
                           <Button
@@ -1075,6 +1089,7 @@ export default function CourseScheduling() {
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
+                      )}
                     </div>
                   )
                 })}
