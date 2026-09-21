@@ -35,9 +35,11 @@ import {
   Check,
   Pencil,
   Save,
+  Presentation,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
+import TimetablePreview, { type PreviewCell } from '@/components/courses/TimetablePreview'
 import { Label } from '@/components/ui/label'
 
 // ============================================================
@@ -180,6 +182,8 @@ export default function CourseScheduling() {
 
   // 时间表编辑态：非编辑态只读，编辑态才能改动，保存时触发自动生成排班
   const [isEditing, setIsEditing] = useState(false)
+  // 全屏预览（只读，给家长/学生看）
+  const [showPreview, setShowPreview] = useState(false)
   const [isSavingSchedule, setIsSavingSchedule] = useState(false)
 
   // 年级筛选
@@ -695,8 +699,35 @@ export default function CourseScheduling() {
     )
   }
 
+  // 构建预览数据：key = `${day}|${slotIndex}`
+  const previewCells: Record<string, PreviewCell[]> = {}
+  timeSlots.forEach((slot, si) => {
+    DAYS.forEach(day => {
+      const list = getEntries(day, slot.start, slot.end)
+      if (list.length === 0) return
+      previewCells[`${day}|${si}`] = list.map(e => {
+        const course = courseMap.get(e.course_id)
+        const subject = course?.subject || e.course_subject || ''
+        return {
+          title: getCourseTitle(e.course_id),
+          subject: subject || undefined,
+          teacher: e.teacher_id ? getTeacherName(e.teacher_id) : undefined,
+          colorClass: getSubjectColor(subject),
+        }
+      })
+    })
+  })
+
   return (
     <div className="space-y-6">
+      <TimetablePreview
+        open={showPreview}
+        onClose={() => setShowPreview(false)}
+        gradeLabel={gradeFilter === 'all' ? '全部年级' : gradeFilter}
+        days={DAYS.map(d => ({ key: d, label: DAY_LABELS[d] }))}
+        slots={timeSlots.map(sl => ({ start: sl.start, end: sl.end }))}
+        cells={previewCells}
+      />
       {/* 标题 */}
       <div>
         <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -730,6 +761,14 @@ export default function CourseScheduling() {
 
         {/* 年级筛选（排课表按当前年级编辑，无"全部"选项） */}
         <div className="flex items-center gap-2 ml-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowPreview(true)}
+            title="全屏预览（适合给家长/学生看或投屏）"
+          >
+            <Presentation className="h-3.5 w-3.5 mr-1" />全屏预览
+          </Button>
           {isEditing ? (
             <>
               <Button
