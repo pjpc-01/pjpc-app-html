@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -43,7 +43,8 @@ import {
   Undo2,
   TrendingUp,
   Trash2,
-  XCircle
+  XCircle,
+  Settings
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -56,6 +57,10 @@ import { useStudents } from "@/hooks/useStudents"
 import type { Refund } from "@/hooks/useRefunds"
 import type { Payment } from "@/hooks/usePayments"
 import { toast } from "sonner"
+import {
+  useReceiptTools, ReceiptActions, ReceiptDetailDialog,
+  ReceiptStatsCards, ReceiptSettingsDialog, ReceiptBinDialog,
+} from "@/app/components/finance/shared/useReceiptTools"
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "-"
@@ -72,12 +77,34 @@ export default function PaymentManagement() {
   const { t } = useLanguage()
   const { invoices, loading: invoicesLoading } = useInvoices()
   const { payments, loading: paymentsLoading, createPayment, deletePayment, refetch } = usePayments()
-  const { createReceipt } = useReceipts()
+  const { createReceipt, receipts } = useReceipts()
   const { refunds, createRefund, getTotalRefundedAmount } = useRefunds()
   
   const searchParams = useSearchParams()
   const centerFilter = searchParams.get("center")
   const { students } = useStudents()
+
+  // ── 收据（付款的自动产物，1:1 绑定 paymentId）──
+  const receiptTools = useReceiptTools({ students: students as any[], payments: payments as any[], invoices: invoices as any[] })
+  const receiptByPayment = useMemo(() => {
+    const m = new Map<string, any>()
+    for (const r of (Array.isArray(receipts) ? receipts : []) as any[]) {
+      if (r.deleted === true) continue
+      if (r.paymentId) m.set(r.paymentId, r)
+    }
+    return m
+  }, [receipts])
+  const receiptStats = useMemo(() => {
+    const live = (Array.isArray(receipts) ? receipts : []).filter((r: any) => r.deleted !== true)
+    return {
+      total: live.length,
+      issued: live.filter((r: any) => r.status === 'issued').length,
+      draft: live.filter((r: any) => r.status === 'draft').length,
+      totalAmount: live.reduce((sum: number, r: any) => sum + (Number(r.totalAmount) || 0), 0),
+    }
+  }, [receipts])
+  const [isReceiptSettingsOpen, setIsReceiptSettingsOpen] = useState(false)
+  const [isReceiptBinOpen, setIsReceiptBinOpen] = useState(false)
 
   // 中心 tab（参照积分榜：全部/PU1中学/BATU14小学）— 用 code 过滤
   const [centerTab, setCenterTab] = useState("all")
@@ -484,6 +511,22 @@ export default function PaymentManagement() {
         </Dialog>
       </div>
 
+      {/* 收据统计 + 收据设置/回收站 */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+          <Receipt className="h-4 w-4 text-blue-500" /> 收据
+        </p>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="h-8" onClick={() => setIsReceiptBinOpen(true)}>
+            <Trash2 className="h-3.5 w-3.5 mr-1" /> 回收站
+          </Button>
+          <Button variant="outline" size="sm" className="h-8" onClick={() => setIsReceiptSettingsOpen(true)}>
+            <Settings className="h-3.5 w-3.5 mr-1" /> 收据设置
+          </Button>
+        </div>
+      </div>
+      <ReceiptStatsCards stats={receiptStats} />
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -571,6 +614,7 @@ export default function PaymentManagement() {
                   <TableHead>{t('common.student')}</TableHead>
                   <TableHead>{t('finance.invoice_no')}</TableHead>
                   <TableHead>凭证号</TableHead>
+                  <TableHead className="text-center">收据</TableHead>
                   <TableHead>支付方式</TableHead>
                   <TableHead className="text-right">实付金额</TableHead>
                   <TableHead className="text-center">{t('teacher.status')}</TableHead>
@@ -594,6 +638,9 @@ export default function PaymentManagement() {
                       <TableCell className="font-medium">{inv?.studentName || "未知学生"}</TableCell>
                       <TableCell className="text-slate-500 font-mono text-xs">{inv?.invoiceNumber || "N/A"}</TableCell>
                       <TableCell className="text-slate-500 font-mono text-xs">{(payment as any).voucher_no || "—"}</TableCell>
+                      <TableCell className="text-center">
+                        <ReceiptActions receipt={receiptByPayment.get(payment.id)} tools={receiptTools} />
+                      </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="font-normal">{payment.method}</Badge>
                       </TableCell>
@@ -643,6 +690,11 @@ export default function PaymentManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* 收据弹窗（详情 / 设置 / 回收站） */}
+      <ReceiptDetailDialog tools={receiptTools} />
+      <ReceiptSettingsDialog open={isReceiptSettingsOpen} onOpenChange={setIsReceiptSettingsOpen} />
+      <ReceiptBinDialog open={isReceiptBinOpen} onOpenChange={setIsReceiptBinOpen} tools={receiptTools} />
 
       {/* Batch Delete Confirmation Dialog */}
       <Dialog open={isBatchDeleteOpen} onOpenChange={setIsBatchDeleteOpen}>
