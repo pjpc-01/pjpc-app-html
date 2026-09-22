@@ -49,7 +49,8 @@ import {
   Megaphone,
   Pen,
   Wrench,
-  MoreHorizontal
+  MoreHorizontal,
+  Tags
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useExpenses } from "@/hooks/useExpenses"
@@ -57,27 +58,26 @@ import { useSearchParams } from "next/navigation"
 import { useCenters } from "@/hooks/useCenters"
 import { formatDate, toLocalMonthKey } from "@/lib/utils"
 import UtilityBillsCard from "./UtilityBillsCard"
+import { useExpenseCategories } from "@/hooks/useExpenseCategories"
+import ExpenseCategoryManager from "./shared/ExpenseCategoryManager"
 
 
-const EXPENSE_CATEGORIES = [
-  { id: "salary", label: "教师薪资", color: "bg-blue-100 text-blue-800 border-blue-200", icon: Briefcase },
-  { id: "rent", label: "办公室租金", color: "bg-purple-100 text-purple-800 border-purple-200", icon: Building },
-  { id: "utilities", label: "水电费", color: "bg-cyan-100 text-cyan-800 border-cyan-200", icon: Zap },
-  { id: "marketing", label: "市场推广", color: "bg-amber-100 text-amber-800 border-amber-200", icon: Megaphone },
-  { id: "stationery", label: "办公文具", color: "bg-green-100 text-green-800 border-green-200", icon: Pen },
-  { id: "maintenance", label: "设备维护", color: "bg-orange-100 text-orange-800 border-orange-200", icon: Wrench },
-  { id: "misc", label: "其他杂项", color: "bg-gray-100 text-gray-800 border-gray-200", icon: MoreHorizontal },
-]
-
-const CATEGORY_COLORS: Record<string, string> = Object.fromEntries(
-  EXPENSE_CATEGORIES.map(c => [c.id, c.color])
-)
+// 类别名称/颜色/排序改为从 PB 集合 expense_categories 读（见 useExpenseCategories）
+// 这里只保留图标映射（自定义类别用默认图标）
+const CATEGORY_ICONS: Record<string, any> = {
+  salary: Briefcase, rent: Building, utilities: Zap, marketing: Megaphone,
+  stationery: Pen, maintenance: Wrench, misc: MoreHorizontal,
+}
+const iconFor = (key: string) => CATEGORY_ICONS[key] || Tags
 
 export default function ExpenseManagement() {
   const { t } = useLanguage()
   const searchParams = useSearchParams()
   const centerParam = searchParams.get("center")
   const { centers } = useCenters()
+  // 自定义支出类别（PB: expense_categories）
+  const cat = useExpenseCategories()
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false)
   
   const { 
     expenses, 
@@ -210,7 +210,7 @@ export default function ExpenseManagement() {
         <div className="flex gap-3">
           <Button variant="outline" className="flex items-center gap-2" onClick={() => {
             const csv = "日期,类别,描述,分行,方式,金额\n" + filteredExpenses.map(e => {
-              const cat = EXPENSE_CATEGORIES.find(c => c.id === e.category)?.label || e.category
+              const cat = cat.labelOf(e.category)
               const center = centers.find(c => c.id === e.centerId)
               const centerName = center ? `${center.code}-${center.name}` : "-"
               return `"${e.date}","${cat}","${e.description}","${centerName}","${e.method}","${e.amount}"`
@@ -222,6 +222,9 @@ export default function ExpenseManagement() {
             a.click(); URL.revokeObjectURL(url)
           }}>
             <Download className="h-4 w-4" /> 导出账单
+          </Button>
+          <Button variant="outline" onClick={() => setIsCategoryManagerOpen(true)} className="flex items-center gap-2">
+            <Tags className="h-4 w-4" /> 管理类别
           </Button>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
@@ -268,8 +271,8 @@ export default function ExpenseManagement() {
                         <SelectValue placeholder="选择类别" />
                       </SelectTrigger>
                       <SelectContent>
-                        {EXPENSE_CATEGORIES.map(cat => (
-                          <SelectItem key={cat.id} value={cat.id}>{cat.label}</SelectItem>
+                        {cat.categories.map(c => (
+                          <SelectItem key={c.id} value={c.key}>{c.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -462,11 +465,12 @@ export default function ExpenseManagement() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {Object.entries(categoryTotals).sort(([,a], [,b]) => b - a).map(([cat, total]) => {
-                const catInfo = EXPENSE_CATEGORIES.find(c => c.id === cat)
+              {Object.entries(categoryTotals).sort(([,a], [,b]) => b - a).map(([catKey, total]) => {
+                const cColor = cat.colorOf(catKey)
                 return (
-                  <div key={cat} className={`p-3 rounded-lg border ${catInfo?.color || "bg-gray-50"}`}>
-                    <p className="text-xs font-medium opacity-70">{catInfo?.label || cat}</p>
+                  <div key={catKey} className="p-3 rounded-lg border"
+                    style={{ backgroundColor: cColor + "14", borderColor: cColor + "44", color: cColor }}>
+                    <p className="text-xs font-medium opacity-70">{cat.labelOf(catKey)}</p>
                     <p className="text-lg font-bold">RM {total.toLocaleString()}</p>
                     <p className="text-xs opacity-60">{totalExpenses > 0 ? ((total / totalExpenses) * 100).toFixed(1) : 0}%</p>
                   </div>
@@ -536,8 +540,9 @@ export default function ExpenseManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={`font-normal border ${CATEGORY_COLORS[expense.category] || "bg-gray-50 text-gray-700"}`} variant="outline">
-                        {EXPENSE_CATEGORIES.find(c => c.id === expense.category)?.label || expense.category}
+                      <Badge className="font-normal border" variant="outline"
+                        style={{ color: cat.colorOf(expense.category), borderColor: cat.colorOf(expense.category) + "55", backgroundColor: cat.colorOf(expense.category) + "14" }}>
+                        {cat.labelOf(expense.category)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-slate-600">{expense.description}</TableCell>
@@ -588,6 +593,18 @@ export default function ExpenseManagement() {
       </Card>
 
       <UtilityBillsCard />
+      <ExpenseCategoryManager
+        open={isCategoryManagerOpen}
+        onOpenChange={setIsCategoryManagerOpen}
+        categories={cat.categories}
+        expenses={safeExpenses}
+        onCreate={cat.create}
+        onRename={cat.rename}
+        onSetColor={cat.setColor}
+        onRemove={cat.remove}
+        onMove={cat.move}
+      />
+
     </div>
   )
 }
