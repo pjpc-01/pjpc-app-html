@@ -21,7 +21,7 @@ const NAV = [
   ['教务/活动管理', '/activities'], ['教务/课程管理', '/course-management'],
   ['教务/教学评估', '/teacher-teaching-report'], ['教务/绩效管理', '/teacher-performance'],
   ['财务/财务概览', '/finance/overview'], ['财务/收费管理', '/finance/fees'], ['财务/学生费用', '/finance/student-fees'],
-  ['财务/发票管理', '/finance/invoices'], ['财务/付款和收据', '/finance/payments'], ['财务/收据管理', '/finance/receipts'],
+  ['财务/发票管理', '/finance/invoices'], ['财务/付款和收据', '/finance/payments'],
   ['财务/薪资管理', '/finance/payroll'], ['财务/支出管理', '/finance/expenses'], ['财务/银行对账', '/finance/bank'],
   ['财务/预算管理', '/finance/budget'], ['财务/财务报表', '/finance/reports'], ['财务/库存管理', '/inventory'],
   ['系统/考勤中心', '/attendance'], ['系统/卡片管理', '/card-management'], ['系统/积分操作', '/points'],

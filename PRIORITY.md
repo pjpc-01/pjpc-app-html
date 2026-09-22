@@ -289,3 +289,22 @@
 - 英文：`Payment Management` → **Payments & Receipts**
 - 实测：侧边栏、页面标题均显示「付款和收据」，全项目已无「付款管理」残留，无 JS 错误
 - 侧边栏「收据管理」入口**暂未动**（用户「之后才看要不要删」）
+
+### ✅ 删除「收据管理」独立页面（2026-09-22）
+收据已并入「付款和收据」页，故撤掉独立入口。**删前做了功能对账**：
+
+**收据页原有、付款页缺的 4 项 → 处理**
+| 收据页独有 | 处理 |
+|---|---|
+| 按**收据号**搜索 | ✅ **已补进付款页**（搜索框现支持 学生 / 发票号 / 凭证号 / 收据号） |
+| 收据**状态筛选** | 不补 —— 实测 121 张收据**全是 `issued`**，筛选无实际作用 |
+| **批量删除收据** | 不补 —— 收据是付款的自动产物，要删该删付款（付款页已有批量删除） |
+| 行**展开**查看 | 等价功能已在（收据详情弹窗 + PDF 预览） |
+
+**改动**
+- `app/finance/receipts/page.tsx` → 改为**服务端重定向**到 `/finance/payments`（旧书签不 404）
+- 删除 `app/components/finance/payment-management/ReceiptManagement.tsx`（851 行）
+- 清引用：`payment-management/index.ts` 导出、`AppShell` 侧边栏入口 / 面包屑 / 路径→权限映射、`scripts/ux-audit.mjs`
+- **保留** `ReceiptSettingsManager.tsx`（共享模块 `useReceiptTools` 仍在用！）、i18n key、`finance.receipts` 权限 key（避免动角色配置）
+
+**实测**：侧边栏剩 10 项无「收据管理」；付款页收据列/统计正常；搜 `RCP-2026-121` 精确命中 1 行；`/finance/receipts` → 跳 `/finance/payments`；无 JS 错误
