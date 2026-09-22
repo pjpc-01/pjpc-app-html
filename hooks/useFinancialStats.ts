@@ -2,6 +2,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/pocketbase-auth-context'
 import { fetchSecureData } from '@/lib/secure-api-client'
 import { toLocalMonthKey } from "@/lib/utils"
+import {
+  buildCenterMaps, inCenterScope, centerOfInvoice, centerOfInvoiceId,
+  centerOfExpense, centerOfSalary,
+} from '@/lib/center-scope'
 
 export interface Transaction {
   id: string
@@ -52,6 +56,7 @@ export interface FinancialStats {
   revenueByMonth: Record<string, number>
   cashBalance: number
   cashFlowHistory: CashFlowRecord[]
+  centers: { code: string; name: string }[]   // 分行列表（供页面筛选）
 }
 
 export interface CashFlowRecord {
@@ -71,7 +76,7 @@ const monthOf = (v: any): string => {
   return s.slice(0, 7)
 }
 
-export const useFinancialStats = () => {
+export const useFinancialStats = (centerCode?: string) => {
   const { user, userProfile } = useAuth()
   const [stats, setStats] = useState<FinancialStats>({
     monthlyRevenue: 0, totalRevenue: 0,
@@ -79,7 +84,7 @@ export const useFinancialStats = () => {
     totalReceivable: 0, totalReceived: 0, totalUnreceived: 0,
     pendingPayments: 0, overduePayments: 0, pendingAmount: 0, overdueAmount: 0,
     monthlySeries: [],
-    recentTransactions: [], revenueByMonth: {}, cashBalance: 0, cashFlowHistory: []
+    recentTransactions: [], revenueByMonth: {}, cashBalance: 0, cashFlowHistory: [], centers: []
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -103,20 +108,40 @@ export const useFinancialStats = () => {
         }
       }
 
-      const [invoices, payments, expenses, salaries, refunds] = await Promise.all([
+      const [invoices, payments, expenses, salaries, refunds, centers, students, teachers] = await Promise.all([
         grab('invoices', '-created'),
         grab('payments', '-date'),
         grab('expenses', '-date'),
         grab('teacher_salary_records', '-payment_date'),
         grab('refunds', '-created'),
+        grab('centers', 'code'),
+        grab('students', 'name'),
+        grab('teachers', 'name'),
       ])
+
+      // ── 分行归属（统一逻辑在 lib/center-scope.ts）──
+      const cm = buildCenterMaps(centers, students, teachers, invoices)
+      const payById: Record<string, any> = {}
+      for (const p of payments) payById[p.id] = p
+      const centerOfPayment = (pay: any): string => centerOfInvoiceId(pay?.invoiceId, cm)
+
+      const fInvoices = invoices.filter(i => inCenterScope(centerOfInvoice(i, cm), centerCode))
+      const fPayments = payments.filter(p => inCenterScope(centerOfPayment(p), centerCode))
+      const fExpenses = expenses.filter(e => inCenterScope(centerOfExpense(e, cm), centerCode))
+      const fSalaries = salaries.filter(s => inCenterScope(centerOfSalary(s, cm), centerCode))
+      const fRefunds = refunds.filter(r => {
+        const viaInv = centerOfInvoiceId(r.invoiceId, cm)
+        if (viaInv) return inCenterScope(viaInv, centerCode)
+        const pay = r.paymentId ? payById[r.paymentId] : null
+        return inCenterScope(pay ? centerOfPayment(pay) : '', centerCode)
+      })
 
       const currentMonth = toLocalMonthKey()
 
       // 发票月映射：收款按【发票所属月】归集
       // 用户 2026-09-16 确认：8 月开的票，钱 9 月才到账也要算 8 月（老板看的是"当月做了多少生意"）
       const invMonth = new Map<string, string>()
-      for (const i of invoices) {
+      for (const i of fInvoices) {
         if (i?.deleted) continue
         // 账期(period)优先 —— 它代表"这票是哪个月的学费"；没填才退回开票日
         const m = (i.period && /^\d{4}-\d{2}/.test(String(i.period)))
@@ -128,7 +153,7 @@ export const useFinancialStats = () => {
       // ── 实收（按发票所属月；找不到对应发票时退回收款日）──
       const payByMonth: Record<string, number> = {}
       let receivedTotal = 0
-      for (const p of payments) {
+      for (const p of fPayments) {
         if (p?.status && p.status !== 'completed') continue
         const m = invMonth.get(p.invoiceId) || monthOf(p.date || p.created)
         if (!m) continue
@@ -139,7 +164,7 @@ export const useFinancialStats = () => {
       // 退款（减少实收）
       const refByMonth: Record<string, number> = {}
       let refundTotal = 0
-      for (const r of refunds) {
+      for (const r of fRefunds) {
         if (r?.status && r.status !== 'completed') continue
         const m = invMonth.get(r.invoiceId) || monthOf(r.created)
         if (!m) continue
@@ -151,7 +176,7 @@ export const useFinancialStats = () => {
 
       // ── 支出（按费用日期）──
       const expByMonth: Record<string, number> = {}
-      for (const e of expenses) {
+      for (const e of fExpenses) {
         const m = monthOf(e.date || e.created)
         if (!m) continue
         expByMonth[m] = (expByMonth[m] || 0) + (Number(e.amount) || 0)
@@ -161,7 +186,7 @@ export const useFinancialStats = () => {
       // 看「每月该付多少人工」比看付款日直观；付款日容易跨月（7月的钱 8/7、9/7 才发）
       // 成本口径 = 净发 + 雇主 EPF/SOCSO/EIS（公司真实支出）
       const salByMonth: Record<string, number> = {}
-      for (const s of salaries) {
+      for (const s of fSalaries) {
         if (s?.deleted) continue
         const m = s.year ? `${s.year}-${String(s.month).padStart(2, '0')}` : monthOf(s.payment_date)
         if (!m) continue
@@ -178,7 +203,7 @@ export const useFinancialStats = () => {
       let receivable = 0
       let pendingCount = 0, overdueCount = 0, pendingAmt = 0, overdueAmt = 0
       const today = new Date(); today.setHours(0, 0, 0, 0)
-      for (const i of invoices) {
+      for (const i of fInvoices) {
         if (i?.deleted) continue
         const amt = Number(i.totalAmount ?? i.total_amount) || 0
         // 开票也按账期归月（与收款归月口径一致）
@@ -229,8 +254,8 @@ export const useFinancialStats = () => {
 
       // 最近交易（带真实学生名，从发票反查）
       const invById: Record<string, any> = {}
-      for (const i of invoices) invById[i.id] = i
-      const recentTransactions: Transaction[] = payments.slice(0, 10).map(p => {
+      for (const i of fInvoices) invById[i.id] = i
+      const recentTransactions: Transaction[] = fPayments.slice(0, 10).map(p => {
         const inv = invById[p.invoiceId] || {}
         return {
           id: p.id,
@@ -254,7 +279,8 @@ export const useFinancialStats = () => {
         monthlySeries,
         recentTransactions, revenueByMonth,
         cashBalance: totalReceived,
-        cashFlowHistory: []
+        cashFlowHistory: [],
+        centers: cm.centers
       })
     } catch (err) {
       console.error('Error fetching financial stats:', err)
@@ -262,7 +288,7 @@ export const useFinancialStats = () => {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [centerCode])
 
   useEffect(() => {
     fetchAllFinancialStats()

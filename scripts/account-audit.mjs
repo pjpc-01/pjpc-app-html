@@ -82,7 +82,7 @@ for (const s of D.teacher_salary_records) {
   const o = salMonths.get(m);
   o.n++; o.net += Number(s.net_salary || 0);
   o.epf += Number(s.epf_employer || 0); o.socso += Number(s.socso_employer || 0);
-  o.eis += Number(s.eis_employer || 0); o.pcb += Number(s.pcb || 0);
+  o.eis += Number(s.eis_employer || 0); o.pcb += Number(s.tax_deduction ?? s.pcb ?? 0);
 }
 R.push('\n| 月份 | 薪资单数 | 净发 | 雇主EPF | 雇主SOCSO | 雇主EIS | PCB | 总成本 |');
 R.push('|---|---|---|---|---|---|---|---|');
@@ -93,8 +93,9 @@ const curYm = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lum
 const prevYm = (() => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; })();
 li(salMonths.has(curYm) ? `✅ 本月(${curYm})薪资已生成` : `⚠️ **本月(${curYm})薪资还没生成** → 本月成本会偏低`);
 li(salMonths.has(prevYm) ? `✅ 上月(${prevYm})薪资已生成` : `⚠️ **上月(${prevYm})薪资缺失** → 上月利润会虚高`);
-const noPcb = D.teacher_salary_records.filter(s => s.pcb === undefined || s.pcb === null || s.pcb === '');
-li(noPcb.length ? `⚠️ ${noPcb.length} 条薪资没记 PCB 字段 → 报税资料不全` : '✅ 薪资都带 PCB 字段');
+// 注: PCB 在 teacher_salary_records 存于 tax_deduction 字段(pcb 字段不存在)
+const noPcb = D.teacher_salary_records.filter(s => s.tax_deduction === undefined || s.tax_deduction === null || s.tax_deduction === '');
+li(noPcb.length ? `⚠️ ${noPcb.length} 条薪资没记 PCB(tax_deduction) 字段 → 报税资料不全` : '✅ 薪资都带 PCB(tax_deduction) 字段');
 
 const expByCat = new Map();
 for (const e of D.expenses) {
@@ -119,18 +120,27 @@ li(`支出覆盖月份: ${[...expMonths.keys()].sort().join(', ') || '(无)'}`);
 
 // ============ C. 资金侧 ============
 h('C. 资金侧 —— 银行和现金');
-li(`⚠️ **没有银行流水导入** → 无法做银行对账(现在的"银行对账"页是静态假数据)`);
-li(`⚠️ **没有现金账户记录** → 现金收的学费无法核对(收款方式为现金的 ${D.payments.filter(p => p.method === 'Cash').length} 笔)`);
+const bankAccts = await g('/collections/bank_accounts/records?perPage=200').then(r => (r.items || []).filter(x => !x.deleted)).catch(() => []);
+const bankTx = await g('/collections/bank_transactions/records?perPage=1').then(r => r.totalItems || 0).catch(() => 0);
+li(bankTx ? `✅ 已导入银行流水 ${bankTx} 条(账户 ${bankAccts.length} 个) → 可做银行对账` : `⚠️ **没有银行流水导入**（账户已建 ${bankAccts.length} 个，流水 0 条）→ 银行对账页无真实数据可对`);
+const cashAccts = bankAccts.filter(a => String(a.type || a.accountType || '').toLowerCase().includes('cash'));
+li(cashAccts.length ? `✅ 有现金账户 ${cashAccts.length} 个` : `⚠️ **没有现金账户记录** → 现金收的学费无法核对(收款方式为现金的 ${D.payments.filter(p => p.method === 'Cash').length} 笔)`);
 
 // ============ D. 报表/账套结构 ============
 h('D. 账套结构 —— 做账还缺什么');
 li(`现在只做了 **损益表(P&L)** 的口径: 收入 / 支出 / 薪资 / 利润`);
-li(`⚠️ **没有资产负债表**: 缺 现金、银行、应收、应付、固定资产、股东权益`);
+const voucherCov = [
+  ['收款', D.payments], ['支出', D.expenses], ['退款', D.refunds],
+].map(([n, arr]) => [n, arr.filter(x => x.voucher_no).length, arr.length]);
+const voucherBad = voucherCov.filter(([, ok, all]) => all && ok < all);
+li(voucherBad.length
+  ? `⚠️ **凭证编号不齐**: ${voucherBad.map(([n, ok, all]) => `${n} ${ok}/${all}`).join(', ')}`
+  : `✅ 凭证编号体系已启用（${voucherCov.filter(([, , all]) => all).map(([n, ok, all]) => `${n} ${ok}/${all}`).join(', ')}）`);
+li(`⚠️ **资产负债表仅简版**: 财务报表页有「资产负债概览」(应收/累计收支)，缺 银行余额、现金、应付账款、固定资产、股东权益`);
 li(`⚠️ **没有预收款概念**: 家长提前交的下月学费,现在直接算当月收入(会计上应记"预收账款")`);
 li(`⚠️ **没有固定资产**: 桌椅、电脑、装修等没入账、没折旧`);
 li(`⚠️ **没有应付账款**: 欠供应商的钱没记`);
 li(`⚠️ **没有税务报表**: SST / 所得税 / PCB 汇总表`);
-li(`⚠️ **没有凭证编号体系**: 收入支出没有连续凭证号(审计要求)`);
 
 // ============ E. 数据质量 ============
 h('E. 数据质量 —— 影响报表准确性的');
@@ -153,11 +163,41 @@ if (noPeriod.length) critical.push(`发票缺账期 ${noPeriod.length} 张`);
 if (dupNums.length) critical.push(`票号重复 ${dupNums.length} 组`);
 if (noMethod.length) critical.push(`收款缺付款方式 ${noMethod.length} 笔`);
 li(critical.length ? `❗ **必须先补**: ${critical.join(' / ')}` : '✅ 没有致命缺口');
-li(`报表清晰度: 收入/支出/薪资/利润 四项清楚,月度可切;**缺资产负债表和现金流**`);
+li(`报表清晰度: 收入/支出/薪资/利润 四项清楚,月度可切;**资产负债表仅简版(缺银行/现金/应付/固定资产)、无现金流表**`);
 
 const out = R.join('\n');
 const f = '/home/pjpc/pjpc-app-prod/reports/account-audit-latest.md';
 fs.mkdirSync('/home/pjpc/pjpc-app-prod/reports', { recursive: true });
 fs.writeFileSync(f, out);
+// 留档快照,供下周对比"新问题"
+const snap = `/home/pjpc/pjpc-app-prod/reports/account-audit-${new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' })}.md`;
+if (!fs.existsSync(snap)) fs.writeFileSync(snap, out);
 console.log(out);
 console.log(`\n(已保存 → ${f})`);
+
+// 与上一份快照对比: 只列变化项
+try {
+  const files = fs.readdirSync('/home/pjpc/pjpc-app-prod/reports')
+    .filter(n => /^account-audit-\d{4}-\d{2}-\d{2}\.md$/.test(n)).sort();
+  const prev = files.filter(n => n !== snap.split('/').pop()).pop();
+  if (prev) {
+    const old = fs.readFileSync(`/home/pjpc/pjpc-app-prod/reports/${prev}`, 'utf8');
+    const metrics = (t) => {
+      const m = {};
+      const grab = (re, k) => { const x = t.match(re); if (x) m[k] = x[1]; };
+      grab(/未收 RM ([\d.]+)/, '未收');
+      grab(/开票总额 RM ([\d.]+)/, '开票');
+      grab(/支出 ([\d.]+) 笔没有凭证/, '无凭证支出');
+      grab(/薪资 (\d+) 条没有分行/, '薪资缺分行');
+      grab(/(\d+) 个学生学号不完整/, '学号不完整');
+      grab(/(\d+) 个学生没有年级/, '无年级');
+      return m;
+    };
+    const a = metrics(old), b = metrics(out);
+    const diffs = Object.keys(b).filter(k => a[k] !== b[k]).map(k => `${k}: ${a[k] ?? '?'} → ${b[k]}`);
+    console.log(`\n【与上一份快照 ${prev} 对比】`);
+    console.log(diffs.length ? diffs.map(d => `  • ${d}`).join('\n') : '  （无变化）');
+  } else {
+    console.log('\n（本日为首份快照，下周起可自动对比）');
+  }
+} catch (e) { console.log(`\n(快照对比失败: ${String(e).slice(0, 80)})`); }

@@ -1,16 +1,24 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { DollarSign, CreditCard, FileText, TrendingUp, AlertCircle, Loader2, Wallet } from "lucide-react"
 import { useFinancialStats } from "@/hooks/useFinancialStats"
+import { useCenterScope } from "@/hooks/useCenterScope"
+import { UNASSIGNED_CENTER } from "@/lib/center-scope"
 import UtilityBillsCard from "./UtilityBillsCard"
 import { useLanguage } from "@/contexts/language-context"
 
 export default function FinanceOverview() {
   const { t } = useLanguage()
-  const { stats: financialStats, loading: financialLoading, error: financialError } = useFinancialStats()
+  // 分行筛选：全部 / 各分行 / 未分配
+  const [centerFilter, setCenterFilter] = useState("all")
+  const centerScope = useCenterScope()
+  const { stats: financialStats, loading: financialLoading, error: financialError } = useFinancialStats(centerFilter)
 
   return (
     <div className="space-y-6">
@@ -21,6 +29,23 @@ export default function FinanceOverview() {
           <AlertDescription>{financialError}</AlertDescription>
         </Alert>
       )}
+
+      {/* 分行筛选 */}
+      <div className="w-56">
+        <Label className="text-xs text-gray-500">分行</Label>
+        <Select value={centerFilter} onValueChange={setCenterFilter}>
+          <SelectTrigger className="h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部分行</SelectItem>
+            {centerScope.options.map(o => (
+              <SelectItem key={o.code} value={o.code}>{o.name}</SelectItem>
+            ))}
+            <SelectItem value={UNASSIGNED_CENTER}>未分配</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
