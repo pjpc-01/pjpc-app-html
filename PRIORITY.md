@@ -308,3 +308,22 @@
 - **保留** `ReceiptSettingsManager.tsx`（共享模块 `useReceiptTools` 仍在用！）、i18n key、`finance.receipts` 权限 key（避免动角色配置）
 
 **实测**：侧边栏剩 10 项无「收据管理」；付款页收据列/统计正常；搜 `RCP-2026-121` 精确命中 1 行；`/finance/receipts` → 跳 `/finance/payments`；无 JS 错误
+
+### ✅ 死代码清理：脚本 + 坏掉的 npm scripts（2026-09-22）
+用户要求「一定要确认都是没再用的」→ 逐个验证后才删。
+
+**删掉的（先验证零引用：项目 / ~/.hermes/cron / systemd / 其他脚本调用 全都查过）**
+- `scripts/` 17 个一次性排查脚本（`check-rep6/7/8`、`check-report2~5`、`check-bs/err/att/period-col`、`img-check`、`verify-finance/monthly/parents/student-status`、`perf-check`）
+- `scripts/test-json-field.py`、`scripts/test-pb-coll.py`（PB 试错脚本）
+- `scripts/tnb_hist_probe.py`（TNB 账单探测前身，已被 `tnb_scraper.py` 取代）
+- **保留**：cron 在用的 `ux-audit.mjs` / `account-audit.mjs`、`dev-check.sh`、`export-pb-schema.py`（pre-commit 钩子用）、TNB/Air 抓取管线
+
+**⚠️ 顺手发现的更大问题：`package.json` 有 18 个 script 指向不存在的文件**
+全是坏的（`npm run start` / `smart` / `wifi` / `http` / `test:*` …），跑起来必然报 module not found。
+- 先确认生产服务用的是 `ExecStart=... next start -H 0.0.0.0 -p 3001`（**不是 `npm start`**），所以删除安全
+- 已移除 18 个坏 script；**`start` 补为可用的 `next start -H 0.0.0.0 -p 3001`**（与 systemd 一致，实测 3010 端口 HTTP 200）
+- 修正 `docs/environment-setup.md` 里让用户跑 `npm run test:env` 的那行（该脚本从来不存在）
+- 现剩 9 个 script 全部有效：`build / build:static / dev / dev:fast / dev:http / export-pb-schema / lint / pb:start / start`
+- `__pycache__/` 已在 `.gitignore`（第 126 行）且未被 git 跟踪 → 无需处理
+
+**经验**：临时测试脚本（`*.mjs`）必须**跑完先删再 `git add`** —— 曾把 `vd.mjs` 误提交进 `afd00a0`。
