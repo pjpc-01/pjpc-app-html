@@ -4,7 +4,7 @@ import { fetchSecureData } from '@/lib/secure-api-client'
 import { toLocalMonthKey } from "@/lib/utils"
 import {
   buildCenterMaps, inCenterScope, centerOfInvoice, centerOfInvoiceId,
-  centerOfExpense, centerOfSalary,
+  centerOfExpense, centerOfSalary, salaryAllocation,
 } from '@/lib/center-scope'
 
 export interface Transaction {
@@ -128,7 +128,6 @@ export const useFinancialStats = (centerCode?: string) => {
       const fInvoices = invoices.filter(i => inCenterScope(centerOfInvoice(i, cm), centerCode))
       const fPayments = payments.filter(p => inCenterScope(centerOfPayment(p), centerCode))
       const fExpenses = expenses.filter(e => inCenterScope(centerOfExpense(e, cm), centerCode))
-      const fSalaries = salaries.filter(s => inCenterScope(centerOfSalary(s, cm), centerCode))
       const fRefunds = refunds.filter(r => {
         const viaInv = centerOfInvoiceId(r.invoiceId, cm)
         if (viaInv) return inCenterScope(viaInv, centerCode)
@@ -186,15 +185,25 @@ export const useFinancialStats = (centerCode?: string) => {
       // 看「每月该付多少人工」比看付款日直观；付款日容易跨月（7月的钱 8/7、9/7 才发）
       // 成本口径 = 净发 + 雇主 EPF/SOCSO/EIS（公司真实支出）
       const salByMonth: Record<string, number> = {}
-      for (const s of fSalaries) {
+      // 跨中心教师（crossCenter）的薪资按分行数均分；「全部分行」整笔只算一次，不重复计
+      const salaryScope = centerCode && centerCode !== 'all' ? centerCode : ''
+      for (const s of salaries) {
         if (s?.deleted) continue
-        const m = s.year ? `${s.year}-${String(s.month).padStart(2, '0')}` : monthOf(s.payment_date)
-        if (!m) continue
+        const mm = s.year ? `${s.year}-${String(s.month).padStart(2, '0')}` : monthOf(s.payment_date)
+        if (!mm) continue
         const cost = (Number(s.net_salary) || 0)
           + (Number(s.epf_employer) || 0)
           + (Number(s.socso_employer) || 0)
           + (Number(s.eis_employer) || 0)
-        salByMonth[m] = (salByMonth[m] || 0) + cost
+        let add = 0
+        if (!salaryScope) {
+          add = cost
+        } else {
+          for (const a of salaryAllocation(s, cm)) {
+            if (inCenterScope(a.code, salaryScope)) add += cost * a.weight
+          }
+        }
+        if (add) salByMonth[mm] = (salByMonth[mm] || 0) + add
       }
 
       // ── 发票（应收 + 未收）──

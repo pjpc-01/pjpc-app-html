@@ -29,6 +29,8 @@ export interface CenterMaps {
   centers: CenterOption[]
   /** invoices.id → 该发票学生所属分行 code */
   invoiceCenterCode: Map<string, string>
+  /** crossCenter=true 的教师：跨两间分行上班，薪资按分行数均分 */
+  crossCenterTeacherIds: Set<string>
 }
 
 export function buildCenterMaps(
@@ -62,6 +64,13 @@ export function buildCenterMaps(
     if (code) teacherCenterCode.set(te.id, code)
   }
 
+  // 跨中心教师（teachers.crossCenter = true）→ 薪资在两间分行间均分
+  const crossCenterTeacherIds = new Set<string>()
+  for (const te of teachers) {
+    if (!te?.id) continue
+    if (te.crossCenter === true || te.crossCenter === 'true') crossCenterTeacherIds.add(te.id)
+  }
+
   const invoiceCenterCode = new Map<string, string>()
   for (const inv of invoices) {
     if (!inv?.id) continue
@@ -70,7 +79,7 @@ export function buildCenterMaps(
     if (code) invoiceCenterCode.set(inv.id, code)
   }
 
-  return { centerCodeById, studentCenterCode, teacherCenterCode, invoiceCenterCode, centers: centersList }
+  return { centerCodeById, studentCenterCode, teacherCenterCode, invoiceCenterCode, centers: centersList, crossCenterTeacherIds }
 }
 
 /** 收款 / 退款 / 收据：透过发票反查分行 */
@@ -92,6 +101,21 @@ export function centerOfInvoice(invoice: any, m: CenterMaps): string {
   if (invoice.id && m.invoiceCenterCode.has(invoice.id)) return m.invoiceCenterCode.get(invoice.id) || ''
   const sid = invoice.studentId || invoice.student || ''
   return sid ? (m.studentCenterCode.get(sid) || '') : ''
+}
+
+/**
+ * 薪资的分行拆分权重。
+ * - 普通教师：[{ 他的分行, 1 }]
+ * - 跨中心教师（crossCenter=true）：在每个分行各 { 1/分行数 }，例如两间 = 各 50%
+ * 这样「全部分行」合计不会重复计算，各分行相加仍等于总额。
+ */
+export function salaryAllocation(salary: any, m: CenterMaps): Array<{ code: string; weight: number }> {
+  const tid = salary?.teacher_id || ''
+  if (tid && m.crossCenterTeacherIds.has(tid) && m.centers.length > 0) {
+    const w = 1 / m.centers.length
+    return m.centers.map(c => ({ code: c.code, weight: w }))
+  }
+  return [{ code: m.teacherCenterCode.get(tid) || '', weight: 1 }]
 }
 
 /** 选中的分行是否包含这条记录 */
