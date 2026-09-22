@@ -13,6 +13,8 @@ import { useFinancialStats } from "@/hooks/useFinancialStats"
 import { useInvoices } from "@/hooks/useInvoices"
 import { usePayments } from "@/hooks/usePayments"
 import { useExpenses } from "@/hooks/useExpenses"
+import { useCenterScope } from "@/hooks/useCenterScope"
+import { inCenterScope, centerOfInvoice, centerOfInvoiceId, centerOfExpense, UNASSIGNED_CENTER } from "@/lib/center-scope"
 import { exportPnLPDF } from "@/lib/pdf-export"
 import { toast } from "sonner"
 import RevenueChart from "../charts/RevenueChart"
@@ -35,10 +37,13 @@ const fmtMoney = (n: number) => (Number(n) || 0).toLocaleString('en-MY', { minim
 
 export default function FinancialReports() {
   const { t } = useLanguage()
-  const { stats: financialStats, loading: financialLoading } = useFinancialStats()
+  // 分行筛选：全部 / 各分行 / 未分配（归属规则见 lib/center-scope.ts）
+  const [centerFilter, setCenterFilter] = useState("all")
+  const { stats: financialStats, loading: financialLoading } = useFinancialStats(centerFilter)
   const { invoices } = useInvoices()
   const { payments } = usePayments()
   const { expenses } = useExpenses()
+  const centerScope = useCenterScope()
   const [selectedReportType, setSelectedReportType] = useState("monthly")
   // 选中的月份（默认当前月）—— 像翻日历一样看某个月的财务状况
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -53,10 +58,13 @@ export default function FinancialReports() {
     { id: "trend", name: "收入趋势分析", icon: TrendingUp },
   ]
 
-  // Safe arrays
-  const safeInvoices = Array.isArray(invoices) ? invoices : []
-  const safePayments = Array.isArray(payments) ? payments : []
-  const safeExpenses = Array.isArray(expenses) ? expenses : []
+  // Safe arrays —— 按分行筛选（源头统一在 lib/center-scope.ts）
+  const safeInvoices = (Array.isArray(invoices) ? invoices : [])
+    .filter((i: any) => inCenterScope(centerOfInvoice(i, centerScope), centerFilter))
+  const safePayments = (Array.isArray(payments) ? payments : [])
+    .filter((pp: any) => inCenterScope(centerOfInvoiceId(pp.invoiceId, centerScope), centerFilter))
+  const safeExpenses = (Array.isArray(expenses) ? expenses : [])
+    .filter((e: any) => inCenterScope(centerOfExpense(e, centerScope), centerFilter))
 
   // 发票归属月：账期(period)优先，没填才用开票日 —— 与财务报表口径一致
   const invMonthOf = (i: any): string => {
@@ -280,6 +288,21 @@ export default function FinancialReports() {
                 <Download className="h-4 w-4 mr-2" />
                 导出 PDF 报表
               </Button>
+            </div>
+            <div className="w-44">
+              <Label>分行</Label>
+              <Select value={centerFilter} onValueChange={setCenterFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部分行</SelectItem>
+                  {centerScope.options.map(o => (
+                    <SelectItem key={o.code} value={o.code}>{o.name}</SelectItem>
+                  ))}
+                  <SelectItem value={UNASSIGNED_CENTER}>未分配</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex-1">
               <Label>选择月份</Label>
