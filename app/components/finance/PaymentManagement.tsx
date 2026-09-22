@@ -150,12 +150,14 @@ export default function PaymentManagement() {
   const filteredPayments = payments.filter(payment => {
     const invoice = invoices.find(inv => inv.id === payment.invoiceId)
     if (!invoice) return false
-    // 搜索：按学生姓名或发票号过滤
+    // 搜索：学生姓名 / 发票号 / 凭证号 / 收据号（收据页原有按收据号搜索，合并后不能丢）
     const q = searchQuery.trim().toLowerCase()
     if (q) {
       const studentName = (invoice.studentName || '').toLowerCase()
       const invoiceNumber = (invoice.invoiceNumber || '').toLowerCase()
-      if (!studentName.includes(q) && !invoiceNumber.includes(q)) return false
+      const voucherNo = String((payment as any).voucher_no || '').toLowerCase()
+      const receiptNo = String(receiptByPayment.get(payment.id)?.receiptNumber || '').toLowerCase()
+      if (!studentName.includes(q) && !invoiceNumber.includes(q) && !voucherNo.includes(q) && !receiptNo.includes(q)) return false
     }
     // 中心 tab 过滤（用 code：PU1/BATU14）
     if (centerTab && centerTab !== "all") {
@@ -571,7 +573,7 @@ export default function PaymentManagement() {
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input 
-                placeholder="搜索学生或发票..." 
+                placeholder="搜索学生 / 发票号 / 收据号..." 
                 className="pl-9" 
                 value={searchQuery} 
                 onChange={(e) => setSearchQuery(e.target.value)}
