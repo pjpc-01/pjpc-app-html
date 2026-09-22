@@ -282,3 +282,10 @@
 - 无 JS 错误；测试数据已清理，最终回到 7 个原始类别
 
 **注意**：新增集合 → PB 集合数 **64 → 65**（`pb-schema.json` 已随 commit 更新）。备份：`/home/pjpc/backups/pb-schema-before-expense-categories-*.json`
+
+### ✅ 「付款管理」改名为「付款和收据」（2026-09-22）
+收据已内嵌进付款页（每行一列 + 统计卡 + 设置/回收站），故改名。
+- 中文：`nav.payments` / `breadcrumb.payments` / `common.payment_management` / `finance.payment_management` + `AppShell` 导航项与标签→i18n 映射 + `PaymentManagement` 页面 h2 + `PermissionEditor` 权限名 → **付款和收据**
+- 英文：`Payment Management` → **Payments & Receipts**
+- 实测：侧边栏、页面标题均显示「付款和收据」，全项目已无「付款管理」残留，无 JS 错误
+- 侧边栏「收据管理」入口**暂未动**（用户「之后才看要不要删」）
