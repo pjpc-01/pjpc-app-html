@@ -251,3 +251,34 @@
 - 旧收据页仍正常（108 张、同统计）✓ 无 JS 错误
 
 **待办（用户明确「之后才看」）**：菜单里的「收据」入口是否撤掉/灰掉。
+
+### ✅ 支出类别改为自定义（2026-09-22）
+**用户需求**：支出管理的类别做成自定义，可自己添加/删减/写字（改名）。
+
+**原状**：7 个类别**写死在代码里**（`ExpenseManagement.tsx` 的 `EXPENSE_CATEGORIES`）：salary/rent/utilities/marketing/stationery/maintenance/misc（id + label + Tailwind 色类 + 图标）。
+`expenses.category` 是 TEXT，存的是 **key**（实际数据 14 条：utilities 11、misc 3）。
+
+**做法（照项目既有模式 fee_categories）**
+- 新建 PB 集合 **`expense_categories`**：`name`(显示名) / `key`(存进 expenses.category 的代号) / `sort_order` / `color`(hex) / `deleted`
+- 种入原 7 个类别（key 与历史数据一致，零影响）
+- 新增 **`hooks/useExpenseCategories.ts`**：读取 + 增/改名/改色/排序/软删；取不到数据回退内置默认，页面不白屏
+- 新增 **`app/components/finance/shared/ExpenseCategoryManager.tsx`**：管理弹窗（名称可编辑、颜色选择器、上移下移、删除）
+- **`ExpenseManagement.tsx`**：类别从 PB 读；徽章/汇总卡改用 **hex 内联色**（原 Tailwind 类无法支持自定义色）；加「管理类别」按钮
+
+**关键设计（防数据损坏）**
+- `expenses.category` 存 key → **改名只动 name，历史记录不受影响**
+- **删除是软删**（deleted=true）：下拉不再出现，但历史支出**仍能解析出原名称**（`labelOf` 查全量含已删）
+- 类别已被支出使用时，删除前提示笔数（「正被 N 笔支出使用」+「仍要删除」）
+
+**⚠️ 测试时发现并修复的 bug**
+- `makeCategoryKey` 原逻辑会把中文名剥成零散字母：「测试类别XYZ」→ `xyz`、中文名只剩 ASCII 时极易**撞 key**（如「维修费A」「水电费A」都变 `a`）
+- 已修：含非 ASCII 字符或 slug < 3 位时，补 4 位随机后缀（验证：「维修费」→ `cat_9re1`）
+
+**实测（真浏览器）**
+- 表格类别显示正常，徽章颜色渲染为 hex（水电费 → `rgb(14,116,144)`）✓
+- 管理弹窗 7 行 + 8 个颜色选择器 ✓
+- 添加「测试类别XYZ」→ 出现在弹窗和下拉 ✓
+- 改名 → 测试改名ABC ✓；删除 → 确认后消失 ✓；再加「维修费」✓
+- 无 JS 错误；测试数据已清理，最终回到 7 个原始类别
+
+**注意**：新增集合 → PB 集合数 **64 → 65**（`pb-schema.json` 已随 commit 更新）。备份：`/home/pjpc/backups/pb-schema-before-expense-categories-*.json`
