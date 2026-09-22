@@ -38,7 +38,7 @@ NODE_ENV=development
 运行以下命令验证环境变量是否正确设置：
 
 ```bash
-npm run test:env
+node scripts/check-env.js
 ```
 
 如果看到以下输出，说明设置正确：
