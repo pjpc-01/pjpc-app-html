@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateIdentifierVariants } from '@/lib/uid-normalizer'
-import { assertPointsEnabled } from '@/lib/points-guard'
+import { assertPointsEnabled, validatePointsDelta } from '@/lib/points-guard'
 import { getAdminToken } from '@/lib/pb-admin-token'
 
 const PB_URL = 'http://127.0.0.1:8090'
@@ -18,6 +18,10 @@ export async function POST(request: NextRequest) {
     const { card_uid, student_id, points = 1, reason = '', mode } = await request.json()
 
     if (!card_uid && !student_id) return NextResponse.json({ error: '缺少 card_uid 或 student_id' }, { status: 400 })
+
+    // 上限校验：防误输入/浮点异常写出天文数字
+    const deltaErr = validatePointsDelta(points)
+    if (deltaErr) return NextResponse.json({ error: deltaErr }, { status: 400 })
 
     let student: any
 

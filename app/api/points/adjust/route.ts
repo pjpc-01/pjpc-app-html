@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { assertPointsEnabled } from '@/lib/points-guard'
+import { assertPointsEnabled, validatePointsDelta } from '@/lib/points-guard'
 import { getAdminToken } from '@/lib/pb-admin-token'
 
 const PB_URL = 'http://127.0.0.1:8090'
@@ -21,6 +21,12 @@ export async function POST(request: NextRequest) {
 
     if (amount === 0) {
       return NextResponse.json({ success: false, error: '调整金额不能为 0' }, { status: 400 })
+    }
+
+    // 上限校验：防误输入/浮点异常写出天文数字
+    const deltaErr = validatePointsDelta(amount)
+    if (deltaErr) {
+      return NextResponse.json({ success: false, error: deltaErr }, { status: 400 })
     }
 
     // 1. Get student current points

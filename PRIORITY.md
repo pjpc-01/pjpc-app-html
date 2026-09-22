@@ -210,3 +210,18 @@
 
 **⚠️ 建议（未做，待用户决定）**
 - `/api/points/adjust` 目前只挡 `amount === 0`，**没有上限** —— 任何超大数值都能写进去（这次 1e53 就是这么来的）。建议加个合理上限（如 |amount| ≤ 1000）防止再出现数据丢失。
+
+### ✅ 积分变动加上限 ±100000（2026-09-22）
+**用户决定**：`/api/points/adjust` 加上限 **100000**（同时不处理 7/31 那两笔 Fries/Reset）。
+
+**做法（单一源头）**
+- `lib/points-guard.ts` 新增 `MAX_POINTS_DELTA = 100000` + `validatePointsDelta(value)`
+- 两个写入入口都接上：`app/api/points/adjust/route.ts`（单笔**和批量**都走这里）、`app/api/points/route.ts`（NFC/直接加减）
+- 批量「设为」是前端算好 delta 再打 adjust，所以堵 adjust 即覆盖
+
+**⚠️ 测试时发现的额外漏洞（已修）**
+- 初版校验用 `Number(value)`，**`Number(null) === 0`** 会骗过有限性检查 → `amount: null` 被当成合法值放行；**JSON 无法表示 `Infinity`，会序列化成 `null`**，所以 `Infinity` 同样溜过
+- 已改为显式拒绝 `null` / `undefined` / 空串 / 布尔 / 数组 / 对象，并单独判 `n === 0`
+- 验证：`100000`/`-100000`/`99999.5`/`120` 通过；`100001`/`1e53`/`null`/`Infinity`/`''`/`abc`/`true`/`[]`/`{}`/`0` 全部 400 拒绝
+
+**影响范围**：只加校验，不改任何写入逻辑；未影响既有流水。LIEW SI MING 分数保持 139。
