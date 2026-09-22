@@ -2,6 +2,26 @@
 // 防止 points_enabled=false（积分系统已关闭）的学生仍被扣分/加分
 // 即使查询 filter 有 bug，写入前这一层也能拦住
 
+// 单次积分变动上限 —— 防止误输入/浮点异常写出天文数字
+// （曾发生：amount=1e53 使 120 分被浮点精度吸收打成 0，无法还原）
+export const MAX_POINTS_DELTA = 100000
+
+/**
+ * 校验积分变动值。通过返回 null，否则返回错误信息。
+ * 拒绝：非数字 / NaN / Infinity / 超过 ±MAX_POINTS_DELTA
+ */
+export function validatePointsDelta(value: any): string | null {
+  // ⚠️ 必须显式挡 null/undefined/空串：Number(null)===0 会骗过下面的有限性检查
+  // （JSON 无法表示 Infinity，传 Infinity 会被序列化成 null）
+  if (value === null || value === undefined || value === '') return '积分变动值无效'
+  if (typeof value === 'boolean' || Array.isArray(value) || typeof value === 'object') return '积分变动值无效'
+  const n = Number(value)
+  if (!Number.isFinite(n)) return '积分变动值无效'
+  if (n === 0) return '积分变动不能为 0'
+  if (Math.abs(n) > MAX_POINTS_DELTA) return `积分变动不得超过 ±${MAX_POINTS_DELTA}`
+  return null
+}
+
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 // ⚠️ 不要硬编码凭据；走环境变量（.env.local 不入库）
 const PB_ADMIN = {
