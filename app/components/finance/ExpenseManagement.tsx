@@ -135,7 +135,7 @@ export default function ExpenseManagement() {
         centerId: ""
       })
     } catch (err) {
-      alert("添加支出记录失败，请重试")
+      alert(explainUploadError(err))
     }
   }
 
@@ -147,9 +147,42 @@ export default function ExpenseManagement() {
     }
   }
 
+  // 收据附件限制（与 PB expenses.receipt 字段配置保持一致）
+  const MAX_RECEIPT_MB = 20
+  const MAX_RECEIPT_BYTES = MAX_RECEIPT_MB * 1024 * 1024
+  const ALLOWED_RECEIPT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+
+  /** 把后端/网络的原始错误翻成人话（原来不管什么原因都只说「请重试」，看不到真正原因） */
+  const explainUploadError = (err: any) => {
+    const msg = String(err?.message || err || '')
+    if (msg.includes('validation_file_size_limit')) {
+      const m = msg.match(/maximum allowed file size is (\d+) bytes/)
+      const mb = m ? Math.round(Number(m[1]) / 1024 / 1024) : MAX_RECEIPT_MB
+      return `收据文件太大（上限 ${mb}MB）。请压缩后再上传，或改用图片。`
+    }
+    if (msg.includes('validation_file_type') || msg.toLowerCase().includes('mime')) {
+      return '收据文件格式不支持，请用 JPG / PNG / WebP / PDF。'
+    }
+    if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+      return '上传失败：网络中断或文件过大导致连接中断，请重试。'
+    }
+    return `添加支出记录失败：${msg.slice(0, 200) || '未知错误'}`
+  }
+
   const handleReceiptFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    // 选文件时就挡住，不用等提交才报错
+    if (!ALLOWED_RECEIPT_TYPES.includes(file.type)) {
+      alert(`不支持的格式：${file.type || '未知'}\n请使用 JPG / PNG / WebP / PDF。`)
+      e.target.value = ''
+      return
+    }
+    if (file.size > MAX_RECEIPT_BYTES) {
+      alert(`文件太大：${(file.size / 1024 / 1024).toFixed(1)}MB，上限 ${MAX_RECEIPT_MB}MB。\n请压缩后再上传。`)
+      e.target.value = ''
+      return
+    }
     setReceiptFile(file)
     // Create preview URL for images
     if (file.type.startsWith('image/')) {
@@ -405,6 +438,7 @@ export default function ExpenseManagement() {
                       >
                         <Paperclip className="h-6 w-6 text-slate-400" />
                         <span className="text-sm text-slate-500">点击上传收据照片或PDF</span>
+                        <span className="text-[11px] text-slate-400">支持 JPG / PNG / WebP / PDF，最大 {MAX_RECEIPT_MB}MB</span>
                       </Button>
                     )}
                   </div>
