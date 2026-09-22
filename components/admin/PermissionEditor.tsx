@@ -30,7 +30,7 @@ const CHILD_LABELS: Record<string, string> = {
   "education.workspace": "教师工作台", "education.teaching_report": "教学评估", "education.resources": "资源库",
   // Finance
   "finance.overview": "财务概览", "finance.fees": "收费管理", "finance.student_fees": "学生费用",
-  "finance.invoices": "发票管理", "finance.payments": "付款管理", "finance.receipts": "收据管理",
+  "finance.invoices": "发票管理", "finance.payments": "付款和收据", "finance.receipts": "收据管理",
   "finance.payroll": "薪资管理", "finance.expenses": "支出管理", "finance.bank": "银行对账",
   "finance.budget": "预算管理", "finance.reports": "财务报表", "finance.inventory": "库存管理",
   // System

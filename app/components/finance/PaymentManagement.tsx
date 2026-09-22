@@ -355,7 +355,7 @@ export default function PaymentManagement() {
         <div>
           <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <CreditCard className="h-6 w-6 text-blue-500" />
-            付款管理
+            付款和收据
           </h2>
           <p className="text-slate-500">处理学生缴费，自动生成收据并更新发票状态</p>
         </div>
