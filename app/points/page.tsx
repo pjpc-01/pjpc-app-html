@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import PageLayout from "@/components/layouts/PageLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -80,6 +80,10 @@ export default function PointsPage() {
   const [txTotalPages, setTxTotalPages] = useState(1)
   const [txTotal, setTxTotal] = useState(0)
   const [txCenter, setTxCenter] = useState<"all" | "PU1" | "BATU14">("all")
+  // 空 = 看全站；有值 = 只看该学生的全部记录
+  const [txStudentId, setTxStudentId] = useState("")
+  const [txStudentName, setTxStudentName] = useState("")
+  const txCardRef = useRef<HTMLDivElement>(null)
   const [batchMode, setBatchMode] = useState(false)
   const [batchStudents, setBatchStudents] = useState<any[]>([])
   const [batchAmount, setBatchAmount] = useState("1")
@@ -113,14 +117,23 @@ export default function PointsPage() {
   const fetchTransactions = useCallback(async (p: number) => {
     setTxLoading(true)
     try {
-      const res = await fetch(`/api/points/log?limit=${TX_PAGE_SIZE}&page=${p}&center=${txCenter}`)
+      const sid = txStudentId ? `&student_id=${txStudentId}` : ""
+      const center = txStudentId ? "all" : txCenter
+      const res = await fetch(`/api/points/log?limit=${TX_PAGE_SIZE}&page=${p}&center=${center}${sid}`)
       const data = await res.json()
       setTxLogs(data.logs || [])
       setTxTotalPages(data.totalPages || 1)
       setTxTotal(data.total || 0)
     } catch (err) { console.error(err) }
     finally { setTxLoading(false) }
-  }, [txCenter])
+  }, [txCenter, txStudentId])
+
+  // 查看某个学生的全部积分记录 / 返回全站
+  const showAllForStudent = (id: string, name: string) => {
+    setTxStudentId(id); setTxStudentName(name); setTxPage(1)
+    setTimeout(() => txCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120)
+  }
+  const backToAllTx = () => { setTxStudentId(""); setTxStudentName(""); setTxPage(1) }
 
   useEffect(() => {
     if (studentIdParam) loadStudent(studentIdParam, studentNameParam || undefined)
@@ -444,8 +457,16 @@ export default function PointsPage() {
         {currentStudent && logs.length > 0 && (
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <History className="h-4 w-4" /> {currentStudent.name} — 最近记录
+              <CardTitle className="text-sm flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <History className="h-4 w-4" /> {currentStudent.name} — 最近记录
+                </span>
+                <button
+                  onClick={() => showAllForStudent(currentStudent.id, currentStudent.name)}
+                  className="text-[11px] font-normal text-amber-600 hover:text-amber-700 flex items-center gap-0.5"
+                >
+                  查看全部 <ChevronRight className="h-3 w-3" />
+                </button>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -466,17 +487,24 @@ export default function PointsPage() {
         )}
 
         {/* ===== 交易记录 ===== */}
+        <div ref={txCardRef}>
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm flex items-center gap-2">
-                <History className="h-4 w-4" /> 全部交易记录
+                <History className="h-4 w-4" /> {txStudentId ? `${txStudentName} — 全部记录` : "全部交易记录"}
               </CardTitle>
               <span className="flex items-center gap-3 text-[11px] text-gray-400">
+                {txStudentId && (
+                  <button onClick={backToAllTx} className="text-amber-600 hover:text-amber-700 font-medium flex items-center gap-0.5">
+                    <ChevronLeft className="h-3 w-3" /> 返回全部
+                  </button>
+                )}
                 <span>今日 <span className={`font-bold ${todayTotal > 0 ? "text-green-600" : todayTotal < 0 ? "text-red-500" : ""}`}>{todayTotal > 0 ? "+" : ""}{todayTotal}</span></span>
                 <span>{txTotal} 条</span>
               </span>
             </div>
+            {!txStudentId && (
             <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5 mt-2 w-fit">
               <button
                 onClick={() => { setTxCenter("all"); setTxPage(1) }}
@@ -497,6 +525,7 @@ export default function PointsPage() {
                 }`}
               >小学 BATU14</button>
             </div>
+            )}
           </CardHeader>
           <CardContent className="p-0">
             {txLoading ? (
@@ -561,6 +590,7 @@ export default function PointsPage() {
             )}
           </CardContent>
         </Card>
+        </div>
       </div>    </PageLayout>
   )
 }
