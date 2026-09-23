@@ -359,4 +359,4 @@
 - 清 `USER.md` 害人的两行，补身份铁律 + 「回复用中文」。
 **✅ 已重启生效**（2026-09-23 17:23）：用 `hermes -p points-agent gateway restart`（护栏对**兄弟 profile** 放行）。注意：该命令会**在前台变成新网关进程**，与 systemd 抢锁导致服务重启循环 —— 收尾用 `hermes -p points-agent gateway stop` 让 systemd 自动接管。重启后 MainPID=9969、无抢锁报错、WhatsApp connected。原步骤（已不必要）：
 `systemctl --user restart hermes-gateway-points`
-**待观察**：Adrian 的 WhatsApp(LID 193407799460) 解析出的手机号 `601110010775` 与 teachers 表里 **Ng Kar Jin** 的号码相同 —— 需确认 teachers 表该号码是否填错。
+**已澄清（2026-09-23）**：Adrian 的 WhatsApp 解析出的 `601110010775` 与 teachers 表里 **Ng Kar Jin** 的号码相同是**正常的** —— 老板本人 Adrian Ng 就是 teachers 表里的 Ng Kar Jin（用户确认「是对的」）。不是录错，无需修改。
