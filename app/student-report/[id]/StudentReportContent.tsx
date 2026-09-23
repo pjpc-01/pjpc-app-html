@@ -222,6 +222,15 @@ export default function StudentReportContent() {
   // Find student by report's studentId
   const student = report?.expand?.studentId || students.find(s => s.id === report?.studentId)
 
+  // Full avatar URL for report iframe/PDF (PB stores filename, not URL)
+  const avatarSrc = (() => {
+    const av = (student as any)?.avatar
+    if (!av) return ''
+    if (String(av).startsWith('http')) return av
+    const cid = (student as any)?.collectionId || 'students'
+    return `/api/pocketbase-proxy/api/files/${cid}/${report?.studentId}/${av}`
+  })()
+
   // Handle save
   const handleSave = async () => {
     if (!report) return
@@ -280,7 +289,7 @@ export default function StudentReportContent() {
         student_id: student.student_id || student.code,
         dob: student.dob,
         grade: student.grade,
-        avatar: student.avatar,
+        avatar: avatarSrc,
       })
     } catch (e: any) {
       alert("PDF下载失败: " + (e.message || "未知错误"))
@@ -360,7 +369,7 @@ export default function StudentReportContent() {
             student_id: student?.student_id || student?.code || '',
             dob: student?.dob || '',
             grade: student?.grade || '',
-            avatar: student?.avatar || '',
+            avatar: avatarSrc,
           }, { hideGrowth: editMode }) : ''}
           className="w-full border-0 rounded-lg bg-white"
           style={{ minHeight: '900px', height: 'auto' }}
