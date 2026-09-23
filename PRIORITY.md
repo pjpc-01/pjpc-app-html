@@ -327,3 +327,13 @@
 - `__pycache__/` 已在 `.gitignore`（第 126 行）且未被 git 跟踪 → 无需处理
 
 **经验**：临时测试脚本（`*.mjs`）必须**跑完先删再 `git add`** —— 曾把 `vd.mjs` 误提交进 `afd00a0`。
+
+## ✅ 已修复：points-agent（WhatsApp bot）掉线 2 天（2026-09-23）
+**症状**：`hermes-gateway-points` 服务 active 但平台没连上，从 09-21 09:42 起每 5 分钟重试一次、连续失败 5928 次，Hermes 自己标了 NEEDS_ATTENTION。
+**根因**：WhatsApp「已链接设备」被登出（session 失效），bridge 每次启动都读到 `Logged out` 直接退出 → 重试一万次也没用。**不是网络/服务问题，是登录凭证失效。**
+**处理**：`hermes -p points-agent whatsapp` 重新扫码配对 → 网关下一轮重试（≤5min）自动读新 session 连上。
+**验证**：bridge `/health` = `{"status":"connected"}`；网关日志 `Bridge ready (status: connected)`；期间有真实 WhatsApp DM 进出并成功回复；无任何告警。
+**注意**：
+- bot WhatsApp 号已更换（用户确认「换了」）；旧号 session 备份在 `platforms/whatsapp/session.dead-<ts>`，确认稳定后可删。
+- 网关实际用的 session 路径是 `~/.hermes/profiles/points-agent/whatsapp/session`（**不是** `platforms/whatsapp/session`，后者是旧布局）。
+- ⚠️ **gateway 不能从 gateway 内部 stop/restart**（安全护栏会拦，防止自杀）。改 session 后靠网关自身 5 分钟重试周期生效，或从独立 shell 操作。
