@@ -346,3 +346,17 @@
 改的是 `~/.hermes/profiles/points-agent/.env`，备份 `.env.bak-20260923_164042`。
 ⚠️ **改完未重启，尚未生效**（运行中的 bridge 进程内存里仍是旧名单）；重启网关后才生效。
 **待办：入职/离职时记得同步这份白名单**（老师表 status=inactive 后应从白名单移除）。
+
+### ✅ points-agent 认错老师身份（2026-09-23）
+**症状**：Thong Wei Ting 发消息被认成 **Ng Kar Jin**；NG SHI JIE 被认成 **JAN SUI WAI**。积分记到了错误操作人。
+**根因（三层叠加）**：
+1. **技能写错示例**：`points-operations` §1a 原文把 `193407799460@lid` 当作「发件人 id」举例 —— 而这个 LID 其实是 **`WHATSAPP_HOME_CHANNEL`（Adrian 的 DM）**。agent 照示例拿它当发件人 → 解析成 Ng Kar Jin。
+2. **新会话拿不到发件人 LID**：老师**第一条**消息只有显示名（「DM with Ting」），Hermes 的 `Gateway message origin` 块只在 busy-steer（同会话后续消息）时注入。
+3. **记忆污染**：`memories/USER.md` 混入了 default profile 的开发记忆，含「Jan=PJPC daycare teacher」「User prefers English」→ agent 猜 Jan、还回英文。
+**修复**（备份在 `/home/pjpc/backups/points-agent-fix-20260923_171021`）：
+- 重写 `SOUL.md` 身份铁律：显示名 → `channel_directory.json` → LID → `lid-mapping-<LID>_reverse.json` → `teachers.phone`（精确 + active）；⛔ 禁止用 Home Channel / 显示名 / 记忆 / 自称认定身份；拿不到就拒绝。
+- 修 `points-operations` §1a 的错误示例，改成三步法 + 明确「HOME_CHANNEL ≠ 发件人」。
+- 清 `USER.md` 害人的两行，补身份铁律 + 「回复用中文」。
+**⚠️ 未生效**：改的是 agent 的 SOUL/skill/memory，**须外部重启网关**才加载（网关内自重启被安全护栏拦）：
+`systemctl --user restart hermes-gateway-points`
+**待观察**：Adrian 的 WhatsApp(LID 193407799460) 解析出的手机号 `601110010775` 与 teachers 表里 **Ng Kar Jin** 的号码相同 —— 需确认 teachers 表该号码是否填错。
