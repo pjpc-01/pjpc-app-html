@@ -337,3 +337,12 @@
 - bot WhatsApp 号已更换（用户确认「换了」）；旧号 session 备份在 `platforms/whatsapp/session.dead-<ts>`，确认稳定后可删。
 - 网关实际用的 session 路径是 `~/.hermes/profiles/points-agent/whatsapp/session`（**不是** `platforms/whatsapp/session`，后者是旧布局）。
 - ⚠️ **gateway 不能从 gateway 内部 stop/restart**（安全护栏会拦，防止自杀）。改 session 后靠网关自身 5 分钟重试周期生效，或从独立 shell 操作。
+
+### ✅ 白名单补齐（2026-09-23，同日）
+核对 points-agent 的 `WHATSAPP_ALLOWED_USERS`（17 个）↔ teachers 表电话：**17/17 全部对得上老师**，白名单机制正常（跟着老师电话走）。
+发现并修正 2 处不一致：
+- **加入** GAN SOH YEE（在职，8/20 入职，科任/辅导老师）—— 原本不在白名单，用不了 bot
+- **移除** Yap Kai Qing（已离职）—— 号码仍留在白名单
+改的是 `~/.hermes/profiles/points-agent/.env`，备份 `.env.bak-20260923_164042`。
+⚠️ **改完未重启，尚未生效**（运行中的 bridge 进程内存里仍是旧名单）；重启网关后才生效。
+**待办：入职/离职时记得同步这份白名单**（老师表 status=inactive 后应从白名单移除）。
