@@ -40,6 +40,7 @@ const SUBJECT_OPTIONS = [
 
 const GRADE_OPTIONS = [
   "一年级", "二年级", "三年级", "四年级", "五年级", "六年级",
+  "中学预备班",
   "中一", "中二", "中三", "中四", "中五", "中六",
 ]
 
@@ -49,7 +50,7 @@ const GRADE_DISPLAY: Record<string, string> = {
   "Standard 4": "四年级", "Standard 5": "五年级", "Standard 6": "六年级",
   "Form 1": "中一", "Form 2": "中二", "Form 3": "中三",
   "Form 4": "中四", "Form 5": "中五", "Form 6": "中六",
-  "Peralihan": "预备班",
+  "Peralihan": "中学预备班",
   "1": "一年级", "2": "二年级", "3": "三年级",
   "4": "四年级", "5": "五年级", "6": "六年级",
   "7": "中一", "8": "中二", "9": "中三",

@@ -367,3 +367,20 @@
 **来源**：新功能「报销单 (Claim Form)」是 **alicia-agent**（另一个 Hermes bot）2026-09-24 12:25–12:40 在共享仓库里做的，未提交（`app/claim-form/`、`hooks/useClaimForms.ts`、`lib/claim-form-pdf.ts`、PB 集合 `claim_forms`、AppShell 导航项）。她漏了 i18n。
 **修复**：`language-context.tsx` 补 `"nav.claims": "报销单"` / `"Claim Form"`（2 行），build + restart，已验证产物里 `nav.claims = 报销单`。
 **注意**：本仓库**长期有第二个 agent（alicia）在同时改**，动文件前先 `git status` 看有没有别人的未提交工作，不要误提交/覆盖。
+
+### ✅ 用户反馈 2 项（2026-09-24）
+**① 支出页「新增支出」金额打不进小数点**
+- 根因：`ExpenseManagement.tsx` 的金额框是 `<Input type="number" />` **没给 `step`** → 浏览器默认 `step=1`，小数点直接被拒。
+- 修复：加 `step="0.01" min="0" inputMode="decimal"`。
+- ⚠️ 同类隐患：全项目还有 20+ 个 `type="number"` 缺 `step`（含 `settings` 薪资费率、`claim-form` 金额等）。**这次只改用户报的支出金额**，其余待定。
+
+**② 教学评估「新建报告」年级下拉没有「中学预备班」**
+- 根因：`teacher-teaching-report/page.tsx` 的 `GRADE_OPTIONS` 只有「一年级…中六」，**没有预备班**；且 `GRADE_DISPLAY` 把 `Peralihan` 映射成「预备班」（名字也对不上）。学生表里**确实有 1 个 `Peralihan` 学生** → 选了年级也加不进学生。
+- 修复：`GRADE_OPTIONS` 加「中学预备班」；`GRADE_DISPLAY["Peralihan"]` 改为「中学预备班」（两边对齐才能匹配到学生）。
+- ⚠️ 年级选项**全项目有 7 处各自写死**（homework、student-reports、points、courses…），措辞还不统一（`预备班`/`Peralihan`/`中学预备班`）。**这次只改教学评估**，未做统一源头（避免扩大范围）。
+
+**③ 顺手修掉我自己留下的 bug**
+- `ExpenseManagement.tsx` 的「导出 CSV」里有 `const cat = cat.labelOf(e.category)` —— **初始化器引用自己（TDZ）→ 一点就抛 ReferenceError**。是我上次做「自定义支出类别」时（commit `315f70f`）留下的。
+- 修复：内部变量改名 `catName`。已全项目扫描，无其他同类自引用。
+
+**验证程度**：`npx next build` 通过；构建产物里确认 `step:"0.01"/inputMode:"decimal"` 和 `"中学预备班"` 已进包；`/`、`/finance/expenses`、`/teacher-teaching-report` 均 200；CSV 那个 LSP 报错已消失。**未做登录后的真实点击测试**（不在脚本里写密码）。
