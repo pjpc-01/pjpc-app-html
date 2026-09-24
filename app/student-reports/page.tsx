@@ -16,6 +16,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useStudents } from "@/hooks/useStudents"
 import { formatGrade } from "@/lib/utils"
+import { GRADE_CANON_ALL, GRADE_LABEL } from "@/lib/grades"
 import ReportSettingsManager, { type ReportSettingsPreset } from "@/app/components/report/ReportSettingsManager"
 import { REPORT_EN_DEFAULT } from "@/lib/pdf-generator"
 
@@ -176,10 +177,8 @@ export default function StudentReportsPage() {
   // 年级列表（去重 + 排序）—— 用于选择学生 dialog
   const gradeOptions = Array.from(new Set((students || []).map((s: any) => formatGrade(s.grade, s.is_peralihan) || s.grade).filter(Boolean))) as string[]
 
-  // 列表页年级选项 —— 固定完整列表（不依赖 students 加载时序）
-  const ALL_GRADES = ["Standard 1","Standard 2","Standard 3","Standard 4","Standard 5","Standard 6","Peralihan","Form 1","Form 2","Form 3","Form 4","Form 5","明年新生"]
-  const GRADE_LABELS: Record<string,string> = { "Standard 1":"1年级","Standard 2":"2年级","Standard 3":"3年级","Standard 4":"4年级","Standard 5":"5年级","Standard 6":"6年级","Peralihan":"Peralihan","Form 1":"中一","Form 2":"中二","Form 3":"中三","Form 4":"中四","Form 5":"中五","明年新生":"明年新生" }
-  const listGradeOptions = ALL_GRADES
+  // 列表页年级选项 —— 走 @/lib/grades（原来写死一份，漏了 Form 6，且「预备班」措辞与别处不一致）
+  const listGradeOptions = GRADE_CANON_ALL
 
   // 过滤报告列表（按年级）
   const filteredReports = reports.filter((r: any) => {
@@ -240,7 +239,7 @@ export default function StudentReportsPage() {
                 >
                   <option value="">全部年级</option>
                   {listGradeOptions.map((g) => (
-                    <option key={g} value={g}>{GRADE_LABELS[g] || g}</option>
+                    <option key={g} value={g}>{GRADE_LABEL[g] || g}</option>
                   ))}
                 </select>
                 {listGrade && (

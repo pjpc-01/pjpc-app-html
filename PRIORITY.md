@@ -444,3 +444,32 @@
 - `095 许瑜桐` 欠 568 —— **不明**：她 8 月单是 `deleted + carried_forward`、零收款，无法证明已付，需要人工判断
 
 **另注**：`InvoiceManagement` 手动开单仍是 `period: period || undefined`（不选账期就会生成无账期单）。金额翻倍的坑已被上面第 2 条堵住，但若希望「手动单也必须有账期」，可加校验 —— 待定。
+
+### ✅ 隐患②（年级不统一）—— 已建源头并迁移 11 处（2026-09-24）
+**新建源头 `lib/grades.ts`**（唯一出处）：`GRADE_CANON` / `GRADE_LABEL` / `GRADE_CANON_ALL` / `GRADE_OPTIONS_ZH` / `gradeCanon()` / `gradeLabel()` / `gradeRank()`
+- 归一化覆盖：`一年级`/`1`/`7`/`Y4`(大写)/`y4`/`Form 1`/`Standard 6`/`Peralihan`/`预备班`/`中学预备班`/`中一`…`中六`/`明年新生`/空白
+- **「预备班」全站统一叫「中学预备班」**；中英混排排序正确（Peralihan < 一年级 < … < 六年级 < 中一 < … < 中六）
+- 实测（`npx tsx` 单测 + 真实浏览器）：全部正确
+
+**已迁移 11 处（原来各写一套）**
+1. `app/teacher-teaching-report/page.tsx` —— 本地 GRADE_OPTIONS/GRADE_DISPLAY（就是漏「中学预备班」那处）
+2. `app/points/page.tsx` —— 本地 GRADE_DISPLAY（**缺 y1–y6**）
+3. `components/shared/LeaderboardList.tsx` —— 同上拷贝
+4. `app/components/finance/invoice-management/InvoiceCreateDialog.tsx` —— **修排序失效**（原 order 写的是 `初一/初二/高一`，与真实值对不上 → `indexOf` 恒 -1）
+5. `app/student-reports/page.tsx` —— 本地 ALL_GRADES（**缺 Form 6**）
+6. `app/homework/page.tsx` + `app/homework/new/page.tsx` —— 本地 GRADES（中英混、缺中四~中六）
+7. `components/courses/ClassManagement.tsx` —— 选项改 canonical + 中文标签；**筛选/分组/统计改按 canonical 归并**（原来 `一年级` 与 `Standard 1` 被拆成两组）；颜色表补中一~中六/Form 6
+8. `components/courses/CourseScheduling.tsx` —— 选项/筛选/排课过滤全部按 canonical
+9. `components/courses/GradeGanttChart.tsx` —— 年级开关按 canonical
+10. `app/components/management/course-management.tsx` + `app/components/attendance/CalendarScheduleView.tsx` —— 显示走 `gradeLabel`
+
+**验证**：build 通过；真实浏览器实测 —— 课程管理两个年级下拉均为「合并后中文 13 级、无英文原始值 ✅」；学生报告筛选含「中学预备班/中六」✅；作业筛选含「中学预备班」✅；教学评估含「中学预备班」✅；全程无 pageerror。测试临时账号已删（204/读回404/无残留）。
+
+**⚠️ 尚未迁移（各自一套，功能上能用但仍是隐患）**
+- `app/api/points/records/route.ts:54` —— **服务端**又有一份年级映射
+- `app/components/student/utils.ts:14,22` —— 另一套年级转换（`'一年级': 'Standard 1（一年级）'` 风格）
+- `components/teacher/TeacherDashboard.tsx:148` —— 又一份映射表
+- `app/components/finance/student-fee-matrix/StudentFeeMatrix.tsx:53` —— 自己一份 order
+- `app/card-management/page.tsx:109`、`app/components/management/student-management-page.tsx:153,340`、`app/components/student/StudentAnalytics.tsx:51` —— 各自用正则判断小学年级
+
+**⚠️ 数据层**：`courses.grade_level` **中英混存**（`一年级`×8 与 `Standard 1`×3 并存）。显示/筛选现在已按 canonical 归并，但**存库值仍不统一**；若要彻底统一需一次性把 81 门课的值改写成 canonical（待定）。

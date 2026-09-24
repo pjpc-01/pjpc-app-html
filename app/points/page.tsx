@@ -16,22 +16,11 @@ import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
 import { classifySchoolLevel } from "@/lib/utils"
 import PointsNfcScanner from "@/components/attendance/PointsNfcScanner"
+import { gradeLabel } from "@/lib/grades"
 
-// 年级中文显示映射 — 兼容各种 raw grade 格式
-const GRADE_DISPLAY: Record<string, string> = {
-  "Standard 1": "一年级", "Standard 2": "二年级", "Standard 3": "三年级",
-  "Standard 4": "四年级", "Standard 5": "五年级", "Standard 6": "六年级",
-  "Form 1": "中一", "Form 2": "中二", "Form 3": "中三",
-  "Form 4": "中四", "Form 5": "中五", "Form 6": "中六",
-  "Peralihan": "预备班",
-  "1": "一年级", "2": "二年级", "3": "三年级",
-  "4": "四年级", "5": "五年级", "6": "六年级",
-  "7": "中一", "8": "中二", "9": "中三",
-  "10": "中四", "11": "中五", "12": "中六",
-  "y7": "中一", "y8": "中二", "y9": "中三",
-  "y10": "中四", "y11": "中五", "y12": "中六",
-}
-const toGradeDisplay = (grade: string): string => GRADE_DISPLAY[grade] || grade
+// 年级显示统一走 @/lib/grades（原来这里自己写了一份 GRADE_DISPLAY，缺 y1–y6、且「预备班」措辞与别处不一致）
+const toGradeDisplay = (grade: string): string => gradeLabel(grade)
+
 
 interface PointLog {
   id: string; amount: number; reason: string; points_before: number

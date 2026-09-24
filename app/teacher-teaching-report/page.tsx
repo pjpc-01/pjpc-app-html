@@ -18,6 +18,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
+import { GRADE_OPTIONS_ZH, gradeLabel } from "@/lib/grades"
 import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
 import { useTeachers } from "@/hooks/useTeachers"
 import {
@@ -38,29 +39,9 @@ const SUBJECT_OPTIONS = [
   "物理", "化学", "生物", "高数",
 ]
 
-const GRADE_OPTIONS = [
-  "一年级", "二年级", "三年级", "四年级", "五年级", "六年级",
-  "中学预备班",
-  "中一", "中二", "中三", "中四", "中五", "中六",
-]
-
-// 年级中文显示映射 — 兼容各种 raw grade 格式
-const GRADE_DISPLAY: Record<string, string> = {
-  "Standard 1": "一年级", "Standard 2": "二年级", "Standard 3": "三年级",
-  "Standard 4": "四年级", "Standard 5": "五年级", "Standard 6": "六年级",
-  "Form 1": "中一", "Form 2": "中二", "Form 3": "中三",
-  "Form 4": "中四", "Form 5": "中五", "Form 6": "中六",
-  "Peralihan": "中学预备班",
-  "1": "一年级", "2": "二年级", "3": "三年级",
-  "4": "四年级", "5": "五年级", "6": "六年级",
-  "7": "中一", "8": "中二", "9": "中三",
-  "10": "中四", "11": "中五", "12": "中六",
-  "y1": "一年级", "y2": "二年级", "y3": "三年级",
-  "y4": "四年级", "y5": "五年级", "y6": "六年级",
-  "y7": "中一", "y8": "中二", "y9": "中三",
-  "y10": "中四", "y11": "中五", "y12": "中六",
-}
-const toGradeDisplay = (grade: string): string => GRADE_DISPLAY[grade] || grade
+// 年级选项/显示名统一走 @/lib/grades（唯一定义处；原来这里自己写了一份，漏过「中学预备班」）
+const GRADE_OPTIONS = GRADE_OPTIONS_ZH
+const toGradeDisplay = (grade: string): string => gradeLabel(grade)
 
 const ASSESSMENT_PERIODS = [
   { value: "first", label: "第一次（1–4月）" },
