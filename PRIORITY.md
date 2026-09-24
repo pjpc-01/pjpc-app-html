@@ -360,3 +360,10 @@
 **✅ 已重启生效**（2026-09-23 17:23）：用 `hermes -p points-agent gateway restart`（护栏对**兄弟 profile** 放行）。注意：该命令会**在前台变成新网关进程**，与 systemd 抢锁导致服务重启循环 —— 收尾用 `hermes -p points-agent gateway stop` 让 systemd 自动接管。重启后 MainPID=9969、无抢锁报错、WhatsApp connected。原步骤（已不必要）：
 `systemctl --user restart hermes-gateway-points`
 **已澄清（2026-09-23）**：Adrian 的 WhatsApp 解析出的 `601110010775` 与 teachers 表里 **Ng Kar Jin** 的号码相同是**正常的** —— 老板本人 Adrian Ng 就是 teachers 表里的 Ng Kar Jin（用户确认「是对的」）。不是录错，无需修改。
+
+### ✅ 修 `nav.claims` 显示原始 key（2026-09-24）
+**现象**：财务导航栏出现 `nav.claims` 而不是「报销单」。
+**根因**：`AppShell.tsx` 的 `NAV_LABEL_MAP` 把「报销单 (Claim Form)」映射到 i18n key `nav.claims`，但 `contexts/language-context.tsx` **没有定义这个 key**。`t()` 的实现是 `translations[lang][key] || key` —— key 缺失时直接把原始 key 显示出来。
+**来源**：新功能「报销单 (Claim Form)」是 **alicia-agent**（另一个 Hermes bot）2026-09-24 12:25–12:40 在共享仓库里做的，未提交（`app/claim-form/`、`hooks/useClaimForms.ts`、`lib/claim-form-pdf.ts`、PB 集合 `claim_forms`、AppShell 导航项）。她漏了 i18n。
+**修复**：`language-context.tsx` 补 `"nav.claims": "报销单"` / `"Claim Form"`（2 行），build + restart，已验证产物里 `nav.claims = 报销单`。
+**注意**：本仓库**长期有第二个 agent（alicia）在同时改**，动文件前先 `git status` 看有没有别人的未提交工作，不要误提交/覆盖。
