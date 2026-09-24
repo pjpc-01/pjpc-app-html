@@ -197,11 +197,11 @@ export default function BankReconciliation() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>期初余额</Label>
-                      <Input type="number" value={newAccount.openingBalance} onChange={e => setNewAccount(p => ({...p, openingBalance: e.target.value}))} />
+                      <Input type="number" step="0.01" value={newAccount.openingBalance} onChange={e => setNewAccount(p => ({...p, openingBalance: e.target.value}))} />
                     </div>
                     <div>
                       <Label>当前余额</Label>
-                      <Input type="number" value={newAccount.currentBalance} onChange={e => setNewAccount(p => ({...p, currentBalance: e.target.value}))} />
+                      <Input type="number" step="0.01" value={newAccount.currentBalance} onChange={e => setNewAccount(p => ({...p, currentBalance: e.target.value}))} />
                     </div>
                   </div>
                 </div>

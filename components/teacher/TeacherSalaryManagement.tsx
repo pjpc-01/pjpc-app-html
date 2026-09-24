@@ -1650,7 +1650,7 @@ export default function TeacherSalaryManagement() {
               {structureForm.salary_type === 'monthly' && (
                 <div>
                   <Label htmlFor="base_salary">基本薪资 (RM)</Label>
-                  <Input id="base_salary" type="number" value={structureForm.base_salary}
+                  <Input id="base_salary" type="number" step="0.01" value={structureForm.base_salary}
                     onChange={(e) => setStructureForm(prev => ({ ...prev, base_salary: parseFloat(e.target.value) || 0 }))} />
                 </div>
               )}
@@ -1658,12 +1658,12 @@ export default function TeacherSalaryManagement() {
                 <>
                   <div>
                     <Label htmlFor="hourly_rate">时薪 (RM/h)</Label>
-                    <Input id="hourly_rate" type="number" value={structureForm.hourly_rate || ''}
+                    <Input id="hourly_rate" type="number" step="0.01" value={structureForm.hourly_rate || ''}
                       onChange={(e) => setStructureForm(prev => ({ ...prev, hourly_rate: parseFloat(e.target.value) || 0 }))} />
                   </div>
                   <div>
                     <Label htmlFor="overtime_rate">加班费率 (RM/h)</Label>
-                    <Input id="overtime_rate" type="number" value={structureForm.overtime_rate || ''}
+                    <Input id="overtime_rate" type="number" step="0.01" value={structureForm.overtime_rate || ''}
                       onChange={(e) => setStructureForm(prev => ({ ...prev, overtime_rate: parseFloat(e.target.value) || 0 }))} />
                   </div>
                 </>
@@ -1671,7 +1671,7 @@ export default function TeacherSalaryManagement() {
               {structureForm.salary_type === 'commission' && (
                 <div>
                   <Label htmlFor="base_salary">底薪 (RM)</Label>
-                  <Input id="base_salary" type="number" value={structureForm.base_salary}
+                  <Input id="base_salary" type="number" step="0.01" value={structureForm.base_salary}
                     onChange={(e) => setStructureForm(prev => ({ ...prev, base_salary: parseFloat(e.target.value) || 0 }))} />
                 </div>
               )}
@@ -1691,7 +1691,7 @@ export default function TeacherSalaryManagement() {
                       updated[i] = { ...updated[i], name: e.target.value }
                       setStructureForm(prev => ({ ...prev, allowance_items: updated }))
                     }} className="w-36" />
-                  <Input type="number" placeholder="金额" value={item.amount || ''}
+                  <Input type="number" step="0.01" placeholder="金额" value={item.amount || ''}
                     onChange={(e) => {
                       const updated = [...(structureForm.allowance_items || [])]
                       updated[i] = { ...updated[i], amount: parseFloat(e.target.value) || 0 }
@@ -1730,7 +1730,7 @@ export default function TeacherSalaryManagement() {
                       updated[i] = { ...updated[i], name: e.target.value }
                       setStructureForm(prev => ({ ...prev, bonus_items: updated }))
                     }} className="w-36" />
-                  <Input type="number" placeholder="金额" value={item.amount || ''}
+                  <Input type="number" step="0.01" placeholder="金额" value={item.amount || ''}
                     onChange={(e) => {
                       const updated = [...(structureForm.bonus_items || [])]
                       updated[i] = { ...updated[i], amount: parseFloat(e.target.value) || 0 }
@@ -2076,7 +2076,7 @@ export default function TeacherSalaryManagement() {
                   <Label htmlFor="hours_worked">工时 (小时) <span className="text-xs text-gray-400">自动从排班读取·不可手填</span></Label>
                   <Input
                     id="hours_worked"
-                    type="number"
+                    type="number" step="0.01"
                     readOnly
                     value={recordForm.hours_worked || ''}
                     className="bg-gray-50"
@@ -2089,7 +2089,7 @@ export default function TeacherSalaryManagement() {
                 <Label htmlFor="bonus">奖金 (RM)</Label>
                 <Input
                   id="bonus"
-                  type="number"
+                  type="number" step="0.01"
                   value={recordForm.bonus}
                   onChange={(e) => setRecordForm(prev => ({ 
                     ...prev, 

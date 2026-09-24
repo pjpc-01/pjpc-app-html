@@ -199,7 +199,7 @@ export default function BudgetManagement() {
               </div>
               <div>
                 <Label>预算金额 (RM) *</Label>
-                <Input type="number" value={formData.budgetAmount} onChange={e => setFormData(p => ({...p, budgetAmount: e.target.value}))} placeholder="0.00" />
+                <Input type="number" step="0.01" value={formData.budgetAmount} onChange={e => setFormData(p => ({...p, budgetAmount: e.target.value}))} placeholder="0.00" />
               </div>
               <div>
                 <Label>{t('teacher.notes')}</Label>
