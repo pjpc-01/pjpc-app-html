@@ -16,11 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useLanguage } from "@/contexts/language-context"
+import { GRADE_OPTIONS_ZH } from "@/lib/grades"
 import { toast } from "sonner"
 import { ArrowLeft, Save } from "lucide-react"
 
 const SUBJECTS = ["数学", "英文", "华文", "马来文", "科学", "历史", "地理", "道德", "美术", "音乐", "体育", "其他"]
-const GRADES = ["一年级", "二年级", "三年级", "四年级", "五年级", "六年级", "预备班", "Form 1", "Form 2", "Form 3", "Form 4", "Form 5"]
+// 年级选项统一走 @/lib/grades
+const GRADES = GRADE_OPTIONS_ZH
 
 export default function NewHomeworkPage() {
   const { t } = useLanguage()

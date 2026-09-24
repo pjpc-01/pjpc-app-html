@@ -4,6 +4,7 @@ import React, { useState } from "react"
 import Link from "next/link"
 import PageLayout from "@/components/layouts/PageLayout"
 import { useHomeworkList } from "@/hooks/useHomework"
+import { GRADE_OPTIONS_ZH } from "@/lib/grades"
 import { useCenters } from "@/hooks/useCenters"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,7 +30,8 @@ import {
 } from "lucide-react"
 
 const SUBJECTS = ["数学", "英文", "华文", "马来文", "科学", "历史", "地理", "道德", "美术", "音乐", "体育", "其他"]
-const GRADES = ["一年级", "二年级", "三年级", "四年级", "五年级", "六年级", "预备班", "Form 1", "Form 2", "Form 3", "Form 4", "Form 5"]
+// 年级选项统一走 @/lib/grades（原来写死一份：中英混、漏中四~中六、用「预备班」而非「中学预备班」）
+const GRADES = GRADE_OPTIONS_ZH
 
 const subjectColors: Record<string, string> = {
   "数学": "bg-blue-100 text-blue-800",

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Clock, BookOpen, Users, Loader2, AlertCircle, GraduationCap, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
+import { gradeCanon, gradeLabel, gradeRank } from "@/lib/grades"
 
 // ============================================================
 // 类型
@@ -151,14 +152,15 @@ export default function GradeGanttChart() {
   const courseMap = new Map(courses.map((c) => [c.id, c]))
 
   // 年级选项（用 courseMap 归一化，不依赖 course_grade 快照）
-  const gradeOptions = Array.from(new Set(courses.map((c) => c.grade_level).filter(Boolean))) as string[]
+  const gradeOptions = (Array.from(new Set(courses.map((c) => gradeCanon(c.grade_level)).filter(Boolean))) as string[])
+    .sort((a, b) => gradeRank(a) - gradeRank(b))
 
   // 当前显示的年级 = 全部年级 减 被隐藏的年级
   const activeGrades = gradeOptions.filter((g) => !hiddenGrades.has(g))
 
   // 过滤出该年级的排课
   const visibleEntries = entries.filter((e) => {
-    const grade = courseMap.get(e.course_id)?.grade_level || e.course_grade
+    const grade = gradeCanon(courseMap.get(e.course_id)?.grade_level || e.course_grade)
     return activeGrades.includes(grade as string)
   })
 
@@ -235,7 +237,7 @@ export default function GradeGanttChart() {
                 className={`cursor-pointer select-none transition-colors ${on ? "bg-indigo-500 text-white" : "bg-gray-200 text-gray-500 hover:bg-gray-300"}`}
                 onClick={() => toggleGrade(g)}
               >
-                {g}
+                {gradeLabel(g)}
               </Badge>
             )
           })}
@@ -306,7 +308,7 @@ export default function GradeGanttChart() {
                             const { left, width } = computeBar(entry.start_time, entry.end_time, totalMinutes)
                             const course = courseMap.get(entry.course_id)
                             const subject = course?.subject || ""
-                            const grade = courseMap.get(entry.course_id)?.grade_level || entry.course_grade || ""
+                            const grade = gradeLabel(courseMap.get(entry.course_id)?.grade_level || entry.course_grade || "")
                             const { bg } = getSubjectColor(subject)
                             return (
                               <div

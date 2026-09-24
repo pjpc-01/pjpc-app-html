@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { gradeLabel } from '@/lib/grades'
 import PageLayout from '@/components/layouts/PageLayout'
 import TabbedPage from '@/components/layouts/TabbedPage'
 import StatsGrid from '@/components/ui/StatsGrid'
@@ -315,7 +316,7 @@ export default function CourseManagement() {
                   <TableRow key={course.id}>
                     <TableCell className="font-medium">{course.title}</TableCell>
                     <TableCell>{course.subject}</TableCell>
-                    <TableCell>{course.grade_level}</TableCell>
+                    <TableCell>{gradeLabel(course.grade_level)}</TableCell>
                     <TableCell>{course.duration}分钟</TableCell>
                     <TableCell>{course.max_students}</TableCell>
                     <TableCell>

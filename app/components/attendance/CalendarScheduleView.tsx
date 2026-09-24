@@ -16,6 +16,7 @@ import {
   parseISO,
 } from "date-fns"
 import { useLanguage } from "@/contexts/language-context"
+import { gradeLabel } from "@/lib/grades"
 import { zhCN } from "date-fns/locale"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -669,7 +670,7 @@ export default function CalendarScheduleView({
                 <SelectContent>
                   {courses.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
-                      {c.title}{c.grade_level ? ` · ${c.grade_level}` : ''}
+                      {c.title}{c.grade_level ? ` · ${gradeLabel(c.grade_level)}` : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>

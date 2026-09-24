@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useCourses, useCourseStats } from '@/hooks/useCourses'
+import { GRADE_CANON, GRADE_LABEL, gradeCanon, gradeLabel } from '@/lib/grades'
 import { Course, CourseCreateData, SUBJECT_OPTIONS } from '@/lib/pocketbase-courses'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -43,11 +44,8 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
-// 年级选项
-const GRADE_OPTIONS = [
-  '一年级', '二年级', '三年级', '四年级', '五年级', '六年级',
-  'Peralihan', 'Form 1', 'Form 2', 'Form 3', 'Form 4', 'Form 5',
-]
+// 年级统一走 @/lib/grades：值 = canonical，显示 = 中文（原来这里中英混着写死，同一级被拆成两组）
+const GRADE_OPTIONS = GRADE_CANON
 
 // 默认空课程表单
 const EMPTY_FORM: CourseCreateData = {
@@ -62,23 +60,25 @@ const EMPTY_FORM: CourseCreateData = {
 }
 
 // 颜色映射
+// 颜色映射（canonical 键；原来漏了中一~中六/Form 6）
 const GRADE_COLORS: Record<string, string> = {
-  '一年级': 'bg-red-100 text-red-700',
-  '二年级': 'bg-orange-100 text-orange-700',
-  '三年级': 'bg-amber-100 text-amber-700',
-  '四年级': 'bg-yellow-100 text-yellow-700',
-  '五年级': 'bg-lime-100 text-lime-700',
-  '六年级': 'bg-green-100 text-green-700',
   'Peralihan': 'bg-cyan-100 text-cyan-700',
+  'Standard 1': 'bg-red-100 text-red-700',
+  'Standard 2': 'bg-orange-100 text-orange-700',
+  'Standard 3': 'bg-amber-100 text-amber-700',
+  'Standard 4': 'bg-yellow-100 text-yellow-700',
+  'Standard 5': 'bg-lime-100 text-lime-700',
+  'Standard 6': 'bg-green-100 text-green-700',
   'Form 1': 'bg-blue-100 text-blue-700',
   'Form 2': 'bg-indigo-100 text-indigo-700',
   'Form 3': 'bg-violet-100 text-violet-700',
   'Form 4': 'bg-purple-100 text-purple-700',
   'Form 5': 'bg-pink-100 text-pink-700',
+  'Form 6': 'bg-fuchsia-100 text-fuchsia-700',
 }
 
 function getGradeColor(grade: string): string {
-  return GRADE_COLORS[grade] || 'bg-gray-100 text-gray-600'
+  return GRADE_COLORS[gradeCanon(grade)] || 'bg-gray-100 text-gray-600'
 }
 
 function getStatusBadge(status?: string) {
@@ -191,7 +191,7 @@ function CourseFormDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {GRADE_OPTIONS.map((g) => (
-                    <SelectItem key={g} value={g}>{g}</SelectItem>
+                    <SelectItem key={g} value={g}>{GRADE_LABEL[g] || g}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -329,13 +329,13 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
   const filteredCourses = activeCourses.filter((c) => {
     if (searchTerm && !c.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
         !c.subject?.toLowerCase().includes(searchTerm.toLowerCase())) return false
-    if (gradeFilter !== 'all' && c.grade_level !== gradeFilter) return false
+    if (gradeFilter !== 'all' && gradeCanon(c.grade_level) !== gradeFilter) return false
     return true
   })
 
   // 按年级分组显示
   const groupedByGrade = filteredCourses.reduce((acc, c) => {
-    const grade = c.grade_level || '未分组'
+    const grade = gradeCanon(c.grade_level) || '未分组'
     if (!acc[grade]) acc[grade] = []
     acc[grade].push(c)
     return acc
@@ -343,7 +343,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
 
   // 统计
   const gradeDistribution = activeCourses.reduce((acc, c) => {
-    acc[c.grade_level || ''] = (acc[c.grade_level || ''] || 0) + 1
+    acc[gradeCanon(c.grade_level) || ''] = (acc[gradeCanon(c.grade_level) || ''] || 0) + 1
     return acc
   }, {} as Record<string, number>)
 
@@ -471,7 +471,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
           <SelectContent>
             <SelectItem value="all">{t('course.all_grades')}</SelectItem>
             {GRADE_OPTIONS.map((g) => (
-              <SelectItem key={g} value={g}>{g}</SelectItem>
+              <SelectItem key={g} value={g}>{GRADE_LABEL[g] || g}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -501,7 +501,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
             <div key={grade}>
               <div className="flex items-center gap-2 mb-3">
                 <Badge className={getGradeColor(grade) + ' text-sm px-3 py-1'}>
-                  {grade}
+                  {GRADE_LABEL[grade] || grade}
                 </Badge>
                 <span className="text-xs text-gray-400">{gradeCourses.length} 个班级</span>
               </div>
@@ -525,7 +525,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
                       <CardContent className="pb-2 space-y-1 text-xs text-gray-500">
                         <div className="flex items-center gap-2">
                           <GraduationCap className="h-3.5 w-3.5 shrink-0" />
-                          {course.grade_level || '未设置年级'}
+                          {gradeLabel(course.grade_level) || '未设置年级'}
                         </div>
                         <div className="flex items-center gap-2">
                           <Clock className="h-3.5 w-3.5 shrink-0" />

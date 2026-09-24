@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { gradeCanon, gradeLabel, gradeRank } from '@/lib/grades'
 import {
   Select,
   SelectContent,
@@ -301,10 +302,10 @@ export default function CourseScheduling() {
   const courseMap = new Map(courses.map(c => [c.id, c]))
   const teacherMap = new Map(teachers.map(tt => [tt.id, tt]))
 
-  // 年级选项（从课程提取）
-  const gradeOptions = Array.from(
-    new Set(courses.map(c => c.grade_level).filter(Boolean))
-  ) as string[]
+  // 年级选项：按 canonical 归并（'一年级' 与 'Standard 1' 是同一级，不再拆成两项）
+  const gradeOptions = (Array.from(
+    new Set(courses.map(c => gradeCanon(c.grade_level)).filter(Boolean))
+  ) as string[]).sort((a, b) => gradeRank(a) - gradeRank(b))
 
   // 数据加载后若无有效年级（或仍在 all），自动选中第一个年级
   useEffect(() => {
@@ -350,14 +351,14 @@ export default function CourseScheduling() {
   // 按年级过滤的课程
   const filteredCourses = gradeFilter === 'all'
     ? courses
-    : courses.filter(c => c.grade_level === gradeFilter)
+    : courses.filter(c => gradeCanon(c.grade_level) === gradeFilter)
 
   // 按年级过滤的排课条目（网格 + 统计 + 列表共用）
   // 用 courseMap 的 grade_level 做源头归一化（不依赖 POST 写入的 course_grade 快照）
   // 只保留时间表模板(isTemplate=true)——date 生成的月度排班不属于时间表编辑器，不在此页显示
   const filteredEntries = (gradeFilter === 'all'
     ? scheduleEntries
-    : scheduleEntries.filter(e => (courseMap.get(e.course_id)?.grade_level || e.course_grade) === gradeFilter)
+    : scheduleEntries.filter(e => gradeCanon(courseMap.get(e.course_id)?.grade_level || e.course_grade) === gradeFilter)
   ).filter(e => e.isTemplate !== false)
 
   function getCourseTitle(courseId: string): string {
@@ -723,7 +724,7 @@ export default function CourseScheduling() {
       <TimetablePreview
         open={showPreview}
         onClose={() => setShowPreview(false)}
-        gradeLabel={gradeFilter === 'all' ? '全部年级' : gradeFilter}
+        gradeLabel={gradeFilter === 'all' ? '全部年级' : gradeLabel(gradeFilter)}
         days={DAYS.map(d => ({ key: d, label: DAY_LABELS[d] }))}
         slots={timeSlots.map(sl => ({ start: sl.start, end: sl.end }))}
         cells={previewCells}
@@ -805,7 +806,7 @@ export default function CourseScheduling() {
             </SelectTrigger>
             <SelectContent>
               {gradeOptions.map(g => (
-                <SelectItem key={g} value={g}>{g}</SelectItem>
+                <SelectItem key={g} value={g}>{gradeLabel(g)}</SelectItem>
               ))}
               {gradeOptions.length === 0 && (
                 <SelectItem value="all" disabled>暂无年级</SelectItem>
@@ -941,7 +942,7 @@ export default function CourseScheduling() {
                         </div>
                         {subject && (
                           <div className="text-[10px] text-gray-400 mt-0.5 truncate">
-                            {subject}{course?.grade_level ? ` · ${course.grade_level}` : ''}
+                            {subject}{course?.grade_level ? ` · ${gradeLabel(course.grade_level)}` : ''}
                           </div>
                         )}
                         {isEditing && (
@@ -1035,7 +1036,7 @@ export default function CourseScheduling() {
             所有排课 ({filteredEntries.length})
             {gradeFilter !== 'all' && (
               <Badge variant="secondary" className="text-xs bg-indigo-50 text-indigo-700">
-                {gradeFilter}
+                {gradeLabel(gradeFilter)}
               </Badge>
             )}
           </CardTitle>
@@ -1161,7 +1162,7 @@ export default function CourseScheduling() {
                 <SelectContent>
                   {filteredCourses.map(course => (
                     <SelectItem key={course.id} value={course.id}>
-                      {course.title}{course.grade_level ? ` (${course.grade_level})` : ''}
+                      {course.title}{course.grade_level ? ` (${gradeLabel(course.grade_level)})` : ''}
                       {course.duration ? ` · ${course.duration}分` : ''}
                     </SelectItem>
                   ))}

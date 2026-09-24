@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { formatGrade } from "@/lib/utils"
+import { gradeRank } from "@/lib/grades"
 import { useLanguage } from "@/contexts/language-context"
 import { FileText, Users, AlertCircle, Loader2 } from "lucide-react"
 
@@ -50,12 +51,8 @@ export function InvoiceCreateDialog({
     return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`
   })
   
-  const gradeOrder = [
-    '一年级', '二年级', '三年级', '四年级', '五年级', '六年级',
-    '初一', '初二', '初三', '高一', '高二', '高三'
-  ]
   const availableGrades = [...new Set(students.map((s: any) => s.standard))]
-    .sort((a, b) => gradeOrder.indexOf(a) - gradeOrder.indexOf(b))
+    .sort((a: any, b: any) => gradeRank(a) - gradeRank(b))
 
   const filteredStudents = students.filter(
     (s: any) => selectedGrades.length === 0 || selectedGrades.includes(s.standard)
