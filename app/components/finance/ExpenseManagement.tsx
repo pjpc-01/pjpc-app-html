@@ -243,10 +243,10 @@ export default function ExpenseManagement() {
         <div className="flex gap-3">
           <Button variant="outline" className="flex items-center gap-2" onClick={() => {
             const csv = "日期,类别,描述,分行,方式,金额\n" + filteredExpenses.map(e => {
-              const cat = cat.labelOf(e.category)
+              const catName = cat.labelOf(e.category)
               const center = centers.find(c => c.id === e.centerId)
               const centerName = center ? `${center.code}-${center.name}` : "-"
-              return `"${e.date}","${cat}","${e.description}","${centerName}","${e.method}","${e.amount}"`
+              return `"${e.date}","${catName}","${e.description}","${centerName}","${e.method}","${e.amount}"`
             }).join("\n")
             const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" })
             const url = URL.createObjectURL(blob)
@@ -319,6 +319,9 @@ export default function ExpenseManagement() {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">RM</span>
                       <Input 
                         type="number" 
+                        step="0.01"
+                        min="0"
+                        inputMode="decimal"
                         className="pl-10 font-mono" 
                         placeholder="0.00" 
                         value={newExpense.amount} 
