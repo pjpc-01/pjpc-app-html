@@ -486,7 +486,7 @@ export default function PaymentManagement() {
                   本次实付金额 (RM)
                 </Label>
                 <Input 
-                  type="number" 
+                  type="number" step="0.01" 
                   className="text-lg font-mono" 
                   placeholder="0.00" 
                   value={paymentAmount} 
@@ -794,7 +794,7 @@ export default function PaymentManagement() {
                   退款金额 (RM)
                 </Label>
                 <Input
-                  type="number"
+                  type="number" step="0.01"
                   className="text-lg font-mono"
                   value={refundAmount}
                   onChange={(e) => setRefundAmount(e.target.value)}

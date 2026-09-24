@@ -393,12 +393,15 @@
 - 全程 **无 pageerror / console.error** ✅。
 - 注：浏览器测试需要登录；`.env.local` 的 `ADMIN_*`/`POCKETBASE_ADMIN_*` **不是应用 users 的登录凭据**（`auth-with-password` 400）。做法是用 PB 超管临时建/删测试账号，**不猜也不硬编码密码**。
 
-### 📋 待办：`type="number"` 缺 `step`（实测共 28 个，不是 20+）
-**风险：不能一把梭**。28 个里混着「钱的」和「整数的」：
-- 💰 钱（学费/薪资/预算/付款/报销/库存单价…）→ 该加 `step="0.01"`（多数还该加 `min="0"`）
-- 🔢 整数（成绩分数 0-100、年份、请假天数）→ **绝不能加 0.01**，否则能填「92.5 分」
-- 逐个判断后改 = 近乎零风险（纯加 HTML 属性，不碰逻辑）；全局替换 = 高风险（脏数据进库）
-- **状态：等用户过目分类后再改**
+### ✅ 已修：`type="number"` 缺 `step`（2026-09-24）
+全项目实测 **75 个 `type="number"`**，逐个看上下文分类：
+- 💰 **钱/费率/余额/工时 —— 19 处 / 6 文件 → 已加 `step="0.01"`**：
+  `AddFeeDialog`×3、`EditFeeDialog`×3、`BudgetManagement`×1、`BankReconciliation`×2（期初/当前余额）、`PaymentManagement`×2（付款额/退款额）、`TeacherSalaryManagement`×8（底薪/时薪/加班费率/津贴/奖金/工时）
+  - **只加 `step`，不加 `min`** —— 余额可为负、折扣可为 0，加 `min="0"` 会改行为。
+- 🔢 **整数 —— 30 处 / 16 文件 → 故意不动**：分数(0-100)、年份、请假天数、库存/学生数量、课时分钟、积分额度、子女数、教龄、提前天数。这些本来就该只收整数，默认 `step=1` 正好。
+- ⏸ 跳过 1 处：`app/claim-form/page.tsx`（alicia 未提交的工作，不碰）。
+- ❌ 误报 2 处：`modern-admin-dashboard.tsx` 的 `<XAxis type="number">` 是图表坐标轴，不是输入框。
+**验证**：`next build` 通过；diff 仅 19 行、每行只多 ` step="0.01"`；真实浏览器登录实测「付款和收据→记录新付款」金额框 `step=0.01`，打入 `123.45` → `123.45` ✅；全程无 pageerror/console.error。测试用的临时账号已删（204/读回404/users=20/无残留）。
 
 ### 📋 待办：年级列表 7 处各自写死（风险中等）
 各页格式用途不同（`homework` 中英混 / `student-reports` PB 原始值 / `教学评估` 显示值），而过滤靠 `toGradeDisplay(学生.grade) === 选中值` —— 措辞对不上就「学生列表变空、报告加不进人」（即本次 bug 的放大版）。

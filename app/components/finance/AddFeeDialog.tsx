@@ -175,7 +175,7 @@ export const AddFeeDialog = ({
               </Label>
               <Input
                 id="amount"
-                type="number"
+                type="number" step="0.01"
                 className="font-mono"
                 value={newFeeItem.amount}
                 onChange={(e) => onFeeItemInputChange("amount", Number(e.target.value))}
@@ -191,7 +191,7 @@ export const AddFeeDialog = ({
                 </Label>
                 <Input
                   id="discount"
-                  type="number"
+                  type="number" step="0.01"
                   value={newFeeItem.discount || 0}
                   onChange={(e) => onFeeItemInputChange("discount", Number(e.target.value))}
                   placeholder="0.00"
@@ -204,7 +204,7 @@ export const AddFeeDialog = ({
                 </Label>
                 <Input
                   id="latePaymentFee"
-                  type="number"
+                  type="number" step="0.01"
                   value={newFeeItem.latePaymentFee || 0}
                   onChange={(e) => onFeeItemInputChange("latePaymentFee", Number(e.target.value))}
                   placeholder="8.00"
