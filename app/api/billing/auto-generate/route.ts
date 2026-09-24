@@ -105,7 +105,11 @@ export async function POST(request: NextRequest) {
       `${PB_URL}/api/collections/invoices/records?perPage=1000&filter=(period!="${period}"%26%26(status="issued"||status="partially_paid"||status="overdue"))`,
       { headers }
     )
-    const prevInvoices = prevInvoicesRes.ok ? (await prevInvoicesRes.json()).items : []
+    // ⚠️ 必须排除 period 为空、以及已删除的 invoice：
+    // 若某处开单忘了写 period（曾发生：学费矩阵开单），会生成 period='' 的单；
+    // 而这里的条件是 period != 当期 → '' 也算「上期」，于是它被当成欠款，金额被「减负为加」→ 账单翻倍。
+    const prevInvoices = (prevInvoicesRes.ok ? (await prevInvoicesRes.json()).items : [])
+      .filter((inv: any) => (inv.period || '') !== '' && inv.deleted !== true)
 
     // 4. 获取所有 payments
     const paymentsRes = await fetch(
