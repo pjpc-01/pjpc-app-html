@@ -4554,6 +4554,107 @@
           "required": false
         }
       ]
+    },
+    {
+      "name": "claim_forms",
+      "type": "base",
+      "fields": [
+        {
+          "name": "id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "claimant",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "position",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "center",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "claim_no",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "fill_date",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "period",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "items",
+          "type": "json",
+          "required": false
+        },
+        {
+          "name": "total",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false
+        },
+        {
+          "name": "created_by",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "created_by_name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "supervisor_comment",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "finance_comment",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "supervisor_at",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "finance_at",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false
+        }
+      ]
     }
   ]
 }
