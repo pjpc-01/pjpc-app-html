@@ -154,6 +154,7 @@ export const StudentFeeMatrix = () => {
       studentId, studentName: student.student_name || '', studentGrade: student.standard || '',
       studentNumber: student.student_id || '',
       totalAmount: total, items, status: 'issued',
+      period: toLocalMonthKey(),
       issueDate: new Date().toISOString().split('T')[0],
       dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
       notes: `${new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}学费`,
