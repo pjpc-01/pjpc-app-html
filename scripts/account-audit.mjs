@@ -144,12 +144,17 @@ li(`⚠️ **没有税务报表**: SST / 所得税 / PCB 汇总表`);
 
 // ============ E. 数据质量 ============
 h('E. 数据质量 —— 影响报表准确性的');
-const stuNoId = D.students.filter(s => !s.student_id || String(s.student_id).trim().length < 5);
-li(stuNoId.length ? `⚠️ ${stuNoId.length} 个学生学号不完整` : '✅ 学生学号完整');
-const stuNoCenter = D.students.filter(s => !s.centerId);
-li(stuNoCenter.length ? `⚠️ ${stuNoCenter.length} 个学生没有 centerId` : '✅ 学生都有 centerId');
-const stuNoGrade = D.students.filter(s => !s.grade);
-li(stuNoGrade.length ? `⚠️ ${stuNoGrade.length} 个学生没有年级` : '✅ 学生都有年级');
+// 数据质量只看「在读」学生：毕业(graduated)/退学(withdrawn)的不影响报表口径，
+// 之前把 14 位毕业生算成「没有年级」→ 每周误报一次。
+const activeStu = D.students.filter(s => s.status === 'active');
+const nonActive = D.students.filter(s => s.status && s.status !== 'active');
+const stuNoId = activeStu.filter(s => !s.student_id || String(s.student_id).trim().length < 5);
+li(stuNoId.length ? `⚠️ ${stuNoId.length} 个在讀学生学号不完整` : '✅ 在读学生学号完整');
+const stuNoCenter = activeStu.filter(s => !s.centerId);
+li(stuNoCenter.length ? `⚠️ ${stuNoCenter.length} 个在讀学生没有 centerId` : '✅ 在读学生都有 centerId');
+const stuNoGrade = activeStu.filter(s => !s.grade);
+li(stuNoGrade.length ? `⚠️ ${stuNoGrade.length} 个在讀学生没有年级` : '✅ 在读学生都有年级');
+li(`ℹ️ 已跳过非在读学生 ${nonActive.length} 位（毕业/退学，不计入数据质量）`);
 const salNoCenter = D.teacher_salary_records.filter(s => !s.centerId && !s.center);
 li(salNoCenter.length ? `⚠️ ${salNoCenter.length} 条薪资没有分行 → 分行损益不准` : '✅ 薪资都挂了分行');
 

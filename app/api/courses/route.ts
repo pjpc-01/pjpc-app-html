@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const pb = await getPocketBase()
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
-    const perPage = parseInt(searchParams.get('per_page') || '50')
+    const perPage = parseInt(searchParams.get('per_page') || '500')
     const teacherId = searchParams.get('teacher_id')
     const status = searchParams.get('status')
 
