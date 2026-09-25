@@ -510,3 +510,22 @@
 - 上次 2026-09-21 `last_status=error`，错误为 **provider 报错**（`HTTP 403 … Upstream response was not valid JSON`，即模型侧问题，不是系统故障）
 - 该 job 就是「tester」：每周一 9:00 自动跑 `ux-audit.mjs` 并把发现写回本文件
 - **待办：修好这个 cron（或换模型/provider），恢复每周自动巡检**
+
+### ✅ 收尾（2026-09-25）
+**a) 审计里「14 个学生没有年级」—— 不用管**
+14 位**全部是 `graduated`（毕业）**，同一天建档（2026-06-18），全在 PU1：全莉莉、THAM YU HWA、张巧琳、张巧恩、林晨晰、詹嘉敏、马弘懿、马如恩、亚当 (MOHAMAD ADAM ZAYYAN)、刘晓彤、法奇 (Muhammad AL-Faqih)、林珂萱、刘维德、陆光铭。
+全校状态：`active 112 / graduated 14 / withdrawn 2 / deleted 3`（退学那 2 位是有年级的）。
+→ 审计口径应跳过非 active 学生，**不是数据错误**。
+
+**b) 「PJPC 每周 UX 检查」cron 已修（根因 + 修法）**
+- 根因①：该 job 原来**没钉 model/provider**，跟全局走 `opencode-go`；2026-09-21 上游偶发 403（`Upstream response was not valid JSON`）→ job 整个挂掉。同一天 09:30 的「账务审计」job 却成功 → 证明是**上游偶发**，非系统故障。
+- 根因②：**没配 fallback 链** → 主 provider 一抽风就没有备份，直接失败。
+- 修法：① 清掉 job 上的临时钉子（回到全局 `opencode-go`）；② 在 `~/.hermes/config.yaml` **顶层**加 fallback 链：
+  ```yaml
+  fallback_providers:
+  - provider: google
+    model: gemini-2.5-flash
+  ```
+  （配置备份：`~/.hermes/config.yaml.bak-20260925_100311`）
+- 环境事实：本机**只有 2 个 provider 可用** —— `opencode-go`（全局主力）与 `google`（GOOGLE_API_KEY；免费配额有限，跑重任务可能 429 RESOURCE_EXHAUSTED）。Nous Portal / OpenRouter / Codex / Qwen / xAI 全未登录，其余 API-key provider 未配置。
+- ⚠️ 待观察：fallback 只在主 provider **失败**时才生效，需下次真失败才能验证；`google` 免费配额跑这种「38 页 + 长文分析」的重 job 可能不够。
