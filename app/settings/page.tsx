@@ -212,8 +212,8 @@ export default function SettingsPage() {
         const users = data.users
         setUserStats({
           total: users.length,
-          active: users.filter((u: any) => u.status === "active" || u.approved).length,
-          pending: users.filter((u: any) => u.status === "pending" || !u.approved).length,
+          active: users.filter((u: any) => u.verified).length,
+          pending: users.filter((u: any) => !u.verified).length,
           admin: users.filter((u: any) => u.role === "admin").length,
         })
       }
@@ -314,7 +314,7 @@ export default function SettingsPage() {
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">活跃用户</p>
+                <p className="text-xs text-gray-500">已验证用户</p>
                 <p className="text-xl font-bold">{userStats.active}</p>
               </div>
             </CardContent>
@@ -325,7 +325,7 @@ export default function SettingsPage() {
                 <AlertTriangle className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">{t('admin.pending_review')}</p>
+                <p className="text-xs text-gray-500">未验证用户</p>
                 <p className="text-xl font-bold">{userStats.pending}</p>
               </div>
             </CardContent>

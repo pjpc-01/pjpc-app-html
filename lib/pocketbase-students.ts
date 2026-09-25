@@ -224,6 +224,7 @@ export const getAllStudents = async (): Promise<Student[]> => {
       serviceType: student.serviceType,
       register_form_url: student.registrationLink,
       standard: student.grade,
+      grade: student.grade,
       level: student.level,
       center: student.expand?.centerId?.code || student.center || '',
       centerId: student.centerId || '',

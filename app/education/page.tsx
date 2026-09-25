@@ -12,7 +12,7 @@ import {
 } from "lucide-react"
 
 // ── Hooks ──
-import { formatGrade } from "@/lib/utils"
+import { gradeLabel } from "@/lib/grades"
 import { useSchedule, Schedule } from "@/hooks/useSchedule"
 import { useCourses } from "@/hooks/useCourses"
 import { useStudents } from "@/hooks/useStudents"
@@ -333,7 +333,10 @@ function MonthCalendar({
 export default function EducationOverviewPage() {
   const today = todayStr()
 
-  const { schedules, loading: schedLoading } = useSchedule()
+  const { schedules, loading: schedLoading, fetchSchedules } = useSchedule()
+  // 这个页面用 useSchedule() 但从来没人调 fetchSchedules()（全项目只有 CalendarScheduleView 调过）
+  // → 课程表/今日课节恒为空。这里补上首次拉取。
+  useEffect(() => { fetchSchedules() }, [fetchSchedules])
   const { courses, loading: courseLoading } = useCourses()
   const { students, loading: studentLoading } = useStudents()
   const { teachers, loading: teacherLoading } = useTeachers()
@@ -359,13 +362,13 @@ export default function EducationOverviewPage() {
   const gradeGroups = useMemo<{ grade: string; students: number; courses: string[] }[]>(() => {
     const m = new Map<string, { grade: string; students: number; courses: string[] }>()
     students.forEach((s: any) => {
-      const g = String(s.grade || "未分年级").trim()
+      const g = String(gradeLabel(s.grade) || "未分年级").trim()
       const cur = m.get(g) || { grade: g, students: 0, courses: [] as string[] }
       cur.students += 1
       m.set(g, cur)
     })
     courses.forEach((c: any) => {
-      const g = String(formatGrade(c.grade_level || c.grade) || "未分年级").trim()
+      const g = String(gradeLabel(c.grade_level || c.grade) || "未分年级").trim()
       const cur = m.get(g) || { grade: g, students: 0, courses: [] as string[] }
       const title = String(c.title || c.name || "")
       if (title && !cur.courses.includes(title)) cur.courses.push(title)
