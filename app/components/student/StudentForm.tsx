@@ -16,26 +16,6 @@ import { Student } from '@/types/student'
 import { validateEmail, validatePhone, validateStudentId, sanitizeText } from '@/lib/validation'
 import { useLanguage } from "@/contexts/language-context"
 
-// 工具函数
-
-const convertGradeToChinese = (grade: string): string => {
-  const gradeMap: Record<string, string> = {
-    '1': 'Standard 1',
-    '2': 'Standard 2', 
-    '3': 'Standard 3',
-    '4': 'Standard 4',
-    '5': 'Standard 5',
-    '6': 'Standard 6',
-    '7': 'Form 1',
-    '8': 'Form 2',
-    '9': 'Form 3',
-    '10': 'Form 4',
-    '11': 'Form 5',
-    '12': 'Form 6'
-  }
-  return gradeMap[grade] || grade
-}
-
 interface StudentFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void

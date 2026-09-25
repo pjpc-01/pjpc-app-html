@@ -10,6 +10,7 @@ import { SearchAndFilter } from "./SearchAndFilter"
 import { FeeCard } from "./FeeCard"
 import { useLanguage } from "@/contexts/language-context"
 import { toLocalMonthKey } from "@/lib/utils"
+import { gradeRank } from "@/lib/grades"
 
 export const StudentFeeMatrix = () => {
   const { t } = useLanguage()
@@ -50,8 +51,8 @@ export const StudentFeeMatrix = () => {
 
   const availableGrades = useMemo(() => {
     const grades = [...new Set(students.filter(s => s.status !== 'graduated' && s.standard).map(s => s.standard!))]
-    const order: Record<string, number> = { '一年级': 1, '二年级': 2, '三年级': 3, '四年级': 4, '五年级': 5, '六年级': 6 }
-    return grades.sort((a, b) => (order[a] ?? 99) - (order[b] ?? 99))
+    // 排序统一走 @/lib/grades（原来只给了小学 6 级，中学全部并列 99）
+    return grades.sort((a, b) => gradeRank(a) - gradeRank(b))
   }, [students])
 
   if (studentFeesLoading) return <div className="py-12 text-center text-muted-foreground">{t('teacher.loading')}</div>

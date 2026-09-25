@@ -74,6 +74,13 @@ export const gradeLabel = (raw: string | undefined | null, isPeralihan?: boolean
   return GRADE_LABEL[canon] || canon
 }
 
+/** 学段判断：小学（Standard / 预备班）/ 中学（Form）。比 lib/utils 的 classifySchoolLevel 宽容（中一、预备班、Remove 都认） */
+export const isPrimaryGrade = (raw?: string | null): boolean => {
+  const c = gradeCanon(raw)
+  return c.startsWith('Standard') || c === 'Peralihan'
+}
+export const isSecondaryGrade = (raw?: string | null): boolean => gradeCanon(raw).startsWith('Form')
+
 /** 排序键：canonical 顺序；未知值排最后（原来用写死的 order 数组 + indexOf，对不上就恒 -1 → 排序失效） */
 export const gradeRank = (raw: string | undefined | null): number => {
   const canon = gradeCanon(raw)

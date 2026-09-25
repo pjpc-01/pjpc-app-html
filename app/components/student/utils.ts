@@ -1,40 +1,7 @@
-// 年级转换函数：统一年级显示格式
-export const convertGradeToChinese = (grade: string): string => {
-  if (!grade) return '未知年级'
-  
-  // 如果已经是标准格式，直接返回
-  if (grade.includes('Standard') || grade.includes('Form')) {
-    return grade
-  }
-  
-  // 处理数字年级
-  const gradeNum = parseInt(grade.toString())
-  if (!isNaN(gradeNum)) {
-    const gradeMap: Record<number, string> = {
-      1: '一年级', 2: '二年级', 3: '三年级', 4: '四年级', 5: '五年级', 6: '六年级',
-      7: '中一', 8: '中二', 9: '中三', 10: '中四', 11: '中五', 12: '中六'
-    }
-    return gradeMap[gradeNum] || grade
-  }
-  
-  // 处理中文年级名称
-  const chineseGradeMap: Record<string, string> = {
-    '一年级': 'Standard 1（一年级）',
-    '二年级': 'Standard 2（二年级）',
-    '三年级': 'Standard 3（三年级）',
-    '四年级': 'Standard 4（四年级）',
-    '五年级': 'Standard 5（五年级）',
-    '六年级': 'Standard 6（六年级）',
-    '初一': 'Form 1（初一）',
-    '初二': 'Form 2（初二）',
-    '初三': 'Form 3（初三）',
-    '高一': 'Form 4（高一）',
-    '高二': 'Form 5（高二）',
-    '高三': 'Form 6（高三）'
-  }
-  
-  return chineseGradeMap[grade] || grade
-}
+// 年级显示统一走 @/lib/grades
+// 原来这里自己写：canonical 输入原样返回（'Standard 1'），中文输入却转成 'Standard 1（一年级）'
+// → 同一个年级两种显示。现在统一。
+export { gradeLabel as convertGradeToChinese } from '@/lib/grades'
 
 // 格式化出生日期
 export const formatBirthDate = (dateString: string): string => {

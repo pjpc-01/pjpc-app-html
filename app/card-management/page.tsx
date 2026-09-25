@@ -7,6 +7,7 @@ import {
   User, Users, BarChart3, Shield, XCircle, CheckCircle,
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
+import { isPrimaryGrade, isSecondaryGrade } from "@/lib/grades"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -102,17 +103,9 @@ export default function CardManagementPage() {
   useEffect(() => { fetchData() }, [])
   useEffect(() => { setPage(1) }, [filterType, filterStatus, filterLevel, search])
 
-  // Helper: determine 小学/中学 from grade string
-  const isPrimary = (grade?: string) => {
-    if (!grade) return false
-    const g = grade.trim()
-    return /^([1-6]|一年级|二年级|三年级|四年级|五年级|六年级|Standard [1-6]|Year [1-6]|y[1-6])$/i.test(g)
-  }
-  const isSecondary = (grade?: string) => {
-    if (!grade) return false
-    const g = grade.trim()
-    return /^([7-9]|1[0-2]|中一|中二|中三|中四|中五|中六|Form [1-6]|Per|预备班|Remove)$/i.test(g)
-  }
+  // Helper: determine 小学/中学 —— 统一走 @/lib/grades（原来靠两串正则硬猜）
+  const isPrimary = (grade?: string) => isPrimaryGrade(grade)
+  const isSecondary = (grade?: string) => isSecondaryGrade(grade)
 
   // Filtered cards
   const filteredCards = useMemo(() => {
