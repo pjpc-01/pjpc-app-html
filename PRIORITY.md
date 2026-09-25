@@ -556,3 +556,13 @@
   5. 生产库残留测试数据：`activities` 2 条（`test` / `__DIAG_TEST__`）+ `point_logs` 35 条 `reason='test'`
 - 原始数据 `/tmp/ux-audit/audit.json`；截图 `/tmp/ux-audit/shots/`（每轮覆盖同名文件，磁盘上只有最新一套 ≈14MB）
 - ✅ **这个 cron 本轮终于跑通**：上两轮都是 provider 报错（`HTTP 403 Upstream response was not valid JSON` / `Gemini 429 RESOURCE_EXHAUSTED`），本轮走全局 `opencode-go` 一次成功 —— 说明 09-25 的 fallback 修法没白加，但也确实还需要「真失败」才算验证过 fallback。
+
+### ✅ 5 条 tester 发现 —— 全部处理完（2026-09-25，commit `1eb2b2a`）
+**1. 教育概览「今日课节」恒 0 / 课程表空白** → 修：`app/education/page.tsx` 补 `useEffect(() => fetchSchedules(), [fetchSchedules])`（`useSchedule()` 的 `fetchSchedules` 原来全项目只有 CalendarScheduleView 调过）。实测：`/api/schedule` 现在真的被调用，**今日课节 3**（原 0）。
+**2. 教育概览「班级总览」全 0 人** → 修：`lib/pocketbase-students.ts` 映射补 `grade: student.grade`；该页年级显示统一走 `gradeLabel`。实测分组名全中文零英文残留，人数正确（六 20/中一 19/四 15/三 13/五 12/一 12/二 10/中二 8/中三 3）。ℹ️「未分年级 14 人」= 那批毕业生，非 bug。
+**3. 统计「课程 50」≠ 实际 81** → 修：`app/api/courses/route.ts` 默认 `per_page` `'50'` → `'500'`。实测 **课程 81**。
+**4. 设置页「活跃用户 0 / 待审核 20」** → 修：原读**不存在的** `u.status`/`u.approved` → 改用真实字段 `verified`，标签改成与用户管理页一致的**「已验证用户 / 未验证用户」**（该系统没有「审核」概念）。
+**5. 生产库残留测试数据** → 已清（备份 `/home/pjpc/backups/testdata-cleanup-20260925031357./`）：`activities` 2 条 → 全表 0；`point_logs` 179 条（`test` 35 / `Reset` 64 / `resettt` 80）→ 3277 降到 **3098**。⚠️ `test` 那批含 **`amount = ±1e53`** 浮点损坏记录；`resettt`/`Reset` 是**批量清零学生积分**的真实操作。两集合都**无 `deleted` 字段**且前端不过滤 → 只能硬删（已全量备份）。受影响学生当前积分正常。
+
+### ✅ 账务审计脚本口径修正（同 commit）
+`scripts/account-audit.mjs` 数据质量段改为**只看在读学生**（原来把 14 位毕业生算成「没有年级」，每周误报）。现输出：`1 个在读学生学号不完整`（黄俊鸿 Ethan Ng Junn Hong，`student_id='PU E'` ← **待补**）、`在读学生都有年级 ✅`、`已跳过非在读学生 19 位`。
