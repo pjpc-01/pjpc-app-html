@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { gradeCanon } from "@/lib/grades"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   GraduationCap,
@@ -144,13 +145,8 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
       setTodaySchedule(list)
 
       // 我教的年级（来自 courses.grade_level，按 GRADE 归一化）
-      const GRADE_MAP: Record<string, string> = {
-        '1': 'Standard 1', '一年级': 'Standard 1', '2': 'Standard 2', '二年级': 'Standard 2',
-        '3': 'Standard 3', '三年级': 'Standard 3', '4': 'Standard 4', '四年级': 'Standard 4',
-        '5': 'Standard 5', '五年级': 'Standard 5', '6': 'Standard 6', '六年级': 'Standard 6',
-        '7': 'Form 1', '8': 'Form 2', '9': 'Form 3', '10': 'Form 4', '11': 'Form 5', '12': 'Form 6',
-      }
-      const normG = (g: any) => { const v = String(g ?? '').trim(); return GRADE_MAP[v] || GRADE_MAP[v.toLowerCase()] || v }
+      // 年级归一统一走 @/lib/grades（原来自己写了一份 GRADE_MAP）
+      const normG = (g: any) => gradeCanon(g)
       const myCourses = await j(`${B}/collections/courses/records?perPage=200&filter=` + esc(`teacher_id="${teacherId}"`))
       const myGrades = Array.from(new Set((myCourses?.items || []).map((c: any) => normG(c.grade_level)).filter(Boolean)))
 

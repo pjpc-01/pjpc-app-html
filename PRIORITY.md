@@ -473,3 +473,20 @@
 - `app/card-management/page.tsx:109`、`app/components/management/student-management-page.tsx:153,340`、`app/components/student/StudentAnalytics.tsx:51` —— 各自用正则判断小学年级
 
 **⚠️ 数据层**：`courses.grade_level` **中英混存**（`一年级`×8 与 `Standard 1`×3 并存）。显示/筛选现在已按 canonical 归并，但**存库值仍不统一**；若要彻底统一需一次性把 81 门课的值改写成 canonical（待定）。
+
+### ✅ 隐患② 收尾（2026-09-25）—— 剩余 7 处 + 数据层
+**代码又迁 9 个文件（全部走 `lib/grades.ts`）**
+1. `app/api/points/records/route.ts` —— **服务端**那份年级映射（含 `Peralihan→预备班` 错误措辞）
+2. `app/components/student/utils.ts` —— `convertGradeToChinese` 改为直接复用 `gradeLabel`（原来 canonical 输入原样返回 `Standard 1`、中文输入却转成 `Standard 1（一年级）` → 同一年级两种显示）；**影响 6+ 组件**（StudentList/StudentTable/StudentGridView/StudentDetails/student-management-page/CSV 导出）
+3. `app/components/student/StudentForm.tsx` —— 删掉本地死代码 `convertGradeToChinese`（定义了没人用）
+4. `components/teacher/TeacherDashboard.tsx` —— 本地 `GRADE_MAP` → `gradeCanon`
+5. `app/components/finance/student-fee-matrix/StudentFeeMatrix.tsx` —— 本地 order（只给了小学 6 级）→ `gradeRank`
+6. `app/card-management/page.tsx` —— 两串正则硬猜小学/中学 → `isPrimaryGrade`/`isSecondaryGrade`
+7. `app/components/management/student-management-page.tsx`（快速筛选 + 统计 ×2）→ 同上
+8. `app/components/student/StudentAnalytics.tsx`（统计 ×2）→ 同上
+9. `lib/grades.ts` 新增 `isPrimaryGrade()` / `isSecondaryGrade()`
+
+**数据层：`courses.grade_level` 已归一**
+81 门课中 **46 门**由中文改成 canonical（一年级→Standard 1 ×8、二年级 ×8、三年级 ×8、四年级 ×9、五年级 ×8、六年级 ×5）。**改后 81 门全部 canonical、零残留**；原先被拆成两组的（如 `一年级` 与 `Standard 1`）已合并。备份：`/home/pjpc/backups/courses-grade-normalize-20260925005917.`
+
+**验证**：build 通过；真实浏览器实测 —— 学生管理年级显示 **52 个中文 / 0 个英文**（原来显示 `Standard 1`）；课程管理两个年级下拉**零英文残留**；全程无 pageerror。测试临时账号已删（204 / users 回到 20 / 无残留）。
