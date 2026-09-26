@@ -337,8 +337,9 @@ export async function POST(request: NextRequest) {
         items,
         period,
         status: "issued",
-        issueDate: new Date().toISOString().split("T")[0],
-        dueDate: new Date(year, month, 15).toISOString().split("T")[0],
+        // 开票日 = 当月 25 号，到期日 = 下月 7 号（本地时区，与 lib/utils 的 defaultInvoiceDates 保持一致）
+        issueDate: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-25` })(),
+        dueDate: (() => { const d = new Date(); const t = new Date(d.getFullYear(), d.getMonth() + 1, 7); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}` })(),
         notes: "Auto-generated invoice",
         discount: discountValue,
         discountType: discountType,

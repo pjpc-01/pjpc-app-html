@@ -30,7 +30,7 @@ import { InvoiceCreateDialog } from "./InvoiceCreateDialog"
 import { InvoiceList } from "./InvoiceList"
 import { InvoiceByStudent } from "./InvoiceByStudent"
 import InvoiceSettingsManager, { type InvoiceSettingsPreset } from "./InvoiceSettingsManager"
-import { getStatusBadge } from "@/lib/utils"
+import { getStatusBadge, defaultInvoiceDates } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // Types
@@ -515,7 +515,7 @@ Prospek Cemerlang`,
       studentNumber: student.student_id, // 学号
       items: invoiceItems.length > 0 ? invoiceItems : [{ name: "学生费用", amount: totalAmount || 0 }],
       status: "issued" as const,
-      issueDate: new Date().toISOString().split('T')[0],
+      issueDate: defaultInvoiceDates().issueDate,
       dueDate: dueDate,
       notes: notes || '',
       period: period || undefined,
@@ -881,8 +881,8 @@ Prospek Cemerlang`,
               studentGrade: student.grade || student.standard,
               items: invoiceItems.length > 0 ? invoiceItems : [{ name: "学生费用", amount: totalAmount || 0 }],
               status: "issued",
-              issueDate: new Date().toISOString().split('T')[0],
-              dueDate: formData.dueDate || new Date(Date.now() + 14*86400000).toISOString().split('T')[0],
+              issueDate: defaultInvoiceDates().issueDate,
+              dueDate: formData.dueDate || defaultInvoiceDates().dueDate,
               notes: formData.notes || '',
               period: formData.period || undefined,
               totalAmount: totalAmount || 0

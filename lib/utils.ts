@@ -621,6 +621,20 @@ export const toLocalMonthKey = (d: Date = new Date()): string =>
 export const toLocalDateKey = (d: Date = new Date()): string =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
+/**
+ * 开发票的默认日期（老板要求，本地时区）：
+ *   开票日 = 当月 25 号   到期日 = 下个月 7 号
+ * ⚠️ 一律用 getFullYear/getMonth 构造本地日期，禁止 toISOString()（UTC 会差一天甚至差一个月）
+ */
+export const defaultInvoiceDates = (base: Date = new Date()): { issueDate: string; dueDate: string } => {
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  return {
+    issueDate: fmt(new Date(base.getFullYear(), base.getMonth(), 25)),
+    dueDate: fmt(new Date(base.getFullYear(), base.getMonth() + 1, 7)),
+  }
+}
+
 
 /**
  * 学生头像 URL —— students.avatar 字段只存文件名（如 333195832626_xxx.jpeg），
