@@ -28,6 +28,7 @@ import { useReceipts } from "@/hooks/useReceipts"
 import { usePayments } from "@/hooks/usePayments"
 import { InvoiceCreateDialog } from "./InvoiceCreateDialog"
 import { InvoiceList } from "./InvoiceList"
+import { InvoiceByStudent } from "./InvoiceByStudent"
 import InvoiceSettingsManager, { type InvoiceSettingsPreset } from "./InvoiceSettingsManager"
 import { getStatusBadge } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -91,6 +92,8 @@ export default function InvoiceManagement() {
   const [messageContent, setMessageContent] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [isAutoGenerating, setIsAutoGenerating] = useState(false)
+  // 视图：列表 / 按学生（已开具·已发送 看板）
+  const [invoiceView, setInvoiceView] = useState<'list' | 'student'>('list')
 
   // Settings state - load from PB on mount
   const [pdfOptions, setPdfOptions] = useState<InvoiceSettingsPreset>({
@@ -805,7 +808,36 @@ Prospek Cemerlang`,
         </Card>
       </div>
 
-      {/* Invoice List */}
+      {/* 视图切换：列表 / 按学生看板 */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <Button size="sm" variant={invoiceView === 'list' ? 'default' : 'outline'} onClick={() => setInvoiceView('list')}>
+          列表
+        </Button>
+        <Button size="sm" variant={invoiceView === 'student' ? 'default' : 'outline'} onClick={() => setInvoiceView('student')}>
+          按学生
+        </Button>
+        {invoiceView === 'student' && (
+          <span className="text-xs text-gray-400">一行一个学生 · 右栏看本月开设状态 · 点「查看」标记已发送</span>
+        )}
+      </div>
+
+      {invoiceView === 'student' ? (
+        <InvoiceByStudent
+          invoices={centerFilteredInvoices}
+          students={students}
+          onMarkSent={async (id, sent) => {
+            await updateInvoice(id, {
+              sent,
+              sent_at: sent ? new Date().toISOString().slice(0, 10) : '',
+            } as any)
+          }}
+          onViewInvoice={(inv) => {
+            setSelectedInvoice(inv)
+            setIsInvoiceDetailDialogOpen(true)
+          }}
+        />
+      ) : (
+      /* Invoice List */
       <InvoiceList
         invoices={centerFilteredInvoices}
         filters={invoiceFilters}
@@ -822,6 +854,7 @@ Prospek Cemerlang`,
         }}
         payments={payments}
       />
+      )}
 
       {/* Dialogs */}
       <InvoiceCreateDialog
