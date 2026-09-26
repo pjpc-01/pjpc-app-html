@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { formatGrade } from "@/lib/utils"
+import { formatGrade, defaultInvoiceDates } from "@/lib/utils"
 import { gradeRank } from "@/lib/grades"
 import { useLanguage } from "@/contexts/language-context"
 import { FileText, Users, AlertCircle, Loader2 } from "lucide-react"
@@ -43,7 +43,7 @@ export function InvoiceCreateDialog({
   const { t } = useLanguage()
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
-  const [dueDate, setDueDate] = useState("")
+  const [dueDate, setDueDate] = useState(() => defaultInvoiceDates().dueDate)
   const [notes, setNotes] = useState("")
   // 账期 = 这张票属于哪个月（学费月份），默认本月；用本地时区取年月，避免 UTC 偏移
   const [period, setPeriod] = useState(() => {
@@ -104,7 +104,7 @@ export function InvoiceCreateDialog({
     onOpenChange(false)
     setSelectedStudents([])
     setSelectedGrades([])
-    setDueDate("")
+    setDueDate(defaultInvoiceDates().dueDate)
     setNotes("")
   }
 

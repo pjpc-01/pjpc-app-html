@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchSecureData, createRecord, updateRecord, deleteRecord } from '@/lib/secure-api-client'
-import { toLocalMonthKey } from "@/lib/utils"
+import { toLocalMonthKey, defaultInvoiceDates } from "@/lib/utils"
 
 export interface Invoice {
   id: string
@@ -195,9 +195,7 @@ export const useInvoices = () => {
     month?: string,
     studentNumber?: string
   ) => {
-    const currentDate = new Date()
-    const issueDate = currentDate.toISOString().split('T')[0]
-    const dueDate = new Date(currentDate.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const { issueDate, dueDate } = defaultInvoiceDates()
     
     const totalAmount = items.reduce((sum, item) => sum + item.amount, 0)
     

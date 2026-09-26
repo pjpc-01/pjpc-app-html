@@ -722,3 +722,26 @@ const RASTER_FORMAT = 'JPEG'
 ## ✅ 脏数据修正：`INV-202608-013` 到期日（2026-09-26）
 `dueDate` 原为 **`0026-07-20`**（年份打错）→ 已修为 `2026-07-20`。全库复查日期格式异常 **0 处**。备份：`~/backups/invoice-fix-20260926_140347/`。
 ⚠️ 遗留：改后 **到期日(2026-07-20) 早于开票日(2026-08-26)** —— 该票为 8 月账、已付清；若要跟其他 8 月票一致，应改为 2026-09-20，**待老板确认**。
+
+
+## ✅ 建发票的默认日期（2026-09-26，老板要求）
+
+**要求**：开票时日期**不要留空** —— **开票日默认当月 25 号**，**到期日默认下个月 7 号**（例：9 月开票 → 开票日 2026-09-25、到期日 2026-10-07）。
+
+**实现（统一源头 `lib/utils.ts` 的 `defaultInvoiceDates()`）**
+```ts
+export const defaultInvoiceDates = (base = new Date()) => ({
+  issueDate: fmt(new Date(base.getFullYear(), base.getMonth(), 25)),      // 当月25号
+  dueDate:   fmt(new Date(base.getFullYear(), base.getMonth() + 1, 7)),   // 下月7号
+})
+```
+⚠️ 全程用 `getFullYear/getMonth` 构造**本地**日期，**不再用 `toISOString()`** —— 那是 UTC，本地早上 8 点前会算成前一天（项目已知坑）。
+
+**四处调用全部改掉**（原来各写各的、且带 UTC 坑）：
+1. `app/components/finance/invoice-management/InvoiceCreateDialog.tsx` —— 到期日期框默认值 + 建完后重置为该默认值（原来留空 ✗）
+2. `InvoiceManagement.tsx` × 2 —— 单张建票 / 批量建票的 `issueDate`
+3. `hooks/useInvoices.ts` —— `generateInvoiceFromStudentFees` 的 issueDate/dueDate（原来 = 今天 + 15 天）
+4. `app/api/billing/auto-generate/route.ts` —— 自动账单的 `issueDate`/`dueDate`（原来 = 今天、以及 `year, month, 15`）
+
+**实测（真 Chromium，今天 2026-09-26）**：打开「创建发票」→ 到期日期已预填 **`2026-10-07`** ✓、账期默认 `2026-09` ✓、零控制台错误 ✓
+**说明**：开票日不在建票表单里（一直是自动设的），现已自动设为**当月 25 号** ✓；若也想在表单里手动改，待老板发话。
