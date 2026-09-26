@@ -20,6 +20,47 @@ import { GRADE_CANON_ALL, GRADE_LABEL } from "@/lib/grades"
 import ReportSettingsManager, { type ReportSettingsPreset } from "@/app/components/report/ReportSettingsManager"
 import { REPORT_EN_DEFAULT } from "@/lib/pdf-generator"
 
+// ── 报告「填写进度」：11 个框，哪些填了、哪些还空着 ──
+const REPORT_FIELDS: [string, string][] = [
+  ["growth_message", "成长寄语"],
+  ["subjects", "科目成绩"],
+  ["teacher_comment", "老师评语"],
+  ["homework_comment", "功课班评语"],
+  ["problems", "存在问题"],
+  ["improvements", "改进建议"],
+  ["future_goals_academic", "学业目标"],
+  ["future_goals_ability", "能力目标"],
+  ["future_goals_character", "品格目标"],
+  ["summary", "学期总结"],
+  ["activities", "活动参与"],
+]
+
+const isFilled = (v: any, key?: string): boolean => {
+  // 科目成绩：模板会预填科目名，必须至少一个科目填了期中/期末分数才算「已填」
+  if (key === "subjects") {
+    return Array.isArray(v) && v.some(s =>
+      !!s && (
+        (s.midterm !== null && s.midterm !== undefined && s.midterm !== "") ||
+        (s.final !== null && s.final !== undefined && s.final !== "")
+      )
+    )
+  }
+  if (Array.isArray(v)) {
+    return v.some(x =>
+      typeof x === "string"
+        ? x.trim() !== ""
+        : !!x && typeof x === "object" && Object.values(x).some(y => y !== "" && y !== null && y !== undefined)
+    )
+  }
+  if (typeof v === "string") return v.trim() !== ""
+  return v !== null && v !== undefined
+}
+
+const reportProgress = (r: any) => {
+  const empty = REPORT_FIELDS.filter(([k]) => !isFilled(r[k], k)).map(([, label]) => label)
+  return { filled: REPORT_FIELDS.length - empty.length, total: REPORT_FIELDS.length, empty }
+}
+
 export default function StudentReportsPage() {
   const { t } = useLanguage()
   const router = useRouter()
@@ -257,6 +298,7 @@ export default function StudentReportsPage() {
                     <TableHead>年份</TableHead>
                     <TableHead>状态</TableHead>
                     <TableHead>创建时间</TableHead>
+                    <TableHead>填写进度</TableHead>
                     <TableHead>操作</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -264,6 +306,7 @@ export default function StudentReportsPage() {
                   {filteredReports.map((r: any) => {
                     const av = reportAvatarUrl(r)
                     const stuName = r.expand?.studentId?.name || r.studentName || (students.find((s:any) => s.id === r.studentId)?.name) || "-"
+                    const prog = reportProgress(r)
                     return (
                     <TableRow key={r.id}>
                       <TableCell>
@@ -282,6 +325,14 @@ export default function StudentReportsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>{new Date(r.created).toLocaleDateString("zh-CN")}</TableCell>
+                      <TableCell>
+                        <span
+                          className={`text-xs font-medium whitespace-nowrap ${prog.empty.length === 0 ? "text-green-600" : "text-amber-600"}`}
+                          title={prog.empty.length ? `未填：${prog.empty.join("、")}` : "全部已填"}
+                        >
+                          已填 {prog.filled} · 未填 {prog.empty.length}
+                        </span>
+                      </TableCell>
                       <TableCell>
                         <Link href={`/student-report/${r.id}`}>
                           <Button size="sm" variant="outline">
