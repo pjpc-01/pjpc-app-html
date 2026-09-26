@@ -47,6 +47,9 @@ export async function POST(request: NextRequest) {
     try {
       const holidays = await pb.collection('public_holidays').getFullList()
       holidays.forEach((h: any) => {
+        // 学校假期（type='school'）只在日历上显示，不阻止排课
+        // （安亲班/补习班在学期假期通常照常上课，只有公共假期才停课）
+        if ((h.type || 'public') === 'school') return
         const d = (h.date || '').split('T')[0].split(' ')[0]
         if (d) holidaySet.add(d)
       })

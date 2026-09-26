@@ -64,6 +64,7 @@ interface Holiday {
   name: string
   name_zh?: string
   region?: string
+  type?: string   // 'public'（默认）| 'school'
 }
 
 interface LeaveRecord {
@@ -507,11 +508,13 @@ export default function CalendarScheduleView({
                     </div>
                   </div>
 
-                  {/* 公假 */}
+                  {/* 公假 / 学校假期 */}
                   {holiday && (
-                    <div className="mt-0.5 text-[10px] leading-tight px-1 py-0.5 rounded bg-rose-500 text-white font-medium truncate"
-                      title={`公假：${holiday.name_zh || holiday.name}`}>
-                      🎌 {holiday.name_zh || holiday.name}
+                    <div className={`mt-0.5 text-[10px] leading-tight px-1 py-0.5 rounded text-white font-medium truncate ${
+                      holiday.type === 'school' ? 'bg-amber-500' : 'bg-rose-500'
+                    }`}
+                      title={`${holiday.type === 'school' ? '学校假期' : '公共假期'}：${holiday.name_zh || holiday.name}`}>
+                      {holiday.type === 'school' ? '🏫' : '🎌'} {holiday.name_zh || holiday.name}
                     </div>
                   )}
 

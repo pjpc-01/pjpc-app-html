@@ -578,3 +578,22 @@
 ### ✅ Ethan 的学号特例（2026-09-25）
 黄俊鸿 Ethan Ng Junn Hong 的 `student_id = 'PU E'` —— **老板确认是他的特例、就是这个名字，不用改**。
 已在 `scripts/account-audit.mjs` 加 `SID_EXCEPTIONS = ['PU E']`，审计不再每周误报。现在该段输出：`✅ 在读学生学号完整（已知例外：Ethan 的「PU E」）`。
+
+### ✅ 教师排班日历 —— 加马来西亚假期（2026-09-26）
+**背景**：`CalendarScheduleView`（考勤排班页 `/teacher-attendance-reports`）本来就有假期功能 + `public_holidays` 集合，但**要手动一条条加**。
+**做法**：从官方表（publicholidays.com.my，取自 MOE/kabinet）抓取 → **程序化解析**（避免手抄）→ 筛 Selangor 适用 → 灌库。
+
+**数据（`public_holidays`，共 101 条）**
+- **公共假期 45 条**（2026 全 23 + 2027 全 22）：Selangor 适用口径 = `National` 或 `National except …`（排除名单含 Selangor 才排除）或州列表含 Selangor
+- **学校假期 56 条**（KPM 2026 学校日历 **Kumpulan B**，含 Selangor，逐日）：农历新年 2/16–20、开斋节 3/19–22、第一学期 3/21–29、年中学期 5/23–6/7、第二学期 8/29–9/6、屠妖节 11/8–10、**年终 12/5–31**
+- ⚠️ 2027 学校假期**尚未公布**（MOE 未发布）→ 待公布后补
+- 备份：`/home/pjpc/backups/holidays-20260926_112527/public_holidays-before.json`
+
+**代码**
+1. `public_holidays` 集合**新增 `type` 字段**（`public` | `school`）；旧 30 行已补 `type='public'`
+2. `app/api/schedule/generate-monthly/route.ts`：**只有公假才整天不排课**；学校假期仅显示，不阻断排班（安亲班学期假期常照常上课）
+3. `CalendarScheduleView.tsx`：公假 🎌 玫瑰色 / 学校假期 🏫 琥珀色，tooltip 分别写「公共假期 / 学校假期」
+
+**实测**（真 Chromium 翻月份）：2 月（大宝森节/农历新年）、3 月（可兰经降世日/开斋节 1–4/第一学期假期）、9 月（第二学期假期/马来西亚日）、11 月（屠妖节 1–2/假期）、12 月（年终假期 26 天/雪兰莪苏丹诞辰/圣诞节）全部正确显示，零报错。
+
+**顺带修正**：`2026-08-25` 原写成「Awal Muharam」→ 实为**先知诞辰 Maulidur Rasul**，已改。

@@ -4410,6 +4410,11 @@
           "name": "notes",
           "type": "text",
           "required": false
+        },
+        {
+          "name": "type",
+          "type": "text",
+          "required": false
         }
       ]
     },
