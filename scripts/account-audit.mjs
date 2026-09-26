@@ -148,8 +148,14 @@ h('E. 数据质量 —— 影响报表准确性的');
 // 之前把 14 位毕业生算成「没有年级」→ 每周误报一次。
 const activeStu = D.students.filter(s => s.status === 'active');
 const nonActive = D.students.filter(s => s.status && s.status !== 'active');
-const stuNoId = activeStu.filter(s => !s.student_id || String(s.student_id).trim().length < 5);
-li(stuNoId.length ? `⚠️ ${stuNoId.length} 个在讀学生学号不完整` : '✅ 在读学生学号完整');
+// 已知例外：黄俊鸿 Ethan Ng Junn Hong 的学号就是 'PU E'（老板确认是特例，别管）
+const SID_EXCEPTIONS = ['PU E'];
+const stuNoId = activeStu.filter(s => {
+  const sid = String(s.student_id || '').trim();
+  if (SID_EXCEPTIONS.includes(sid)) return false;
+  return !sid || sid.length < 5;
+});
+li(stuNoId.length ? `⚠️ ${stuNoId.length} 个在讀学生学号不完整` : '✅ 在读学生学号完整（已知例外：Ethan 的「PU E」）');
 const stuNoCenter = activeStu.filter(s => !s.centerId);
 li(stuNoCenter.length ? `⚠️ ${stuNoCenter.length} 个在讀学生没有 centerId` : '✅ 在读学生都有 centerId');
 const stuNoGrade = activeStu.filter(s => !s.grade);
