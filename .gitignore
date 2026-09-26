@@ -132,3 +132,6 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+# 发票 PDF 是客户端生成后上传的产物（2GB+，可从 invoices 数据重新生成）
+public/invoices/
