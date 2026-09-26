@@ -597,3 +597,82 @@
 **实测**（真 Chromium 翻月份）：2 月（大宝森节/农历新年）、3 月（可兰经降世日/开斋节 1–4/第一学期假期）、9 月（第二学期假期/马来西亚日）、11 月（屠妖节 1–2/假期）、12 月（年终假期 26 天/雪兰莪苏丹诞辰/圣诞节）全部正确显示，零报错。
 
 **顺带修正**：`2026-08-25` 原写成「Awal Muharam」→ 实为**先知诞辰 Maulidur Rasul**，已改。
+
+
+---
+
+## 🔴 备份系统 —— 从 7 月起就没有有效备份（2026-09-26 已修复并验证）
+
+**发现（排查 `public/invoices` 是否要 gitignore 时顺带查出，比预想严重）**
+- `~/.hermes/scripts/pjpc-backup.sh` 指向 **`/home/pjpc/pjpc-app-html/pb_data`** —— 那是 **7 月就废弃的旧目录（12K）**
+- 它历史产出的 `pjpc_auto_backup_*.tar.gz` **每个只有 123 字节（空包）**，最后一份 **7/19**
+- 而且**当时根本没被任何 timer/cron 调度**（孤儿脚本）
+- **真实数据** = `/home/pjpc/pjpc-app-prod/pb_data` → **软链 → `/home/pjpc/pb_data_store`（663 MB）**，**无人备份**
+- `/mnt/d/hermes-backup/` 每天 650 MB 的 zip **只含 `~/.hermes`**（记忆/配置/skill），**不含 PB 数据**
+- **结论：整个生意数据从 2026-07 起没有自动备份。**
+
+**已修（老板拍板「全部数据」）**
+- 重写 `~/.hermes/scripts/pjpc-backup.sh`：备份 **① `pb_data_store`（数据库+上传文件）② 整个项目（含 `public/invoices` 发票 PDF、`.env.local` 密钥、`.git` 历史、`pb_migrations`）**；只排除可重建的 `node_modules` / `.next`
+- 新增 systemd `pjpc-backup.timer` + `.service`：**每天 18:30**（避开 18:00 的 hermes 备份）+ **开机 5 分钟后补跑**（`Persistent=true` 会补跑错过的）
+- 落盘 **`/mnt/d/pjpc-backup/`（= Windows `D:\pjpc-backup\`）**，保留最近 **7 份**（约 18 GB，D 盘剩 3.5 TB）
+- 两道防线（防止再出 123 字节空包）：**`/mnt/d` 未挂载 → 报错退出**（不写本地假成功）；**单份 < 10 MB → 报错**
+
+**验证（全量逐字节 md5 + 还原实测）**
+- 项目归档 **8756 个文件 → 8756 全部一致 ✅**（含全部发票 PDF、`.git`、`.env.local`）
+- 数据库归档 **529 个 → 524 一致 ✅**，唯一不同 = `auxiliary.db`（PB 辅助日志库，持续被写，属正常）
+- `data.db` 解出后 **`pragma integrity_check = ok`** ✅ · 71 张表 · students 131 · invoices 290
+- ⚠️ 首次写的校验脚本路径拼错（少 `/home/pjpc/` 前缀），把 8756 个文件全判成「磁盘缺失」却仍打印「完全一致」→ **假通过**；已修正重跑
+
+**备份范围决策（老板原话）**：「发票也要一起备份，总之全部都要备份」「全部是全部数据」→ 因此**不**排除 2 GB 的发票 PDF。
+
+## ✅ 发票 PDF 体积 —— 10 MB/张 的病根与止血（2026-09-26）
+
+**病根（`lib/pdf-generator.ts`）**：流程是 `HTML → html2canvas(scale:2) → jsPDF.addImage(...)`。截出的是 **1590×2248 RGB 位图**，`1590×2248×3 ≈ 10.7 MB`；jsPDF 以 **PNG 格式参数**接收时把它写成**未压缩 RGB 流**（`/FlateDecode` 出现 **0 次**）→ **每张发票 ≈ 10 MB**。215 张 = 2.0 GB；且**发票是 WhatsApp 发给家长的**，10 MB 附件体验很差。
+
+**止血方案 A（已实施）**：4 个生成器（invoice / receipt / report / payslip）共 **8 处 `toDataURL('image/png')` + 8 处 `addImage(..., 'PNG', ...)`** 全部改 JPEG。按**源头改**原则抽了 3 个常量，一处可调：
+```
+const RASTER_MIME = 'image/jpeg' as const
+const RASTER_QUALITY = 0.9
+const RASTER_FORMAT = 'JPEG'
+```
+预期 10 MB → **约 120–250 KB**（1/40~1/80），**外观与原来一致**（A4@192dpi JPEG 0.9）。备份：`/home/pjpc/backups/pdf-generator.ts.bak-*`。
+
+## 📋 待办：C 方案 —— 发票改真矢量 PDF（老板指定「C 才是正确做法」）
+
+**为什么 C 才正确**：现在的 PDF 本质是**一张图片**（文字不可搜索/不可复制、无限放大就糊、体积大）。C = 用 jsPDF 文字/表格 API 直接生成矢量 PDF → **约 50 KB/张** + **文字可搜索可复制**（会计/存档有用）+ 放大不糊。
+
+**前提已具备**：项目已装 `jspdf` + `jspdf-autotable` + **`fontkit` + `subset-font`**（字体子集化）；可用中文字体：Windows `NotoSansSC-VF.ttf`、Linux `wqy-zenhei.ttc`。
+
+**三个必须付出的代价（动手前要跟老板确认）**
+1. **外观会变**：矢量是重新排版，不再是现在这套 HTML/CSS 设计（字距/线条/配色都会有差）
+2. **必须搬到服务端**：矢量 PDF 写中文要嵌字体，完整中文字体 10+ MB → 必须按每张发票实际用字**动态子集化**，浏览器端做不到 → 生成流程要从「客户端生成」改成「服务端生成」
+3. **3 套模板都要重写**：发票 / 收据 / 薪资单（`generateInvoicePDF` @310、`generateReceiptPDF` @628、`generatePayslipPDF` @1514；报表 @1063 可选）
+
+## 📋 待办：已存在的 215 张发票瘦身（2.0 GB → 约 300 MB）
+
+老板已同意「先做 A」，旧档案瘦身**尚未执行**。做法：解析每张 PDF、把里面那张**未压缩 RGB 位图流**替换为压缩后的同类图像（排版/尺寸/其他对象全不动）→ 外观不变、体积降 ~85%。⚠️ 会改写生产档案，执行前必须先备份（`/mnt/d/pjpc-backup/` 已有 ✓）。
+
+## ✅ `public/invoices` 已 gitignore（2026-09-26）
+
+发票 PDF 是**生成物**，原来 105 个入库（仓库膨胀）。已加 `.gitignore`（`public/invoices/`）+ `git rm -r --cached public/invoices` 停止跟踪。**本地 215 个文件全部保留** ✓，不影响运行。老板确认「这个备份只是在 local 啊，不会 push 去 GitHub 的」—— 备份与仓库无关 ✓。
+
+
+## ℹ️ 另一个 agent（alicia-agent）的未提交功能：报销单 (Claim Form)（2026-09-26 盘点）
+
+**她做了什么**（全部产生于 2026-09-24 12:26–12:38，一直未提交）：
+| 文件 | 作用 |
+|---|---|
+| `pb_migrations/1790223976_created_claim_forms.js` | 建 PB 集合 `claim_forms`（19 字段），**已应用到生产库** ✓ |
+| `hooks/useClaimForms.ts` | 数据层：增删改查 + 审批状态流转 |
+| `lib/claim-form-pdf.ts` | 打印模板（HTML 打印，不走 html2canvas，无 10MB 问题） |
+| `app/claim-form/page.tsx` | 页面：填单表单 + 列表 + 查看/打印/审批弹窗 |
+| `components/layouts/AppShell.tsx` (+2 行) | 财务菜单加入口「报销单 (Claim Form)」→ `/claim-form` |
+
+**功能**：填单（申请人/职位/中心/单号/期间 + 明细表：日期·说明·金额·备注·有无收据 + 合计）→ 两级审批（草稿 → 已提交 → 主管已批 → 已批可发 / 已驳回）；admin/accountant/supervisor 看全部，其他人只看自己的。
+
+**实测（2026-09-26，真 Chromium）**：`/claim-form` 正常加载、导航显示「报销单」（alicia 原来漏的 i18n key 已于 09-24 补）、**零控制台错误、零失败请求**；集合当前 **0 条记录**。
+
+**⚠️ 待办**
+1. `claim_forms` 的 **5 条权限规则全是 `null`**（PB 里 null = 仅 superuser）→ 现在靠 `lib/secure-api-client` 服务端代理能跑通，但规则该补
+2. 该功能**未提交**已有 2 天 → 已随本次提交一并归档（老板同意「也可以列 alicia 改的文件」）
+3. `app/pickup/page.tsx`（+7 行「晚点接送收费政策」，mtime 2026-09-25 14:59）**不是 alicia 的**，来源不明，暂未提交

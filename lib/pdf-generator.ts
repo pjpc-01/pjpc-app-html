@@ -307,6 +307,12 @@ const A4_WIDTH_MM = 210
 const A4_HEIGHT_MM = 297
 const RENDER_WIDTH_PX = 794  // ~A4 width at 96dpi
 
+// 位图输出格式（原先用 PNG，jsPDF 会写成未压缩 RGB，一张发票 ~10MB）
+// 改 JPEG 后体积降至 1/20~1/40，A4@192dpi 下肉眼无差
+const RASTER_MIME = 'image/jpeg' as const
+const RASTER_QUALITY = 0.9
+const RASTER_FORMAT = 'JPEG'
+
 export const generateInvoicePDF = async (invoice: Invoice, settings: InvoiceSettingsPreset): Promise<Blob> => {
   // 1. Generate HTML
   const html = generateInvoiceHTML(invoice, settings)
@@ -350,7 +356,7 @@ export const generateInvoicePDF = async (invoice: Invoice, settings: InvoiceSett
 
     if (imgHeight <= pageHeight + 5) {
       // Single page
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight)
+      pdf.addImage(canvas.toDataURL(RASTER_MIME, RASTER_QUALITY), RASTER_FORMAT, 0, 0, imgWidth, imgHeight)
     } else {
       // Multi-page: split canvas across pages
       let remainingHeight = canvas.height
@@ -367,9 +373,9 @@ export const generateInvoicePDF = async (invoice: Invoice, settings: InvoiceSett
         const ctx = pageCanvas.getContext('2d')!
         ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH)
 
-        const pageImgData = pageCanvas.toDataURL('image/png')
+        const pageImgData = pageCanvas.toDataURL(RASTER_MIME, RASTER_QUALITY)
         const pageImgH = (pageCanvas.height * imgWidth) / pageCanvas.width
-        pdf.addImage(pageImgData, 'PNG', 0, 0, imgWidth, pageImgH)
+        pdf.addImage(pageImgData, RASTER_FORMAT, 0, 0, imgWidth, pageImgH)
 
         srcY += srcH
         remainingHeight -= srcH
@@ -660,7 +666,7 @@ export const generateReceiptPDF = async (receipt: any, settings: ReceiptSettings
     const pdf = new jsPDF('p', 'mm', 'a4')
 
     if (imgHeight <= pageHeight + 5) {
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight)
+      pdf.addImage(canvas.toDataURL(RASTER_MIME, RASTER_QUALITY), RASTER_FORMAT, 0, 0, imgWidth, imgHeight)
     } else {
       let remainingHeight = canvas.height
       let srcY = 0
@@ -673,9 +679,9 @@ export const generateReceiptPDF = async (receipt: any, settings: ReceiptSettings
         pageCanvas.height = srcH
         const ctx = pageCanvas.getContext('2d')!
         ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH)
-        const pageImgData = pageCanvas.toDataURL('image/png')
+        const pageImgData = pageCanvas.toDataURL(RASTER_MIME, RASTER_QUALITY)
         const pageImgH = (pageCanvas.height * imgWidth) / pageCanvas.width
-        pdf.addImage(pageImgData, 'PNG', 0, 0, imgWidth, pageImgH)
+        pdf.addImage(pageImgData, RASTER_FORMAT, 0, 0, imgWidth, pageImgH)
         srcY += srcH
         remainingHeight -= srcH
         pageNum++
@@ -1102,7 +1108,7 @@ export const generateReportPDF = async (report: StudentReport, settings: ReportS
     const pdf = new jsPDF('p', 'mm', 'a4')
 
     if (imgHeight <= pageHeight + 5) {
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight)
+      pdf.addImage(canvas.toDataURL(RASTER_MIME, RASTER_QUALITY), RASTER_FORMAT, 0, 0, imgWidth, imgHeight)
     } else {
       let remainingHeight = canvas.height
       let srcY = 0
@@ -1118,9 +1124,9 @@ export const generateReportPDF = async (report: StudentReport, settings: ReportS
         const ctx = pageCanvas.getContext('2d')!
         ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH)
 
-        const pageImgData = pageCanvas.toDataURL('image/png')
+        const pageImgData = pageCanvas.toDataURL(RASTER_MIME, RASTER_QUALITY)
         const pageImgH = (pageCanvas.height * imgWidth) / pageCanvas.width
-        pdf.addImage(pageImgData, 'PNG', 0, 0, imgWidth, pageImgH)
+        pdf.addImage(pageImgData, RASTER_FORMAT, 0, 0, imgWidth, pageImgH)
 
         srcY += srcH
         remainingHeight -= srcH
@@ -1553,7 +1559,7 @@ export const generatePayslipPDF = async (
     const pdf = new jsPDF('p', 'mm', 'a4')
 
     if (imgHeight <= pageHeight + 5) {
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight)
+      pdf.addImage(canvas.toDataURL(RASTER_MIME, RASTER_QUALITY), RASTER_FORMAT, 0, 0, imgWidth, imgHeight)
     } else {
       let remainingHeight = canvas.height
       let srcY = 0
@@ -1566,9 +1572,9 @@ export const generatePayslipPDF = async (
         pageCanvas.height = srcH
         const ctx = pageCanvas.getContext('2d')!
         ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH)
-        const pageImgData = pageCanvas.toDataURL('image/png')
+        const pageImgData = pageCanvas.toDataURL(RASTER_MIME, RASTER_QUALITY)
         const pageImgH = (pageCanvas.height * imgWidth) / pageCanvas.width
-        pdf.addImage(pageImgData, 'PNG', 0, 0, imgWidth, pageImgH)
+        pdf.addImage(pageImgData, RASTER_FORMAT, 0, 0, imgWidth, pageImgH)
         srcY += srcH
         remainingHeight -= srcH
         pageNum++
