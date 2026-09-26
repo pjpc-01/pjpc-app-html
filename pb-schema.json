@@ -482,6 +482,16 @@
           "name": "deleted",
           "type": "bool",
           "required": false
+        },
+        {
+          "name": "sent",
+          "type": "bool",
+          "required": false
+        },
+        {
+          "name": "sent_at",
+          "type": "text",
+          "required": false
         }
       ]
     },
