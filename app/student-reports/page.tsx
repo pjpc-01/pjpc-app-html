@@ -32,7 +32,7 @@ const REPORT_FIELDS: [string, string][] = [
   ["future_goals_ability", "能力目标"],
   ["future_goals_character", "品格目标"],
   ["summary", "学期总结"],
-  ["activities", "活动参与"],
+  // 注：「活动参与」不计入填写进度 —— 从 2026-09-26 起模板会预填，老师一般不改
 ]
 
 const isFilled = (v: any, key?: string): boolean => {
@@ -77,6 +77,7 @@ export default function StudentReportsPage() {
     growthMessage: "成长不在于做得最好，而在于愿意不断尝试、不断进步。{studentName}，继续加油！",
     problems: ["在理科学习中，解题思路不够灵活，需加强思维训练。","有时会因拖延导致作业完成质量不高。","阅读量不足，知识面有待拓宽。"],
     improvements: ["制定学习计划，提高学习效率，减少拖延。","多做练习题，总结解题方法和技巧。","每天阅读，拓宽知识面，做好读书笔记。","遇到问题及时请教老师或同学，加强理解与应用。"],
+    activities: ["积极参加中心举办的各项活动", "课堂中主动参与讨论与分享", "与同学相处融洽，乐于助人"],
     futureGoalAcademic: "提高各科成绩，争取进入班级前列。",
     futureGoalAbility: "积极参与更多课外活动，提升自己的组织和沟通能力。",
     futureGoalCharacter: "培养良好的学习和生活习惯，做一个全面发展的学生。",
@@ -188,7 +189,7 @@ export default function StudentReportsPage() {
         language: createLang,
         growth_message: growthMessage,
         subjects,
-        activities: [],
+        activities: isEn ? REPORT_EN_DEFAULT.activities : (settings?.activities?.length ? settings.activities : ["积极参加中心举办的各项活动", "课堂中主动参与讨论与分享", "与同学相处融洽，乐于助人"]),
         homework_comment: "",
         problems,
         improvements,

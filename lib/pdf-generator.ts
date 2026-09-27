@@ -736,6 +736,7 @@ export const REPORT_EN_DEFAULT = {
   growthMessage: 'Growth is not about being the best, but about being willing to keep trying and improving. {studentName}, keep going!',
   problems: ['Problem-solving in Science is not flexible enough and needs more thinking training.', 'Sometimes delays work, which affects its quality.', 'Reading is limited; the breadth of knowledge needs to be widened.'],
   improvements: ['Make a study plan to improve efficiency and reduce delay.', 'Do more practice and summarise problem-solving methods.', 'Read every day to broaden knowledge and keep reading notes.', 'Ask teachers or classmates promptly when facing problems.'],
+  activities: ['Actively took part in activities organised by the centre.', 'Participated in class discussions and shared ideas.', 'Got along well with classmates and was helpful.'],
   goalAcademic: 'Work hard to improve results in all subjects and aim for the top of the class.',
   goalAbility: 'Take part in more activities to improve organisational and communication skills.',
   goalCharacter: 'Develop good learning and life habits and become an all-round student.',
