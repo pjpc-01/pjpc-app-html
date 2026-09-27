@@ -46,6 +46,7 @@ export interface ReportSettingsPreset {
   growthMessage: string
   problems: string[]
   improvements: string[]
+  activities: string[]
   futureGoalAcademic: string
   futureGoalAbility: string
   futureGoalCharacter: string
@@ -82,6 +83,7 @@ const createDefaultPreset = (overrides?: Partial<ReportSettingsPreset>): ReportS
   growthMessage: "成长不在于做得最好，而在于愿意不断尝试、不断进步。{studentName}，继续加油！",
   problems: ["在理科学习中，解题思路不够灵活，需加强思维训练。","有时会因拖延导致作业完成质量不高。","阅读量不足，知识面有待拓宽。"],
   improvements: ["制定学习计划，提高学习效率，减少拖延。","多做练习题，总结解题方法和技巧。","每天阅读，拓宽知识面，做好读书笔记。","遇到问题及时请教老师或同学，加强理解与应用。"],
+  activities: ["积极参加中心举办的各项活动", "课堂中主动参与讨论与分享", "与同学相处融洽，乐于助人"],
   futureGoalAcademic: "提高各科成绩，争取进入班级前列。",
   futureGoalAbility: "积极参与更多课外活动，提升自己的组织和沟通能力。",
   futureGoalCharacter: "培养良好的学习和生活习惯，做一个全面发展的学生。",
@@ -452,6 +454,7 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
           growthMessage: r.growthMessage || "成长不在于做得最好，而在于愿意不断尝试、不断进步。{studentName}，继续加油！",
           problems: r.problems || ["在理科学习中，解题思路不够灵活，需加强思维训练。","有时会因拖延导致作业完成质量不高。","阅读量不足，知识面有待拓宽。"],
           improvements: r.improvements || ["制定学习计划，提高学习效率，减少拖延。","多做练习题，总结解题方法和技巧。","每天阅读，拓宽知识面，做好读书笔记。","遇到问题及时请教老师或同学，加强理解与应用。"],
+          activities: r.activities || [],
           futureGoalAcademic: r.futureGoalAcademic || "提高各科成绩，争取进入班级前列。",
           futureGoalAbility: r.futureGoalAbility || "积极参与更多课外活动，提升自己的组织和沟通能力。",
           futureGoalCharacter: r.futureGoalCharacter || "培养良好的学习和生活习惯，做一个全面发展的学生。",
@@ -915,6 +918,31 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                   ))}
                   <Button variant="outline" size="sm" onClick={() => updateSettings({ improvements: [...(settings.improvements || []), ""] })}>
                     <Plus className="h-3.5 w-3.5 mr-1" />添加建议
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">活动参与模板</CardTitle>
+                  <CardDescription>每条活动占一行，可添加多个；新建报告时会预填到「活动参与」</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {(settings.activities || []).map((act, i) => (
+                    <div key={i} className="flex gap-2">
+                      <Textarea value={act} onChange={e => {
+                        const arr = [...(settings.activities || [])]
+                        arr[i] = e.target.value
+                        updateSettings({ activities: arr })
+                      }} rows={1} className="flex-1" />
+                      <Button variant="ghost" size="sm" className="text-red-400 h-auto" onClick={() => {
+                        const arr = (settings.activities || []).filter((_, idx) => idx !== i)
+                        updateSettings({ activities: arr })
+                      }}>×</Button>
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" onClick={() => updateSettings({ activities: [...(settings.activities || []), ""] })}>
+                    <Plus className="h-3.5 w-3.5 mr-1" />添加活动
                   </Button>
                 </CardContent>
               </Card>

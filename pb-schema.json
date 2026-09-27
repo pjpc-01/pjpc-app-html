@@ -3746,6 +3746,11 @@
           "name": "summary",
           "type": "text",
           "required": false
+        },
+        {
+          "name": "activities",
+          "type": "json",
+          "required": false
         }
       ]
     },
