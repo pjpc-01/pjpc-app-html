@@ -847,4 +847,8 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 
 📌 注：`app/api/teacher-attendance/route.ts:239` 前人已用 `(date ~ "..." || date >= ... || date <= ...)` 绕过，说明这个坑有人踩过但没修全。现已统一为范围比较。
 
-❓ 待定：788 条历史脏数据（签退被存成独立行、`check_out` 空）是否要回填？
+🟢 **历史脏数据已回填**（老板 2026-09-28 选 🅰️）：
+- `student_attendance` 回填 **788** 条、`teacher_attendance` **133** 条（共 921），跳过 1 条（本来就有值）。
+- 配对规则：同一人 + 同一天 + 「签退行之前最近的一条未签退签到行」，一天多条的 20 例也按时间就近配。
+- **没有删除任何 `[签退]` 行** —— 考勤日志页（`/api/attendance/logs`）从这些备注行"拼"签退时间，删了会让页面丢数据；本次只补 `check_out` 空字段。
+- 备份：`/home/pjpc/backups/attendance-checkout-backfill-20260928_214957/attendance-before.json`（921 行改前全量，可回滚）。
