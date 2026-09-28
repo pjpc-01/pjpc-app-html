@@ -2,8 +2,10 @@
 
 import { Suspense } from "react"
 import StudentReportContent from "./StudentReportContent"
+import { useLanguage } from "@/contexts/language-context"
 
 export default function StudentReportPage() {
+  useLanguage()
   return (
     <Suspense fallback={
       <div className="glass-body min-h-screen flex items-center justify-center">

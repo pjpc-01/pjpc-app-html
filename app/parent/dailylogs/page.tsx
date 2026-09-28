@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { useRouter } from "next/navigation"
 import { useStudentDailyLogs, MEAL_LABELS, MOOD_EMOJI, MOOD_LABELS, MEAL_EMOJI } from "@/hooks/useDailyLogs"
+import { useLanguage } from "@/contexts/language-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -32,6 +33,7 @@ export default function ParentDailyLogsPage() {
 
   const { logs, loading } = useStudentDailyLogs(childId || undefined, 50)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const { t } = useLanguage()
 
   if (!childId) {
     return (
@@ -39,9 +41,9 @@ export default function ParentDailyLogsPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <BookOpen className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-500">请从家长首页选择孩子查看每日日志</p>
+            <p className="text-gray-500">{t("请从家长首页选择孩子查看每日日志")}</p>
             <Button variant="outline" className="mt-4" onClick={() => router.push("/parent/dashboard")}>
-              返回首页
+              {t("返回首页")}
             </Button>
           </CardContent>
         </Card>
@@ -64,21 +66,21 @@ export default function ParentDailyLogsPage() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" onClick={() => router.push("/parent/dashboard")}>
-          <ArrowLeft className="h-4 w-4 mr-1" /> 返回
+          <ArrowLeft className="h-4 w-4 mr-1" /> {t("返回")}
         </Button>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">📓 每日日志</h1>
-          <p className="text-sm text-gray-500">查看孩子在安亲班的学习和生活记录</p>
+          <h1 className="text-xl font-bold text-gray-900">📓 {t("每日日志")}</h1>
+          <p className="text-sm text-gray-500">{t("查看孩子在安亲班的学习和生活记录")}</p>
         </div>
       </div>
 
       {/* 最近一级统计 */}
       {!loading && logs.length > 0 && (
         <div className="grid grid-cols-4 gap-2">
-          <MiniStat icon={<CheckCircle2 className="h-4 w-4 text-emerald-500" />} label="功课完成" value={`${logs.filter(l => l.homework_done).length}/${logs.length}`} />
-          <MiniStat icon={<Moon className="h-4 w-4 text-indigo-500" />} label="午睡" value={`${logs.filter(l => l.nap).length}/${logs.length}`} />
-          <MiniStat icon={<Utensils className="h-4 w-4 text-amber-500" />} label="吃完" value={`${logs.filter(l => l.meal === 'ate_all').length}`} />
-          <MiniStat icon={<Heart className="h-4 w-4 text-pink-500" />} label="开心" value={`${logs.filter(l => l.mood === 'happy').length}`} />
+          <MiniStat icon={<CheckCircle2 className="h-4 w-4 text-emerald-500" />} label={t("功课完成")} value={`${logs.filter(l => l.homework_done).length}/${logs.length}`} />
+          <MiniStat icon={<Moon className="h-4 w-4 text-indigo-500" />} label={t("午睡")} value={`${logs.filter(l => l.nap).length}/${logs.length}`} />
+          <MiniStat icon={<Utensils className="h-4 w-4 text-amber-500" />} label={t("吃完")} value={`${logs.filter(l => l.meal === 'ate_all').length}`} />
+          <MiniStat icon={<Heart className="h-4 w-4 text-pink-500" />} label={t("开心")} value={`${logs.filter(l => l.mood === 'happy').length}`} />
         </div>
       )}
 
@@ -94,8 +96,8 @@ export default function ParentDailyLogsPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <BookOpen className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-500">暂无日志记录</p>
-            <p className="text-sm text-gray-400 mt-1">老师会给孩子的每一天做记录</p>
+            <p className="text-gray-500">{t("暂无日志记录")}</p>
+            <p className="text-sm text-gray-400 mt-1">{t("老师会给孩子的每一天做记录")}</p>
           </CardContent>
         </Card>
       )}
@@ -119,12 +121,12 @@ export default function ParentDailyLogsPage() {
                     {/* 功课 */}
                     <div className={`flex items-center gap-2 p-2 rounded-lg text-sm ${log.homework_done ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
                       {log.homework_done ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
-                      {log.homework_done ? '功课已完成' : '功课未完成'}
+                      {log.homework_done ? t("功课已完成") : t("功课未完成")}
                     </div>
                     {/* 午睡 */}
                     <div className={`flex items-center gap-2 p-2 rounded-lg text-sm ${log.nap ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-50 text-gray-500'}`}>
                       <Moon className="h-4 w-4" />
-                      {log.nap ? '午睡了' : '没午睡'}
+                      {log.nap ? t("午睡了") : t("没午睡")}
                     </div>
                   </div>
 
@@ -132,11 +134,11 @@ export default function ParentDailyLogsPage() {
                   <div className="grid grid-cols-2 gap-2">
                     <div className="flex items-center gap-2 p-2 rounded-lg text-sm bg-amber-50 text-amber-700">
                       <span className="text-base">{MEAL_EMOJI[log.meal] || '—'}</span>
-                      {log.meal ? MEAL_LABELS[log.meal] : '无记录'}
+                      {log.meal ? MEAL_LABELS[log.meal] : t("无记录")}
                     </div>
                     <div className="flex items-center gap-2 p-2 rounded-lg text-sm bg-purple-50 text-purple-700">
                       <span className="text-base">{MOOD_EMOJI[log.mood] || '—'}</span>
-                      {log.mood ? MOOD_LABELS[log.mood] : '无记录'}
+                      {log.mood ? MOOD_LABELS[log.mood] : t("无记录")}
                     </div>
                   </div>
 
@@ -158,7 +160,7 @@ export default function ParentDailyLogsPage() {
                   {/* 教师 */}
                   {log.expand?.teacherId?.name && (
                     <div className="text-xs text-gray-400">
-                      记录：{log.expand.teacherId.name}
+                      {t("记录")}：{log.expand.teacherId.name}
                     </div>
                   )}
                 </div>

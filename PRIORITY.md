@@ -82,10 +82,11 @@
   - 教育概览：补了 `fetchSchedules()`，「今日课节」不再恒 0（现 3）✓；「课程 50」→ **81**（= DB 实际 81 门）✓；「班级总览」年级全中文化、人数正确（六 20 / 中一 19 / 四 15 / 三 13 / 五 12 / 一 12 / 二 10 / 中二 8 / 中三 3）✓
   - 系统设置改读真字段 `verified`：**已验证 7 / 未验证 13**（与 DB 一致：verified=true 7 条、其余 13 条）✓
   - 生产库残留测试数据已清：`activities` 全表 **0** 条、`point_logs` 里 `reason='test'` **0** 条 ✓
-- 🆕 **首页 `/` 在已登录状态下会被踢回登录页（硬刷新 / 直接打开）**（2026-09-28 新发现）
+- ✅ **首页 `/` 已登录被踢回登录页**（2026-09-28 发现 → **当天已修**，真浏览器实测通过）
   - 实测：真 Chromium + superuser 代登录（localStorage 有有效会话）打开 `http://127.0.0.1:3001/` → 立刻跳到 `/login`，等 3 秒 / 8 秒都一样；**同一个会话**下另外 38 页全部正常（顶部显示「管理员 Administrator 在线」）→ 不是会话失效，是首页自己的守卫
   - 根因：`app/page.tsx` 的 `if (!loading && !user && !userProfile) router.replace("/login")`，而 `AuthProvider` 的 `loading` 初始为 `false`、会话是**异步**从 authStore 恢复的 → 首次渲染就判「未登录」；`/login` 又没有「已登录自动跳回」，人就停在登录表单
   - 影响：已登录的人刷新首页 / 直接开首页 → 被迫重新登录
+  - ✅ **已修（2026-09-28 当天）**：`app/page.tsx` 的重定向守卫加 `hasStoredSession()` —— 同步读 SDK 写在 localStorage 的 token，只在**真的没有会话**时才踢。实测（真 Chromium）：有会话打开 `/` ✓、刷新 `/` ✓、进 `/students` ✓ 均不被踢；无会话打开 `/` 仍正确跳 `/login` ✓。提交 `19b2457`
 - 🆕 **教师排班「今日排班」恒 0**（2026-09-28 新发现）
   - 实测：卡片「今日排班 0」，但同页月历今天（9/28）明明有 **8 条**（08:30 LIM ZHE HONG、08:30 Josephine Pooi Yin Lee、09:00 Yee Siu Huay、10:45 GAN CHUAN TECK…）
   - 根因：`app/api/schedule/route.ts:19` 的 `date = "2026-09-28"` 是**精确匹配**，而 `schedules.date` 存的是 datetime（`2026-09-28 00:00:00.000Z`）→ 永远查不到。实测 `/api/schedule?date=2026-09-28`（DB 当天 8 条）和 `?date=2026-09-25`（DB 当天 10 条）**都返回 `[]`**
@@ -102,6 +103,10 @@
   - 「逾期支付 **3**」vs 发票管理页「逾期 **0**」：DB 里确有 3 张已开票过期未付（`INV-202609-038` 到期 9/25、`039` 9/25、`170` 9/24），但系统从不把 `status` 置成 `overdue` → 发票管理按 `status==='overdue'` 数，永远 0（另 3 张 8 月单是 carried_forward，不算）
   - 「本月净利润 RM -29,464.**888**」显示 3 位小数：`app/components/finance/FinanceOverview.tsx:146` 直接 `toLocaleString()`，浮点尾数没进位的四舍五入（财务报表页同一数字显示 -29,464.89）
 - ✅ **`/student-reports` 加载**（最后验证：2026-09-28，**已改善**：2.6 秒抓取时已完整出 107 份报告 + 「填写进度」列，上周同一时间点还在「加载中…」）
+- 🆕 **家长端「通知消息」拉的是不存在的集合**（2026-09-28 新发现）
+  - 实测：`/parent/notifications` 请求 `…/api/collections/announcements/records?perPage=20&sort=-created` → **404**（`announcements` 集合根本不存在）；同一页 `parents?filter=userId='…'` → **400**
+  - 影响：家长端公告页**永远**「暂无通知消息」，老师发的公告家长看不到
+  - （i18n 冒烟测试顺带发现；与本次 i18n 改动无关 —— 改动只包了字符串、没碰 URL）
 
 ---
 

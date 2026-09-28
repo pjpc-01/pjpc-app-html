@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
+import { useLanguage } from "@/contexts/language-context"
 import PageLayout from "@/components/layouts/PageLayout"
 import ResourceLibrary from "@/app/components/features/resource-library"
 import { Button } from "@/components/ui/button"
@@ -12,13 +13,14 @@ export default function ResourceLibraryPage() {
   const [showHeader] = useState(false)
   const router = useRouter()
   const { userProfile } = useAuth()
+  const { t } = useLanguage()
 
   return (
     <PageLayout
-      title="资源库系统"
-      description="教学资源共享、学习资料下载和多媒体内容管理"
+      title={t("资源库系统")}
+      description={t("教学资源共享、学习资料下载和多媒体内容管理")}
       userRole={userProfile?.role || 'teacher'}
-      status="系统正常"
+      status={t("系统正常")}
       background="bg-gray-50"
       actions={
         <Button 
@@ -27,7 +29,7 @@ export default function ResourceLibraryPage() {
           className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          返回仪表板
+          {t("返回仪表板")}
         </Button>
       }
     >

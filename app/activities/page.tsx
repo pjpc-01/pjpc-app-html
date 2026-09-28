@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2, X } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
 const PROXY = "/api/pocketbase-proxy/api/collections/activities/records"
 
@@ -29,6 +30,7 @@ const fmtDate = (y: number, m: number, d: number) => `${y}-${String(m).padStart(
 const todayStr = () => fmtDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate())
 
 export default function ActivitiesPage() {
+  const { t } = useLanguage()
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
@@ -69,7 +71,7 @@ export default function ActivitiesPage() {
       })))
       setError("")
     } catch (e) {
-      setError("加载活动失败")
+      setError(t("加载活动失败"))
     }
   }, [year, month])
 
@@ -117,10 +119,10 @@ export default function ActivitiesPage() {
         setForm({ title: "", center: "all", category: "活动", description: "" })
         await loadActivities()
       } else {
-        setError(d?.message || "添加失败")
+        setError(d?.message || t("添加失败"))
       }
     } catch (e) {
-      setError("添加失败")
+      setError(t("添加失败"))
     }
   }
 
@@ -129,7 +131,7 @@ export default function ActivitiesPage() {
       await fetch(`${PROXY}/${id}`, { method: "DELETE" })
       setActivities(prev => prev.filter(a => a.id !== id))
     } catch (e) {
-      setError("删除失败")
+      setError(t("删除失败"))
     }
   }
 
@@ -137,17 +139,17 @@ export default function ActivitiesPage() {
     <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">活动管理</h1>
-          <p className="text-gray-500 mt-1">按日历管理中心活动</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("活动管理")}</h1>
+          <p className="text-gray-500 mt-1">{t("按日历管理中心活动")}</p>
         </div>
         <select
           value={centerFilter}
           onChange={e => setCenterFilter(e.target.value)}
           className="h-9 px-3 text-sm rounded-md border bg-white"
         >
-          <option value="all">全部中心</option>
-          <option value="PU1">中学（PU1）</option>
-          <option value="BATU14">小学（BATU14）</option>
+          <option value="all">{t("全部中心")}</option>
+          <option value="PU1">{t("中学（PU1）")}</option>
+          <option value="BATU14">{t("小学（BATU14）")}</option>
         </select>
       </div>
 
@@ -161,7 +163,7 @@ export default function ActivitiesPage() {
               <CardTitle>{year}年{MONTH_NAMES[month - 1]}</CardTitle>
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="sm" onClick={goToday} className="text-xs h-8">今天</Button>
+              <Button variant="outline" size="sm" onClick={goToday} className="text-xs h-8">{t("今天")}</Button>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={prevMonth}><ChevronLeft className="h-4 w-4" /></Button>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={nextMonth}><ChevronRight className="h-4 w-4" /></Button>
             </div>
@@ -196,11 +198,11 @@ export default function ActivitiesPage() {
                           <div key={a.id} className="flex items-center gap-1" title={a.title}>
                             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${a.center === 'all' ? 'bg-amber-400' : 'bg-violet-400'}`} />
                             <span className="text-[10px] text-gray-600 truncate leading-tight">
-                              {(a.title || "活动").length > 8 ? (a.title || "活动").slice(0, 8) + "…" : (a.title || "活动")}
+                              {(a.title || t("活动")).length > 8 ? (a.title || t("活动")).slice(0, 8) + "…" : (a.title || t("活动"))}
                             </span>
                           </div>
                         ))}
-                        {dayActs.length > 3 && <span className="text-[10px] text-gray-400">+{dayActs.length - 3} 活动</span>}
+                        {dayActs.length > 3 && <span className="text-[10px] text-gray-400">+{dayActs.length - 3} {t("活动")}</span>}
                       </div>
                     </button>
                   )
@@ -220,12 +222,12 @@ export default function ActivitiesPage() {
                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedDate(null)}><X className="h-3.5 w-3.5" /></Button>
                 </div>
                 <Button size="sm" onClick={() => setDialogOpen(true)} className="w-full mb-3 h-8 text-xs gap-1">
-                  <Plus className="h-3 w-3" />添加活动
+                  <Plus className="h-3 w-3" />{t("添加活动")}
                 </Button>
                 {selectedActivities.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">
                     <Calendar className="h-6 w-6 mx-auto mb-1 opacity-30" />
-                    <p className="text-xs">当日无活动</p>
+                    <p className="text-xs">{t("当日无活动")}</p>
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-[400px] overflow-y-auto">
@@ -237,7 +239,7 @@ export default function ActivitiesPage() {
                             <div className="flex items-center gap-1 mt-1 flex-wrap">
                               <Badge variant="secondary" className="text-[9px]">{a.category}</Badge>
                               <Badge variant="outline" className={`text-[9px] ${a.center === 'all' ? "text-amber-600" : "text-blue-600"}`}>
-                                {a.center === 'all' ? "全中心" : (a.center === 'PU1' ? "中学PU1" : "小学BATU14")}
+                                {a.center === 'all' ? t("全中心") : (a.center === 'PU1' ? t("中学PU1") : t("小学BATU14"))}
                               </Badge>
                               {a.description && <span className="text-[10px] text-gray-400 w-full">{a.description}</span>}
                             </div>
@@ -260,28 +262,28 @@ export default function ActivitiesPage() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-4 w-4" /> 添加活动
+              <Plus className="h-4 w-4" /> {t("添加活动")}
               {selectedDate && <span className="text-sm font-normal text-gray-500">· {selectedDate}</span>}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div>
-              <Label className="text-xs">活动名称</Label>
-              <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="例如：运动会" className="mt-1" />
+              <Label className="text-xs">{t("活动名称")}</Label>
+              <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder={t("例如：运动会")} className="mt-1" />
             </div>
             <div>
-              <Label className="text-xs">适用中心</Label>
+              <Label className="text-xs">{t("适用中心")}</Label>
               <Select value={form.center} onValueChange={v => setForm({ ...form, center: v })}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全中心</SelectItem>
-                  <SelectItem value="PU1">中学（PU1）</SelectItem>
-                  <SelectItem value="BATU14">小学（BATU14）</SelectItem>
+                  <SelectItem value="all">{t("全中心")}</SelectItem>
+                  <SelectItem value="PU1">{t("中学（PU1）")}</SelectItem>
+                  <SelectItem value="BATU14">{t("小学（BATU14）")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-xs">分类</Label>
+              <Label className="text-xs">{t("分类")}</Label>
               <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -290,13 +292,13 @@ export default function ActivitiesPage() {
               </Select>
             </div>
             <div>
-              <Label className="text-xs">备注（可选）</Label>
-              <Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="补充说明" className="mt-1" />
+              <Label className="text-xs">{t("备注（可选）")}</Label>
+              <Input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder={t("补充说明")} className="mt-1" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>取消</Button>
-            <Button onClick={addActivity}><Plus className="h-3 w-3 mr-1" />添加</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("取消")}</Button>
+            <Button onClick={addActivity}><Plus className="h-3 w-3 mr-1" />{t("添加")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
