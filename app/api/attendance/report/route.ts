@@ -88,16 +88,26 @@ export async function GET(request: NextRequest) {
 
       for (const r of (res.items || [])) {
         const notes = r.notes || ''
-        const isCheckOut = notes.startsWith('[签退]') || (r.check_out && !notes.startsWith('[签到]'))
-        logs.push({
+        const isLegacyOut = notes.startsWith('[签退]')
+        const _e = {
           person_id: r.student_id,
           person_name: r.student_name,
           person_type: 'student',
           center: r.center,
-          action: isCheckOut ? 'check_out' : 'check_in',
-          timestamp: r.check_in || r.created,
           student_id: r.student_id,
-        })
+        }
+        if (isLegacyOut) {
+          logs.push({ ..._e,
+                      action: 'check_out',
+                      timestamp: r.check_in || r.created, })
+        } else {
+          if (r.check_in) logs.push({ ..._e,
+                      action: 'check_in',
+            timestamp: r.check_in })
+          if (r.check_out) logs.push({ ..._e,
+                      action: 'check_out',
+            timestamp: r.check_out })
+        }
       }
     }
 
@@ -110,17 +120,35 @@ export async function GET(request: NextRequest) {
 
       for (const r of (res.items || [])) {
         const notes = r.notes || ''
-        const isCheckOut = notes.startsWith('[签退]') || (r.check_out && !notes.startsWith('[签到]'))
-        logs.push({
+        const isLegacyOut = notes.startsWith('[签退]')
+        const _e = {
           person_id: r.teacher_id,
           person_name: r.teacher_name,
           person_type: 'teacher',
           center: r.center || r.branch_code,
-          action: isCheckOut ? 'check_out' : 'check_in',
-          timestamp: r.check_in || r.created,
           teacher_id: r.teacher_id,
-        })
+        }
+        if (isLegacyOut) {
+          logs.push({ ..._e,
+                      action: 'check_out',
+                      timestamp: r.check_in || r.created, })
+        } else {
+          if (r.check_in) logs.push({ ..._e,
+                      action: 'check_in',
+            timestamp: r.check_in })
+          if (r.check_out) logs.push({ ..._e,
+                      action: 'check_out',
+            timestamp: r.check_out })
+        }
       }
+    }
+
+    // 去重：配对行（同含 check_in+check_out）与历史遗留的 [签退] 行会指向同一时刻
+    for (let i = logs.length - 1; i >= 0; i--) {
+      const x = logs[i]
+      const dup = logs.findIndex(y => y.person_id === x.person_id && (y.action_key ?? y.action) === (x.action_key ?? x.action) &&
+        new Date(y.timestamp).getTime() === new Date(x.timestamp).getTime())
+      if (dup !== -1 && dup !== i) logs.splice(i, 1)
     }
 
     // ── Group by person ─────────────────────────

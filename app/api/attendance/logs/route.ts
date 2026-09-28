@@ -55,20 +55,32 @@ export async function GET(request: NextRequest) {
 
       for (const r of (res.items || [])) {
         const notes = r.notes || ''
-        const isCheckOut = notes.startsWith('[签退]') || (r.check_out && !notes.startsWith('[签到]'))
-        records.push({
+        const isLegacyOut = notes.startsWith('[签退]')
+        const _e = {
           id: r.id,
           person_id: r.student_id,
           person_name: r.student_name,
           person_type: 'student',
           center: r.center || '',
-          action: isCheckOut ? '签退' : '签到',
-          action_key: isCheckOut ? 'check_out' : 'check_in',
-          timestamp: r.check_in || r.created,
           date: r.date,
           method: r.method || 'nfc',
           notes: r.notes || '',
-        })
+        }
+        if (isLegacyOut) {
+          records.push({ ..._e,
+                      action: '签退',
+                      action_key: 'check_out',
+                      timestamp: r.check_in || r.created, })
+        } else {
+          if (r.check_in) records.push({ ..._e,
+                      action: '签到',
+                      action_key: 'check_in',
+            timestamp: r.check_in })
+          if (r.check_out) records.push({ ..._e,
+                      action: '签退',
+                      action_key: 'check_out',
+            timestamp: r.check_out })
+        }
       }
     }
 
@@ -81,21 +93,41 @@ export async function GET(request: NextRequest) {
 
       for (const r of (res.items || [])) {
         const notes = r.notes || ''
-        const isCheckOut = notes.startsWith('[签退]') || (r.check_out && !notes.startsWith('[签到]'))
-        records.push({
+        const isLegacyOut = notes.startsWith('[签退]')
+        const _e = {
           id: r.id,
           person_id: r.teacher_id,
           person_name: r.teacher_name,
           person_type: 'teacher',
           center: r.center || r.branch_code || '',
-          action: isCheckOut ? '签退' : '签到',
-          action_key: isCheckOut ? 'check_out' : 'check_in',
-          timestamp: r.check_in || r.created,
           date: r.date,
           method: r.method || 'nfc',
           notes: r.notes || '',
-        })
+        }
+        if (isLegacyOut) {
+          records.push({ ..._e,
+                      action: '签退',
+                      action_key: 'check_out',
+                      timestamp: r.check_in || r.created, })
+        } else {
+          if (r.check_in) records.push({ ..._e,
+                      action: '签到',
+                      action_key: 'check_in',
+            timestamp: r.check_in })
+          if (r.check_out) records.push({ ..._e,
+                      action: '签退',
+                      action_key: 'check_out',
+            timestamp: r.check_out })
+        }
       }
+    }
+
+    // 去重：配对行（同含 check_in+check_out）与历史遗留的 [签退] 行会指向同一时刻
+    for (let i = records.length - 1; i >= 0; i--) {
+      const x = records[i]
+      const dup = records.findIndex(y => y.person_id === x.person_id && (y.action_key ?? y.action) === (x.action_key ?? x.action) &&
+        new Date(y.timestamp).getTime() === new Date(x.timestamp).getTime())
+      if (dup !== -1 && dup !== i) records.splice(i, 1)
     }
 
     // Sort by timestamp descending
