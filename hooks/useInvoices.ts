@@ -95,7 +95,12 @@ export const useInvoices = () => {
     for (let attempt = 0; attempt < 5; attempt++) {
       const invoiceNumber = await generateInvoiceNumber()
       try {
-        const result = await createRecord('invoices', { ...invoiceData, invoiceNumber })
+        const result = await createRecord('invoices', {
+          ...invoiceData,
+          // PB 的 amount 字段：与 totalAmount 保持一致（自动开单本来就会写，手动开单以前漏写 → 全库 50+ 张 amount=0）
+          amount: (invoiceData as any).amount ?? invoiceData.totalAmount,
+          invoiceNumber
+        })
         setInvoices(prev => [...prev, result])
         return result
       } catch (e: any) {
@@ -109,6 +114,10 @@ export const useInvoices = () => {
   }, [generateInvoiceNumber])
 
   const updateInvoice = useCallback(async (invoiceId: string, updates: Partial<Invoice>) => {
+    // 金额变了就同步 amount，别让两个字段打架
+    if (updates.totalAmount !== undefined && (updates as any).amount === undefined) {
+      updates = { ...updates, amount: updates.totalAmount }
+    }
     const result = await updateRecord('invoices', invoiceId, updates)
     setInvoices(prev => prev.map(invoice => 
       invoice.id === invoiceId ? { ...invoice, ...updates } : invoice
