@@ -404,7 +404,7 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
             </Link>
             <Button variant="outline" className="w-full h-20 flex flex-col items-center gap-2"
               onClick={() => {
-                toast.info("通知功能", { description: "通知发送功能即将上线" })
+                toast.info(t("通知功能"), { description: "通知发送功能即将上线" })
               }}>
               <MessageSquare className="h-6 w-6" />
               <span className="text-sm">{t("发送通知")}</span>

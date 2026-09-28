@@ -37,6 +37,10 @@ const SAFE_ATTRS = new Set(['placeholder', 'title', 'aria-label', 'alt', 'label'
 // 枚举类字段：这些字段的「值」在显示层走 t()（中文模式原样返回中文，英文模式查直译表）
 // 只在 JSX 子节点位置、且是**纯属性访问**时才包 —— value=/key=/比较/模板串一律不匹配
 const ENUM_FIELDS = new Set(['subject', 'grade']);
+// 弹窗/提示类函数：这些函数的第一个字符串参数是「给人看的」，包 t() —— 已核对不含 console.log/error（日志不翻）
+const DISPLAY_CALLS = new Set(['toast', 'toast.error', 'toast.success', 'toast.info', 'toast.warning', 'toast.loading',
+  'alert', 'window.alert', 'confirm', 'window.confirm', 'prompt', 'window.prompt',
+  'setError', 'setSuccess', 'setMessage', 'setStatus', 'success']);
 const BLOCK_ATTRS = new Set(['value', 'id', 'key', 'name', 'type', 'role', 'htmlFor', 'href', 'src',
   'defaultValue', 'className', 'style', 'accept', 'target', 'rel', 'method', 'action', 'data-testid', 'data-state']);
 
@@ -90,8 +94,8 @@ for (const file of files) {
   // 最近的组件（首字母大写的函数/箭头函数）—— 用它来插 hook
   const nearestComponent = node => {
     for (let n = node.parent; n; n = n.parent) {
-      if (ts.isFunctionDeclaration(n) && n.name && /^[A-Z]/.test(n.name.text) && n.body) return n;
-      if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && /^[A-Z]/.test(n.name.text) &&
+      if (ts.isFunctionDeclaration(n) && n.name && /^(?:[A-Z]|use[A-Z])/.test(n.name.text) && n.body) return n;
+      if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && /^(?:[A-Z]|use[A-Z])/.test(n.name.text) &&
           n.initializer && (ts.isArrowFunction(n.initializer) || ts.isFunctionExpression(n.initializer)) &&
           n.initializer.body) return n.initializer;
     }
@@ -143,6 +147,11 @@ for (const file of files) {
           } else res.skipped.noComponent.push(`${rel}:${line(e.getStart(sf))}`);
         }
       }
+    } else if (ts.isCallExpression(node) && node.arguments.length &&
+               ts.isStringLiteral(node.arguments[0]) && DISPLAY_CALLS.has(node.expression.getText(sf))) {
+      // 弹窗/提示文案：toast.error("删除失败") → toast.error(t("删除失败"))
+      const a0 = node.arguments[0], inner = a0.text;
+      if (CJK.test(inner)) handle(node, inner, a0.getStart(sf), a0.getEnd(), `t(${JSON.stringify(inner)})`);
     }
     ts.forEachChild(node, visit);
   })(sf);

@@ -77,7 +77,7 @@ export default function AttendanceManagement({ teacherId }: AttendanceManagement
         }
       } catch (error) {
         console.error('获取学生数据失败:', error)
-        setError('获取学生数据失败')
+        setError(t("获取学生数据失败"))
       }
     }
     fetchStudents()
@@ -105,10 +105,10 @@ export default function AttendanceManagement({ teacherId }: AttendanceManagement
           }))
           setAttendanceRecords(formattedRecords)
         } else {
-          setError('获取考勤记录失败')
+          setError(t("获取考勤记录失败"))
         }
       } catch (error) {
-        setError('获取考勤记录失败')
+        setError(t("获取考勤记录失败"))
       } finally {
         setLoading(false)
       }
@@ -145,7 +145,7 @@ export default function AttendanceManagement({ teacherId }: AttendanceManagement
         setAttendanceRecords(formattedRecords)
       }
     } catch (error) {
-      setError('刷新数据失败')
+      setError(t("刷新数据失败"))
     } finally {
       setLoading(false)
     }

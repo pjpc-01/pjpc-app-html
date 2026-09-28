@@ -50,7 +50,7 @@ export default function NewInventoryItemPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim()) {
-      setError("请输入商品名称")
+      setError(t("请输入商品名称"))
       return
     }
     setSaving(true)

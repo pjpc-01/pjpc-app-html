@@ -249,9 +249,9 @@ export default function FinancialReports() {
         revenueItems: [{ label: "学费收入", amount: financialSummary.totalIncome }],
         expenseItems: financialSummary.expenses.map(e => ({ label: e.category, amount: e.amount })),
       })
-      toast.success("PDF 报表已下载")
+      toast.success(t("PDF 报表已下载"))
     } catch (err) {
-      toast.error("导出 PDF 失败")
+      toast.error(t("导出 PDF 失败"))
     }
   }
 

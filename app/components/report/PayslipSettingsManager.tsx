@@ -475,7 +475,7 @@ export default function PayslipSettingsManager({ onSettingsChange, activePresetI
 
   const handleDeletePreset = async () => {
     if (presets.length <= 1) {
-      alert("至少需要保留一个预设")
+      alert(t("至少需要保留一个预设"))
       return
     }
     try {

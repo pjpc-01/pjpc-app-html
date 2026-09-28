@@ -45,7 +45,7 @@ export default function ExpenseCategoryManager({
   const handleAdd = async () => {
     const name = newName.trim()
     if (!name) return
-    if (categories.some(c => c.name === name)) { alert("已经有同名类别了"); return }
+    if (categories.some(c => c.name === name)) { alert(t("已经有同名类别了")); return }
     setBusy(true)
     try {
       await onCreate(name, newColor)

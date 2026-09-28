@@ -94,10 +94,10 @@ export default function HomeworkDetailPage() {
         }
       )
       if (!res.ok) throw new Error("Failed to grade")
-      toast.success("批改已保存")
+      toast.success(t("批改已保存"))
       refetch()
     } catch {
-      toast.error("保存失败")
+      toast.error(t("保存失败"))
     } finally {
       setSavingId(null)
     }

@@ -90,6 +90,8 @@ export const FeeCard = ({
     try {
       const r = await fetch(`/api/pocketbase-proxy/api/collections/student_fees/records?perPage=1&filter=(student_id="${studentId}")`)
       const d = await r.json()
+      // 本卡片上其它按天计费项目的天数（本地状态优先）
+      const qtyOf = (id: string) => (id === feeId ? newQty : (dayQuantities[id] || 1))
       if (d.items?.[0]) {
         let items = typeof d.items[0].fee_items === 'string' ? JSON.parse(d.items[0].fee_items) : d.items[0].fee_items
         items = items.map((fi: any) => fi.id === feeId ? { ...fi, quantity: newQty } : fi)
@@ -97,11 +99,43 @@ export const FeeCard = ({
           method: 'PATCH', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fee_items: JSON.stringify(items) }),
         })
-        // Refresh global student-fees state so getStudentAmount / invoice totals
-        // pick up the new quantity immediately (otherwise stays at old 1).
-        await onRefreshFees?.()
+      } else {
+        // ⚠️ 原来这里什么都不做（学生还没有费用记录时，改天数静默失效，
+        //    用户必须先"保存"一次才能加天数）。改为直接建记录，让天数立即生效。
+        const assignedFees = activeFees.filter((f: Fee) => isAssigned(studentId, f.id))
+        const list = assignedFees.some((f: Fee) => f.id === feeId)
+          ? assignedFees
+          : [...assignedFees, activeFees.find((f: Fee) => f.id === feeId)!].filter(Boolean)
+        const items = list.map((f: Fee) => ({
+          id: f.id, name: f.name, amount: f.amount,
+          quantity: f.type === 'daily' ? qtyOf(f.id) : 1,
+          active: true,
+        }))
+        const base = items.reduce((s: number, i: any) => s + (i.amount || 0) * (i.quantity || 1), 0)
+        const adj = getLocalAdjustment(studentId)
+        const disc = adj?.discount || 0
+        const total = Math.max(0, adj?.discount_type === 'percent' ? base - base * (disc / 100) : base - disc)
+        await fetch(`/api/pocketbase-proxy/api/collections/student_fees/records`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            students: studentId, student_id: studentId,
+            fee_items: JSON.stringify(items), totalAmount: total,
+            status: 'pending', assigned_at: new Date().toISOString(),
+            discount: disc, discount_type: adj?.discount_type || 'amount',
+            six_month_fee_ids: adj?.six_month_fee_ids || [],
+            six_month_pay: (adj?.six_month_fee_ids || []).length > 0,
+            six_month_pay_rate: adj?.six_month_pay_rate || 0,
+            six_month_pay_rate_type: adj?.six_month_pay_rate_type || 'percent',
+          }),
+        })
       }
-    } catch {} finally {
+      // Refresh global student-fees state so getStudentAmount / invoice totals
+      // pick up the new quantity immediately (otherwise stays at old 1).
+      await onRefreshFees?.()
+    } catch (e) {
+      // 不吞错误：至少留下痕迹（原来 catch {} 让所有失败无声无息）
+      console.error('[FeeCard] 保存天数失败:', feeId, e)
+    } finally {
       setSavingQty(prev => { const s = new Set(prev); s.delete(feeId); return s })
     }
   }

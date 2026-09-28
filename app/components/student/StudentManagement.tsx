@@ -261,7 +261,7 @@ export default function StudentManagement({
       alert(`数据健康检查完成！\n\n匹配率: ${healthReport.matchRate}\n总学生: ${healthReport.totalStudents}\n总卡片: ${healthReport.totalCards}\n不匹配: ${healthReport.unmatchedCount}\n\n详细报告请查看控制台。`)
     } catch (error) {
       console.error('数据健康检查失败:', error)
-      alert('数据健康检查失败，请查看控制台了解详情。')
+      alert(t("数据健康检查失败，请查看控制台了解详情。"))
     }
   }
 

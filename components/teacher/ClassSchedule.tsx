@@ -335,7 +335,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
                             setSchedule(prev => prev.map(s => 
                               s.id === item.id ? { ...s, status: 'active' } : s
                             ))
-                            toast.success("课程已开始", { description: `${item.subject} - ${item.className}` })
+                            toast.success(t("课程已开始"), { description: `${item.subject} - ${item.className}` })
                           }}>
                           <Play className="h-3 w-3 mr-1" />
                           {t("开始")}
@@ -347,18 +347,18 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
                             setSchedule(prev => prev.map(s => 
                               s.id === item.id ? { ...s, status: 'completed' } : s
                             ))
-                            toast.success("课程已完成", { description: `${item.subject} - ${item.className}` })
+                            toast.success(t("课程已完成"), { description: `${item.subject} - ${item.className}` })
                           }}>
                           <Pause className="h-3 w-3 mr-1" />
                           {t("暂停")}
                         </Button>
                       )}
                       <Button size="sm" variant="outline"
-                        onClick={() => toast.info("编辑课程", { description: "编辑课程详情功能即将上线" })}>
+                        onClick={() => toast.info(t("编辑课程"), { description: "编辑课程详情功能即将上线" })}>
                         <Edit className="h-3 w-3" />
                       </Button>
                       <Button size="sm" variant="outline"
-                        onClick={() => toast.info("调课申请", { description: "调课/换课功能即将上线" })}>
+                        onClick={() => toast.info(t("调课申请"), { description: "调课/换课功能即将上线" })}>
                         <RefreshCw className="h-3 w-3" />
                       </Button>
                     </div>

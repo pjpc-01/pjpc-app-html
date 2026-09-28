@@ -91,7 +91,7 @@ export default function BudgetManagement() {
 
   const handleSave = async () => {
     if (!formData.category || !formData.budgetAmount) {
-      toast.error("请填写类别和预算金额")
+      toast.error(t("请填写类别和预算金额"))
       return
     }
 
@@ -134,12 +134,12 @@ export default function BudgetManagement() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("确定删除此预算？")) return
+    if (!confirm(t("确定删除此预算？"))) return
     try {
       const res = await fetch(`/api/finance/budgets?id=${id}`, { method: "DELETE" })
       const data = await res.json()
       if (data.success) {
-        toast.success("已删除")
+        toast.success(t("已删除"))
         fetchBudgets()
       }
     } catch (err: any) {

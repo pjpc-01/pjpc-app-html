@@ -90,7 +90,7 @@ export default function ParentManagementPage() {
 
   const handleSave = async () => {
     if (!form.name || !form.phone) {
-      toast.error("姓名和电话是必填项")
+      toast.error(t("姓名和电话是必填项"))
       return
     }
     setSaving(true)
@@ -110,20 +110,20 @@ export default function ParentManagementPage() {
       setShowForm(false)
       refetch()
     } catch {
-      toast.error("保存失败")
+      toast.error(t("保存失败"))
     } finally {
       setSaving(false)
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("确定删除此家长记录？")) return
+    if (!confirm(t("确定删除此家长记录？"))) return
     try {
       await fetch(`/api/pocketbase-proxy/api/collections/parents/records/${id}`, { method: "DELETE" })
-      toast.success("家长已删除")
+      toast.success(t("家长已删除"))
       refetch()
     } catch {
-      toast.error("删除失败")
+      toast.error(t("删除失败"))
     }
   }
 

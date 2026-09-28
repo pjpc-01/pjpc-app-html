@@ -85,7 +85,7 @@ export default function UserManagementPage() {
   }
 
   const deleteUser = async (userId: string) => {
-    if (!confirm("确定要删除此用户？")) return
+    if (!confirm(t("确定要删除此用户？"))) return
     setUpdating(userId)
     try { await fetch(`/api/pocketbase-proxy/api/collections/users/records/${userId}`, { method: "DELETE" }); fetchUsers() }
     finally { setUpdating(null) }

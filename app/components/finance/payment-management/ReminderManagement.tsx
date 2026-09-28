@@ -75,7 +75,7 @@ export default function ReminderManagement() {
 
   const handleAddTemplate = () => {
     if (!newTemplate.name || !newTemplate.subject || !newTemplate.body) {
-      alert("请填写完整信息")
+      alert(t("请填写完整信息"))
       return
     }
 
@@ -104,7 +104,7 @@ export default function ReminderManagement() {
 
   const handleUpdateTemplate = () => {
     if (!newTemplate.name || !newTemplate.subject || !newTemplate.body) {
-      alert("请填写完整信息")
+      alert(t("请填写完整信息"))
       return
     }
 
@@ -121,7 +121,7 @@ export default function ReminderManagement() {
   }
 
   const handleDeleteTemplate = (templateId: string) => {
-    if (confirm("确定要删除这个提醒模板吗？")) {
+    if (confirm(t("确定要删除这个提醒模板吗？"))) {
       deleteTemplate(templateId)
     }
   }

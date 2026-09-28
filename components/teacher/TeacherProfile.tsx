@@ -197,13 +197,13 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
 
   // 处理请假申请
   const handleLeaveApplication = async () => {
-    const startDate = prompt('请输入开始日期 (YYYY-MM-DD):')
-    const endDate = prompt('请输入结束日期 (YYYY-MM-DD):')
-    const reason = prompt('请输入请假原因:')
-    const leaveType = prompt('请输入请假类型 (annual/sick/personal/emergency):')
+    const startDate = prompt(t("请输入开始日期 (YYYY-MM-DD):"))
+    const endDate = prompt(t("请输入结束日期 (YYYY-MM-DD):"))
+    const reason = prompt(t("请输入请假原因:"))
+    const leaveType = prompt(t("请输入请假类型 (annual/sick/personal/emergency):"))
 
     if (!startDate || !endDate || !reason || !leaveType) {
-      alert('请填写所有必填字段')
+      alert(t("请填写所有必填字段"))
       return
     }
 
@@ -226,7 +226,7 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
       const result = await response.json()
       
       if (result.success) {
-        alert('请假申请提交成功！')
+        alert(t("请假申请提交成功！"))
         // 重新加载数据
         window.location.reload()
       } else {
@@ -234,7 +234,7 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
       }
     } catch (error) {
       console.error('请假申请失败:', error)
-      alert('请假申请提交失败，请重试')
+      alert(t("请假申请提交失败，请重试"))
     }
   }
 

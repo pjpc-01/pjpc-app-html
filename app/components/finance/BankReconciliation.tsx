@@ -34,7 +34,7 @@ export default function BankReconciliation() {
 
   const handleAddAccount = async () => {
     if (!newAccount.bankName || !newAccount.accountNumber) {
-      toast.error("请填写银行名称和账号")
+      toast.error(t("请填写银行名称和账号"))
       return
     }
     try {
@@ -46,7 +46,7 @@ export default function BankReconciliation() {
         currentBalance: newAccount.currentBalance ? Number(newAccount.currentBalance) : undefined,
         status: "active"
       })
-      toast.success("银行账户已添加")
+      toast.success(t("银行账户已添加"))
       setShowAddAccount(false)
       setNewAccount({ bankName: "", accountNumber: "", accountName: "", openingBalance: "", currentBalance: "" })
     } catch (err: any) {
@@ -56,11 +56,11 @@ export default function BankReconciliation() {
 
   const handleImportTransactions = async () => {
     if (!selectedAccountId) {
-      toast.error("请先选择银行账户")
+      toast.error(t("请先选择银行账户"))
       return
     }
     if (!importText.trim()) {
-      toast.error("请输入交易数据")
+      toast.error(t("请输入交易数据"))
       return
     }
 
@@ -86,7 +86,7 @@ export default function BankReconciliation() {
     }
 
     if (parsed.length === 0) {
-      toast.error("无法解析任何交易记录，格式：日期, 描述, 金额, credit/debit")
+      toast.error(t("无法解析任何交易记录，格式：日期, 描述, 金额, credit/debit"))
       return
     }
 
@@ -102,7 +102,7 @@ export default function BankReconciliation() {
 
   const handleReconciliation = async () => {
     if (!selectedAccountId) {
-      toast.error("请先选择银行账户")
+      toast.error(t("请先选择银行账户"))
       return
     }
     setReconciling(true)
@@ -348,7 +348,7 @@ export default function BankReconciliation() {
                             )}
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteTransaction(txn.id).then(() => toast.success("已删除"))}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteTransaction(txn.id).then(() => toast.success(t("已删除")))}>
                               <Trash2 className="h-3 w-3 text-gray-400" />
                             </Button>
                           </TableCell>

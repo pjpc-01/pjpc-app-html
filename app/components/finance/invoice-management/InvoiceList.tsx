@@ -248,7 +248,7 @@ export function InvoiceList({
                       <Button size="sm" variant="outline" className="h-8 text-xs" onClick={async () => { await fetch("/api/pocketbase-proxy/api/collections/invoices/" + inv.id, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deleted: false }) }); await cascadeChildren(inv.id, "restore"); fetchDeletedInvoices(); }}>
                         {t("恢复")}
                       </Button>
-                      <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={async () => { if (!confirm("确定要永久删除这张发票吗？此操作不可恢复！(关联的收款与收据会一并删除)")) return; await cascadeChildren(inv.id, "purge"); await fetch("/api/pocketbase-proxy/api/collections/invoices/" + inv.id, { method: "DELETE" }); fetchDeletedInvoices(); }}>
+                      <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={async () => { if (!confirm(t("确定要永久删除这张发票吗？此操作不可恢复！(关联的收款与收据会一并删除)"))) return; await cascadeChildren(inv.id, "purge"); await fetch("/api/pocketbase-proxy/api/collections/invoices/" + inv.id, { method: "DELETE" }); fetchDeletedInvoices(); }}>
                         {t("永久删除")}
                       </Button>
                     </div>

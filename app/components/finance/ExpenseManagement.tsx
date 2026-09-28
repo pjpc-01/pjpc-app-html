@@ -198,11 +198,11 @@ export default function ExpenseManagement() {
   }
 
   const handleDeleteExpense = async (id: string) => {
-    if (confirm("确定要删除此支出记录吗？")) {
+    if (confirm(t("确定要删除此支出记录吗？"))) {
       try {
         await deleteExpense(id)
       } catch (err) {
-        alert("删除失败，请重试")
+        alert(t("删除失败，请重试"))
       }
     }
   }

@@ -61,7 +61,7 @@ export default function NewHomeworkPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.title || !form.subject || !form.grade || !form.teacherId || !form.dueDate) {
-      toast.error("请填写必填字段")
+      toast.error(t("请填写必填字段"))
       return
     }
     setSaving(true)
@@ -77,11 +77,11 @@ export default function NewHomeworkPage() {
         body: JSON.stringify(payload),
       })
       if (!res.ok) throw new Error("Failed to create")
-      toast.success("作业已发布")
+      toast.success(t("作业已发布"))
       router.push("/homework")
       router.refresh()
     } catch (err) {
-      toast.error("发布失败，请重试")
+      toast.error(t("发布失败，请重试"))
     } finally {
       setSaving(false)
     }

@@ -292,8 +292,8 @@ export default function StudentForm({
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (!file.type.startsWith('image/')) { alert('请选择图片文件'); return }
-    if (file.size > 2 * 1024 * 1024) { alert('图片不能超过2MB'); return }
+    if (!file.type.startsWith('image/')) { alert(t("请选择图片文件")); return }
+    if (file.size > 2 * 1024 * 1024) { alert(t("图片不能超过2MB")); return }
 
     // Preview
     const reader = new FileReader()
@@ -563,7 +563,7 @@ export default function StudentForm({
                             hasGeneratedStudentId.current = true
                             console.log('手动生成学号:', newStudentId)
                           } else {
-                            alert('请先选择性别、服务类型和中心')
+                            alert(t("请先选择性别、服务类型和中心"))
                           }
                         }}
                        className="whitespace-nowrap"

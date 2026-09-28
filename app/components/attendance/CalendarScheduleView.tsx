@@ -228,7 +228,7 @@ export default function CalendarScheduleView({
       setEvents((prev) => prev.filter((e) => e.id !== evt.id))
     } catch (err) {
       console.error('删除排班失败', err)
-      window.alert('删除失败，请重试')
+      window.alert(t("删除失败，请重试"))
     } finally {
       setDeletingId(null)
     }
@@ -237,7 +237,7 @@ export default function CalendarScheduleView({
   // 添加排班（指定日期 + 课程管理里的课程 + 老师 + 时间段）;编辑时复用
   const handleAddSchedule = async () => {
     if (!selectedDate || !form.courseId || !form.teacherId || !form.start || !form.end) {
-      window.alert('请选择课程、老师并填写时间')
+      window.alert(t("请选择课程、老师并填写时间"))
       return
     }
     setSaving(true)
@@ -308,7 +308,7 @@ export default function CalendarScheduleView({
   // 新增公假
   const handleAddHoliday = async () => {
     if (!holidayForm.date || !holidayForm.name_zh) {
-      window.alert('请填写日期和名称')
+      window.alert(t("请填写日期和名称"))
       return
     }
     setSaving(true)
@@ -331,7 +331,7 @@ export default function CalendarScheduleView({
   }
 
   const handleDeleteHoliday = async (id: string) => {
-    if (!window.confirm('删除这条公假？')) return
+    if (!window.confirm(t("删除这条公假？"))) return
     try {
       await fetch(`/api/pocketbase-proxy/api/collections/public_holidays/records/${id}`, { method: 'DELETE' })
       await fetchHolidaysAndLeaves()

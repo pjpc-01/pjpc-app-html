@@ -157,7 +157,7 @@ export default function TeacherLeaveManagement() {
       }
     } catch (error) {
       console.error('获取请假记录失败:', error)
-      setError('获取请假记录失败')
+      setError(t("获取请假记录失败"))
     }
   }, [filters])
 
@@ -208,7 +208,7 @@ export default function TeacherLeaveManagement() {
         setError(result.error)
       }
     } catch (error) {
-      setError('创建请假申请失败')
+      setError(t("创建请假申请失败"))
     }
   }
 
@@ -244,26 +244,26 @@ export default function TeacherLeaveManagement() {
         setError(result.error)
       }
     } catch (error) {
-      setError('处理审批失败')
+      setError(t("处理审批失败"))
     }
   }
 
   // 删除请假记录
   const handleDeleteLeave = async (recordId: string) => {
-    if (!confirm("确定要删除这条请假记录吗？此操作不可恢复。")) return
+    if (!confirm(t("确定要删除这条请假记录吗？此操作不可恢复。"))) return
     try {
       const response = await fetch(`/api/teacher-leave?id=${recordId}`, {
         method: 'DELETE'
       })
       const result = await response.json()
       if (result.success) {
-        toast.success("删除成功")
+        toast.success(t("删除成功"))
         fetchLeaveRecords()
       } else {
-        toast.error("删除失败", { description: result.error })
+        toast.error(t("删除失败"), { description: result.error })
       }
     } catch (error) {
-      toast.error("删除失败", { description: "网络错误，请重试" })
+      toast.error(t("删除失败"), { description: "网络错误，请重试" })
     }
   }
 

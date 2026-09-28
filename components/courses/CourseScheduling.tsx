@@ -418,7 +418,7 @@ export default function CourseScheduling() {
     if (slot) {
       const used = scheduleEntries.some(e => e.start_time === slot.start && e.end_time === slot.end)
       if (used) {
-        toast.error('该时间段已有排课，无法删除')
+        toast.error(t("该时间段已有排课，无法删除"))
         return
       }
     }
@@ -430,10 +430,10 @@ export default function CourseScheduling() {
         await pbRequest(`${SLOT_BASE}/${target.id}`, { method: 'DELETE' })
       }
       commitSlots(grade, persisted.filter(s => s.id !== id))
-      toast.success('已删除时间段')
+      toast.success(t("已删除时间段"))
     } catch (e) {
       console.error('删除时段失败:', e)
-      toast.error('删除失败')
+      toast.error(t("删除失败"))
     }
   }
 
@@ -446,11 +446,11 @@ export default function CourseScheduling() {
 
   async function saveEditSlot() {
     if (!editSlotStart || !editSlotEnd) {
-      toast.error('请填写开始和结束时间')
+      toast.error(t("请填写开始和结束时间"))
       return
     }
     if (editSlotStart >= editSlotEnd) {
-      toast.error('结束时间必须晚于开始时间')
+      toast.error(t("结束时间必须晚于开始时间"))
       return
     }
     try {
@@ -466,20 +466,20 @@ export default function CourseScheduling() {
       }
       commitSlots(grade, edited)
       setEditingSlotId(null)
-      toast.success('已更新时间段')
+      toast.success(t("已更新时间段"))
     } catch (e) {
       console.error('编辑时段失败:', e)
-      toast.error('保存失败')
+      toast.error(t("保存失败"))
     }
   }
 
   async function addInlineSlot() {
     if (!inlineNewStart || !inlineNewEnd) {
-      toast.error('请填写开始和结束时间')
+      toast.error(t("请填写开始和结束时间"))
       return
     }
     if (inlineNewStart >= inlineNewEnd) {
-      toast.error('结束时间必须晚于开始时间')
+      toast.error(t("结束时间必须晚于开始时间"))
       return
     }
     try {
@@ -493,10 +493,10 @@ export default function CourseScheduling() {
       setInlineAdding(false)
       setInlineNewStart('08:00')
       setInlineNewEnd('08:45')
-      toast.success('已添加时间段')
+      toast.success(t("已添加时间段"))
     } catch (e) {
       console.error('添加时段失败:', e)
-      toast.error('添加失败')
+      toast.error(t("添加失败"))
     }
   }
 
@@ -518,7 +518,7 @@ export default function CourseScheduling() {
     if (!ensureEditing()) return
     if (!targetDay || !targetSlot) return
     if (!assignCourseId) {
-      toast.error('请选择课程')
+      toast.error(t("请选择课程"))
       return
     }
     // 冲突检查：同一时间段可排多班（允许同一天同一时间同一年级排两个班）
@@ -531,7 +531,7 @@ export default function CourseScheduling() {
       start < e.end_time && e.start_time < end
     )
     if (conflict) {
-      toast.error('该课程在该时间段已排过')
+      toast.error(t("该课程在该时间段已排过"))
       return
     }
 
@@ -557,7 +557,7 @@ export default function CourseScheduling() {
           notes: targetDay,
         }),
       })
-      toast.success('课程已放入时间表')
+      toast.success(t("课程已放入时间表"))
       setAssignCourseDialog(false)
       loadData()
     } catch (err) {
@@ -577,7 +577,7 @@ export default function CourseScheduling() {
     if (!ensureEditing()) return
     if (!targetEntry) return
     if (!assignTeacherId) {
-      toast.error('请选择教师')
+      toast.error(t("请选择教师"))
       return
     }
     try {
@@ -589,7 +589,7 @@ export default function CourseScheduling() {
           teacher_name: teacher?.name || '',
         }),
       })
-      toast.success('已指定教师')
+      toast.success(t("已指定教师"))
       setAssignTeacherDialog(false)
       loadData()
     } catch (err) {
@@ -601,7 +601,7 @@ export default function CourseScheduling() {
     if (!ensureEditing()) return
     try {
       await pbRequest(`${PROXY_BASE}/${entry.id}`, { method: 'DELETE' })
-      toast.success('排课已删除')
+      toast.success(t("排课已删除"))
       loadData()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '删除排课失败')
@@ -627,7 +627,7 @@ export default function CourseScheduling() {
   // 非编辑态：锁定所有改动入口
   function ensureEditing(): boolean {
     if (!isEditing) {
-      toast.info('请先点击右上角「编辑」进入编辑状态')
+      toast.info(t("请先点击右上角「编辑」进入编辑状态"))
       return false
     }
     return true
@@ -778,9 +778,9 @@ export default function CourseScheduling() {
                   setIsSavingSchedule(true)
                   try {
                     await handleSaveTimetable()
-                    toast.success('时间表已保存，排班已更新')
+                    toast.success(t("时间表已保存，排班已更新"))
                   } catch (e) {
-                    toast.error('保存失败')
+                    toast.error(t("保存失败"))
                   } finally {
                     setIsSavingSchedule(false)
                   }

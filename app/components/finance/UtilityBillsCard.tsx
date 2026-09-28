@@ -46,7 +46,7 @@ export default function UtilityBillsCard() {
         if (Array.isArray(data.bills)) setBills(data.bills)
         else if (data.error) setError(data.error)
       })
-      .catch(() => setError("读取失败"))
+      .catch(() => setError(t("读取失败")))
       .finally(() => setLoading(false))
   }, [])
 

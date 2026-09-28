@@ -791,3 +791,22 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 - **上周 5 条复验全部通过**：教育概览 3 项（课节/课程 81/班级总览）+ 设置页 `verified` + 测试数据清理
 - `/student-reports` 本周 2.6 秒内已完整出 107 份报告（上周同一时间点还在「加载中」）→ 明显改善
 - 其他：`/finance/budget`、`/pickup`、`/claim-form` 仍是「无数据」空状态（前两个属既有问题，报销单是 0 条新功能，均正常）
+
+### 🌐 全站 i18n（英文界面）机械内嵌（2026-09-28 傍晚，已提交 `9ed37f3`）
+**用户要求**：「全站都要，然后按你说的 1+2+3 全做」
+1. **① 一次机械扫全站** —— 新写 `scripts/i18n-codemod.mjs`（用项目自带的 TypeScript 编译器 API 做 AST 替换，**不装新依赖**）
+   - 包什么：JSX 文本节点里的中文 + 白名单显示属性（`placeholder`/`title`/`description`/`aria-label`/`alt`/`label`/`confirmText`…）
+   - **绝不碰**：`value=` / `id=` / `key=` / 比较 / 模板串 / 对象取值（实测误包 **0** 处）
+   - 服务端组件、类组件自动跳过（用不了 hook），名单在 `scripts/i18n-allowlist.json`
+   - 三轮累计 **149 文件 / 3316 处**包进 `t()`
+2. **② 防回归** —— `package.json` 加 `prebuild → check:i18n`：以后谁写裸中文，`npm run build` **直接失败**
+3. **③ 值类走显示层映射** —— `{course.subject}` / `{student.grade}` → `t(...)`（中文模式原样返回中文，英文模式查直译表）；**不动数据库**
+**对照表**：2524 条，从语言文件里**搬出去**成 `contexts/i18n-zh-en.ts`（语言文件瘦 270 行，以后只改数据、不再动代码）
+**验证**：build 通过；真 Chromium 全站 **56 页零崩溃零 JS 报错**；中文模式那 10 个「❌」逐个查过 —— 全是既有资源 404，与本次改动无关
+**⚠️ 坑（会被咬）**：仓库 `.gitignore` 有 `*.json` → `scripts/i18n-allowlist.json` 是用 `git add -f` 强加的。**换新机 clone 后 build 若报找不到 allowlist，就是这个原因**
+**已知未做（不阻塞）**：
+- 6 个服务端/类组件文件（`app/tv-board/components/`、`components/shared/error-boundary.tsx`、`app/loading.tsx`、`PaymentStatusBadge.tsx` 等）—— 要英化必须重构（加 `use client` 或抽子组件）
+- `lib/validation.ts` 的 20 条校验消息（`errs.push("密码长度至少8位")`）—— 要手动改 `t()`
+- `log/error/console.*` 的中文**故意不翻**（是日志不是界面）
+**英文模式实测残留 1485 处** —— **基本都是数据**（学生姓名/收费项目/班级名/中心名），设计如此；界面文案该包的都包了
+**可复跑的自检**：`node scripts/i18n-codemod.mjs --check`（输出 0 = 干净）

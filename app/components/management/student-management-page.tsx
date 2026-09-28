@@ -357,17 +357,17 @@ export default function StudentManagementPage() {
     if (!editingStudent) return
     try {
       await updateStudent(editingStudent.id, studentData)
-      toast.success("学生信息已更新")
+      toast.success(t("学生信息已更新"))
       setEditingStudent(null)
       refetch()
     } catch (error: any) {
-      toast.error("更新失败", { description: error.message || "请重试" })
+      toast.error(t("更新失败"), { description: error.message || "请重试" })
       console.error("Error updating student:", error)
     }
   }
 
   const handleDeleteStudent = async (studentId: string) => {
-    if (!confirm("确定要删除此学生？此操作不可撤销。")) return
+    if (!confirm(t("确定要删除此学生？此操作不可撤销。"))) return
     try {
       await deleteStudent(studentId)
       refetch()
@@ -483,7 +483,7 @@ export default function StudentManagementPage() {
         body: formData,
       })
       if (!response.ok) throw new Error('Import failed')
-      alert('导入成功！')
+      alert(t("导入成功！"))
       refetch()
     } catch (e) {
       alert('导入失败: ' + (e as Error).message)

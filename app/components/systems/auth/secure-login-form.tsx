@@ -231,20 +231,20 @@ export default function SecureLoginForm() {
 
     // 验证表单
     if (registerData.password !== registerData.confirmPassword) {
-      setError("密码确认不匹配")
+      setError(t("密码确认不匹配"))
       setIsLoading(false)
       return
     }
 
     if (!registerData.role) {
-      setError("请选择用户角色")
+      setError(t("请选择用户角色"))
       setIsLoading(false)
       return
     }
 
     try {
       await signUp(registerData.email, registerData.password, registerData.name, registerData.role)
-      setSuccess("注册成功！请检查邮箱验证邮件，并等待管理员审核。")
+      setSuccess(t("注册成功！请检查邮箱验证邮件，并等待管理员审核。"))
       setRegisterData({
         email: "",
         password: "",
@@ -266,7 +266,7 @@ export default function SecureLoginForm() {
 
     try {
       await resetPassword(resetEmail)
-      setSuccess("密码重置邮件已发送，请检查您的邮箱。")
+      setSuccess(t("密码重置邮件已发送，请检查您的邮箱。"))
       setResetEmail("")
     } catch (error: any) {
       setError(error.message)

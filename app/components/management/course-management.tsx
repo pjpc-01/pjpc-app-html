@@ -44,7 +44,7 @@ export default function CourseManagement() {
 
     // 验证必填字段
     if (!newCourse.title || !newCourse.subject) {
-      alert('请填写课程名称和科目')
+      alert(t("请填写课程名称和科目"))
       return
     }
 
@@ -65,7 +65,7 @@ export default function CourseManagement() {
         max_students: 30,
         status: 'active'
       })
-      alert('课程创建成功！')
+      alert(t("课程创建成功！"))
     }
   }
 
@@ -74,7 +74,7 @@ export default function CourseManagement() {
 
     // 验证必填字段
     if (!newCourse.title || !newCourse.subject) {
-      alert('请填写课程名称和科目')
+      alert(t("请填写课程名称和科目"))
       return
     }
 
@@ -91,15 +91,15 @@ export default function CourseManagement() {
         max_students: 30,
         status: 'active'
       })
-      alert('课程更新成功！')
+      alert(t("课程更新成功！"))
     }
   }
 
   const handleDeleteCourse = async (courseId: string) => {
-    if (confirm('确定要删除这个课程吗？删除后无法恢复！')) {
+    if (confirm(t("确定要删除这个课程吗？删除后无法恢复！"))) {
       const result = await deleteCourse(courseId)
       if (result) {
-        alert('课程删除成功！')
+        alert(t("课程删除成功！"))
       }
     }
   }

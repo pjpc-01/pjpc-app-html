@@ -179,7 +179,7 @@ export const StudentFeeMatrix = () => {
         const result = await exitEditMode()
         if (result?.failures?.length === 0) setEditMode(false)
         else alert(`保存失败：${result?.failures?.length || 0} 条未保存`)
-      } catch { alert('保存失败') }
+      } catch { alert(t("保存失败")) }
       finally { setIsSaving(false) }
     }
   }
