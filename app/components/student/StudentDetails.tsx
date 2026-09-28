@@ -56,10 +56,10 @@ export default function StudentDetails({
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2 text-xl">
               <User className="h-6 w-6" />
-              学生详细信息
+              {t("学生详细信息")}
             </SheetTitle>
             <SheetDescription>
-              无法获取学生信息，请检查数据库连接。
+              {t("无法获取学生信息，请检查数据库连接。")}
             </SheetDescription>
           </SheetHeader>
           <div className="p-8 text-center mt-10">
@@ -99,8 +99,8 @@ export default function StudentDetails({
 
           <div className="pt-14 px-6 pb-6 space-y-6">
             <SheetHeader className="sr-only">
-              <SheetTitle>{student.student_name} - 学生详细信息</SheetTitle>
-              <SheetDescription>查看学生的个人、学校及接送详细资料</SheetDescription>
+              <SheetTitle>{student.student_name} {t("- 学生详细信息")}</SheetTitle>
+              <SheetDescription>{t("查看学生的个人、学校及接送详细资料")}</SheetDescription>
             </SheetHeader>
 
             {/* 姓名与状态 */}
@@ -116,7 +116,7 @@ export default function StudentDetails({
               </div>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={onEdit} className="h-8 px-2">
-                  <Edit className="h-3 w-3 mr-1" /> 编辑
+                  <Edit className="h-3 w-3 mr-1" /> {t("编辑")}
                 </Button>
               </div>
             </div>
@@ -130,7 +130,7 @@ export default function StudentDetails({
                 onClick={() => window.open(`tel:${student.father_phone || student.mother_phone || student.parentPhone}`)}
               >
                 <Phone className="h-4 w-4 text-blue-600" />
-                <span className="text-xs">父亲电话</span>
+                <span className="text-xs">{t("父亲电话")}</span>
               </Button>
               <Button 
                 variant="outline" 
@@ -148,33 +148,33 @@ export default function StudentDetails({
                 onClick={onDelete}
               >
                 <AlertTriangle className="h-4 w-4 text-white" />
-                <span className="text-xs text-white">删除记录</span>
+                <span className="text-xs text-white">{t("删除记录")}</span>
               </Button>
             </div>
 
             {/* 详细信息标签页 */}
             <Tabs defaultValue="basic" className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-4">
-                <TabsTrigger value="basic">基础</TabsTrigger>
-                <TabsTrigger value="school">学校</TabsTrigger>
-                <TabsTrigger value="pickup">接送</TabsTrigger>
+                <TabsTrigger value="basic">{t("基础")}</TabsTrigger>
+                <TabsTrigger value="school">{t("学校")}</TabsTrigger>
+                <TabsTrigger value="pickup">{t("接送")}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="basic" className="space-y-4">
-                <DetailSection title="个人身份">
+                <DetailSection title={t("个人身份")}>
                   <DetailRow label={t('student.date_of_birth')} value={student.dob ? new Date(student.dob).toLocaleDateString('zh-CN') : '-'} icon={<Calendar className="h-3 w-3" />} />
                   <DetailRow label={t('student.gender')} value={student.gender === 'male' ? '男' : student.gender === 'female' ? '女' : '-'} icon={<User className="h-3 w-3" />} />
-                  <DetailRow label="NRIC/护照" value={student.nric || '-'} icon={<FileText className="h-3 w-3" />} />
+                  <DetailRow label={t("NRIC/护照")} value={student.nric || '-'} icon={<FileText className="h-3 w-3" />} />
                 </DetailSection>
 
                 <DetailSection title={t('teacher.contact_info')}>
-                  <DetailRow label="父亲姓名" value={student.father_name || student.fatherName || '-'} icon={<User className="h-3 w-3" />} />
-                  <DetailRow label="母亲姓名" value={student.mother_name || student.motherName || '-'} icon={<User className="h-3 w-3" />} />
-                  <DetailRow label="父亲电话" value={student.father_phone || student.fatherPhone || '-'} icon={<Phone className="h-3 w-3" />} />
-                  <DetailRow label="母亲电话" value={student.mother_phone || student.motherPhone || '-'} icon={<Phone className="h-3 w-3" />} />
+                  <DetailRow label={t("父亲姓名")} value={student.father_name || student.fatherName || '-'} icon={<User className="h-3 w-3" />} />
+                  <DetailRow label={t("母亲姓名")} value={student.mother_name || student.motherName || '-'} icon={<User className="h-3 w-3" />} />
+                  <DetailRow label={t("父亲电话")} value={student.father_phone || student.fatherPhone || '-'} icon={<Phone className="h-3 w-3" />} />
+                  <DetailRow label={t("母亲电话")} value={student.mother_phone || student.motherPhone || '-'} icon={<Phone className="h-3 w-3" />} />
                 </DetailSection>
 
-                <DetailSection title="居住地址">
+                <DetailSection title={t("居住地址")}>
                   <div className="flex justify-between items-start py-2">
                     <span className="text-sm font-medium text-slate-500">{t('parent.home_address')}</span>
                     <div className="text-right">
@@ -186,7 +186,7 @@ export default function StudentDetails({
                           className="h-auto p-0 text-xs text-blue-600"
                           onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(student.home_address)}`, '_blank')}
                         >
-                          <ExternalLink className="h-3 w-3 inline mr-1" /> 在地图中查看
+                          <ExternalLink className="h-3 w-3 inline mr-1" /> {t("在地图中查看")}
                         </Button>
                       )}
                     </div>
@@ -195,19 +195,19 @@ export default function StudentDetails({
               </TabsContent>
 
               <TabsContent value="school" className="space-y-4">
-                <DetailSection title="学习状态">
+                <DetailSection title={t("学习状态")}>
                   <DetailRow label={t('student.school')} value={student.school || '-'} icon={<School className="h-3 w-3" />} />
                   <DetailRow label={t('student.grade')} value={convertGradeToChinese(student.standard || student.grade || '') || '-'} icon={<GraduationCap className="h-3 w-3" />} />
                 </DetailSection>
 
-                <DetailSection title="中心服务">
+                <DetailSection title={t("中心服务")}>
                   <DetailRow label={t('teacher.center')} value={student.center || '-'} icon={<MapPin className="h-3 w-3" />} />
-                  <DetailRow label="注册日期" value={student.registrationDate ? new Date(student.registrationDate).toLocaleDateString('zh-CN') : '-'} icon={<Calendar className="h-3 w-3" />} />
+                  <DetailRow label={t("注册日期")} value={student.registrationDate ? new Date(student.registrationDate).toLocaleDateString('zh-CN') : '-'} icon={<Calendar className="h-3 w-3" />} />
                 </DetailSection>
 
-                <DetailSection title="费用状态">
+                <DetailSection title={t("费用状态")}>
                   <div className="flex justify-between items-center py-2">
-                    <span className="text-sm font-medium text-slate-500">学费状态</span>
+                    <span className="text-sm font-medium text-slate-500">{t("学费状态")}</span>
                     <Badge variant={student.tuitionStatus === 'paid' ? 'default' : student.tuitionStatus === 'overdue' ? 'destructive' : 'secondary'} className="text-xs">
                       {student.tuitionStatus === 'pending' ? '待付款' : student.tuitionStatus === 'paid' ? '已付款' : student.tuitionStatus === 'partial' ? '部分付款' : student.tuitionStatus === 'overdue' ? '逾期' : '-'}
                     </Badge>
@@ -216,18 +216,18 @@ export default function StudentDetails({
               </TabsContent>
 
               <TabsContent value="pickup" className="space-y-4">
-                <DetailSection title="健康与医疗">
+                <DetailSection title={t("健康与医疗")}>
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                     <div className="flex items-center gap-2 text-amber-800 mb-1">
                       <Heart className="h-3 w-3" />
-                      <span className="text-xs font-semibold">健康备注</span>
+                      <span className="text-xs font-semibold">{t("健康备注")}</span>
                     </div>
                     <p className="text-xs text-amber-700">{student.healthInfo || '无特殊健康记录'}</p>
                   </div>
                 </DetailSection>
 
-                <DetailSection title="接送安排">
-                  <DetailRow label="接送方式" value={student.pickupMethod === 'parent' ? '父母接送' : student.pickupMethod === 'guardian' ? '监护人接送' : student.pickupMethod === 'authorized' ? '授权人接送' : student.pickupMethod === 'public' ? '公共交通' : student.pickupMethod === 'walking' ? '步行' : '-'} icon={<Car className="h-3 w-3" />} />
+                <DetailSection title={t("接送安排")}>
+                  <DetailRow label={t("接送方式")} value={student.pickupMethod === 'parent' ? '父母接送' : student.pickupMethod === 'guardian' ? '监护人接送' : student.pickupMethod === 'authorized' ? '授权人接送' : student.pickupMethod === 'public' ? '公共交通' : student.pickupMethod === 'walking' ? '步行' : '-'} icon={<Car className="h-3 w-3" />} />
                   
                   <div className="space-y-2 mt-2">
                     {student.authorizedPickup1Name && (

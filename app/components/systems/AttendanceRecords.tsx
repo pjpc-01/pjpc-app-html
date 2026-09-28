@@ -120,12 +120,12 @@ export default function AttendanceRecords({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5" />
-            打卡记录
+            {t("打卡记录")}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button onClick={onExportRecords} variant="outline" size="sm">
               <Download className="h-4 w-4 mr-1" />
-              导出
+              {t("导出")}
             </Button>
           </div>
         </div>
@@ -137,7 +137,7 @@ export default function AttendanceRecords({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="搜索学生姓名、卡片号或设备名称..."
+                placeholder={t("搜索学生姓名、卡片号或设备名称...")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -162,7 +162,7 @@ export default function AttendanceRecords({
               <SelectItem value="all">{t('common.all_status')}</SelectItem>
               <SelectItem value="success">{t('common.success')}</SelectItem>
               <SelectItem value="failed">{t('finance.failed')}</SelectItem>
-              <SelectItem value="duplicate">重复</SelectItem>
+              <SelectItem value="duplicate">{t("重复")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -192,10 +192,10 @@ export default function AttendanceRecords({
         {/* 批量操作 */}
         {selectedRecords.length > 0 && (
           <div className="flex items-center gap-2 p-4 bg-blue-50 rounded-lg mb-4">
-            <span className="text-sm font-medium">已选择 {selectedRecords.length} 条记录</span>
+            <span className="text-sm font-medium">{t("已选择")} {selectedRecords.length} {t("条记录")}</span>
             <Button onClick={bulkDeleteRecords} size="sm" variant="destructive">
               <Trash2 className="h-3 w-3 mr-1" />
-              批量删除
+              {t("批量删除")}
             </Button>
           </div>
         )}
@@ -212,8 +212,8 @@ export default function AttendanceRecords({
               </TableHead>
               <TableHead>{t('announcement.time')}</TableHead>
               <TableHead>{t('common.student')}</TableHead>
-              <TableHead>卡片号</TableHead>
-              <TableHead>设备</TableHead>
+              <TableHead>{t("卡片号")}</TableHead>
+              <TableHead>{t("设备")}</TableHead>
               <TableHead>{t('common.type')}</TableHead>
               <TableHead>{t('teacher.status')}</TableHead>
             </TableRow>
@@ -254,7 +254,7 @@ export default function AttendanceRecords({
           <div className="text-center py-8">
             <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">{t('common.no_records')}</h3>
-            <p className="text-gray-600">没有找到符合条件的打卡记录</p>
+            <p className="text-gray-600">{t("没有找到符合条件的打卡记录")}</p>
           </div>
         )}
       </CardContent>

@@ -88,29 +88,29 @@ export default function NewHomeworkPage() {
   }
 
   return (
-    <PageLayout title="布置作业" description="为学生布置新的作业" backUrl="/homework" userRole="admin">
+    <PageLayout title={t("布置作业")} description={t("为学生布置新的作业")} backUrl="/homework" userRole="admin">
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader>
-            <CardTitle>作业信息</CardTitle>
+            <CardTitle>{t("作业信息")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Title */}
               <div className="md:col-span-2">
-                <Label htmlFor="title">作业标题 *</Label>
+                <Label htmlFor="title">{t("作业标题 *")}</Label>
                 <Input
                   id="title"
                   value={form.title}
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                  placeholder="例如：单元练习一"
+                  placeholder={t("例如：单元练习一")}
                   required
                 />
               </div>
 
               {/* Subject */}
               <div>
-                <Label>科目 *</Label>
+                <Label>{t("科目 *")}</Label>
                 <Select
                   value={form.subject}
                   onValueChange={(v) => setForm((f) => ({ ...f, subject: v }))}
@@ -128,13 +128,13 @@ export default function NewHomeworkPage() {
 
               {/* Grade */}
               <div>
-                <Label>年级 *</Label>
+                <Label>{t("年级 *")}</Label>
                 <Select
                   value={form.grade}
                   onValueChange={(v) => setForm((f) => ({ ...f, grade: v }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="选择年级" />
+                    <SelectValue placeholder={t("选择年级")} />
                   </SelectTrigger>
                   <SelectContent>
                     {GRADES.map((g) => (
@@ -165,7 +165,7 @@ export default function NewHomeworkPage() {
 
               {/* Teacher */}
               <div>
-                <Label>布置教师 *</Label>
+                <Label>{t("布置教师 *")}</Label>
                 <Select
                   value={form.teacherId}
                   onValueChange={(v) => setForm((f) => ({ ...f, teacherId: v }))}
@@ -183,7 +183,7 @@ export default function NewHomeworkPage() {
 
               {/* Dates */}
               <div>
-                <Label>布置日期</Label>
+                <Label>{t("布置日期")}</Label>
                 <Input
                   type="date"
                   value={form.assignedDate}
@@ -191,7 +191,7 @@ export default function NewHomeworkPage() {
                 />
               </div>
               <div>
-                <Label>截止日期 *</Label>
+                <Label>{t("截止日期 *")}</Label>
                 <Input
                   type="date"
                   value={form.dueDate}
@@ -202,12 +202,12 @@ export default function NewHomeworkPage() {
 
               {/* Description */}
               <div className="md:col-span-2">
-                <Label htmlFor="description">作业描述</Label>
+                <Label htmlFor="description">{t("作业描述")}</Label>
                 <Textarea
                   id="description"
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  placeholder="作业内容和要求..."
+                  placeholder={t("作业内容和要求...")}
                   rows={4}
                 />
               </div>
@@ -216,7 +216,7 @@ export default function NewHomeworkPage() {
             {/* Actions */}
             <div className="flex gap-2 justify-end pt-4">
               <Button type="button" variant="outline" onClick={() => router.back()}>
-                取消
+                {t("取消")}
               </Button>
               <Button type="submit" disabled={saving}>
                 <Save className="h-4 w-4 mr-2" />

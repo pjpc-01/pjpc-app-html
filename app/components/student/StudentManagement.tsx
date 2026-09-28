@@ -7,6 +7,7 @@ import StudentDetails from "./StudentDetails"
 import StudentBulkActions from "./StudentBulkActions"
 import StudentFilters from "./StudentFilters"
 import StudentStats from "./StudentStats"
+import { useLanguage } from "@/contexts/language-context";
 
 interface StudentManagementProps {
   dataType?: 'primary' | 'secondary'
@@ -27,6 +28,7 @@ export default function StudentManagement({
   buttonColor = 'default',
   userRole = 'admin'
 }: StudentManagementProps) {
+  const { t } = useLanguage();
   const { students, loading, error, refetch, addStudent, updateStudent, deleteStudent } = useStudents()
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -329,7 +331,7 @@ export default function StudentManagement({
               onClick={handleDataHealthCheck}
               className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
             >
-              🔍 数据检查
+              {t("🔍 数据检查")}
             </Button>
             <Button 
               onClick={() => setIsAddDialogOpen(true)} 
@@ -396,8 +398,8 @@ export default function StudentManagement({
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-600">
-            显示第 {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredStudents.length)} 条，
-            共 {filteredStudents.length} 条记录
+            {t("显示第")} {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredStudents.length)} 条，
+            共 {filteredStudents.length} {t("条记录")}
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -406,7 +408,7 @@ export default function StudentManagement({
               onClick={handlePrevPage}
               disabled={!hasPrevPage}
             >
-              上一页
+              {t("上一页")}
             </Button>
             
             {/* 页码显示 */}
@@ -443,7 +445,7 @@ export default function StudentManagement({
               onClick={handleNextPage}
               disabled={!hasNextPage}
             >
-              下一页
+              {t("下一页")}
             </Button>
           </div>
         </div>

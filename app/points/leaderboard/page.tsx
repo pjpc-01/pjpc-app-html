@@ -6,6 +6,7 @@ import PageLayout from "@/components/layouts/PageLayout"
 import { Badge } from "@/components/ui/badge"
 import { Trophy, X } from "lucide-react"
 import { LeaderboardView, LeaderboardList, type LeaderboardStudent, type CenterInfo } from "@/components/shared/LeaderboardList"
+import { useLanguage } from "@/contexts/language-context";
 
 interface RankingStudent {
   id: string
@@ -19,13 +20,14 @@ interface RankingStudent {
 
 // ─── Full-screen overlay ────────────────────────────────
 function FullscreenOverlay({ students, centerName, onClose }: { students: RankingStudent[]; centerName: string; onClose: () => void }) {
+  const { t } = useLanguage();
   return (
     <div className="fixed inset-0 z-50 bg-gray-900 flex flex-col">
       <div className="flex items-center justify-between px-4 py-2 bg-gray-800/80 text-white shrink-0">
         <div className="flex items-center gap-3">
           <Trophy className="h-4 w-4 text-amber-400" />
-          <span className="text-sm font-semibold">{centerName || "全部"} · 积分排行榜</span>
-          <Badge className="text-[10px] bg-gray-700 text-gray-300">{students.length} 人</Badge>
+          <span className="text-sm font-semibold">{centerName || "全部"} {t("· 积分排行榜")}</span>
+          <Badge className="text-[10px] bg-gray-700 text-gray-300">{students.length} {t("人")}</Badge>
         </div>
         <button onClick={onClose}
           className="inline-flex items-center justify-center rounded-md text-white/60 hover:text-white h-7 w-7 hover:bg-white/10 transition-colors">
@@ -40,6 +42,7 @@ function FullscreenOverlay({ students, centerName, onClose }: { students: Rankin
 }
 
 export default function LeaderboardPage() {
+  const { t } = useLanguage();
   const router = useRouter()
   const searchParams = useSearchParams()
   const centerParam = searchParams.get("center") || ""
@@ -81,7 +84,7 @@ export default function LeaderboardPage() {
 
   return (
     <PageLayout
-      title="积分排行榜"
+      title={t("积分排行榜")}
       description={`共 ${filtered.length} 名学生有积分`}
       backUrl="/points"
       userRole="admin"

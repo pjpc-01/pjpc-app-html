@@ -11,7 +11,7 @@ export default function FinancePayrollPage() {
   return (
     <PageLayout
       title={t('teacher.payroll_management')}
-      description="管理教师薪资结构和发薪记录"
+      description={t("管理教师薪资结构和发薪记录")}
       userRole="admin"
       status="系统正常"
       background="bg-gray-50"

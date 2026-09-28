@@ -128,16 +128,16 @@ export default function ParentManagementPage() {
   }
 
   return (
-    <PageLayout title="家长管理" description="管理家长信息和关联学生" backUrl="/" userRole="admin">
+    <PageLayout title={t("家长管理")} description={t("管理家长信息和关联学生")} backUrl="/" userRole="admin">
       {/* Toolbar */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="搜索家长姓名、电话、NRIC..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder={t("搜索家长姓名、电话、NRIC...")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Button onClick={openNew}>
           <Plus className="h-4 w-4 mr-2" />
-          添加家长
+          {t("添加家长")}
         </Button>
       </div>
 
@@ -146,7 +146,7 @@ export default function ParentManagementPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            家长列表 ({filtered.length})
+            {t("家长列表 (")}{filtered.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -155,7 +155,7 @@ export default function ParentManagementPage() {
           ) : filtered.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <User className="h-12 w-12 mx-auto mb-4 opacity-30" />
-              <p>暂无家长数据{search ? "（匹配搜索条件）" : ""}</p>
+              <p>{t("暂无家长数据")}{search ? "（匹配搜索条件）" : ""}</p>
             </div>
           ) : (
             <div className="border rounded-lg">
@@ -166,8 +166,8 @@ export default function ParentManagementPage() {
                     <TableHead>{t('student.relationship')}</TableHead>
                     <TableHead>{t('report.phone')}</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>职业</TableHead>
-                    <TableHead>学生数</TableHead>
+                    <TableHead>{t("职业")}</TableHead>
+                    <TableHead>{t("学生数")}</TableHead>
                     <TableHead>{t('teacher.status')}</TableHead>
                     <TableHead className="text-right">{t('teacher.actions')}</TableHead>
                   </TableRow>
@@ -218,16 +218,16 @@ export default function ParentManagementPage() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "编辑家长" : "添加家长"}</DialogTitle>
-            <DialogDescription>填写家长基本信息</DialogDescription>
+            <DialogDescription>{t("填写家长基本信息")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <Label>姓名 *</Label>
+                <Label>{t("姓名 *")}</Label>
                 <Input value={form.name} onChange={(e) => setForm(f => ({...f, name: e.target.value}))} placeholder={t('parent.parent_name')} />
               </div>
               <div>
-                <Label>关系 *</Label>
+                <Label>{t("关系 *")}</Label>
                 <Select value={form.relationship} onValueChange={(v) => setForm(f => ({...f, relationship: v}))}>
                   <SelectTrigger>
                     <SelectValue />
@@ -253,7 +253,7 @@ export default function ParentManagementPage() {
                 </Select>
               </div>
               <div>
-                <Label>电话 *</Label>
+                <Label>{t("电话 *")}</Label>
                 <Input value={form.phone} onChange={(e) => setForm(f => ({...f, phone: e.target.value}))} placeholder="012-3456789" />
               </div>
               <div>
@@ -262,11 +262,11 @@ export default function ParentManagementPage() {
               </div>
               <div>
                 <Label>NRIC</Label>
-                <Input value={form.nric} onChange={(e) => setForm(f => ({...f, nric: e.target.value}))} placeholder="身份证号码" />
+                <Input value={form.nric} onChange={(e) => setForm(f => ({...f, nric: e.target.value}))} placeholder={t("身份证号码")} />
               </div>
               <div>
-                <Label>职业</Label>
-                <Input value={form.occupation} onChange={(e) => setForm(f => ({...f, occupation: e.target.value}))} placeholder="职业" />
+                <Label>{t("职业")}</Label>
+                <Input value={form.occupation} onChange={(e) => setForm(f => ({...f, occupation: e.target.value}))} placeholder={t("职业")} />
               </div>
               <div className="col-span-2">
                 <Label>{t('teacher.address')}</Label>
@@ -274,7 +274,7 @@ export default function ParentManagementPage() {
               </div>
               <div className="col-span-2">
                 <Label>{t('teacher.notes')}</Label>
-                <Input value={form.notes} onChange={(e) => setForm(f => ({...f, notes: e.target.value}))} placeholder="备注信息" />
+                <Input value={form.notes} onChange={(e) => setForm(f => ({...f, notes: e.target.value}))} placeholder={t("备注信息")} />
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
@@ -293,7 +293,7 @@ export default function ParentManagementPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <GraduationCap className="h-5 w-5" />
-              {showStudents?.name} 的关联学生
+              {showStudents?.name} {t("的关联学生")}
             </DialogTitle>
           </DialogHeader>
           {showStudents?.expand?.students && showStudents.expand.students.length > 0 ? (
@@ -311,7 +311,7 @@ export default function ParentManagementPage() {
               ))}
             </div>
           ) : (
-            <p className="text-center text-muted-foreground py-4">暂未关联学生</p>
+            <p className="text-center text-muted-foreground py-4">{t("暂未关联学生")}</p>
           )}
         </DialogContent>
       </Dialog>

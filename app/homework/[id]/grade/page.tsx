@@ -174,7 +174,7 @@ export default function BatchGradingPage() {
 
   if (loading) {
     return (
-      <PageLayout title="批量批改" backUrl={`/homework/${homeworkId}`} userRole="admin">
+      <PageLayout title={t("批量批改")} backUrl={`/homework/${homeworkId}`} userRole="admin">
         <div className="text-center py-12 text-muted-foreground">{t('teacher.loading')}</div>
       </PageLayout>
     )
@@ -184,7 +184,7 @@ export default function BatchGradingPage() {
 
   return (
     <PageLayout
-      title="批量批改"
+      title={t("批量批改")}
       description={homework ? `${homework.title} · ${ungradedCount} 份待批改` : ""}
       backUrl={`/homework/${homeworkId}`}
       userRole="admin"
@@ -193,24 +193,24 @@ export default function BatchGradingPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex gap-4">
           <div className="text-sm">
-            <span className="text-muted-foreground">共 </span>
+            <span className="text-muted-foreground">{t("共")} </span>
             <span className="font-bold">{items.length}</span>
-            <span className="text-muted-foreground"> 份提交</span>
+            <span className="text-muted-foreground"> {t("份提交")}</span>
           </div>
           <div className="text-sm">
             <span className="text-yellow-600 font-bold">{ungradedCount}</span>
-            <span className="text-muted-foreground"> 待批改</span>
+            <span className="text-muted-foreground"> {t("待批改")}</span>
           </div>
           <div className="text-sm">
             <span className="text-green-600 font-bold">{items.length - ungradedCount}</span>
-            <span className="text-muted-foreground"> 已批改</span>
+            <span className="text-muted-foreground"> {t("已批改")}</span>
           </div>
         </div>
         <div className="flex gap-2">
           <Link href={`/homework/${homeworkId}`}>
             <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              返回详情
+              {t("返回详情")}
             </Button>
           </Link>
           <Button onClick={handleSaveAll} disabled={saving} size="sm">
@@ -224,7 +224,7 @@ export default function BatchGradingPage() {
       {items.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            暂无学生提交作业
+            {t("暂无学生提交作业")}
           </CardContent>
         </Card>
       ) : (
@@ -269,7 +269,7 @@ export default function BatchGradingPage() {
                       <div className="w-24">
                         <label className="text-xs font-medium text-muted-foreground block mb-1">
                           <Award className="h-3 w-3 inline mr-1" />
-                          分数
+                          {t("分数")}
                         </label>
                         <Input
                           type="number"
@@ -281,11 +281,11 @@ export default function BatchGradingPage() {
                         />
                       </div>
                       <div className="flex-1">
-                        <label className="text-xs font-medium text-muted-foreground block mb-1">评语</label>
+                        <label className="text-xs font-medium text-muted-foreground block mb-1">{t("评语")}</label>
                         <Textarea
                           value={item.feedback ?? ""}
                           onChange={(e) => updateItem(item.id, "feedback", e.target.value)}
-                          placeholder="批改评语..."
+                          placeholder={t("批改评语...")}
                           rows={2}
                         />
                       </div>

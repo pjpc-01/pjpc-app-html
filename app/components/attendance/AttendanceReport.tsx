@@ -223,9 +223,9 @@ export function AttendanceReport() {
         <CardHeader>
           <CardTitle className="flex items-center">
             <BarChart3 className="h-5 w-5 mr-2" />
-            考勤报告筛选
+            {t("考勤报告筛选")}
           </CardTitle>
-          <CardDescription>选择时间范围和员工查看考勤报告</CardDescription>
+          <CardDescription>{t("选择时间范围和员工查看考勤报告")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -233,13 +233,13 @@ export function AttendanceReport() {
               <label className="text-sm font-medium">{t('teacher.time_range')}</label>
               <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择时间范围" />
+                  <SelectValue placeholder={t("选择时间范围")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="day">日报告</SelectItem>
-                  <SelectItem value="week">周报告</SelectItem>
-                  <SelectItem value="month">月报告</SelectItem>
-                  <SelectItem value="year">年报告</SelectItem>
+                  <SelectItem value="day">{t("日报告")}</SelectItem>
+                  <SelectItem value="week">{t("周报告")}</SelectItem>
+                  <SelectItem value="month">{t("月报告")}</SelectItem>
+                  <SelectItem value="year">{t("年报告")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -248,7 +248,7 @@ export function AttendanceReport() {
               <label className="text-sm font-medium">{t('teacher.year')}</label>
               <Select value={selectedYear} onValueChange={setSelectedYear}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择年份" />
+                  <SelectValue placeholder={t("选择年份")} />
                 </SelectTrigger>
                 <SelectContent>
                   {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(year => (
@@ -259,15 +259,15 @@ export function AttendanceReport() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">月份</label>
+              <label className="text-sm font-medium">{t("月份")}</label>
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择月份" />
+                  <SelectValue placeholder={t("选择月份")} />
                 </SelectTrigger>
                 <SelectContent>
                   {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
                     <SelectItem key={month} value={month.toString()}>
-                      {month}月
+                      {month}{t("月")}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -275,13 +275,13 @@ export function AttendanceReport() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">员工</label>
+              <label className="text-sm font-medium">{t("员工")}</label>
               <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择员工" />
+                  <SelectValue placeholder={t("选择员工")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部员工</SelectItem>
+                  <SelectItem value="all">{t("全部员工")}</SelectItem>
                   <SelectItem value="EMP001">Ahmad Rahman</SelectItem>
                   <SelectItem value="EMP002">Siti Aminah</SelectItem>
                   <SelectItem value="EMP003">Muhammad Ali</SelectItem>
@@ -296,7 +296,7 @@ export function AttendanceReport() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="搜索员工姓名或工号..."
+                  placeholder={t("搜索员工姓名或工号...")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -305,11 +305,11 @@ export function AttendanceReport() {
             </div>
             <Button>
               <Filter className="h-4 w-4 mr-2" />
-              应用筛选
+              {t("应用筛选")}
             </Button>
             <Button variant="outline">
               <Download className="h-4 w-4 mr-2" />
-              导出报告
+              {t("导出报告")}
             </Button>
           </div>
         </CardContent>
@@ -320,7 +320,7 @@ export function AttendanceReport() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">总工作日</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("总工作日")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{summary.totalDays}</div>
@@ -330,31 +330,31 @@ export function AttendanceReport() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">出勤天数</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("出勤天数")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">{summary.presentDays}</div>
               <p className="text-xs text-muted-foreground">
-                出勤率 {summary.attendanceRate}%
+                {t("出勤率")} {summary.attendanceRate}%
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">总工时</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("总工时")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{summary.totalHours}</div>
               <p className="text-xs text-muted-foreground">
-                平均 {summary.averageHours}h/天
+                {t("平均")} {summary.averageHours}{t("h/天")}
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">加班工时</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("加班工时")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">{summary.overtimeHours}</div>
@@ -370,10 +370,10 @@ export function AttendanceReport() {
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center">
               <Calendar className="h-5 w-5 mr-2" />
-              考勤详细记录
+              {t("考勤详细记录")}
             </span>
             <Badge variant="outline">
-              {filteredRecords.length} 条记录
+              {filteredRecords.length} {t("条记录")}
             </Badge>
           </CardTitle>
           <CardDescription>
@@ -381,7 +381,7 @@ export function AttendanceReport() {
             {selectedPeriod === 'week' && '周报告'} 
             {selectedPeriod === 'month' && '月报告'} 
             {selectedPeriod === 'year' && '年报告'} - 
-            {selectedYear}年{selectedMonth}月
+            {selectedYear}{t("年")}{selectedMonth}{t("月")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -389,13 +389,13 @@ export function AttendanceReport() {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-3 px-4">员工信息</th>
+                  <th className="text-left py-3 px-4">{t("员工信息")}</th>
                   <th className="text-left py-3 px-4">{t('finance.date')}</th>
                   <th className="text-left py-3 px-4">{t('teacher.check_in_time')}</th>
                   <th className="text-left py-3 px-4">{t('teacher.check_out_time')}</th>
-                  <th className="text-left py-3 px-4">总工时</th>
+                  <th className="text-left py-3 px-4">{t("总工时")}</th>
                   <th className="text-left py-3 px-4">{t('teacher.status')}</th>
-                  <th className="text-left py-3 px-4">加班</th>
+                  <th className="text-left py-3 px-4">{t("加班")}</th>
                   <th className="text-left py-3 px-4">{t('teacher.actions')}</th>
                 </tr>
               </thead>

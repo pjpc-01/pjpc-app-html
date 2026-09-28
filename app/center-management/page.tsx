@@ -187,15 +187,15 @@ export default function CenterManagementPage() {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Building className="h-5 w-5" />
-              分行管理
+              {t("分行管理")}
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              管理所有分行信息，查看各分行学生人数
+              {t("管理所有分行信息，查看各分行学生人数")}
             </p>
           </div>
           <Button onClick={openAdd}>
             <Plus className="h-4 w-4 mr-2" />
-            添加分行
+            {t("添加分行")}
           </Button>
         </CardHeader>
         <CardContent>
@@ -207,28 +207,28 @@ export default function CenterManagementPage() {
 
           {loading ? (
             <div className="flex items-center justify-center h-40 text-gray-500">
-              加载中...
+              {t("加载中...")}
             </div>
           ) : centers.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <Building className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-              <p>暂无分行数据</p>
-              <p className="text-sm mt-1">点击上方按钮添加第一个分行</p>
+              <p>{t("暂无分行数据")}</p>
+              <p className="text-sm mt-1">{t("点击上方按钮添加第一个分行")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>分行名称</TableHead>
-                    <TableHead>代码</TableHead>
-                    <TableHead>负责人</TableHead>
+                    <TableHead>{t("分行名称")}</TableHead>
+                    <TableHead>{t("代码")}</TableHead>
+                    <TableHead>{t("负责人")}</TableHead>
                     <TableHead>{t('report.phone')}</TableHead>
                     <TableHead>{t('teacher.address')}</TableHead>
-                    <TableHead>发票预设</TableHead>
-                    <TableHead>收据预设</TableHead>
-                    <TableHead>工资单预设</TableHead>
-                    <TableHead>学生数</TableHead>
+                    <TableHead>{t("发票预设")}</TableHead>
+                    <TableHead>{t("收据预设")}</TableHead>
+                    <TableHead>{t("工资单预设")}</TableHead>
+                    <TableHead>{t("学生数")}</TableHead>
                     <TableHead>{t('teacher.status')}</TableHead>
                     <TableHead className="w-20">{t('teacher.actions')}</TableHead>
                   </TableRow>
@@ -297,30 +297,30 @@ export default function CenterManagementPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">名称 *</Label>
+              <Label className="text-right">{t("名称 *")}</Label>
               <Input
                 value={form.name}
                 onChange={e => setForm({...form, name: e.target.value})}
                 className="col-span-3"
-                placeholder="例: PU1 分院"
+                placeholder={t("例: PU1 分院")}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">代码</Label>
+              <Label className="text-right">{t("代码")}</Label>
               <Input
                 value={form.code}
                 onChange={e => setForm({...form, code: e.target.value})}
                 className="col-span-3"
-                placeholder="例: PU1"
+                placeholder={t("例: PU1")}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">负责人</Label>
+              <Label className="text-right">{t("负责人")}</Label>
               <Input
                 value={form.manager}
                 onChange={e => setForm({...form, manager: e.target.value})}
                 className="col-span-3"
-                placeholder="负责人姓名"
+                placeholder={t("负责人姓名")}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -329,7 +329,7 @@ export default function CenterManagementPage() {
                 value={form.phone}
                 onChange={e => setForm({...form, phone: e.target.value})}
                 className="col-span-3"
-                placeholder="分行电话"
+                placeholder={t("分行电话")}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -338,7 +338,7 @@ export default function CenterManagementPage() {
                 value={form.address}
                 onChange={e => setForm({...form, address: e.target.value})}
                 className="col-span-3"
-                placeholder="分行地址"
+                placeholder={t("分行地址")}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -348,7 +348,7 @@ export default function CenterManagementPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">营业中</SelectItem>
+                  <SelectItem value="active">{t("营业中")}</SelectItem>
                   <SelectItem value="inactive">{t('center.disabled')}</SelectItem>
                 </SelectContent>
               </Select>
@@ -356,26 +356,26 @@ export default function CenterManagementPage() {
 
             {/* PDF Preset Selectors */}
             <div className="col-span-4 border-t pt-4 mt-2">
-              <h4 className="font-semibold text-sm mb-3 flex items-center gap-2"><FileText className="h-4 w-4" />PDF 预设方案</h4>
+              <h4 className="font-semibold text-sm mb-3 flex items-center gap-2"><FileText className="h-4 w-4" />{t("PDF 预设方案")}</h4>
               <div className="grid grid-cols-1 gap-3">
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right text-xs">发票预设</Label>
+                  <Label className="text-right text-xs">{t("发票预设")}</Label>
                   <select className="col-span-3 border rounded-md px-3 py-2 text-sm" value={presetForm.invoice_settings_id} onChange={e => setPresetForm({...presetForm, invoice_settings_id: e.target.value})}>
-                    <option value="">不使用预设</option>
+                    <option value="">{t("不使用预设")}</option>
                     {invoicePresets.map((p: any) => <option key={p.id} value={p.id}>{p.name || '未命名'}{p.isDefault ? ' (默认)' : ''}</option>)}
                   </select>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right text-xs">收据预设</Label>
+                  <Label className="text-right text-xs">{t("收据预设")}</Label>
                   <select className="col-span-3 border rounded-md px-3 py-2 text-sm" value={presetForm.receipt_settings_id} onChange={e => setPresetForm({...presetForm, receipt_settings_id: e.target.value})}>
-                    <option value="">不使用预设</option>
+                    <option value="">{t("不使用预设")}</option>
                     {receiptPresets.map((p: any) => <option key={p.id} value={p.id}>{p.name || '未命名'}{p.isDefault ? ' (默认)' : ''}</option>)}
                   </select>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right text-xs">工资单预设</Label>
+                  <Label className="text-right text-xs">{t("工资单预设")}</Label>
                   <select className="col-span-3 border rounded-md px-3 py-2 text-sm" value={presetForm.payslip_settings_id} onChange={e => setPresetForm({...presetForm, payslip_settings_id: e.target.value})}>
-                    <option value="">不使用预设</option>
+                    <option value="">{t("不使用预设")}</option>
                     {payslipPresets.map((p: any) => <option key={p.id} value={p.id}>{p.name || '未命名'}{p.isDefault ? ' (默认)' : ''}</option>)}
                   </select>
                 </div>
@@ -397,7 +397,7 @@ export default function CenterManagementPage() {
           <DialogHeader>
             <DialogTitle>{t('course.confirm_delete')}</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-gray-600">确定要删除这个分行吗？此操作不可撤销。</p>
+          <p className="text-sm text-gray-600">{t("确定要删除这个分行吗？此操作不可撤销。")}</p>
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setDeleteId(null)}>{t('report.cancel')}</Button>
             <Button variant="destructive" onClick={confirmDelete}>{t('card.delete')}</Button>

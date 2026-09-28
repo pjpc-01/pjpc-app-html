@@ -2,16 +2,18 @@
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useLanguage } from "@/contexts/language-context";
 
 interface ProfitChartProps {
   data: { month: string; profit: number }[]
 }
 
 export default function ProfitChart({ data }: ProfitChartProps) {
+  const { t } = useLanguage();
   return (
     <Card className="border-none shadow-lg bg-white/50 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-slate-800">净利润趋势 (Profit Trend)</CardTitle>
+        <CardTitle className="text-lg font-semibold text-slate-800">{t("净利润趋势 (Profit Trend)")}</CardTitle>
       </CardHeader>
       <CardContent className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">

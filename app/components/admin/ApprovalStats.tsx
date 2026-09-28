@@ -40,7 +40,7 @@ export default function ApprovalStats({ stats }: ApprovalStatsProps) {
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">总用户数</p>
+              <p className="text-sm font-medium text-gray-600">{t("总用户数")}</p>
               <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
             </div>
             <Users className="h-8 w-8 text-blue-600" />
@@ -64,7 +64,7 @@ export default function ApprovalStats({ stats }: ApprovalStatsProps) {
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">今日审核</p>
+              <p className="text-sm font-medium text-gray-600">{t("今日审核")}</p>
               <p className="text-2xl font-bold text-green-600">{stats.todayApproved}</p>
             </div>
             <UserCheck className="h-8 w-8 text-green-600" />
@@ -76,7 +76,7 @@ export default function ApprovalStats({ stats }: ApprovalStatsProps) {
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">平均审核时间</p>
+              <p className="text-sm font-medium text-gray-600">{t("平均审核时间")}</p>
               <p className="text-2xl font-bold text-purple-600">{stats.avgApprovalTime}h</p>
             </div>
             <Activity className="h-8 w-8 text-purple-600" />

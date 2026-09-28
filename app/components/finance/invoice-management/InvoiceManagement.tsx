@@ -638,7 +638,7 @@ Prospek Cemerlang`,
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">{t('finance.invoice_management')}</h1>
-          <p className="text-gray-600">管理学校发票和付款状态</p>
+          <p className="text-gray-600">{t("管理学校发票和付款状态")}</p>
         </div>
         
         <div className="flex gap-2">
@@ -647,7 +647,7 @@ Prospek Cemerlang`,
             onClick={() => setIsSettingsDialogOpen(true)}
           >
             <Settings className="h-4 w-4 mr-2" />
-            设置
+            {t("设置")}
           </Button>
           
           <Button
@@ -660,12 +660,12 @@ Prospek Cemerlang`,
             ) : (
               <Zap className="h-4 w-4 mr-2" />
             )}
-            自动生成
+            {t("自动生成")}
           </Button>
           
           <Button onClick={() => setIsCreateInvoiceDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            创建发票
+            {t("创建发票")}
           </Button>
         </div>
       </div>
@@ -678,7 +678,7 @@ Prospek Cemerlang`,
           onClick={() => setCenterFilter("all")}
           className="h-8"
         >
-          全部
+          {t("全部")}
         </Button>
         <Button
           size="sm"
@@ -686,7 +686,7 @@ Prospek Cemerlang`,
           onClick={() => setCenterFilter("PU1")}
           className="h-8"
         >
-          中学（PU1）
+          {t("中学（PU1）")}
         </Button>
         <Button
           size="sm"
@@ -694,7 +694,7 @@ Prospek Cemerlang`,
           onClick={() => setCenterFilter("BATU14")}
           className="h-8"
         >
-          小学（BATU14）
+          {t("小学（BATU14）")}
         </Button>
       </div>
 
@@ -705,7 +705,7 @@ Prospek Cemerlang`,
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-blue-600" />
               <div>
-                <p className="text-sm text-gray-600">总发票数</p>
+                <p className="text-sm text-gray-600">{t("总发票数")}</p>
                 <p className="text-2xl font-bold">{centerFilteredInvoices.length}</p>
               </div>
             </div>
@@ -762,7 +762,7 @@ Prospek Cemerlang`,
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-blue-600" />
               <div>
-                <p className="text-sm text-gray-600">开票总额 (RM)</p>
+                <p className="text-sm text-gray-600">{t("开票总额 (RM)")}</p>
                 <p className="text-2xl font-bold text-blue-700">RM {centerTotalInvoiced.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
             </div>
@@ -774,7 +774,7 @@ Prospek Cemerlang`,
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-600" />
               <div>
-                <p className="text-sm text-gray-600">已收金额 (RM)</p>
+                <p className="text-sm text-gray-600">{t("已收金额 (RM)")}</p>
                 <p className="text-2xl font-bold text-green-700">RM {centerTotalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
             </div>
@@ -786,7 +786,7 @@ Prospek Cemerlang`,
             <div className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-red-600" />
               <div>
-                <p className="text-sm text-gray-600">未收金额 (RM)</p>
+                <p className="text-sm text-gray-600">{t("未收金额 (RM)")}</p>
                 <p className="text-2xl font-bold text-red-700">RM {centerTotalUnpaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
             </div>
@@ -799,9 +799,9 @@ Prospek Cemerlang`,
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-red-600" />
               <div className="min-w-0">
-                <p className="text-sm text-gray-600">本月未收 ({currentMonthSummary.label})</p>
+                <p className="text-sm text-gray-600">{t("本月未收 (")}{currentMonthSummary.label})</p>
                 <p className="text-2xl font-bold text-red-700">RM {currentMonthSummary.outstanding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                <p className="text-[11px] text-gray-500 mt-0.5">开票 {currentMonthSummary.count} 张 · RM {currentMonthSummary.invoiced.toLocaleString(undefined, { maximumFractionDigits: 2 })} · 已收 RM {currentMonthSummary.collected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">{t("开票")} {currentMonthSummary.count} {t("张 · RM")} {currentMonthSummary.invoiced.toLocaleString(undefined, { maximumFractionDigits: 2 })} {t("· 已收 RM")} {currentMonthSummary.collected.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
               </div>
             </div>
           </CardContent>
@@ -811,13 +811,13 @@ Prospek Cemerlang`,
       {/* 视图切换：列表 / 按学生看板 */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <Button size="sm" variant={invoiceView === 'list' ? 'default' : 'outline'} onClick={() => setInvoiceView('list')}>
-          列表
+          {t("列表")}
         </Button>
         <Button size="sm" variant={invoiceView === 'student' ? 'default' : 'outline'} onClick={() => setInvoiceView('student')}>
-          按学生
+          {t("按学生")}
         </Button>
         {invoiceView === 'student' && (
-          <span className="text-xs text-gray-400">一行一个学生 · 右栏看本月开设状态 · 点「查看」标记已发送</span>
+          <span className="text-xs text-gray-400">{t("一行一个学生 · 右栏看本月开设状态 · 点「查看」标记已发送")}</span>
         )}
       </div>
 
@@ -900,15 +900,15 @@ Prospek Cemerlang`,
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
-              发票设置
+              {t("发票设置")}
             </DialogTitle>
-            <DialogDescription>管理发票模板和消息格式</DialogDescription>
+            <DialogDescription>{t("管理发票模板和消息格式")}</DialogDescription>
           </DialogHeader>
           
           <Tabs value={settingsTab} onValueChange={(value) => setSettingsTab(value as 'school-settings' | 'message-formats')}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="school-settings">学校设置</TabsTrigger>
-              <TabsTrigger value="message-formats">消息格式</TabsTrigger>
+              <TabsTrigger value="school-settings">{t("学校设置")}</TabsTrigger>
+              <TabsTrigger value="message-formats">{t("消息格式")}</TabsTrigger>
             </TabsList>
             
             <TabsContent value="school-settings" className="space-y-4">
@@ -924,13 +924,13 @@ Prospek Cemerlang`,
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <div className="text-2xl">📱</div>
-                      WhatsApp 消息格式
+                      {t("WhatsApp 消息格式")}
                     </CardTitle>
-                    <CardDescription>自定义发送到WhatsApp的消息格式</CardDescription>
+                    <CardDescription>{t("自定义发送到WhatsApp的消息格式")}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="whatsappSubject">消息主题</Label>
+                      <Label htmlFor="whatsappSubject">{t("消息主题")}</Label>
                       <Input
                         id="whatsappSubject"
                         value={messageFormats.whatsapp.subject}
@@ -938,11 +938,11 @@ Prospek Cemerlang`,
                           ...prev,
                           whatsapp: { ...prev.whatsapp, subject: e.target.value }
                         }))}
-                        placeholder="输入消息主题..."
+                        placeholder={t("输入消息主题...")}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="whatsappTemplate">消息模板</Label>
+                      <Label htmlFor="whatsappTemplate">{t("消息模板")}</Label>
                       <Textarea
                         id="whatsappTemplate"
                         value={messageFormats.whatsapp.template}
@@ -950,11 +950,11 @@ Prospek Cemerlang`,
                           ...prev,
                           whatsapp: { ...prev.whatsapp, template: e.target.value }
                         }))}
-                        placeholder="输入消息模板..."
+                        placeholder={t("输入消息模板...")}
                         rows={12}
                       />
                       <p className="text-xs text-gray-600 mt-1">
-                        可用变量: {'{{invoiceNumber}}'}, {'{{studentName}}'}, {'{{totalAmount}}'}, {'{{dueDate}}'}, {'{{customMessage}}'}
+                        {t("可用变量:")} {'{{invoiceNumber}}'}, {'{{studentName}}'}, {'{{totalAmount}}'}, {'{{dueDate}}'}, {'{{customMessage}}'}
                       </p>
                     </div>
                   </CardContent>
@@ -965,13 +965,13 @@ Prospek Cemerlang`,
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <div className="text-2xl">📧</div>
-                      电子邮件格式
+                      {t("电子邮件格式")}
                     </CardTitle>
-                    <CardDescription>自定义发送到电子邮件的消息格式</CardDescription>
+                    <CardDescription>{t("自定义发送到电子邮件的消息格式")}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="emailSubject">邮件主题</Label>
+                      <Label htmlFor="emailSubject">{t("邮件主题")}</Label>
                       <Input
                         id="emailSubject"
                         value={messageFormats.email.subject}
@@ -979,11 +979,11 @@ Prospek Cemerlang`,
                           ...prev,
                           email: { ...prev.email, subject: e.target.value }
                         }))}
-                        placeholder="输入邮件主题..."
+                        placeholder={t("输入邮件主题...")}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="emailTemplate">邮件模板</Label>
+                      <Label htmlFor="emailTemplate">{t("邮件模板")}</Label>
                       <Textarea
                         id="emailTemplate"
                         value={messageFormats.email.template}
@@ -991,11 +991,11 @@ Prospek Cemerlang`,
                           ...prev,
                           email: { ...prev.email, template: e.target.value }
                         }))}
-                        placeholder="输入邮件模板..."
+                        placeholder={t("输入邮件模板...")}
                         rows={16}
                       />
                       <p className="text-xs text-gray-600 mt-1">
-                        可用变量: {'{{invoiceNumber}}'}, {'{{studentName}}'}, {'{{studentGrade}}'}, {'{{totalAmount}}'}, {'{{issueDate}}'}, {'{{dueDate}}'}, {'{{items}}'}, {'{{tax}}'}, {'{{discount}}'}, {'{{customMessage}}'}
+                        {t("可用变量:")} {'{{invoiceNumber}}'}, {'{{studentName}}'}, {'{{studentGrade}}'}, {'{{totalAmount}}'}, {'{{issueDate}}'}, {'{{dueDate}}'}, {'{{items}}'}, {'{{tax}}'}, {'{{discount}}'}, {'{{customMessage}}'}
                       </p>
                     </div>
                   </CardContent>
@@ -1008,7 +1008,7 @@ Prospek Cemerlang`,
                     localStorage.setItem('invoiceMessageFormats', JSON.stringify(messageFormats))
                     alert('消息格式已保存！')
                   }}>
-                    保存设置
+                    {t("保存设置")}
                   </Button>
                 </div>
               </div>
@@ -1023,9 +1023,9 @@ Prospek Cemerlang`,
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              发票详情 - {selectedInvoice?.invoiceNumber}
+              {t("发票详情 -")} {selectedInvoice?.invoiceNumber}
             </DialogTitle>
-            <DialogDescription>查看发票的详细信息</DialogDescription>
+            <DialogDescription>{t("查看发票的详细信息")}</DialogDescription>
           </DialogHeader>
           
           {selectedInvoice && (
@@ -1036,7 +1036,7 @@ Prospek Cemerlang`,
                   srcDoc={generateInvoiceHTML(selectedInvoice, getPresetForInvoice(selectedInvoice))}
                   className="w-full border-0"
                   style={{ height: '70vh', minHeight: '500px' }}
-                  title="发票预览"
+                  title={t("发票预览")}
                 />
               </div>
 
@@ -1047,24 +1047,24 @@ Prospek Cemerlang`,
                   onClick={() => handleDownloadInvoice(selectedInvoice)}
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  下载PDF
+                  {t("下载PDF")}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => handlePrintInvoice(selectedInvoice)}
                 >
                   <Printer className="h-4 w-4 mr-2" />
-                  打印
+                  {t("打印")}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => handleSendInvoice(selectedInvoice)}
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  发送
+                  {t("发送")}
                 </Button>
                 <Button onClick={() => setIsInvoiceDetailDialogOpen(false)}>
-                  关闭
+                  {t("关闭")}
                 </Button>
               </div>
             </div>
@@ -1078,10 +1078,10 @@ Prospek Cemerlang`,
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Send className="h-5 w-5" />
-              发送发票通知
+              {t("发送发票通知")}
             </DialogTitle>
             <DialogDescription>
-              选择发送方式发送发票给 {selectedInvoice?.student} 的家长
+              {t("选择发送方式发送发票给")} {selectedInvoice?.student} {t("的家长")}
             </DialogDescription>
           </DialogHeader>
           
@@ -1090,7 +1090,7 @@ Prospek Cemerlang`,
               {/* Send Method Selection */}
               <div className="space-y-4">
                 <div>
-                  <Label className="text-base font-medium">选择发送方式</Label>
+                  <Label className="text-base font-medium">{t("选择发送方式")}</Label>
                   <div className="grid grid-cols-2 gap-4 mt-4">
                     <Card 
                       className={`cursor-pointer border-2 transition-all hover:shadow-lg ${
@@ -1103,7 +1103,7 @@ Prospek Cemerlang`,
                       <CardContent className="p-6 text-center">
                         <div className="text-4xl mb-3">📱</div>
                         <p className="font-semibold text-lg">WhatsApp</p>
-                        <p className="text-sm text-gray-600 mt-1">发送到手机</p>
+                        <p className="text-sm text-gray-600 mt-1">{t("发送到手机")}</p>
                       </CardContent>
                     </Card>
                     
@@ -1117,8 +1117,8 @@ Prospek Cemerlang`,
                     >
                       <CardContent className="p-6 text-center">
                         <div className="text-4xl mb-3">📧</div>
-                        <p className="font-semibold text-lg">电子邮件</p>
-                        <p className="text-sm text-gray-600 mt-1">发送到邮箱</p>
+                        <p className="font-semibold text-lg">{t("电子邮件")}</p>
+                        <p className="text-sm text-gray-600 mt-1">{t("发送到邮箱")}</p>
                       </CardContent>
                     </Card>
                   </div>
@@ -1126,11 +1126,11 @@ Prospek Cemerlang`,
 
                 {/* Contact Information */}
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold mb-2">联系信息</h3>
+                  <h3 className="font-semibold mb-2">{t("联系信息")}</h3>
                   {sendMethod === 'whatsapp' ? (
                     <div className="space-y-1">
                       <p className="text-sm">
-                        <span className="font-medium">电话号码:</span> 
+                        <span className="font-medium">{t("电话号码:")}</span> 
                         {(() => {
                           const student = students.find(s => s.id === selectedInvoice.studentId)
                           const phoneNumber = student?.parentName || '未提供'
@@ -1141,7 +1141,7 @@ Prospek Cemerlang`,
                   ) : (
                     <div className="space-y-1">
                       <p className="text-sm">
-                        <span className="font-medium">邮箱地址:</span> 
+                        <span className="font-medium">{t("邮箱地址:")}</span> 
                         {(() => {
                           const student = students.find(s => s.id === selectedInvoice.studentId)
                           const email = student?.email || '未提供'
@@ -1163,7 +1163,7 @@ Prospek Cemerlang`,
                   }}
                   disabled={isSending}
                 >
-                  取消
+                  {t("取消")}
                 </Button>
                 <Button 
                   onClick={handleSendMessage}
@@ -1172,12 +1172,12 @@ Prospek Cemerlang`,
                   {isSending ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      发送中...
+                      {t("发送中...")}
                     </>
                   ) : (
                     <>
                       <Send className="h-4 w-4 mr-2" />
-                      发送 {sendMethod === 'whatsapp' ? 'WhatsApp' : '邮件'}
+                      {t("发送")} {sendMethod === 'whatsapp' ? 'WhatsApp' : '邮件'}
                     </>
                   )}
                 </Button>

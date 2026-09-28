@@ -256,7 +256,7 @@ export default function PermissionEditor() {
                   <Shield className="h-3.5 w-3.5 inline mr-1.5 text-amber-600" />
                   {roleInfo.label}
                   {roleInfo.role === "admin" && (
-                    <span className="ml-1.5 text-[10px] text-amber-600 font-normal">默认全开</span>
+                    <span className="ml-1.5 text-[10px] text-amber-600 font-normal">{t("默认全开")}</span>
                   )}
                 </button>
                 {/* Delete button — not for admin */}
@@ -288,7 +288,7 @@ export default function PermissionEditor() {
               className="px-4 py-2 rounded-lg text-sm font-medium border-2 border-dashed border-gray-300 text-gray-500 hover:border-amber-400 hover:text-amber-600 transition-all flex items-center"
             >
               <Plus className="h-3.5 w-3.5 mr-1.5" />
-              新增角色
+              {t("新增角色")}
             </button>
           )}
         </div>
@@ -315,18 +315,18 @@ export default function PermissionEditor() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs">角色代码（英文）</Label>
+                  <Label className="text-xs">{t("角色代码（英文）")}</Label>
                   <Input
-                    placeholder="如 supervisor"
+                    placeholder={t("如 supervisor")}
                     value={newRoleKey}
                     onChange={(e) => setNewRoleKey(e.target.value)}
                     className="h-8 text-sm"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">显示名称</Label>
+                  <Label className="text-xs">{t("显示名称")}</Label>
                   <Input
-                    placeholder="如 主任"
+                    placeholder={t("如 主任")}
                     value={newRoleLabel}
                     onChange={(e) => setNewRoleLabel(e.target.value)}
                     className="h-8 text-sm"
@@ -338,7 +338,7 @@ export default function PermissionEditor() {
               )}
               <Button size="sm" onClick={addRole} className="bg-amber-600 hover:bg-amber-700">
                 <Plus className="h-3.5 w-3.5 mr-1" />
-                创建
+                {t("创建")}
               </Button>
             </CardContent>
           </Card>
@@ -349,15 +349,15 @@ export default function PermissionEditor() {
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            {currentRole?.label || selectedRole} — 导航权限
+            {currentRole?.label || selectedRole} {t("— 导航权限")}
             <Badge variant="outline" className="text-xs ml-1">
-              {enabledCount} 项已开启
+              {enabledCount} {t("项已开启")}
             </Badge>
           </CardTitle>
           <div className="flex items-center gap-3">
             {saved && (
               <span className="text-xs text-green-600 flex items-center gap-1">
-                <CheckCircle2 className="h-3.5 w-3.5" /> 已保存
+                <CheckCircle2 className="h-3.5 w-3.5" /> {t("已保存")}
               </span>
             )}
             <Button size="sm" onClick={savePermissions} disabled={saving}>
@@ -366,7 +366,7 @@ export default function PermissionEditor() {
               ) : (
                 <Save className="h-3.5 w-3.5 mr-1" />
               )}
-              保存
+              {t("保存")}
             </Button>
           </div>
         </CardHeader>
@@ -379,7 +379,7 @@ export default function PermissionEditor() {
             <>
               {/* Toggle all */}
               <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/50 mb-2">
-                <span className="text-sm font-medium">全选 / 取消全选</span>
+                <span className="text-sm font-medium">{t("全选 / 取消全选")}</span>
                 <Switch
                   checked={allKeys.every((k) => permissions[k])}
                   onCheckedChange={(v) => {

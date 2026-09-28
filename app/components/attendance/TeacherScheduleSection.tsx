@@ -138,7 +138,7 @@ export default function TeacherScheduleSection() {
           <RefreshCw
             className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
           />
-          刷新数据
+          {t("刷新数据")}
         </Button>
         <Button
           variant="outline"
@@ -150,7 +150,7 @@ export default function TeacherScheduleSection() {
           }}
         >
           <ListOrdered className="h-4 w-4" />
-          排班记录
+          {t("排班记录")}
         </Button>
       </div>
 
@@ -168,19 +168,19 @@ export default function TeacherScheduleSection() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ListOrdered className="h-4 w-4" />
-              排班记录（{format(month, "yyyy 年 M 月")}）
+              {t("排班记录（")}{format(month, "yyyy 年 M 月")}{t("）")}
             </DialogTitle>
             <DialogDescription>
-              当月全部排班记录。标红的 = 没有课程的排班（来源见「来源」列）
+              {t("当月全部排班记录。标红的 = 没有课程的排班（来源见「来源」列）")}
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto border rounded-lg divide-y">
             {logLoading ? (
               <div className="flex items-center justify-center py-10 text-gray-500">
-                <Loader2 className="h-5 w-5 animate-spin mr-2" />加载中...
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />{t("加载中...")}
               </div>
             ) : scheduleLogs.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-10">当月暂无排班</p>
+              <p className="text-sm text-muted-foreground text-center py-10">{t("当月暂无排班")}</p>
             ) : (
               scheduleLogs.map((rec) => {
                 const tName = logTeacherName(rec)
@@ -194,10 +194,10 @@ export default function TeacherScheduleSection() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium truncate">
-                        {tName || <span className="text-red-600">未排老师</span>}
+                        {tName || <span className="text-red-600">{t("未排老师")}</span>}
                       </div>
                       <div className="text-xs truncate">
-                        {hasCourse ? cName : <span className="text-red-600 font-medium">无课程</span>}
+                        {hasCourse ? cName : <span className="text-red-600 font-medium">{t("无课程")}</span>}
                       </div>
                     </div>
                     <Badge variant="outline" className="shrink-0 text-[10px] max-w-[130px] truncate" title={logSource(rec)}>

@@ -142,7 +142,7 @@ export default function QuickFilters({
       
       {activeFilters.length > 0 && (
         <div className="flex items-center gap-2 pt-2 border-t">
-          <span className="text-xs text-gray-500">已选择:</span>
+          <span className="text-xs text-gray-500">{t("已选择:")}</span>
           {activeFilters.map((filterId) => {
             const filter = quickFilters.find(f => f.id === filterId)
             return filter ? (

@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Search, Eye, Check, X, Loader2 } from "lucide-react"
 import { formatGrade } from "@/lib/utils"
+import { useLanguage } from "@/contexts/language-context";
 
 // ── 按学生看发票：一行一个学生，右栏只显示【选定账期】的已开具/已发送状态 ──
 // 点「查看」→ 该学生所有发票按账期分类，每行可标记已发送/取消
@@ -38,6 +39,7 @@ export function InvoiceByStudent({
   onMarkSent: (invoiceId: string, sent: boolean) => Promise<void>
   onViewInvoice: (invoice: any) => void
 }) {
+  const { t } = useLanguage();
   const [search, setSearch] = useState("")
   const [period, setPeriod] = useState<string>(CURRENT_PERIOD)
   const [detailStudent, setDetailStudent] = useState<any>(null)
@@ -117,24 +119,24 @@ export function InvoiceByStudent({
               <Input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="搜索学生姓名 / 学号..."
+                placeholder={t("搜索学生姓名 / 学号...")}
                 className="pl-8 h-9"
               />
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">账期</span>
+              <span className="text-sm text-gray-600">{t("账期")}</span>
               <select
                 value={period}
                 onChange={e => setPeriod(e.target.value)}
                 className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700"
               >
                 {periods.map(p => (
-                  <option key={p} value={p}>{p}（{periodLabel(p)}）</option>
+                  <option key={p} value={p}>{p}{t("（")}{periodLabel(p)}{t("）")}</option>
                 ))}
               </select>
             </div>
             <div className="text-sm text-gray-500 ml-auto">
-              {period} · 已开具 <b className="text-gray-800">{stat.issued}</b> · 已发送 <b className="text-gray-800">{stat.sent}</b> · 未开具 <b className="text-amber-600">{stat.notIssued}</b>
+              {period} {t("· 已开具")} <b className="text-gray-800">{stat.issued}</b> {t("· 已发送")} <b className="text-gray-800">{stat.sent}</b> {t("· 未开具")} <b className="text-amber-600">{stat.notIssued}</b>
             </div>
           </div>
 
@@ -142,12 +144,12 @@ export function InvoiceByStudent({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-16">学号</TableHead>
-                  <TableHead>学生</TableHead>
-                  <TableHead>年级</TableHead>
-                  <TableHead className="text-center">{period} 开具</TableHead>
-                  <TableHead className="text-center">{period} 发送</TableHead>
-                  <TableHead className="text-right">操作</TableHead>
+                  <TableHead className="w-16">{t("学号")}</TableHead>
+                  <TableHead>{t("学生")}</TableHead>
+                  <TableHead>{t("年级")}</TableHead>
+                  <TableHead className="text-center">{period} {t("开具")}</TableHead>
+                  <TableHead className="text-center">{period} {t("发送")}</TableHead>
+                  <TableHead className="text-right">{t("操作")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -160,19 +162,19 @@ export function InvoiceByStudent({
                       <TableCell className="text-xs text-gray-500">{formatGrade(s.grade, s.is_peralihan) || s.grade || "-"}</TableCell>
                       <TableCell className="text-center">
                         {r.issued
-                          ? <span className="text-xs font-medium text-green-600">已开具</span>
-                          : <span className="text-xs font-medium text-amber-600">未开具</span>}
+                          ? <span className="text-xs font-medium text-green-600">{t("已开具")}</span>
+                          : <span className="text-xs font-medium text-amber-600">{t("未开具")}</span>}
                       </TableCell>
                       <TableCell className="text-center">
                         {!r.issued
                           ? <span className="text-xs text-gray-400">—</span>
                           : r.sent
-                            ? <span className="text-xs font-medium text-green-600">已发送</span>
-                            : <span className="text-xs font-medium text-red-500">未发送</span>}
+                            ? <span className="text-xs font-medium text-green-600">{t("已发送")}</span>
+                            : <span className="text-xs font-medium text-red-500">{t("未发送")}</span>}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button size="sm" variant="outline" onClick={() => setDetailStudent(s)}>
-                          <Eye className="h-4 w-4 mr-1" />查看
+                          <Eye className="h-4 w-4 mr-1" />{t("查看")}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -180,14 +182,14 @@ export function InvoiceByStudent({
                 })}
                 {rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-10 text-center text-gray-400 text-sm">没有符合的学生</TableCell>
+                    <TableCell colSpan={6} className="py-10 text-center text-gray-400 text-sm">{t("没有符合的学生")}</TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </div>
           {rows.length > 300 && (
-            <div className="mt-2 text-xs text-gray-400">只显示前 300 位，请用搜索缩小范围</div>
+            <div className="mt-2 text-xs text-gray-400">{t("只显示前 300 位，请用搜索缩小范围")}</div>
           )}
         </CardContent>
       </Card>
@@ -199,22 +201,22 @@ export function InvoiceByStudent({
             <DialogTitle>
               {detailStudent?.name}
               {detailStudent?.student_id ? <span className="text-sm font-normal text-gray-500 ml-2">({detailStudent.student_id})</span> : null}
-              <span className="text-sm font-normal text-gray-500 ml-2">— 所有发票（按账期）</span>
+              <span className="text-sm font-normal text-gray-500 ml-2">{t("— 所有发票（按账期）")}</span>
             </DialogTitle>
           </DialogHeader>
           {studentInvoices.length === 0 ? (
-            <div className="py-10 text-center text-gray-400 text-sm">这位学生还没有任何发票</div>
+            <div className="py-10 text-center text-gray-400 text-sm">{t("这位学生还没有任何发票")}</div>
           ) : (
             <div className="border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>账期</TableHead>
-                    <TableHead>发票号</TableHead>
-                    <TableHead className="text-right">金额 (RM)</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead className="text-center">发送</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
+                    <TableHead>{t("账期")}</TableHead>
+                    <TableHead>{t("发票号")}</TableHead>
+                    <TableHead className="text-right">{t("金额 (RM)")}</TableHead>
+                    <TableHead>{t("状态")}</TableHead>
+                    <TableHead className="text-center">{t("发送")}</TableHead>
+                    <TableHead className="text-right">{t("操作")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -232,8 +234,8 @@ export function InvoiceByStudent({
                       </TableCell>
                       <TableCell className="text-center">
                         {inv.sent
-                          ? <span className="text-xs font-medium text-green-600">已发送{inv.sent_at ? <span className="text-gray-400 ml-1">{String(inv.sent_at).slice(0, 10)}</span> : null}</span>
-                          : <span className="text-xs font-medium text-red-500">未发送</span>}
+                          ? <span className="text-xs font-medium text-green-600">{t("已发送")}{inv.sent_at ? <span className="text-gray-400 ml-1">{String(inv.sent_at).slice(0, 10)}</span> : null}</span>
+                          : <span className="text-xs font-medium text-red-500">{t("未发送")}</span>}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
@@ -245,8 +247,8 @@ export function InvoiceByStudent({
                           {busyId === inv.id
                             ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             : inv.sent
-                              ? <><X className="h-3.5 w-3.5 mr-1" />取消标记</>
-                              : <><Check className="h-3.5 w-3.5 mr-1" />标记已发送</>}
+                              ? <><X className="h-3.5 w-3.5 mr-1" />{t("取消标记")}</>
+                              : <><Check className="h-3.5 w-3.5 mr-1" />{t("标记已发送")}</>}
                         </Button>
                       </TableCell>
                     </TableRow>

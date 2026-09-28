@@ -570,10 +570,10 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
       {/* Preset Selector Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-gray-50 rounded-lg border">
         <div className="flex items-center gap-3">
-          <Label className="whitespace-nowrap font-medium text-sm">预设方案:</Label>
+          <Label className="whitespace-nowrap font-medium text-sm">{t("预设方案:")}</Label>
           <Select value={activeId} onValueChange={handleSelectPreset}>
             <SelectTrigger className="w-56">
-              <SelectValue placeholder="选择预设" />
+              <SelectValue placeholder={t("选择预设")} />
             </SelectTrigger>
             <SelectContent>
               {presets.map(p => (
@@ -586,16 +586,16 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={handleSaveAsNew}>
-            <Plus className="h-4 w-4 mr-1" />另存为新预设
+            <Plus className="h-4 w-4 mr-1" />{t("另存为新预设")}
           </Button>
           <Button variant="outline" size="sm" onClick={handleDuplicate}>
-            <Copy className="h-4 w-4 mr-1" />复制
+            <Copy className="h-4 w-4 mr-1" />{t("复制")}
           </Button>
           <Button variant="outline" size="sm" onClick={handleSetDefault}>
-            <CheckCircle className="h-4 w-4 mr-1" />设为默认
+            <CheckCircle className="h-4 w-4 mr-1" />{t("设为默认")}
           </Button>
           <Button variant="destructive" size="sm" onClick={handleDeletePreset}>
-            <Trash2 className="h-4 w-4 mr-1" />删除
+            <Trash2 className="h-4 w-4 mr-1" />{t("删除")}
           </Button>
         </div>
       </div>
@@ -607,8 +607,8 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="school"><Building2 className="h-4 w-4 mr-1" />{t('report.school_info')}</TabsTrigger>
-              <TabsTrigger value="style"><Palette className="h-4 w-4 mr-1" />样式 & 内容</TabsTrigger>
-              <TabsTrigger value="content"><FileText className="h-4 w-4 mr-1" />内容模板</TabsTrigger>
+              <TabsTrigger value="style"><Palette className="h-4 w-4 mr-1" />{t("样式 & 内容")}</TabsTrigger>
+              <TabsTrigger value="content"><FileText className="h-4 w-4 mr-1" />{t("内容模板")}</TabsTrigger>
             </TabsList>
 
             {/* Tab: School Info */}
@@ -620,17 +620,17 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>学校名称 (中文)</Label>
-                      <Input value={settings.schoolName} onChange={e => updateSettings({ schoolName: e.target.value })} placeholder="智慧教育学校" />
+                      <Label>{t("学校名称 (中文)")}</Label>
+                      <Input value={settings.schoolName} onChange={e => updateSettings({ schoolName: e.target.value })} placeholder={t("智慧教育学校")} />
                     </div>
                     <div>
-                      <Label>学校名称 (英文)</Label>
+                      <Label>{t("学校名称 (英文)")}</Label>
                       <Input value={settings.schoolNameEn} onChange={e => updateSettings({ schoolNameEn: e.target.value })} placeholder="Smart Education School" />
                     </div>
                   </div>
                   <div>
-                    <Label>学校地址</Label>
-                    <Textarea value={settings.schoolAddress} onChange={e => updateSettings({ schoolAddress: e.target.value })} rows={2} placeholder="详细地址" />
+                    <Label>{t("学校地址")}</Label>
+                    <Textarea value={settings.schoolAddress} onChange={e => updateSettings({ schoolAddress: e.target.value })} rows={2} placeholder={t("详细地址")} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -643,7 +643,7 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                     </div>
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold mb-2 block">学校标志 (Logo)</Label>
+                    <Label className="text-sm font-semibold mb-2 block">{t("学校标志 (Logo)")}</Label>
                     <div className="flex items-center gap-4 mt-1">
                       <div className="w-20 h-20 rounded-xl border-2 border-dashed border-muted bg-muted/20 flex items-center justify-center overflow-hidden flex-shrink-0 group relative cursor-pointer hover:border-primary/40 transition-colors"
                         onClick={() => logoSpanRef.current?.click()}>
@@ -664,12 +664,12 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                       <div className="flex flex-col gap-2">
                         <input ref={logoSpanRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                         <Button variant="outline" size="sm" onClick={() => logoSpanRef.current?.click()}>
-                          <Upload className="h-4 w-4 mr-1" />上传Logo
+                          <Upload className="h-4 w-4 mr-1" />{t("上传Logo")}
                         </Button>
-                        <p className="text-xs text-muted-foreground">建议正方形，PNG/SVG</p>
+                        <p className="text-xs text-muted-foreground">{t("建议正方形，PNG/SVG")}</p>
                         {settings.schoolLogo && (
                           <Button variant="ghost" size="sm" onClick={() => updateSettings({ schoolLogo: '' })} className="text-red-500 hover:text-red-600 hover:bg-red-50">
-                            <Trash2 className="h-3.5 w-3.5 mr-1" />移除Logo
+                            <Trash2 className="h-3.5 w-3.5 mr-1" />{t("移除Logo")}
                           </Button>
                         )}
                       </div>
@@ -683,19 +683,19 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
             <TabsContent value="style" className="space-y-4 mt-4">
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">颜色方案</CardTitle>
-                  <CardDescription>自定义学生报告的主题颜色</CardDescription>
+                  <CardTitle className="text-base">{t("颜色方案")}</CardTitle>
+                  <CardDescription>{t("自定义学生报告的主题颜色")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <Label className="text-xs">主色</Label>
+                    <Label className="text-xs">{t("主色")}</Label>
                     <input type="color" value={settings.primaryColor} onChange={e => updateSettings({ primaryColor: e.target.value })} className="w-10 h-10 rounded cursor-pointer border" />
                     <Input className="h-8 text-sm w-28 font-mono" value={settings.primaryColor} onChange={e => updateSettings({ primaryColor: e.target.value })} />
                   </div>
                   <div className="flex items-center gap-4 p-4 rounded-lg border bg-gray-50">
-                    <div className="text-sm text-gray-600">预览效果：</div>
+                    <div className="text-sm text-gray-600">{t("预览效果：")}</div>
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded" style={{ backgroundColor: settings.primaryColor }} title="主色" />
+                      <div className="w-8 h-8 rounded" style={{ backgroundColor: settings.primaryColor }} title={t("主色")} />
                     </div>
                   </div>
                 </CardContent>
@@ -703,21 +703,21 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">报告内容</CardTitle>
-                  <CardDescription>自定义报告标题、副标题和页脚</CardDescription>
+                  <CardTitle className="text-base">{t("报告内容")}</CardTitle>
+                  <CardDescription>{t("自定义报告标题、副标题和页脚")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
                     <Label>{t('report.title')}</Label>
-                    <Input value={settings.headerTitle} onChange={e => updateSettings({ headerTitle: e.target.value })} placeholder="学生报告" />
+                    <Input value={settings.headerTitle} onChange={e => updateSettings({ headerTitle: e.target.value })} placeholder={t("学生报告")} />
                   </div>
                   <div>
-                    <Label>副标题</Label>
-                    <Input value={settings.headerSubtitle} onChange={e => updateSettings({ headerSubtitle: e.target.value })} placeholder="— 全面发展 · 健康成长 · 追求卓越 —" />
+                    <Label>{t("副标题")}</Label>
+                    <Input value={settings.headerSubtitle} onChange={e => updateSettings({ headerSubtitle: e.target.value })} placeholder={t("— 全面发展 · 健康成长 · 追求卓越 —")} />
                   </div>
                   <div>
-                    <Label>页脚文字</Label>
-                    <Textarea value={settings.footerText} onChange={e => updateSettings({ footerText: e.target.value })} rows={2} placeholder="自信自强 | 勤学善思 | 合作共进 | 全面发展" />
+                    <Label>{t("页脚文字")}</Label>
+                    <Textarea value={settings.footerText} onChange={e => updateSettings({ footerText: e.target.value })} rows={2} placeholder={t("自信自强 | 勤学善思 | 合作共进 | 全面发展")} />
                   </div>
                 </CardContent>
               </Card>
@@ -729,8 +729,8 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
               <Card>
                 <CardHeader className="pb-3 flex flex-row items-center justify-between">
                   <div>
-                    <CardTitle className="text-base">板块管理</CardTitle>
-                    <CardDescription>自定义报告板块的顺序、标题和可见性</CardDescription>
+                    <CardTitle className="text-base">{t("板块管理")}</CardTitle>
+                    <CardDescription>{t("自定义报告板块的顺序、标题和可见性")}</CardDescription>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => {
                     const newSection: ReportSection = {
@@ -742,7 +742,7 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                     }
                     updateSettings({ sections: [...(settings.sections || []), newSection] })
                   }}>
-                    <Plus className="h-3.5 w-3.5 mr-1" />添加自定义板块
+                    <Plus className="h-3.5 w-3.5 mr-1" />{t("添加自定义板块")}
                   </Button>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -778,7 +778,7 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                           updateSettings({ sections: arr })
                         }}
                         className="h-8 text-sm flex-1 min-w-0"
-                        placeholder="板块标题"
+                        placeholder={t("板块标题")}
                       />
                       {/* Type badge */}
                       <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 whitespace-nowrap capitalize">
@@ -793,7 +793,7 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                       {section.type === 'text' && (
                         <input
                           className="h-8 text-sm px-2 border rounded min-w-[80px] max-w-[120px]"
-                          placeholder="内容..."
+                          placeholder={t("内容...")}
                           value={section.content || ''}
                           onChange={e => {
                             const arr = [...(settings.sections || [])]
@@ -828,8 +828,8 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">默认科目</CardTitle>
-                  <CardDescription>设置新建报告时的默认科目列表</CardDescription>
+                  <CardTitle className="text-base">{t("默认科目")}</CardTitle>
+                  <CardDescription>{t("设置新建报告时的默认科目列表")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2 mb-3">
@@ -847,7 +847,7 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                     ))}
                     <input
                       className="px-3 py-1.5 border rounded-full text-sm outline-none focus:border-blue-400 min-w-[80px]"
-                      placeholder="添加科目..."
+                      placeholder={t("添加科目...")}
                       onKeyDown={e => {
                         if (e.key === 'Enter') {
                           const val = (e.target as HTMLInputElement).value.trim()
@@ -864,8 +864,8 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">成长寄语模板</CardTitle>
-                  <CardDescription>使用 {'{studentName}'} 作为学生姓名占位符</CardDescription>
+                  <CardTitle className="text-base">{t("成长寄语模板")}</CardTitle>
+                  <CardDescription>{t("使用")} {'{studentName}'} {t("作为学生姓名占位符")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Textarea value={settings.growthMessage || ""} onChange={e => updateSettings({ growthMessage: e.target.value })} rows={3} />
@@ -874,8 +874,8 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">存在问题模板</CardTitle>
-                  <CardDescription>每个问题占一行，可添加多个</CardDescription>
+                  <CardTitle className="text-base">{t("存在问题模板")}</CardTitle>
+                  <CardDescription>{t("每个问题占一行，可添加多个")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {(settings.problems || []).map((p, i) => (
@@ -892,15 +892,15 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                     </div>
                   ))}
                   <Button variant="outline" size="sm" onClick={() => updateSettings({ problems: [...(settings.problems || []), ""] })}>
-                    <Plus className="h-3.5 w-3.5 mr-1" />添加问题
+                    <Plus className="h-3.5 w-3.5 mr-1" />{t("添加问题")}
                   </Button>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">改进建议模板</CardTitle>
-                  <CardDescription>每条建议占一行，可添加多个</CardDescription>
+                  <CardTitle className="text-base">{t("改进建议模板")}</CardTitle>
+                  <CardDescription>{t("每条建议占一行，可添加多个")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {(settings.improvements || []).map((imp, i) => (
@@ -917,15 +917,15 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                     </div>
                   ))}
                   <Button variant="outline" size="sm" onClick={() => updateSettings({ improvements: [...(settings.improvements || []), ""] })}>
-                    <Plus className="h-3.5 w-3.5 mr-1" />添加建议
+                    <Plus className="h-3.5 w-3.5 mr-1" />{t("添加建议")}
                   </Button>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">活动参与模板</CardTitle>
-                  <CardDescription>每条活动占一行，可添加多个；新建报告时会预填到「活动参与」</CardDescription>
+                  <CardTitle className="text-base">{t("活动参与模板")}</CardTitle>
+                  <CardDescription>{t("每条活动占一行，可添加多个；新建报告时会预填到「活动参与」")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {(settings.activities || []).map((act, i) => (
@@ -942,27 +942,27 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                     </div>
                   ))}
                   <Button variant="outline" size="sm" onClick={() => updateSettings({ activities: [...(settings.activities || []), ""] })}>
-                    <Plus className="h-3.5 w-3.5 mr-1" />添加活动
+                    <Plus className="h-3.5 w-3.5 mr-1" />{t("添加活动")}
                   </Button>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">未来目标模板</CardTitle>
-                  <CardDescription>学业、能力、品格三个维度的目标</CardDescription>
+                  <CardTitle className="text-base">{t("未来目标模板")}</CardTitle>
+                  <CardDescription>{t("学业、能力、品格三个维度的目标")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label className="text-xs">学业目标</Label>
+                    <Label className="text-xs">{t("学业目标")}</Label>
                     <Textarea value={settings.futureGoalAcademic || ""} onChange={e => updateSettings({ futureGoalAcademic: e.target.value })} rows={2} className="mt-1" />
                   </div>
                   <div>
-                    <Label className="text-xs">能力目标</Label>
+                    <Label className="text-xs">{t("能力目标")}</Label>
                     <Textarea value={settings.futureGoalAbility || ""} onChange={e => updateSettings({ futureGoalAbility: e.target.value })} rows={2} className="mt-1" />
                   </div>
                   <div>
-                    <Label className="text-xs">品格目标</Label>
+                    <Label className="text-xs">{t("品格目标")}</Label>
                     <Textarea value={settings.futureGoalCharacter || ""} onChange={e => updateSettings({ futureGoalCharacter: e.target.value })} rows={2} className="mt-1" />
                   </div>
                 </CardContent>
@@ -970,8 +970,8 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">总结模板</CardTitle>
-                  <CardDescription>学期总结的默认内容</CardDescription>
+                  <CardTitle className="text-base">{t("总结模板")}</CardTitle>
+                  <CardDescription>{t("学期总结的默认内容")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Textarea value={settings.summary || ""} onChange={e => updateSettings({ summary: e.target.value })} rows={4} />
@@ -986,14 +986,14 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
           <div className="flex items-center justify-between">
             <h3 className="font-semibold flex items-center gap-2">
               <Eye className="h-4 w-4" />
-              报告预览
+              {t("报告预览")}
             </h3>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handlePrintPreview}>
-                <FileText className="h-4 w-4 mr-1" />打印预览
+                <FileText className="h-4 w-4 mr-1" />{t("打印预览")}
               </Button>
               <Button variant="outline" size="sm" onClick={() => setIsPreviewDialogOpen(true)}>
-                <Eye className="h-4 w-4 mr-1" />全屏预览
+                <Eye className="h-4 w-4 mr-1" />{t("全屏预览")}
               </Button>
             </div>
           </div>
@@ -1004,10 +1004,10 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                 srcDoc={previewHTML}
                 className="w-full border-0"
                 style={{ minHeight: 500, height: 'calc(100vh - 400px)' }}
-                title="报告预览"
+                title={t("报告预览")}
               />
             ) : (
-              <div className="p-8 text-center text-gray-400">加载预览中...</div>
+              <div className="p-8 text-center text-gray-400">{t("加载预览中...")}</div>
             )}
           </div>
         </div>
@@ -1016,16 +1016,16 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
       {/* Save Status */}
       <div className="flex items-center justify-end text-xs text-gray-500 border-t pt-3">
         <Save className="h-3.5 w-3.5 mr-1" />
-        自动保存 · 最后更新: {settings.updatedAt}
-        {activePreset?.isDefault && <Badge variant="outline" className="ml-2 text-xs">默认预设</Badge>}
+        {t("自动保存 · 最后更新:")} {settings.updatedAt}
+        {activePreset?.isDefault && <Badge variant="outline" className="ml-2 text-xs">{t("默认预设")}</Badge>}
       </div>
 
       {/* Fullscreen Preview Dialog */}
       <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
         <DialogContent className="max-w-5xl max-h-[95vh]">
           <DialogHeader>
-            <DialogTitle>报告预览 - {settings.name}</DialogTitle>
-            <DialogDescription>使用当前设置生成的学生报告样式</DialogDescription>
+            <DialogTitle>{t("报告预览 -")} {settings.name}</DialogTitle>
+            <DialogDescription>{t("使用当前设置生成的学生报告样式")}</DialogDescription>
           </DialogHeader>
           <div className="bg-gray-100 p-4 rounded-lg overflow-auto max-h-[70vh]">
             {fullscreenPreviewHTML ? (
@@ -1033,10 +1033,10 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                 srcDoc={fullscreenPreviewHTML}
                 className="w-full border-0 bg-white rounded-lg shadow-sm"
                 style={{ minHeight: 600 }}
-                title="全屏报告预览"
+                title={t("全屏报告预览")}
               />
             ) : (
-              <div className="p-8 text-center text-gray-400">加载预览中...</div>
+              <div className="p-8 text-center text-gray-400">{t("加载预览中...")}</div>
             )}
           </div>
         </DialogContent>

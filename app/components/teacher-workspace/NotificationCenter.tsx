@@ -166,20 +166,20 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
   const getTypeBadge = (type: string) => {
     switch (type) {
       case 'system': return <Badge variant="outline" className="bg-blue-100 text-blue-700">{t('teacher.system')}</Badge>
-      case 'meeting': return <Badge variant="outline" className="bg-green-100 text-green-700">会议</Badge>
+      case 'meeting': return <Badge variant="outline" className="bg-green-100 text-green-700">{t("会议")}</Badge>
       case 'assignment': return <Badge variant="outline" className="bg-purple-100 text-purple-700">{t('teacher.homework')}</Badge>
-      case 'reminder': return <Badge variant="outline" className="bg-yellow-100 text-yellow-700">提醒</Badge>
-      case 'announcement': return <Badge variant="outline" className="bg-orange-100 text-orange-700">公告</Badge>
+      case 'reminder': return <Badge variant="outline" className="bg-yellow-100 text-yellow-700">{t("提醒")}</Badge>
+      case 'announcement': return <Badge variant="outline" className="bg-orange-100 text-orange-700">{t("公告")}</Badge>
       default: return <Badge variant="outline">{t('teacher.unknown')}</Badge>
     }
   }
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
-      case 'urgent': return <Badge variant="destructive">紧急</Badge>
-      case 'high': return <Badge variant="default" className="bg-red-100 text-red-700">高</Badge>
-      case 'medium': return <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">中</Badge>
-      case 'low': return <Badge variant="outline" className="bg-gray-100 text-gray-700">低</Badge>
+      case 'urgent': return <Badge variant="destructive">{t("紧急")}</Badge>
+      case 'high': return <Badge variant="default" className="bg-red-100 text-red-700">{t("高")}</Badge>
+      case 'medium': return <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">{t("中")}</Badge>
+      case 'low': return <Badge variant="outline" className="bg-gray-100 text-gray-700">{t("低")}</Badge>
       default: return <Badge variant="outline">{t('teacher.unknown')}</Badge>
     }
   }
@@ -199,7 +199,7 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
       {/* 页面标题和描述 */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900">{t('announcement.notification_center')}</h2>
-        <p className="text-gray-600 mt-1">查看系统通知、工作安排、会议提醒等重要信息</p>
+        <p className="text-gray-600 mt-1">{t("查看系统通知、工作安排、会议提醒等重要信息")}</p>
       </div>
 
       {/* 统计概览 */}
@@ -208,7 +208,7 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">总通知</p>
+                <p className="text-sm font-medium text-gray-600">{t("总通知")}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
               </div>
               <div className="p-3 bg-blue-100 rounded-lg">
@@ -236,7 +236,7 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">紧急通知</p>
+                <p className="text-sm font-medium text-gray-600">{t("紧急通知")}</p>
                 <p className="text-2xl font-bold text-red-600">{stats.urgent}</p>
               </div>
               <div className="p-3 bg-red-100 rounded-lg">
@@ -250,7 +250,7 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">今日通知</p>
+                <p className="text-sm font-medium text-gray-600">{t("今日通知")}</p>
                 <p className="text-2xl font-bold text-green-600">{stats.today}</p>
               </div>
               <div className="p-3 bg-green-100 rounded-lg">
@@ -266,7 +266,7 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5 text-blue-600" />
-            搜索和筛选
+            {t("搜索和筛选")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -274,7 +274,7 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="搜索通知内容..."
+                placeholder={t("搜索通知内容...")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -286,12 +286,12 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
               onChange={(e) => setSelectedType(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">所有类型</option>
+              <option value="all">{t("所有类型")}</option>
               <option value="system">{t('announcement.system_notification')}</option>
-              <option value="meeting">会议通知</option>
-              <option value="assignment">作业相关</option>
-              <option value="reminder">提醒通知</option>
-              <option value="announcement">公告通知</option>
+              <option value="meeting">{t("会议通知")}</option>
+              <option value="assignment">{t("作业相关")}</option>
+              <option value="reminder">{t("提醒通知")}</option>
+              <option value="announcement">{t("公告通知")}</option>
             </select>
 
             <select
@@ -299,11 +299,11 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
               onChange={(e) => setSelectedPriority(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">所有优先级</option>
-              <option value="urgent">紧急</option>
-              <option value="high">高</option>
-              <option value="medium">中</option>
-              <option value="low">低</option>
+              <option value="all">{t("所有优先级")}</option>
+              <option value="urgent">{t("紧急")}</option>
+              <option value="high">{t("高")}</option>
+              <option value="medium">{t("中")}</option>
+              <option value="low">{t("低")}</option>
             </select>
 
             <select
@@ -311,7 +311,7 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
               onChange={(e) => setSelectedStatus(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">所有状态</option>
+              <option value="all">{t("所有状态")}</option>
               <option value="unread">{t('teacher.unread')}</option>
               <option value="read">{t('teacher.read')}</option>
               <option value="archived">{t('course.archived')}</option>
@@ -325,9 +325,9 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5 text-blue-600" />
-            通知列表
+            {t("通知列表")}
           </CardTitle>
-          <CardDescription>共 {filteredNotifications.length} 条通知</CardDescription>
+          <CardDescription>{t("共")} {filteredNotifications.length} {t("条通知")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -353,7 +353,7 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
                       {getTypeBadge(notification.type)}
                       {getPriorityBadge(notification.priority)}
                       {!notification.isRead && (
-                        <Badge variant="default" className="bg-blue-600">新</Badge>
+                        <Badge variant="default" className="bg-blue-600">{t("新")}</Badge>
                       )}
                     </div>
                     
@@ -373,7 +373,7 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
                       {notification.dueDate && (
                         <span className={`flex items-center gap-1 ${getPriorityColor(notification.priority)}`}>
                           <Clock className="h-3 w-3" />
-                          截止: {notification.dueDate}
+                          {t("截止:")} {notification.dueDate}
                         </span>
                       )}
                     </div>
@@ -448,18 +448,18 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
                 </div>
                 
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">发送者</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">{t("发送者")}</h4>
                   <p className="text-gray-600">{viewingNotification.sender}</p>
                 </div>
                 
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">发送时间</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">{t("发送时间")}</h4>
                   <p className="text-gray-600">{viewingNotification.createdAt}</p>
                 </div>
                 
                 {viewingNotification.dueDate && (
                   <div className="col-span-2">
-                    <h4 className="font-medium text-gray-900 mb-2">截止时间</h4>
+                    <h4 className="font-medium text-gray-900 mb-2">{t("截止时间")}</h4>
                     <p className={`${getPriorityColor(viewingNotification.priority)}`}>
                       {viewingNotification.dueDate}
                     </p>
@@ -470,11 +470,11 @@ export default function NotificationCenter({ teacherId }: NotificationCenterProp
             
             <div className="flex gap-2 mt-6">
               <Button variant="outline" onClick={() => setViewingNotification(null)}>
-                关闭
+                {t("关闭")}
               </Button>
               <Button>
                 <CheckCircle className="h-4 w-4 mr-2" />
-                标记为已读
+                {t("标记为已读")}
               </Button>
             </div>
           </div>

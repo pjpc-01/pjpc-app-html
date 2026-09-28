@@ -66,7 +66,7 @@ export default function ParentPaymentsPage() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">{t('finance.payment_records')}</h1>
-      <p className="text-gray-500">查看孩子的学费缴纳情况</p>
+      <p className="text-gray-500">{t("查看孩子的学费缴纳情况")}</p>
 
       {fetching ? (
         <div className="space-y-3">
@@ -76,7 +76,7 @@ export default function ParentPaymentsPage() {
         <Card>
           <CardContent className="flex flex-col items-center py-12">
             <CreditCard className="h-12 w-12 text-gray-300 mb-4" />
-            <p className="text-gray-500">暂无缴费记录</p>
+            <p className="text-gray-500">{t("暂无缴费记录")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -103,7 +103,7 @@ export default function ParentPaymentsPage() {
                       </div>
                       {inv.paidAmount && (
                         <div className="text-xs text-gray-400">
-                          已付 RM {Number(inv.paidAmount).toFixed(2)}
+                          {t("已付 RM")} {Number(inv.paidAmount).toFixed(2)}
                         </div>
                       )}
                     </div>

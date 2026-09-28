@@ -170,7 +170,7 @@ export default function UnifiedAttendanceHub() {
         <div className="h-full">
           <div className="px-3 py-2 rounded-lg text-sm flex items-center gap-2 border bg-green-50 border-green-200 text-green-700 mb-3">
             <div className="w-2 h-2 rounded-full bg-green-500" />
-            <span className="font-medium text-xs">💳 USB 读卡器全局启动 — 任何页面刷卡自动打卡</span>
+            <span className="font-medium text-xs">{t("💳 USB 读卡器全局启动 — 任何页面刷卡自动打卡")}</span>
           </div>
           {showNfc ? <NfcTapReader /> : (
             <Card className="border-2 border-dashed border-blue-200 bg-gradient-to-br from-blue-50/50 to-white h-[calc(100%-2.5rem)]">
@@ -178,10 +178,10 @@ export default function UnifiedAttendanceHub() {
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
                   <SmartphoneNfc className="h-8 w-8 text-blue-500" />
                 </div>
-                <h3 className="text-base font-bold text-gray-700 mb-2">手机 NFC 打卡</h3>
-                <p className="text-sm text-gray-400 mb-4">Android Chrome 可用</p>
+                <h3 className="text-base font-bold text-gray-700 mb-2">{t("手机 NFC 打卡")}</h3>
+                <p className="text-sm text-gray-400 mb-4">{t("Android Chrome 可用")}</p>
                 <Button onClick={() => setShowNfc(true)} size="sm" variant="outline" className="text-blue-600 border-blue-300">
-                  <SmartphoneNfc className="h-4 w-4 mr-1" /> 打开
+                  <SmartphoneNfc className="h-4 w-4 mr-1" /> {t("打开")}
                 </Button>
               </CardContent>
             </Card>
@@ -192,7 +192,7 @@ export default function UnifiedAttendanceHub() {
           <Card>
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Clock className="h-4 w-4 text-gray-500" /> 实时打卡
+                <Clock className="h-4 w-4 text-gray-500" /> {t("实时打卡")}
                 <Badge variant="secondary" className="text-[10px]">{records.length}</Badge>
               </CardTitle>
               <div className="flex items-center gap-1">
@@ -204,7 +204,7 @@ export default function UnifiedAttendanceHub() {
             </CardHeader>
             <CardContent className="p-0">
               {loading ? <div className="text-center py-12"><Loader2 className="h-6 w-6 mx-auto animate-spin text-blue-500" /></div>
-              : records.length === 0 ? <div className="text-center py-12 text-gray-400"><Clock className="h-8 w-8 mx-auto mb-2 opacity-30" /><p className="text-sm">刷卡后自动出现</p></div>
+              : records.length === 0 ? <div className="text-center py-12 text-gray-400"><Clock className="h-8 w-8 mx-auto mb-2 opacity-30" /><p className="text-sm">{t("刷卡后自动出现")}</p></div>
               : <div className="max-h-[320px] overflow-y-auto">
                   {records.map(rec => (
                     <div key={rec.id} className="flex items-center gap-3 px-4 py-2 border-b border-gray-50 hover:bg-gray-50">
@@ -242,13 +242,13 @@ export default function UnifiedAttendanceHub() {
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     reportTab === "calendar" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
                   }`}
-                >考勤日历</button>
+                >{t("考勤日历")}</button>
                 <button
                   onClick={() => setReportTab("filter")}
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     reportTab === "filter" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
                   }`}
-                >筛选报表</button>
+                >{t("筛选报表")}</button>
               </div>
               {reportTab === "today" && (
                 <input
@@ -324,7 +324,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
             className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
               centerFilter === "all" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
             }`}
-          >全部</button>
+          >{t("全部")}</button>
           <button
             onClick={() => setCenterFilter("PU1")}
             className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
@@ -342,7 +342,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
             className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
               centerFilter === "teacher" ? "bg-white shadow text-indigo-600 text-indigo-700" : "text-gray-500 hover:text-gray-700"
             }`}
-          >教师</button>
+          >{t("教师")}</button>
         </div>
         <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
           <button
@@ -350,19 +350,19 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
             className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
               statusFilter === "all" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
             }`}
-          >全部</button>
+          >{t("全部")}</button>
           <button
             onClick={() => setStatusFilter("checked_in")}
             className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
               statusFilter === "checked_in" ? "bg-white shadow text-green-700" : "text-gray-500 hover:text-gray-700"
             }`}
-          >已签到</button>
+          >{t("已签到")}</button>
           <button
             onClick={() => setStatusFilter("not_checked_in")}
             className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
               statusFilter === "not_checked_in" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
             }`}
-          >未签到</button>
+          >{t("未签到")}</button>
         </div>
         <div className="flex items-center gap-4 ml-auto">
         {[
@@ -381,7 +381,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
       </div>
 
       {reportLoading ? <div className="text-center py-8"><Loader2 className="h-5 w-5 mx-auto animate-spin text-blue-500" /></div>
-      : filteredRows.length === 0 ? <div className="text-center py-8 text-gray-400 text-sm">当日暂无考勤数据</div>
+      : filteredRows.length === 0 ? <div className="text-center py-8 text-gray-400 text-sm">{t("当日暂无考勤数据")}</div>
       : <div className="max-h-[360px] overflow-y-auto">
           <table className="w-full text-sm">
             <thead><tr className="bg-gray-50/80 border-b sticky top-0 backdrop-blur">
@@ -399,7 +399,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
                       </div>
                       <div>
                         <span className={`font-medium text-xs ${item._isAbsent ? "text-gray-400 line-through" : "text-gray-800"}`}>{item.person_name}</span>
-                        {item.grade && <span className="text-[10px] text-gray-400 ml-1.5">{item.grade}</span>}
+                        {item.grade && <span className="text-[10px] text-gray-400 ml-1.5">{t(item.grade)}</span>}
                       </div>
                     </div>
                   </td>
@@ -424,10 +424,10 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
                   <td className="px-4 py-2.5">
                     {item._isAbsent ? (
                       <span className="inline-flex items-center gap-1 text-[10px] text-gray-400">
-                        <span className="w-1 h-1 rounded-full bg-gray-300" /> 缺勤
+                        <span className="w-1 h-1 rounded-full bg-gray-300" /> {t("缺勤")}
                       </span>
                     ) : item.status === "late" ? <Badge className="text-[9px] bg-orange-50 text-orange-600 font-normal">{t('teacher.late')}</Badge> :
-                       item.status === "on_time" ? <Badge className="text-[9px] bg-emerald-50 text-emerald-600 font-normal">准时</Badge> :
+                       item.status === "on_time" ? <Badge className="text-[9px] bg-emerald-50 text-emerald-600 font-normal">{t("准时")}</Badge> :
                        <Badge variant="secondary" className="text-[9px] font-normal">{item.check_out_time ? "已签退" : "仅签到"}</Badge>}
                   </td>
                 </tr>
@@ -500,7 +500,7 @@ function CalendarReport() {
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
           <input
-            type="text" placeholder="搜索学生或教师姓名..."
+            type="text" placeholder={t("搜索学生或教师姓名...")}
             value={search}
             onChange={(e) => { setSearch(e.target.value); doSearch(e.target.value) }}
             className="w-full text-sm border rounded-lg pl-8 pr-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-200"
@@ -529,7 +529,7 @@ function CalendarReport() {
       {!selected ? (
         <div className="text-center py-16 text-gray-400">
           <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-20" />
-          <p className="text-sm">搜索并选择一位学生或教师查看考勤日历</p>
+          <p className="text-sm">{t("搜索并选择一位学生或教师查看考勤日历")}</p>
         </div>
       ) : loading ? (
         <div className="text-center py-16"><Loader2 className="h-6 w-6 mx-auto animate-spin text-blue-500" /></div>
@@ -544,7 +544,7 @@ function CalendarReport() {
               <div>
                 <p className="font-bold text-sm text-gray-900">{selected.name}</p>
                 <p className="text-[11px] text-gray-400">
-                  {selected.type === "teacher" ? "教师" : "学生"} · {summaryDays}天记录 · 签到{totalIn}次 签退{totalOut}次
+                  {selected.type === "teacher" ? "教师" : "学生"} · {summaryDays}{t("天记录 · 签到")}{totalIn}{t("次 签退")}{totalOut}{t("次")}
                 </p>
               </div>
             </div>
@@ -619,8 +619,8 @@ function CalendarReport() {
 
           {/* Legend */}
           <div className="flex items-center gap-4 mt-3 text-[11px] text-gray-400">
-            <span className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full bg-green-500" /> 签到</span>
-            <span className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full bg-amber-500" /> 签退</span>
+            <span className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full bg-green-500" /> {t("签到")}</span>
+            <span className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full bg-amber-500" /> {t("签退")}</span>
           </div>
 
           {/* Selected day detail */}
@@ -661,6 +661,7 @@ function FilterReport({ start, end, type, onStart, onEnd, onType, rows, loading,
   rows: ScanRecord[]; loading: boolean; onQuery: () => void; onExport: () => void
   fmtTimeSec: (iso: string) => string
 }) {
+  const { t } = useLanguage();
   const checkIns = rows.filter(r => r.action_key === "check_in").length
   const checkOuts = rows.filter(r => r.action_key === "check_out").length
   const teachers = rows.filter(r => r.person_type === "teacher").length
@@ -669,26 +670,26 @@ function FilterReport({ start, end, type, onStart, onEnd, onType, rows, loading,
     <div>
       {/* 筛选控制条 */}
       <div className="flex items-center gap-2 px-4 py-3 bg-white border-b flex-wrap">
-        <label className="text-xs text-gray-500">从</label>
+        <label className="text-xs text-gray-500">{t("从")}</label>
         <input type="date" value={start} onChange={e => onStart(e.target.value)} className="text-xs border rounded px-2 py-1 h-7 bg-white" />
-        <label className="text-xs text-gray-500">至</label>
+        <label className="text-xs text-gray-500">{t("至")}</label>
         <input type="date" value={end} onChange={e => onEnd(e.target.value)} className="text-xs border rounded px-2 py-1 h-7 bg-white" />
         <select value={type} onChange={e => onType(e.target.value)} className="text-xs border rounded px-2 py-1 h-7 bg-white">
-          <option value="all">全部</option>
-          <option value="student">学生</option>
-          <option value="teacher">教师</option>
+          <option value="all">{t("全部")}</option>
+          <option value="student">{t("学生")}</option>
+          <option value="teacher">{t("教师")}</option>
         </select>
-        <Button size="sm" onClick={onQuery} className="h-7 gap-1"><Clock className="h-3.5 w-3.5" />查询</Button>
+        <Button size="sm" onClick={onQuery} className="h-7 gap-1"><Clock className="h-3.5 w-3.5" />{t("查询")}</Button>
         <Button size="sm" variant="outline" onClick={onExport} disabled={rows.length === 0} className="h-7 gap-1">
-          <Download className="h-3.5 w-3.5" />导出 CSV
+          <Download className="h-3.5 w-3.5" />{t("导出 CSV")}
         </Button>
         <span className="ml-auto text-[11px] text-gray-400">
-          共 {rows.length} 条 · 签到{checkIns} 签退{checkOuts} · 教师{teachers}
+          {t("共")} {rows.length} {t("条 · 签到")}{checkIns} {t("签退")}{checkOuts} {t("· 教师")}{teachers}
         </span>
       </div>
 
       {loading ? <div className="text-center py-10"><Loader2 className="h-5 w-5 mx-auto animate-spin text-blue-500" /></div>
-      : rows.length === 0 ? <div className="text-center py-10 text-gray-400 text-sm">所选区间暂无打卡记录</div>
+      : rows.length === 0 ? <div className="text-center py-10 text-gray-400 text-sm">{t("所选区间暂无打卡记录")}</div>
       : <div className="max-h-[420px] overflow-y-auto">
           <table className="w-full text-sm">
             <thead><tr className="bg-gray-50/80 border-b sticky top-0 backdrop-blur">

@@ -243,7 +243,7 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">加载个人档案中...</p>
+          <p className="text-gray-600">{t("加载个人档案中...")}</p>
         </div>
       </div>
     )
@@ -253,27 +253,27 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
     <div className="space-y-6">
       {/* 页面标题 */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">个人档案</h2>
-        <p className="text-gray-600">查看您的个人信息、考勤记录、请假情况和负责班级</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">{t("个人档案")}</h2>
+        <p className="text-gray-600">{t("查看您的个人信息、考勤记录、请假情况和负责班级")}</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <User className="h-4 w-4" />
-            基本信息
+            {t("基本信息")}
           </TabsTrigger>
           <TabsTrigger value="attendance" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            考勤记录
+            {t("考勤记录")}
           </TabsTrigger>
           <TabsTrigger value="leave" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            请假管理
+            {t("请假管理")}
           </TabsTrigger>
           <TabsTrigger value="classes" className="flex items-center gap-2">
             <GraduationCap className="h-4 w-4" />
-            负责班级
+            {t("负责班级")}
           </TabsTrigger>
         </TabsList>
 
@@ -285,7 +285,7 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  个人信息
+                  {t("个人信息")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -297,8 +297,8 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="text-lg font-semibold">张老师</h3>
-                    <p className="text-gray-600">数学教师</p>
+                    <h3 className="text-lg font-semibold">{t("张老师")}</h3>
+                    <p className="text-gray-600">{t("数学教师")}</p>
                     <Badge variant="outline" className="mt-1">{t('teacher.active')}</Badge>
                   </div>
                 </div>
@@ -314,7 +314,7 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
                   </div>
                   <div className="flex items-center gap-3">
                     <MapPin className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm">WX 01 分行</span>
+                    <span className="text-sm">{t("WX 01 分行")}</span>
                   </div>
                 </div>
               </CardContent>
@@ -325,7 +325,7 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  统计概览
+                  {t("统计概览")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -333,22 +333,22 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
                   <div className="text-center p-3 bg-blue-50 rounded-lg">
                     <Users className="h-8 w-8 mx-auto mb-2 text-blue-600" />
                     <p className="text-2xl font-bold text-blue-600">47</p>
-                    <p className="text-sm text-gray-600">负责学生</p>
+                    <p className="text-sm text-gray-600">{t("负责学生")}</p>
                   </div>
                   <div className="text-center p-3 bg-green-50 rounded-lg">
                     <GraduationCap className="h-8 w-8 mx-auto mb-2 text-green-600" />
                     <p className="text-2xl font-bold text-green-600">2</p>
-                    <p className="text-sm text-gray-600">负责班级</p>
+                    <p className="text-sm text-gray-600">{t("负责班级")}</p>
                   </div>
                   <div className="text-center p-3 bg-purple-50 rounded-lg">
                     <Award className="h-8 w-8 mx-auto mb-2 text-purple-600" />
                     <p className="text-2xl font-bold text-purple-600">5</p>
-                    <p className="text-sm text-gray-600">教学年数</p>
+                    <p className="text-sm text-gray-600">{t("教学年数")}</p>
                   </div>
                   <div className="text-center p-3 bg-orange-50 rounded-lg">
                     <Calendar className="h-8 w-8 mx-auto mb-2 text-orange-600" />
                     <p className="text-2xl font-bold text-orange-600">{calculateRemainingLeave()}</p>
-                    <p className="text-sm text-gray-600">剩余年假</p>
+                    <p className="text-sm text-gray-600">{t("剩余年假")}</p>
                   </div>
                 </div>
               </CardContent>
@@ -362,9 +362,9 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                考勤记录
+                {t("考勤记录")}
               </CardTitle>
-              <CardDescription>查看您的出勤情况和考勤历史</CardDescription>
+              <CardDescription>{t("查看您的出勤情况和考勤历史")}</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -416,22 +416,22 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
-                  请假统计
+                  {t("请假统计")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                    <span className="text-sm font-medium">年假余额</span>
-                    <span className="text-lg font-bold text-blue-600">{calculateRemainingLeave()} 天</span>
+                    <span className="text-sm font-medium">{t("年假余额")}</span>
+                    <span className="text-lg font-bold text-blue-600">{calculateRemainingLeave()} {t("天")}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                    <span className="text-sm font-medium">病假余额</span>
-                    <span className="text-lg font-bold text-green-600">14 天</span>
+                    <span className="text-sm font-medium">{t("病假余额")}</span>
+                    <span className="text-lg font-bold text-green-600">{t("14 天")}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-                    <span className="text-sm font-medium">事假余额</span>
-                    <span className="text-lg font-bold text-purple-600">5 天</span>
+                    <span className="text-sm font-medium">{t("事假余额")}</span>
+                    <span className="text-lg font-bold text-purple-600">{t("5 天")}</span>
                   </div>
                 </div>
               </CardContent>
@@ -442,7 +442,7 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  请假记录
+                  {t("请假记录")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -453,7 +453,7 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
                         <div>
                           <p className="font-medium">{leave.reason}</p>
                           <p className="text-sm text-gray-600">
-                            {leave.startDate} 至 {leave.endDate} ({leave.days}天)
+                            {leave.startDate} {t("至")} {leave.endDate} ({leave.days}{t("天)")}
                           </p>
                         </div>
                         <Badge className={getStatusColor(leave.status)}>
@@ -481,7 +481,7 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
                 onClick={() => handleLeaveApplication()}
               >
                 <Calendar className="h-4 w-4 mr-2" />
-                申请请假
+                {t("申请请假")}
               </Button>
             </CardContent>
           </Card>
@@ -493,9 +493,9 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <GraduationCap className="h-5 w-5" />
-                负责班级
+                {t("负责班级")}
               </CardTitle>
-              <CardDescription>查看您负责的班级和教学安排</CardDescription>
+              <CardDescription>{t("查看您负责的班级和教学安排")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -504,7 +504,7 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h3 className="font-semibold text-lg">{classItem.className}</h3>
-                        <p className="text-gray-600">{classItem.subject} - {classItem.grade}</p>
+                        <p className="text-gray-600">{t(classItem.subject)} - {t(classItem.grade)}</p>
                       </div>
                       <Badge variant="outline">{classItem.center}</Badge>
                     </div>
@@ -512,7 +512,7 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Users className="h-4 w-4" />
-                        <span>{classItem.students} 名学生</span>
+                        <span>{classItem.students} {t("名学生")}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Clock className="h-4 w-4" />
@@ -523,11 +523,11 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
                     <div className="mt-3 flex gap-2">
                       <Button variant="outline" size="sm" className="flex-1">
                         <Eye className="h-4 w-4 mr-1" />
-                        查看详情
+                        {t("查看详情")}
                       </Button>
                       <Button variant="outline" size="sm" className="flex-1">
                         <Edit className="h-4 w-4 mr-1" />
-                        编辑
+                        {t("编辑")}
                       </Button>
                     </div>
                   </div>

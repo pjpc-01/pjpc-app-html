@@ -59,7 +59,7 @@ export default function ParentAttendancePage() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">{t('attendance.attendance_records')}</h1>
-      <p className="text-gray-500">查看孩子的每日签到情况</p>
+      <p className="text-gray-500">{t("查看孩子的每日签到情况")}</p>
 
       {filteredChildren.length === 0 ? (
         <Card>
@@ -85,10 +85,10 @@ export default function ParentAttendancePage() {
                   {records.length > 0 && (
                     <div className="flex items-center gap-3 text-sm">
                       <span className="text-green-600 flex items-center gap-1">
-                        <CheckCircle2 className="h-4 w-4" /> {present}天
+                        <CheckCircle2 className="h-4 w-4" /> {present}{t("天")}
                       </span>
                       <span className="text-red-600 flex items-center gap-1">
-                        <XCircle className="h-4 w-4" /> {absent}天
+                        <XCircle className="h-4 w-4" /> {absent}{t("天")}
                       </span>
                     </div>
                   )}
@@ -100,7 +100,7 @@ export default function ParentAttendancePage() {
                 ) : records.length === 0 ? (
                   <div className="text-center py-6 text-gray-400">
                     <Clock className="h-8 w-8 mx-auto mb-2" />
-                    <p className="text-sm">暂无出勤记录</p>
+                    <p className="text-sm">{t("暂无出勤记录")}</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -119,7 +119,7 @@ export default function ParentAttendancePage() {
                     ))}
                     {records.length > 10 && (
                       <p className="text-xs text-gray-400 text-center pt-2">
-                        仅显示最近 10 条记录
+                        {t("仅显示最近 10 条记录")}
                       </p>
                     )}
                   </div>

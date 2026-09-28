@@ -132,29 +132,29 @@ export default function StudentList({
               className="hover:bg-accent text-accent-foreground font-semibold cursor-pointer"
               onClick={() => handleSort('name')}
             >
-              姓名
+              {t("姓名")}
             </TableHead>
             <TableHead 
               className="hover:bg-accent text-accent-foreground font-semibold cursor-pointer"
               onClick={() => handleSort('studentId')}
             >
-              学号
+              {t("学号")}
             </TableHead>
             <TableHead 
               className="hover:bg-accent text-accent-foreground font-semibold cursor-pointer"
               onClick={() => handleSort('grade')}
             >
-              年级
+              {t("年级")}
             </TableHead>
             <TableHead className="text-accent-foreground font-semibold">{t('student.father')}</TableHead>
             <TableHead className="text-accent-foreground font-semibold">{t('student.mother')}</TableHead>
             <TableHead className="text-accent-foreground font-semibold">{t('student.contact_phone')}</TableHead>
-            <TableHead className="text-accent-foreground font-semibold">积分</TableHead>
+            <TableHead className="text-accent-foreground font-semibold">{t("积分")}</TableHead>
             <TableHead 
               className="hover:bg-accent text-accent-foreground font-semibold cursor-pointer"
               onClick={() => handleSort('status')}
             >
-              状态
+              {t("状态")}
             </TableHead>
             <TableHead className="w-24 text-accent-foreground font-semibold">{t('teacher.actions')}</TableHead>
           </TableRow>
@@ -199,9 +199,9 @@ export default function StudentList({
               <TableCell className="text-muted-foreground">
                 {student.father_phone || student.mother_phone ? (
                   <span className="text-xs">
-                    {student.father_phone && <span>父: {student.father_phone}</span>}
+                    {student.father_phone && <span>{t("父:")} {student.father_phone}</span>}
                     {student.father_phone && student.mother_phone && <span className="mx-1">|</span>}
-                    {student.mother_phone && <span>母: {student.mother_phone}</span>}
+                    {student.mother_phone && <span>{t("母:")} {student.mother_phone}</span>}
                   </span>
                 ) : '-'}
               </TableCell>
@@ -238,8 +238,8 @@ export default function StudentList({
                       title={student.status === 'active' ? '标记为已停学' : '恢复在读'}
                     >
                       {student.status === 'active'
-                        ? <><UserX className="h-3.5 w-3.5" />停学</>
-                        : <><UserCheck className="h-3.5 w-3.5" />复学</>}
+                        ? <><UserX className="h-3.5 w-3.5" />{t("停学")}</>
+                        : <><UserCheck className="h-3.5 w-3.5" />{t("复学")}</>}
                     </Button>
                   )}
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -252,7 +252,7 @@ export default function StudentList({
                         e.stopPropagation();
                         onViewReport(student);
                       }}
-                      title="学生报告"
+                      title={t("学生报告")}
                     >
                       <FileText className="h-3.5 w-3.5" />
                     </Button>

@@ -123,13 +123,13 @@ export default function LoginForm() {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('auth.after_school_care_management_system')}</h1>
-          <p className="text-gray-600">欢迎使用我们的教育管理平台</p>
+          <p className="text-gray-600">{t("欢迎使用我们的教育管理平台")}</p>
         </div>
 
         <Card className="shadow-lg">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">账户登录</CardTitle>
-            <CardDescription className="text-center">请输入您的邮箱和密码登录系统</CardDescription>
+            <CardTitle className="text-2xl text-center">{t("账户登录")}</CardTitle>
+            <CardDescription className="text-center">{t("请输入您的邮箱和密码登录系统")}</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -169,7 +169,7 @@ export default function LoginForm() {
                       <Input
                         id="login-email"
                         type="email"
-                        placeholder="请输入邮箱地址"
+                        placeholder={t("请输入邮箱地址")}
                         value={loginForm.email}
                         onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                         className="pl-10"
@@ -196,7 +196,7 @@ export default function LoginForm() {
                     {loading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        登录中...
+                        {t("登录中...")}
                       </>
                     ) : (
                       "登录"
@@ -215,7 +215,7 @@ export default function LoginForm() {
                       <Input
                         id="signup-name"
                         type="text"
-                        placeholder="请输入您的姓名"
+                        placeholder={t("请输入您的姓名")}
                         value={signupForm.name}
                         onChange={(e) => setSignupForm({ ...signupForm, name: e.target.value })}
                         className="pl-10"
@@ -230,7 +230,7 @@ export default function LoginForm() {
                       <Input
                         id="signup-email"
                         type="email"
-                        placeholder="请输入邮箱地址"
+                        placeholder={t("请输入邮箱地址")}
                         value={signupForm.email}
                         onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })}
                         className="pl-10"
@@ -239,7 +239,7 @@ export default function LoginForm() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-role">用户角色</Label>
+                    <Label htmlFor="signup-role">{t("用户角色")}</Label>
                     <Select
                       value={signupForm.role}
                       onValueChange={(value: "admin" | "teacher" | "parent" | "accountant") =>
@@ -247,11 +247,11 @@ export default function LoginForm() {
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="请选择您的角色" />
+                        <SelectValue placeholder={t("请选择您的角色")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="admin">{t('admin.admin')}</SelectItem>
-                        <SelectItem value="teacher">老师</SelectItem>
+                        <SelectItem value="teacher">{t("老师")}</SelectItem>
                         <SelectItem value="parent">{t('admin.parent')}</SelectItem>
                         <SelectItem value="accountant">{t('admin.accountant')}</SelectItem>
                       </SelectContent>
@@ -264,7 +264,7 @@ export default function LoginForm() {
                       <Input
                         id="signup-password"
                         type="password"
-                        placeholder="请输入密码（至少8位）"
+                        placeholder={t("请输入密码（至少8位）")}
                         value={signupForm.password}
                         onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
                         className="pl-10"
@@ -280,7 +280,7 @@ export default function LoginForm() {
                       <Input
                         id="signup-confirm-password"
                         type="password"
-                        placeholder="请再次输入密码"
+                        placeholder={t("请再次输入密码")}
                         value={signupForm.confirmPassword}
                         onChange={(e) => setSignupForm({ ...signupForm, confirmPassword: e.target.value })}
                         className="pl-10"
@@ -292,7 +292,7 @@ export default function LoginForm() {
                     {loading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        注册中...
+                        {t("注册中...")}
                       </>
                     ) : (
                       "注册账户"
@@ -311,7 +311,7 @@ export default function LoginForm() {
                       <Input
                         id="reset-email"
                         type="email"
-                        placeholder="请输入注册时的邮箱地址"
+                        placeholder={t("请输入注册时的邮箱地址")}
                         value={resetForm.email}
                         onChange={(e) => setResetForm({ ...resetForm, email: e.target.value })}
                         className="pl-10"
@@ -319,12 +319,12 @@ export default function LoginForm() {
                       />
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600">我们将向您的邮箱发送重置密码的链接</p>
+                  <p className="text-sm text-gray-600">{t("我们将向您的邮箱发送重置密码的链接")}</p>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        发送中...
+                        {t("发送中...")}
                       </>
                     ) : (
                       "发送重置邮件"
@@ -339,12 +339,12 @@ export default function LoginForm() {
         {/* Demo Accounts */}
         <Card className="mt-6 bg-blue-50 border-blue-200">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-blue-800">测试注册</CardTitle>
+            <CardTitle className="text-sm text-blue-800">{t("测试注册")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="text-xs text-blue-700">
-              <div>您可以使用任意邮箱进行注册测试</div>
-              <div>例如：test@example.com / 123456</div>
+              <div>{t("您可以使用任意邮箱进行注册测试")}</div>
+              <div>{t("例如：test@example.com / 123456")}</div>
             </div>
           </CardContent>
         </Card>

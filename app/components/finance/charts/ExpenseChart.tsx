@@ -2,18 +2,20 @@
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useLanguage } from "@/contexts/language-context";
 
 interface ExpenseChartProps {
   data: { name: string; value: number }[]
 }
 
 export default function ExpenseChart({ data }: ExpenseChartProps) {
+  const { t } = useLanguage();
   const COLORS = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#6366F1', '#8B5CF6']
 
   return (
     <Card className="border-none shadow-lg bg-white/50 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-slate-800">支出分布 (Spend Breakdown)</CardTitle>
+        <CardTitle className="text-lg font-semibold text-slate-800">{t("支出分布 (Spend Breakdown)")}</CardTitle>
       </CardHeader>
       <CardContent className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">

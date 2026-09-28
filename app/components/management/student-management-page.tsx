@@ -615,7 +615,7 @@ export default function StudentManagementPage() {
                 className="bg-white/60 backdrop-blur-sm border-amber-200/40 hover:bg-amber-50/80 text-amber-800"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                刷新
+                {t("刷新")}
               </Button>
               <Button 
                 variant="outline" 
@@ -624,7 +624,7 @@ export default function StudentManagementPage() {
                 className="bg-white/60 backdrop-blur-sm border-amber-200/40 hover:bg-amber-50/80 text-amber-800"
               >
                 <Download className="h-4 w-4 mr-2" />
-                导出
+                {t("导出")}
               </Button>
               <div className="relative">
                 <input 
@@ -641,7 +641,7 @@ export default function StudentManagementPage() {
                   className="bg-white/60 backdrop-blur-sm border-amber-200/40 hover:bg-amber-50/80 text-amber-800"
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  导入
+                  {t("导入")}
                 </Button>
               </div>
               <Button 
@@ -649,7 +649,7 @@ export default function StudentManagementPage() {
                 className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 <UserPlus className="h-4 w-4 mr-2" />
-                添加学生
+                {t("添加学生")}
               </Button>
             </div>
           </div>
@@ -668,7 +668,7 @@ export default function StudentManagementPage() {
                   </p>
                   <p className="text-xs text-amber-600 flex items-center">
                     <TrendingUp className="h-3 w-3 mr-1" />
-                    实时数据
+                    {t("实时数据")}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
@@ -689,7 +689,7 @@ export default function StudentManagementPage() {
                   </p>
                   <p className="text-xs text-yellow-700 flex items-center">
                     <UserCheck className="h-3 w-3 mr-1" />
-                    活跃状态
+                    {t("活跃状态")}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-xl flex items-center justify-center shadow-lg">
@@ -704,13 +704,13 @@ export default function StudentManagementPage() {
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-amber-800">小学生</p>
+                  <p className="text-sm font-medium text-amber-800">{t("小学生")}</p>
                   <p className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text text-transparent">
                     {stats.primaryCount}
                   </p>
                   <p className="text-xs text-orange-600 flex items-center">
                     <GraduationCap className="h-3 w-3 mr-1" />
-                    一年级到六年级
+                    {t("一年级到六年级")}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-r from-orange-400 to-amber-500 rounded-xl flex items-center justify-center shadow-lg">
@@ -725,13 +725,13 @@ export default function StudentManagementPage() {
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-amber-800">中学生</p>
+                  <p className="text-sm font-medium text-amber-800">{t("中学生")}</p>
                   <p className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-700 bg-clip-text text-transparent">
                     {stats.secondaryCount}
                   </p>
                   <p className="text-xs text-amber-600 flex items-center">
                     <GraduationCap className="h-3 w-3 mr-1" />
-                    初一到高三
+                    {t("初一到高三")}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-r from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
@@ -769,7 +769,7 @@ export default function StudentManagementPage() {
                   className={viewMode === 'table' ? 'bg-white shadow-sm text-amber-900' : 'text-amber-700 hover:text-amber-900 hover:bg-amber-50'}
                 >
                   <Table className="h-4 w-4 mr-2" />
-                  表格视图
+                  {t("表格视图")}
                 </Button>
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -778,7 +778,7 @@ export default function StudentManagementPage() {
                   className={viewMode === 'grid' ? 'bg-white shadow-sm text-amber-900' : 'text-amber-700 hover:text-amber-900 hover:bg-amber-50'}
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
-                  网格视图
+                  {t("网格视图")}
                 </Button>
                 <Button
                   variant={viewMode === 'analytics' ? 'default' : 'ghost'}
@@ -787,7 +787,7 @@ export default function StudentManagementPage() {
                   className={viewMode === 'analytics' ? 'bg-white shadow-sm text-amber-900' : 'text-amber-700 hover:text-amber-900 hover:bg-amber-50'}
                 >
                   <PieChart className="h-4 w-4 mr-2" />
-                  数据分析
+                  {t("数据分析")}
                 </Button>
               </div>
             </div>
@@ -797,14 +797,14 @@ export default function StudentManagementPage() {
               <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 rounded-lg">
                 <Users className="h-4 w-4 text-amber-600" />
                 <span className="text-sm font-medium text-amber-800">
-                  显示 {filteredStudents.length} 个学生
+                  {t("显示")} {filteredStudents.length} {t("个学生")}
                 </span>
               </div>
               {filters.searchTerm && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-orange-50 rounded-lg">
                   <Search className="h-4 w-4 text-orange-600" />
                   <span className="text-sm text-orange-800">
-                    搜索: &quot;{filters.searchTerm}&quot;
+                    {t("搜索: &quot;")}{filters.searchTerm}&quot;
                   </span>
                 </div>
               )}
@@ -819,7 +819,7 @@ export default function StudentManagementPage() {
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600 mx-auto"></div>
-                <p className="mt-2 text-amber-700">加载学生数据中...</p>
+                <p className="mt-2 text-amber-700">{t("加载学生数据中...")}</p>
               </div>
             </div>
           )}
@@ -834,7 +834,7 @@ export default function StudentManagementPage() {
                       </svg>
                     </div>
                     <p className="text-amber-700">{t('student.no_student_data')}</p>
-                    <p className="text-sm text-amber-500 mt-1">请添加学生或调整筛选条件</p>
+                    <p className="text-sm text-amber-500 mt-1">{t("请添加学生或调整筛选条件")}</p>
                   </div>
                 </div>
               ) : (
@@ -915,7 +915,7 @@ export default function StudentManagementPage() {
                     onClick={() => setViewingStudent(student)}
                   >
                     <Eye className="h-4 w-4 mr-2" />
-                    查看
+                    {t("查看")}
                   </Button>
                   <Button
                     variant="outline"
@@ -943,8 +943,8 @@ export default function StudentManagementPage() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-amber-700">
-            显示第 {startIndex + 1} - {Math.min(endIndex, filteredStudents.length)} 条，
-            共 {filteredStudents.length} 条记录
+            {t("显示第")} {startIndex + 1} - {Math.min(endIndex, filteredStudents.length)} 条，
+            共 {filteredStudents.length} {t("条记录")}
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -953,7 +953,7 @@ export default function StudentManagementPage() {
               onClick={prevPage}
               disabled={currentPage === 1}
             >
-              上一页
+              {t("上一页")}
             </Button>
             
             <div className="flex items-center gap-1">
@@ -989,7 +989,7 @@ export default function StudentManagementPage() {
               onClick={nextPage}
               disabled={currentPage === totalPages}
             >
-              下一页
+              {t("下一页")}
             </Button>
           </div>
         </div>

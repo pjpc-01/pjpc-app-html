@@ -114,7 +114,7 @@ export default function FilterAnalytics({
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
-            筛选结果统计
+            {t("筛选结果统计")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -125,19 +125,19 @@ export default function FilterAnalytics({
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{analytics.filtered}</div>
-              <div className="text-sm text-gray-600">筛选结果</div>
+              <div className="text-sm text-gray-600">{t("筛选结果")}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
                 {analytics.filterRate.toFixed(1)}%
               </div>
-              <div className="text-sm text-gray-600">筛选比例</div>
+              <div className="text-sm text-gray-600">{t("筛选比例")}</div>
             </div>
           </div>
           
           <div className="mt-4">
             <div className="flex items-center justify-between text-sm mb-1">
-              <span>筛选进度</span>
+              <span>{t("筛选进度")}</span>
               <span>{analytics.filtered}/{analytics.total}</span>
             </div>
             <Progress value={analytics.filterRate} className="h-2" />
@@ -152,7 +152,7 @@ export default function FilterAnalytics({
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <MapPin className="h-4 w-4" />
-              中心分布
+              {t("中心分布")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -185,7 +185,7 @@ export default function FilterAnalytics({
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <GraduationCap className="h-4 w-4" />
-              年级分布
+              {t("年级分布")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -221,7 +221,7 @@ export default function FilterAnalytics({
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Phone className="h-4 w-4" />
-              联系信息完整性
+              {t("联系信息完整性")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -229,7 +229,7 @@ export default function FilterAnalytics({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm">有电话号码</span>
+                  <span className="text-sm">{t("有电话号码")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-20 bg-gray-200 rounded-full h-2">
@@ -247,7 +247,7 @@ export default function FilterAnalytics({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-green-600" />
-                  <span className="text-sm">有邮箱地址</span>
+                  <span className="text-sm">{t("有邮箱地址")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-20 bg-gray-200 rounded-full h-2">
@@ -265,7 +265,7 @@ export default function FilterAnalytics({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm">有地址信息</span>
+                  <span className="text-sm">{t("有地址信息")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-20 bg-gray-200 rounded-full h-2">
@@ -288,7 +288,7 @@ export default function FilterAnalytics({
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Users className="h-4 w-4" />
-              状态分布
+              {t("状态分布")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -328,7 +328,7 @@ export default function FilterAnalytics({
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              年龄分布
+              {t("年龄分布")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -338,8 +338,8 @@ export default function FilterAnalytics({
                 .slice(0, 8)
                 .map(([age, count]) => (
                   <div key={age} className="text-center">
-                    <div className="text-lg font-semibold text-gray-900">{age}岁</div>
-                    <div className="text-sm text-gray-600">{count}人</div>
+                    <div className="text-lg font-semibold text-gray-900">{age}{t("岁")}</div>
+                    <div className="text-sm text-gray-600">{count}{t("人")}</div>
                     <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
                       <div 
                         className="bg-indigo-600 h-1 rounded-full" 

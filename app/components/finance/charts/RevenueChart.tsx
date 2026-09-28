@@ -2,18 +2,20 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useLanguage } from "@/contexts/language-context";
 
 interface RevenueChartProps {
   data: { month: string; amount: number }[]
 }
 
 export default function RevenueChart({ data }: RevenueChartProps) {
+  const { t } = useLanguage();
   const COLORS = ['#3B82F6', '#6366F1', '#8B5CF6', '#A855F7', '#C026D3', '#EC4899']
 
   return (
     <Card className="border-none shadow-lg bg-white/50 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-slate-800">收入趋势 (Revenue Pulse)</CardTitle>
+        <CardTitle className="text-lg font-semibold text-slate-800">{t("收入趋势 (Revenue Pulse)")}</CardTitle>
       </CardHeader>
       <CardContent className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">

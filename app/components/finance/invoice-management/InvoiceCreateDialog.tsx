@@ -117,15 +117,15 @@ export function InvoiceCreateDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            创建发票
+            {t("创建发票")}
           </DialogTitle>
-          <DialogDescription>选择学生并确认费用明细后创建发票</DialogDescription>
+          <DialogDescription>{t("选择学生并确认费用明细后创建发票")}</DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
           {/* Grade Filter */}
           <div>
-            <Label className="text-sm font-medium mb-2 block">选择年级</Label>
+            <Label className="text-sm font-medium mb-2 block">{t("选择年级")}</Label>
             <div className="flex flex-wrap gap-2">
               {availableGrades.map(grade => (
                 <Badge
@@ -169,14 +169,14 @@ export function InvoiceCreateDialog({
                     </TableHead>
                     <TableHead>{t('student.student_name')}</TableHead>
                     <TableHead className="w-20">{t('student.grade')}</TableHead>
-                    <TableHead className="w-28 text-right">应缴费</TableHead>
+                    <TableHead className="w-28 text-right">{t("应缴费")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredStudents.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">
-                        暂无学生数据
+                        {t("暂无学生数据")}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -199,7 +199,7 @@ export function InvoiceCreateDialog({
                             {student.name || student.student_name}
                             {amount === 0 && (
                               <span className="ml-2 text-xs text-amber-600">
-                                <AlertCircle className="h-3 w-3 inline" /> 未分配
+                                <AlertCircle className="h-3 w-3 inline" /> {t("未分配")}
                               </span>
                             )}
                           </TableCell>
@@ -222,7 +222,7 @@ export function InvoiceCreateDialog({
               <div className="flex items-center gap-2 mb-3">
                 <FileText className="h-4 w-4 text-primary" />
                 <span className="text-sm font-semibold">
-                  费用明细预览
+                  {t("费用明细预览")}
                   {selectedStudents.length === 1 && ` — ${feePreview.studentName}`}
                   {selectedStudents.length > 1 && ` (${selectedStudents.length} 位学生)`}
                 </span>
@@ -231,8 +231,8 @@ export function InvoiceCreateDialog({
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-8">#</TableHead>
-                    <TableHead>费用项目</TableHead>
-                    <TableHead className="w-28 text-right">金额 (RM)</TableHead>
+                    <TableHead>{t("费用项目")}</TableHead>
+                    <TableHead className="w-28 text-right">{t("金额 (RM)")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -258,7 +258,7 @@ export function InvoiceCreateDialog({
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-amber-600" />
               <span className="text-sm text-amber-800">
-                所选学生尚未分配费用项目。请先在「收费管理」中为学生分配费用。
+                {t("所选学生尚未分配费用项目。请先在「收费管理」中为学生分配费用。")}
               </span>
             </div>
           )}
@@ -266,7 +266,7 @@ export function InvoiceCreateDialog({
           {/* Invoice Details Form */}
           <div className="grid grid-cols-1 gap-3 pt-2 border-t">
             <div>
-              <Label htmlFor="period">账期（这张票属于哪个月）</Label>
+              <Label htmlFor="period">{t("账期（这张票属于哪个月）")}</Label>
               <Input
                 id="period"
                 type="month"
@@ -275,11 +275,11 @@ export function InvoiceCreateDialog({
                 className="mt-1"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                报表按账期算收入。例如 8 月的学费即使 9 月才开票，选 2026-08 就计入 8 月。
+                {t("报表按账期算收入。例如 8 月的学费即使 9 月才开票，选 2026-08 就计入 8 月。")}
               </p>
             </div>
             <div>
-              <Label htmlFor="dueDate">到期日期 *</Label>
+              <Label htmlFor="dueDate">{t("到期日期 *")}</Label>
               <Input
                 id="dueDate"
                 type="date"
@@ -292,7 +292,7 @@ export function InvoiceCreateDialog({
               <Label htmlFor="notes">{t('teacher.notes')}</Label>
               <Input
                 id="notes"
-                placeholder="发票备注（可选）"
+                placeholder={t("发票备注（可选）")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="mt-1"
@@ -306,12 +306,12 @@ export function InvoiceCreateDialog({
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-primary" />
                 <span className="text-sm text-primary font-medium">
-                  已选择 {selectedStudents.length} 位学生
+                  {t("已选择")} {selectedStudents.length} {t("位学生")}
                   {selectedStudents.length === 1 && ` (${selectedStudentObjects[0]?.name || selectedStudentObjects[0]?.student_name})`}
                 </span>
               </div>
               <span className="text-sm text-muted-foreground">
-                总计: <span className="font-bold text-green-600">
+                {t("总计:")} <span className="font-bold text-green-600">
                   RM {selectedStudentObjects.reduce((sum: number, s: any) => sum + (calculateStudentTotal(s.id) || 0), 0).toFixed(2)}
                 </span>
               </span>
@@ -321,7 +321,7 @@ export function InvoiceCreateDialog({
           {/* Action Buttons */}
           <div className="flex justify-end gap-2 pt-2 border-t">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              取消
+              {t("取消")}
             </Button>
             <Button 
               onClick={handleCreate}

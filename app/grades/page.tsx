@@ -184,11 +184,11 @@ export default function GradesManagementPage() {
   const bottom10 = studentRanking.slice(-10).reverse()
 
   return (
-    <PageLayout title={t('exam.grade_management')} description="录入和分析学生考试成绩">
+    <PageLayout title={t('exam.grade_management')} description={t("录入和分析学生考试成绩")}>
       {/* Tab switcher */}
       <div className="flex gap-1 mb-3 border-b pb-0">
-        <button onClick={() => setActiveTab("report")} className={`px-3 py-1.5 text-xs font-medium border-b-2 -mb-[2px] ${activeTab === "report" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>📊 成绩报表</button>
-        <button onClick={() => setActiveTab("entry")} className={`px-3 py-1.5 text-xs font-medium border-b-2 -mb-[2px] ${activeTab === "entry" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>📝 录入分析</button>
+        <button onClick={() => setActiveTab("report")} className={`px-3 py-1.5 text-xs font-medium border-b-2 -mb-[2px] ${activeTab === "report" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>{t("📊 成绩报表")}</button>
+        <button onClick={() => setActiveTab("entry")} className={`px-3 py-1.5 text-xs font-medium border-b-2 -mb-[2px] ${activeTab === "entry" ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}>{t("📝 录入分析")}</button>
       </div>
 
       {/* Center + Import */}
@@ -199,7 +199,7 @@ export default function GradesManagementPage() {
         <div className="flex-1" />
         <Button size="sm" variant="ghost" onClick={() => window.open("https://datastudio.google.com/u/0/reporting/5755410c-43ab-4d79-afa7-a770c11eef2a/page/bEQqD", "_blank")} className="h-8 text-xs text-blue-600"><ExternalLink className="h-3 w-3 mr-1" />DataStudio</Button>
         <Button size="sm" onClick={handleImport} disabled={importing} className="h-8 text-xs bg-green-600 hover:bg-green-700">
-          {importing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}从 DataStudio 导入
+          {importing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}{t("从 DataStudio 导入")}
         </Button>
         {importMsg && <Badge className="text-[10px] bg-blue-50 text-blue-700">{importMsg}</Badge>}
       </div>
@@ -218,7 +218,7 @@ export default function GradesManagementPage() {
         <Input type="number" value={year} onChange={e => setYear(parseInt(e.target.value) || CURRENT_YEAR)} className="w-24" />
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input className="pl-9" placeholder="搜索学生..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <Input className="pl-9" placeholder={t("搜索学生...")} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
       </div>
 
@@ -229,7 +229,7 @@ export default function GradesManagementPage() {
           <Card><CardContent className="p-4 text-center"><p className="text-xs text-slate-500">{t('grade.highest_score')}</p><p className="text-2xl font-bold text-emerald-600">{stats.highest}</p></CardContent></Card>
           <Card><CardContent className="p-4 text-center"><p className="text-xs text-slate-500">{t('grade.lowest_score')}</p><p className="text-2xl font-bold text-red-600">{stats.lowest}</p></CardContent></Card>
           <Card><CardContent className="p-4 text-center"><p className="text-xs text-slate-500">{t('exam.pass_rate')}</p><p className="text-2xl font-bold text-blue-600">{stats.passRate}%</p></CardContent></Card>
-          <Card><CardContent className="p-4 text-center"><p className="text-xs text-slate-500">等级分布</p><div className="flex justify-center gap-1 mt-1">{(["A", "B", "C", "D", "F"] as const).map(l => <span key={l} className={`text-xs px-1.5 py-0.5 rounded ${gradeBadgeCls(l)}`}>{l}:{stats.distribution[l]}</span>)}</div></CardContent></Card>
+          <Card><CardContent className="p-4 text-center"><p className="text-xs text-slate-500">{t("等级分布")}</p><div className="flex justify-center gap-1 mt-1">{(["A", "B", "C", "D", "F"] as const).map(l => <span key={l} className={`text-xs px-1.5 py-0.5 rounded ${gradeBadgeCls(l)}`}>{l}:{stats.distribution[l]}</span>)}</div></CardContent></Card>
         </div>
       )}
 
@@ -239,11 +239,11 @@ export default function GradesManagementPage() {
       ) : error ? (
         <Alert variant="destructive" className="mb-6"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>
       ) : filtered.length === 0 ? (
-        <Card className="mb-6"><CardContent className="p-12 text-center text-slate-400"><GraduationCap className="h-12 w-12 mx-auto mb-3 opacity-30" />{subject} · {term} · {year} 暂无成绩记录</CardContent></Card>
+        <Card className="mb-6"><CardContent className="p-12 text-center text-slate-400"><GraduationCap className="h-12 w-12 mx-auto mb-3 opacity-30" />{subject} · {term} · {year} {t("暂无成绩记录")}</CardContent></Card>
       ) : (
         <Card className="mb-6"><div className="overflow-x-auto">
           <Table>
-            <TableHeader><TableRow><TableHead className="w-12">#</TableHead><TableHead>{t('common.student')}</TableHead><TableHead className="w-24">{t('student.grade')}</TableHead><TableHead className="w-24">分数</TableHead><TableHead className="w-20">等级</TableHead><TableHead>评语</TableHead><TableHead className="w-24">{t('teacher.actions')}</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-12">#</TableHead><TableHead>{t('common.student')}</TableHead><TableHead className="w-24">{t('student.grade')}</TableHead><TableHead className="w-24">{t("分数")}</TableHead><TableHead className="w-20">{t("等级")}</TableHead><TableHead>{t("评语")}</TableHead><TableHead className="w-24">{t('teacher.actions')}</TableHead></TableRow></TableHeader>
             <TableBody>
               {filtered.map((g, i) => {
                 const isEditing = editingId === g.id
@@ -254,8 +254,8 @@ export default function GradesManagementPage() {
                     <TableCell className="text-xs text-slate-500">{g.expand?.studentId?.grade || studentMap.infoMap[g.studentId]?.grade || "-"}</TableCell>
                     <TableCell>{isEditing ? <Input type="number" min={0} max={100} value={editScore} onChange={e => setEditScore(e.target.value)} className="w-16 h-8 text-sm" /> : <span className={g.score && g.score >= 80 ? "text-emerald-600 font-bold" : g.score && g.score < 50 ? "text-red-600" : ""}>{g.score ?? "-"}</span>}</TableCell>
                     <TableCell>{g.grade_letter && <Badge className={gradeBadgeCls(g.grade_letter)}>{g.grade_letter}</Badge>}</TableCell>
-                    <TableCell>{isEditing ? <Input value={editComment} onChange={e => setEditComment(e.target.value)} className="h-8 text-sm" placeholder="评语..." /> : <span className="text-xs text-slate-400 truncate max-w-[120px] block">{g.teacher_comment || "-"}</span>}</TableCell>
-                    <TableCell>{isEditing ? <div className="flex gap-1"><Button size="sm" onClick={() => handleSave(g)}><Save className="h-3 w-3 mr-1" />{t('report.save')}</Button><Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>{t('report.cancel')}</Button></div> : <Button size="sm" variant="outline" onClick={() => { setEditingId(g.id); setEditScore(String(g.score ?? "")); setEditComment(g.teacher_comment || "") }}>编辑</Button>}</TableCell>
+                    <TableCell>{isEditing ? <Input value={editComment} onChange={e => setEditComment(e.target.value)} className="h-8 text-sm" placeholder={t("评语...")} /> : <span className="text-xs text-slate-400 truncate max-w-[120px] block">{g.teacher_comment || "-"}</span>}</TableCell>
+                    <TableCell>{isEditing ? <div className="flex gap-1"><Button size="sm" onClick={() => handleSave(g)}><Save className="h-3 w-3 mr-1" />{t('report.save')}</Button><Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>{t('report.cancel')}</Button></div> : <Button size="sm" variant="outline" onClick={() => { setEditingId(g.id); setEditScore(String(g.score ?? "")); setEditComment(g.teacher_comment || "") }}>{t("编辑")}</Button>}</TableCell>
                   </TableRow>
                 )
               })}
@@ -281,7 +281,7 @@ export default function GradesManagementPage() {
           <Card className="mb-6">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm flex items-center gap-2"><GraduationCap className="h-4 w-4" />成绩报表</CardTitle>
+                <CardTitle className="text-sm flex items-center gap-2"><GraduationCap className="h-4 w-4" />{t("成绩报表")}</CardTitle>
                 <div className="flex items-center gap-2">
                   <Select value={reportTerm} onValueChange={setReportTerm}>
                     <SelectTrigger className="w-28 h-7 text-xs"><SelectValue /></SelectTrigger>
@@ -290,9 +290,9 @@ export default function GradesManagementPage() {
                   <Input type="number" value={year} onChange={e => setYear(parseInt(e.target.value) || CURRENT_YEAR)} className="w-20 h-7 text-xs" />
                 </div>
                 <Select value={reportGradeFilter} onValueChange={setReportGradeFilter}>
-                  <SelectTrigger className="w-28 h-7 text-xs"><SelectValue placeholder="全部年级" /></SelectTrigger>
+                  <SelectTrigger className="w-28 h-7 text-xs"><SelectValue placeholder={t("全部年级")} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部年级</SelectItem>
+                    <SelectItem value="all">{t("全部年级")}</SelectItem>
                     <SelectItem value="Standard 1">Standard 1</SelectItem>
                     <SelectItem value="Standard 2">Standard 2</SelectItem>
                     <SelectItem value="Standard 3">Standard 3</SelectItem>
@@ -316,11 +316,11 @@ export default function GradesManagementPage() {
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <TableHead className={STICKY_TH + " text-xs w-10"}>#</TableHead>
-                      <TableHead className={STICKY_TH + " text-xs w-28"}>学生</TableHead>
-                      <TableHead className={STICKY_TH + " text-xs w-16"}>年级</TableHead>
+                      <TableHead className={STICKY_TH + " text-xs w-28"}>{t("学生")}</TableHead>
+                      <TableHead className={STICKY_TH + " text-xs w-16"}>{t("年级")}</TableHead>
                       {gradeSubjects.map(s => <TableHead key={s} className={STICKY_TH + " text-xs text-center w-16"}>{s}</TableHead>)}
-                      <TableHead className={STICKY_TH + " text-xs text-right w-14"}>平均</TableHead>
-                      <TableHead className={STICKY_TH + " text-xs w-14"}>核对</TableHead>
+                      <TableHead className={STICKY_TH + " text-xs text-right w-14"}>{t("平均")}</TableHead>
+                      <TableHead className={STICKY_TH + " text-xs w-14"}>{t("核对")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -364,7 +364,7 @@ export default function GradesManagementPage() {
                               }}
                               className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded border border-slate-200 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600"
                             >
-                              <ExternalLink className="h-3 w-3" />核对
+                              <ExternalLink className="h-3 w-3" />{t("核对")}
                             </button>
                           </TableCell>
                         </TableRow>
@@ -384,29 +384,29 @@ export default function GradesManagementPage() {
         <Button size="sm" variant="ghost" onClick={() => setShowAnalysis(!showAnalysis)} className="h-7 text-xs text-slate-500">
           <BarChart3 className="h-3 w-3 mr-1" />{showAnalysis ? "隐藏分析" : "显示分析"}
         </Button>
-        <span className="text-xs text-slate-400">全部科目 · {term} · {year}</span>
+        <span className="text-xs text-slate-400">{t("全部科目 ·")} {term} · {year}</span>
       </div>
 
       {/* Analysis section */}
       {showAnalysis && !loading && analysisGrades.length > 0 && overallStats && (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
-            <Card><CardContent className="p-4 text-center"><p className="text-xs text-slate-500">学生数</p><p className="text-2xl font-bold text-indigo-600">{overallStats.students}</p><p className="text-[10px] text-slate-400">{overallStats.entries} 科次</p></CardContent></Card>
-            <Card><CardContent className="p-4 text-center"><p className="text-xs text-slate-500">全科均分</p><p className={`text-2xl font-bold ${overallStats.avg >= 60 ? "text-emerald-600" : overallStats.avg >= 40 ? "text-amber-600" : "text-red-600"}`}>{overallStats.avg}</p></CardContent></Card>
-            <Card><CardContent className="p-4 text-center"><p className="text-xs text-slate-500">及格率</p><p className={`text-2xl font-bold ${overallStats.passRate >= 60 ? "text-emerald-600" : overallStats.passRate >= 40 ? "text-amber-600" : "text-red-600"}`}>{overallStats.passRate}%</p></CardContent></Card>
-            <Card><CardContent className="p-4 text-center"><p className="text-xs text-slate-500">最高分</p><p className="text-2xl font-bold text-emerald-600">{overallStats.high}</p></CardContent></Card>
-            <Card><CardContent className="p-4 text-center"><p className="text-xs text-slate-500">最低分</p><p className="text-2xl font-bold text-red-600">{overallStats.low}</p></CardContent></Card>
+            <Card><CardContent className="p-4 text-center"><p className="text-xs text-slate-500">{t("学生数")}</p><p className="text-2xl font-bold text-indigo-600">{overallStats.students}</p><p className="text-[10px] text-slate-400">{overallStats.entries} {t("科次")}</p></CardContent></Card>
+            <Card><CardContent className="p-4 text-center"><p className="text-xs text-slate-500">{t("全科均分")}</p><p className={`text-2xl font-bold ${overallStats.avg >= 60 ? "text-emerald-600" : overallStats.avg >= 40 ? "text-amber-600" : "text-red-600"}`}>{overallStats.avg}</p></CardContent></Card>
+            <Card><CardContent className="p-4 text-center"><p className="text-xs text-slate-500">{t("及格率")}</p><p className={`text-2xl font-bold ${overallStats.passRate >= 60 ? "text-emerald-600" : overallStats.passRate >= 40 ? "text-amber-600" : "text-red-600"}`}>{overallStats.passRate}%</p></CardContent></Card>
+            <Card><CardContent className="p-4 text-center"><p className="text-xs text-slate-500">{t("最高分")}</p><p className="text-2xl font-bold text-emerald-600">{overallStats.high}</p></CardContent></Card>
+            <Card><CardContent className="p-4 text-center"><p className="text-xs text-slate-500">{t("最低分")}</p><p className="text-2xl font-bold text-red-600">{overallStats.low}</p></CardContent></Card>
           </div>
 
           <Card className="mb-6">
-            <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><BarChart3 className="h-4 w-4" />科目分析</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><BarChart3 className="h-4 w-4" />{t("科目分析")}</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {subjectStats.map(s => {
                   const max = Math.max(...Object.values(s.dist), 1)
                   return (
                     <div key={s.subject} className="flex items-center gap-3">
-                      <div className="w-20 text-xs font-medium shrink-0 text-right">{s.subject}</div>
+                      <div className="w-20 text-xs font-medium shrink-0 text-right">{t(s.subject)}</div>
                       <div className="flex-1 flex items-center gap-1">
                         {(["A", "B", "C", "D", "F"] as const).map(l => {
                           const c = s.dist[l] || 0
@@ -423,12 +423,12 @@ export default function GradesManagementPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Trophy className="h-4 w-4 text-amber-500" />前十名</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Trophy className="h-4 w-4 text-amber-500" />{t("前十名")}</CardTitle></CardHeader>
               <CardContent className="p-0">
                 <Table>
-                  <TableHeader><TableRow><TableHead className="w-10 text-xs">#</TableHead><TableHead className="text-xs">学生</TableHead><TableHead className="text-xs w-16">班级</TableHead><TableHead className="text-xs w-14 text-right">平均</TableHead></TableRow></TableHeader>
+                  <TableHeader><TableRow><TableHead className="w-10 text-xs">#</TableHead><TableHead className="text-xs">{t("学生")}</TableHead><TableHead className="text-xs w-16">{t("班级")}</TableHead><TableHead className="text-xs w-14 text-right">{t("平均")}</TableHead></TableRow></TableHeader>
                   <TableBody>
-                    {top10.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center text-slate-400 py-4">暂无</TableCell></TableRow> :
+                    {top10.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center text-slate-400 py-4">{t("暂无")}</TableCell></TableRow> :
                       top10.map((s, i) => (
                         <TableRow key={s.id} className={i < 3 ? "bg-amber-50/50" : ""}>
                           <TableCell className="text-xs">{i < 3 ? <Medal className={`h-3.5 w-3.5 ${i === 0 ? "text-amber-500" : i === 1 ? "text-slate-400" : "text-orange-400"}`} /> : i + 1}</TableCell>
@@ -443,12 +443,12 @@ export default function GradesManagementPage() {
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-red-500" />需关注</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-red-500" />{t("需关注")}</CardTitle></CardHeader>
               <CardContent className="p-0">
                 <Table>
-                  <TableHeader><TableRow><TableHead className="w-10 text-xs">#</TableHead><TableHead className="text-xs">学生</TableHead><TableHead className="text-xs w-16">班级</TableHead><TableHead className="text-xs w-14 text-right">平均</TableHead></TableRow></TableHeader>
+                  <TableHeader><TableRow><TableHead className="w-10 text-xs">#</TableHead><TableHead className="text-xs">{t("学生")}</TableHead><TableHead className="text-xs w-16">{t("班级")}</TableHead><TableHead className="text-xs w-14 text-right">{t("平均")}</TableHead></TableRow></TableHeader>
                   <TableBody>
-                    {bottom10.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center text-slate-400 py-4">暂无</TableCell></TableRow> :
+                    {bottom10.length === 0 ? <TableRow><TableCell colSpan={4} className="text-center text-slate-400 py-4">{t("暂无")}</TableCell></TableRow> :
                       bottom10.map((s, i) => (
                         <TableRow key={s.id} className={s.avg < 40 ? "bg-red-50/50" : ""}>
                           <TableCell className="text-xs text-slate-400">{studentRanking.length - i}</TableCell>
@@ -465,11 +465,11 @@ export default function GradesManagementPage() {
           </div>
 
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><GraduationCap className="h-4 w-4" />全部排名</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><GraduationCap className="h-4 w-4" />{t("全部排名")}</CardTitle></CardHeader>
             <CardContent className="p-0">
               <div className="max-h-[600px] overflow-auto">
                 <Table>
-                  <TableHeader><TableRow><TableHead className="w-10 text-xs">#</TableHead><TableHead className="text-xs">学生</TableHead><TableHead className="text-xs w-16">班级</TableHead><TableHead className="text-xs w-14 text-right">平均</TableHead><TableHead className="text-xs w-12 text-right">科数</TableHead></TableRow></TableHeader>
+                  <TableHeader><TableRow><TableHead className="w-10 text-xs">#</TableHead><TableHead className="text-xs">{t("学生")}</TableHead><TableHead className="text-xs w-16">{t("班级")}</TableHead><TableHead className="text-xs w-14 text-right">{t("平均")}</TableHead><TableHead className="text-xs w-12 text-right">{t("科数")}</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {studentRanking.map((s, i) => (
                       <TableRow key={s.id} className={i < 3 ? "bg-amber-50/50" : s.avg < 40 ? "bg-red-50/50" : ""}>

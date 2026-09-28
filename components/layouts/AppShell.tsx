@@ -544,7 +544,7 @@ export default function AppShell({
           </>
         ) : item.disabled ? (
           <div
-            title="功能开发中，暂未开放"
+            title={t("功能开发中，暂未开放")}
             aria-disabled="true"
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 cursor-not-allowed select-none"
           >
@@ -711,19 +711,19 @@ export default function AppShell({
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="sm" className="h-6 text-[10px] text-gray-400 hover:text-gray-600 flex-1"
                 onClick={() => setNavEditMode(false)}>
-                完成排序
+                {t("完成排序")}
               </Button>
               {navOrder.length > 0 && (
                 <Button variant="ghost" size="sm" className="h-6 text-[10px] text-gray-300 hover:text-red-400"
                   onClick={resetNavOrder}>
-                  恢复默认
+                  {t("恢复默认")}
                 </Button>
               )}
             </div>
           ) : (
             <Button variant="ghost" size="sm" className="h-6 text-[10px] text-gray-300 hover:text-gray-500 w-full"
               onClick={() => setNavEditMode(true)}>
-              <Edit3 className="h-3 w-3 mr-1" />调整菜单顺序
+              <Edit3 className="h-3 w-3 mr-1" />{t("调整菜单顺序")}
             </Button>
           )}
         </div>
@@ -801,7 +801,7 @@ export default function AppShell({
                 onClick={() => router.push("/login")}
               >
                 <LogOut className="h-3.5 w-3.5 rotate-180" />
-                登入
+                {t("登入")}
               </Button>
             )}
           </div>

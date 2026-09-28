@@ -290,12 +290,12 @@ export default function TeacherForm({
           {/* 基本信息 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="teacher_name">教师姓名 *</Label>
+              <Label htmlFor="teacher_name">{t("教师姓名 *")}</Label>
               <Input
                 id="teacher_name"
                 value={formData.teacher_name}
                 onChange={(e) => handleInputChange('teacher_name', e.target.value)}
-                placeholder="请输入教师姓名"
+                placeholder={t("请输入教师姓名")}
                 className={errors.teacher_name ? 'border-red-500' : ''}
               />
               {errors.teacher_name && (
@@ -304,42 +304,42 @@ export default function TeacherForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="teacher_id">教师工号</Label>
+              <Label htmlFor="teacher_id">{t("教师工号")}</Label>
               <Input
                 id="teacher_id"
                 value={formData.teacher_id}
                 onChange={(e) => handleInputChange('teacher_id', e.target.value)}
-                placeholder="请输入教师工号"
+                placeholder={t("请输入教师工号")}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="nric">NRIC 身份证号码</Label>
+              <Label htmlFor="nric">{t("NRIC 身份证号码")}</Label>
               <Input
                 id="nric"
                 value={formData.nric}
                 onChange={(e) => handleInputChange('nric', e.target.value)}
-                placeholder="例如: 880101-01-1234"
+                placeholder={t("例如: 880101-01-1234")}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="epfNo">EPF 号码</Label>
+              <Label htmlFor="epfNo">{t("EPF 号码")}</Label>
               <Input
                 id="epfNo"
                 value={formData.epfNo}
                 onChange={(e) => handleInputChange('epfNo', e.target.value)}
-                placeholder="请输入 EPF 号码"
+                placeholder={t("请输入 EPF 号码")}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="socsoNo">SOCSO 号码</Label>
+              <Label htmlFor="socsoNo">{t("SOCSO 号码")}</Label>
               <Input
                 id="socsoNo"
                 value={formData.socsoNo}
                 onChange={(e) => handleInputChange('socsoNo', e.target.value)}
-                placeholder="请输入 SOCSO 号码"
+                placeholder={t("请输入 SOCSO 号码")}
               />
             </div>
 
@@ -360,7 +360,7 @@ export default function TeacherForm({
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="请输入电话"
+                placeholder={t("请输入电话")}
               />
             </div>
 
@@ -368,7 +368,7 @@ export default function TeacherForm({
               <Label htmlFor="status">{t('teacher.status')}</Label>
               <Select value={formData.status || 'active'} onValueChange={(value) => handleInputChange('status', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择状态" />
+                  <SelectValue placeholder={t("选择状态")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="active">{t('teacher.active')}</SelectItem>
@@ -379,23 +379,23 @@ export default function TeacherForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="department">部门</Label>
+              <Label htmlFor="department">{t("部门")}</Label>
               <Select value={formData.department} onValueChange={(value) => handleInputChange('department', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择部门" />
+                  <SelectValue placeholder={t("选择部门")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="管理层">管理层（Management）</SelectItem>
-                  <SelectItem value="学术部门">学术部门（Academic Department）</SelectItem>
-                  <SelectItem value="学生事务与活动部门">学生事务与活动部门（Student Affairs）</SelectItem>
-                  <SelectItem value="行政与家长沟通部门">行政与家长沟通部门（Admin & Parent Liaison）</SelectItem>
-                  <SelectItem value="财务与后勤部门">财务与后勤部门（Finance & Operations）</SelectItem>
+                  <SelectItem value="管理层">{t("管理层（Management）")}</SelectItem>
+                  <SelectItem value="学术部门">{t("学术部门（Academic Department）")}</SelectItem>
+                  <SelectItem value="学生事务与活动部门">{t("学生事务与活动部门（Student Affairs）")}</SelectItem>
+                  <SelectItem value="行政与家长沟通部门">{t("行政与家长沟通部门（Admin & Parent Liaison）")}</SelectItem>
+                  <SelectItem value="财务与后勤部门">{t("财务与后勤部门（Finance & Operations）")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
                          <div className="space-y-2">
-               <Label htmlFor="position">职位</Label>
+               <Label htmlFor="position">{t("职位")}</Label>
                <Select 
                  value={formData.position}
                  onValueChange={(value) => handleInputChange('position', value)}
@@ -420,7 +420,7 @@ export default function TeacherForm({
             </div>
 
                          <div className="space-y-2">
-               <Label htmlFor="joinDate">入职日期</Label>
+               <Label htmlFor="joinDate">{t("入职日期")}</Label>
                <Button
                  type="button"
                  variant="outline"
@@ -431,7 +431,7 @@ export default function TeacherForm({
                  onClick={() => setIsCalendarOpen(true)}
                >
                  <CalendarIcon className="mr-2 h-4 w-4" />
-                 {formData.joinDate ? format(new Date(formData.joinDate), "PPP") : <span>选择入职日期</span>}
+                 {formData.joinDate ? format(new Date(formData.joinDate), "PPP") : <span>{t("选择入职日期")}</span>}
                </Button>
              </div>
 
@@ -448,13 +448,13 @@ export default function TeacherForm({
 
           {/* 中心分配 */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">中心分配</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t("中心分配")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="center">{t('teacher.center')}</Label>
                 <Select value={formData.centerId} onValueChange={(value) => handleInputChange('centerId', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择中心" />
+                    <SelectValue placeholder={t("选择中心")} />
                   </SelectTrigger>
                   <SelectContent>
                     {centers.map((c: {id:string,name:string,code:string}) => (
@@ -469,37 +469,37 @@ export default function TeacherForm({
           {/* 财务信息 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="taxNo">税务号码</Label>
+              <Label htmlFor="taxNo">{t("税务号码")}</Label>
               <Input
                 id="taxNo"
                 value={formData.taxNo}
                 onChange={(e) => handleInputChange('taxNo', e.target.value)}
-                placeholder="请输入税务号码"
+                placeholder={t("请输入税务号码")}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="totalChild">子女数量</Label>
+              <Label htmlFor="totalChild">{t("子女数量")}</Label>
               <Input
                 id="totalChild"
                 type="number"
                 min="0"
                 value={formData.totalChild}
                 onChange={(e) => handleInputChange('totalChild', parseInt(e.target.value) || 0)}
-                placeholder="请输入子女数量"
+                placeholder={t("请输入子女数量")}
               />
             </div>
           </div>
 
           {/* 银行信息 */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">银行信息</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t("银行信息")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="bankName">{t('teacher.bank_name')}</Label>
                 <Select value={formData.bankName} onValueChange={(value) => handleInputChange('bankName', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择银行" />
+                    <SelectValue placeholder={t("选择银行")} />
                   </SelectTrigger>
                   <SelectContent>
                     {malaysianBanks.map((bank) => (
@@ -512,32 +512,32 @@ export default function TeacherForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="bankAccountName">账户持有人姓名</Label>
+                <Label htmlFor="bankAccountName">{t("账户持有人姓名")}</Label>
                 <Input
                   id="bankAccountName"
                   value={formData.bankAccountName}
                   onChange={(e) => handleInputChange('bankAccountName', e.target.value)}
-                  placeholder="请输入账户持有人姓名"
+                  placeholder={t("请输入账户持有人姓名")}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="bankAccountNo">银行账号</Label>
+                <Label htmlFor="bankAccountNo">{t("银行账号")}</Label>
                 <Input
                   id="bankAccountNo"
                   value={formData.bankAccountNo}
                   onChange={(e) => handleInputChange('bankAccountNo', e.target.value)}
-                  placeholder="请输入银行账号"
+                  placeholder={t("请输入银行账号")}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="accountNo">其他账号</Label>
+                <Label htmlFor="accountNo">{t("其他账号")}</Label>
                 <Input
                   id="accountNo"
                   value={formData.accountNo}
                   onChange={(e) => handleInputChange('accountNo', e.target.value)}
-                  placeholder="请输入其他账号（可选）"
+                  placeholder={t("请输入其他账号（可选）")}
                 />
               </div>
             </div>
@@ -546,7 +546,7 @@ export default function TeacherForm({
           {/* 个人状态信息 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>是否公民</Label>
+              <Label>{t("是否公民")}</Label>
               <div className="flex gap-4">
                 <label className="flex items-center space-x-2">
                   <input
@@ -574,7 +574,7 @@ export default function TeacherForm({
             </div>
 
             <div className="space-y-2">
-              <Label>婚姻状况</Label>
+              <Label>{t("婚姻状况")}</Label>
               <div className="flex gap-4">
                 <label className="flex items-center space-x-2">
                   <input
@@ -585,7 +585,7 @@ export default function TeacherForm({
                     onChange={(e) => handleInputChange('marriedStatus', e.target.value === 'true')}
                     className="text-blue-600"
                   />
-                  <span>已婚</span>
+                  <span>{t("已婚")}</span>
                 </label>
                 <label className="flex items-center space-x-2">
                   <input
@@ -596,7 +596,7 @@ export default function TeacherForm({
                     onChange={(e) => handleInputChange('marriedStatus', e.target.value === 'true')}
                     className="text-blue-600"
                   />
-                  <span>未婚</span>
+                  <span>{t("未婚")}</span>
                 </label>
               </div>
             </div>
@@ -620,7 +620,7 @@ export default function TeacherForm({
                 id="emergencyContact"
                 value={formData.emergencyContact}
                 onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
-                placeholder="请输入紧急联系人"
+                placeholder={t("请输入紧急联系人")}
               />
             </div>
           </div>
@@ -632,7 +632,7 @@ export default function TeacherForm({
               id="notes"
               value={formData.notes}
               onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="请输入备注信息"
+              placeholder={t("请输入备注信息")}
               rows={3}
             />
           </div>
@@ -640,7 +640,7 @@ export default function TeacherForm({
           {/* 提交按钮 */}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              取消
+              {t("取消")}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? '提交中...' : (teacher ? '更新' : '添加')}
@@ -653,7 +653,7 @@ export default function TeacherForm({
        <Dialog open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
          <DialogContent className="max-w-md">
            <DialogHeader>
-             <DialogTitle>选择教师入职日期</DialogTitle>
+             <DialogTitle>{t("选择教师入职日期")}</DialogTitle>
            </DialogHeader>
            
            <div className="space-y-4">
@@ -666,7 +666,7 @@ export default function TeacherForm({
                  className="text-xs h-6 p-1 w-full justify-between"
                  onClick={() => setShowQuickYears(!showQuickYears)}
                >
-                 <span>快速选择年份</span>
+                 <span>{t("快速选择年份")}</span>
                  <span>{showQuickYears ? '▼' : '▶'}</span>
                </Button>
                
@@ -674,7 +674,7 @@ export default function TeacherForm({
                  <div className="space-y-3 border-t pt-3">
                    {/* 最近年份 */}
                    <div className="space-y-2">
-                     <p className="text-xs text-blue-600 font-medium">最近年份:</p>
+                     <p className="text-xs text-blue-600 font-medium">{t("最近年份:")}</p>
                      <div className="grid grid-cols-4 gap-1">
                        {[2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017].map((year) => (
                          <Button
@@ -696,7 +696,7 @@ export default function TeacherForm({
                    
                    {/* 更早年份 */}
                    <div className="space-y-2">
-                     <p className="text-xs text-green-600 font-medium">更早年份:</p>
+                     <p className="text-xs text-green-600 font-medium">{t("更早年份:")}</p>
                      <div className="grid grid-cols-4 gap-1">
                        {[2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009].map((year) => (
                          <Button
@@ -763,7 +763,7 @@ export default function TeacherForm({
                    setIsCalendarOpen(false)
                  }}
                >
-                 清除日期
+                 {t("清除日期")}
                </Button>
              </div>
            </div>

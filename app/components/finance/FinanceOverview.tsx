@@ -32,17 +32,17 @@ export default function FinanceOverview() {
 
       {/* 分行筛选 */}
       <div className="w-56">
-        <Label className="text-xs text-gray-500">分行</Label>
+        <Label className="text-xs text-gray-500">{t("分行")}</Label>
         <Select value={centerFilter} onValueChange={setCenterFilter}>
           <SelectTrigger className="h-9">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">全部分行</SelectItem>
+            <SelectItem value="all">{t("全部分行")}</SelectItem>
             {centerScope.options.map(o => (
               <SelectItem key={o.code} value={o.code}>{o.name}</SelectItem>
             ))}
-            <SelectItem value={UNASSIGNED_CENTER}>未分配</SelectItem>
+            <SelectItem value={UNASSIGNED_CENTER}>{t("未分配")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -51,7 +51,7 @@ export default function FinanceOverview() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">月收入</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("月收入")}</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -63,7 +63,7 @@ export default function FinanceOverview() {
             ) : (
               <>
                 <div className="text-2xl font-bold">RM {financialStats.monthlyRevenue.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">本月实时收入</p>
+                <p className="text-xs text-muted-foreground">{t("本月实时收入")}</p>
               </>
             )}
           </CardContent>
@@ -71,7 +71,7 @@ export default function FinanceOverview() {
 
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">待处理支付</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("待处理支付")}</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -83,7 +83,7 @@ export default function FinanceOverview() {
             ) : (
               <>
                 <div className="text-2xl font-bold">{financialStats.pendingPayments}</div>
-                <p className="text-xs text-muted-foreground">待处理支付数量</p>
+                <p className="text-xs text-muted-foreground">{t("待处理支付数量")}</p>
               </>
             )}
           </CardContent>
@@ -91,7 +91,7 @@ export default function FinanceOverview() {
 
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">逾期支付</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("逾期支付")}</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -103,7 +103,7 @@ export default function FinanceOverview() {
             ) : (
               <>
                 <div className="text-2xl font-bold text-red-600">{financialStats.overduePayments}</div>
-                <p className="text-xs text-muted-foreground">逾期支付数量</p>
+                <p className="text-xs text-muted-foreground">{t("逾期支付数量")}</p>
               </>
             )}
           </CardContent>
@@ -123,7 +123,7 @@ export default function FinanceOverview() {
             ) : (
               <>
                 <div className="text-2xl font-bold">RM {financialStats.totalRevenue.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">累计总收入</p>
+                <p className="text-xs text-muted-foreground">{t("累计总收入")}</p>
               </>
             )}
           </CardContent>
@@ -131,7 +131,7 @@ export default function FinanceOverview() {
 
         <Card className="hover:shadow-md transition-shadow border-blue-200 bg-blue-50/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-700">本月净利润</CardTitle>
+            <CardTitle className="text-sm font-medium text-blue-700">{t("本月净利润")}</CardTitle>
             <Wallet className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
@@ -145,7 +145,7 @@ export default function FinanceOverview() {
                 <div className={`text-2xl font-bold ${financialStats.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   RM {financialStats.netProfit.toLocaleString()}
                 </div>
-                <p className="text-xs text-muted-foreground">收入 - 支出</p>
+                <p className="text-xs text-muted-foreground">{t("收入 - 支出")}</p>
               </>
             )}
           </CardContent>
@@ -155,13 +155,13 @@ export default function FinanceOverview() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>最近交易</CardTitle>
+            <CardTitle>{t("最近交易")}</CardTitle>
           </CardHeader>
           <CardContent>
             {financialLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                <span>加载交易数据...</span>
+                <span>{t("加载交易数据...")}</span>
               </div>
             ) : financialStats.recentTransactions.length > 0 ? (
               <div className="space-y-3">
@@ -193,7 +193,7 @@ export default function FinanceOverview() {
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <CreditCard className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                <p>暂无交易记录</p>
+                <p>{t("暂无交易记录")}</p>
               </div>
             )}
           </CardContent>
@@ -201,13 +201,13 @@ export default function FinanceOverview() {
 
         <Card>
           <CardHeader>
-            <CardTitle>月度收入趋势</CardTitle>
+            <CardTitle>{t("月度收入趋势")}</CardTitle>
           </CardHeader>
           <CardContent>
             {financialLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                <span>加载趋势数据...</span>
+                <span>{t("加载趋势数据...")}</span>
               </div>
             ) : (
               <div className="space-y-3">

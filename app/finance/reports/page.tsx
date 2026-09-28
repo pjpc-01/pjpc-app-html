@@ -11,7 +11,7 @@ export default function FinanceReportsPage() {
   return (
     <PageLayout
       title={t('dashboard.financial_report')}
-      description="收入支出统计报告"
+      description={t("收入支出统计报告")}
       userRole="admin"
       status="系统正常"
       background="bg-gray-50"

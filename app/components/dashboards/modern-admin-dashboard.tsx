@@ -442,15 +442,15 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">
-              数据分析仪表板
+              {t("数据分析仪表板")}
             </h2>
             <p className="text-amber-700 text-sm sm:text-base">
-              欢迎回来，{userProfile?.name || "管理员"} · 当前查看：
+              {t("欢迎回来，")}{userProfile?.name || "管理员"} {t("· 当前查看：")}
               <span className="font-semibold text-amber-900">{selectedCenterName}</span>
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-amber-700 font-medium mr-1">分行筛选：</span>
+            <span className="text-xs text-amber-700 font-medium mr-1">{t("分行筛选：")}</span>
             {centerFilterOptions.map((opt) => (
               <Button
                 key={opt.id}
@@ -486,7 +486,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                   {loading ? "—" : totalStudents}
                 </p>
                 <p className="text-xs text-amber-600 mt-1">
-                  在读 {filteredStudents.filter((s) => s.status === "active").length} 人
+                  {t("在读")} {filteredStudents.filter((s) => s.status === "active").length} {t("人")}
                 </p>
               </div>
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all flex-shrink-0">
@@ -507,7 +507,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                   {loading ? "—" : totalTeachers}
                 </p>
                 <p className="text-xs text-orange-600 mt-1">
-                  在职 {filteredTeachers.filter((t) => t.status === "active").length} 人
+                  {t("在职")} {filteredTeachers.filter((t) => t.status === "active").length} {t("人")}
                 </p>
               </div>
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all flex-shrink-0">
@@ -530,7 +530,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                 <div className="flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 text-emerald-500 mr-1" />
                   <span className="text-xs text-emerald-600">
-                    {filteredPayments.length} 笔收款
+                    {filteredPayments.length} {t("笔收款")}
                   </span>
                 </div>
               </div>
@@ -554,7 +554,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                 <div className="flex items-center mt-1">
                   <TrendingDown className="h-3 w-3 text-red-500 mr-1" />
                   <span className="text-xs text-red-600">
-                    {filteredExpenses.length} 笔支出
+                    {filteredExpenses.length} {t("笔支出")}
                   </span>
                 </div>
               </div>
@@ -571,7 +571,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
         <Card className="border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50">
           <CardContent className="p-4">
             <h3 className="text-sm font-semibold text-amber-700 mb-3 flex items-center gap-2">
-              <Cake className="h-4 w-4" /> 🎂 本月寿星 ({birthdayStudents.length}人)
+              <Cake className="h-4 w-4" /> {t("🎂 本月寿星 (")}{birthdayStudents.length}{t("人)")}
             </h3>
             <div className="flex flex-wrap gap-2">
               {birthdayStudents.map(s => {
@@ -594,13 +594,13 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
       <div>
         <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <GraduationCap className="h-5 w-5 text-amber-600" />
-          学生维度
+          {t("学生维度")}
         </h3>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Grade Distribution — BarChart */}
           <ChartCard
-            title="年级分布"
-            description="各年级学生人数"
+            title={t("年级分布")}
+            description={t("各年级学生人数")}
             icon={BarChart3}
             isEmpty={gradeDistribution.length === 0}
             loading={loading}
@@ -643,8 +643,8 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
 
           {/* Gender Distribution — PieChart */}
           <ChartCard
-            title="性别分布"
-            description="学生男女比例"
+            title={t("性别分布")}
+            description={t("学生男女比例")}
             icon={PieChartIcon}
             isEmpty={genderDistribution.length === 0}
             loading={loading}
@@ -703,8 +703,8 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
 
           {/* Student Status — PieChart */}
           <ChartCard
-            title="学生状态"
-            description="在读 / 离校分布"
+            title={t("学生状态")}
+            description={t("在读 / 离校分布")}
             icon={Activity}
             isEmpty={statusDistribution.length === 0}
             loading={loading}
@@ -752,13 +752,13 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
       <div>
         <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <School className="h-5 w-5 text-amber-600" />
-          教师 & 财务维度
+          {t("教师 & 财务维度")}
         </h3>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Teacher Department Distribution — BarChart */}
           <ChartCard
-            title="教师部门分布"
-            description="各部门教师人数"
+            title={t("教师部门分布")}
+            description={t("各部门教师人数")}
             icon={Shield}
             isEmpty={departmentDistribution.length === 0}
             loading={loading}
@@ -805,8 +805,8 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
 
           {/* Revenue / Expense Trend — AreaChart */}
           <ChartCard
-            title="收支趋势"
-            description="近12个月收入与支出"
+            title={t("收支趋势")}
+            description={t("近12个月收入与支出")}
             icon={TrendingUp}
             isEmpty={revenueExpenseTrend.length === 0}
             loading={loading}
@@ -875,8 +875,8 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
       {/* Fee Item Category Distribution — PieChart (full row) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <ChartCard
-          title="收费项类别分布"
-          description="各类收费项金额占比"
+          title={t("收费项类别分布")}
+          description={t("各类收费项金额占比")}
           icon={Layers}
           isEmpty={feeItemDistribution.length === 0}
           loading={loading}
@@ -918,8 +918,8 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
 
         {/* Center Student Comparison — Horizontal BarChart */}
         <ChartCard
-          title="分行学生数对比"
-          description="PU1 vs BATU14 学生数量"
+          title={t("分行学生数对比")}
+          description={t("PU1 vs BATU14 学生数量")}
           icon={Building2}
           isEmpty={centerStudentComparison.length === 0}
           loading={loading}
@@ -972,35 +972,35 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
         <div className="p-4 sm:p-6 border-b border-amber-100">
           <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Building2 className="h-5 w-5 text-amber-600" />
-            分行数据对比
+            {t("分行数据对比")}
           </h3>
-          <p className="text-xs text-muted-foreground mt-1">各分行核心指标对比</p>
+          <p className="text-xs text-muted-foreground mt-1">{t("各分行核心指标对比")}</p>
         </div>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-amber-800 font-semibold">分行</TableHead>
-                  <TableHead className="text-amber-800 font-semibold text-right">学生总数</TableHead>
+                  <TableHead className="text-amber-800 font-semibold">{t("分行")}</TableHead>
+                  <TableHead className="text-amber-800 font-semibold text-right">{t("学生总数")}</TableHead>
                   <TableHead className="text-amber-800 font-semibold text-right">{t('dashboard.active_students')}</TableHead>
-                  <TableHead className="text-amber-800 font-semibold text-right">教师数</TableHead>
+                  <TableHead className="text-amber-800 font-semibold text-right">{t("教师数")}</TableHead>
                   <TableHead className="text-amber-800 font-semibold text-right">{t('finance.total_income')}</TableHead>
                   <TableHead className="text-amber-800 font-semibold text-right">{t('finance.total_expenses')}</TableHead>
-                  <TableHead className="text-amber-800 font-semibold text-right">净利润</TableHead>
+                  <TableHead className="text-amber-800 font-semibold text-right">{t("净利润")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      加载中...
+                      {t("加载中...")}
                     </TableCell>
                   </TableRow>
                 ) : centerComparisonData.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      暂无分行数据
+                      {t("暂无分行数据")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -1048,7 +1048,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                           <div className="w-8 h-8 rounded-lg bg-amber-200 flex items-center justify-center">
                             <Layers className="h-4 w-4 text-amber-700" />
                           </div>
-                          <span>全部合计</span>
+                          <span>{t("全部合计")}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">

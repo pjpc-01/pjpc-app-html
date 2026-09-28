@@ -157,13 +157,13 @@ export default function TeacherBulkOperations({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-lg">批量操作</CardTitle>
+            <CardTitle className="text-lg">{t("批量操作")}</CardTitle>
             <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-              已选择 {selectedTeachers.length} 位教师
+              {t("已选择")} {selectedTeachers.length} {t("位教师")}
             </Badge>
           </div>
           <Button variant="outline" size="sm" onClick={onClearSelection}>
-            清除选择
+            {t("清除选择")}
           </Button>
         </div>
       </CardHeader>
@@ -185,7 +185,7 @@ export default function TeacherBulkOperations({
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-600">{stats.averageExperience}</div>
-            <div className="text-xs text-gray-600">平均教龄</div>
+            <div className="text-xs text-gray-600">{t("平均教龄")}</div>
           </div>
         </div>
 
@@ -196,14 +196,14 @@ export default function TeacherBulkOperations({
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="h-auto p-3 flex flex-col gap-2">
                 <Edit className="h-4 w-4" />
-                <span className="text-xs">批量编辑</span>
+                <span className="text-xs">{t("批量编辑")}</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>批量编辑教师信息</DialogTitle>
+                <DialogTitle>{t("批量编辑教师信息")}</DialogTitle>
                 <DialogDescription>
-                  为选中的 {selectedTeachers.length} 位教师批量更新信息
+                  {t("为选中的")} {selectedTeachers.length} {t("位教师批量更新信息")}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -211,10 +211,10 @@ export default function TeacherBulkOperations({
                   <Label htmlFor="status">{t('teacher.status')}</Label>
                   <Select value={bulkEditData.status} onValueChange={(value) => setBulkEditData(prev => ({ ...prev, status: value }))}>
                     <SelectTrigger>
-                      <SelectValue placeholder="选择状态" />
+                      <SelectValue placeholder={t("选择状态")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="no-change">保持不变</SelectItem>
+                      <SelectItem value="no-change">{t("保持不变")}</SelectItem>
                       <SelectItem value="approved">{t('attendance.approved')}</SelectItem>
                       <SelectItem value="pending">{t('admin.pending_review')}</SelectItem>
                       <SelectItem value="suspended">{t('course.paused')}</SelectItem>
@@ -223,33 +223,33 @@ export default function TeacherBulkOperations({
                 </div>
                 
                 <div>
-                  <Label htmlFor="department">部门</Label>
+                  <Label htmlFor="department">{t("部门")}</Label>
                   <Select value={bulkEditData.department} onValueChange={(value) => setBulkEditData(prev => ({ ...prev, department: value }))}>
                     <SelectTrigger>
-                      <SelectValue placeholder="选择部门" />
+                      <SelectValue placeholder={t("选择部门")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="no-change">保持不变</SelectItem>
-                      <SelectItem value="数学组">数学组</SelectItem>
-                      <SelectItem value="语文组">语文组</SelectItem>
-                      <SelectItem value="英语组">英语组</SelectItem>
-                      <SelectItem value="理科组">理科组</SelectItem>
-                      <SelectItem value="文科组">文科组</SelectItem>
-                      <SelectItem value="艺术组">艺术组</SelectItem>
-                      <SelectItem value="体育组">体育组</SelectItem>
-                      <SelectItem value="行政组">行政组</SelectItem>
+                      <SelectItem value="no-change">{t("保持不变")}</SelectItem>
+                      <SelectItem value="数学组">{t("数学组")}</SelectItem>
+                      <SelectItem value="语文组">{t("语文组")}</SelectItem>
+                      <SelectItem value="英语组">{t("英语组")}</SelectItem>
+                      <SelectItem value="理科组">{t("理科组")}</SelectItem>
+                      <SelectItem value="文科组">{t("文科组")}</SelectItem>
+                      <SelectItem value="艺术组">{t("艺术组")}</SelectItem>
+                      <SelectItem value="体育组">{t("体育组")}</SelectItem>
+                      <SelectItem value="行政组">{t("行政组")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div>
-                  <Label htmlFor="subject">任教科目</Label>
+                  <Label htmlFor="subject">{t("任教科目")}</Label>
                   <Select value={bulkEditData.subject} onValueChange={(value) => setBulkEditData(prev => ({ ...prev, subject: value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder={t('assignment.select_subject')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="no-change">保持不变</SelectItem>
+                      <SelectItem value="no-change">{t("保持不变")}</SelectItem>
                       <SelectItem value="数学">{t('assignment.mathematics')}</SelectItem>
                       <SelectItem value="语文">{t('assignment.chinese')}</SelectItem>
                       <SelectItem value="英语">{t('assignment.english')}</SelectItem>
@@ -259,7 +259,7 @@ export default function TeacherBulkOperations({
                       <SelectItem value="物理">{t('assignment.physics')}</SelectItem>
                       <SelectItem value="化学">{t('assignment.chemistry')}</SelectItem>
                       <SelectItem value="生物">{t('assignment.biology')}</SelectItem>
-                      <SelectItem value="艺术">艺术</SelectItem>
+                      <SelectItem value="艺术">{t("艺术")}</SelectItem>
                       <SelectItem value="体育">{t('teacher.physical_education')}</SelectItem>
                       <SelectItem value="音乐">{t('teacher.music')}</SelectItem>
                     </SelectContent>
@@ -267,11 +267,11 @@ export default function TeacherBulkOperations({
                 </div>
                 
                 <div>
-                  <Label htmlFor="experience">教龄(年)</Label>
+                  <Label htmlFor="experience">{t("教龄(年)")}</Label>
                   <Input
                     id="experience"
                     type="number"
-                    placeholder="输入教龄"
+                    placeholder={t("输入教龄")}
                     value={bulkEditData.experience}
                     onChange={(e) => setBulkEditData(prev => ({ ...prev, experience: e.target.value }))}
                   />
@@ -279,10 +279,10 @@ export default function TeacherBulkOperations({
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setShowBulkEdit(false)}>
-                  取消
+                  {t("取消")}
                 </Button>
                 <Button onClick={handleBulkEdit}>
-                  应用更改
+                  {t("应用更改")}
                 </Button>
               </div>
             </DialogContent>
@@ -298,15 +298,15 @@ export default function TeacherBulkOperations({
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>确认批量删除</AlertDialogTitle>
+                <AlertDialogTitle>{t("确认批量删除")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  您确定要删除选中的 {selectedTeachers.length} 位教师吗？此操作无法撤销。
+                  {t("您确定要删除选中的")} {selectedTeachers.length} {t("位教师吗？此操作无法撤销。")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>{t('report.cancel')}</AlertDialogCancel>
                 <AlertDialogAction onClick={onBulkDelete} className="bg-red-600 hover:bg-red-700">
-                  确认删除
+                  {t("确认删除")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -316,7 +316,7 @@ export default function TeacherBulkOperations({
           <div className="relative group">
             <Button variant="outline" size="sm" className="h-auto p-3 flex flex-col gap-2 w-full">
               <Download className="h-4 w-4" />
-              <span className="text-xs">批量导出</span>
+              <span className="text-xs">{t("批量导出")}</span>
             </Button>
             <div className="absolute top-full left-0 mt-1 bg-white border rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 min-w-[120px]">
               <div className="p-1">
@@ -327,7 +327,7 @@ export default function TeacherBulkOperations({
                   onClick={() => onBulkExport?.('csv')}
                 >
                   <FileText className="h-3 w-3 mr-1" />
-                  导出为 CSV
+                  {t("导出为 CSV")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -336,7 +336,7 @@ export default function TeacherBulkOperations({
                   onClick={() => onBulkExport?.('excel')}
                 >
                   <FileText className="h-3 w-3 mr-1" />
-                  导出为 Excel
+                  {t("导出为 Excel")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -345,7 +345,7 @@ export default function TeacherBulkOperations({
                   onClick={() => onBulkExport?.('pdf')}
                 >
                   <FileText className="h-3 w-3 mr-1" />
-                  导出为 PDF
+                  {t("导出为 PDF")}
                 </Button>
               </div>
             </div>
@@ -356,14 +356,14 @@ export default function TeacherBulkOperations({
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="h-auto p-3 flex flex-col gap-2">
                 <Upload className="h-4 w-4" />
-                <span className="text-xs">批量导入</span>
+                <span className="text-xs">{t("批量导入")}</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>批量导入教师</DialogTitle>
+                <DialogTitle>{t("批量导入教师")}</DialogTitle>
                 <DialogDescription>
-                  从 CSV 或 Excel 文件批量导入教师信息
+                  {t("从 CSV 或 Excel 文件批量导入教师信息")}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -377,16 +377,16 @@ export default function TeacherBulkOperations({
                   />
                 </div>
                 <div className="text-sm text-gray-600">
-                  <p>支持的文件格式：CSV, Excel (.xlsx, .xls)</p>
-                  <p>请确保文件包含必要的列：姓名、邮箱、科目、部门等</p>
+                  <p>{t("支持的文件格式：CSV, Excel (.xlsx, .xls)")}</p>
+                  <p>{t("请确保文件包含必要的列：姓名、邮箱、科目、部门等")}</p>
                 </div>
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setShowBulkImport(false)}>
-                  取消
+                  {t("取消")}
                 </Button>
                 <Button onClick={handleBulkImport} disabled={!importFile}>
-                  开始导入
+                  {t("开始导入")}
                 </Button>
               </div>
             </DialogContent>
@@ -397,35 +397,35 @@ export default function TeacherBulkOperations({
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="h-auto p-3 flex flex-col gap-2">
                 <MessageSquare className="h-4 w-4" />
-                <span className="text-xs">批量消息</span>
+                <span className="text-xs">{t("批量消息")}</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>发送批量消息</DialogTitle>
+                <DialogTitle>{t("发送批量消息")}</DialogTitle>
                 <DialogDescription>
-                  向选中的 {selectedTeachers.length} 位教师发送消息
+                  {t("向选中的")} {selectedTeachers.length} {t("位教师发送消息")}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="messageType">消息类型</Label>
+                  <Label htmlFor="messageType">{t("消息类型")}</Label>
                   <Select value={messageData.type} onValueChange={(value: 'email' | 'sms') => setMessageData(prev => ({ ...prev, type: value }))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="email">邮件</SelectItem>
-                      <SelectItem value="sms">短信</SelectItem>
+                      <SelectItem value="email">{t("邮件")}</SelectItem>
+                      <SelectItem value="sms">{t("短信")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div>
-                  <Label htmlFor="messageSubject">主题</Label>
+                  <Label htmlFor="messageSubject">{t("主题")}</Label>
                   <Input
                     id="messageSubject"
-                    placeholder="消息主题"
+                    placeholder={t("消息主题")}
                     value={messageData.subject}
                     onChange={(e) => setMessageData(prev => ({ ...prev, subject: e.target.value }))}
                   />
@@ -435,7 +435,7 @@ export default function TeacherBulkOperations({
                   <Label htmlFor="messageContent">{t('teacher.content')}</Label>
                   <Textarea
                     id="messageContent"
-                    placeholder="消息内容..."
+                    placeholder={t("消息内容...")}
                     rows={4}
                     value={messageData.content}
                     onChange={(e) => setMessageData(prev => ({ ...prev, content: e.target.value }))}
@@ -443,19 +443,19 @@ export default function TeacherBulkOperations({
                 </div>
                 
                 <div className="text-sm text-gray-600">
-                  <p>将发送给 {stats.hasEmail} 位有邮箱的教师</p>
+                  <p>{t("将发送给")} {stats.hasEmail} {t("位有邮箱的教师")}</p>
                   {messageData.type === 'sms' && (
-                    <p>将发送给 {stats.hasPhone} 位有电话的教师</p>
+                    <p>{t("将发送给")} {stats.hasPhone} {t("位有电话的教师")}</p>
                   )}
                 </div>
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setShowBulkMessage(false)}>
-                  取消
+                  {t("取消")}
                 </Button>
                 <Button onClick={handleBulkMessage} disabled={!messageData.subject || !messageData.content}>
                   <Send className="h-4 w-4 mr-1" />
-                  发送消息
+                  {t("发送消息")}
                 </Button>
               </div>
             </DialogContent>
@@ -476,7 +476,7 @@ export default function TeacherBulkOperations({
                   onClick={() => onBulkUpdate?.({ status: 'approved' })}
                 >
                   <UserCheck className="h-3 w-3 mr-1" />
-                  批量批准
+                  {t("批量批准")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -485,7 +485,7 @@ export default function TeacherBulkOperations({
                   onClick={() => onBulkUpdate?.({ status: 'suspended' })}
                 >
                   <UserX className="h-3 w-3 mr-1" />
-                  批量暂停
+                  {t("批量暂停")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -494,7 +494,7 @@ export default function TeacherBulkOperations({
                   onClick={() => onBulkExport?.('csv')}
                 >
                   <Copy className="h-3 w-3 mr-1" />
-                  复制邮箱
+                  {t("复制邮箱")}
                 </Button>
               </div>
             </div>
@@ -504,11 +504,11 @@ export default function TeacherBulkOperations({
         {/* 操作统计 */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
           <div className="text-center">
-            <div className="text-sm font-medium text-gray-600">有邮箱</div>
+            <div className="text-sm font-medium text-gray-600">{t("有邮箱")}</div>
             <div className="text-lg font-bold text-green-600">{stats.hasEmail}</div>
           </div>
           <div className="text-center">
-            <div className="text-sm font-medium text-gray-600">有电话</div>
+            <div className="text-sm font-medium text-gray-600">{t("有电话")}</div>
             <div className="text-lg font-bold text-blue-600">{stats.hasPhone}</div>
           </div>
           <div className="text-center">

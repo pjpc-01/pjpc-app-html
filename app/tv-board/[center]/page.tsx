@@ -344,7 +344,7 @@ export default function TVBoardByCenter() {
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center text-white">
           <h2 className="text-2xl font-bold mb-4">{t('parent.no_data')}</h2>
-          <p className="text-gray-400">该中心暂无学生数据</p>
+          <p className="text-gray-400">{t("该中心暂无学生数据")}</p>
         </div>
       </div>
     )

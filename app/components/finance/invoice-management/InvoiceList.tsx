@@ -163,21 +163,21 @@ export function InvoiceList({
 
     if (invoicePayments.length === 0) {
       return invoice.status === 'overdue'
-        ? <Badge variant="destructive">逾期</Badge>
-        : <Badge variant="outline">未缴费</Badge>
+        ? <Badge variant="destructive">{t("逾期")}</Badge>
+        : <Badge variant="outline">{t("未缴费")}</Badge>
     }
 
     const completedPayments = invoicePayments.filter(p => p.status === 'completed')
     const totalPaid = completedPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
 
     if (totalPaid >= invoice.totalAmount) {
-      return <Badge variant="default">已缴费</Badge>
+      return <Badge variant="default">{t("已缴费")}</Badge>
     } else if (totalPaid > 0) {
-      return <Badge variant="secondary">半缴费</Badge>
+      return <Badge variant="secondary">{t("半缴费")}</Badge>
     } else {
       return invoice.status === 'overdue'
-        ? <Badge variant="destructive">逾期</Badge>
-        : <Badge variant="outline">未缴费</Badge>
+        ? <Badge variant="destructive">{t("逾期")}</Badge>
+        : <Badge variant="outline">{t("未缴费")}</Badge>
     }
   }
 
@@ -216,8 +216,8 @@ export function InvoiceList({
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
                 <div>
-                  <CardTitle>回收站</CardTitle>
-                  <CardDescription>已删除的发票，可恢复或永久删除</CardDescription>
+                  <CardTitle>{t("回收站")}</CardTitle>
+                  <CardDescription>{t("已删除的发票，可恢复或永久删除")}</CardDescription>
                 </div>
               </div>
               <button
@@ -225,15 +225,15 @@ export function InvoiceList({
                 onClick={() => setBinMode(false)}
                 className="px-3 py-1.5 text-xs font-medium border rounded-lg bg-white text-gray-600 hover:bg-gray-50"
               >
-                ← 返回列表
+                {t("← 返回列表")}
               </button>
             </div>
           </CardHeader>
           <CardContent>
             {binLoading ? (
-              <div className="py-16 text-center text-gray-400 text-sm">加载中...</div>
+              <div className="py-16 text-center text-gray-400 text-sm">{t("加载中...")}</div>
             ) : deletedInvoices.length === 0 ? (
-              <div className="py-16 text-center text-gray-400 text-sm">回收站为空</div>
+              <div className="py-16 text-center text-gray-400 text-sm">{t("回收站为空")}</div>
             ) : (
               <div className="space-y-2">
                 {deletedInvoices.map((inv) => (
@@ -241,15 +241,15 @@ export function InvoiceList({
                     <div className="min-w-0">
                       <div className="font-medium text-sm">{inv.invoiceNumber} · {inv.studentName}</div>
                       <div className="text-xs text-gray-500 mt-0.5">
-                        {inv.studentGrade || ""} · {formatCurrency(inv.totalAmount)} · 删除于 {formatDate(inv.updated)}
+                        {inv.studentGrade || ""} · {formatCurrency(inv.totalAmount)} {t("· 删除于")} {formatDate(inv.updated)}
                       </div>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
                       <Button size="sm" variant="outline" className="h-8 text-xs" onClick={async () => { await fetch("/api/pocketbase-proxy/api/collections/invoices/" + inv.id, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deleted: false }) }); await cascadeChildren(inv.id, "restore"); fetchDeletedInvoices(); }}>
-                        恢复
+                        {t("恢复")}
                       </Button>
                       <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={async () => { if (!confirm("确定要永久删除这张发票吗？此操作不可恢复！(关联的收款与收据会一并删除)")) return; await cascadeChildren(inv.id, "purge"); await fetch("/api/pocketbase-proxy/api/collections/invoices/" + inv.id, { method: "DELETE" }); fetchDeletedInvoices(); }}>
-                        永久删除
+                        {t("永久删除")}
                       </Button>
                     </div>
                   </div>
@@ -269,8 +269,8 @@ export function InvoiceList({
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
               <div>
-                <CardTitle>发票列表</CardTitle>
-                <CardDescription>管理所有发票记录</CardDescription>
+                <CardTitle>{t("发票列表")}</CardTitle>
+                <CardDescription>{t("管理所有发票记录")}</CardDescription>
               </div>
             </div>
             <div className="flex gap-1 border rounded-lg overflow-hidden">
@@ -279,14 +279,14 @@ export function InvoiceList({
                 onClick={() => { setBinMode(false); }}
                 className={`px-3 py-1.5 text-xs font-medium ${!binMode ? "bg-primary text-primary-foreground" : "text-gray-600 hover:bg-gray-50"}`}
               >
-                列表
+                {t("列表")}
               </button>
               <button
                 type="button"
                 onClick={() => { setBinMode(true); fetchDeletedInvoices(); }}
                 className={`px-3 py-1.5 text-xs font-medium ${binMode ? "bg-primary text-primary-foreground" : "text-gray-600 hover:bg-gray-50"}`}
               >
-                🗑️ 回收站 {deletedInvoices.length > 0 ? `(${deletedInvoices.length})` : ""}
+                {t("🗑️ 回收站")} {deletedInvoices.length > 0 ? `(${deletedInvoices.length})` : ""}
               </button>
             </div>
           </div>
@@ -298,13 +298,13 @@ export function InvoiceList({
               <Label htmlFor="search">{t('common.search')}</Label>
               <Input
                 id="search"
-                placeholder="搜索发票号码、学生姓名..."
+                placeholder={t("搜索发票号码、学生姓名...")}
                 value={filters.search || ""}
                 onChange={(e) => setFilters((prev: any) => ({ ...prev, search: e.target.value }))}
               />
             </div>
             <div className="w-48">
-              <Label>缴费状态</Label>
+              <Label>{t("缴费状态")}</Label>
               <Select 
                 value={filters.status || "all"} 
                 onValueChange={(value) => setFilters((prev: any) => ({ ...prev, status: value }))}
@@ -313,9 +313,9 @@ export function InvoiceList({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">所有缴费状态</SelectItem>
-                  <SelectItem value="unpaid">未缴费</SelectItem>
-                  <SelectItem value="paid">已缴费</SelectItem>
+                  <SelectItem value="all">{t("所有缴费状态")}</SelectItem>
+                  <SelectItem value="unpaid">{t("未缴费")}</SelectItem>
+                  <SelectItem value="paid">{t("已缴费")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -325,7 +325,7 @@ export function InvoiceList({
           {someSelected && (
             <div className="flex items-center justify-between mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
               <span className="text-sm text-red-700 font-medium">
-                已选择 <span className="font-bold">{selectedIds.size}</span> 张发票
+                {t("已选择")} <span className="font-bold">{selectedIds.size}</span> {t("张发票")}
               </span>
               <div className="flex gap-2">
                 <Button
@@ -334,7 +334,7 @@ export function InvoiceList({
                   onClick={() => setSelectedIds(new Set())}
                 >
                   <XCircle className="h-4 w-4 mr-1" />
-                  取消选择
+                  {t("取消选择")}
                 </Button>
                 <Button
                   variant="destructive"
@@ -342,7 +342,7 @@ export function InvoiceList({
                   onClick={() => setIsBatchDeleteOpen(true)}
                 >
                   <Trash2 className="h-4 w-4 mr-1" />
-                  删除选中 ({selectedIds.size})
+                  {t("删除选中 (")}{selectedIds.size})
                 </Button>
               </div>
             </div>
@@ -360,16 +360,16 @@ export function InvoiceList({
                       aria-label={t('teacher.select_all')}
                     />
                   </TableHead>
-                  <TableHead>发票号码</TableHead>
-                  <TableHead>发票状态</TableHead>
+                  <TableHead>{t("发票号码")}</TableHead>
+                  <TableHead>{t("发票状态")}</TableHead>
                   <TableHead>{t('student.student_no')}</TableHead>
                   <TableHead>{t('student.student_name')}</TableHead>
                   <TableHead>{t('student.grade')}</TableHead>
                   <TableHead>{t('finance.amount')}</TableHead>
-                  <TableHead>缴费状态</TableHead>
-                  <TableHead>开票日期</TableHead>
-                  <TableHead>账期</TableHead>
-                  <TableHead>到期日期</TableHead>
+                  <TableHead>{t("缴费状态")}</TableHead>
+                  <TableHead>{t("开票日期")}</TableHead>
+                  <TableHead>{t("账期")}</TableHead>
+                  <TableHead>{t("到期日期")}</TableHead>
                   <TableHead>{t('teacher.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -454,14 +454,14 @@ export function InvoiceList({
           {totalInvoicePages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <span className="text-sm text-gray-500">
-                共 {activeInvoices.length} 条，每页 {INVOICE_PER_PAGE} 条
+                {t("共")} {activeInvoices.length} {t("条，每页")} {INVOICE_PER_PAGE} {t("条")}
               </span>
               <div className="flex gap-1">
-                <Button size="sm" variant="outline" disabled={invoicePage===1} onClick={() => setInvoicePage(p=>Math.max(1,p-1))}>上一页</Button>
+                <Button size="sm" variant="outline" disabled={invoicePage===1} onClick={() => setInvoicePage(p=>Math.max(1,p-1))}>{t("上一页")}</Button>
                 {Array.from({length: totalInvoicePages}, (_,i)=>i+1).map(p=>(
                   <Button key={p} size="sm" variant={p===invoicePage?"default":"outline"} onClick={()=>setInvoicePage(p)} className="min-w-[32px] h-8">{p}</Button>
                 ))}
-                <Button size="sm" variant="outline" disabled={invoicePage===totalInvoicePages} onClick={() => setInvoicePage(p=>Math.min(totalInvoicePages,p+1))}>下一页</Button>
+                <Button size="sm" variant="outline" disabled={invoicePage===totalInvoicePages} onClick={() => setInvoicePage(p=>Math.min(totalInvoicePages,p+1))}>{t("下一页")}</Button>
               </div>
             </div>
           )}
@@ -475,7 +475,7 @@ export function InvoiceList({
           <DialogHeader>
             <DialogTitle>{t('course.confirm_delete')}</DialogTitle>
             <DialogDescription>
-              确定要删除发票 <span className="font-semibold">{invoiceToDelete?.invoiceNumber}</span> 吗？
+              {t("确定要删除发票")} <span className="font-semibold">{invoiceToDelete?.invoiceNumber}</span> {t("吗？")}
             </DialogDescription>
           </DialogHeader>
           
@@ -484,13 +484,13 @@ export function InvoiceList({
               variant="outline" 
               onClick={handleCancelDelete}
             >
-              取消
+              {t("取消")}
             </Button>
             <Button 
               variant="destructive" 
               onClick={handleConfirmDelete}
             >
-              删除
+              {t("删除")}
             </Button>
           </div>
         </DialogContent>
@@ -502,12 +502,12 @@ export function InvoiceList({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <Trash2 className="h-5 w-5" />
-              批量删除发票
+              {t("批量删除发票")}
             </DialogTitle>
             <DialogDescription />
             <div className="space-y-2 mt-2">
               <p className="text-sm">
-                确定要删除选中的 <span className="font-bold text-red-600">{selectedIds.size}</span> 张发票吗？
+                {t("确定要删除选中的")} <span className="font-bold text-red-600">{selectedIds.size}</span> {t("张发票吗？")}
               </p>
               <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-40 overflow-y-auto">
                 <ul className="text-xs space-y-0.5">
@@ -521,7 +521,7 @@ export function InvoiceList({
                   })}
                 </ul>
               </div>
-              <p className="text-xs text-red-500 mt-2">⚠️ 此操作不可撤销！</p>
+              <p className="text-xs text-red-500 mt-2">{t("⚠️ 此操作不可撤销！")}</p>
             </div>
           </DialogHeader>
           
@@ -531,7 +531,7 @@ export function InvoiceList({
               onClick={() => setIsBatchDeleteOpen(false)}
               disabled={isBatchDeleting}
             >
-              取消
+              {t("取消")}
             </Button>
             <Button 
               variant="destructive" 
@@ -541,12 +541,12 @@ export function InvoiceList({
               {isBatchDeleting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  删除中...
+                  {t("删除中...")}
                 </>
               ) : (
                 <>
                   <Trash2 className="h-4 w-4 mr-2" />
-                  删除 {selectedIds.size} 张发票
+                  {t("删除")} {selectedIds.size} {t("张发票")}
                 </>
               )}
             </Button>

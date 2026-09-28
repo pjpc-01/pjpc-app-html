@@ -193,7 +193,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">加载课程表中...</p>
+          <p className="text-gray-600">{t("加载课程表中...")}</p>
         </div>
       </div>
     )
@@ -203,8 +203,8 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
     <div className="space-y-6">
       {/* 页面标题 */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">课程表管理</h2>
-        <p className="text-gray-600">查看和管理您的课程安排</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">{t("课程表管理")}</h2>
+        <p className="text-gray-600">{t("查看和管理您的课程安排")}</p>
       </div>
 
       {/* 搜索和过滤 */}
@@ -212,7 +212,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            课程表 - {new Date(selectedDate).toLocaleDateString('zh-CN')}
+            {t("课程表 -")} {new Date(selectedDate).toLocaleDateString('zh-CN')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -230,7 +230,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="搜索科目、班级或教室..."
+                  placeholder={t("搜索科目、班级或教室...")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -241,11 +241,11 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
               <label className="text-sm font-medium text-gray-700 mb-2 block">{t('teacher.status')}</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择状态" />
+                  <SelectValue placeholder={t("选择状态")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('common.all_status')}</SelectItem>
-                  <SelectItem value="upcoming">即将开始</SelectItem>
+                  <SelectItem value="upcoming">{t("即将开始")}</SelectItem>
                   <SelectItem value="active">{t('assignment.in_progress')}</SelectItem>
                   <SelectItem value="completed">{t('assignment.completed')}</SelectItem>
                   <SelectItem value="cancelled">{t('teacher.cancelled')}</SelectItem>
@@ -276,11 +276,11 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
-              今日课程 ({filteredSchedule.length})
+              {t("今日课程 (")}{filteredSchedule.length})
             </CardTitle>
             <Button className="flex items-center gap-2" onClick={() => router.push('/schedule-management')}>
               <Plus className="h-4 w-4" />
-              添加课程
+              {t("添加课程")}
             </Button>
           </div>
         </CardHeader>
@@ -305,7 +305,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900">{item.subject}</h3>
+                        <h3 className="font-semibold text-gray-900">{t(item.subject)}</h3>
                         <Badge className={getStatusColor(item.status)}>
                           {getStatusIcon(item.status)}
                           {getStatusText(item.status)}
@@ -325,7 +325,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
                       </div>
                       <div className="flex items-center gap-1 text-sm text-gray-600">
                         <Users className="h-4 w-4" />
-                        {item.students} 名学生
+                        {item.students} {t("名学生")}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -338,7 +338,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
                             toast.success("课程已开始", { description: `${item.subject} - ${item.className}` })
                           }}>
                           <Play className="h-3 w-3 mr-1" />
-                          开始
+                          {t("开始")}
                         </Button>
                       )}
                       {item.status === 'active' && (
@@ -350,7 +350,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
                             toast.success("课程已完成", { description: `${item.subject} - ${item.className}` })
                           }}>
                           <Pause className="h-3 w-3 mr-1" />
-                          暂停
+                          {t("暂停")}
                         </Button>
                       )}
                       <Button size="sm" variant="outline"
@@ -367,7 +367,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
                 
                 {item.materials && item.materials.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-gray-200">
-                    <p className="text-sm text-gray-600 mb-2">所需材料:</p>
+                    <p className="text-sm text-gray-600 mb-2">{t("所需材料:")}</p>
                     <div className="flex flex-wrap gap-2">
                       {item.materials.map((material, index) => (
                         <Badge key={index} variant="outline" className="text-xs">
@@ -383,7 +383,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
             {filteredSchedule.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>没有找到匹配的课程</p>
+                <p>{t("没有找到匹配的课程")}</p>
               </div>
             )}
           </div>
@@ -436,7 +436,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">即将开始</p>
+                <p className="text-sm font-medium text-gray-600">{t("即将开始")}</p>
                 <p className="text-2xl font-bold text-purple-600">
                   {schedule.filter(item => item.status === 'upcoming').length}
                 </p>

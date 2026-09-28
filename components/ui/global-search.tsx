@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "@/contexts/language-context";
 
 // ============================================================
 // 搜索项类型
@@ -73,6 +74,7 @@ const CATEGORY_CONFIG: Record<string, { label: string; color: string }> = {
 // ============================================================
 
 export default function GlobalSearch() {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [loading, setLoading] = useState(false)
@@ -237,7 +239,7 @@ export default function GlobalSearch() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="搜索页面、学生、教师..."
+              placeholder={t("搜索页面、学生、教师...")}
               className="border-0 p-0 h-7 text-base bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-gray-400"
             />
             {loading && <Loader2 className="h-4 w-4 animate-spin text-gray-400 shrink-0" />}
@@ -256,8 +258,8 @@ export default function GlobalSearch() {
             {results.length === 0 && !loading && (
               <div className="py-12 text-center">
                 <Search className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                <p className="text-sm text-gray-500">没有找到结果</p>
-                <p className="text-xs text-gray-400 mt-1">试试其他关键词</p>
+                <p className="text-sm text-gray-500">{t("没有找到结果")}</p>
+                <p className="text-xs text-gray-400 mt-1">{t("试试其他关键词")}</p>
               </div>
             )}
 
@@ -317,10 +319,10 @@ export default function GlobalSearch() {
           {/* 键盘快捷键提示 */}
           <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex justify-between text-[10px] text-gray-400">
             <div className="flex items-center gap-3">
-              <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-[9px]">↑↓</kbd> 导航</span>
-              <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-[9px]">↵</kbd> 打开</span>
+              <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-[9px]">↑↓</kbd> {t("导航")}</span>
+              <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-[9px]">↵</kbd> {t("打开")}</span>
             </div>
-            <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-[9px]">Esc</kbd> 关闭</span>
+            <span><kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-[9px]">Esc</kbd> {t("关闭")}</span>
           </div>
         </div>
       </div>

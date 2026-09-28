@@ -4,12 +4,14 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useStudents } from "@/hooks/useStudents"
+import { useLanguage } from "@/contexts/language-context";
 
 interface StudentManagementProps {
   teacherId?: string
 }
 
 export default function StudentManagement({ teacherId }: StudentManagementProps) {
+  const { t } = useLanguage();
   const { students, loading, error, refetch } = useStudents()
   
   useEffect(() => {
@@ -36,9 +38,9 @@ export default function StudentManagement({ teacherId }: StudentManagementProps)
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-blue-600">
-            学生管理
+            {t("学生管理")}
           </h3>
-          <p className="text-sm text-gray-600">管理您的学生信息、查看学习进度和考勤记录</p>
+          <p className="text-sm text-gray-600">{t("管理您的学生信息、查看学习进度和考勤记录")}</p>
         </div>
       </div>
 
@@ -50,7 +52,7 @@ export default function StudentManagement({ teacherId }: StudentManagementProps)
             </p>
             {students.length > 0 && (
               <p className="text-sm text-gray-600 mt-2">
-                第一个学生: {students[0]?.student_name || '未知'}
+                {t("第一个学生:")} {students[0]?.student_name || '未知'}
               </p>
             )}
           </div>

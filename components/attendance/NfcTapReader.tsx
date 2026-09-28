@@ -17,6 +17,7 @@ import {
   User,
   GraduationCap,
 } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context";
 
 declare global {
   interface Window {
@@ -55,6 +56,7 @@ interface CheckinResult {
 type ReaderState = "idle" | "scanning" | "reading" | "checking_in" | "success" | "error"
 
 export default function NfcTapReader() {
+  const { t } = useLanguage();
   const [readerState, setReaderState] = useState<ReaderState>("idle")
   const [nfcSupported, setNfcSupported] = useState<boolean | null>(null)
   const [tapResult, setTapResult] = useState<TapResult | null>(null)
@@ -244,7 +246,7 @@ export default function NfcTapReader() {
       <Card className="border-dashed">
         <CardContent className="p-6 text-center">
           <Loader2 className="h-6 w-6 mx-auto animate-spin text-gray-400" />
-          <p className="text-sm text-gray-400 mt-2">检测浏览器 NFC 支持...</p>
+          <p className="text-sm text-gray-400 mt-2">{t("检测浏览器 NFC 支持...")}</p>
         </CardContent>
       </Card>
     )
@@ -255,12 +257,12 @@ export default function NfcTapReader() {
       <Card className="border-dashed border-amber-300 bg-amber-50">
         <CardContent className="p-6 text-center space-y-3">
           <WifiOff className="h-10 w-10 mx-auto text-amber-500" />
-          <h3 className="font-bold text-amber-800">NFC 不可用</h3>
-          <p className="text-sm text-amber-600">此浏览器不支持 Web NFC。请使用：</p>
+          <h3 className="font-bold text-amber-800">{t("NFC 不可用")}</h3>
+          <p className="text-sm text-amber-600">{t("此浏览器不支持 Web NFC。请使用：")}</p>
           <ul className="text-xs text-amber-700 space-y-1 list-disc list-inside text-left max-w-xs mx-auto">
-            <li><strong>Android 手机</strong> + Chrome 浏览器</li>
-            <li>或将此页面通过 <strong>HTTPS</strong> 访问</li>
-            <li>或使用 <strong>USB 读卡器</strong>（运行 Python 桥接脚本）</li>
+            <li><strong>{t("Android 手机")}</strong> {t("+ Chrome 浏览器")}</li>
+            <li>{t("或将此页面通过")} <strong>HTTPS</strong> {t("访问")}</li>
+            <li>{t("或使用")} <strong>{t("USB 读卡器")}</strong>{t("（运行 Python 桥接脚本）")}</li>
           </ul>
         </CardContent>
       </Card>
@@ -272,9 +274,9 @@ export default function NfcTapReader() {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <SmartphoneNfc className="h-6 w-6 text-blue-600" />
-          NFC 感应打卡
+          {t("NFC 感应打卡")}
         </CardTitle>
-        <CardDescription>学生和教师统一 — 将 NFC 卡片靠近手机背面自动签到/签退</CardDescription>
+        <CardDescription>{t("学生和教师统一 — 将 NFC 卡片靠近手机背面自动签到/签退")}</CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -284,14 +286,14 @@ export default function NfcTapReader() {
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-100 mb-3 animate-pulse">
               <SmartphoneNfc className="h-10 w-10 text-blue-600" />
             </div>
-            <p className="text-sm text-gray-500 mb-4">学生和教师统一使用 NFC 卡片打卡</p>
+            <p className="text-sm text-gray-500 mb-4">{t("学生和教师统一使用 NFC 卡片打卡")}</p>
             <Button
               onClick={startScan}
               size="lg"
               className="w-full h-16 text-lg rounded-xl bg-blue-600 hover:bg-blue-700"
             >
               <SmartphoneNfc className="h-6 w-6 mr-2" />
-              开始扫描 NFC
+              {t("开始扫描 NFC")}
             </Button>
           </div>
         )}
@@ -305,10 +307,10 @@ export default function NfcTapReader() {
               </div>
               <div className="absolute inset-0 rounded-full border-4 border-blue-400 border-t-transparent animate-spin" />
             </div>
-            <p className="text-lg font-bold text-blue-700">请贴近 NFC 卡片...</p>
-            <p className="text-sm text-blue-500">将卡片放在手机背面 NFC 感应区</p>
+            <p className="text-lg font-bold text-blue-700">{t("请贴近 NFC 卡片...")}</p>
+            <p className="text-sm text-blue-500">{t("将卡片放在手机背面 NFC 感应区")}</p>
             <Button variant="outline" size="sm" onClick={reset}>
-              取消
+              {t("取消")}
             </Button>
           </div>
         )}
@@ -334,15 +336,15 @@ export default function NfcTapReader() {
             {tapResult && !tapResult.found && (
               <div className="bg-gray-50 rounded-xl p-4 text-center">
                 <p className="text-gray-500 text-sm mb-2">
-                  卡号: <code className="bg-gray-200 px-2 py-0.5 rounded text-xs">{tapResult.card?.uid || "未知"}</code>
+                  {t("卡号:")} <code className="bg-gray-200 px-2 py-0.5 rounded text-xs">{tapResult.card?.uid || "未知"}</code>
                 </p>
-                <p className="text-gray-400 text-sm">该卡片未在系统中注册</p>
+                <p className="text-gray-400 text-sm">{t("该卡片未在系统中注册")}</p>
               </div>
             )}
 
             <Button variant="outline" className="w-full" onClick={reset}>
               <RefreshCw className="h-4 w-4 mr-2" />
-              重试
+              {t("重试")}
             </Button>
           </div>
         )}
@@ -390,7 +392,7 @@ export default function NfcTapReader() {
                       checkinResult.action === "签退" ? "text-orange-700" : "text-green-700"
                     }`}
                   >
-                    {checkinResult.action}成功！
+                    {checkinResult.action}{t("成功！")}
                   </span>
                 </div>
                 <p className="text-sm text-gray-500 mt-1">
@@ -400,7 +402,7 @@ export default function NfcTapReader() {
             )}
 
             <Button variant="outline" className="w-full" size="lg" onClick={reset}>
-              继续打卡
+              {t("继续打卡")}
             </Button>
           </div>
         )}
@@ -409,7 +411,7 @@ export default function NfcTapReader() {
         {log.length > 0 && (
           <details className="mt-4">
             <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600">
-              调试日志 ({log.length})
+              {t("调试日志 (")}{log.length})
             </summary>
             <div className="mt-2 max-h-32 overflow-y-auto bg-gray-900 rounded-lg p-3 font-mono text-xs text-green-400 space-y-0.5">
               {log.map((entry, i) => (

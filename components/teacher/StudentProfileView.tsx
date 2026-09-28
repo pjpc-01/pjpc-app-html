@@ -109,7 +109,7 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">加载学生档案中...</p>
+          <p className="text-gray-600">{t("加载学生档案中...")}</p>
         </div>
       </div>
     )
@@ -118,7 +118,7 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
   if (error) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-600 mb-4">加载学生档案失败: {error}</p>
+        <p className="text-red-600 mb-4">{t("加载学生档案失败:")} {error}</p>
         <Button onClick={() => window.location.reload()}>{t('teacher.reload')}</Button>
       </div>
     )
@@ -128,12 +128,12 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
     <div className="space-y-6">
       {/* 页面标题 */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">学生档案查看</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">{t("学生档案查看")}</h2>
         <p className="text-gray-600">
-          查看学生详细信息、紧急联络、健康状况等档案资料
+          {t("查看学生详细信息、紧急联络、健康状况等档案资料")}
           {teacher?.center_assignment && (
             <span className="ml-2 text-blue-600 font-medium">
-              (负责分行: {teacher.center_assignment})
+              {t("(负责分行:")} {teacher.center_assignment})
             </span>
           )}
         </p>
@@ -146,7 +146,7 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                学生列表 ({filteredStudents.length})
+                {t("学生列表 (")}{filteredStudents.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -155,7 +155,7 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    placeholder="搜索学生姓名、学号或学校..."
+                    placeholder={t("搜索学生姓名、学号或学校...")}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -171,7 +171,7 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
                       onChange={(e) => setSelectedCenter(e.target.value)}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
                     >
-                      <option value="all">所有中心</option>
+                      <option value="all">{t("所有中心")}</option>
                       {centers.map((center: any) => (
                         <option key={center} value={center}>{center}</option>
                       ))}
@@ -184,7 +184,7 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
                   <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-md">
                     <Filter className="h-4 w-4 text-blue-600" />
                     <span className="text-sm text-blue-800 font-medium">
-                      负责分行: {teacher.center_assignment}
+                      {t("负责分行:")} {teacher.center_assignment}
                     </span>
                   </div>
                 )}
@@ -240,7 +240,7 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
                 {filteredStudents.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>没有找到匹配的学生</p>
+                    <p>{t("没有找到匹配的学生")}</p>
                   </div>
                 )}
               </div>
@@ -294,7 +294,7 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
                   <div className="space-y-4">
                     <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                       <User className="h-4 w-4" />
-                      基本信息
+                      {t("基本信息")}
                     </h4>
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
@@ -307,7 +307,7 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
                       <div className="flex items-center gap-3">
                         <GraduationCap className="h-4 w-4 text-gray-400" />
                         <div>
-                          <p className="text-sm text-gray-600">学校</p>
+                          <p className="text-sm text-gray-600">{t("学校")}</p>
                           <p className="font-medium">{selectedStudent.school || '未设置'}</p>
                         </div>
                       </div>
@@ -325,7 +325,7 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
                   <div className="space-y-4">
                     <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                       <Phone className="h-4 w-4" />
-                      紧急联络
+                      {t("紧急联络")}
                     </h4>
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
@@ -356,27 +356,27 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
                   <div className="space-y-4">
                     <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                       <Heart className="h-4 w-4" />
-                      健康状况
+                      {t("健康状况")}
                     </h4>
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
                         <Heart className="h-4 w-4 text-gray-400" />
                         <div>
-                          <p className="text-sm text-gray-600">过敏史</p>
+                          <p className="text-sm text-gray-600">{t("过敏史")}</p>
                           <p className="font-medium">{selectedStudent.allergies || '无'}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <Shield className="h-4 w-4 text-gray-400" />
                         <div>
-                          <p className="text-sm text-gray-600">特殊需求</p>
+                          <p className="text-sm text-gray-600">{t("特殊需求")}</p>
                           <p className="font-medium">{selectedStudent.special_needs || '无'}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <Car className="h-4 w-4 text-gray-400" />
                         <div>
-                          <p className="text-sm text-gray-600">接送方式</p>
+                          <p className="text-sm text-gray-600">{t("接送方式")}</p>
                           <p className="font-medium">{selectedStudent.transportation || '未设置'}</p>
                         </div>
                       </div>
@@ -387,13 +387,13 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
                   <div className="space-y-4">
                     <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                       <Award className="h-4 w-4" />
-                      学习记录
+                      {t("学习记录")}
                     </h4>
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
                         <Star className="h-4 w-4 text-gray-400" />
                         <div>
-                          <p className="text-sm text-gray-600">平均成绩</p>
+                          <p className="text-sm text-gray-600">{t("平均成绩")}</p>
                           <p className="font-medium">{selectedStudent.average_grade || '暂无'}</p>
                         </div>
                       </div>
@@ -421,7 +421,7 @@ export default function StudentProfileView({ teacherId }: StudentProfileViewProp
               <CardContent className="flex items-center justify-center h-64">
                 <div className="text-center text-gray-500">
                   <User className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>请选择一个学生查看详细信息</p>
+                  <p>{t("请选择一个学生查看详细信息")}</p>
                 </div>
               </CardContent>
             </Card>

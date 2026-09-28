@@ -288,7 +288,7 @@ export default function SecureLoginForm() {
             <div className="bg-white p-4 rounded-2xl shadow-lg border-2 border-yellow-200">
               <img 
                 src="/logo.png" 
-                alt="温馨小屋 - 安亲补习中心" 
+                alt={t("温馨小屋 - 安亲补习中心")} 
                 className="h-16 w-auto"
                 onError={(e) => {
                   // 如果logo文件不存在，显示备用图标
@@ -304,17 +304,17 @@ export default function SecureLoginForm() {
               </div>
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">温馨小屋</h1>
-          <p className="text-gray-600">安亲补习中心管理系统</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{t("温馨小屋")}</h1>
+          <p className="text-gray-600">{t("安亲补习中心管理系统")}</p>
         </div>
 
         <Card className="shadow-lg">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl text-center flex items-center justify-center gap-2">
               <Shield className="h-5 w-5" />
-              安全登录
+              {t("安全登录")}
             </CardTitle>
-            <CardDescription className="text-center">请选择登录、注册或重置密码</CardDescription>
+            <CardDescription className="text-center">{t("请选择登录、注册或重置密码")}</CardDescription>
           </CardHeader>
           <CardContent>
             {/* 错误和成功提示 */}
@@ -347,7 +347,7 @@ export default function SecureLoginForm() {
                     <Input
                       id="login-email"
                       type="email"
-                      placeholder="请输入邮箱地址"
+                      placeholder={t("请输入邮箱地址")}
                       value={loginData.email}
                       onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                       required
@@ -384,7 +384,7 @@ export default function SecureLoginForm() {
                         onChange={(e) => setRememberMe(e.target.checked)}
                         className="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
                       />
-                      <span className="text-sm text-gray-600">记住我（保持登录状态）</span>
+                      <span className="text-sm text-gray-600">{t("记住我（保持登录状态）")}</span>
                     </label>
                   </div>
                   <Button 
@@ -402,7 +402,7 @@ export default function SecureLoginForm() {
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        登录中...
+                        {t("登录中...")}
                       </>
                     ) : (
                       "安全登录"
@@ -415,11 +415,11 @@ export default function SecureLoginForm() {
               <TabsContent value="register">
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="register-name">真实姓名</Label>
+                    <Label htmlFor="register-name">{t("真实姓名")}</Label>
                     <Input
                       id="register-name"
                       type="text"
-                      placeholder="请输入您的真实姓名"
+                      placeholder={t("请输入您的真实姓名")}
                       value={registerData.name}
                       onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
                       required
@@ -431,7 +431,7 @@ export default function SecureLoginForm() {
                     <Input
                       id="register-email"
                       type="email"
-                      placeholder="请输入有效的邮箱地址"
+                      placeholder={t("请输入有效的邮箱地址")}
                       value={registerData.email}
                       onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
                       required
@@ -439,20 +439,20 @@ export default function SecureLoginForm() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="register-role">用户角色</Label>
+                    <Label htmlFor="register-role">{t("用户角色")}</Label>
                     <Select
                       value={registerData.role}
                       onValueChange={(value: "teacher" | "parent") => setRegisterData({ ...registerData, role: value })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="请选择您的角色" />
+                        <SelectValue placeholder={t("请选择您的角色")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="teacher">老师</SelectItem>
+                        <SelectItem value="teacher">{t("老师")}</SelectItem>
                         <SelectItem value="parent">{t('admin.parent')}</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-gray-500">注：管理员账户需要特殊申请</p>
+                    <p className="text-xs text-gray-500">{t("注：管理员账户需要特殊申请")}</p>
                   </div>
 
                   <div className="space-y-2">
@@ -461,7 +461,7 @@ export default function SecureLoginForm() {
                       <Input
                         id="register-password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="请输入强密码"
+                        placeholder={t("请输入强密码")}
                         value={registerData.password}
                         onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
                         required
@@ -484,7 +484,7 @@ export default function SecureLoginForm() {
                       <Input
                         id="register-confirm-password"
                         type={showConfirmPassword ? "text" : "password"}
-                        placeholder="请再次输入密码"
+                        placeholder={t("请再次输入密码")}
                         value={registerData.confirmPassword}
                         onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
                         required
@@ -505,7 +505,7 @@ export default function SecureLoginForm() {
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        注册中...
+                        {t("注册中...")}
                       </>
                     ) : (
                       "提交注册申请"
@@ -524,7 +524,7 @@ export default function SecureLoginForm() {
                       type="email"
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
-                      placeholder="请输入您的邮箱地址"
+                      placeholder={t("请输入您的邮箱地址")}
                       required
                     />
                   </div>
@@ -532,7 +532,7 @@ export default function SecureLoginForm() {
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        发送中...
+                        {t("发送中...")}
                       </>
                     ) : (
                       "发送重置邮件"
@@ -549,10 +549,10 @@ export default function SecureLoginForm() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-blue-800 flex items-center gap-2">
               <SmartphoneNfc className="h-4 w-4" />
-              NFC 快速登入
+              {t("NFC 快速登入")}
             </CardTitle>
             <CardDescription className="text-xs text-blue-600">
-              用户可使用手机 NFC 刷卡快速登入（仅 Android Chrome 支持）
+              {t("用户可使用手机 NFC 刷卡快速登入（仅 Android Chrome 支持）")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -583,15 +583,15 @@ export default function SecureLoginForm() {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm text-yellow-800 flex items-center gap-2">
               <Shield className="h-4 w-4" />
-              安全提示
+              {t("安全提示")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="text-xs text-yellow-700">
-              <div>• 新用户注册需要管理员审核</div>
-              <div>• 请使用真实邮箱，系统会发送验证邮件</div>
-              <div>• 密码将被安全加密存储</div>
-              <div>• 多次登录失败将临时锁定账户</div>
+              <div>{t("• 新用户注册需要管理员审核")}</div>
+              <div>{t("• 请使用真实邮箱，系统会发送验证邮件")}</div>
+              <div>{t("• 密码将被安全加密存储")}</div>
+              <div>{t("• 多次登录失败将临时锁定账户")}</div>
             </div>
           </CardContent>
         </Card>

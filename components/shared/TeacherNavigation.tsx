@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 import { GraduationCap, Bell, LogOut } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context";
 
 interface TeacherNavigationProps {
   title?: string
@@ -15,6 +16,7 @@ interface TeacherNavigationProps {
 export default function TeacherNavigation({ 
   title = "教师工作台",
 }: TeacherNavigationProps) {
+  const { t } = useLanguage();
   const { user, userProfile, logout } = useAuth()
 
   const handleLogout = () => {
@@ -29,7 +31,7 @@ export default function TeacherNavigation({
             <div className="flex items-center">
               <img 
                 src="/logo.png" 
-                alt="温馨小屋" 
+                alt={t("温馨小屋")} 
                 className="h-8 w-auto mr-3"
                 onError={(e) => {
                   // 如果logo文件不存在，显示备用图标
@@ -64,7 +66,7 @@ export default function TeacherNavigation({
             </div>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
-              退出
+              {t("退出")}
             </Button>
           </div>
         </div>

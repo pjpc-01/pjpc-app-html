@@ -237,7 +237,7 @@ export default function AttendanceRecords() {
               </div>
               <div>
                 <div className="text-2xl font-bold">{stats.total}</div>
-                <div className="text-sm text-gray-500">总记录数</div>
+                <div className="text-sm text-gray-500">{t("总记录数")}</div>
               </div>
             </div>
           </CardContent>
@@ -291,7 +291,7 @@ export default function AttendanceRecords() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            筛选条件
+            {t("筛选条件")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -310,7 +310,7 @@ export default function AttendanceRecords() {
               <Label htmlFor="name">{t('student.name')}</Label>
               <Input
                 id="name"
-                placeholder="输入姓名"
+                placeholder={t("输入姓名")}
                 value={filters.name}
                 onChange={(e) => setFilters(prev => ({ ...prev, name: e.target.value }))}
               />
@@ -320,12 +320,12 @@ export default function AttendanceRecords() {
               <Label>{t('common.type')}</Label>
               <Select value={filters.type} onValueChange={(value) => setFilters(prev => ({ ...prev, type: value }))}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择类型" />
+                  <SelectValue placeholder={t("选择类型")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('common.all_types')}</SelectItem>
                   <SelectItem value="student">{t('common.student')}</SelectItem>
-                  <SelectItem value="teacher">教师/员工</SelectItem>
+                  <SelectItem value="teacher">{t("教师/员工")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -334,11 +334,11 @@ export default function AttendanceRecords() {
               <Label>{t('teacher.center')}</Label>
               <Select value={filters.center} onValueChange={(value) => setFilters(prev => ({ ...prev, center: value }))}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择中心" />
+                  <SelectValue placeholder={t("选择中心")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('teacher.all_centers')}</SelectItem>
-                  <SelectItem value="总校">总校</SelectItem>
+                  <SelectItem value="总校">{t("总校")}</SelectItem>
                   <SelectItem value="分校">{t('attendance.branch')}</SelectItem>
                 </SelectContent>
               </Select>
@@ -348,7 +348,7 @@ export default function AttendanceRecords() {
               <Label>{t('teacher.status')}</Label>
               <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择状态" />
+                  <SelectValue placeholder={t("选择状态")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('common.all_status')}</SelectItem>
@@ -368,12 +368,12 @@ export default function AttendanceRecords() {
               disabled={loading}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              刷新
+              {t("刷新")}
             </Button>
             
             <Button onClick={exportRecords} disabled={records.length === 0}>
               <Download className="h-4 w-4 mr-2" />
-              导出记录
+              {t("导出记录")}
             </Button>
           </div>
         </CardContent>
@@ -384,10 +384,10 @@ export default function AttendanceRecords() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            考勤记录
+            {t("考勤记录")}
           </CardTitle>
           <CardDescription>
-            查看和管理学生考勤记录
+            {t("查看和管理学生考勤记录")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -405,13 +405,13 @@ export default function AttendanceRecords() {
                 onClick={fetchAttendanceRecords}
                 className="mt-4"
               >
-                重试
+                {t("重试")}
               </Button>
             </div>
           ) : records.length === 0 ? (
             <div className="text-center py-8">
               <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-500">暂无考勤记录</p>
+              <p className="text-gray-500">{t("暂无考勤记录")}</p>
             </div>
           ) : (
             <>
@@ -419,7 +419,7 @@ export default function AttendanceRecords() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('common.type')}</TableHead>
-                    <TableHead>人员信息</TableHead>
+                    <TableHead>{t("人员信息")}</TableHead>
                     <TableHead>{t('teacher.center')}</TableHead>
                     <TableHead>{t('finance.date')}</TableHead>
                     <TableHead>{t('teacher.check_in_time')}</TableHead>
@@ -486,10 +486,10 @@ export default function AttendanceRecords() {
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
                   >
-                    上一页
+                    {t("上一页")}
                   </Button>
                   <span className="text-sm text-gray-500">
-                    第 {currentPage} 页，共 {totalPages} 页
+                    {t("第")} {currentPage} {t("页，共")} {totalPages} {t("页")}
                   </span>
                   <Button
                     variant="outline"
@@ -497,7 +497,7 @@ export default function AttendanceRecords() {
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
                   >
-                    下一页
+                    {t("下一页")}
                   </Button>
                 </div>
               )}

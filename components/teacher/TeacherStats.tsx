@@ -85,7 +85,7 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">加载统计数据中...</p>
+          <p className="text-gray-600">{t("加载统计数据中...")}</p>
         </div>
       </div>
     )
@@ -101,7 +101,7 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
               <div>
                 <p className="text-sm font-medium text-gray-600">{t('dashboard.total_students')}</p>
                 <p className="text-2xl font-bold text-blue-600">{stats.totalStudents}</p>
-                <p className="text-xs text-gray-500">活跃学生</p>
+                <p className="text-xs text-gray-500">{t("活跃学生")}</p>
               </div>
               <Users className="h-8 w-8 text-blue-600" />
             </div>
@@ -112,9 +112,9 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">今日出勤</p>
+                <p className="text-sm font-medium text-gray-600">{t("今日出勤")}</p>
                 <p className="text-2xl font-bold text-green-600">{stats.todayAttendance}</p>
-                <p className="text-xs text-gray-500">出勤率 {stats.attendanceRate}%</p>
+                <p className="text-xs text-gray-500">{t("出勤率")} {stats.attendanceRate}%</p>
               </div>
               <UserCheck className="h-8 w-8 text-green-600" />
             </div>
@@ -125,9 +125,9 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">待批作业</p>
+                <p className="text-sm font-medium text-gray-600">{t("待批作业")}</p>
                 <p className="text-2xl font-bold text-orange-600">{stats.pendingAssignments}</p>
-                <p className="text-xs text-gray-500">已完成 {stats.completedAssignments}</p>
+                <p className="text-xs text-gray-500">{t("已完成")} {stats.completedAssignments}</p>
               </div>
               <BookOpen className="h-8 w-8 text-orange-600" />
             </div>
@@ -138,9 +138,9 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">平均成绩</p>
+                <p className="text-sm font-medium text-gray-600">{t("平均成绩")}</p>
                 <p className="text-2xl font-bold text-purple-600">{stats.averageGrade}</p>
-                <p className="text-xs text-gray-500">本月提升 {stats.monthlyProgress}%</p>
+                <p className="text-xs text-gray-500">{t("本月提升")} {stats.monthlyProgress}%</p>
               </div>
               <Award className="h-8 w-8 text-purple-600" />
             </div>
@@ -154,9 +154,9 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              本周出勤率趋势
+              {t("本周出勤率趋势")}
             </CardTitle>
-            <CardDescription>过去7天的出勤情况</CardDescription>
+            <CardDescription>{t("过去7天的出勤情况")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -185,9 +185,9 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              课程统计
+              {t("课程统计")}
             </CardTitle>
-            <CardDescription>今日课程安排</CardDescription>
+            <CardDescription>{t("今日课程安排")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -196,12 +196,12 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
                   <Calendar className="h-5 w-5 text-blue-600" />
                   <div>
                     <p className="font-medium text-blue-900">{t('teacher.todays_classes')}</p>
-                    <p className="text-sm text-blue-700">已安排课程数</p>
+                    <p className="text-sm text-blue-700">{t("已安排课程数")}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-blue-600">{stats.todayClasses}</p>
-                  <p className="text-sm text-blue-600">节</p>
+                  <p className="text-sm text-blue-600">{t("节")}</p>
                 </div>
               </div>
 
@@ -209,13 +209,13 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
                 <div className="flex items-center gap-3">
                   <MessageSquare className="h-5 w-5 text-green-600" />
                   <div>
-                    <p className="font-medium text-green-900">未读消息</p>
-                    <p className="text-sm text-green-700">家长和学校消息</p>
+                    <p className="font-medium text-green-900">{t("未读消息")}</p>
+                    <p className="text-sm text-green-700">{t("家长和学校消息")}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-green-600">{stats.recentMessages}</p>
-                  <p className="text-sm text-green-600">条</p>
+                  <p className="text-sm text-green-600">{t("条")}</p>
                 </div>
               </div>
 
@@ -223,8 +223,8 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
                 <div className="flex items-center gap-3">
                   <Activity className="h-5 w-5 text-purple-600" />
                   <div>
-                    <p className="font-medium text-purple-900">月度进步</p>
-                    <p className="text-sm text-purple-700">学生成绩提升</p>
+                    <p className="font-medium text-purple-900">{t("月度进步")}</p>
+                    <p className="text-sm text-purple-700">{t("学生成绩提升")}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -242,9 +242,9 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5" />
-            详细统计
+            {t("详细统计")}
           </CardTitle>
-          <CardDescription>各项指标的详细数据</CardDescription>
+          <CardDescription>{t("各项指标的详细数据")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -256,7 +256,7 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
                   <span className="font-medium">{stats.totalStudents}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">今日出勤</span>
+                  <span className="text-sm text-gray-600">{t("今日出勤")}</span>
                   <span className="font-medium">{stats.todayAttendance}</span>
                 </div>
                 <div className="flex justify-between">
@@ -270,7 +270,7 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
               <h4 className="font-semibold text-gray-900">{t('teacher.homework_management')}</h4>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">待批作业</span>
+                  <span className="text-sm text-gray-600">{t("待批作业")}</span>
                   <span className="font-medium">{stats.pendingAssignments}</span>
                 </div>
                 <div className="flex justify-between">
@@ -278,7 +278,7 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
                   <span className="font-medium">{stats.completedAssignments}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">完成率</span>
+                  <span className="text-sm text-gray-600">{t("完成率")}</span>
                   <span className="font-medium">
                     {stats.completedAssignments + stats.pendingAssignments > 0 
                       ? Math.round((stats.completedAssignments / (stats.completedAssignments + stats.pendingAssignments)) * 100)
@@ -289,10 +289,10 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
             </div>
 
             <div className="space-y-3">
-              <h4 className="font-semibold text-gray-900">教学效果</h4>
+              <h4 className="font-semibold text-gray-900">{t("教学效果")}</h4>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">平均成绩</span>
+                  <span className="text-sm text-gray-600">{t("平均成绩")}</span>
                   <span className="font-medium">{stats.averageGrade}</span>
                 </div>
                 <div className="flex justify-between">
@@ -300,7 +300,7 @@ export default function TeacherStats({ teacherId }: TeacherStatsProps) {
                   <span className="font-medium">{stats.todayClasses}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">月度进步</span>
+                  <span className="text-sm text-gray-600">{t("月度进步")}</span>
                   <span className="font-medium">+{stats.monthlyProgress}%</span>
                 </div>
               </div>

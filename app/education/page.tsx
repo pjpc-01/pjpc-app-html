@@ -469,7 +469,7 @@ export default function EducationOverviewPage() {
                         <Users className="h-4 w-4 text-primary" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{g.grade}</p>
+                        <p className="font-medium text-sm truncate">{t(g.grade)}</p>
                         <p className="text-xs text-gray-500 truncate">
                           {g.courses.length > 0 ? g.courses.slice(0, 2).join("、") : t("未设课程")}
                           {g.courses.length > 2 ? ` ${t("等")} ${g.courses.length} ${t("门")}` : ""}

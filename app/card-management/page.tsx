@@ -280,8 +280,8 @@ export default function CardManagementPage() {
 
   return (
     <PageLayout
-      title="NFC 卡片管理"
-      description="统一管理所有 NFC 卡片：发卡、挂失、停用、查看记录"
+      title={t("NFC 卡片管理")}
+      description={t("统一管理所有 NFC 卡片：发卡、挂失、停用、查看记录")}
       backUrl="/"
       userRole="admin"
       status="系统正常"
@@ -293,25 +293,25 @@ export default function CardManagementPage() {
           <Card>
             <CardContent className="p-4 flex items-center gap-4">
               <div className="p-3 rounded-lg bg-blue-100"><CreditCard className="h-6 w-6 text-blue-600" /></div>
-              <div><p className="text-2xl font-bold">{stats.total}</p><p className="text-sm text-gray-500">总卡片数</p></div>
+              <div><p className="text-2xl font-bold">{stats.total}</p><p className="text-sm text-gray-500">{t("总卡片数")}</p></div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-4">
               <div className="p-3 rounded-lg bg-green-100"><CheckCircle className="h-6 w-6 text-green-600" /></div>
-              <div><p className="text-2xl font-bold">{stats.active}</p><p className="text-sm text-gray-500">活跃卡片</p></div>
+              <div><p className="text-2xl font-bold">{stats.active}</p><p className="text-sm text-gray-500">{t("活跃卡片")}</p></div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-4">
               <div className="p-3 rounded-lg bg-purple-100"><Users className="h-6 w-6 text-purple-600" /></div>
-              <div><p className="text-2xl font-bold">{stats.student}</p><p className="text-sm text-gray-500">学生卡</p></div>
+              <div><p className="text-2xl font-bold">{stats.student}</p><p className="text-sm text-gray-500">{t("学生卡")}</p></div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-4">
               <div className="p-3 rounded-lg bg-amber-100"><Shield className="h-6 w-6 text-amber-600" /></div>
-              <div><p className="text-2xl font-bold">{stats.teacher}</p><p className="text-sm text-gray-500">教师卡</p></div>
+              <div><p className="text-2xl font-bold">{stats.teacher}</p><p className="text-sm text-gray-500">{t("教师卡")}</p></div>
             </CardContent>
           </Card>
         </div>
@@ -322,7 +322,7 @@ export default function CardManagementPage() {
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="搜索卡号或姓名..."
+                placeholder={t("搜索卡号或姓名...")}
                 className="pl-10"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -346,20 +346,20 @@ export default function CardManagementPage() {
               </SelectContent>
             </Select>
             <Select value={filterLevel} onValueChange={setFilterLevel}>
-              <SelectTrigger className="w-28"><SelectValue placeholder="学段" /></SelectTrigger>
+              <SelectTrigger className="w-28"><SelectValue placeholder={t("学段")} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">全部</SelectItem>
-                <SelectItem value="primary">小学</SelectItem>
-                <SelectItem value="secondary">中学</SelectItem>
+                <SelectItem value="all">{t("全部")}</SelectItem>
+                <SelectItem value="primary">{t("小学")}</SelectItem>
+                <SelectItem value="secondary">{t("中学")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={fetchData}>
-              <RefreshCw className="h-4 w-4 mr-1" />刷新
+              <RefreshCw className="h-4 w-4 mr-1" />{t("刷新")}
             </Button>
             <Button size="sm" onClick={openIssueDialog}>
-              <Plus className="h-4 w-4 mr-1" />发卡
+              <Plus className="h-4 w-4 mr-1" />{t("发卡")}
             </Button>
           </div>
         </div>
@@ -368,7 +368,7 @@ export default function CardManagementPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle>{t('card.card_list')}</CardTitle>
-            <CardDescription>共 {filteredCards.length} 张卡片 · 第{page}/{totalPages}页</CardDescription>
+            <CardDescription>{t("共")} {filteredCards.length} {t("张卡片 · 第")}{page}/{totalPages}{t("页")}</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -377,9 +377,9 @@ export default function CardManagementPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>卡号</TableHead>
+                    <TableHead>{t("卡号")}</TableHead>
                     <TableHead>{t('common.type')}</TableHead>
-                    <TableHead>持卡人</TableHead>
+                    <TableHead>{t("持卡人")}</TableHead>
                     <TableHead>{t('teacher.status')}</TableHead>
                     <TableHead>{t('teacher.notes')}</TableHead>
                     <TableHead>{t('teacher.actions')}</TableHead>
@@ -405,7 +405,7 @@ export default function CardManagementPage() {
                               <XCircle className="h-4 w-4 text-orange-500" />
                             </Button>
                           )}
-                          <Button variant="ghost" size="sm" onClick={() => openTransferDialog(card)} title="转绑">
+                          <Button variant="ghost" size="sm" onClick={() => openTransferDialog(card)} title={t("转绑")}>
                             <ArrowRightLeft className="h-4 w-4 text-blue-500" />
                           </Button>
                           <Button variant="ghost" size="sm" onClick={() => handleDeleteCard(card)} title={t('card.delete')}>
@@ -418,7 +418,7 @@ export default function CardManagementPage() {
                   {paginatedCards.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                        没有符合条件的卡片
+                        {t("没有符合条件的卡片")}
                       </TableCell>
                     </TableRow>
                   )}
@@ -440,15 +440,15 @@ export default function CardManagementPage() {
         {/* No-card breakdown */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">无卡人员</CardTitle>
-            <CardDescription>在校学生中未绑定卡片的人员</CardDescription>
+            <CardTitle className="text-base">{t("无卡人员")}</CardTitle>
+            <CardDescription>{t("在校学生中未绑定卡片的人员")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h4 className="font-semibold text-sm mb-2 text-blue-700">🏫 PU1 ({noCardBreakdown.pu1.length}人)</h4>
+                <h4 className="font-semibold text-sm mb-2 text-blue-700">🏫 PU1 ({noCardBreakdown.pu1.length}{t("人)")}</h4>
                 {noCardBreakdown.pu1.length === 0 ? (
-                  <p className="text-sm text-gray-400">全部有卡 ✅</p>
+                  <p className="text-sm text-gray-400">{t("全部有卡 ✅")}</p>
                 ) : (
                   <div className="flex flex-wrap gap-1">
                     {noCardBreakdown.pu1.map(p => (
@@ -458,9 +458,9 @@ export default function CardManagementPage() {
                 )}
               </div>
               <div>
-                <h4 className="font-semibold text-sm mb-2 text-green-700">🏫 BATU14 ({noCardBreakdown.batu14.length}人)</h4>
+                <h4 className="font-semibold text-sm mb-2 text-green-700">🏫 BATU14 ({noCardBreakdown.batu14.length}{t("人)")}</h4>
                 {noCardBreakdown.batu14.length === 0 ? (
-                  <p className="text-sm text-gray-400">全部有卡 ✅</p>
+                  <p className="text-sm text-gray-400">{t("全部有卡 ✅")}</p>
                 ) : (
                   <div className="flex flex-wrap gap-1">
                     {noCardBreakdown.batu14.map(p => (
@@ -477,14 +477,14 @@ export default function CardManagementPage() {
         <Dialog open={showIssueDialog} onOpenChange={setShowIssueDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>发放新卡片</DialogTitle>
-              <DialogDescription>为未绑定卡片的人员发放 NFC 卡</DialogDescription>
+              <DialogTitle>{t("发放新卡片")}</DialogTitle>
+              <DialogDescription>{t("为未绑定卡片的人员发放 NFC 卡")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>卡片 UID</Label>
+                <Label>{t("卡片 UID")}</Label>
                 <Input
-                  placeholder="刷卡自动填入或手动输入"
+                  placeholder={t("刷卡自动填入或手动输入")}
                   value={newCard.card_uid}
                   onChange={e => setNewCard({ ...newCard, card_uid: e.target.value })}
                   className={cardUidExists ? "border-red-400 focus-visible:ring-red-400" : ""}
@@ -492,15 +492,15 @@ export default function CardManagementPage() {
                 {cardUidExists && (
                   <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
                     <XCircle className="h-3 w-3" />
-                    已存在 — {cardUidExists.type === "student" 
+                    {t("已存在 —")} {cardUidExists.type === "student" 
                       ? `学生: ${students[cardUidExists.studentId || ""]?.name || "未知"}` 
                       : `教师: ${teachers[cardUidExists.teacherId || ""]?.name || "未知"}`}
-                    （状态: {cardUidExists.status === "active" ? "正常" : cardUidExists.status}）
+                    {t("（状态:")} {cardUidExists.status === "active" ? "正常" : cardUidExists.status}{t("）")}
                   </p>
                 )}
               </div>
               <div>
-                <Label>人员类型</Label>
+                <Label>{t("人员类型")}</Label>
                 <Select value={newCard.personType} onValueChange={v => setNewCard({ ...newCard, personType: v, personId: "" })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -512,10 +512,10 @@ export default function CardManagementPage() {
               <div>
                 <Label>
                   {newCard.personType === "student" ? "学生" : "教师"}
-                  <span className="text-xs text-gray-400 ml-2">（仅显示未绑卡的人员）</span>
+                  <span className="text-xs text-gray-400 ml-2">{t("（仅显示未绑卡的人员）")}</span>
                 </Label>
                 <Select value={newCard.personId} onValueChange={v => setNewCard({ ...newCard, personId: v })}>
-                  <SelectTrigger><SelectValue placeholder="选择人员..." /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t("选择人员...")} /></SelectTrigger>
                   <SelectContent>
                     {(newCard.personType === "student" ? unlinkedPeople.students : unlinkedPeople.teachers).map(p => (
                       <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
@@ -526,13 +526,13 @@ export default function CardManagementPage() {
               <div>
                 <Label>{t('teacher.notes')}</Label>
                 <Input
-                  placeholder="发卡备注"
+                  placeholder={t("发卡备注")}
                   value={newCard.notes}
                   onChange={e => setNewCard({ ...newCard, notes: e.target.value })}
                 />
               </div>
               <Button onClick={handleIssueCard} disabled={!newCard.card_uid || !newCard.personId || !!cardUidExists} className="w-full">
-                <Plus className="h-4 w-4 mr-1" />确认发卡
+                <Plus className="h-4 w-4 mr-1" />{t("确认发卡")}
               </Button>
             </div>
           </DialogContent>
@@ -544,19 +544,19 @@ export default function CardManagementPage() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <ArrowRightLeft className="h-5 w-5 text-blue-500" />
-                转绑卡片
+                {t("转绑卡片")}
               </DialogTitle>
               <DialogDescription>
-                将卡片 <span className="font-mono text-blue-600">{selectedCard?.card_uid}</span> 转绑给其他人
+                {t("将卡片")} <span className="font-mono text-blue-600">{selectedCard?.card_uid}</span> {t("转绑给其他人")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="bg-slate-50 rounded-lg p-3 text-sm">
-                <p>当前持卡人：<span className="font-semibold">{selectedCard ? getPersonName(selectedCard) : ""}</span></p>
-                <p className="text-xs text-gray-500">转绑后原持卡人将失去此卡</p>
+                <p>{t("当前持卡人：")}<span className="font-semibold">{selectedCard ? getPersonName(selectedCard) : ""}</span></p>
+                <p className="text-xs text-gray-500">{t("转绑后原持卡人将失去此卡")}</p>
               </div>
               <div>
-                <Label>新持卡人类型</Label>
+                <Label>{t("新持卡人类型")}</Label>
                 <Select value={transferPersonType} onValueChange={v => { setTransferPersonType(v); setTransferPersonId("") }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -568,10 +568,10 @@ export default function CardManagementPage() {
               <div>
                 <Label>
                   {transferPersonType === "student" ? "学生" : "教师"}
-                  <span className="text-xs text-gray-400 ml-2">（已有卡的人会标注）</span>
+                  <span className="text-xs text-gray-400 ml-2">{t("（已有卡的人会标注）")}</span>
                 </Label>
                 <Select value={transferPersonId} onValueChange={setTransferPersonId}>
-                  <SelectTrigger><SelectValue placeholder="选择人员..." /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t("选择人员...")} /></SelectTrigger>
                   <SelectContent>
                     {(transferPersonType === "student" ? allPeople.students : allPeople.teachers).map(p => (
                       <SelectItem key={p.id} value={p.id}>
@@ -582,7 +582,7 @@ export default function CardManagementPage() {
                 </Select>
               </div>
               <Button onClick={handleTransferCard} disabled={!transferPersonId} className="w-full">
-                <ArrowRightLeft className="h-4 w-4 mr-1" />确认转绑
+                <ArrowRightLeft className="h-4 w-4 mr-1" />{t("确认转绑")}
               </Button>
             </div>
           </DialogContent>

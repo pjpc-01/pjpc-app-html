@@ -84,7 +84,7 @@ export default function ParentGradesPage() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">{t('parent.grades_query')}</h1>
-      <p className="text-gray-500">查看孩子的考试成绩与学习进度</p>
+      <p className="text-gray-500">{t("查看孩子的考试成绩与学习进度")}</p>
 
       {filtered.length === 0 ? (
         <Card>
@@ -117,7 +117,7 @@ export default function ParentGradesPage() {
                   ) : childGrades.length === 0 ? (
                     <div className="flex flex-col items-center py-8 text-slate-400">
                       <BarChart3 className="h-10 w-10 mb-2 opacity-30" />
-                      <p className="text-sm">暂无成绩记录</p>
+                      <p className="text-sm">{t("暂无成绩记录")}</p>
                     </div>
                   ) : (
                     <>
@@ -125,7 +125,7 @@ export default function ParentGradesPage() {
                       {stats && (
                         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-4">
                           <div className="bg-slate-50 rounded-lg p-3 text-center">
-                            <p className="text-xs text-slate-500">科目数</p>
+                            <p className="text-xs text-slate-500">{t("科目数")}</p>
                             <p className="text-lg font-bold text-indigo-600">{stats.count}</p>
                           </div>
                           <div className="bg-slate-50 rounded-lg p-3 text-center">
@@ -133,7 +133,7 @@ export default function ParentGradesPage() {
                             <p className="text-lg font-bold text-blue-600">{stats.average}</p>
                           </div>
                           <div className="bg-slate-50 rounded-lg p-3 text-center">
-                            <p className="text-xs text-slate-500">最高</p>
+                            <p className="text-xs text-slate-500">{t("最高")}</p>
                             <p className="text-lg font-bold text-emerald-600">{stats.highest}</p>
                           </div>
                           <div className="bg-slate-50 rounded-lg p-3 text-center">
@@ -141,7 +141,7 @@ export default function ParentGradesPage() {
                             <p className="text-lg font-bold text-amber-600">{stats.passRate}%</p>
                           </div>
                           <div className="bg-slate-50 rounded-lg p-3 text-center">
-                            <p className="text-xs text-slate-500">等级</p>
+                            <p className="text-xs text-slate-500">{t("等级")}</p>
                             <div className="flex justify-center gap-0.5 mt-1">
                               {(["A","B","C","D","F"] as const).map(l => stats.distribution[l] > 0 && (
                                 <span key={l} className={`text-xs px-1 py-0.5 rounded ${gradeColor(l)}`}>{l}</span>
@@ -160,7 +160,7 @@ export default function ParentGradesPage() {
                           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                             {termGrades.map((g) => (
                               <div key={g.id} className="bg-slate-50 rounded-lg p-3">
-                                <p className="text-xs text-slate-500">{g.subject}</p>
+                                <p className="text-xs text-slate-500">{t(g.subject)}</p>
                                 <div className="flex items-center gap-2 mt-1">
                                   <span className="text-xl font-bold text-slate-800">{g.score ?? "-"}</span>
                                   {g.grade_letter && (

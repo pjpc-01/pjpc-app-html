@@ -149,23 +149,23 @@ export default function ReminderManagement() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">本月提醒</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("本月提醒")}</CardTitle>
             <Bell className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{reminders.length}</div>
-            <p className="text-xs text-muted-foreground">发送提醒数量</p>
+            <p className="text-xs text-muted-foreground">{t("发送提醒数量")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">成功发送</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("成功发送")}</CardTitle>
             <Send className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{reminders.filter(r => r.status === 'sent').length}</div>
-            <p className="text-xs text-muted-foreground">成功发送数量</p>
+            <p className="text-xs text-muted-foreground">{t("成功发送数量")}</p>
           </CardContent>
         </Card>
 
@@ -176,18 +176,18 @@ export default function ReminderManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{reminders.filter(r => r.status === 'failed').length}</div>
-            <p className="text-xs text-muted-foreground">发送失败数量</p>
+            <p className="text-xs text-muted-foreground">{t("发送失败数量")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">模板数量</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("模板数量")}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{templates.length}</div>
-            <p className="text-xs text-muted-foreground">提醒模板数量</p>
+            <p className="text-xs text-muted-foreground">{t("提醒模板数量")}</p>
           </CardContent>
         </Card>
       </div>
@@ -197,16 +197,16 @@ export default function ReminderManagement() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5" />
-            逾期发票
+            {t("逾期发票")}
           </CardTitle>
-          <CardDescription>需要发送提醒的逾期发票</CardDescription>
+          <CardDescription>{t("需要发送提醒的逾期发票")}</CardDescription>
         </CardHeader>
         <CardContent>
           {/* 逾期发票 - real data from hooks */}
           {(() => {
             const overdue = getOverdueInvoicesForReminders()
             return overdue.length === 0 ? (
-              <div className="text-center py-4 text-gray-400 text-sm">暂无逾期发票 🎉</div>
+              <div className="text-center py-4 text-gray-400 text-sm">{t("暂无逾期发票 🎉")}</div>
             ) : (
               <div className="space-y-4">
                 {overdue.slice(0, 5).map(inv => {
@@ -216,7 +216,7 @@ export default function ReminderManagement() {
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <div className="font-medium">{inv.studentName || '未知学生'}</div>
-                          <div className="text-sm text-gray-500">发票号: {inv.invoiceNumber} · 应缴金额：RM {(inv.totalAmount || 0).toLocaleString()}</div>
+                          <div className="text-sm text-gray-500">{t("发票号:")} {inv.invoiceNumber} {t("· 应缴金额：RM")} {(inv.totalAmount || 0).toLocaleString()}</div>
                         </div>
                         <Badge variant={daysOverdue > 7 ? "destructive" : "secondary"}>
                           {daysOverdue > 0 ? `逾期${daysOverdue}天` : "今日到期"}
@@ -225,11 +225,11 @@ export default function ReminderManagement() {
                       <div className="flex gap-2">
                         <Button size="sm" variant="outline" onClick={() => handleSendReminderViaTemplate(inv.id, 'email')}>
                           <Mail className="h-4 w-4 mr-2" />
-                          发送邮件提醒
+                          {t("发送邮件提醒")}
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => handleSendReminderViaTemplate(inv.id, 'sms')}>
                           <Bell className="h-4 w-4 mr-2" />
-                          短信提醒
+                          {t("短信提醒")}
                         </Button>
                       </div>
                     </div>
@@ -248,13 +248,13 @@ export default function ReminderManagement() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5" />
-                提醒模板
+                {t("提醒模板")}
               </CardTitle>
-              <CardDescription>管理提醒消息模板</CardDescription>
+              <CardDescription>{t("管理提醒消息模板")}</CardDescription>
             </div>
             <Button size="sm" onClick={() => setIsAddTemplateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              添加模板
+              {t("添加模板")}
             </Button>
           </div>
         </CardHeader>
@@ -262,9 +262,9 @@ export default function ReminderManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>模板名称</TableHead>
+                <TableHead>{t("模板名称")}</TableHead>
                 <TableHead>{t('common.type')}</TableHead>
-                <TableHead>提前天数</TableHead>
+                <TableHead>{t("提前天数")}</TableHead>
                 <TableHead>{t('teacher.status')}</TableHead>
                 <TableHead>{t('teacher.actions')}</TableHead>
               </TableRow>
@@ -279,7 +279,7 @@ export default function ReminderManagement() {
                        template.type === "sms" ? "短信" : "电话"}
                     </Badge>
                   </TableCell>
-                  <TableCell>{template.daysBeforeDue}天</TableCell>
+                  <TableCell>{template.daysBeforeDue}{t("天")}</TableCell>
                   <TableCell>
                     <Badge variant="default">{t('finance.enable')}</Badge>
                   </TableCell>
@@ -313,17 +313,17 @@ export default function ReminderManagement() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
-            已安排提醒
+            {t("已安排提醒")}
           </CardTitle>
-          <CardDescription>即将发送的提醒消息</CardDescription>
+          <CardDescription>{t("即将发送的提醒消息")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>{t('student.student_name')}</TableHead>
-                <TableHead>提醒类型</TableHead>
-                <TableHead>计划发送时间</TableHead>
+                <TableHead>{t("提醒类型")}</TableHead>
+                <TableHead>{t("计划发送时间")}</TableHead>
                 <TableHead>{t('teacher.status')}</TableHead>
                 <TableHead>{t('teacher.actions')}</TableHead>
               </TableRow>
@@ -366,35 +366,35 @@ export default function ReminderManagement() {
       <Dialog open={isAddTemplateDialogOpen} onOpenChange={setIsAddTemplateDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>添加提醒模板</DialogTitle>
-            <DialogDescription>创建新的提醒消息模板</DialogDescription>
+            <DialogTitle>{t("添加提醒模板")}</DialogTitle>
+            <DialogDescription>{t("创建新的提醒消息模板")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>模板名称</Label>
+                <Label>{t("模板名称")}</Label>
                 <Input
                   value={newTemplate.name}
                   onChange={(e) => setNewTemplate(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="例如：学费到期提醒"
+                  placeholder={t("例如：学费到期提醒")}
                 />
               </div>
               <div>
-                <Label>提醒类型</Label>
+                <Label>{t("提醒类型")}</Label>
                 <Select value={newTemplate.type} onValueChange={(value) => setNewTemplate(prev => ({ ...prev, type: value as 'email' | 'sms' }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="email">邮件</SelectItem>
-                    <SelectItem value="sms">短信</SelectItem>
+                    <SelectItem value="email">{t("邮件")}</SelectItem>
+                    <SelectItem value="sms">{t("短信")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             
             <div>
-              <Label>提前天数</Label>
+              <Label>{t("提前天数")}</Label>
               <Input
                 type="number"
                 value={newTemplate.daysBeforeDue}
@@ -404,30 +404,30 @@ export default function ReminderManagement() {
             </div>
 
             <div>
-              <Label>邮件主题</Label>
+              <Label>{t("邮件主题")}</Label>
               <Input
                 value={newTemplate.subject}
                 onChange={(e) => setNewTemplate(prev => ({ ...prev, subject: e.target.value }))}
-                placeholder="缴费提醒 - {学生姓名}"
+                placeholder={t("缴费提醒 - {学生姓名}")}
               />
             </div>
 
             <div>
-              <Label>邮件内容</Label>
+              <Label>{t("邮件内容")}</Label>
               <Textarea
                 value={newTemplate.body}
                 onChange={(e) => setNewTemplate(prev => ({ ...prev, body: e.target.value }))}
-                placeholder="尊敬的{家长姓名}，您好！{学生姓名}的{费用项目}即将到期，请及时缴费。"
+                placeholder={t("尊敬的{家长姓名}，您好！{学生姓名}的{费用项目}即将到期，请及时缴费。")}
                 rows={6}
               />
             </div>
             
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsAddTemplateDialogOpen(false)}>
-                取消
+                {t("取消")}
               </Button>
               <Button onClick={handleAddTemplate}>
-                添加模板
+                {t("添加模板")}
               </Button>
             </div>
           </div>
@@ -438,35 +438,35 @@ export default function ReminderManagement() {
       <Dialog open={isEditTemplateDialogOpen} onOpenChange={setIsEditTemplateDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>编辑提醒模板</DialogTitle>
-            <DialogDescription>修改提醒消息模板</DialogDescription>
+            <DialogTitle>{t("编辑提醒模板")}</DialogTitle>
+            <DialogDescription>{t("修改提醒消息模板")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>模板名称</Label>
+                <Label>{t("模板名称")}</Label>
                 <Input
                   value={newTemplate.name}
                   onChange={(e) => setNewTemplate(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="例如：学费到期提醒"
+                  placeholder={t("例如：学费到期提醒")}
                 />
               </div>
               <div>
-                <Label>提醒类型</Label>
+                <Label>{t("提醒类型")}</Label>
                 <Select value={newTemplate.type} onValueChange={(value) => setNewTemplate(prev => ({ ...prev, type: value as 'email' | 'sms' }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="email">邮件</SelectItem>
-                    <SelectItem value="sms">短信</SelectItem>
+                    <SelectItem value="email">{t("邮件")}</SelectItem>
+                    <SelectItem value="sms">{t("短信")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             
             <div>
-              <Label>提前天数</Label>
+              <Label>{t("提前天数")}</Label>
               <Input
                 type="number"
                 value={newTemplate.daysBeforeDue}
@@ -476,30 +476,30 @@ export default function ReminderManagement() {
             </div>
 
             <div>
-              <Label>邮件主题</Label>
+              <Label>{t("邮件主题")}</Label>
               <Input
                 value={newTemplate.subject}
                 onChange={(e) => setNewTemplate(prev => ({ ...prev, subject: e.target.value }))}
-                placeholder="缴费提醒 - {学生姓名}"
+                placeholder={t("缴费提醒 - {学生姓名}")}
               />
             </div>
 
             <div>
-              <Label>邮件内容</Label>
+              <Label>{t("邮件内容")}</Label>
               <Textarea
                 value={newTemplate.body}
                 onChange={(e) => setNewTemplate(prev => ({ ...prev, body: e.target.value }))}
-                placeholder="尊敬的{家长姓名}，您好！{学生姓名}的{费用项目}即将到期，请及时缴费。"
+                placeholder={t("尊敬的{家长姓名}，您好！{学生姓名}的{费用项目}即将到期，请及时缴费。")}
                 rows={6}
               />
             </div>
             
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsEditTemplateDialogOpen(false)}>
-                取消
+                {t("取消")}
               </Button>
               <Button onClick={handleUpdateTemplate}>
-                更新模板
+                {t("更新模板")}
               </Button>
             </div>
           </div>

@@ -54,19 +54,19 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
         <TabsList className="grid w-full grid-cols-4 h-12">
           <TabsTrigger value="overview" className="flex items-center gap-2 text-sm">
             <BarChart3 className="h-4 w-4" />
-            概览
+            {t("概览")}
           </TabsTrigger>
           <TabsTrigger value="finance" className="flex items-center gap-2 text-sm">
             <DollarSign className="h-4 w-4" />
-            财务
+            {t("财务")}
           </TabsTrigger>
           <TabsTrigger value="reports" className="flex items-center gap-2 text-sm">
             <FileText className="h-4 w-4" />
-            报表
+            {t("报表")}
           </TabsTrigger>
           <TabsTrigger value="billing" className="flex items-center gap-2 text-sm">
             <Receipt className="h-4 w-4" />
-            账单
+            {t("账单")}
           </TabsTrigger>
         </TabsList>
 
@@ -78,11 +78,11 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">本月收入</p>
+                      <p className="text-sm font-medium text-gray-600">{t("本月收入")}</p>
                       <p className="text-2xl font-bold">RM {stats.monthlyRevenue.toLocaleString()}</p>
                       <p className="text-xs text-green-600 flex items-center mt-1">
                         <TrendingUp className="h-3 w-3 mr-1" />
-                        +7.8% 较上月
+                        {t("+7.8% 较上月")}
                       </p>
                     </div>
                     <DollarSign className="h-8 w-8 text-green-600" />
@@ -94,11 +94,11 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">待处理付款</p>
+                      <p className="text-sm font-medium text-gray-600">{t("待处理付款")}</p>
                       <p className="text-2xl font-bold">{stats.pendingPayments}</p>
                       <p className="text-xs text-orange-600 flex items-center mt-1">
                         <Calendar className="h-3 w-3 mr-1" />
-                        需要处理
+                        {t("需要处理")}
                       </p>
                     </div>
                     <CreditCard className="h-8 w-8 text-orange-600" />
@@ -110,11 +110,11 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">逾期付款</p>
+                      <p className="text-sm font-medium text-gray-600">{t("逾期付款")}</p>
                       <p className="text-2xl font-bold text-red-600">{stats.overduePayments}</p>
                       <p className="text-xs text-red-600 flex items-center mt-1">
                         <FileText className="h-3 w-3 mr-1" />
-                        需要催收
+                        {t("需要催收")}
                       </p>
                     </div>
                     <Receipt className="h-8 w-8 text-red-600" />
@@ -130,7 +130,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                       <p className="text-2xl font-bold">{stats.totalStudents}</p>
                       <p className="text-xs text-blue-600 flex items-center mt-1">
                         <Users className="h-3 w-3 mr-1" />
-                        活跃账户
+                        {t("活跃账户")}
                       </p>
                     </div>
                     <Users className="h-8 w-8 text-blue-600" />
@@ -146,7 +146,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Calculator className="h-5 w-5" />
-                    财务概览
+                    {t("财务概览")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -155,19 +155,19 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                     <span className="font-medium text-green-600">RM {stats.totalRevenue.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">本月收入</span>
+                    <span className="text-sm">{t("本月收入")}</span>
                     <span className="font-medium">RM {stats.thisMonthIncome.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">上月收入</span>
+                    <span className="text-sm">{t("上月收入")}</span>
                     <span className="font-medium">RM {stats.lastMonthIncome.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">注册家长</span>
+                    <span className="text-sm">{t("注册家长")}</span>
                     <span className="font-medium">{stats.totalParents}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">待处理付款</span>
+                    <span className="text-sm">{t("待处理付款")}</span>
                     <Badge variant="destructive" className="bg-orange-100 text-orange-800">
                       {stats.pendingPayments}
                     </Badge>
@@ -180,7 +180,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 className="h-5 w-5" />
-                    最近交易
+                    {t("最近交易")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -243,7 +243,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                     onClick={() => setActiveTab("billing")}
                   >
                     <Receipt className="h-6 w-6 text-purple-600" />
-                    <span className="text-sm">账单管理</span>
+                    <span className="text-sm">{t("账单管理")}</span>
                   </Button>
                   <Button
                     variant="outline"
@@ -251,7 +251,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                     onClick={() => setActiveTab("analytics")}
                   >
                     <BarChart3 className="h-6 w-6 text-orange-600" />
-                    <span className="text-sm">财务分析</span>
+                    <span className="text-sm">{t("财务分析")}</span>
                   </Button>
                 </div>
               </CardContent>
@@ -269,7 +269,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  财务报表
+                  {t("财务报表")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -278,9 +278,9 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                     <CardContent className="p-6 text-center">
                       <FileText className="h-12 w-12 mx-auto mb-4 text-green-600" />
                       <h3 className="font-semibold mb-2">{t('dashboard.monthly_report')}</h3>
-                      <p className="text-sm text-gray-600 mb-3">生成月度财务报告</p>
+                      <p className="text-sm text-gray-600 mb-3">{t("生成月度财务报告")}</p>
                       <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        本月数据
+                        {t("本月数据")}
                       </Badge>
                     </CardContent>
                   </Card>
@@ -289,9 +289,9 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                     <CardContent className="p-6 text-center">
                       <Calculator className="h-12 w-12 mx-auto mb-4 text-blue-600" />
                       <h3 className="font-semibold mb-2">{t('dashboard.annual_report')}</h3>
-                      <p className="text-sm text-gray-600 mb-3">年度财务汇总报告</p>
+                      <p className="text-sm text-gray-600 mb-3">{t("年度财务汇总报告")}</p>
                       <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                        2024年度
+                        {t("2024年度")}
                       </Badge>
                     </CardContent>
                   </Card>
@@ -299,10 +299,10 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                   <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-purple-200">
                     <CardContent className="p-6 text-center">
                       <TrendingUp className="h-12 w-12 mx-auto mb-4 text-purple-600" />
-                      <h3 className="font-semibold mb-2">趋势分析</h3>
-                      <p className="text-sm text-gray-600 mb-3">收入趋势分析报告</p>
+                      <h3 className="font-semibold mb-2">{t("趋势分析")}</h3>
+                      <p className="text-sm text-gray-600 mb-3">{t("收入趋势分析报告")}</p>
                       <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-                        数据分析
+                        {t("数据分析")}
                       </Badge>
                     </CardContent>
                   </Card>
@@ -318,7 +318,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Receipt className="h-5 w-5" />
-                  账单管理
+                  {t("账单管理")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -326,10 +326,10 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                   <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-green-200">
                     <CardContent className="p-6 text-center">
                       <CreditCard className="h-12 w-12 mx-auto mb-4 text-green-600" />
-                      <h3 className="font-semibold mb-2">待处理付款</h3>
-                      <p className="text-sm text-gray-600 mb-3">处理待确认的付款</p>
+                      <h3 className="font-semibold mb-2">{t("待处理付款")}</h3>
+                      <p className="text-sm text-gray-600 mb-3">{t("处理待确认的付款")}</p>
                       <Badge variant="destructive" className="bg-orange-100 text-orange-800">
-                        {stats.pendingPayments} 待处理
+                        {stats.pendingPayments} {t("待处理")}
                       </Badge>
                     </CardContent>
                   </Card>
@@ -337,10 +337,10 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                   <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-red-200">
                     <CardContent className="p-6 text-center">
                       <FileText className="h-12 w-12 mx-auto mb-4 text-red-600" />
-                      <h3 className="font-semibold mb-2">逾期催收</h3>
-                      <p className="text-sm text-gray-600 mb-3">处理逾期付款催收</p>
+                      <h3 className="font-semibold mb-2">{t("逾期催收")}</h3>
+                      <p className="text-sm text-gray-600 mb-3">{t("处理逾期付款催收")}</p>
                       <Badge variant="destructive" className="bg-red-100 text-red-800">
-                        {stats.overduePayments} 逾期
+                        {stats.overduePayments} {t("逾期")}
                       </Badge>
                     </CardContent>
                   </Card>
@@ -348,10 +348,10 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                   <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-blue-200">
                     <CardContent className="p-6 text-center">
                       <Banknote className="h-12 w-12 mx-auto mb-4 text-blue-600" />
-                      <h3 className="font-semibold mb-2">退款处理</h3>
-                      <p className="text-sm text-gray-600 mb-3">处理退款申请</p>
+                      <h3 className="font-semibold mb-2">{t("退款处理")}</h3>
+                      <p className="text-sm text-gray-600 mb-3">{t("处理退款申请")}</p>
                       <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                        退款管理
+                        {t("退款管理")}
                       </Badge>
                     </CardContent>
                   </Card>
@@ -367,7 +367,7 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  财务分析
+                  {t("财务分析")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -375,10 +375,10 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                   <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-green-200">
                     <CardContent className="p-6 text-center">
                       <TrendingUp className="h-12 w-12 mx-auto mb-4 text-green-600" />
-                      <h3 className="font-semibold mb-2">收入分析</h3>
-                      <p className="text-sm text-gray-600 mb-3">收入趋势和预测</p>
+                      <h3 className="font-semibold mb-2">{t("收入分析")}</h3>
+                      <p className="text-sm text-gray-600 mb-3">{t("收入趋势和预测")}</p>
                       <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        增长分析
+                        {t("增长分析")}
                       </Badge>
                     </CardContent>
                   </Card>
@@ -386,10 +386,10 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                   <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-blue-200">
                     <CardContent className="p-6 text-center">
                       <Users className="h-12 w-12 mx-auto mb-4 text-blue-600" />
-                      <h3 className="font-semibold mb-2">客户分析</h3>
-                      <p className="text-sm text-gray-600 mb-3">客户付费行为分析</p>
+                      <h3 className="font-semibold mb-2">{t("客户分析")}</h3>
+                      <p className="text-sm text-gray-600 mb-3">{t("客户付费行为分析")}</p>
                       <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                        行为分析
+                        {t("行为分析")}
                       </Badge>
                     </CardContent>
                   </Card>
@@ -397,10 +397,10 @@ export default function AccountantDashboard({ activeTab, setActiveTab }: Account
                   <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-purple-200">
                     <CardContent className="p-6 text-center">
                       <Calculator className="h-12 w-12 mx-auto mb-4 text-purple-600" />
-                      <h3 className="font-semibold mb-2">成本分析</h3>
-                      <p className="text-sm text-gray-600 mb-3">运营成本分析</p>
+                      <h3 className="font-semibold mb-2">{t("成本分析")}</h3>
+                      <p className="text-sm text-gray-600 mb-3">{t("运营成本分析")}</p>
                       <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-                        成本控制
+                        {t("成本控制")}
                       </Badge>
                     </CardContent>
                   </Card>

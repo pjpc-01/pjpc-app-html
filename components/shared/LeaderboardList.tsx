@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Trophy, Star, Building, RefreshCw, Maximize2, Loader2 } from "lucide-react"
 import { gradeLabel } from "@/lib/grades"
+import { useLanguage } from "@/contexts/language-context";
 
 export interface LeaderboardStudent {
   id: string
@@ -54,10 +55,11 @@ export function LeaderboardList({
   onStudentClick?: (s: LeaderboardStudent) => void
   startRank?: number
 }) {
+  const { t } = useLanguage();
   if (students.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className={variant === "dark" ? "text-white/30 text-sm" : "text-gray-400 text-sm"}>暂无积分排行</p>
+        <p className={variant === "dark" ? "text-white/30 text-sm" : "text-gray-400 text-sm"}>{t("暂无积分排行")}</p>
       </div>
     )
   }
@@ -132,7 +134,7 @@ export function LeaderboardList({
         <p className={`text-[10px] leading-tight ${gradeCol(r)}`}>{toGradeDisplay(s.grade)}</p>
       </div>
       <span className={`text-sm font-bold tabular-nums shrink-0 ${ptsCol}`}>
-        {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">分</span>
+        {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">{t("分")}</span>
       </span>
     </div>
   )
@@ -173,6 +175,7 @@ export function LeaderboardView({
   onStudentClick,
   fullscreenDisabled,
 }: LeaderboardPageProps) {
+  const { t } = useLanguage();
   const filtered = rankings
     .filter(s => {
       if (!centerFilter || centerFilter === "all" || centerFilter === "") return true
@@ -190,7 +193,7 @@ export function LeaderboardView({
             onClick={() => onCenterChange("all")}
             className="h-8 text-xs"
           >
-            全部
+            {t("全部")}
           </Button>
           {centers.map(c => (
             <Button
@@ -220,7 +223,7 @@ export function LeaderboardView({
         {!compact && (
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Trophy className="h-4 w-4 text-amber-500" /> 全部排行
+              <Trophy className="h-4 w-4 text-amber-500" /> {t("全部排行")}
               <Badge variant="secondary" className="text-[10px]">{filtered.length}</Badge>
             </CardTitle>
           </CardHeader>
@@ -233,7 +236,7 @@ export function LeaderboardView({
           ) : filtered.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <Star className="h-8 w-8 mx-auto mb-2 opacity-20" />
-              <p className="text-sm">暂无积分排行</p>
+              <p className="text-sm">{t("暂无积分排行")}</p>
             </div>
           ) : (
             <div className="max-h-[500px] overflow-y-auto">

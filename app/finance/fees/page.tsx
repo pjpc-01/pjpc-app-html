@@ -9,7 +9,7 @@ export default function FinanceFeesPage() {
   return (
     <PageLayout
       title={t('finance.fee_management')}
-      description="管理收费项目"
+      description={t("管理收费项目")}
       userRole="admin"
       status="系统正常"
       background="bg-gray-50"

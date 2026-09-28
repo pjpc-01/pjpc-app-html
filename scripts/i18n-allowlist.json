@@ -1,0 +1,11 @@
+{
+  "_why": "这些文件是服务端组件或类组件 —— 用不了 React hook，要英化必须重构（加 use client 或抽子组件）。属已知遗留，不阻塞检查，但记在案。",
+  "paths": [
+    "app/components/finance/shared/PaymentStatusBadge.tsx",
+    "app/components/finance/student-fee-matrix/SearchAndFilter.tsx",
+    "app/components/finance/student-fee-matrix/StudentFeeMatrixHeader.tsx",
+    "app/loading.tsx",
+    "app/tv-board/components/",
+    "components/shared/error-boundary.tsx"
+  ]
+}

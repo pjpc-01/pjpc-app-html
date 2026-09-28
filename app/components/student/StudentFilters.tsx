@@ -10,6 +10,7 @@ import SmartSearch from "./SmartSearch"
 import AdvancedFilters from "./AdvancedFilters"
 import FilterAnalytics from "./FilterAnalytics"
 import QuickFilters from "./QuickFilters"
+import { useLanguage } from "@/contexts/language-context";
 
 interface StudentFiltersProps {
   searchTerm: string
@@ -51,6 +52,7 @@ export default function StudentFilters({
   filteredStudents,
   onFiltersChange
 }: StudentFiltersProps) {
+  const { t } = useLanguage();
   const [showFilters, setShowFilters] = useState(false)
   const [showAnalytics, setShowAnalytics] = useState(false)
   const [selectedCenter, setSelectedCenter] = useState("all")
@@ -228,7 +230,7 @@ export default function StudentFilters({
             onClick={clearAllFilters}
           >
             <X className="h-4 w-4 mr-2" />
-            清除筛选
+            {t("清除筛选")}
           </Button>
         )}
       </div>

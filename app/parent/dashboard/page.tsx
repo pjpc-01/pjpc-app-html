@@ -62,7 +62,7 @@ function ChildCard({ child }: { child: any }) {
           />
           <QuickStat
             icon={<CreditCard className="h-4 w-4" />}
-            label="缴费"
+            label={t("缴费")}
             value="查看"
             color="text-amber-600"
           />
@@ -84,22 +84,22 @@ function ChildCard({ child }: { child: any }) {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" asChild>
             <Link href={`/parent/dailylogs?child=${child.id}`}>
-              每日日志 <ChevronRight className="ml-1 h-3 w-3" />
+              {t("每日日志")} <ChevronRight className="ml-1 h-3 w-3" />
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href={`/parent/grades?child=${child.id}`}>
-              成绩 <ChevronRight className="ml-1 h-3 w-3" />
+              {t("成绩")} <ChevronRight className="ml-1 h-3 w-3" />
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href={`/parent/attendance?child=${child.id}`}>
-              出勤 <ChevronRight className="ml-1 h-3 w-3" />
+              {t("出勤")} <ChevronRight className="ml-1 h-3 w-3" />
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href={`/parent/payments?child=${child.id}`}>
-              缴费 <ChevronRight className="ml-1 h-3 w-3" />
+              {t("缴费")} <ChevronRight className="ml-1 h-3 w-3" />
             </Link>
           </Button>
         </div>
@@ -130,6 +130,7 @@ function QuickStat({ icon, label, value, color, href }: {
 }
 
 export default function ParentDashboardPage() {
+  const { t } = useLanguage();
   const { parentName, children, loading, error } = useParentPortal()
 
   if (loading) {
@@ -163,7 +164,7 @@ export default function ParentDashboardPage() {
           <h1 className="text-2xl font-bold text-gray-900">
             {parentName ? `${parentName}，您好 👋` : "家长门户"}
           </h1>
-          <p className="text-gray-500 mt-1">查看孩子在安亲班的学习与生活情况</p>
+          <p className="text-gray-500 mt-1">{t("查看孩子在安亲班的学习与生活情况")}</p>
         </div>
       </div>
 
@@ -171,8 +172,8 @@ export default function ParentDashboardPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Users className="h-12 w-12 text-gray-300 mb-4" />
-            <p className="text-gray-500 text-lg mb-2">暂无关联孩子</p>
-            <p className="text-gray-400 text-sm">请联系管理员关联您的孩子</p>
+            <p className="text-gray-500 text-lg mb-2">{t("暂无关联孩子")}</p>
+            <p className="text-gray-400 text-sm">{t("请联系管理员关联您的孩子")}</p>
           </CardContent>
         </Card>
       ) : (

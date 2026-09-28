@@ -11,7 +11,7 @@ export default function FinanceBudgetPage() {
   return (
     <PageLayout
       title={t('finance.budget_management')}
-      description="设置和跟踪月度预算"
+      description={t("设置和跟踪月度预算")}
       userRole="admin"
       status="系统正常"
       background="bg-gray-50"

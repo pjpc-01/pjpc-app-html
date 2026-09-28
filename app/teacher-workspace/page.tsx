@@ -110,7 +110,7 @@ export default function TeacherWorkspace() {
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">加载教师工作台...</p>
+          <p className="text-gray-600">{t("加载教师工作台...")}</p>
             </div>
       </div>
     )
@@ -121,7 +121,7 @@ export default function TeacherWorkspace() {
       <div className="p-6">
         <Alert variant="destructive">
           <AlertDescription>
-            加载教师信息失败: {teacherError}
+            {t("加载教师信息失败:")} {teacherError}
           </AlertDescription>
         </Alert>
       </div>
@@ -133,7 +133,7 @@ export default function TeacherWorkspace() {
             <div className="p-6">
         <Alert>
           <AlertDescription>
-            未找到教师信息，请检查您的账户设置。
+            {t("未找到教师信息，请检查您的账户设置。")}
           </AlertDescription>
         </Alert>
                   </div>
@@ -171,14 +171,14 @@ export default function TeacherWorkspace() {
       {/* 登出按钮 */}
       <Button variant="ghost" size="sm" onClick={handleLogout}>
         <LogOut className="h-4 w-4 mr-2" />
-        登出
+        {t("登出")}
       </Button>
     </div>
   )
 
   return (
     <PageLayout
-      title="教师工作台"
+      title={t("教师工作台")}
       description={`欢迎回来，${teacher.name || user?.name}`}
       userRole="teacher"
       status="系统正常"
@@ -215,9 +215,9 @@ export default function TeacherWorkspace() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <FileEdit className="h-5 w-5" />
-                    作业管理
+                    {t("作业管理")}
                   </CardTitle>
-                  <CardDescription>布置、查看和批改学生作业</CardDescription>
+                  <CardDescription>{t("布置、查看和批改学生作业")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -225,23 +225,23 @@ export default function TeacherWorkspace() {
                       onClick={() => window.open('/homework', '_blank')}>
                       <CardContent className="pt-6 text-center">
                         <FileEdit className="h-10 w-10 mx-auto mb-3 text-blue-600" />
-                        <h3 className="font-medium">作业总览</h3>
-                        <p className="text-sm text-muted-foreground mt-1">查看所有作业和提交状态</p>
+                        <h3 className="font-medium">{t("作业总览")}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">{t("查看所有作业和提交状态")}</p>
                       </CardContent>
                     </Card>
                     <Card className="bg-green-50 border-green-200 cursor-pointer hover:shadow-md transition-shadow"
                       onClick={() => window.open('/homework/new', '_blank')}>
                       <CardContent className="pt-6 text-center">
                         <BookOpen className="h-10 w-10 mx-auto mb-3 text-green-600" />
-                        <h3 className="font-medium">布置新作业</h3>
-                        <p className="text-sm text-muted-foreground mt-1">为学生布置新的作业和练习</p>
+                        <h3 className="font-medium">{t("布置新作业")}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">{t("为学生布置新的作业和练习")}</p>
                       </CardContent>
                     </Card>
                   </div>
                   <div className="mt-4 text-center">
                     <Button variant="outline" onClick={() => window.open('/homework', '_blank')}>
                       <ExternalLink className="h-4 w-4 mr-2" />
-                      打开完整作业管理
+                      {t("打开完整作业管理")}
                     </Button>
                   </div>
                 </CardContent>
@@ -271,15 +271,15 @@ export default function TeacherWorkspace() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <BookOpen className="h-5 w-5" />
-                      课程管理
+                      {t("课程管理")}
                     </CardTitle>
-                    <CardDescription>管理您的课程和班级</CardDescription>
+                    <CardDescription>{t("管理您的课程和班级")}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="text-center py-8 text-gray-500">
                         <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                        <p>课程管理功能开发中...</p>
+                        <p>{t("课程管理功能开发中...")}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -290,24 +290,24 @@ export default function TeacherWorkspace() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <CreditCard className="h-5 w-5" />
-                      NFC卡片管理
+                      {t("NFC卡片管理")}
                     </CardTitle>
-                    <CardDescription>申请补办和管理学生卡片</CardDescription>
+                    <CardDescription>{t("申请补办和管理学生卡片")}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="p-4 border rounded-lg bg-blue-50">
-                        <h4 className="font-medium mb-2 text-blue-800">卡片申请</h4>
-                        <p className="text-sm text-blue-600 mb-3">为学生申请NFC卡片补办</p>
+                        <h4 className="font-medium mb-2 text-blue-800">{t("卡片申请")}</h4>
+                        <p className="text-sm text-blue-600 mb-3">{t("为学生申请NFC卡片补办")}</p>
                         <Button variant="outline" size="sm" className="text-blue-600 border-blue-300">
-                          申请补办
+                          {t("申请补办")}
                         </Button>
                       </div>
                       <div className="p-4 border rounded-lg bg-green-50">
-                        <h4 className="font-medium mb-2 text-green-800">查看状态</h4>
-                        <p className="text-sm text-green-600 mb-3">查看学生卡片状态和记录</p>
+                        <h4 className="font-medium mb-2 text-green-800">{t("查看状态")}</h4>
+                        <p className="text-sm text-green-600 mb-3">{t("查看学生卡片状态和记录")}</p>
                         <Button variant="outline" size="sm" className="text-green-600 border-green-300">
-                          查看记录
+                          {t("查看记录")}
                         </Button>
                       </div>
                     </div>
@@ -319,24 +319,24 @@ export default function TeacherWorkspace() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Bell className="h-5 w-5" />
-                      通知管理
+                      {t("通知管理")}
                     </CardTitle>
-                    <CardDescription>查看通知和发送班级消息</CardDescription>
+                    <CardDescription>{t("查看通知和发送班级消息")}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="p-4 border rounded-lg bg-purple-50">
-                        <h4 className="font-medium mb-2 text-purple-800">我的通知</h4>
-                        <p className="text-sm text-purple-600 mb-3">查看收到的通知消息</p>
+                        <h4 className="font-medium mb-2 text-purple-800">{t("我的通知")}</h4>
+                        <p className="text-sm text-purple-600 mb-3">{t("查看收到的通知消息")}</p>
                         <Button variant="outline" size="sm" className="text-purple-600 border-purple-300">
-                          查看通知
+                          {t("查看通知")}
                         </Button>
                       </div>
                       <div className="p-4 border rounded-lg bg-orange-50">
-                        <h4 className="font-medium mb-2 text-orange-800">班级通知</h4>
-                        <p className="text-sm text-orange-600 mb-3">发送班级内部通知</p>
+                        <h4 className="font-medium mb-2 text-orange-800">{t("班级通知")}</h4>
+                        <p className="text-sm text-orange-600 mb-3">{t("发送班级内部通知")}</p>
                         <Button variant="outline" size="sm" className="text-orange-600 border-orange-300">
-                          发送通知
+                          {t("发送通知")}
                         </Button>
                       </div>
                     </div>
@@ -348,24 +348,24 @@ export default function TeacherWorkspace() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Trophy className="h-5 w-5" />
-                      积分管理
+                      {t("积分管理")}
                     </CardTitle>
-                    <CardDescription>管理学生积分和奖励</CardDescription>
+                    <CardDescription>{t("管理学生积分和奖励")}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="p-4 border rounded-lg bg-yellow-50">
                         <h4 className="font-medium mb-2 text-yellow-800">{t('teacher.points')}</h4>
-                        <p className="text-sm text-yellow-600 mb-3">为学生添加或扣除积分</p>
+                        <p className="text-sm text-yellow-600 mb-3">{t("为学生添加或扣除积分")}</p>
                         <Button variant="outline" size="sm" className="text-yellow-600 border-yellow-300">
-                          积分操作
+                          {t("积分操作")}
                         </Button>
                       </div>
                       <div className="p-4 border rounded-lg bg-indigo-50">
                         <h4 className="font-medium mb-2 text-indigo-800">{t('teacher.points_leaderboard')}</h4>
-                        <p className="text-sm text-indigo-600 mb-3">查看班级积分排行榜</p>
+                        <p className="text-sm text-indigo-600 mb-3">{t("查看班级积分排行榜")}</p>
                         <Button variant="outline" size="sm" className="text-indigo-600 border-indigo-300">
-                          查看排行
+                          {t("查看排行")}
                         </Button>
                       </div>
                     </div>
@@ -377,25 +377,25 @@ export default function TeacherWorkspace() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Settings className="h-5 w-5" />
-                      个人设置
+                      {t("个人设置")}
                     </CardTitle>
-                    <CardDescription>管理您的个人信息和偏好</CardDescription>
+                    <CardDescription>{t("管理您的个人信息和偏好")}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="p-4 border rounded-lg">
-                        <h4 className="font-medium mb-2">个人信息</h4>
-                        <p className="text-sm text-gray-600 mb-3">姓名: {teacher.name || user?.name}</p>
-                        <p className="text-sm text-gray-600 mb-3">邮箱: {teacher.email || user?.email}</p>
+                        <h4 className="font-medium mb-2">{t("个人信息")}</h4>
+                        <p className="text-sm text-gray-600 mb-3">{t("姓名:")} {teacher.name || user?.name}</p>
+                        <p className="text-sm text-gray-600 mb-3">{t("邮箱:")} {teacher.email || user?.email}</p>
                         <Button variant="outline" size="sm">
-                          编辑资料
+                          {t("编辑资料")}
                         </Button>
                       </div>
                       <div className="p-4 border rounded-lg">
-                        <h4 className="font-medium mb-2">通知偏好</h4>
-                        <p className="text-sm text-gray-600 mb-3">管理您接收的通知类型</p>
+                        <h4 className="font-medium mb-2">{t("通知偏好")}</h4>
+                        <p className="text-sm text-gray-600 mb-3">{t("管理您接收的通知类型")}</p>
                         <Button variant="outline" size="sm">
-                          设置通知
+                          {t("设置通知")}
                         </Button>
                       </div>
                     </div>

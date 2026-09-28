@@ -149,46 +149,46 @@ export default function TeacherAnalytics({ teachers, filteredTeachers }: Teacher
           <CardContent>
             <div className="text-2xl font-bold">{analytics.total}</div>
             <p className="text-xs text-muted-foreground">
-              筛选显示 {analytics.filtered} 位
+              {t("筛选显示")} {analytics.filtered} {t("位")}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">已批准教师</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("已批准教师")}</CardTitle>
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{analytics.approvedCount}</div>
             <p className="text-xs text-muted-foreground">
-              {analytics.total > 0 ? Math.round((analytics.approvedCount / analytics.total) * 100) : 0}% 的教师
+              {analytics.total > 0 ? Math.round((analytics.approvedCount / analytics.total) * 100) : 0}{t("% 的教师")}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">平均教龄</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("平均教龄")}</CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{analytics.averageExperience}年</div>
+            <div className="text-2xl font-bold text-blue-600">{analytics.averageExperience}{t("年")}</div>
             <p className="text-xs text-muted-foreground">
-              资深教师比例高
+              {t("资深教师比例高")}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">最近活跃</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("最近活跃")}</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">{analytics.recentActiveCount}</div>
             <p className="text-xs text-muted-foreground">
-              过去7天内登录
+              {t("过去7天内登录")}
             </p>
           </CardContent>
         </Card>
@@ -201,9 +201,9 @@ export default function TeacherAnalytics({ teachers, filteredTeachers }: Teacher
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
-              教师状态分析
+              {t("教师状态分析")}
             </CardTitle>
-            <CardDescription>教师审批和活跃状态分布</CardDescription>
+            <CardDescription>{t("教师审批和活跃状态分布")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
@@ -257,16 +257,16 @@ export default function TeacherAnalytics({ teachers, filteredTeachers }: Teacher
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
-              联系信息完整性
+              {t("联系信息完整性")}
             </CardTitle>
-            <CardDescription>教师联系方式的完善程度</CardDescription>
+            <CardDescription>{t("教师联系方式的完善程度")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm">有联系电话</span>
+                  <span className="text-sm">{t("有联系电话")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{analytics.hasPhoneCount}</span>
@@ -279,7 +279,7 @@ export default function TeacherAnalytics({ teachers, filteredTeachers }: Teacher
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-green-600" />
-                  <span className="text-sm">有邮箱地址</span>
+                  <span className="text-sm">{t("有邮箱地址")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{analytics.hasEmailCount}</span>
@@ -292,7 +292,7 @@ export default function TeacherAnalytics({ teachers, filteredTeachers }: Teacher
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm">邮箱已验证</span>
+                  <span className="text-sm">{t("邮箱已验证")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{analytics.emailVerifiedCount}</span>
@@ -313,9 +313,9 @@ export default function TeacherAnalytics({ teachers, filteredTeachers }: Teacher
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
-              科目分布
+              {t("科目分布")}
             </CardTitle>
-            <CardDescription>教师任教科目的分布情况</CardDescription>
+            <CardDescription>{t("教师任教科目的分布情况")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -340,9 +340,9 @@ export default function TeacherAnalytics({ teachers, filteredTeachers }: Teacher
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building className="h-5 w-5" />
-              部门分布
+              {t("部门分布")}
             </CardTitle>
-            <CardDescription>教师所属部门的分布情况</CardDescription>
+            <CardDescription>{t("教师所属部门的分布情况")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -370,9 +370,9 @@ export default function TeacherAnalytics({ teachers, filteredTeachers }: Teacher
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <GraduationCap className="h-5 w-5" />
-              教龄分布
+              {t("教龄分布")}
             </CardTitle>
-            <CardDescription>教师教学经验年限分布</CardDescription>
+            <CardDescription>{t("教师教学经验年限分布")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -397,16 +397,16 @@ export default function TeacherAnalytics({ teachers, filteredTeachers }: Teacher
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              入职趋势
+              {t("入职趋势")}
             </CardTitle>
-            <CardDescription>教师入职时间分布</CardDescription>
+            <CardDescription>{t("教师入职时间分布")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-green-600" />
-                  <span className="text-sm">今年入职</span>
+                  <span className="text-sm">{t("今年入职")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{analytics.thisYearCount}</span>
@@ -419,7 +419,7 @@ export default function TeacherAnalytics({ teachers, filteredTeachers }: Teacher
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Target className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm">往年入职</span>
+                  <span className="text-sm">{t("往年入职")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{analytics.total - analytics.thisYearCount}</span>
@@ -430,17 +430,17 @@ export default function TeacherAnalytics({ teachers, filteredTeachers }: Teacher
               </div>
               
               <div className="pt-2">
-                <div className="text-xs text-muted-foreground mb-2">入职趋势分析</div>
+                <div className="text-xs text-muted-foreground mb-2">{t("入职趋势分析")}</div>
                 <div className="flex items-center gap-2">
                   {analytics.thisYearCount > 0 ? (
                     <>
                       <TrendingUp className="h-4 w-4 text-green-600" />
-                      <span className="text-sm text-green-600">今年新增 {analytics.thisYearCount} 位教师</span>
+                      <span className="text-sm text-green-600">{t("今年新增")} {analytics.thisYearCount} {t("位教师")}</span>
                     </>
                   ) : (
                     <>
                       <TrendingDown className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm text-gray-600">今年暂无新教师入职</span>
+                      <span className="text-sm text-gray-600">{t("今年暂无新教师入职")}</span>
                     </>
                   )}
                 </div>

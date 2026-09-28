@@ -17,7 +17,7 @@ export default function CourseManagementPage() {
   return (
     <PageLayout
       title={t('course.course_management')}
-      description="管理课程设置和教学安排"
+      description={t("管理课程设置和教学安排")}
       userRole={userProfile?.role || "admin"}
       status="系统正常"
       background="bg-gray-50"
@@ -28,18 +28,18 @@ export default function CourseManagementPage() {
           size="sm"
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
-          返回仪表板
+          {t("返回仪表板")}
         </Button>
       }
     >
       <div className="space-y-6">
         <section>
-          <h2 className="text-lg font-semibold mb-3">排课管理</h2>
+          <h2 className="text-lg font-semibold mb-3">{t("排课管理")}</h2>
           <CourseScheduling />
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold mb-3">年级时间表（甘特图）</h2>
+          <h2 className="text-lg font-semibold mb-3">{t("年级时间表（甘特图）")}</h2>
           <GradeGanttChart />
         </section>
 

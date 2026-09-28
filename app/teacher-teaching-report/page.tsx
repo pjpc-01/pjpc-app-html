@@ -977,7 +977,7 @@ export default function TeacherTeachingReportPage() {
                         </SelectContent>
                       </Select>
                       <span className="text-xs text-gray-400 self-center">
-                        {t("共")} {centerStudents.length} {t("名学生，")}{gradeStudents.length} {t("名匹配")} {report.grade}
+                        {t("共")} {centerStudents.length} {t("名学生，")}{gradeStudents.length} {t("名匹配")} {t(report.grade)}
                       </span>
                     </>
                   )

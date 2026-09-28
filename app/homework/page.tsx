@@ -71,7 +71,7 @@ export default function HomeworkPage() {
   return (
     <PageLayout
       title={t('teacher.homework_management')}
-      description="布置、查看和批改学生作业"
+      description={t("布置、查看和批改学生作业")}
       backUrl="/"
       userRole="admin"
     >
@@ -81,7 +81,7 @@ export default function HomeworkPage() {
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="搜索作业..."
+              placeholder={t("搜索作业...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -114,7 +114,7 @@ export default function HomeworkPage() {
         <Link href="/homework/new">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
-            布置作业
+            {t("布置作业")}
           </Button>
         </Link>
       </div>
@@ -138,12 +138,12 @@ export default function HomeworkPage() {
         <Card>
           <CardContent className="flex flex-col items-center py-12">
             <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium mb-2">还没有作业</p>
-            <p className="text-muted-foreground mb-4">点击上方按钮布置第一份作业</p>
+            <p className="text-lg font-medium mb-2">{t("还没有作业")}</p>
+            <p className="text-muted-foreground mb-4">{t("点击上方按钮布置第一份作业")}</p>
             <Link href="/homework/new">
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                布置作业
+                {t("布置作业")}
               </Button>
             </Link>
           </CardContent>
@@ -161,13 +161,13 @@ export default function HomeworkPage() {
                     <CardTitle className="text-base line-clamp-2">{hw.title}</CardTitle>
                   </div>
                   <Badge className={subjectColors[hw.subject] || "bg-gray-100"} variant="secondary">
-                    {hw.subject}
+                    {t(hw.subject)}
                   </Badge>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Users className="h-4 w-4" />
-                    <span>{hw.grade}</span>
+                    <span>{t(hw.grade)}</span>
                     {getCenterName(hw.centerId) && (
                       <>
                         <span>·</span>
@@ -177,11 +177,11 @@ export default function HomeworkPage() {
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-4 w-4" />
-                    <span>截止: {new Date(hw.dueDate).toLocaleDateString("zh-CN")}</span>
+                    <span>{t("截止:")} {new Date(hw.dueDate).toLocaleDateString("zh-CN")}</span>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <FileText className="h-4 w-4" />
-                    <span>提交: {hw.submissionCount ?? 0} 份</span>
+                    <span>{t("提交:")} {hw.submissionCount ?? 0} {t("份")}</span>
                   </div>
                   {hw.expand?.teacherId && (
                     <div className="flex items-center gap-2 text-muted-foreground">
