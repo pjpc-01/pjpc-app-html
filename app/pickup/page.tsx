@@ -103,6 +103,13 @@ export default function PickupManagementPage() {
 
   return (
     <PageLayout title={t('pickup.pickup_management')} description="登记和追踪学生接送情况">
+      {/* 晚点接送收费政策 */}
+      <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+        <div className="flex items-center gap-1 text-sm font-semibold text-amber-800">⏰ 晚点接送收费政策</div>
+        <div className="mt-1 text-xs leading-5 text-amber-700">
+          学生迟回家（家长晚来接）超过 <b>5 分钟</b>即计费：<b>7:05pm 之后</b>开始，每个不足一小时按一小时计 <b>RM5 / 小时</b>；首小时后每再多一小时<b>再叠加 RM5</b>。
+        </div>
+      </div>
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <Card><CardContent className="p-4 text-center">
