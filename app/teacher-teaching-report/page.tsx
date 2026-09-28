@@ -27,6 +27,7 @@ import {
   ClipboardList, User, Calendar, Image,
 } from "lucide-react"
 import { toast } from "sonner"
+import { useLanguage } from "@/contexts/language-context"
 
 // ── Constants ──
 const RATING_OPTIONS = ["优秀", "良好", "中等", "待改善"] as const
@@ -279,6 +280,7 @@ export default function TeacherTeachingReportPage() {
   const { user } = useAuth()
   const { teacher } = useCurrentTeacher()
   const { teachers, loading: teachersLoading } = useTeachers()
+  const { t } = useLanguage()
 
   // Fetch students directly instead of using useStudents hook
   const [students, setStudents] = useState<any[]>([])
@@ -467,7 +469,7 @@ export default function TeacherTeachingReportPage() {
 
   const handleSave = async (submitStatus: string = "draft") => {
     if (!report.teacher_id) {
-      toast.error("请先选择教师")
+      toast.error(t("请先选择教师"))
       return
     }
     setSaving(true)
@@ -479,7 +481,7 @@ export default function TeacherTeachingReportPage() {
       if (docFiles.length > 0) await uploadFiles(recordId, "documents", docFiles)
       setPhotoFiles([])
       setDocFiles([])
-      toast.success(submitStatus === "submitted" ? "报告已提交" : "草稿已保存")
+      toast.success(submitStatus === "submitted" ? t("报告已提交") : t("草稿已保存"))
       if (submitStatus === "submitted") {
         setViewMode("list")
         loadReports()
@@ -491,7 +493,7 @@ export default function TeacherTeachingReportPage() {
         setViewReportId(id || report.id || null)
       }
     } catch (err: any) {
-      toast.error("保存失败: " + (err.message || "未知错误"))
+      toast.error(t("保存失败: ") + (err.message || t("未知错误")))
     } finally {
       setSaving(false)
     }
@@ -499,17 +501,17 @@ export default function TeacherTeachingReportPage() {
 
   // 软删除
   const handleDelete = async (id: string) => {
-    if (!confirm("确定要删除这份报告吗？将移入回收站。")) return
+    if (!confirm(t("确定要删除这份报告吗？将移入回收站。"))) return
     try {
       await fetch(`${API_BASE}/records/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ deleted: true }),
       })
-      toast.success("已移入回收站")
+      toast.success(t("已移入回收站"))
       loadReports()
     } catch {
-      toast.error("删除失败")
+      toast.error(t("删除失败"))
     }
   }
 
@@ -520,21 +522,21 @@ export default function TeacherTeachingReportPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ deleted: false }),
       })
-      toast.success("已还原")
+      toast.success(t("已还原"))
       loadReports()
     } catch {
-      toast.error("还原失败")
+      toast.error(t("还原失败"))
     }
   }
 
   const handlePermanentDelete = async (id: string) => {
-    if (!confirm("确定要永久删除吗？此操作不可恢复！")) return
+    if (!confirm(t("确定要永久删除吗？此操作不可恢复！"))) return
     try {
       await fetch(`${API_BASE}/records/${id}`, { method: "DELETE" })
-      toast.success("已永久删除")
+      toast.success(t("已永久删除"))
       loadReports()
     } catch {
-      toast.error("删除失败")
+      toast.error(t("删除失败"))
     }
   }
 
@@ -567,22 +569,22 @@ export default function TeacherTeachingReportPage() {
       reviewed: { label: "已审核", variant: "outline" },
     }
     const s = map[status] || { label: status, variant: "secondary" as const }
-    return <Badge variant={s.variant}>{s.label}</Badge>
+    return <Badge variant={s.variant}>{t(s.label)}</Badge>
   }
 
   // ── Render: List View ──
   if (viewMode === "list") {
     return (
       <PageLayout
-        title="教学进度与评估报告"
-        description="兼职老师教学进展和学生程度评估"
+        title={t("教学进度与评估报告")}
+        description={t("兼职老师教学进展和学生程度评估")}
         userRole="admin"
-        status="系统正常"
+        status={t("系统正常")}
         background="bg-gray-50"
         actions={
           <Button onClick={handleStartNew} className="gap-2">
             <Plus className="h-4 w-4" />
-            新建报告
+            {t("新建报告")}
           </Button>
         }
       >
@@ -591,11 +593,11 @@ export default function TeacherTeachingReportPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                {binTab ? "🗑️ 回收站" : "报告列表"}
+                {binTab ? t("🗑️ 回收站") : t("报告列表")}
               </CardTitle>
               <div className="flex gap-1">
-                <Button size="sm" variant={!binTab ? "default" : "ghost"} onClick={() => { setBinTab(false); setPage(1); }}>报告列表</Button>
-                <Button size="sm" variant={binTab ? "default" : "ghost"} onClick={() => { setBinTab(true); setPage(1); }}>🗑️ 回收站</Button>
+                <Button size="sm" variant={!binTab ? "default" : "ghost"} onClick={() => { setBinTab(false); setPage(1); }}>{t("报告列表")}</Button>
+                <Button size="sm" variant={binTab ? "default" : "ghost"} onClick={() => { setBinTab(true); setPage(1); }}>{t("🗑️ 回收站")}</Button>
               </div>
             </div>
           </CardHeader>
@@ -604,10 +606,10 @@ export default function TeacherTeachingReportPage() {
             <div className="flex flex-wrap gap-3 mb-4">
               <Select value={filterTeacher} onValueChange={(v) => { setFilterTeacher(v); setPage(1); }}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="全部教师" />
+                  <SelectValue placeholder={t("全部教师")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__all__">全部教师</SelectItem>
+                  <SelectItem value="__all__">{t("全部教师")}</SelectItem>
                   {teachers.map((t: any) => (
                     <SelectItem key={t.id} value={t.id}>
                       {t.teacher_name || t.name}
@@ -617,28 +619,28 @@ export default function TeacherTeachingReportPage() {
               </Select>
               <Select value={filterGrade} onValueChange={(v) => { setFilterGrade(v); setPage(1); }}>
                 <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="全部年级" />
+                  <SelectValue placeholder={t("全部年级")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__all__">全部年级</SelectItem>
+                  <SelectItem value="__all__">{t("全部年级")}</SelectItem>
                   {GRADE_OPTIONS.map(g => (
-                    <SelectItem key={g} value={g}>{g}</SelectItem>
+                    <SelectItem key={g} value={g}>{t(g)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <Button variant="outline" size="sm" onClick={() => { setFilterTeacher(""); setFilterGrade(""); setPage(1); }}>
-                重置
+                {t("重置")}
               </Button>
             </div>
             {loading ? (
-              <p className="text-gray-500 text-center py-8">加载中...</p>
+              <p className="text-gray-500 text-center py-8">{t("加载中...")}</p>
             ) : reports.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                <p>暂无教学报告</p>
+                <p>{t("暂无教学报告")}</p>
                 <Button onClick={handleStartNew} variant="outline" className="mt-3 gap-2">
                   <Plus className="h-4 w-4" />
-                  创建第一份报告
+                  {t("创建第一份报告")}
                 </Button>
               </div>
             ) : (
@@ -656,10 +658,10 @@ export default function TeacherTeachingReportPage() {
                       <FileText className="h-8 w-8 text-blue-500" />
                       <div>
                         <div className="font-medium">
-                          {r.subject || "未指定科目"} — {r.grade || "未指定年级"}
+                          {r.subject || t("未指定科目")} — {r.grade || t("未指定年级")}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {r.teacher_name} · {r.date} · {ASSESSMENT_PERIODS.find(p => p.value === r.assessment_period)?.label || r.assessment_period}
+                          {r.teacher_name} · {r.date} · {ASSESSMENT_PERIODS.find(p => p.value === r.assessment_period)?.label ? t(ASSESSMENT_PERIODS.find(p => p.value === r.assessment_period)!.label) : r.assessment_period}
                         </div>
                       </div>
                     </div>
@@ -668,7 +670,7 @@ export default function TeacherTeachingReportPage() {
                       {binTab ? (
                         <>
                           <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleRestore(r.id); }}>
-                            还原
+                            {t("还原")}
                           </Button>
                           <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handlePermanentDelete(r.id); }}>
                             <Trash2 className="h-4 w-4 text-red-500" />
@@ -695,7 +697,7 @@ export default function TeacherTeachingReportPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between mt-6 pt-4 border-t">
                 <span className="text-sm text-gray-500">
-                  共 {totalItems} 条，每页 {PER_PAGE} 条
+                  {t("共")} {totalItems} {t("条，每页")} {PER_PAGE} {t("条")}
                 </span>
                 <div className="flex gap-1">
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
@@ -727,10 +729,10 @@ export default function TeacherTeachingReportPage() {
 
   return (
     <PageLayout
-      title={isView ? "查看教学报告" : viewMode === "edit" ? "编辑教学报告" : "新建教学报告"}
-      description="兼职老师教学进展和学生程度评估"
+      title={isView ? t("查看教学报告") : viewMode === "edit" ? t("编辑教学报告") : t("新建教学报告")}
+      description={t("兼职老师教学进展和学生程度评估")}
       userRole="admin"
-      status="系统正常"
+      status={t("系统正常")}
       background="bg-gray-50"
       backUrl="#"
       actions={
@@ -739,22 +741,22 @@ export default function TeacherTeachingReportPage() {
             <>
               <Button variant="outline" onClick={() => setViewMode("edit")} className="gap-2">
                 <Edit className="h-4 w-4" />
-                编辑
+                {t("编辑")}
               </Button>
               <Button variant="outline" onClick={() => setViewMode("list")} className="gap-2">
                 <ArrowLeft className="h-4 w-4" />
-                返回列表
+                {t("返回列表")}
               </Button>
             </>
           ) : (
             <>
               <Button variant="outline" onClick={() => handleSave("draft")} disabled={saving} className="gap-2">
                 <Save className="h-4 w-4" />
-                保存草稿
+                {t("保存草稿")}
               </Button>
               <Button onClick={() => handleSave("submitted")} disabled={saving} className="gap-2">
                 <Send className="h-4 w-4" />
-                提交报告
+                {t("提交报告")}
               </Button>
             </>
           )}
@@ -765,7 +767,7 @@ export default function TeacherTeachingReportPage() {
         {/* ── SECTION 1: Header ── */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-center text-lg">教学进度与学生学习评估表</CardTitle>
+            <CardTitle className="text-center text-lg">{t("教学进度与学生学习评估表")}</CardTitle>
           </CardHeader>
         </Card>
 
@@ -774,14 +776,14 @@ export default function TeacherTeachingReportPage() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Calendar className="h-4 w-4" />
-              评估期间 & 基本信息
+              {t("评估期间 & 基本信息")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {/* 评估期间 */}
               <div>
-                <Label className="mb-2 block font-semibold">评估期间 Assessment Period</Label>
+                <Label className="mb-2 block font-semibold">{t("评估期间 Assessment Period")}</Label>
                 <div className="flex gap-4 flex-wrap">
                   {ASSESSMENT_PERIODS.map(p => (
                     <label key={p.value} className="flex items-center gap-2">
@@ -794,7 +796,7 @@ export default function TeacherTeachingReportPage() {
                         disabled={isView}
                         className="h-4 w-4"
                       />
-                      <span className="text-sm">{p.label}</span>
+                      <span className="text-sm">{t(p.label)}</span>
                     </label>
                   ))}
                 </div>
@@ -805,7 +807,7 @@ export default function TeacherTeachingReportPage() {
               {/* 基本信息 grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>教师 Teacher</Label>
+                  <Label>{t("教师 Teacher")}</Label>
                   {isView ? (
                     <Input value={report.teacher_name} disabled />
                   ) : (
@@ -814,7 +816,7 @@ export default function TeacherTeachingReportPage() {
                       onValueChange={selectTeacher}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="选择教师..." />
+                        <SelectValue placeholder={t("选择教师...")} />
                       </SelectTrigger>
                       <SelectContent className="max-h-64 overflow-y-auto">
                         {(teachers || []).map((t: any) => (
@@ -827,7 +829,7 @@ export default function TeacherTeachingReportPage() {
                   )}
                 </div>
                 <div>
-                  <Label>科目 Subject</Label>
+                  <Label>{t("科目 Subject")}</Label>
                   {isView ? (
                     <Input value={report.subject} disabled />
                   ) : (
@@ -836,18 +838,18 @@ export default function TeacherTeachingReportPage() {
                       onValueChange={v => updateField("subject", v)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="选择科目..." />
+                        <SelectValue placeholder={t("选择科目...")} />
                       </SelectTrigger>
                       <SelectContent className="max-h-64 overflow-y-auto">
                         {SUBJECT_OPTIONS.map(s => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                          <SelectItem key={s} value={s}>{t(s)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   )}
                 </div>
                 <div>
-                  <Label>年级 Grade</Label>
+                  <Label>{t("年级 Grade")}</Label>
                   {isView ? (
                     <Input value={report.grade} disabled />
                   ) : (
@@ -856,18 +858,18 @@ export default function TeacherTeachingReportPage() {
                       onValueChange={v => updateField("grade", v)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="选择年级..." />
+                        <SelectValue placeholder={t("选择年级...")} />
                       </SelectTrigger>
                       <SelectContent className="max-h-64 overflow-y-auto">
                         {GRADE_OPTIONS.map(g => (
-                          <SelectItem key={g} value={g}>{g}</SelectItem>
+                          <SelectItem key={g} value={g}>{t(g)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   )}
                 </div>
                 <div>
-                  <Label>填写日期 Date</Label>
+                  <Label>{t("填写日期 Date")}</Label>
                   <Input
                     type="date"
                     value={report.date}
@@ -885,18 +887,18 @@ export default function TeacherTeachingReportPage() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <BookOpen className="h-4 w-4" />
-              教学进度 Teaching Progress
+              {t("教学进度 Teaching Progress")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
-                <Label>本阶段已完成的教学内容</Label>
+                <Label>{t("本阶段已完成的教学内容")}</Label>
                 <Textarea
                   value={report.teaching_content}
                   onChange={e => updateField("teaching_content", e.target.value)}
                   disabled={isView}
-                  placeholder="教材 / 单元 / 章节，每行一个"
+                  placeholder={t("教材 / 单元 / 章节，每行一个")}
                   rows={4}
                 />
               </div>
@@ -904,7 +906,7 @@ export default function TeacherTeachingReportPage() {
               <Separator />
 
               <div>
-                <Label className="mb-2 block font-semibold">目前教学进度</Label>
+                <Label className="mb-2 block font-semibold">{t("目前教学进度")}</Label>
                 <div className="flex gap-4 flex-wrap mb-3">
                   {PROGRESS_STATUSES.map(p => (
                     <label key={p.value} className="flex items-center gap-2">
@@ -917,14 +919,14 @@ export default function TeacherTeachingReportPage() {
                         disabled={isView}
                         className="h-4 w-4"
                       />
-                      <span className="text-sm">{p.label}</span>
+                      <span className="text-sm">{t(p.label)}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               <div>
-                <Label>原因 Reason</Label>
+                <Label>{t("原因 Reason")}</Label>
                 <Textarea
                   value={report.progress_reason}
                   onChange={e => updateField("progress_reason", e.target.value)}
@@ -941,7 +943,7 @@ export default function TeacherTeachingReportPage() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Users className="h-4 w-4" />
-              学生整体学习表现 Overall Class Performance
+              {t("学生整体学习表现 Overall Class Performance")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -949,7 +951,7 @@ export default function TeacherTeachingReportPage() {
             {!isView && (
               <div className="flex gap-2 mb-4 flex-wrap">
                 {!report.grade ? (
-                  <p className="text-sm text-gray-400">请先在基本信息中选择年级，再添加学生</p>
+                  <p className="text-sm text-gray-400">{t("请先在基本信息中选择年级，再添加学生")}</p>
                 ) : (() => {
                   const gradeStudents = centerStudents
                     .filter((s: any) => toGradeDisplay(s.grade) === report.grade)
@@ -958,12 +960,12 @@ export default function TeacherTeachingReportPage() {
                     <>
                       <Select value="" onValueChange={addStudentToPerformance}>
                         <SelectTrigger className="w-[280px]">
-                          <SelectValue placeholder={`选择 ${report.grade} 的学生添加...（${gradeStudents.length}人）`} />
+                          <SelectValue placeholder={`${t("选择")} ${report.grade} ${t("的学生添加...（")}${gradeStudents.length}${t("人）")}`} />
                         </SelectTrigger>
                         <SelectContent className="max-h-64 overflow-y-auto">
                           {gradeStudents.length === 0 ? (
                             <div className="px-2 py-4 text-sm text-gray-400 text-center">
-                              该年级没有可添加的学生
+                              {t("该年级没有可添加的学生")}
                             </div>
                           ) : (
                             gradeStudents.map((s: any) => (
@@ -975,7 +977,7 @@ export default function TeacherTeachingReportPage() {
                         </SelectContent>
                       </Select>
                       <span className="text-xs text-gray-400 self-center">
-                        共 {centerStudents.length} 名学生，{gradeStudents.length} 名匹配 {report.grade}
+                        {t("共")} {centerStudents.length} {t("名学生，")}{gradeStudents.length} {t("名匹配")} {report.grade}
                       </span>
                     </>
                   )
@@ -984,7 +986,7 @@ export default function TeacherTeachingReportPage() {
             )}
 
             {report.student_performances.length === 0 ? (
-              <p className="text-gray-400 text-center py-4">尚未添加学生</p>
+              <p className="text-gray-400 text-center py-4">{t("尚未添加学生")}</p>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
@@ -992,9 +994,9 @@ export default function TeacherTeachingReportPage() {
                     <TableRow>
                       <TableHead className="w-10">No</TableHead>
                       <TableHead>Name</TableHead>
-                      <TableHead>年级</TableHead>
+                      <TableHead>{t("年级")}</TableHead>
                       {PERFORMANCE_COLUMNS.map(col => (
-                        <TableHead key={col.key} className="text-center">{col.label}</TableHead>
+                        <TableHead key={col.key} className="text-center">{t(col.label)}</TableHead>
                       ))}
                       {!isView && <TableHead className="w-10"></TableHead>}
                     </TableRow>
@@ -1009,7 +1011,7 @@ export default function TeacherTeachingReportPage() {
                           <TableCell key={col.key} className="text-center">
                             {isView ? (
                               <Badge variant={ratingVariant(perf[col.key])}>
-                                {perf[col.key]}
+                                {t(perf[col.key])}
                               </Badge>
                             ) : (
                               <Select
@@ -1021,7 +1023,7 @@ export default function TeacherTeachingReportPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   {RATING_OPTIONS.map(r => (
-                                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                                    <SelectItem key={r} value={r}>{t(r)}</SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
@@ -1049,14 +1051,14 @@ export default function TeacherTeachingReportPage() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Target className="h-4 w-4" />
-              学生程度分析 Student Performance Analysis
+              {t("学生程度分析 Student Performance Analysis")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {/* 学生程度表格 */}
               {report.student_performances.length === 0 ? (
-                <p className="text-gray-400 text-center py-4">请先在「学生整体学习表现」中添加学生</p>
+                <p className="text-gray-400 text-center py-4">{t("请先在「学生整体学习表现」中添加学生")}</p>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
@@ -1064,11 +1066,11 @@ export default function TeacherTeachingReportPage() {
                       <TableRow>
                         <TableHead className="w-10">No</TableHead>
                         <TableHead>Name</TableHead>
-                        <TableHead>年级</TableHead>
+                        <TableHead>{t("年级")}</TableHead>
                         {PERFORMANCE_COLUMNS.map(col => (
-                          <TableHead key={col.key} className="text-center">{col.label}</TableHead>
+                          <TableHead key={col.key} className="text-center">{t(col.label)}</TableHead>
                         ))}
-                        <TableHead className="text-center w-32">程度分类</TableHead>
+                        <TableHead className="text-center w-32">{t("程度分类")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1080,16 +1082,16 @@ export default function TeacherTeachingReportPage() {
                           {PERFORMANCE_COLUMNS.map(col => (
                             <TableCell key={col.key} className="text-center">
                               <Badge variant={ratingVariant(perf[col.key])}>
-                                {perf[col.key]}
+                                {t(perf[col.key])}
                               </Badge>
                             </TableCell>
                           ))}
                           <TableCell className="text-center">
                             {isView ? (
                               analysisLevels[idx] === "excellent" ? (
-                                <Badge variant="default" className="bg-green-600">掌握良好</Badge>
+                                <Badge variant="default" className="bg-green-600">{t("掌握良好")}</Badge>
                               ) : analysisLevels[idx] === "attention" ? (
-                                <Badge variant="destructive">需关注</Badge>
+                                <Badge variant="destructive">{t("需关注")}</Badge>
                               ) : (
                                 <span className="text-gray-400 text-sm">—</span>
                               )
@@ -1101,7 +1103,7 @@ export default function TeacherTeachingReportPage() {
                                   className="h-7 text-xs px-2"
                                   onClick={() => setAnalysisForStudent(idx, "excellent")}
                                 >
-                                  优秀
+                                  {t("优秀")}
                                 </Button>
                                 <Button
                                   size="sm"
@@ -1109,7 +1111,7 @@ export default function TeacherTeachingReportPage() {
                                   className="h-7 text-xs px-2"
                                   onClick={() => setAnalysisForStudent(idx, "attention")}
                                 >
-                                  关注
+                                  {t("关注")}
                                 </Button>
                               </div>
                             )}
@@ -1125,7 +1127,7 @@ export default function TeacherTeachingReportPage() {
 
               {/* 学生普遍遇到的问题 */}
               <div>
-                <Label className="font-semibold mb-2 block">学生普遍遇到的问题</Label>
+                <Label className="font-semibold mb-2 block">{t("学生普遍遇到的问题")}</Label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {PROBLEM_OPTIONS.map(problem => (
                     <label key={problem} className="flex items-center gap-2">
@@ -1134,12 +1136,12 @@ export default function TeacherTeachingReportPage() {
                         onCheckedChange={() => toggleArrayField("common_problems", problem)}
                         disabled={isView}
                       />
-                      <span className="text-sm">{problem}</span>
+                      <span className="text-sm">{t(problem)}</span>
                     </label>
                   ))}
                 </div>
                 <div className="mt-2 flex items-center gap-2">
-                  <span className="text-sm">其他：</span>
+                  <span className="text-sm">{t("其他：")}</span>
                   <Input
                     value={report.other_problem}
                     onChange={e => updateField("other_problem", e.target.value)}
@@ -1157,13 +1159,13 @@ export default function TeacherTeachingReportPage() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <ClipboardList className="h-4 w-4" />
-              本阶段教学总结 Teacher&apos;s Summary
+              {t("本阶段教学总结 Teacher&apos;s Summary")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
-                <Label className="font-semibold">最大进步</Label>
+                <Label className="font-semibold">{t("最大进步")}</Label>
                 <Textarea
                   value={report.biggest_progress}
                   onChange={e => updateField("biggest_progress", e.target.value)}
@@ -1172,7 +1174,7 @@ export default function TeacherTeachingReportPage() {
                 />
               </div>
               <div>
-                <Label className="font-semibold">主要挑战</Label>
+                <Label className="font-semibold">{t("主要挑战")}</Label>
                 <Textarea
                   value={report.main_challenge}
                   onChange={e => updateField("main_challenge", e.target.value)}
@@ -1181,7 +1183,7 @@ export default function TeacherTeachingReportPage() {
                 />
               </div>
               <div>
-                <Label className="font-semibold">教学成效</Label>
+                <Label className="font-semibold">{t("教学成效")}</Label>
                 <Textarea
                   value={report.teaching_effectiveness}
                   onChange={e => updateField("teaching_effectiveness", e.target.value)}
@@ -1198,7 +1200,7 @@ export default function TeacherTeachingReportPage() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Target className="h-4 w-4" />
-              下一阶段教学计划 Next Teaching Plan
+              {t("下一阶段教学计划 Next Teaching Plan")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1211,12 +1213,12 @@ export default function TeacherTeachingReportPage() {
                       onCheckedChange={() => toggleArrayField("next_plan_options", plan)}
                       disabled={isView}
                     />
-                    <span className="text-sm">{plan}</span>
+                    <span className="text-sm">{t(plan)}</span>
                   </label>
                 ))}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm">其他：</span>
+                <span className="text-sm">{t("其他：")}</span>
                 <Input
                   value={report.next_plan_other}
                   onChange={e => updateField("next_plan_other", e.target.value)}
@@ -1233,7 +1235,7 @@ export default function TeacherTeachingReportPage() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="h-4 w-4" />
-              需要中心协助事项 (如有)
+              {t("需要中心协助事项 (如有)")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1242,7 +1244,7 @@ export default function TeacherTeachingReportPage() {
               onChange={e => updateField("assistance_needed", e.target.value)}
               disabled={isView}
               rows={3}
-              placeholder="需要中心协助的事项..."
+              placeholder={t("需要中心协助的事项...")}
             />
           </CardContent>
         </Card>
@@ -1252,27 +1254,27 @@ export default function TeacherTeachingReportPage() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <User className="h-4 w-4" />
-              签名
+              {t("签名")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label>教师签名</Label>
+                <Label>{t("教师签名")}</Label>
                 <Input
                   value={report.teacher_signature}
                   onChange={e => updateField("teacher_signature", e.target.value)}
                   disabled={isView}
-                  placeholder="教师签名"
+                  placeholder={t("教师签名")}
                 />
               </div>
               <div>
-                <Label>审核</Label>
+                <Label>{t("审核")}</Label>
                 <Input
                   value={report.reviewer}
                   onChange={e => updateField("reviewer", e.target.value)}
                   disabled={isView}
-                  placeholder="审核人"
+                  placeholder={t("审核人")}
                 />
               </div>
             </div>
@@ -1284,21 +1286,21 @@ export default function TeacherTeachingReportPage() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Image className="h-4 w-4" />
-              照片 & 文档
+              {t("照片 & 文档")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {/* 照片上传 */}
               <div>
-                <Label className="font-semibold mb-2 block">照片（课堂活动、学生作业等）</Label>
+                <Label className="font-semibold mb-2 block">{t("照片（课堂活动、学生作业等）")}</Label>
                 {isView ? (
                   <div className="flex gap-2 flex-wrap">
                     {(report as any)._photos?.map((url: string, i: number) => (
                       <a key={i} href={url} target="_blank" rel="noopener noreferrer">
                         <img src={url} alt={`photo-${i}`} className="h-20 w-20 object-cover rounded border" />
                       </a>
-                    )) || <span className="text-sm text-gray-400">无照片</span>}
+                    )) || <span className="text-sm text-gray-400">{t("无照片")}</span>}
                   </div>
                 ) : (
                   <>
@@ -1333,7 +1335,7 @@ export default function TeacherTeachingReportPage() {
                       </div>
                     )}
                     {(report as any)._photos?.length > 0 && (
-                      <p className="text-xs text-gray-400 mt-1">已有 {(report as any)._photos.length} 张照片（新上传会追加）</p>
+                      <p className="text-xs text-gray-400 mt-1">{t("已有 ")} {(report as any)._photos.length} {t(" 张照片（新上传会追加）")}</p>
                     )}
                   </>
                 )}
@@ -1343,7 +1345,7 @@ export default function TeacherTeachingReportPage() {
 
               {/* 文档上传 */}
               <div>
-                <Label className="font-semibold mb-2 block">文档（教案、习题等）</Label>
+                <Label className="font-semibold mb-2 block">{t("文档（教案、习题等）")}</Label>
                 {isView ? (
                   <div className="flex gap-2 flex-wrap">
                     {(report as any)._documents?.map((url: string, i: number) => (
@@ -1351,9 +1353,9 @@ export default function TeacherTeachingReportPage() {
                         className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded text-sm hover:bg-blue-100"
                       >
                         <FileText className="h-4 w-4" />
-                        {decodeURIComponent(url.split('/').pop()?.split('_').slice(1).join('_') || `文档${i+1}`)}
+                        {decodeURIComponent(url.split('/').pop()?.split('_').slice(1).join('_') || `${t("文档")}${i+1}`)}
                       </a>
-                    )) || <span className="text-sm text-gray-400">无文档</span>}
+                    )) || <span className="text-sm text-gray-400">{t("无文档")}</span>}
                   </div>
                 ) : (
                   <>
@@ -1377,7 +1379,7 @@ export default function TeacherTeachingReportPage() {
                               onClick={() => setDocFiles(prev => prev.filter((_, j) => j !== i))}
                               className="text-red-500 text-xs hover:underline"
                             >
-                              移除
+                              {t("移除")}
                             </button>
                           </div>
                         ))}
@@ -1394,15 +1396,15 @@ export default function TeacherTeachingReportPage() {
         {!isView && (
           <div className="flex justify-end gap-3 pb-8">
             <Button variant="outline" onClick={() => setViewMode("list")}>
-              取消
+              {t("取消")}
             </Button>
             <Button variant="outline" onClick={() => handleSave("draft")} disabled={saving}>
               <Save className="h-4 w-4 mr-2" />
-              保存草稿
+              {t("保存草稿")}
             </Button>
             <Button onClick={() => handleSave("submitted")} disabled={saving}>
               <Send className="h-4 w-4 mr-2" />
-              提交报告
+              {t("提交报告")}
             </Button>
           </div>
         )}

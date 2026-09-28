@@ -17,6 +17,7 @@ import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
 import { classifySchoolLevel } from "@/lib/utils"
 import PointsNfcScanner from "@/components/attendance/PointsNfcScanner"
 import { gradeLabel } from "@/lib/grades"
+import { useLanguage } from "@/contexts/language-context"
 
 // 年级显示统一走 @/lib/grades（原来这里自己写了一份 GRADE_DISPLAY，缺 y1–y6、且「预备班」措辞与别处不一致）
 const toGradeDisplay = (grade: string): string => gradeLabel(grade)
@@ -43,6 +44,7 @@ export default function PointsPage() {
   const { user } = useAuth()
   const { teacher } = useCurrentTeacher()
   const isAuthenticated = !!user
+  const { t } = useLanguage()
 
   // ─── 积分操作 ──────────────────────────────────────
   const [currentStudent, setCurrentStudent] = useState<{
@@ -171,12 +173,12 @@ export default function PointsPage() {
       })
       const data = await res.json()
       if (data.success) {
-        setResult({ ok: true, msg: `${delta > 0 ? "+" : ""}${delta} 分 (${data.points_before} → ${data.points_after})` })
+        setResult({ ok: true, msg: `${delta > 0 ? "+" : ""}${delta} ${t("分")} (${data.points_before} → ${data.points_after})` })
         setCurrentStudent(prev => prev ? { ...prev, points: data.points_after } : null)
         fetchLogs(currentStudent.id)
         fetchTransactions(1)
       } else {
-        setResult({ ok: false, msg: data.error || "操作失败" })
+        setResult({ ok: false, msg: data.error || t("操作失败") })
       }
     } catch (err: any) { setResult({ ok: false, msg: err.message }) }
     finally { setSubmitting(false) }
@@ -195,8 +197,8 @@ export default function PointsPage() {
 
   return (
     <PageLayout
-      title="积分操作"
-      description={isAuthenticated && teacher ? `${teacher.teacher_name || teacher.name} 老师` : "请先登入"}
+      title={t("积分操作")}
+      description={isAuthenticated && teacher ? `${teacher.teacher_name || teacher.name} ${t("老师")}` : t("请先登入")}
       backUrl="/"
       userRole="admin"
       background="from-amber-50 to-yellow-50"
@@ -205,7 +207,7 @@ export default function PointsPage() {
         {/* Quick links + batch toggle */}
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => router.push("/points/leaderboard")} className="h-8 text-xs bg-white">
-            <Trophy className="h-3 w-3 mr-1" />排行榜
+            <Trophy className="h-3 w-3 mr-1" />{t("排行榜")}
           </Button>
           <Button
             variant={batchMode ? "default" : "outline"}
@@ -213,7 +215,7 @@ export default function PointsPage() {
             onClick={() => setBatchMode(!batchMode)}
             className={`h-8 text-xs ${batchMode ? "bg-amber-600 hover:bg-amber-700" : "bg-white"}`}
           >
-            <Layers className="h-3 w-3 mr-1" />批量改积分{batchStudents.length > 0 && ` (${batchStudents.length})`}
+            <Layers className="h-3 w-3 mr-1" />{t("批量改积分")}{batchStudents.length > 0 && ` (${batchStudents.length})`}
           </Button>
         </div>
 
@@ -222,8 +224,8 @@ export default function PointsPage() {
           <Card className="border-2 border-amber-300 bg-amber-50">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center justify-between">
-                <span className="flex items-center gap-2"><Layers className="h-4 w-4 text-amber-600" />批量修改积分</span>
-                <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setBatchMode(false)}><X className="h-3 w-3 mr-1" />关闭</Button>
+                <span className="flex items-center gap-2"><Layers className="h-4 w-4 text-amber-600" />{t("批量修改积分")}</span>
+                <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setBatchMode(false)}><X className="h-3 w-3 mr-1" />{t("关闭")}</Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -238,12 +240,12 @@ export default function PointsPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-gray-400">搜索学生勾选，或使用快捷按钮：</p>
+                <p className="text-xs text-gray-400">{t("搜索学生勾选，或使用快捷按钮：")}</p>
               )}
 
               {/* Quick select buttons — by center */}
               <div className="flex items-center gap-2 flex-wrap">
-                {[{ code: "PU1", label: "中学（PU1）" }, { code: "BATU14", label: "小学（BATU14）" }].map(ctr => (
+                {[{ code: "PU1", label: t("中学（PU1）") }, { code: "BATU14", label: t("小学（BATU14）") }].map(ctr => (
                   <Button key={ctr.code} size="sm" variant="outline" className="h-7 text-xs bg-white"
                     onClick={async () => {
                       const filter = encodeURIComponent(`status='active' && center='${ctr.code}' && points_enabled!=false`)
@@ -256,7 +258,7 @@ export default function PointsPage() {
                 ))}
                 {batchStudents.length > 0 && (
                   <Button size="sm" variant="ghost" className="h-7 text-xs"
-                    onClick={() => setBatchStudents([])}>清空</Button>
+                    onClick={() => setBatchStudents([])}>{t("清空")}</Button>
                 )}
               </div>
 
@@ -265,17 +267,17 @@ export default function PointsPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <select value={batchOp} onChange={e => setBatchOp(e.target.value as any)}
                     className="text-xs border rounded px-2 py-1 h-8 bg-white">
-                    <option value="add">增加</option>
-                    <option value="subtract">减少</option>
-                    <option value="set">设置为</option>
+                    <option value="add">{t("增加")}</option>
+                    <option value="subtract">{t("减少")}</option>
+                    <option value="set">{t("设置为")}</option>
                   </select>
                   <Input type="number" min={0} value={batchAmount} onChange={e => setBatchAmount(e.target.value)}
-                    className="w-20 h-8 text-sm" placeholder="数量" />
+                    className="w-20 h-8 text-sm" placeholder={t("数量")} />
                   <Input
                     value={batchReason}
                     onChange={e => setBatchReason(e.target.value)}
                     className="h-8 text-xs"
-                    placeholder="原因"
+                    placeholder={t("原因")}
                     style={{ width: 120 }}
                   />
                   <Button size="sm" disabled={batchBusy || batchAmount === ""}
@@ -296,19 +298,19 @@ export default function PointsPage() {
                           promises.push(p)
                         }
                         await Promise.all(promises)
-                        setBatchMsg(`✅ 已为 ${batchStudents.length} 名学生${batchOp === "add" ? "增加" : batchOp === "subtract" ? "减少" : "设置"} ${val} 分`)
+                        setBatchMsg(`✅ ${t("已为")} ${batchStudents.length} ${t("名学生")}${batchOp === "add" ? t("增加") : batchOp === "subtract" ? t("减少") : t("设置")} ${val} ${t("分")}`)
                         setBatchStudents([])
                         setBatchAmount("1")
                         fetchTransactions(1)
                       } catch (e: any) {
-                        setBatchMsg(`❌ 操作失败: ${e.message}`)
+                        setBatchMsg(`❌ ${t("操作失败")}: ${e.message}`)
                       }
                       setBatchBusy(false)
                     }}
                     className="h-8 text-xs bg-amber-600 hover:bg-amber-700"
                   >
                     {batchBusy ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Check className="h-3 w-3 mr-1" />}
-                    确认修改
+                    {t("确认修改")}
                   </Button>
                   {batchMsg && <span className="text-xs text-gray-600">{batchMsg}</span>}
                 </div>
@@ -323,7 +325,7 @@ export default function PointsPage() {
             <div className="flex items-center gap-1 bg-white rounded-lg border px-3 py-2">
               <Search className="h-4 w-4 text-gray-400 shrink-0" />
               <Input
-                placeholder="搜索学生姓名或学号..."
+                placeholder={t("搜索学生姓名或学号...")}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="border-0 h-7 text-sm p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -366,7 +368,7 @@ export default function PointsPage() {
             )}
             {showResults && search.length >= 2 && searchResults.length === 0 && !searching && (
               <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white rounded-lg border shadow-lg p-4 text-center text-xs text-gray-400">
-                未找到匹配的学生
+                {t("未找到匹配的学生")}
               </div>
             )}
           </div>
@@ -380,10 +382,10 @@ export default function PointsPage() {
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 mb-3">
                   <LogIn className="h-8 w-8 text-amber-500" />
                 </div>
-                <h3 className="text-base font-bold text-gray-700 mb-1">请先登入</h3>
-                <p className="text-xs text-gray-400 mb-3">使用 NFC 教师卡或账号密码登入</p>
+                <h3 className="text-base font-bold text-gray-700 mb-1">{t("请先登入")}</h3>
+                <p className="text-xs text-gray-400 mb-3">{t("使用 NFC 教师卡或账号密码登入")}</p>
                 <Button onClick={() => router.push("/login")} size="sm" className="bg-amber-600 hover:bg-amber-700">
-                  <LogIn className="h-3.5 w-3.5 mr-1" /> 前往登入
+                  <LogIn className="h-3.5 w-3.5 mr-1" /> {t("前往登入")}
                 </Button>
               </>
             ) : !currentStudent ? (
@@ -391,7 +393,7 @@ export default function PointsPage() {
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 mb-3">
                   <Star className="h-8 w-8 text-amber-500" />
                 </div>
-                <h3 className="text-base font-bold text-gray-700 mb-1">等待刷学生卡</h3>
+                <h3 className="text-base font-bold text-gray-700 mb-1">{t("等待刷学生卡")}</h3>
                 <PointsNfcScanner />
               </>
             ) : (
@@ -403,7 +405,7 @@ export default function PointsPage() {
                 <p className="text-xs text-gray-400">{toGradeDisplay(currentStudent.grade)} · {currentStudent.center}</p>
                 <div className="mt-1 inline-flex items-center gap-1 bg-amber-100 rounded-full px-3 py-0.5">
                   <Star className="h-3.5 w-3.5 text-amber-500" />
-                  <span className="font-bold text-amber-700 text-sm">{currentStudent.points} 分</span>
+                  <span className="font-bold text-amber-700 text-sm">{currentStudent.points} {t("分")}</span>
                 </div>
 
                 {result && (
@@ -415,9 +417,9 @@ export default function PointsPage() {
                 <div className="mt-4 max-w-sm mx-auto space-y-2">
                   <div className="flex justify-center gap-1 bg-gray-100 rounded-lg p-0.5 w-fit mx-auto">
                     <button onClick={() => setMode("add")}
-                      className={`px-3 py-1 rounded text-xs font-medium ${mode === "add" ? "bg-white shadow text-green-700" : "text-gray-500"}`}>➕ 加分</button>
+                      className={`px-3 py-1 rounded text-xs font-medium ${mode === "add" ? "bg-white shadow text-green-700" : "text-gray-500"}`}>{t("➕ 加分")}</button>
                     <button onClick={() => setMode("subtract")}
-                      className={`px-3 py-1 rounded text-xs font-medium ${mode === "subtract" ? "bg-white shadow text-red-700" : "text-gray-500"}`}>➖ 减分</button>
+                      className={`px-3 py-1 rounded text-xs font-medium ${mode === "subtract" ? "bg-white shadow text-red-700" : "text-gray-500"}`}>{t("➖ 减分")}</button>
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setAmount(String(Math.max(1, Number(amount) - 1)))}><Minus className="h-3 w-3" /></Button>
@@ -430,11 +432,11 @@ export default function PointsPage() {
                         className={`px-2 py-0.5 rounded text-xs border ${Number(amount) === n ? "bg-amber-100 border-amber-300 text-amber-700" : "bg-white text-gray-400 hover:bg-gray-50"}`}>{n}</button>
                     ))}
                   </div>
-                  <Input placeholder="原因" value={reason} onChange={e => setReason(e.target.value)} className="text-xs h-8 text-center" />
+                  <Input placeholder={t("原因")} value={reason} onChange={e => setReason(e.target.value)} className="text-xs h-8 text-center" />
                   <Button onClick={handleConfirm} disabled={submitting || Number(amount) <= 0}
                     className={`w-full h-8 text-sm ${mode === "add" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}>
                     {submitting ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Check className="h-3.5 w-3.5 mr-1" />}
-                    {mode === "add" ? `+${amount} 分` : `-${amount} 分`}
+                    {mode === "add" ? `+${amount} ${t("分")}` : `-${amount} ${t("分")}`}
                   </Button>
                 </div>
               </>
@@ -448,13 +450,13 @@ export default function PointsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center justify-between">
                 <span className="flex items-center gap-2">
-                  <History className="h-4 w-4" /> {currentStudent.name} — 最近记录
+                  <History className="h-4 w-4" /> {currentStudent.name} — {t("最近记录")}
                 </span>
                 <button
                   onClick={() => showAllForStudent(currentStudent.id, currentStudent.name)}
                   className="text-[11px] font-normal text-amber-600 hover:text-amber-700 flex items-center gap-0.5"
                 >
-                  查看全部 <ChevronRight className="h-3 w-3" />
+                  {t("查看全部")} <ChevronRight className="h-3 w-3" />
                 </button>
               </CardTitle>
             </CardHeader>
@@ -481,16 +483,16 @@ export default function PointsPage() {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm flex items-center gap-2">
-                <History className="h-4 w-4" /> {txStudentId ? `${txStudentName} — 全部记录` : "全部交易记录"}
+                <History className="h-4 w-4" /> {txStudentId ? `${txStudentName} — ${t("全部记录")}` : t("全部交易记录")}
               </CardTitle>
               <span className="flex items-center gap-3 text-[11px] text-gray-400">
                 {txStudentId && (
                   <button onClick={backToAllTx} className="text-amber-600 hover:text-amber-700 font-medium flex items-center gap-0.5">
-                    <ChevronLeft className="h-3 w-3" /> 返回全部
+                    <ChevronLeft className="h-3 w-3" /> {t("返回全部")}
                   </button>
                 )}
-                <span>今日 <span className={`font-bold ${todayTotal > 0 ? "text-green-600" : todayTotal < 0 ? "text-red-500" : ""}`}>{todayTotal > 0 ? "+" : ""}{todayTotal}</span></span>
-                <span>{txTotal} 条</span>
+                <span>{t("今日")} <span className={`font-bold ${todayTotal > 0 ? "text-green-600" : todayTotal < 0 ? "text-red-500" : ""}`}>{todayTotal > 0 ? "+" : ""}{todayTotal}</span></span>
+                <span>{txTotal} {t("条")}</span>
               </span>
             </div>
             {!txStudentId && (
@@ -500,19 +502,19 @@ export default function PointsPage() {
                 className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                   txCenter === "all" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
                 }`}
-              >全部</button>
+              >{t("全部")}</button>
               <button
                 onClick={() => { setTxCenter("PU1"); setTxPage(1) }}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                   txCenter === "PU1" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
                 }`}
-              >中学 PU1</button>
+              >{t("中学 PU1")}</button>
               <button
                 onClick={() => { setTxCenter("BATU14"); setTxPage(1) }}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                   txCenter === "BATU14" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"
                 }`}
-              >小学 BATU14</button>
+              >{t("小学 BATU14")}</button>
             </div>
             )}
           </CardHeader>
@@ -520,14 +522,14 @@ export default function PointsPage() {
             {txLoading ? (
               <div className="text-center py-10"><Loader2 className="h-5 w-5 mx-auto animate-spin text-amber-500" /></div>
             ) : txLogs.length === 0 ? (
-              <div className="text-center py-10 text-gray-400 text-xs">暂无记录</div>
+              <div className="text-center py-10 text-gray-400 text-xs">{t("暂无记录")}</div>
             ) : (
               <>
                 <div className="max-h-[400px] overflow-y-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gray-50 border-b sticky top-0 z-10">
-                        {["时间", "学生", "变动", "原因", "教师"].map(h => (
+                        { [t("时间"), t("学生"), t("变动"), t("原因"), t("教师")].map(h => (
                           <th key={h} className="text-left px-3 py-2 text-[11px] font-semibold text-gray-400">{h}</th>
                         ))}
                       </tr>

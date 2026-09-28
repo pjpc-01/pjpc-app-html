@@ -17,6 +17,7 @@ import { useSchedule, Schedule } from "@/hooks/useSchedule"
 import { useCourses } from "@/hooks/useCourses"
 import { useStudents } from "@/hooks/useStudents"
 import { useTeachers } from "@/hooks/useTeachers"
+import { useLanguage } from "@/contexts/language-context"
 
 // ── Constants ──
 const WEEKDAYS_SHORT = ["日", "一", "二", "三", "四", "五", "六"]
@@ -59,6 +60,7 @@ function MonthCalendar({
   const [month, setMonth] = useState(now.getMonth() + 1) // 1-indexed
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const today = todayStr()
+  const { t } = useLanguage()
 
   // Navigate
   const prevMonth = () => {
@@ -128,13 +130,13 @@ function MonthCalendar({
           <div className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
             <CardTitle>
-              {year}年{MONTH_NAMES[month - 1]}
+              {year}{t("年")}{MONTH_NAMES[month - 1]}
             </CardTitle>
           </div>
           <div className="flex items-center gap-1">
             <Button variant="outline" size="sm" onClick={goToday} className="text-xs h-8">
-              今天
-            </Button>
+                            {t("今天")}
+                          </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={prevMonth}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -221,12 +223,12 @@ function MonthCalendar({
                         ))}
                         {(activityMap[dateStr] || []).length > 3 && (
                           <span className="text-[10px] text-gray-400">
-                            +{(activityMap[dateStr] || []).length - 3} 活动
+                            +{(activityMap[dateStr] || []).length - 3} {t("活动")}
                           </span>
                         )}
                         {uniqueClasses.length > 3 && (
                           <span className="text-[10px] text-gray-400">
-                            +{uniqueClasses.length - 3} 更多
+                            +{uniqueClasses.length - 3} {t("更多")}
                           </span>
                         )}
                       </div>
@@ -253,7 +255,7 @@ function MonthCalendar({
                 {selectedSchedules.length === 0 && selectedActivities.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">
                     <Calendar className="h-6 w-6 mx-auto mb-1 opacity-30" />
-                    <p className="text-xs">当日无课程安排</p>
+                    <p className="text-xs">{t("当日无课程安排")}</p>
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-[400px] overflow-y-auto">
@@ -280,11 +282,11 @@ function MonthCalendar({
                                   : "border-blue-300 bg-blue-50 text-blue-700"
                               }`}
                             >
-                              {s.status === "scheduled" ? "待定" :
-                               s.status === "confirmed" ? "已确认" :
-                               s.status === "in_progress" ? "进行中" :
-                               s.status === "completed" ? "已完成" :
-                               s.status === "cancelled" ? "已取消" : s.status}
+                              {s.status === "scheduled" ? t("待定") :
+                               s.status === "confirmed" ? t("已确认") :
+                               s.status === "in_progress" ? t("进行中") :
+                               s.status === "completed" ? t("已完成") :
+                               s.status === "cancelled" ? t("已取消") : s.status}
                             </Badge>
                           </div>
                           <div className="flex items-center gap-2 text-[11px] text-gray-500">
@@ -304,14 +306,14 @@ function MonthCalendar({
                 {selectedActivities.length > 0 && (
                   <div className="mt-3 space-y-2">
                     <div className="text-[11px] font-semibold text-gray-500 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" /> 活动
+                      <span className="w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" /> {t("活动")}
                     </div>
                     {selectedActivities.map(a => (
                       <div key={a.id} className="bg-white rounded-lg border p-2.5 hover:shadow-sm transition-shadow">
                         <div className="font-medium text-xs">{a.title}</div>
                         <div className="flex items-center gap-1.5 mt-1">
                           <span className={`text-[10px] px-1.5 py-0 rounded-full border ${a.center === 'all' ? "border-amber-300 bg-amber-50 text-amber-700" : "border-violet-300 bg-violet-50 text-violet-700"}`}>
-                            {a.center === 'all' ? "全中心" : (a.center === 'PU1' ? "中学PU1" : "小学BATU14")}
+                            {a.center === 'all' ? t("全中心") : (a.center === 'PU1' ? t("中学PU1") : t("小学BATU14"))}
                           </span>
                         </div>
                       </div>
@@ -332,6 +334,7 @@ function MonthCalendar({
 // ─────────────────────────────────────────────
 export default function EducationOverviewPage() {
   const today = todayStr()
+  const { t } = useLanguage()
 
   const { schedules, loading: schedLoading, fetchSchedules } = useSchedule()
   // 这个页面用 useSchedule() 但从来没人调 fetchSchedules()（全项目只有 CalendarScheduleView 调过）
@@ -395,12 +398,12 @@ export default function EducationOverviewPage() {
       <div>
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">教育概览</h1>
-            <p className="text-gray-500 mt-1">课程表 · 班级总览 · 公告动态</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("教育概览")}</h1>
+            <p className="text-gray-500 mt-1">{t("课程表 · 班级总览 · 公告动态")}</p>
           </div>
           <Link href="/activities">
             <Button variant="outline" size="sm" className="h-9 gap-1.5">
-              <Calendar className="h-4 w-4" />管理活动
+              <Calendar className="h-4 w-4" />{t("管理活动")}
             </Button>
           </Link>
         </div>
@@ -409,11 +412,11 @@ export default function EducationOverviewPage() {
       {/* ── Quick Stats ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {[
-          { icon: GraduationCap, label: "学生", value: stats.totalStudents, color: "text-blue-600 bg-blue-50" },
-          { icon: Users, label: "教师", value: stats.totalTeachers, color: "text-green-600 bg-green-50" },
-          { icon: BookOpen, label: "课程", value: stats.totalCourses, color: "text-purple-600 bg-purple-50" },
-          { icon: School, label: "班级", value: stats.totalClasses, color: "text-orange-600 bg-orange-50" },
-          { icon: Clock, label: "今日课节", value: stats.todayClasses, color: "text-cyan-600 bg-cyan-50" },
+          { icon: GraduationCap, label: t("学生"), value: stats.totalStudents, color: "text-blue-600 bg-blue-50" },
+          { icon: Users, label: t("教师"), value: stats.totalTeachers, color: "text-green-600 bg-green-50" },
+          { icon: BookOpen, label: t("课程"), value: stats.totalCourses, color: "text-purple-600 bg-purple-50" },
+          { icon: School, label: t("班级"), value: stats.totalClasses, color: "text-orange-600 bg-orange-50" },
+          { icon: Clock, label: t("今日课节"), value: stats.todayClasses, color: "text-cyan-600 bg-cyan-50" },
         ].map((item, i) => (
           <Card key={i} className="border-0 shadow-sm">
             <CardContent className="p-3 sm:p-4 flex items-center gap-3">
@@ -445,9 +448,9 @@ export default function EducationOverviewPage() {
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
               <School className="h-5 w-5 text-primary" />
-              <CardTitle>班级总览</CardTitle>
+              <CardTitle>{t("班级总览")}</CardTitle>
             </div>
-            <CardDescription>所有班级及当前状态</CardDescription>
+            <CardDescription>{t("所有班级及当前状态")}</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -455,7 +458,7 @@ export default function EducationOverviewPage() {
             ) : gradeGroups.length === 0 ? (
               <div className="text-center py-8 text-gray-400">
                 <School className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                <p>暂无班级数据</p>
+                <p>{t("暂无班级数据")}</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
@@ -468,17 +471,17 @@ export default function EducationOverviewPage() {
                       <div className="min-w-0">
                         <p className="font-medium text-sm truncate">{g.grade}</p>
                         <p className="text-xs text-gray-500 truncate">
-                          {g.courses.length > 0 ? g.courses.slice(0, 2).join("、") : "未设课程"}
-                          {g.courses.length > 2 ? ` 等 ${g.courses.length} 门` : ""}
+                          {g.courses.length > 0 ? g.courses.slice(0, 2).join("、") : t("未设课程")}
+                          {g.courses.length > 2 ? ` ${t("等")} ${g.courses.length} ${t("门")}` : ""}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
                       <Badge variant="outline" className="text-xs">
-                        {g.students} 人
+                        {g.students} {t("人")}
                       </Badge>
                       <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-                        {g.courses.length} 门课
+                        {g.courses.length} {t("门课")}
                       </Badge>
                     </div>
                   </div>
@@ -493,15 +496,15 @@ export default function EducationOverviewPage() {
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-primary" />
-              <CardTitle>最新公告</CardTitle>
+              <CardTitle>{t("最新公告")}</CardTitle>
             </div>
-            <CardDescription>活动与通知动态（同「管理活动」）</CardDescription>
+            <CardDescription>{t("活动与通知动态（同「管理活动」）")}</CardDescription>
           </CardHeader>
           <CardContent>
             {activities.length === 0 ? (
               <div className="text-center py-8 text-gray-400">
                 <Bell className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                <p>暂无公告</p>
+                <p>{t("暂无公告")}</p>
               </div>
             ) : (
               <div className="space-y-3 max-h-[400px] overflow-y-auto">

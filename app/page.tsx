@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { GraduationCap, Bell, Settings, LogOut, UserCheck, Wifi, WifiOff, AlertTriangle, CreditCard, Menu, X, Loader2 } from "lucide-react"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
+import { useLanguage } from "@/contexts/language-context"
 import ModernAdminDashboard from "./components/dashboards/modern-admin-dashboard"
 import AccountantDashboard from "./components/dashboards/accountant-dashboard"
 import ErrorBoundary from "@/components/shared/error-boundary"
@@ -31,6 +32,7 @@ const TeacherWorkspace = dynamic(() => import('./teacher-workspace/page'), {
 
 export default function Dashboard() {
   const { user, userProfile, loading, connectionStatus, error, logout, resendVerification, clearError } = useAuth()
+  const { t } = useLanguage()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -84,7 +86,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-center h-64">
             <div className="text-gray-500">
               <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
-              <p>正在跳转家长门户...</p>
+              <p>{t("正在跳转家长门户...")}</p>
             </div>
           </div>
         )
@@ -134,7 +136,7 @@ export default function Dashboard() {
       <div className="glass-body min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-10 w-10 mx-auto mb-3 animate-spin text-amber-600" />
-          <p className="text-amber-800/60 text-sm">正在验证身份...</p>
+          <p className="text-amber-800/60 text-sm">{t("正在验证身份...")}</p>
         </div>
       </div>
     )
@@ -146,7 +148,7 @@ export default function Dashboard() {
       <div className="glass-body min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-10 w-10 mx-auto mb-3 animate-spin text-amber-600" />
-          <p className="text-amber-800/60 text-sm">跳转登录...</p>
+          <p className="text-amber-800/60 text-sm">{t("跳转登录...")}</p>
         </div>
       </div>
     )
