@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       const startOfDay = `${today} 00:00:00`
       const endOfDay = `${today} 23:59:59`
       const existingRecords = await pb.collection('teacher_attendance').getList(1, 1, {
-        filter: `teacher_id = "${teacherId}" && (branch_code = "${branchId || centerId}" || branch_name = "${branchName || centerName || centerId}") && date = "${today}"`,
+        filter: `teacher_id = "${teacherId}" && (branch_code = "${branchId || centerId}" || branch_name = "${branchName || centerName || centerId}") && date >= "${startOfDay}" && date <= "${endOfDay}"`,
         sort: '-created'
       })
       
@@ -317,7 +317,7 @@ export async function GET(request: NextRequest) {
       })
     } else {
       // 获取学生考勤数据（包括缺席记录）
-      const filter = `date = "${date}"`
+      const filter = `date >= "${date} 00:00:00" && date <= "${date} 23:59:59"`
       const records = await pb.collection('student_attendance').getList(1, 100, {
         filter,
         sort: '-created'
