@@ -208,7 +208,7 @@ export default function AdvancedTeacherFilters({
                  (filters.hasEmail ? 1 : 0) + 
                  (filters.emailVerified ? 1 : 0) + 
                  (filters.dateRange.from || filters.dateRange.to ? 1 : 0) + 
-                 (filters.experienceRange[0] > 0 || filters.experienceRange[1] < 30 ? 1 : 0)} 个筛选
+                 (filters.experienceRange[0] > 0 || filters.experienceRange[1] < 30 ? 1 : 0)} {t("个筛选")}
               </Badge>
             )}
           </div>
@@ -216,7 +216,7 @@ export default function AdvancedTeacherFilters({
             {hasActiveFilters && (
               <Button variant="outline" size="sm" onClick={clearFilters}>
                 <X className="h-4 w-4 mr-1" />
-                清除
+                {t("清除")}
               </Button>
             )}
             {onSaveFilter && (
@@ -224,32 +224,32 @@ export default function AdvancedTeacherFilters({
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
                     <Save className="h-4 w-4 mr-1" />
-                    保存
+                    {t("保存")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>保存筛选条件</DialogTitle>
+                    <DialogTitle>{t("保存筛选条件")}</DialogTitle>
                     <DialogDescription>
-                      为当前的筛选条件设置一个名称，方便下次使用
+                      {t("为当前的筛选条件设置一个名称，方便下次使用")}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="filterName">筛选名称</Label>
+                      <Label htmlFor="filterName">{t("筛选名称")}</Label>
                       <Input
                         id="filterName"
                         value={filterName}
                         onChange={(e) => setFilterName(e.target.value)}
-                        placeholder="例如：资深数学教师"
+                        placeholder={t("例如：资深数学教师")}
                       />
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
-                        取消
+                        {t("取消")}
                       </Button>
                       <Button onClick={handleSaveFilter} disabled={!filterName.trim()}>
-                        保存
+                        {t("保存")}
                       </Button>
                     </div>
                   </div>
@@ -299,7 +299,7 @@ export default function AdvancedTeacherFilters({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="搜索教师姓名、邮箱..."
+              placeholder={t("搜索教师姓名、邮箱...")}
               value={filters.searchTerm}
               onChange={(e) => updateFilter({ searchTerm: e.target.value })}
               className="pl-10"
@@ -322,10 +322,10 @@ export default function AdvancedTeacherFilters({
 
           <Select value={filters.selectedDepartment} onValueChange={(value) => updateFilter({ selectedDepartment: value })}>
             <SelectTrigger>
-              <SelectValue placeholder="选择部门" />
+              <SelectValue placeholder={t("选择部门")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部部门</SelectItem>
+              <SelectItem value="all">{t("全部部门")}</SelectItem>
               {departmentOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -336,7 +336,7 @@ export default function AdvancedTeacherFilters({
 
           <Select value={filters.selectedStatus} onValueChange={(value) => updateFilter({ selectedStatus: value })}>
             <SelectTrigger>
-              <SelectValue placeholder="选择状态" />
+              <SelectValue placeholder={t("选择状态")} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('common.all_status')}</SelectItem>
@@ -355,7 +355,7 @@ export default function AdvancedTeacherFilters({
             {/* 教龄范围 */}
             <div>
               <Label className="text-sm font-medium mb-3 block">
-                教龄范围: {filters.experienceRange[0]} - {filters.experienceRange[1]} 年
+                {t("教龄范围:")} {filters.experienceRange[0]} - {filters.experienceRange[1]} {t("年")}
               </Label>
               <Slider
                 value={filters.experienceRange}
@@ -370,7 +370,7 @@ export default function AdvancedTeacherFilters({
             {/* 日期范围 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="text-sm font-medium mb-2 block">入职日期范围</Label>
+                <Label className="text-sm font-medium mb-2 block">{t("入职日期范围")}</Label>
                 <div className="flex gap-2">
                   <Popover>
                     <PopoverTrigger asChild>
@@ -428,10 +428,10 @@ export default function AdvancedTeacherFilters({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="name">{t('student.name')}</SelectItem>
-                      <SelectItem value="experience">教龄</SelectItem>
+                      <SelectItem value="experience">{t("教龄")}</SelectItem>
                       <SelectItem value="subject">{t('exam.subject')}</SelectItem>
-                      <SelectItem value="department">部门</SelectItem>
-                      <SelectItem value="createdAt">入职时间</SelectItem>
+                      <SelectItem value="department">{t("部门")}</SelectItem>
+                      <SelectItem value="createdAt">{t("入职时间")}</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button
@@ -447,7 +447,7 @@ export default function AdvancedTeacherFilters({
 
             {/* 联系信息筛选 */}
             <div>
-              <Label className="text-sm font-medium mb-3 block">联系信息</Label>
+              <Label className="text-sm font-medium mb-3 block">{t("联系信息")}</Label>
               <div className="flex flex-wrap gap-4">
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -455,7 +455,7 @@ export default function AdvancedTeacherFilters({
                     checked={filters.hasPhone}
                     onCheckedChange={(checked) => updateFilter({ hasPhone: checked as boolean })}
                   />
-                  <Label htmlFor="hasPhone" className="text-sm">有联系电话</Label>
+                  <Label htmlFor="hasPhone" className="text-sm">{t("有联系电话")}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -463,7 +463,7 @@ export default function AdvancedTeacherFilters({
                     checked={filters.hasEmail}
                     onCheckedChange={(checked) => updateFilter({ hasEmail: checked as boolean })}
                   />
-                  <Label htmlFor="hasEmail" className="text-sm">有邮箱地址</Label>
+                  <Label htmlFor="hasEmail" className="text-sm">{t("有邮箱地址")}</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -471,7 +471,7 @@ export default function AdvancedTeacherFilters({
                     checked={filters.emailVerified}
                     onCheckedChange={(checked) => updateFilter({ emailVerified: checked as boolean })}
                   />
-                  <Label htmlFor="emailVerified" className="text-sm">邮箱已验证</Label>
+                  <Label htmlFor="emailVerified" className="text-sm">{t("邮箱已验证")}</Label>
                 </div>
               </div>
             </div>
@@ -481,7 +481,7 @@ export default function AdvancedTeacherFilters({
         {/* 已保存的筛选条件 */}
         {savedFilters.length > 0 && (
           <div className="pt-4 border-t">
-            <Label className="text-sm font-medium mb-3 block">已保存的筛选条件</Label>
+            <Label className="text-sm font-medium mb-3 block">{t("已保存的筛选条件")}</Label>
             <div className="flex flex-wrap gap-2">
               {savedFilters.map((savedFilter) => (
                 <Button

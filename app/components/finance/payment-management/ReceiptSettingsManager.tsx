@@ -482,10 +482,10 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
       {/* Preset Selector Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-gray-50 rounded-lg border">
         <div className="flex items-center gap-3">
-          <Label className="whitespace-nowrap font-medium">预设方案:</Label>
+          <Label className="whitespace-nowrap font-medium">{t("预设方案:")}</Label>
           <Select value={activeId} onValueChange={handleSelectPreset}>
             <SelectTrigger className="w-56">
-              <SelectValue placeholder="选择预设" />
+              <SelectValue placeholder={t("选择预设")} />
             </SelectTrigger>
             <SelectContent>
               {presets.map(p => (
@@ -498,16 +498,16 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={() => setIsNewPresetDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" />另存为新预设
+            <Plus className="h-4 w-4 mr-1" />{t("另存为新预设")}
           </Button>
           <Button variant="outline" size="sm" onClick={handleDuplicate}>
-            <Copy className="h-4 w-4 mr-1" />复制
+            <Copy className="h-4 w-4 mr-1" />{t("复制")}
           </Button>
           <Button variant="outline" size="sm" onClick={handleSetDefault}>
-            <CheckCircle className="h-4 w-4 mr-1" />设为默认
+            <CheckCircle className="h-4 w-4 mr-1" />{t("设为默认")}
           </Button>
           <Button variant="destructive" size="sm" onClick={handleDeletePreset}>
-            <Trash2 className="h-4 w-4 mr-1" />删除
+            <Trash2 className="h-4 w-4 mr-1" />{t("删除")}
           </Button>
         </div>
       </div>
@@ -519,7 +519,7 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
           {/* Section: School Info */}
           <div>
             <h2 className="text-lg font-semibold flex items-center gap-2 pb-2 border-b mb-4">
-              <Building2 className="h-5 w-5" />学校信息
+              <Building2 className="h-5 w-5" />{t("学校信息")}
             </h2>
             <Card>
               <CardHeader className="pb-3">
@@ -528,17 +528,17 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>学校名称 (中文)</Label>
-                    <Input value={settings.schoolName} onChange={e => updateSettings({ schoolName: e.target.value })} placeholder="智慧教育学校" />
+                    <Label>{t("学校名称 (中文)")}</Label>
+                    <Input value={settings.schoolName} onChange={e => updateSettings({ schoolName: e.target.value })} placeholder={t("智慧教育学校")} />
                   </div>
                   <div>
-                    <Label>学校名称 (英文)</Label>
+                    <Label>{t("学校名称 (英文)")}</Label>
                     <Input value={settings.schoolNameEn} onChange={e => updateSettings({ schoolNameEn: e.target.value })} placeholder="Smart Education School" />
                   </div>
                 </div>
                 <div>
-                  <Label>学校地址</Label>
-                  <Textarea value={settings.schoolAddress} onChange={e => updateSettings({ schoolAddress: e.target.value })} rows={2} placeholder="详细地址" />
+                  <Label>{t("学校地址")}</Label>
+                  <Textarea value={settings.schoolAddress} onChange={e => updateSettings({ schoolAddress: e.target.value })} rows={2} placeholder={t("详细地址")} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -551,7 +551,7 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
                   </div>
                 </div>
                 <div>
-                  <Label className="text-sm font-semibold mb-2 block">学校标志 (Logo)</Label>
+                  <Label className="text-sm font-semibold mb-2 block">{t("学校标志 (Logo)")}</Label>
                   <div className="flex items-center gap-4 mt-1">
                     <div className="w-20 h-20 rounded-xl border-2 border-dashed border-muted bg-muted/20 flex items-center justify-center overflow-hidden flex-shrink-0 group relative cursor-pointer hover:border-primary/40 transition-colors"
                       onClick={() => logoSpanRef.current?.click()}>
@@ -572,12 +572,12 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
                     <div className="flex flex-col gap-2">
                       <input ref={logoSpanRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                       <Button variant="outline" size="sm" onClick={() => logoSpanRef.current?.click()}>
-                        <Upload className="h-4 w-4 mr-1" />上传Logo
+                        <Upload className="h-4 w-4 mr-1" />{t("上传Logo")}
                       </Button>
-                      <p className="text-xs text-muted-foreground">建议正方形，PNG/SVG</p>
+                      <p className="text-xs text-muted-foreground">{t("建议正方形，PNG/SVG")}</p>
                       {settings.schoolLogo && (
                         <Button variant="ghost" size="sm" onClick={() => updateSettings({ schoolLogo: '' })} className="text-red-500 hover:text-red-600 hover:bg-red-50">
-                          <Trash2 className="h-3.5 w-3.5 mr-1" />移除Logo
+                          <Trash2 className="h-3.5 w-3.5 mr-1" />{t("移除Logo")}
                         </Button>
                       )}
                     </div>
@@ -590,31 +590,31 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
           {/* Section: Branding */}
           <div>
             <h2 className="text-lg font-semibold flex items-center gap-2 pb-2 border-b mb-4">
-              <Palette className="h-5 w-5" />品牌样式
+              <Palette className="h-5 w-5" />{t("品牌样式")}
             </h2>
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">颜色方案</CardTitle>
-                <CardDescription>自定义收据的主题颜色</CardDescription>
+                <CardTitle className="text-base">{t("颜色方案")}</CardTitle>
+                <CardDescription>{t("自定义收据的主题颜色")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label>主色</Label>
+                    <Label>{t("主色")}</Label>
                     <div className="flex items-center gap-2 mt-1">
                       <input type="color" value={settings.primaryColor} onChange={e => updateSettings({ primaryColor: e.target.value })} className="w-10 h-10 rounded cursor-pointer border" />
                       <Input value={settings.primaryColor} onChange={e => updateSettings({ primaryColor: e.target.value })} className="flex-1 font-mono text-xs" />
                     </div>
                   </div>
                   <div>
-                    <Label>辅色</Label>
+                    <Label>{t("辅色")}</Label>
                     <div className="flex items-center gap-2 mt-1">
                       <input type="color" value={settings.secondaryColor} onChange={e => updateSettings({ secondaryColor: e.target.value })} className="w-10 h-10 rounded cursor-pointer border" />
                       <Input value={settings.secondaryColor} onChange={e => updateSettings({ secondaryColor: e.target.value })} className="flex-1 font-mono text-xs" />
                     </div>
                   </div>
                   <div>
-                    <Label>强调色</Label>
+                    <Label>{t("强调色")}</Label>
                     <div className="flex items-center gap-2 mt-1">
                       <input type="color" value={settings.accentColor} onChange={e => updateSettings({ accentColor: e.target.value })} className="w-10 h-10 rounded cursor-pointer border" />
                       <Input value={settings.accentColor} onChange={e => updateSettings({ accentColor: e.target.value })} className="flex-1 font-mono text-xs" />
@@ -622,10 +622,10 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
                   </div>
                 </div>
                 <div className="flex items-center gap-4 p-4 rounded-lg border bg-gray-50">
-                  <div className="text-sm text-gray-600">预览效果：</div>
-                  <div className="w-8 h-8 rounded" style={{ backgroundColor: settings.primaryColor }} title="主色" />
-                  <div className="w-8 h-8 rounded" style={{ backgroundColor: settings.secondaryColor }} title="辅色" />
-                  <div className="w-8 h-8 rounded" style={{ backgroundColor: settings.accentColor }} title="强调色" />
+                  <div className="text-sm text-gray-600">{t("预览效果：")}</div>
+                  <div className="w-8 h-8 rounded" style={{ backgroundColor: settings.primaryColor }} title={t("主色")} />
+                  <div className="w-8 h-8 rounded" style={{ backgroundColor: settings.secondaryColor }} title={t("辅色")} />
+                  <div className="w-8 h-8 rounded" style={{ backgroundColor: settings.accentColor }} title={t("强调色")} />
                 </div>
               </CardContent>
             </Card>
@@ -634,20 +634,20 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
           {/* Section: Content */}
           <div>
             <h2 className="text-lg font-semibold flex items-center gap-2 pb-2 border-b mb-4">
-              <FileText className="h-5 w-5" />内容设置
+              <FileText className="h-5 w-5" />{t("内容设置")}
             </h2>
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">收据内容</CardTitle>
+                <CardTitle className="text-base">{t("收据内容")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label>收据备注</Label>
-                  <Textarea value={settings.receiptNote} onChange={e => updateSettings({ receiptNote: e.target.value })} rows={2} placeholder="此收据仅作为付款凭证..." />
+                  <Label>{t("收据备注")}</Label>
+                  <Textarea value={settings.receiptNote} onChange={e => updateSettings({ receiptNote: e.target.value })} rows={2} placeholder={t("此收据仅作为付款凭证...")} />
                 </div>
                 <div>
-                  <Label>页脚文字</Label>
-                  <Textarea value={settings.footerText} onChange={e => updateSettings({ footerText: e.target.value })} rows={2} placeholder="感谢您的信任与支持！" />
+                  <Label>{t("页脚文字")}</Label>
+                  <Textarea value={settings.footerText} onChange={e => updateSettings({ footerText: e.target.value })} rows={2} placeholder={t("感谢您的信任与支持！")} />
                 </div>
               </CardContent>
             </Card>
@@ -659,14 +659,14 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
           <div className="flex items-center justify-between">
             <h3 className="font-semibold flex items-center gap-2">
               <Eye className="h-4 w-4" />
-              收据预览
+              {t("收据预览")}
             </h3>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handlePrintPreview}>
-                <FileText className="h-4 w-4 mr-1" />打印预览
+                <FileText className="h-4 w-4 mr-1" />{t("打印预览")}
               </Button>
               <Button variant="outline" size="sm" onClick={() => setIsPreviewDialogOpen(true)}>
-                <Eye className="h-4 w-4 mr-1" />全屏预览
+                <Eye className="h-4 w-4 mr-1" />{t("全屏预览")}
               </Button>
             </div>
           </div>
@@ -676,7 +676,7 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
               srcDoc={generateReceiptPreviewHTML(settings)}
               className="w-full border-0"
               style={{ minHeight: 500, height: 'calc(100vh - 400px)' }}
-              title="收据预览"
+              title={t("收据预览")}
             />
           </div>
         </div>
@@ -685,21 +685,21 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
       {/* Save Status */}
       <div className="flex items-center justify-end text-xs text-gray-500 border-t pt-3">
         <Save className="h-3.5 w-3.5 mr-1" />
-        自动保存 · 最后更新: {settings.updatedAt}
-        {activePreset?.isDefault && <Badge variant="outline" className="ml-2 text-xs">默认预设</Badge>}
+        {t("自动保存 · 最后更新:")} {settings.updatedAt}
+        {activePreset?.isDefault && <Badge variant="outline" className="ml-2 text-xs">{t("默认预设")}</Badge>}
       </div>
 
       {/* New Preset Dialog */}
       <Dialog open={isNewPresetDialogOpen} onOpenChange={setIsNewPresetDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>另存为新预设</DialogTitle>
-            <DialogDescription>将当前设置保存为一个新的预设方案</DialogDescription>
+            <DialogTitle>{t("另存为新预设")}</DialogTitle>
+            <DialogDescription>{t("将当前设置保存为一个新的预设方案")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>预设名称</Label>
-              <Input value={newPresetName} onChange={e => setNewPresetName(e.target.value)} placeholder="例如：标准收据、简化版" onKeyDown={e => { if (e.key === 'Enter') handleSaveAsNew() }} />
+              <Label>{t("预设名称")}</Label>
+              <Input value={newPresetName} onChange={e => setNewPresetName(e.target.value)} placeholder={t("例如：标准收据、简化版")} onKeyDown={e => { if (e.key === 'Enter') handleSaveAsNew() }} />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsNewPresetDialogOpen(false)}>{t('report.cancel')}</Button>
@@ -713,15 +713,15 @@ export default function ReceiptSettingsManager({ onSettingsChange, activePresetI
       <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
         <DialogContent className="max-w-5xl max-h-[95vh]">
           <DialogHeader>
-            <DialogTitle>收据预览 - {settings.name}</DialogTitle>
-            <DialogDescription>使用当前设置生成的收据样式</DialogDescription>
+            <DialogTitle>{t("收据预览 -")} {settings.name}</DialogTitle>
+            <DialogDescription>{t("使用当前设置生成的收据样式")}</DialogDescription>
           </DialogHeader>
           <div className="bg-gray-100 p-4 rounded-lg overflow-auto max-h-[70vh]">
             <iframe
               srcDoc={generateReceiptPreviewHTML(settings)}
               className="w-full border-0 bg-white rounded-lg shadow-sm"
               style={{ minHeight: 600 }}
-              title="全屏收据预览"
+              title={t("全屏收据预览")}
             />
           </div>
         </DialogContent>

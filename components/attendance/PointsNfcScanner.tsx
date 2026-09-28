@@ -3,12 +3,14 @@
 import { useState, useCallback } from "react"
 import { SmartphoneNfc, Loader2, CheckCircle, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useLanguage } from "@/contexts/language-context";
 
 declare global {
   interface Window { NDEFReader: any }
 }
 
 export default function PointsNfcScanner() {
+  const { t } = useLanguage();
   const [scanning, setScanning] = useState(false)
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null)
 
@@ -145,8 +147,8 @@ export default function PointsNfcScanner() {
       <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-3">
         <SmartphoneNfc className="h-8 w-8 text-blue-500" />
       </div>
-      <h3 className="text-base font-bold text-gray-700 mb-1">手机 NFC 积分</h3>
-      <p className="text-sm text-gray-400 mb-4">将学生 NFC 卡贴近手机背面</p>
+      <h3 className="text-base font-bold text-gray-700 mb-1">{t("手机 NFC 积分")}</h3>
+      <p className="text-sm text-gray-400 mb-4">{t("将学生 NFC 卡贴近手机背面")}</p>
 
       {status && (
         <div className={`mb-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs ${

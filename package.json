@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prebuild": "npm run check:i18n",
     "build": "next build",
+    "check:i18n": "node scripts/i18n-codemod.mjs --check",
     "build:static": "node scripts/build-static-simple.js",
     "dev": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --max-old-space-size=4096\" next dev -H 0.0.0.0 -p 3001",
     "dev:fast": "next dev --turbo",

@@ -150,7 +150,7 @@ export default function BankReconciliation() {
             activeSection === "accounts" ? "bg-indigo-50 text-indigo-700 border-b-2 border-indigo-600" : "text-gray-500 hover:text-gray-700"
           }`}
         >
-          <Building2 className="h-4 w-4 inline mr-1" />银行账户
+          <Building2 className="h-4 w-4 inline mr-1" />{t("银行账户")}
         </button>
         <button
           onClick={() => setActiveSection("transactions")}
@@ -158,7 +158,7 @@ export default function BankReconciliation() {
             activeSection === "transactions" ? "bg-indigo-50 text-indigo-700 border-b-2 border-indigo-600" : "text-gray-500 hover:text-gray-700"
           }`}
         >
-          <FileText className="h-4 w-4 inline mr-1" />银行流水
+          <FileText className="h-4 w-4 inline mr-1" />{t("银行流水")}
         </button>
         <button
           onClick={() => setActiveSection("reconciliation")}
@@ -166,7 +166,7 @@ export default function BankReconciliation() {
             activeSection === "reconciliation" ? "bg-indigo-50 text-indigo-700 border-b-2 border-indigo-600" : "text-gray-500 hover:text-gray-700"
           }`}
         >
-          <RefreshCw className="h-4 w-4 inline mr-1" />对账报告
+          <RefreshCw className="h-4 w-4 inline mr-1" />{t("对账报告")}
         </button>
       </div>
 
@@ -174,33 +174,33 @@ export default function BankReconciliation() {
       {activeSection === "accounts" && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900">银行账户管理</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t("银行账户管理")}</h3>
             <Dialog open={showAddAccount} onOpenChange={setShowAddAccount}>
               <DialogTrigger asChild>
-                <Button size="sm"><Plus className="h-4 w-4 mr-1" />添加账户</Button>
+                <Button size="sm"><Plus className="h-4 w-4 mr-1" />{t("添加账户")}</Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>添加银行账户</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{t("添加银行账户")}</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <div>
-                    <Label>银行名称 *</Label>
-                    <Input value={newAccount.bankName} onChange={e => setNewAccount(p => ({...p, bankName: e.target.value}))} placeholder="例：CIMB Bank" />
+                    <Label>{t("银行名称 *")}</Label>
+                    <Input value={newAccount.bankName} onChange={e => setNewAccount(p => ({...p, bankName: e.target.value}))} placeholder={t("例：CIMB Bank")} />
                   </div>
                   <div>
-                    <Label>账号 *</Label>
-                    <Input value={newAccount.accountNumber} onChange={e => setNewAccount(p => ({...p, accountNumber: e.target.value}))} placeholder="例：1234-567-89" />
+                    <Label>{t("账号 *")}</Label>
+                    <Input value={newAccount.accountNumber} onChange={e => setNewAccount(p => ({...p, accountNumber: e.target.value}))} placeholder={t("例：1234-567-89")} />
                   </div>
                   <div>
-                    <Label>账户名称</Label>
-                    <Input value={newAccount.accountName} onChange={e => setNewAccount(p => ({...p, accountName: e.target.value}))} placeholder="例：PJPC Enterprise" />
+                    <Label>{t("账户名称")}</Label>
+                    <Input value={newAccount.accountName} onChange={e => setNewAccount(p => ({...p, accountName: e.target.value}))} placeholder={t("例：PJPC Enterprise")} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label>期初余额</Label>
+                      <Label>{t("期初余额")}</Label>
                       <Input type="number" step="0.01" value={newAccount.openingBalance} onChange={e => setNewAccount(p => ({...p, openingBalance: e.target.value}))} />
                     </div>
                     <div>
-                      <Label>当前余额</Label>
+                      <Label>{t("当前余额")}</Label>
                       <Input type="number" step="0.01" value={newAccount.currentBalance} onChange={e => setNewAccount(p => ({...p, currentBalance: e.target.value}))} />
                     </div>
                   </div>
@@ -219,8 +219,8 @@ export default function BankReconciliation() {
             <Card>
               <CardContent className="py-8 text-center text-gray-500">
                 <Building2 className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                <p>暂无银行账户</p>
-                <p className="text-sm mt-1">点击"添加账户"开始</p>
+                <p>{t("暂无银行账户")}</p>
+                <p className="text-sm mt-1">{t("点击\"添加账户\"开始")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -239,7 +239,7 @@ export default function BankReconciliation() {
                       </Badge>
                     </div>
                     <div className="mt-3 flex justify-between text-sm">
-                      <span className="text-gray-500">余额：</span>
+                      <span className="text-gray-500">{t("余额：")}</span>
                       <span className={`font-semibold ${(acct.currentBalance || 0) >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                         RM {(acct.currentBalance || 0).toFixed(2)}
                       </span>
@@ -259,7 +259,7 @@ export default function BankReconciliation() {
             <Card>
               <CardContent className="py-8 text-center text-gray-500">
                 <Search className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                <p>请在"银行账户"页签选择一个账户</p>
+                <p>{t("请在\"银行账户\"页签选择一个账户")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -268,35 +268,35 @@ export default function BankReconciliation() {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">{selectedAccount?.bankName} - {selectedAccount?.accountNumber}</h3>
                   <p className="text-sm text-gray-500">
-                    收入: RM {totalCredits.toFixed(2)} | 支出: RM {totalDebits.toFixed(2)} | 已对账: {reconciledCount} | 未对账: {unreconciledCount}
+                    {t("收入: RM")} {totalCredits.toFixed(2)} {t("| 支出: RM")} {totalDebits.toFixed(2)} {t("| 已对账:")} {reconciledCount} {t("| 未对账:")} {unreconciledCount}
                   </p>
                 </div>
                 <Dialog open={showImport} onOpenChange={setShowImport}>
                   <DialogTrigger asChild>
-                    <Button size="sm" variant="outline"><Upload className="h-4 w-4 mr-1" />导入流水</Button>
+                    <Button size="sm" variant="outline"><Upload className="h-4 w-4 mr-1" />{t("导入流水")}</Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-xl">
-                    <DialogHeader><DialogTitle>导入银行流水</DialogTitle></DialogHeader>
+                    <DialogHeader><DialogTitle>{t("导入银行流水")}</DialogTitle></DialogHeader>
                     <div className="space-y-3">
-                      <Label>粘贴交易数据（每行一个）</Label>
+                      <Label>{t("粘贴交易数据（每行一个）")}</Label>
                       <p className="text-xs text-gray-500">
-                        格式：日期, 描述, 金额, credit/debit, 参考号<br />
-                        例：<br />
-                        2026-06-01, 学费收入-张三, 500, credit, INV-001<br />
-                        2026-06-02, 水电费, -150, debit, UTIL-001<br />
-                        2026-06-03, 文具采购, 80, debit, SUP-001<br />
-                        （正数为 credit 收入，负数为 debit 支出）
+                        {t("格式：日期, 描述, 金额, credit/debit, 参考号")}<br />
+                        {t("例：")}<br />
+                        {t("2026-06-01, 学费收入-张三, 500, credit, INV-001")}<br />
+                        {t("2026-06-02, 水电费, -150, debit, UTIL-001")}<br />
+                        {t("2026-06-03, 文具采购, 80, debit, SUP-001")}<br />
+                        {t("（正数为 credit 收入，负数为 debit 支出）")}
                       </p>
                       <textarea
                         className="w-full h-40 p-3 border rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         value={importText}
                         onChange={e => setImportText(e.target.value)}
-                        placeholder="粘贴交易数据..."
+                        placeholder={t("粘贴交易数据...")}
                       />
                     </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setShowImport(false)}>{t('report.cancel')}</Button>
-                      <Button onClick={handleImportTransactions}>导入</Button>
+                      <Button onClick={handleImportTransactions}>{t("导入")}</Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
@@ -308,8 +308,8 @@ export default function BankReconciliation() {
                 <Card>
                   <CardContent className="py-8 text-center text-gray-500">
                     <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                    <p>暂无交易记录</p>
-                    <p className="text-sm mt-1">点击"导入流水"添加银行交易</p>
+                    <p>{t("暂无交易记录")}</p>
+                    <p className="text-sm mt-1">{t("点击\"导入流水\"添加银行交易")}</p>
                   </CardContent>
                 </Card>
               ) : (
@@ -319,10 +319,10 @@ export default function BankReconciliation() {
                       <TableRow>
                         <TableHead>{t('finance.date')}</TableHead>
                         <TableHead>{t('finance.description')}</TableHead>
-                        <TableHead>参考号</TableHead>
+                        <TableHead>{t("参考号")}</TableHead>
                         <TableHead className="text-right">{t('finance.amount')}</TableHead>
                         <TableHead className="text-center">{t('common.type')}</TableHead>
-                        <TableHead className="text-center">对账状态</TableHead>
+                        <TableHead className="text-center">{t("对账状态")}</TableHead>
                         <TableHead className="text-right">{t('teacher.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -342,9 +342,9 @@ export default function BankReconciliation() {
                           </TableCell>
                           <TableCell className="text-center">
                             {txn.reconciled ? (
-                              <span className="inline-flex items-center text-xs text-emerald-600"><CheckCircle2 className="h-3 w-3 mr-1" />已对账</span>
+                              <span className="inline-flex items-center text-xs text-emerald-600"><CheckCircle2 className="h-3 w-3 mr-1" />{t("已对账")}</span>
                             ) : (
-                              <span className="inline-flex items-center text-xs text-amber-600"><AlertCircle className="h-3 w-3 mr-1" />未对账</span>
+                              <span className="inline-flex items-center text-xs text-amber-600"><AlertCircle className="h-3 w-3 mr-1" />{t("未对账")}</span>
                             )}
                           </TableCell>
                           <TableCell className="text-right">
@@ -370,18 +370,18 @@ export default function BankReconciliation() {
             <Card>
               <CardContent className="py-8 text-center text-gray-500">
                 <Search className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                <p>请在"银行账户"页签选择一个账户</p>
+                <p>{t("请在\"银行账户\"页签选择一个账户")}</p>
               </CardContent>
             </Card>
           ) : (
             <>
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">自动对账</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">{t("自动对账")}</h3>
                   <p className="text-sm text-gray-500">{selectedAccount?.bankName} - {selectedAccount?.accountNumber}</p>
                 </div>
                 <Button onClick={handleReconciliation} disabled={reconciling || unreconciledCount === 0}>
-                  {reconciling ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />对账中...</> : <><RefreshCw className="h-4 w-4 mr-1" />运行对账</>}
+                  {reconciling ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />{t("对账中...")}</> : <><RefreshCw className="h-4 w-4 mr-1" />{t("运行对账")}</>}
                 </Button>
               </div>
 
@@ -390,19 +390,19 @@ export default function BankReconciliation() {
                 <Card>
                   <CardContent className="p-4 text-center">
                     <p className="text-2xl font-bold text-gray-900">{transactions.length}</p>
-                    <p className="text-xs text-gray-500">总交易数</p>
+                    <p className="text-xs text-gray-500">{t("总交易数")}</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-4 text-center">
                     <p className="text-2xl font-bold text-emerald-600">{reconciledCount}</p>
-                    <p className="text-xs text-gray-500">已对账</p>
+                    <p className="text-xs text-gray-500">{t("已对账")}</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-4 text-center">
                     <p className={`text-2xl font-bold ${unreconciledCount > 0 ? "text-amber-600" : "text-gray-900"}`}>{unreconciledCount}</p>
-                    <p className="text-xs text-gray-500">未对账</p>
+                    <p className="text-xs text-gray-500">{t("未对账")}</p>
                   </CardContent>
                 </Card>
               </div>
@@ -412,32 +412,32 @@ export default function BankReconciliation() {
                 <Card className="border-emerald-200 bg-emerald-50">
                   <CardHeader>
                     <CardTitle className="text-emerald-800 flex items-center gap-2">
-                      <CheckCircle2 className="h-5 w-5" />对账完成
+                      <CheckCircle2 className="h-5 w-5" />{t("对账完成")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
-                        <p className="text-sm text-emerald-700">总交易</p>
+                        <p className="text-sm text-emerald-700">{t("总交易")}</p>
                         <p className="text-xl font-bold text-emerald-900">{reconResult.total || 0}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-emerald-700">已匹配</p>
+                        <p className="text-sm text-emerald-700">{t("已匹配")}</p>
                         <p className="text-xl font-bold text-emerald-900">{reconResult.matched || 0}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-emerald-700">未匹配</p>
+                        <p className="text-sm text-emerald-700">{t("未匹配")}</p>
                         <p className="text-xl font-bold text-amber-600">{reconResult.unmatched || 0}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-emerald-700">匹配率</p>
+                        <p className="text-sm text-emerald-700">{t("匹配率")}</p>
                         <p className="text-xl font-bold text-emerald-900">
                           {reconResult.total > 0 ? Math.round((reconResult.matched / reconResult.total) * 100) : 0}%
                         </p>
                       </div>
                     </div>
                     {reconResult.runId && (
-                      <p className="text-xs text-emerald-600 mt-3">对账ID: {reconResult.runId}</p>
+                      <p className="text-xs text-emerald-600 mt-3">{t("对账ID:")} {reconResult.runId}</p>
                     )}
                   </CardContent>
                 </Card>
@@ -451,15 +451,15 @@ export default function BankReconciliation() {
                       <TableHead>{t('finance.date')}</TableHead>
                       <TableHead>{t('finance.description')}</TableHead>
                       <TableHead className="text-right">{t('finance.amount')}</TableHead>
-                      <TableHead>匹配目标</TableHead>
-                      <TableHead className="text-center">匹配类型</TableHead>
+                      <TableHead>{t("匹配目标")}</TableHead>
+                      <TableHead className="text-center">{t("匹配类型")}</TableHead>
                       <TableHead className="text-center">{t('teacher.status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {transactions.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-gray-400 py-8">暂无交易</TableCell>
+                        <TableCell colSpan={6} className="text-center text-gray-400 py-8">{t("暂无交易")}</TableCell>
                       </TableRow>
                     ) : (
                       transactions.map(txn => (
@@ -481,9 +481,9 @@ export default function BankReconciliation() {
                           </TableCell>
                           <TableCell className="text-center">
                             {txn.reconciled ? (
-                              <Badge variant="default" className="text-xs bg-emerald-100 text-emerald-800 border-emerald-200">已对账</Badge>
+                              <Badge variant="default" className="text-xs bg-emerald-100 text-emerald-800 border-emerald-200">{t("已对账")}</Badge>
                             ) : (
-                              <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700">未对账</Badge>
+                              <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700">{t("未对账")}</Badge>
                             )}
                           </TableCell>
                         </TableRow>

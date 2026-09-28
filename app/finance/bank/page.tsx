@@ -11,7 +11,7 @@ export default function FinanceBankPage() {
   return (
     <PageLayout
       title={t('finance.bank_reconciliation')}
-      description="管理银行账户、导入流水、自动对账"
+      description={t("管理银行账户、导入流水、自动对账")}
       userRole="admin"
       status="系统正常"
       background="bg-gray-50"

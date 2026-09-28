@@ -283,19 +283,19 @@ export function LeaveManagement() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">待审批</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("待审批")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">
               {leaveRequests.filter(r => r.status === 'pending').length}
             </div>
-            <p className="text-xs text-muted-foreground">请假申请</p>
+            <p className="text-xs text-muted-foreground">{t("请假申请")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">本月批准</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("本月批准")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
@@ -307,7 +307,7 @@ export function LeaveManagement() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">总请假天数</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("总请假天数")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -319,13 +319,13 @@ export function LeaveManagement() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">平均请假</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("平均请假")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
               {(leaveRequests.reduce((sum, r) => sum + r.totalDays, 0) / leaveRequests.length).toFixed(1)}
             </div>
-            <p className="text-xs text-muted-foreground">天/人</p>
+            <p className="text-xs text-muted-foreground">{t("天/人")}</p>
           </CardContent>
         </Card>
       </div>
@@ -333,9 +333,9 @@ export function LeaveManagement() {
       {/* 主要功能区域 */}
       <Tabs defaultValue="requests" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="requests">请假申请</TabsTrigger>
-          <TabsTrigger value="balances">假期余额</TabsTrigger>
-          <TabsTrigger value="policies">请假政策</TabsTrigger>
+          <TabsTrigger value="requests">{t("请假申请")}</TabsTrigger>
+          <TabsTrigger value="balances">{t("假期余额")}</TabsTrigger>
+          <TabsTrigger value="policies">{t("请假政策")}</TabsTrigger>
         </TabsList>
 
         {/* 请假申请 */}
@@ -345,9 +345,9 @@ export function LeaveManagement() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Filter className="h-5 w-5 mr-2" />
-                请假申请管理
+                {t("请假申请管理")}
               </CardTitle>
-              <CardDescription>管理和审批员工请假申请</CardDescription>
+              <CardDescription>{t("管理和审批员工请假申请")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap items-center gap-4">
@@ -355,7 +355,7 @@ export function LeaveManagement() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
-                      placeholder="搜索员工姓名或工号..."
+                      placeholder={t("搜索员工姓名或工号...")}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-10"
@@ -368,31 +368,31 @@ export function LeaveManagement() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t('common.all_status')}</SelectItem>
-                    <SelectItem value="pending">待审批</SelectItem>
+                    <SelectItem value="pending">{t("待审批")}</SelectItem>
                     <SelectItem value="approved">{t('attendance.approved')}</SelectItem>
                     <SelectItem value="rejected">{t('attendance.rejected')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={selectedType} onValueChange={setSelectedType}>
                   <SelectTrigger className="w-40">
-                    <SelectValue placeholder="请假类型" />
+                    <SelectValue placeholder={t("请假类型")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t('common.all_types')}</SelectItem>
-                    <SelectItem value="annual">年假</SelectItem>
-                    <SelectItem value="sick">病假</SelectItem>
-                    <SelectItem value="emergency">紧急假</SelectItem>
-                    <SelectItem value="maternity">产假</SelectItem>
-                    <SelectItem value="paternity">陪产假</SelectItem>
+                    <SelectItem value="annual">{t("年假")}</SelectItem>
+                    <SelectItem value="sick">{t("病假")}</SelectItem>
+                    <SelectItem value="emergency">{t("紧急假")}</SelectItem>
+                    <SelectItem value="maternity">{t("产假")}</SelectItem>
+                    <SelectItem value="paternity">{t("陪产假")}</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button>
                   <Filter className="h-4 w-4 mr-2" />
-                  应用筛选
+                  {t("应用筛选")}
                 </Button>
                 <Button variant="outline">
                   <Download className="h-4 w-4 mr-2" />
-                  导出报告
+                  {t("导出报告")}
                 </Button>
               </div>
             </CardContent>
@@ -404,10 +404,10 @@ export function LeaveManagement() {
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center">
                   <FileText className="h-5 w-5 mr-2" />
-                  请假申请列表
+                  {t("请假申请列表")}
                 </span>
                 <Badge variant="outline">
-                  {filteredRequests.length} 条申请
+                  {filteredRequests.length} {t("条申请")}
                 </Badge>
               </CardTitle>
             </CardHeader>
@@ -434,19 +434,19 @@ export function LeaveManagement() {
                         
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                           <div>
-                            <span className="text-gray-500">请假日期:</span>
-                            <p className="font-medium">{request.startDate} 至 {request.endDate}</p>
+                            <span className="text-gray-500">{t("请假日期:")}</span>
+                            <p className="font-medium">{request.startDate} {t("至")} {request.endDate}</p>
                           </div>
                           <div>
-                            <span className="text-gray-500">请假天数:</span>
-                            <p className="font-medium">{request.totalDays} 天</p>
+                            <span className="text-gray-500">{t("请假天数:")}</span>
+                            <p className="font-medium">{request.totalDays} {t("天")}</p>
                           </div>
                           <div>
-                            <span className="text-gray-500">申请日期:</span>
+                            <span className="text-gray-500">{t("申请日期:")}</span>
                             <p className="font-medium">{request.appliedDate}</p>
                           </div>
                           <div>
-                            <span className="text-gray-500">请假原因:</span>
+                            <span className="text-gray-500">{t("请假原因:")}</span>
                             <p className="font-medium">{request.reason}</p>
                           </div>
                         </div>
@@ -461,7 +461,7 @@ export function LeaveManagement() {
                               className="bg-green-600 hover:bg-green-700"
                             >
                               <CheckCircle className="h-4 w-4 mr-1" />
-                              批准
+                              {t("批准")}
                             </Button>
                             <Button 
                               size="sm" 
@@ -469,7 +469,7 @@ export function LeaveManagement() {
                               onClick={() => handleReject(request.id)}
                             >
                               <XCircle className="h-4 w-4 mr-1" />
-                              拒绝
+                              {t("拒绝")}
                             </Button>
                           </>
                         )}
@@ -494,21 +494,21 @@ export function LeaveManagement() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <CalendarDays className="h-5 w-5 mr-2" />
-                员工假期余额
+                {t("员工假期余额")}
               </CardTitle>
-              <CardDescription>查看员工各类假期余额使用情况</CardDescription>
+              <CardDescription>{t("查看员工各类假期余额使用情况")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-3 px-4">员工信息</th>
-                      <th className="text-left py-3 px-4">年假</th>
-                      <th className="text-left py-3 px-4">病假</th>
-                      <th className="text-left py-3 px-4">紧急假</th>
-                      <th className="text-left py-3 px-4">产假</th>
-                      <th className="text-left py-3 px-4">陪产假</th>
+                      <th className="text-left py-3 px-4">{t("员工信息")}</th>
+                      <th className="text-left py-3 px-4">{t("年假")}</th>
+                      <th className="text-left py-3 px-4">{t("病假")}</th>
+                      <th className="text-left py-3 px-4">{t("紧急假")}</th>
+                      <th className="text-left py-3 px-4">{t("产假")}</th>
+                      <th className="text-left py-3 px-4">{t("陪产假")}</th>
                       <th className="text-left py-3 px-4">{t('teacher.actions')}</th>
                     </tr>
                   </thead>
@@ -523,32 +523,32 @@ export function LeaveManagement() {
                         </td>
                         <td className="py-3 px-4">
                           <div className="text-sm">
-                            <div className="font-medium">{balance.annualLeave - balance.usedAnnual} 天</div>
-                            <div className="text-gray-500">已用 {balance.usedAnnual}/{balance.annualLeave}</div>
+                            <div className="font-medium">{balance.annualLeave - balance.usedAnnual} {t("天")}</div>
+                            <div className="text-gray-500">{t("已用")} {balance.usedAnnual}/{balance.annualLeave}</div>
                           </div>
                         </td>
                         <td className="py-3 px-4">
                           <div className="text-sm">
-                            <div className="font-medium">{balance.sickLeave - balance.usedSick} 天</div>
-                            <div className="text-gray-500">已用 {balance.usedSick}/{balance.sickLeave}</div>
+                            <div className="font-medium">{balance.sickLeave - balance.usedSick} {t("天")}</div>
+                            <div className="text-gray-500">{t("已用")} {balance.usedSick}/{balance.sickLeave}</div>
                           </div>
                         </td>
                         <td className="py-3 px-4">
                           <div className="text-sm">
-                            <div className="font-medium">{balance.emergencyLeave - balance.usedEmergency} 天</div>
-                            <div className="text-gray-500">已用 {balance.usedEmergency}/{balance.emergencyLeave}</div>
+                            <div className="font-medium">{balance.emergencyLeave - balance.usedEmergency} {t("天")}</div>
+                            <div className="text-gray-500">{t("已用")} {balance.usedEmergency}/{balance.emergencyLeave}</div>
                           </div>
                         </td>
                         <td className="py-3 px-4">
                           <div className="text-sm">
-                            <div className="font-medium">{balance.maternityLeave - balance.usedMaternity} 天</div>
-                            <div className="text-gray-500">已用 {balance.usedMaternity}/{balance.maternityLeave}</div>
+                            <div className="font-medium">{balance.maternityLeave - balance.usedMaternity} {t("天")}</div>
+                            <div className="text-gray-500">{t("已用")} {balance.usedMaternity}/{balance.maternityLeave}</div>
                           </div>
                         </td>
                         <td className="py-3 px-4">
                           <div className="text-sm">
-                            <div className="font-medium">{balance.paternityLeave - balance.usedPaternity} 天</div>
-                            <div className="text-gray-500">已用 {balance.usedPaternity}/{balance.paternityLeave}</div>
+                            <div className="font-medium">{balance.paternityLeave - balance.usedPaternity} {t("天")}</div>
+                            <div className="text-gray-500">{t("已用")} {balance.usedPaternity}/{balance.paternityLeave}</div>
                           </div>
                         </td>
                         <td className="py-3 px-4">
@@ -571,64 +571,64 @@ export function LeaveManagement() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <FileText className="h-5 w-5 mr-2" />
-                马来西亚劳工法令请假政策
+                {t("马来西亚劳工法令请假政策")}
               </CardTitle>
-              <CardDescription>符合马来西亚劳工法令的请假政策说明</CardDescription>
+              <CardDescription>{t("符合马来西亚劳工法令的请假政策说明")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">年假 (Annual Leave)</h3>
+                    <h3 className="text-lg font-semibold">{t("年假 (Annual Leave)")}</h3>
                     <ul className="space-y-2 text-sm text-gray-600">
-                      <li>• 工作满1年：12天年假</li>
-                      <li>• 工作满2年：13天年假</li>
-                      <li>• 工作满3年：14天年假</li>
-                      <li>• 工作满4年：15天年假</li>
-                      <li>• 工作满5年及以上：16天年假</li>
+                      <li>{t("• 工作满1年：12天年假")}</li>
+                      <li>{t("• 工作满2年：13天年假")}</li>
+                      <li>{t("• 工作满3年：14天年假")}</li>
+                      <li>{t("• 工作满4年：15天年假")}</li>
+                      <li>{t("• 工作满5年及以上：16天年假")}</li>
                     </ul>
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">病假 (Sick Leave)</h3>
+                    <h3 className="text-lg font-semibold">{t("病假 (Sick Leave)")}</h3>
                     <ul className="space-y-2 text-sm text-gray-600">
-                      <li>• 工作满4个月：14天病假</li>
-                      <li>• 工作满6个月：18天病假</li>
-                      <li>• 工作满1年：22天病假</li>
-                      <li>• 工作满2年：28天病假</li>
-                      <li>• 工作满3年及以上：30天病假</li>
+                      <li>{t("• 工作满4个月：14天病假")}</li>
+                      <li>{t("• 工作满6个月：18天病假")}</li>
+                      <li>{t("• 工作满1年：22天病假")}</li>
+                      <li>{t("• 工作满2年：28天病假")}</li>
+                      <li>{t("• 工作满3年及以上：30天病假")}</li>
                     </ul>
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">产假 (Maternity Leave)</h3>
+                    <h3 className="text-lg font-semibold">{t("产假 (Maternity Leave)")}</h3>
                     <ul className="space-y-2 text-sm text-gray-600">
-                      <li>• 连续工作满12个月：90天产假</li>
-                      <li>• 连续工作满3个月但未满12个月：60天产假</li>
-                      <li>• 产假期间享受全薪</li>
-                      <li>• 产假可提前30天申请</li>
+                      <li>{t("• 连续工作满12个月：90天产假")}</li>
+                      <li>{t("• 连续工作满3个月但未满12个月：60天产假")}</li>
+                      <li>{t("• 产假期间享受全薪")}</li>
+                      <li>{t("• 产假可提前30天申请")}</li>
                     </ul>
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">陪产假 (Paternity Leave)</h3>
+                    <h3 className="text-lg font-semibold">{t("陪产假 (Paternity Leave)")}</h3>
                     <ul className="space-y-2 text-sm text-gray-600">
-                      <li>• 连续工作满12个月：7天陪产假</li>
-                      <li>• 陪产假期间享受全薪</li>
-                      <li>• 陪产假在孩子出生后30天内使用</li>
-                      <li>• 需要提供出生证明</li>
+                      <li>{t("• 连续工作满12个月：7天陪产假")}</li>
+                      <li>{t("• 陪产假期间享受全薪")}</li>
+                      <li>{t("• 陪产假在孩子出生后30天内使用")}</li>
+                      <li>{t("• 需要提供出生证明")}</li>
                     </ul>
                   </div>
                 </div>
 
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-2">重要提醒</h3>
+                  <h3 className="text-lg font-semibold text-blue-900 mb-2">{t("重要提醒")}</h3>
                   <ul className="space-y-1 text-sm text-blue-800">
-                    <li>• 所有请假申请需要提前至少24小时提交</li>
-                    <li>• 紧急情况除外，但需要事后补交说明</li>
-                    <li>• 病假需要提供医生证明（超过3天）</li>
-                    <li>• 年假需要提前2周申请</li>
-                    <li>• 未使用的年假可以累积到下一年（最多2年）</li>
+                    <li>{t("• 所有请假申请需要提前至少24小时提交")}</li>
+                    <li>{t("• 紧急情况除外，但需要事后补交说明")}</li>
+                    <li>{t("• 病假需要提供医生证明（超过3天）")}</li>
+                    <li>{t("• 年假需要提前2周申请")}</li>
+                    <li>{t("• 未使用的年假可以累积到下一年（最多2年）")}</li>
                   </ul>
                 </div>
               </div>

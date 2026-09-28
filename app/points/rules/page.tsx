@@ -204,7 +204,7 @@ export default function RulesPage() {
           className="h-8 text-sm flex-1"
         />
         <Button onClick={() => addRule(type)} size="sm" className={`h-8 text-xs flex-shrink-0 ${isAdd ? "bg-green-600 hover:bg-green-700" : "bg-red-500 hover:bg-red-600"}`}>
-          <Plus className="h-3.5 w-3.5 mr-1" />添加
+          <Plus className="h-3.5 w-3.5 mr-1" />{t("添加")}
         </Button>
       </div>
     )
@@ -228,20 +228,20 @@ export default function RulesPage() {
                   <Clock className="h-4 w-4 text-blue-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-sm font-bold text-blue-800">考勤打卡积分</CardTitle>
-                  <p className="text-[11px] text-blue-500">NFC打卡自动加减分规则</p>
+                  <CardTitle className="text-sm font-bold text-blue-800">{t("考勤打卡积分")}</CardTitle>
+                  <p className="text-[11px] text-blue-500">{t("NFC打卡自动加减分规则")}</p>
                 </div>
               </div>
               <Button size="sm" onClick={saveAttendance} disabled={savingAttendance} className="h-8 text-xs">
                 {savingAttendance ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Save className="h-3.5 w-3.5 mr-1" />}
-                保存
+                {t("保存")}
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1 block">打卡积分</label>
+                <label className="text-xs font-medium text-gray-500 mb-1 block">{t("打卡积分")}</label>
                 <div className="flex items-center gap-1">
                   <button onClick={() => setAttendanceSettings(p => ({ ...p, points_checkin: p.points_checkin - 1 }))}
                     className="w-6 h-6 rounded border text-xs">−</button>
@@ -253,7 +253,7 @@ export default function RulesPage() {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1 block">缺勤扣分</label>
+                <label className="text-xs font-medium text-gray-500 mb-1 block">{t("缺勤扣分")}</label>
                 <div className="flex items-center gap-1">
                   <button onClick={() => setAttendanceSettings(p => ({ ...p, points_absent: p.points_absent - 1 }))}
                     className="w-6 h-6 rounded border text-xs">−</button>
@@ -265,7 +265,7 @@ export default function RulesPage() {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1 block">迟到扣分</label>
+                <label className="text-xs font-medium text-gray-500 mb-1 block">{t("迟到扣分")}</label>
                 <div className="flex items-center gap-1">
                   <button onClick={() => setAttendanceSettings(p => ({ ...p, points_late: p.points_late - 1 }))}
                     className="w-6 h-6 rounded border text-xs">−</button>
@@ -277,7 +277,7 @@ export default function RulesPage() {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1 block">早退扣分</label>
+                <label className="text-xs font-medium text-gray-500 mb-1 block">{t("早退扣分")}</label>
                 <div className="flex items-center gap-1">
                   <button onClick={() => setAttendanceSettings(p => ({ ...p, points_early: p.points_early - 1 }))}
                     className="w-6 h-6 rounded border text-xs">−</button>
@@ -306,7 +306,7 @@ export default function RulesPage() {
         <div className="flex justify-end">
           <Button size="sm" onClick={save} disabled={saving} className="h-8 text-xs">
             {saving ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Save className="h-3.5 w-3.5 mr-1" />}
-            保存
+            {t("保存")}
           </Button>
         </div>
 
@@ -320,15 +320,15 @@ export default function RulesPage() {
                   <Plus className="h-4 w-4 text-green-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-sm font-bold text-green-800">加分模板</CardTitle>
-                  <p className="text-[11px] text-green-500">{activeAdd.length} 条生效 · {addRules.length} 条总计</p>
+                  <CardTitle className="text-sm font-bold text-green-800">{t("加分模板")}</CardTitle>
+                  <p className="text-[11px] text-green-500">{activeAdd.length} {t("条生效 ·")} {addRules.length} {t("条总计")}</p>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="max-h-[640px] overflow-y-auto">
                 {addRules.length === 0 ? (
-                  <div className="px-4 py-16 text-center text-gray-400 text-sm">暂无加分规则，点击下方添加</div>
+                  <div className="px-4 py-16 text-center text-gray-400 text-sm">{t("暂无加分规则，点击下方添加")}</div>
                 ) : (
                   addRules.map(rule => <RuleRow key={rule.id} rule={rule} />)
                 )}
@@ -345,15 +345,15 @@ export default function RulesPage() {
                   <Minus className="h-4 w-4 text-red-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-sm font-bold text-red-800">减分模板</CardTitle>
-                  <p className="text-[11px] text-red-500">{activeSub.length} 条生效 · {subRules.length} 条总计</p>
+                  <CardTitle className="text-sm font-bold text-red-800">{t("减分模板")}</CardTitle>
+                  <p className="text-[11px] text-red-500">{activeSub.length} {t("条生效 ·")} {subRules.length} {t("条总计")}</p>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="max-h-[640px] overflow-y-auto">
                 {subRules.length === 0 ? (
-                  <div className="px-4 py-16 text-center text-gray-400 text-sm">暂无减分规则，点击下方添加</div>
+                  <div className="px-4 py-16 text-center text-gray-400 text-sm">{t("暂无减分规则，点击下方添加")}</div>
                 ) : (
                   subRules.map(rule => <RuleRow key={rule.id} rule={rule} />)
                 )}

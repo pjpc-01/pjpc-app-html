@@ -126,16 +126,16 @@ export default function DeviceManagement({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Smartphone className="h-5 w-5" />
-            设备管理
+            {t("设备管理")}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button onClick={onExportDevices} variant="outline" size="sm">
               <Download className="h-4 w-4 mr-1" />
-              导出
+              {t("导出")}
             </Button>
             <Button onClick={onAddDevice} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              添加设备
+              {t("添加设备")}
             </Button>
           </div>
         </div>
@@ -147,7 +147,7 @@ export default function DeviceManagement({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="搜索设备名称、位置或IP地址..."
+                placeholder={t("搜索设备名称、位置或IP地址...")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -173,7 +173,7 @@ export default function DeviceManagement({
               <SelectItem value="all">{t('common.all_types')}</SelectItem>
               <SelectItem value="NFC">{t('common.nfc')}</SelectItem>
               <SelectItem value="RFID">RFID</SelectItem>
-              <SelectItem value="hybrid">混合</SelectItem>
+              <SelectItem value="hybrid">{t("混合")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -181,22 +181,22 @@ export default function DeviceManagement({
         {/* 批量操作 */}
         {selectedDevices.length > 0 && (
           <div className="flex items-center gap-2 p-4 bg-blue-50 rounded-lg mb-4">
-            <span className="text-sm font-medium">已选择 {selectedDevices.length} 台设备</span>
+            <span className="text-sm font-medium">{t("已选择")} {selectedDevices.length} {t("台设备")}</span>
             <Button onClick={() => bulkUpdateStatus("online")} size="sm" variant="outline">
               <CheckCircle className="h-3 w-3 mr-1" />
-              批量上线
+              {t("批量上线")}
             </Button>
             <Button onClick={() => bulkUpdateStatus("offline")} size="sm" variant="outline">
               <XCircle className="h-3 w-3 mr-1" />
-              批量下线
+              {t("批量下线")}
             </Button>
             <Button onClick={() => bulkUpdateStatus("maintenance")} size="sm" variant="outline">
               <AlertTriangle className="h-3 w-3 mr-1" />
-              批量维护
+              {t("批量维护")}
             </Button>
             <Button onClick={bulkDeleteDevices} size="sm" variant="destructive">
               <Trash2 className="h-3 w-3 mr-1" />
-              批量删除
+              {t("批量删除")}
             </Button>
           </div>
         )}
@@ -211,13 +211,13 @@ export default function DeviceManagement({
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
-              <TableHead>设备名称</TableHead>
-              <TableHead>位置</TableHead>
+              <TableHead>{t("设备名称")}</TableHead>
+              <TableHead>{t("位置")}</TableHead>
               <TableHead>{t('common.type')}</TableHead>
               <TableHead>{t('teacher.status')}</TableHead>
-              <TableHead>IP地址</TableHead>
-              <TableHead>固件版本</TableHead>
-              <TableHead>最后在线</TableHead>
+              <TableHead>{t("IP地址")}</TableHead>
+              <TableHead>{t("固件版本")}</TableHead>
+              <TableHead>{t("最后在线")}</TableHead>
               <TableHead>{t('teacher.actions')}</TableHead>
             </TableRow>
           </TableHeader>
@@ -263,8 +263,8 @@ export default function DeviceManagement({
         {filteredDevices.length === 0 && (
           <div className="text-center py-8">
             <Smartphone className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">暂无设备</h3>
-            <p className="text-gray-600">没有找到符合条件的设备</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t("暂无设备")}</h3>
+            <p className="text-gray-600">{t("没有找到符合条件的设备")}</p>
           </div>
         )}
       </CardContent>

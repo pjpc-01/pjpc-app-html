@@ -160,7 +160,7 @@ export default function ParentDailyLogsPage() {
                   {/* 教师 */}
                   {log.expand?.teacherId?.name && (
                     <div className="text-xs text-gray-400">
-                      {t("记录")}：{log.expand.teacherId.name}
+                      {t("记录")}{t("：")}{log.expand.teacherId.name}
                     </div>
                   )}
                 </div>

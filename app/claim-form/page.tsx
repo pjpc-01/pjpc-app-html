@@ -182,7 +182,7 @@ export default function ClaimFormPage() {
                 </Table>
               </div>
               <Button size="sm" variant="outline" className="mt-2" onClick={addItem}><Plus className="h-3.5 w-3.5 mr-1" />{t("加一行")}</Button>
-              <div className="mt-2 text-right font-semibold text-blue-700">{t("合计")}：RM {tot.toFixed(2)}</div>
+              <div className="mt-2 text-right font-semibold text-blue-700">{t("合计")}{t("：RM")} {tot.toFixed(2)}</div>
             </div>
 
             <div><Label>{t("备注 / 附注")}</Label><Textarea value={form.notes} onChange={e => upd({ notes: e.target.value })} rows={2} /></div>

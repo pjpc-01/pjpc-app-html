@@ -9,7 +9,7 @@ export default function FinancePaymentsPage() {
   return (
     <PageLayout
       title={t('finance.payment_management')}
-      description="管理付款记录"
+      description={t("管理付款记录")}
       userRole="admin"
       status="系统正常"
       background="bg-gray-50"

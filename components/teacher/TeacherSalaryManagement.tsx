@@ -1094,11 +1094,11 @@ export default function TeacherSalaryManagement() {
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={() => setIsPayslipSettingsOpen(true)}>
           <Settings className="h-4 h-4 mr-2" />
-          设置
+          {t("设置")}
         </Button>
         <Button onClick={handleCreateStructure}>
           <Plus className="w-4 h-4 mr-2" />
-          新建薪资结构
+          {t("新建薪资结构")}
         </Button>
       </div>
 
@@ -1110,12 +1110,12 @@ export default function TeacherSalaryManagement() {
             <div className="flex items-center">
               <Calendar className="h-8 w-8 text-blue-600" />
               <div className="ml-4 min-w-0">
-                <p className="text-sm font-medium text-gray-600">本月应发薪资（按结构）</p>
+                <p className="text-sm font-medium text-gray-600">{t("本月应发薪资（按结构）")}</p>
                 <p className="text-2xl font-bold text-blue-700">
                   {monthlyExpected.loading ? '计算中...' : formatCurrency(monthlyExpected.total)}
                 </p>
                 <p className="text-[11px] text-gray-500 mt-0.5">
-                  月薪 {monthlyExpected.monthlyCount} 人 {formatCurrency(monthlyExpected.monthly)} · 时薪 {monthlyExpected.hourlyCount} 人 {formatCurrency(monthlyExpected.hourly)}
+                  {t("月薪")} {monthlyExpected.monthlyCount} {t("人")} {formatCurrency(monthlyExpected.monthly)} {t("· 时薪")} {monthlyExpected.hourlyCount} {t("人")} {formatCurrency(monthlyExpected.hourly)}
                 </p>
               </div>
             </div>
@@ -1127,7 +1127,7 @@ export default function TeacherSalaryManagement() {
             <div className="flex items-center">
               <DollarSign className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">总薪资支出</p>
+                <p className="text-sm font-medium text-gray-600">{t("总薪资支出")}</p>
                 <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalGrossSalary)}</p>
               </div>
             </div>
@@ -1139,7 +1139,7 @@ export default function TeacherSalaryManagement() {
             <div className="flex items-center">
               <Calculator className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">净薪资支出</p>
+                <p className="text-sm font-medium text-gray-600">{t("净薪资支出")}</p>
                 <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalNetSalary)}</p>
               </div>
             </div>
@@ -1151,7 +1151,7 @@ export default function TeacherSalaryManagement() {
             <div className="flex items-center">
               <TrendingUp className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">平均薪资</p>
+                <p className="text-sm font-medium text-gray-600">{t("平均薪资")}</p>
                 <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.averageSalary)}</p>
               </div>
             </div>
@@ -1163,7 +1163,7 @@ export default function TeacherSalaryManagement() {
             <div className="flex items-center">
               <FileText className="h-8 w-8 text-orange-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">薪资记录数</p>
+                <p className="text-sm font-medium text-gray-600">{t("薪资记录数")}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.recordCount}</p>
               </div>
             </div>
@@ -1176,14 +1176,14 @@ export default function TeacherSalaryManagement() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Settings className="h-4 w-4" />
-            薪资参数设置
+            {t("薪资参数设置")}
           </CardTitle>
-          <CardDescription>设置 EPF、SOCSO、EIS、所得税等默认扣款比率，新建薪资结构时自动应用</CardDescription>
+          <CardDescription>{t("设置 EPF、SOCSO、EIS、所得税等默认扣款比率，新建薪资结构时自动应用")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <Label htmlFor="global_epf">EPF 雇员比率 (%)</Label>
+              <Label htmlFor="global_epf">{t("EPF 雇员比率 (%)")}</Label>
               <Input
                 id="global_epf"
                 type="number"
@@ -1194,10 +1194,10 @@ export default function TeacherSalaryManagement() {
                 onChange={(e) => updateGlobalRates({ epf: (parseFloat(e.target.value) || 0) / 100 })}
                 className="bg-white"
               />
-              <p className="text-xs text-gray-500 mt-1">雇员公积金</p>
+              <p className="text-xs text-gray-500 mt-1">{t("雇员公积金")}</p>
             </div>
             <div>
-              <Label htmlFor="global_tax">PCB 税率 (%)</Label>
+              <Label htmlFor="global_tax">{t("PCB 税率 (%)")}</Label>
               <Input
                 id="global_tax"
                 type="number"
@@ -1208,10 +1208,10 @@ export default function TeacherSalaryManagement() {
                 onChange={(e) => updateGlobalRates({ tax: (parseFloat(e.target.value) || 0) / 100 })}
                 className="bg-white"
               />
-              <p className="text-xs text-gray-500 mt-1">每月预扣税（0=不扣）</p>
+              <p className="text-xs text-gray-500 mt-1">{t("每月预扣税（0=不扣）")}</p>
             </div>
             <div>
-              <Label htmlFor="global_epf_employer">EPF 雇主比率 (%)</Label>
+              <Label htmlFor="global_epf_employer">{t("EPF 雇主比率 (%)")}</Label>
               <Input
                 id="global_epf_employer"
                 type="number"
@@ -1222,7 +1222,7 @@ export default function TeacherSalaryManagement() {
                 onChange={(e) => updateGlobalRates({ epf_employer: (parseFloat(e.target.value) || 0) / 100 })}
                 className="bg-white"
               />
-              <p className="text-xs text-gray-500 mt-1">雇主公积金</p>
+              <p className="text-xs text-gray-500 mt-1">{t("雇主公积金")}</p>
             </div>
           </div>
         </CardContent>
@@ -1230,19 +1230,19 @@ export default function TeacherSalaryManagement() {
 
       {/* 薪资结构 */}
       <section id="structures">
-        <h2 className="text-lg font-semibold mb-3">薪资结构</h2>
+        <h2 className="text-lg font-semibold mb-3">{t("薪资结构")}</h2>
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>薪资结构列表</CardTitle>
-              <CardDescription>管理教师的薪资结构和福利设置</CardDescription>
+              <CardTitle>{t("薪资结构列表")}</CardTitle>
+              <CardDescription>{t("管理教师的薪资结构和福利设置")}</CardDescription>
             </CardHeader>
             <CardContent>
               {/* ── Batch action bar for structures ── */}
               {someStructuresSelected && (
                 <div className="flex items-center justify-between mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
                   <span className="text-sm text-red-700 font-medium">
-                    已选择 <span className="font-bold">{structureSelectedIds.size}</span> 条薪资结构
+                    {t("已选择")} <span className="font-bold">{structureSelectedIds.size}</span> {t("条薪资结构")}
                   </span>
                   <div className="flex gap-2">
                     <Button
@@ -1251,7 +1251,7 @@ export default function TeacherSalaryManagement() {
                       onClick={() => setStructureSelectedIds(new Set())}
                     >
                       <XCircle className="h-4 w-4 mr-1" />
-                      取消选择
+                      {t("取消选择")}
                     </Button>
                     <Button
                       variant="destructive"
@@ -1259,7 +1259,7 @@ export default function TeacherSalaryManagement() {
                       onClick={() => setIsStructureBatchDeleteOpen(true)}
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
-                      删除选中 ({structureSelectedIds.size})
+                      {t("删除选中 (")}{structureSelectedIds.size})
                     </Button>
                   </div>
                 </div>
@@ -1276,14 +1276,14 @@ export default function TeacherSalaryManagement() {
                       />
                     </TableHead>
                     <TableHead>{t('teacher.teacher')}</TableHead>
-                    <TableHead>薪资类型</TableHead>
-                    <TableHead>基本薪资</TableHead>
-                    <TableHead>津贴</TableHead>
+                    <TableHead>{t("薪资类型")}</TableHead>
+                    <TableHead>{t("基本薪资")}</TableHead>
+                    <TableHead>{t("津贴")}</TableHead>
                     <TableHead>EPF %</TableHead>
                     <TableHead>SOCSO %</TableHead>
                     <TableHead>EIS %</TableHead>
                     <TableHead>{t('teacher.status')}</TableHead>
-                    <TableHead>生效日期</TableHead>
+                    <TableHead>{t("生效日期")}</TableHead>
                     <TableHead>{t('teacher.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1310,7 +1310,7 @@ export default function TeacherSalaryManagement() {
                         </Badge>
                       </TableCell>
                       <TableCell>{structure.salary_type === 'hourly'
-                        ? <span>RM {structure.hourly_rate || 0} <span className="text-xs text-gray-400">/时</span></span>
+                        ? <span>RM {structure.hourly_rate || 0} <span className="text-xs text-gray-400">{t("/时")}</span></span>
                         : formatCurrency(structure.base_salary)}</TableCell>
                       <TableCell>{formatCurrency((structure.allowance_items || []).reduce((s: number, a: any) => s + (a.amount || 0), 0))}</TableCell>
                       <TableCell>{structure.salary_type === 'monthly' && !(structure as any).no_statutory ? `${((structure.epf_rate ?? 0.11) * 100).toFixed(1)}%` : '—'}</TableCell>
@@ -1348,7 +1348,7 @@ export default function TeacherSalaryManagement() {
       {/* 薪资记录 */}
       <section id="records">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">薪资记录</h2>
+          <h2 className="text-lg font-semibold">{t("薪资记录")}</h2>
           <div className="flex flex-wrap items-center gap-2">
             <Button
               size="sm"
@@ -1356,7 +1356,7 @@ export default function TeacherSalaryManagement() {
               onClick={() => setRecordDialogOpen(true)}
             >
               <Plus className="w-4 h-4 mr-1" />
-              新建薪资记录
+              {t("新建薪资记录")}
             </Button>
             <Button
               size="sm"
@@ -1365,7 +1365,7 @@ export default function TeacherSalaryManagement() {
               className="bg-green-600 hover:bg-green-700"
             >
               <Calculator className="w-4 h-4 mr-1" />
-              批量生成薪资
+              {t("批量生成薪资")}
             </Button>
           </div>
         </div>
@@ -1373,38 +1373,38 @@ export default function TeacherSalaryManagement() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>薪资记录列表</CardTitle>
-                <CardDescription>查看和管理教师的薪资发放记录</CardDescription>
+                <CardTitle>{t("薪资记录列表")}</CardTitle>
+                <CardDescription>{t("查看和管理教师的薪资发放记录")}</CardDescription>
               </div>
               <Button size="sm" variant="outline" onClick={() => { setBinMode(true); fetchDeletedRecords(); }}>
-                🗑️ 回收站 {deletedRecords.length > 0 ? `(${deletedRecords.length})` : ""}
+                {t("🗑️ 回收站")} {deletedRecords.length > 0 ? `(${deletedRecords.length})` : ""}
               </Button>
             </CardHeader>
             <CardContent>
             {binMode ? (
             <div className="py-4 space-y-2">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-sm">回收站（已删除的薪资记录）</h3>
-                <Button size="sm" variant="outline" onClick={() => setBinMode(false)}>← 返回列表</Button>
+                <h3 className="font-semibold text-sm">{t("回收站（已删除的薪资记录）")}</h3>
+                <Button size="sm" variant="outline" onClick={() => setBinMode(false)}>{t("← 返回列表")}</Button>
               </div>
               {binLoading ? (
-                <div className="py-16 text-center text-gray-400 text-sm">加载中...</div>
+                <div className="py-16 text-center text-gray-400 text-sm">{t("加载中...")}</div>
               ) : deletedRecords.length === 0 ? (
-                <div className="py-16 text-center text-gray-400 text-sm border rounded-lg bg-white">回收站为空</div>
+                <div className="py-16 text-center text-gray-400 text-sm border rounded-lg bg-white">{t("回收站为空")}</div>
               ) : (
                 <div className="space-y-2">
                   {deletedRecords.map((r: any) => (
                     <div key={r.id} className="flex items-center justify-between p-3 rounded-lg border bg-white">
                       <div className="min-w-0">
-                        <div className="font-medium text-sm">{r.expand?.teacher_id?.name || r.teacher_id} · {r.year}年{r.month}月</div>
-                        <div className="text-xs text-gray-500 mt-0.5">RM {Number(r.net_salary||0).toLocaleString()} · 删除于 {new Date(r.updated).toLocaleDateString("zh-CN")}</div>
+                        <div className="font-medium text-sm">{r.expand?.teacher_id?.name || r.teacher_id} · {r.year}{t("年")}{r.month}{t("月")}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">RM {Number(r.net_salary||0).toLocaleString()} {t("· 删除于")} {new Date(r.updated).toLocaleDateString("zh-CN")}</div>
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
                         <Button size="sm" variant="outline" className="h-8 text-xs" onClick={async () => { await fetch(`/api/teacher-salary?type=record&id=${r.id}&action=restore`, { method: "DELETE" }); fetchDeletedRecords(); fetchSalaryRecords(1); }}>
-                          恢复
+                          {t("恢复")}
                         </Button>
                         <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={async () => { if (!confirm("确定要永久删除这条薪资记录吗？此操作不可恢复！")) return; await fetch(`/api/teacher-salary?type=record&id=${r.id}&action=permanent`, { method: "DELETE" }); fetchDeletedRecords(); }}>
-                          永久删除
+                          {t("永久删除")}
                         </Button>
                       </div>
                     </div>
@@ -1417,7 +1417,7 @@ export default function TeacherSalaryManagement() {
               {someRecordsSelected && (
                 <div className="flex items-center justify-between mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
                   <span className="text-sm text-red-700 font-medium">
-                    已选择 <span className="font-bold">{recordSelectedIds.size}</span> 条薪资记录
+                    {t("已选择")} <span className="font-bold">{recordSelectedIds.size}</span> {t("条薪资记录")}
                   </span>
                   <div className="flex gap-2">
                     <Button
@@ -1426,7 +1426,7 @@ export default function TeacherSalaryManagement() {
                       onClick={() => setRecordSelectedIds(new Set())}
                     >
                       <XCircle className="h-4 w-4 mr-1" />
-                      取消选择
+                      {t("取消选择")}
                     </Button>
                     <Button
                       variant="destructive"
@@ -1434,7 +1434,7 @@ export default function TeacherSalaryManagement() {
                       onClick={() => setIsRecordBatchDeleteOpen(true)}
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
-                      删除选中 ({recordSelectedIds.size})
+                      {t("删除选中 (")}{recordSelectedIds.size})
                     </Button>
                   </div>
                 </div>
@@ -1447,12 +1447,12 @@ export default function TeacherSalaryManagement() {
                       <Checkbox
                         checked={allRecordsSelected}
                         onCheckedChange={toggleSelectAllRecords}
-                        aria-label="全选"
+                        aria-label={t("全选")}
                       />
                     </TableHead>
                     <TableHead>Payslip No.</TableHead>
                     <TableHead>{t('teacher.teacher')}</TableHead>
-                    <TableHead>薪资期间</TableHead>
+                    <TableHead>{t("薪资期间")}</TableHead>
                     <TableHead>{t('teacher.status')}</TableHead>
                     <TableHead>{t('teacher.actions')}</TableHead>
                   </TableRow>
@@ -1480,10 +1480,10 @@ export default function TeacherSalaryManagement() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{record.year}年{record.month}月</p>
+                          <p className="font-medium">{record.year}{t("年")}{record.month}{t("月")}</p>
                           <p className="text-sm text-gray-500">{record.salary_period}</p>
                           {record.payment_date && (
-                            <p className="text-xs text-emerald-600">发薪：{String(record.payment_date).slice(0, 10)}</p>
+                            <p className="text-xs text-emerald-600">{t("发薪：")}{String(record.payment_date).slice(0, 10)}</p>
                           )}
                         </div>
                       </TableCell>
@@ -1571,7 +1571,7 @@ export default function TeacherSalaryManagement() {
             {/* Pagination - 始终显示，1 页时也可见 */}
             <div className="flex items-center justify-between mt-4">
               <span className="text-sm text-gray-500">
-                共 {recordTotal} 条，每页 20 条
+                {t("共")} {recordTotal} {t("条，每页 20 条")}
               </span>
               <div className="flex gap-1">
                 {Array.from({ length: Math.max(recordTotalPages, 1) }, (_, i) => i + 1).map(p => (
@@ -1621,14 +1621,14 @@ export default function TeacherSalaryManagement() {
                       </SelectItem>
                     ))}
                     {availableTeachers.length === 0 && !editingStructure && (
-                      <div className="px-2 py-4 text-sm text-slate-500 text-center">所有教师已有薪资结构</div>
+                      <div className="px-2 py-4 text-sm text-slate-500 text-center">{t("所有教师已有薪资结构")}</div>
                     )}
                   </SelectContent>
                 </Select>
               </div>
               
               <div>
-                <Label htmlFor="salary_type">薪资类型</Label>
+                <Label htmlFor="salary_type">{t("薪资类型")}</Label>
                 <Select value={structureForm.salary_type} onValueChange={(value: any) => 
                   setStructureForm(prev => ({ ...prev, salary_type: value }))
                 }>
@@ -1636,20 +1636,20 @@ export default function TeacherSalaryManagement() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="monthly">月薪</SelectItem>
-                    <SelectItem value="hourly">时薪</SelectItem>
-                    <SelectItem value="commission">佣金</SelectItem>
+                    <SelectItem value="monthly">{t("月薪")}</SelectItem>
+                    <SelectItem value="hourly">{t("时薪")}</SelectItem>
+                    <SelectItem value="commission">{t("佣金")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             {/* ── 工资 ── */}
-            <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">💰 工资</h4>
+            <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">{t("💰 工资")}</h4>
             <div className="grid grid-cols-3 gap-4">
               {structureForm.salary_type === 'monthly' && (
                 <div>
-                  <Label htmlFor="base_salary">基本薪资 (RM)</Label>
+                  <Label htmlFor="base_salary">{t("基本薪资 (RM)")}</Label>
                   <Input id="base_salary" type="number" step="0.01" value={structureForm.base_salary}
                     onChange={(e) => setStructureForm(prev => ({ ...prev, base_salary: parseFloat(e.target.value) || 0 }))} />
                 </div>
@@ -1657,12 +1657,12 @@ export default function TeacherSalaryManagement() {
               {structureForm.salary_type === 'hourly' && (
                 <>
                   <div>
-                    <Label htmlFor="hourly_rate">时薪 (RM/h)</Label>
+                    <Label htmlFor="hourly_rate">{t("时薪 (RM/h)")}</Label>
                     <Input id="hourly_rate" type="number" step="0.01" value={structureForm.hourly_rate || ''}
                       onChange={(e) => setStructureForm(prev => ({ ...prev, hourly_rate: parseFloat(e.target.value) || 0 }))} />
                   </div>
                   <div>
-                    <Label htmlFor="overtime_rate">加班费率 (RM/h)</Label>
+                    <Label htmlFor="overtime_rate">{t("加班费率 (RM/h)")}</Label>
                     <Input id="overtime_rate" type="number" step="0.01" value={structureForm.overtime_rate || ''}
                       onChange={(e) => setStructureForm(prev => ({ ...prev, overtime_rate: parseFloat(e.target.value) || 0 }))} />
                   </div>
@@ -1670,7 +1670,7 @@ export default function TeacherSalaryManagement() {
               )}
               {structureForm.salary_type === 'commission' && (
                 <div>
-                  <Label htmlFor="base_salary">底薪 (RM)</Label>
+                  <Label htmlFor="base_salary">{t("底薪 (RM)")}</Label>
                   <Input id="base_salary" type="number" step="0.01" value={structureForm.base_salary}
                     onChange={(e) => setStructureForm(prev => ({ ...prev, base_salary: parseFloat(e.target.value) || 0 }))} />
                 </div>
@@ -1679,19 +1679,19 @@ export default function TeacherSalaryManagement() {
 
             {/* ── 津贴 ── */}
             <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">
-              📦 津贴
-              <span className="text-xs text-gray-400 ml-2">总额: RM {(structureForm.allowance_items || []).reduce((s, a) => s + (a.amount || 0), 0).toFixed(2)}</span>
+              {t("📦 津贴")}
+              <span className="text-xs text-gray-400 ml-2">{t("总额: RM")} {(structureForm.allowance_items || []).reduce((s, a) => s + (a.amount || 0), 0).toFixed(2)}</span>
             </h4>
             <div className="space-y-1">
               {(structureForm.allowance_items || []).map((item, i) => (
                 <div key={i} className="flex gap-2 items-center">
-                  <Input placeholder="津贴名称" value={item.name}
+                  <Input placeholder={t("津贴名称")} value={item.name}
                     onChange={(e) => {
                       const updated = [...(structureForm.allowance_items || [])]
                       updated[i] = { ...updated[i], name: e.target.value }
                       setStructureForm(prev => ({ ...prev, allowance_items: updated }))
                     }} className="w-36" />
-                  <Input type="number" step="0.01" placeholder="金额" value={item.amount || ''}
+                  <Input type="number" step="0.01" placeholder={t("金额")} value={item.amount || ''}
                     onChange={(e) => {
                       const updated = [...(structureForm.allowance_items || [])]
                       updated[i] = { ...updated[i], amount: parseFloat(e.target.value) || 0 }
@@ -1704,7 +1704,7 @@ export default function TeacherSalaryManagement() {
                         updated[i] = { ...updated[i], taxable: e.target.checked }
                         setStructureForm(prev => ({ ...prev, allowance_items: updated }))
                       }} />
-                    计扣
+                    {t("计扣")}
                   </label>
                   <Button type="button" variant="ghost" size="sm" onClick={() => {
                     setStructureForm(prev => ({ ...prev, allowance_items: (prev.allowance_items || []).filter((_, j) => j !== i) }))
@@ -1713,24 +1713,24 @@ export default function TeacherSalaryManagement() {
               ))}
               <Button type="button" variant="outline" size="sm" onClick={() => {
                 setStructureForm(prev => ({ ...prev, allowance_items: [...(prev.allowance_items || []), { name: '', amount: 0, taxable: true }] }))
-              }}>+ 加津贴</Button>
+              }}>{t("+ 加津贴")}</Button>
             </div>
 
             {/* ── 奖金 ── */}
             <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">
-              🎁 奖金
-              <span className="text-xs text-gray-400 ml-2">总额: RM {(structureForm.bonus_items || []).reduce((s, b) => s + (b.amount || 0), 0).toFixed(2)}</span>
+              {t("🎁 奖金")}
+              <span className="text-xs text-gray-400 ml-2">{t("总额: RM")} {(structureForm.bonus_items || []).reduce((s, b) => s + (b.amount || 0), 0).toFixed(2)}</span>
             </h4>
             <div className="space-y-1">
               {(structureForm.bonus_items || []).map((item, i) => (
                 <div key={i} className="flex gap-2 items-center">
-                  <Input placeholder="奖金名称" value={item.name}
+                  <Input placeholder={t("奖金名称")} value={item.name}
                     onChange={(e) => {
                       const updated = [...(structureForm.bonus_items || [])]
                       updated[i] = { ...updated[i], name: e.target.value }
                       setStructureForm(prev => ({ ...prev, bonus_items: updated }))
                     }} className="w-36" />
-                  <Input type="number" step="0.01" placeholder="金额" value={item.amount || ''}
+                  <Input type="number" step="0.01" placeholder={t("金额")} value={item.amount || ''}
                     onChange={(e) => {
                       const updated = [...(structureForm.bonus_items || [])]
                       updated[i] = { ...updated[i], amount: parseFloat(e.target.value) || 0 }
@@ -1743,7 +1743,7 @@ export default function TeacherSalaryManagement() {
                         updated[i] = { ...updated[i], taxable: e.target.checked }
                         setStructureForm(prev => ({ ...prev, bonus_items: updated }))
                       }} />
-                    计扣
+                    {t("计扣")}
                   </label>
                   <Button type="button" variant="ghost" size="sm" onClick={() => {
                     setStructureForm(prev => ({ ...prev, bonus_items: (prev.bonus_items || []).filter((_, j) => j !== i) }))
@@ -1752,7 +1752,7 @@ export default function TeacherSalaryManagement() {
               ))}
               <Button type="button" variant="outline" size="sm" onClick={() => {
                 setStructureForm(prev => ({ ...prev, bonus_items: [...(prev.bonus_items || []), { name: '', amount: 0, taxable: false }] }))
-              }}>+ 加奖金</Button>
+              }}>{t("+ 加奖金")}</Button>
             </div>
 
             {structureForm.salary_type === 'monthly' && (
@@ -1766,16 +1766,16 @@ export default function TeacherSalaryManagement() {
                       onChange={(e) => setStructureForm(prev => ({ ...prev, no_statutory: e.target.checked }))}
                       className="h-4 w-4 rounded border-gray-300"
                     />
-                    <span className="text-sm font-medium text-gray-700">该员工无 EPF/SOCSO/EIS 扣款（外籍/佣工等）</span>
+                    <span className="text-sm font-medium text-gray-700">{t("该员工无 EPF/SOCSO/EIS 扣款（外籍/佣工等）")}</span>
                   </label>
-                  <p className="text-xs text-gray-500 mt-1">勾选后，生成薪资和薪资单不扣 EPF、SOCSO、EIS、PCB（雇员与雇主都不算）</p>
+                  <p className="text-xs text-gray-500 mt-1">{t("勾选后，生成薪资和薪资单不扣 EPF、SOCSO、EIS、PCB（雇员与雇主都不算）")}</p>
                 </div>
 
                 {/* ── EPF / 税务 ── */}
-                <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">🏛️ EPF / 税率</h4>
+                <h4 className="font-semibold text-sm text-gray-500 mt-4 mb-1">{t("🏛️ EPF / 税率")}</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="epf_rate">EPF 雇员 (%)</Label>
+                    <Label htmlFor="epf_rate">{t("EPF 雇员 (%)")}</Label>
                     {(structureForm as any).no_statutory ? (
                       <div className="flex h-9 items-center rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-400">-</div>
                     ) : (
@@ -1785,7 +1785,7 @@ export default function TeacherSalaryManagement() {
                     )}
                   </div>
                   <div>
-                    <Label htmlFor="epf_employer_rate">EPF 雇主 (%)</Label>
+                    <Label htmlFor="epf_employer_rate">{t("EPF 雇主 (%)")}</Label>
                     {(structureForm as any).no_statutory ? (
                       <div className="flex h-9 items-center rounded-md border border-gray-200 bg-gray-100 px-3 text-sm text-gray-400">-</div>
                     ) : (
@@ -1805,26 +1805,26 @@ export default function TeacherSalaryManagement() {
                       onChange={(e) => setStructureForm(prev => ({ ...prev, pcb_enabled: e.target.checked }))}
                       className="h-4 w-4 rounded border-gray-300"
                     />
-                    <span className="text-sm font-medium text-gray-700">计算 PCB 预扣税</span>
+                    <span className="text-sm font-medium text-gray-700">{t("计算 PCB 预扣税")}</span>
                   </label>
-                  <p className="text-xs text-gray-500 mt-1">勾选后才会扣除 PCB；不勾则 PCB 为 0</p>
+                  <p className="text-xs text-gray-500 mt-1">{t("勾选后才会扣除 PCB；不勾则 PCB 为 0")}</p>
                   {structureForm.pcb_enabled && (
                     <div className="grid grid-cols-2 gap-4 mt-3">
                       <div>
-                        <Label htmlFor="pcb_rate">PCB 八仙率 (%)</Label>
+                        <Label htmlFor="pcb_rate">{t("PCB 八仙率 (%)")}</Label>
                         <Input id="pcb_rate" type="number" step="0.1" min="0" max="100"
                           value={structureForm.pcb_rate || ''}
-                          placeholder="如 3"
+                          placeholder={t("如 3")}
                           onChange={(e) => setStructureForm(prev => ({ ...prev, pcb_rate: parseFloat(e.target.value) || 0 }))} />
-                        <p className="text-xs text-gray-500 mt-1">按 gross × 八仙率</p>
+                        <p className="text-xs text-gray-500 mt-1">{t("按 gross × 八仙率")}</p>
                       </div>
                       <div>
-                        <Label htmlFor="pcb_amount">或固定金额 (RM)</Label>
+                        <Label htmlFor="pcb_amount">{t("或固定金额 (RM)")}</Label>
                         <Input id="pcb_amount" type="number" step="0.01" min="0"
                           value={structureForm.pcb_amount || ''}
-                          placeholder="如 150"
+                          placeholder={t("如 150")}
                           onChange={(e) => setStructureForm(prev => ({ ...prev, pcb_amount: parseFloat(e.target.value) || 0 }))} />
-                        <p className="text-xs text-gray-500 mt-1">固定数目优先于八仙率</p>
+                        <p className="text-xs text-gray-500 mt-1">{t("固定数目优先于八仙率")}</p>
                       </div>
                     </div>
                   )}
@@ -1834,7 +1834,7 @@ export default function TeacherSalaryManagement() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="effective_date">生效日期</Label>
+                <Label htmlFor="effective_date">{t("生效日期")}</Label>
                 <Input
                   id="effective_date"
                   type="date"
@@ -1847,7 +1847,7 @@ export default function TeacherSalaryManagement() {
               </div>
               
               <div>
-                <Label htmlFor="end_date">结束日期（可选）</Label>
+                <Label htmlFor="end_date">{t("结束日期（可选）")}</Label>
                 <Input
                   id="end_date"
                   type="date"
@@ -1875,7 +1875,7 @@ export default function TeacherSalaryManagement() {
 
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setStructureDialogOpen(false)}>
-                取消
+                {t("取消")}
               </Button>
               <Button type="submit">{editingStructure ? '更新薪资结构' : '创建薪资结构'}</Button>
             </div>
@@ -1887,13 +1887,13 @@ export default function TeacherSalaryManagement() {
       <Dialog open={genDialogOpen} onOpenChange={setGenDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>批量生成薪资</DialogTitle>
-            <DialogDescription>选择要生成的月份和发薪日期，确认后为所有教师生成当月薪资</DialogDescription>
+            <DialogTitle>{t("批量生成薪资")}</DialogTitle>
+            <DialogDescription>{t("选择要生成的月份和发薪日期，确认后为所有教师生成当月薪资")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-xs text-gray-500 block mb-1">年份</Label>
+                <Label className="text-xs text-gray-500 block mb-1">{t("年份")}</Label>
                 <input
                   type="number"
                   value={genYear}
@@ -1902,20 +1902,20 @@ export default function TeacherSalaryManagement() {
                 />
               </div>
               <div>
-                <Label className="text-xs text-gray-500 block mb-1">月份</Label>
+                <Label className="text-xs text-gray-500 block mb-1">{t("月份")}</Label>
                 <select
                   value={genMonth}
                   onChange={e => setGenMonth(Number(e.target.value))}
                   className="w-full h-9 border rounded px-2 text-sm"
                 >
                   {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                    <option key={m} value={m}>{m}月</option>
+                    <option key={m} value={m}>{m}{t("月")}</option>
                   ))}
                 </select>
               </div>
             </div>
             <div>
-              <Label className="text-xs text-gray-500 block mb-1">发薪日期（可选）</Label>
+              <Label className="text-xs text-gray-500 block mb-1">{t("发薪日期（可选）")}</Label>
               <input
                 type="date"
                 value={genPayDate}
@@ -1924,11 +1924,11 @@ export default function TeacherSalaryManagement() {
               />
             </div>
             <p className="text-xs text-amber-600">
-              将按每位教师的薪资类型生成：月薪按月薪算，时薪按时薪 × 工时算。
+              {t("将按每位教师的薪资类型生成：月薪按月薪算，时薪按时薪 × 工时算。")}
             </p>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" size="sm" onClick={() => setGenDialogOpen(false)}>
-                取消
+                {t("取消")}
               </Button>
               <Button
                 size="sm"
@@ -1936,7 +1936,7 @@ export default function TeacherSalaryManagement() {
                 disabled={isGenerating}
                 className="bg-green-600 hover:bg-green-700"
               >
-                {isGenerating ? <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />生成中...</> : <>确认生成</>}
+                {isGenerating ? <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />{t("生成中...")}</> : <>{t("确认生成")}</>}
               </Button>
             </div>
           </div>
@@ -1945,8 +1945,8 @@ export default function TeacherSalaryManagement() {
       <Dialog open={recordDialogOpen} onOpenChange={setRecordDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>新建薪资记录</DialogTitle>
-            <DialogDescription>记录教师的薪资发放情况</DialogDescription>
+            <DialogTitle>{t("新建薪资记录")}</DialogTitle>
+            <DialogDescription>{t("记录教师的薪资发放情况")}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleRecordSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -2008,7 +2008,7 @@ export default function TeacherSalaryManagement() {
               </div>
               
               <div>
-                <Label htmlFor="record_year">薪资年份</Label>
+                <Label htmlFor="record_year">{t("薪资年份")}</Label>
                 <Input
                   id="record_year"
                   type="number"
@@ -2024,12 +2024,12 @@ export default function TeacherSalaryManagement() {
                       if (result.success) setRecordForm(prev => ({ ...prev, hours_worked: result.data.totalHours || 0 }))
                     }
                   }}
-                  placeholder="例如：2026"
+                  placeholder={t("例如：2026")}
                 />
               </div>
 
               <div>
-                <Label htmlFor="record_month">薪资月份</Label>
+                <Label htmlFor="record_month">{t("薪资月份")}</Label>
                 <Select value={String(recordForm.month || '')} onValueChange={async (v) => {
                   const m = parseInt(v)
                   const hourly = (recordForm as any).salary_type === 'hourly'
@@ -2048,18 +2048,18 @@ export default function TeacherSalaryManagement() {
                   }
                 }}>
                   <SelectTrigger id="record_month">
-                    <SelectValue placeholder="选择月份" />
+                    <SelectValue placeholder={t("选择月份")} />
                   </SelectTrigger>
                   <SelectContent>
                     {Array.from({length: 12}, (_, i) => i + 1).map(m => (
-                      <SelectItem key={m} value={String(m)}>{m}月</SelectItem>
+                      <SelectItem key={m} value={String(m)}>{m}{t("月")}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="salary_period">发薪日期</Label>
+                <Label htmlFor="salary_period">{t("发薪日期")}</Label>
                 <Input
                   id="payment_date"
                   type="date"
@@ -2073,20 +2073,20 @@ export default function TeacherSalaryManagement() {
               
               {(recordForm as any).salary_type === 'hourly' ? (
                 <div>
-                  <Label htmlFor="hours_worked">工时 (小时) <span className="text-xs text-gray-400">自动从排班读取·不可手填</span></Label>
+                  <Label htmlFor="hours_worked">{t("工时 (小时)")} <span className="text-xs text-gray-400">{t("自动从排班读取·不可手填")}</span></Label>
                   <Input
                     id="hours_worked"
                     type="number" step="0.01"
                     readOnly
                     value={recordForm.hours_worked || ''}
                     className="bg-gray-50"
-                    placeholder="本月总工时"
+                    placeholder={t("本月总工时")}
                   />
                 </div>
               ) : null}
 
               <div>
-                <Label htmlFor="bonus">奖金 (RM)</Label>
+                <Label htmlFor="bonus">{t("奖金 (RM)")}</Label>
                 <Input
                   id="bonus"
                   type="number" step="0.01"
@@ -2101,17 +2101,17 @@ export default function TeacherSalaryManagement() {
 
             {/* Auto-calculated summary */}
             <div className="p-3 bg-green-50 rounded-lg border border-green-200 text-sm space-y-1">
-              <p className="font-medium text-green-800">自动计算（来自薪资结构）</p>
+              <p className="font-medium text-green-800">{t("自动计算（来自薪资结构）")}</p>
               <div className="grid grid-cols-2 gap-x-4 text-green-700">
-                <span>基本薪资: <strong>RM {recordForm.base_salary.toFixed(2)}</strong></span>
-                <span>津贴: <strong>RM {recordForm.allowances.toFixed(2)}</strong></span>
-                <span>总薪资: <strong>RM {recordForm.gross_salary.toFixed(2)}</strong></span>
+                <span>{t("基本薪资:")} <strong>RM {recordForm.base_salary.toFixed(2)}</strong></span>
+                <span>{t("津贴:")} <strong>RM {recordForm.allowances.toFixed(2)}</strong></span>
+                <span>{t("总薪资:")} <strong>RM {recordForm.gross_salary.toFixed(2)}</strong></span>
                 <span>EPF: <strong>RM {recordForm.epf_deduction.toFixed(2)}</strong></span>
                 <span>SOCSO: <strong>RM {recordForm.socso_deduction.toFixed(2)}</strong></span>
                 <span>EIS: <strong>RM {recordForm.eis_deduction.toFixed(2)}</strong></span>
                 <span>PCB: <strong>RM {recordForm.tax_deduction.toFixed(2)}</strong></span>
                 <span className="col-span-2 text-base font-bold text-green-900 pt-1 border-t border-green-300">
-                  净薪资: <strong>RM {recordForm.net_salary.toFixed(2)}</strong>
+                  {t("净薪资:")} <strong>RM {recordForm.net_salary.toFixed(2)}</strong>
                 </span>
               </div>
             </div>
@@ -2131,9 +2131,9 @@ export default function TeacherSalaryManagement() {
 
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setRecordDialogOpen(false)}>
-                取消
+                {t("取消")}
               </Button>
-              <Button type="submit">创建薪资记录</Button>
+              <Button type="submit">{t("创建薪资记录")}</Button>
             </div>
           </form>
         </DialogContent>
@@ -2145,9 +2145,9 @@ export default function TeacherSalaryManagement() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              薪资单详情 - {selectedPayslipRecord?.year}年{selectedPayslipRecord?.month}月
+              {t("薪资单详情 -")} {selectedPayslipRecord?.year}{t("年")}{selectedPayslipRecord?.month}{t("月")}
             </DialogTitle>
-            <DialogDescription>查看薪资单的详细信息</DialogDescription>
+            <DialogDescription>{t("查看薪资单的详细信息")}</DialogDescription>
           </DialogHeader>
           
           {selectedPayslipRecord && (
@@ -2158,7 +2158,7 @@ export default function TeacherSalaryManagement() {
                   srcDoc={generatePayslipHTML(selectedPayslipRecord, getPayslipPresetForRecord(selectedPayslipRecord), selectedPayslipRecord.expand?.teacher_id?.name || '教师', selectedPayslipRecord.expand?.teacher_id ? { epfNo: selectedPayslipRecord.expand.teacher_id.epfNo, socsoNo: selectedPayslipRecord.expand.teacher_id.socsoNo, bankName: selectedPayslipRecord.expand.teacher_id.bankName, bankAccountNo: selectedPayslipRecord.expand.teacher_id.bankAccountNo } : undefined)}
                   className="w-full border-0"
                   style={{ height: '70vh', minHeight: '500px' }}
-                  title="薪资单预览"
+                  title={t("薪资单预览")}
                 />
               </div>
 
@@ -2171,10 +2171,10 @@ export default function TeacherSalaryManagement() {
                   }}
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  下载PDF
+                  {t("下载PDF")}
                 </Button>
                 <Button onClick={() => setIsPayslipDetailOpen(false)}>
-                  关闭
+                  {t("关闭")}
                 </Button>
               </div>
             </div>
@@ -2187,9 +2187,9 @@ export default function TeacherSalaryManagement() {
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />薪资单格式设置
+              <Settings className="h-5 w-5" />{t("薪资单格式设置")}
             </DialogTitle>
-            <DialogDescription>自定义薪资单 PDF 样式</DialogDescription>
+            <DialogDescription>{t("自定义薪资单 PDF 样式")}</DialogDescription>
           </DialogHeader>
           <PayslipSettingsManager
             onSettingsChange={(s) => {
@@ -2208,22 +2208,22 @@ export default function TeacherSalaryManagement() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <Trash2 className="h-5 w-5" />
-              确认删除薪资结构
+              {t("确认删除薪资结构")}
             </DialogTitle>
             <DialogDescription>
               <div className="space-y-2 mt-2">
-                <p>确定要删除这个薪资结构吗？此操作不可撤销。</p>
-                <p className="text-xs text-red-500">⚠️ 相关教师的薪资计算将受到此操作影响。</p>
+                <p>{t("确定要删除这个薪资结构吗？此操作不可撤销。")}</p>
+                <p className="text-xs text-red-500">{t("⚠️ 相关教师的薪资计算将受到此操作影响。")}</p>
               </div>
             </DialogDescription>
           </DialogHeader>
           
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={handleCancelDeleteStructure}>
-              取消
+              {t("取消")}
             </Button>
             <Button variant="destructive" onClick={handleConfirmDeleteStructure}>
-              删除
+              {t("删除")}
             </Button>
           </div>
         </DialogContent>
@@ -2237,22 +2237,22 @@ export default function TeacherSalaryManagement() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <Trash2 className="h-5 w-5" />
-              确认删除薪资记录
+              {t("确认删除薪资记录")}
             </DialogTitle>
             <DialogDescription>
               <div className="space-y-2 mt-2">
-                <p>确定要删除这条薪资记录吗？此操作不可撤销。</p>
-                <p className="text-xs text-red-500">⚠️ 已删除的薪资记录将无法恢复。</p>
+                <p>{t("确定要删除这条薪资记录吗？此操作不可撤销。")}</p>
+                <p className="text-xs text-red-500">{t("⚠️ 已删除的薪资记录将无法恢复。")}</p>
               </div>
             </DialogDescription>
           </DialogHeader>
           
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={handleCancelDeleteRecord}>
-              取消
+              {t("取消")}
             </Button>
             <Button variant="destructive" onClick={handleConfirmDeleteRecord}>
-              删除
+              {t("删除")}
             </Button>
           </div>
         </DialogContent>
@@ -2264,12 +2264,12 @@ export default function TeacherSalaryManagement() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <Trash2 className="h-5 w-5" />
-              批量删除薪资结构
+              {t("批量删除薪资结构")}
             </DialogTitle>
             <DialogDescription>
               <div className="space-y-2 mt-2">
                 <p className="text-sm">
-                  确定要删除选中的 <span className="font-bold text-red-600">{structureSelectedIds.size}</span> 条薪资结构吗？
+                  {t("确定要删除选中的")} <span className="font-bold text-red-600">{structureSelectedIds.size}</span> {t("条薪资结构吗？")}
                 </p>
                 <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-40 overflow-y-auto">
                   <ul className="text-xs space-y-0.5">
@@ -2283,7 +2283,7 @@ export default function TeacherSalaryManagement() {
                     })}
                   </ul>
                 </div>
-                <p className="text-xs text-red-500 mt-2">⚠️ 此操作不可撤销！</p>
+                <p className="text-xs text-red-500 mt-2">{t("⚠️ 此操作不可撤销！")}</p>
               </div>
             </DialogDescription>
           </DialogHeader>
@@ -2294,7 +2294,7 @@ export default function TeacherSalaryManagement() {
               onClick={() => setIsStructureBatchDeleteOpen(false)}
               disabled={isStructureBatchDeleting}
             >
-              取消
+              {t("取消")}
             </Button>
             <Button 
               variant="destructive" 
@@ -2304,12 +2304,12 @@ export default function TeacherSalaryManagement() {
               {isStructureBatchDeleting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  删除中...
+                  {t("删除中...")}
                 </>
               ) : (
                 <>
                   <Trash2 className="h-4 w-4 mr-2" />
-                  删除 {structureSelectedIds.size} 条薪资结构
+                  {t("删除")} {structureSelectedIds.size} {t("条薪资结构")}
                 </>
               )}
             </Button>
@@ -2323,12 +2323,12 @@ export default function TeacherSalaryManagement() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <Trash2 className="h-5 w-5" />
-              批量删除薪资记录
+              {t("批量删除薪资记录")}
             </DialogTitle>
             <DialogDescription>
               <div className="space-y-2 mt-2">
                 <p className="text-sm">
-                  确定要删除选中的 <span className="font-bold text-red-600">{recordSelectedIds.size}</span> 条薪资记录吗？
+                  {t("确定要删除选中的")} <span className="font-bold text-red-600">{recordSelectedIds.size}</span> {t("条薪资记录吗？")}
                 </p>
                 <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-40 overflow-y-auto">
                   <ul className="text-xs space-y-0.5">
@@ -2336,13 +2336,13 @@ export default function TeacherSalaryManagement() {
                       const r = salaryRecords.find(rec => rec.id === id)
                       return r ? (
                         <li key={id} className="text-red-700">
-                          • {r.expand?.teacher_id?.name || r.teacher_id} — {r.year}年{r.month}月 ({formatCurrency(r.net_salary)})
+                          • {r.expand?.teacher_id?.name || r.teacher_id} — {r.year}{t("年")}{r.month}{t("月 (")}{formatCurrency(r.net_salary)})
                         </li>
                       ) : null
                     })}
                   </ul>
                 </div>
-                <p className="text-xs text-red-500 mt-2">⚠️ 此操作不可撤销！</p>
+                <p className="text-xs text-red-500 mt-2">{t("⚠️ 此操作不可撤销！")}</p>
               </div>
             </DialogDescription>
           </DialogHeader>
@@ -2353,7 +2353,7 @@ export default function TeacherSalaryManagement() {
               onClick={() => setIsRecordBatchDeleteOpen(false)}
               disabled={isRecordBatchDeleting}
             >
-              取消
+              {t("取消")}
             </Button>
             <Button 
               variant="destructive" 
@@ -2363,12 +2363,12 @@ export default function TeacherSalaryManagement() {
               {isRecordBatchDeleting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  删除中...
+                  {t("删除中...")}
                 </>
               ) : (
                 <>
                   <Trash2 className="h-4 w-4 mr-2" />
-                  删除 {recordSelectedIds.size} 条薪资记录
+                  {t("删除")} {recordSelectedIds.size} {t("条薪资记录")}
                 </>
               )}
             </Button>

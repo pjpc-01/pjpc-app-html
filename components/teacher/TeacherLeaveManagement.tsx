@@ -344,13 +344,13 @@ export default function TeacherLeaveManagement() {
       {/* 标题和操作 */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">教师请假管理</h1>
-          <p className="text-gray-600">管理教师请假申请和审批流程</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t("教师请假管理")}</h1>
+          <p className="text-gray-600">{t("管理教师请假申请和审批流程")}</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setLeaveDialogOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
-            新建请假申请
+            {t("新建请假申请")}
           </Button>
         </div>
       </div>
@@ -362,7 +362,7 @@ export default function TeacherLeaveManagement() {
             <div className="flex items-center">
               <FileText className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">总请假申请</p>
+                <p className="text-sm font-medium text-gray-600">{t("总请假申请")}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.totalLeaves}</p>
               </div>
             </div>
@@ -374,7 +374,7 @@ export default function TeacherLeaveManagement() {
             <div className="flex items-center">
               <Clock className="h-8 w-8 text-yellow-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">待审批</p>
+                <p className="text-sm font-medium text-gray-600">{t("待审批")}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.pendingLeaves}</p>
               </div>
             </div>
@@ -398,7 +398,7 @@ export default function TeacherLeaveManagement() {
             <div className="flex items-center">
               <Calendar className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">总请假天数</p>
+                <p className="text-sm font-medium text-gray-600">{t("总请假天数")}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.totalDays}</p>
               </div>
             </div>
@@ -435,11 +435,11 @@ export default function TeacherLeaveManagement() {
                 setFilters(prev => ({ ...prev, status: value }))
               }>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择状态" />
+                  <SelectValue placeholder={t("选择状态")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('common.all_status')}</SelectItem>
-                  <SelectItem value="pending">待审批</SelectItem>
+                  <SelectItem value="pending">{t("待审批")}</SelectItem>
                   <SelectItem value="approved">{t('attendance.approved')}</SelectItem>
                   <SelectItem value="rejected">{t('attendance.rejected')}</SelectItem>
                   <SelectItem value="cancelled">{t('teacher.cancelled')}</SelectItem>
@@ -461,18 +461,18 @@ export default function TeacherLeaveManagement() {
             </div>
             
             <div>
-              <Label htmlFor="month_filter">月份</Label>
+              <Label htmlFor="month_filter">{t("月份")}</Label>
               <Select value={filters.month} onValueChange={(value) => 
                 setFilters(prev => ({ ...prev, month: value }))
               }>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择月份" />
+                  <SelectValue placeholder={t("选择月份")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部月份</SelectItem>
+                  <SelectItem value="all">{t("全部月份")}</SelectItem>
                   {Array.from({ length: 12 }, (_, i) => (
                     <SelectItem key={i + 1} value={(i + 1).toString()}>
-                      {i + 1}月
+                      {i + 1}{t("月")}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -485,20 +485,20 @@ export default function TeacherLeaveManagement() {
       {/* 请假记录列表 */}
       <Card>
         <CardHeader>
-          <CardTitle>请假记录列表</CardTitle>
-          <CardDescription>查看和管理教师的请假申请</CardDescription>
+          <CardTitle>{t("请假记录列表")}</CardTitle>
+          <CardDescription>{t("查看和管理教师的请假申请")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>{t('teacher.teacher')}</TableHead>
-                <TableHead>请假类型</TableHead>
-                <TableHead>请假期间</TableHead>
-                <TableHead>天数</TableHead>
-                <TableHead>原因</TableHead>
+                <TableHead>{t("请假类型")}</TableHead>
+                <TableHead>{t("请假期间")}</TableHead>
+                <TableHead>{t("天数")}</TableHead>
+                <TableHead>{t("原因")}</TableHead>
                 <TableHead>{t('teacher.status')}</TableHead>
-                <TableHead>申请日期</TableHead>
+                <TableHead>{t("申请日期")}</TableHead>
                 <TableHead>{t('teacher.actions')}</TableHead>
               </TableRow>
             </TableHeader>
@@ -527,10 +527,10 @@ export default function TeacherLeaveManagement() {
                   <TableCell>
                     <div>
                       <p className="font-medium">{formatDate(record.start_date)}</p>
-                      <p className="text-sm text-gray-500">至 {formatDate(record.end_date)}</p>
+                      <p className="text-sm text-gray-500">{t("至")} {formatDate(record.end_date)}</p>
                     </div>
                   </TableCell>
-                  <TableCell>{record.total_days} 天</TableCell>
+                  <TableCell>{record.total_days} {t("天")}</TableCell>
                   <TableCell className="max-w-xs truncate">{record.reason}</TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(record.status)}>
@@ -583,8 +583,8 @@ export default function TeacherLeaveManagement() {
       <Dialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>新建请假申请</DialogTitle>
-            <DialogDescription>提交教师的请假申请</DialogDescription>
+            <DialogTitle>{t("新建请假申请")}</DialogTitle>
+            <DialogDescription>{t("提交教师的请假申请")}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleLeaveSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -607,7 +607,7 @@ export default function TeacherLeaveManagement() {
               </div>
               
               <div>
-                <Label htmlFor="leave_type">请假类型</Label>
+                <Label htmlFor="leave_type">{t("请假类型")}</Label>
                 <Select value={leaveForm.leave_type} onValueChange={(value: any) => 
                   setLeaveForm(prev => ({ ...prev, leave_type: value }))
                 }>
@@ -615,12 +615,12 @@ export default function TeacherLeaveManagement() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="annual">年假</SelectItem>
-                    <SelectItem value="sick">病假</SelectItem>
-                    <SelectItem value="emergency">紧急事假</SelectItem>
-                    <SelectItem value="maternity">产假</SelectItem>
-                    <SelectItem value="paternity">陪产假</SelectItem>
-                    <SelectItem value="unpaid">无薪假</SelectItem>
+                    <SelectItem value="annual">{t("年假")}</SelectItem>
+                    <SelectItem value="sick">{t("病假")}</SelectItem>
+                    <SelectItem value="emergency">{t("紧急事假")}</SelectItem>
+                    <SelectItem value="maternity">{t("产假")}</SelectItem>
+                    <SelectItem value="paternity">{t("陪产假")}</SelectItem>
+                    <SelectItem value="unpaid">{t("无薪假")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -660,7 +660,7 @@ export default function TeacherLeaveManagement() {
             </div>
 
             <div>
-              <Label htmlFor="reason">请假原因</Label>
+              <Label htmlFor="reason">{t("请假原因")}</Label>
               <Textarea
                 id="reason"
                 value={leaveForm.reason}
@@ -669,20 +669,20 @@ export default function TeacherLeaveManagement() {
                   reason: e.target.value 
                 }))}
                 rows={3}
-                placeholder="请详细说明请假原因..."
+                placeholder={t("请详细说明请假原因...")}
               />
             </div>
 
             <div>
-              <Label htmlFor="substitute_teacher">代课教师（可选）</Label>
+              <Label htmlFor="substitute_teacher">{t("代课教师（可选）")}</Label>
               <Select value={leaveForm.substitute_teacher} onValueChange={(value) => 
                 setLeaveForm(prev => ({ ...prev, substitute_teacher: value }))
               }>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择代课教师" />
+                  <SelectValue placeholder={t("选择代课教师")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">无需代课</SelectItem>
+                  <SelectItem value="none">{t("无需代课")}</SelectItem>
                   {teachers.map((teacher) => (
                     <SelectItem key={teacher.id} value={teacher.id}>
                       {teacher.name} - {teacher.email}
@@ -702,15 +702,15 @@ export default function TeacherLeaveManagement() {
                   notes: e.target.value 
                 }))}
                 rows={2}
-                placeholder="其他需要说明的信息..."
+                placeholder={t("其他需要说明的信息...")}
               />
             </div>
 
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setLeaveDialogOpen(false)}>
-                取消
+                {t("取消")}
               </Button>
-              <Button type="submit">提交申请</Button>
+              <Button type="submit">{t("提交申请")}</Button>
             </div>
           </form>
         </DialogContent>
@@ -720,16 +720,16 @@ export default function TeacherLeaveManagement() {
       <Dialog open={approvalDialogOpen} onOpenChange={setApprovalDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>审批请假申请</DialogTitle>
+            <DialogTitle>{t("审批请假申请")}</DialogTitle>
             <DialogDescription>
-              审批 {Array.isArray(editingLeave?.expand?.teacher_id)
+              {t("审批")} {Array.isArray(editingLeave?.expand?.teacher_id)
    ? editingLeave?.expand?.teacher_id[0]?.name
-   : editingLeave?.expand?.teacher_id?.name} 的请假申请
+   : editingLeave?.expand?.teacher_id?.name} {t("的请假申请")}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleApprovalSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="approval_status">审批结果</Label>
+              <Label htmlFor="approval_status">{t("审批结果")}</Label>
               <Select value={approvalForm.status} onValueChange={(value: any) => 
                 setApprovalForm(prev => ({ ...prev, status: value }))
               }>
@@ -737,7 +737,7 @@ export default function TeacherLeaveManagement() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="approved">批准</SelectItem>
+                  <SelectItem value="approved">{t("批准")}</SelectItem>
                   <SelectItem value="rejected">{t('teacher.reject')}</SelectItem>
                 </SelectContent>
               </Select>
@@ -745,7 +745,7 @@ export default function TeacherLeaveManagement() {
 
             {approvalForm.status === 'rejected' && (
               <div>
-                <Label htmlFor="rejection_reason">拒绝原因</Label>
+                <Label htmlFor="rejection_reason">{t("拒绝原因")}</Label>
                 <Textarea
                   id="rejection_reason"
                   value={approvalForm.rejection_reason}
@@ -754,13 +754,13 @@ export default function TeacherLeaveManagement() {
                     rejection_reason: e.target.value 
                   }))}
                   rows={3}
-                  placeholder="请说明拒绝的原因..."
+                  placeholder={t("请说明拒绝的原因...")}
                 />
               </div>
             )}
 
             <div>
-              <Label htmlFor="approval_notes">审批备注</Label>
+              <Label htmlFor="approval_notes">{t("审批备注")}</Label>
               <Textarea
                 id="approval_notes"
                 value={approvalForm.notes}
@@ -769,13 +769,13 @@ export default function TeacherLeaveManagement() {
                   notes: e.target.value 
                 }))}
                 rows={2}
-                placeholder="审批意见或备注..."
+                placeholder={t("审批意见或备注...")}
               />
             </div>
 
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setApprovalDialogOpen(false)}>
-                取消
+                {t("取消")}
               </Button>
               <Button type="submit" variant={approvalForm.status === 'approved' ? 'default' : 'destructive'}>
                 {approvalForm.status === 'approved' ? '批准申请' : '拒绝申请'}

@@ -17,6 +17,7 @@ import { createElement, type ComponentType, useState, useEffect, useRef } from "
 import { Fee } from "@/types/fees"
 import { Student } from "@/hooks/useStudents"
 import type { StudentAdjustment } from "@/hooks/useStudentFees"
+import { useLanguage } from "@/contexts/language-context";
 
 const ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
   GraduationCap, BookOpen, Package, CalendarDays, Utensils, Bus,
@@ -53,6 +54,7 @@ export const FeeCard = ({
   assignFeeToStudent, removeFeeFromStudent, hasInvoiceThisMonth,
   getLocalAdjustment, setLocalDiscount, toggleLocalSixMonthFeeId, setLocalSixMonthPayRate, setLocalSixMonthPayRateType, onRefreshFees,
  }: FeeCardProps) => {
+  const { t } = useLanguage();
   const studentId = student.id
   const [expanded, setExpanded] = useState(false)
   const [localEditMode, setLocalEditMode] = useState(false)
@@ -141,9 +143,9 @@ export const FeeCard = ({
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold text-sm text-slate-900 truncate">{student.student_name}</h3>
               {hasInvoice ? (
-                <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] px-1.5 py-0 h-4">已开单</Badge>
+                <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] px-1.5 py-0 h-4">{t("已开单")}</Badge>
               ) : (
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-blue-200 text-blue-600">待开单</Badge>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-blue-200 text-blue-600">{t("待开单")}</Badge>
               )}
             </div>
             <p className="text-xs text-slate-400 mt-0.5">{student.student_id}</p>
@@ -177,7 +179,7 @@ export const FeeCard = ({
           <CreditCard className="h-4 w-4 text-emerald-500" />
           <span className="text-lg font-bold text-emerald-600">RM {localTotal}</span>
           {localTotal > 0 && (
-            <span className="text-xs text-slate-400">({assignedCount}项)</span>
+            <span className="text-xs text-slate-400">({assignedCount}{t("项)")}</span>
           )}
         </div>
         <div className="flex items-center gap-1">
@@ -187,7 +189,7 @@ export const FeeCard = ({
             onClick={(e) => { e.stopPropagation(); onCreateInvoice?.(studentId) }}
           >
             <FileText className="h-3 w-3 mr-1" />
-            开单
+            {t("开单")}
           </Button>
           <Button
             variant="ghost" size="sm" className="h-7 w-7 p-0"
@@ -204,11 +206,11 @@ export const FeeCard = ({
           {/* Discount panel */}
           {(editMode || localEditMode) && (
             <div className="px-4 py-3 bg-blue-50/50 border-b space-y-2">
-              <p className="text-xs font-semibold text-blue-700">费用调整</p>
+              <p className="text-xs font-semibold text-blue-700">{t("费用调整")}</p>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label className="text-[10px] text-slate-500">
-                    月折扣({adjustment.discount_type === 'percent' ? '%' : 'RM'})
+                    {t("月折扣(")}{adjustment.discount_type === 'percent' ? '%' : 'RM'})
                   </Label>
                   <div className="flex gap-1">
                     <Input
@@ -235,7 +237,7 @@ export const FeeCard = ({
                 </div>
                 <div>
                   <Label className="text-[10px] text-slate-500">
-                    预付折扣({adjustment.six_month_pay_rate_type === 'percent' ? '%' : 'RM'})
+                    {t("预付折扣(")}{adjustment.six_month_pay_rate_type === 'percent' ? '%' : 'RM'})
                   </Label>
                   <div className="flex gap-1">
                     <Input
@@ -322,7 +324,7 @@ export const FeeCard = ({
                                       ? 'bg-amber-100 border-amber-400 text-amber-700'
                                       : 'border-slate-200 text-slate-400'
                                   }`}
-                                >6月</button>
+                                >{t("6月")}</button>
                               )}
                               {(editMode || localEditMode) && fee.type === 'daily' && assigned ? (
                                 <span className="flex items-center gap-0.5">
@@ -341,7 +343,7 @@ export const FeeCard = ({
                                     disabled={savingQty.has(fee.id)}
                                     className="w-10 h-5 text-[10px] text-center border rounded"
                                   />
-                                  <span className="text-[10px] text-slate-400">天</span>
+                                  <span className="text-[10px] text-slate-400">{t("天")}</span>
                                 </span>
                               ) : null}
                               <span className="text-slate-400">

@@ -228,7 +228,7 @@ export default function SmartStudentSelector({
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    placeholder="搜索学生姓名、学号、家长..."
+                    placeholder={t("搜索学生姓名、学号、家长...")}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -311,7 +311,7 @@ export default function SmartStudentSelector({
               {/* 所有学生 */}
               <CommandGroup heading={recentStudentsList.length > 0 ? "所有学生" : "学生列表"}>
                 {filteredStudents.length === 0 ? (
-                  <CommandEmpty>没有找到匹配的学生</CommandEmpty>
+                  <CommandEmpty>{t("没有找到匹配的学生")}</CommandEmpty>
                 ) : (
                   filteredStudents.map((student) => (
                     <CommandItem
@@ -334,7 +334,7 @@ export default function SmartStudentSelector({
                         </div>
                         {student.parentName && (
                           <div className="text-xs text-gray-400">
-                            家长: {student.parentName}
+                            {t("家长:")} {student.parentName}
                           </div>
                         )}
                       </div>

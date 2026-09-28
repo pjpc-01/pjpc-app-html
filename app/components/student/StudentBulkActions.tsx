@@ -43,12 +43,12 @@ export default function StudentBulkActions({
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-blue-600" />
               <span className="font-medium text-blue-900">
-                已选择 {selectedCount} 名学生
+                {t("已选择")} {selectedCount} {t("名学生")}
               </span>
             </div>
             
             <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-              {selectedCount} 项
+              {selectedCount} {t("项")}
             </Badge>
           </div>
           
@@ -60,7 +60,7 @@ export default function StudentBulkActions({
               disabled={selectedStudents.length === 0}
             >
               <Download className="h-4 w-4 mr-2" />
-              导出选中
+              {t("导出选中")}
             </Button>
             
             <PermissionGate permission="students.delete" role={userRole} showDisabled>
@@ -68,20 +68,20 @@ export default function StudentBulkActions({
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="sm">
                     <Trash2 className="h-4 w-4 mr-2" />
-                    批量删除
+                    {t("批量删除")}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>确认批量删除</AlertDialogTitle>
+                    <AlertDialogTitle>{t("确认批量删除")}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      您确定要删除选中的 {selectedCount} 名学生吗？此操作无法撤销。
+                      {t("您确定要删除选中的")} {selectedCount} {t("名学生吗？此操作无法撤销。")}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>{t('report.cancel')}</AlertDialogCancel>
                     <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700">
-                      确认删除
+                      {t("确认删除")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -94,7 +94,7 @@ export default function StudentBulkActions({
               onClick={onClearSelection}
             >
               <X className="h-4 w-4 mr-2" />
-              清除选择
+              {t("清除选择")}
             </Button>
           </div>
         </div>

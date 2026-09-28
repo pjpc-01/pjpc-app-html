@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { RefreshCw, Users, Wifi, WifiOff } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context";
 
 interface TVBoardHeaderProps {
   center: string
@@ -16,6 +17,7 @@ export default function TVBoardHeader({
   isRealtime,
   onRefresh,
 }: TVBoardHeaderProps) {
+  const { t } = useLanguage();
   return (
     <motion.div
       className="bg-gray-800 rounded-lg p-4 mb-4"
@@ -30,10 +32,10 @@ export default function TVBoardHeader({
           </div>
           <div>
             <h1 className="text-4xl font-bold text-white">
-              {center} 积分排行榜
+              {center} {t("积分排行榜")}
             </h1>
             <p className="text-xl text-gray-400">
-              共 {studentCount} 名学生
+              {t("共")} {studentCount} {t("名学生")}
             </p>
           </div>
         </div>
@@ -44,12 +46,12 @@ export default function TVBoardHeader({
               {isRealtime ? (
                 <>
                   <Wifi className="w-4 h-4 text-green-400" />
-                  <span className="text-green-400 font-medium">实时更新</span>
+                  <span className="text-green-400 font-medium">{t("实时更新")}</span>
                 </>
               ) : (
                 <>
                   <WifiOff className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-400 font-medium">离线模式</span>
+                  <span className="text-gray-400 font-medium">{t("离线模式")}</span>
                 </>
               )}
             </div>
@@ -58,7 +60,7 @@ export default function TVBoardHeader({
               className="text-gray-400 hover:text-white text-sm flex items-center gap-1 mt-1"
             >
               <RefreshCw className="w-3 h-3" />
-              刷新
+              {t("刷新")}
             </button>
           </div>
         </div>

@@ -126,19 +126,19 @@ export default function StudentList({
               className="cursor-pointer hover:bg-gray-50"
               onClick={() => handleSort('name')}
             >
-              姓名
+              {t("姓名")}
             </TableHead>
             <TableHead 
               className="cursor-pointer hover:bg-gray-50"
               onClick={() => handleSort('studentId')}
             >
-              学号
+              {t("学号")}
             </TableHead>
             <TableHead 
               className="cursor-pointer hover:bg-gray-50"
               onClick={() => handleSort('grade')}
             >
-              年级
+              {t("年级")}
             </TableHead>
             <TableHead>{t('student.father')}</TableHead>
             <TableHead>{t('student.mother')}</TableHead>
@@ -147,7 +147,7 @@ export default function StudentList({
               className="cursor-pointer hover:bg-gray-50"
               onClick={() => handleSort('status')}
             >
-              状态
+              {t("状态")}
             </TableHead>
             <TableHead className="w-24">{t('teacher.actions')}</TableHead>
           </TableRow>
@@ -180,9 +180,9 @@ export default function StudentList({
               <TableCell className="text-slate-500">
                 {student.father_phone || student.mother_phone ? (
                   <span className="text-xs">
-                    {student.father_phone && <span>父: {student.father_phone}</span>}
+                    {student.father_phone && <span>{t("父:")} {student.father_phone}</span>}
                     {student.father_phone && student.mother_phone && <span className="mx-1">|</span>}
-                    {student.mother_phone && <span>母: {student.mother_phone}</span>}
+                    {student.mother_phone && <span>{t("母:")} {student.mother_phone}</span>}
                   </span>
                 ) : '-'}
               </TableCell>

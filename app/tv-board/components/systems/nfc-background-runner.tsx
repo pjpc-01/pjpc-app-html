@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { tvLog } from '../../utils/logger'
 import { unifiedNFCManager, NFCReaderType } from '@/lib/usb-nfc-reader'
+import { useLanguage } from "@/contexts/language-context";
 
 interface NFCBackgroundRunnerProps {
   center: string
@@ -366,6 +367,7 @@ export default function NFCBackgroundRunner({
   students = [],
   teachers = []
 }: NFCBackgroundRunnerProps) {
+  const { t } = useLanguage();
   const [isRunning, setIsRunning] = useState(false)
   const [lastCardData, setLastCardData] = useState<string | null>(null)
   const [connectedReaders, setConnectedReaders] = useState<string[]>([])
@@ -705,6 +707,7 @@ export default function NFCBackgroundRunner({
 
   // 成功提示组件
   const SuccessNotification = () => {
+  const { t } = useLanguage();
     if (!successMessage) return null
     
     return (
@@ -714,7 +717,7 @@ export default function NFCBackgroundRunner({
           <div>
             <div className="font-bold text-lg">{successMessage.name}</div>
             <div className="text-sm opacity-90">
-              {successMessage.type === 'student' ? '学生' : '教师'} 打卡成功
+              {successMessage.type === 'student' ? '学生' : '教师'} {t("打卡成功")}
             </div>
           </div>
         </div>
@@ -724,6 +727,7 @@ export default function NFCBackgroundRunner({
 
   // 错误提示组件
   const ErrorNotification = () => {
+  const { t } = useLanguage();
     if (!errorMessage) return null
     
     return (
@@ -731,7 +735,7 @@ export default function NFCBackgroundRunner({
         <div className="flex items-center space-x-2">
           <div className="w-3 h-3 bg-red-400 rounded-full"></div>
           <div>
-            <div className="font-bold text-lg">打卡失败</div>
+            <div className="font-bold text-lg">{t("打卡失败")}</div>
             <div className="text-sm opacity-90">{errorMessage}</div>
           </div>
         </div>
@@ -748,30 +752,30 @@ export default function NFCBackgroundRunner({
       <>
         <div className="fixed top-4 right-4 z-50 bg-black/80 text-white p-2 rounded text-xs max-w-xs">
           <div>NFC: {isRunning ? '运行中' : '已停止'}</div>
-          <div>中心: {center}</div>
-          <div>协议: {typeof window !== 'undefined' ? window.location.protocol : 'unknown'}</div>
+          <div>{t("中心:")} {center}</div>
+          <div>{t("协议:")} {typeof window !== 'undefined' ? window.location.protocol : 'unknown'}</div>
           <div className={isHttps ? 'text-green-400' : 'text-red-400'}>
             HTTPS: {isHttps ? '✅' : '❌'}
           </div>
           <div className={hasWebNFC ? 'text-green-400' : 'text-red-400'}>
             Web NFC: {hasWebNFC ? '✅' : '❌'}
           </div>
-          <div>读取器: {connectedReaders.length > 0 ? connectedReaders.join(', ') : '无'}</div>
-          <div className="text-green-400">HID键盘: ✅ 已启用（全局模式）</div>
+          <div>{t("读取器:")} {connectedReaders.length > 0 ? connectedReaders.join(', ') : '无'}</div>
+          <div className="text-green-400">{t("HID键盘: ✅ 已启用（全局模式）")}</div>
           <div className={document.hasFocus() ? 'text-green-400' : 'text-yellow-400'}>
-            窗口焦点: {document.hasFocus() ? '✅ 有焦点' : '⚠️ 无焦点'}
+            {t("窗口焦点:")} {document.hasFocus() ? '✅ 有焦点' : '⚠️ 无焦点'}
           </div>
-          {lastCardData && <div>最后读卡: {lastCardData.slice(-8)}</div>}
-          <div>学生数: {students.length}</div>
-          <div>教师数: {teachers.length}</div>
+          {lastCardData && <div>{t("最后读卡:")} {lastCardData.slice(-8)}</div>}
+          <div>{t("学生数:")} {students.length}</div>
+          <div>{t("教师数:")} {teachers.length}</div>
           {!isHttps && (
             <div className="text-yellow-400 text-xs mt-1">
-              ⚠️ 手机NFC需要HTTPS
+              {t("⚠️ 手机NFC需要HTTPS")}
             </div>
           )}
           {!hasWebNFC && (
             <div className="text-yellow-400 text-xs mt-1">
-              ⚠️ 浏览器不支持Web NFC
+              {t("⚠️ 浏览器不支持Web NFC")}
             </div>
           )}
         </div>

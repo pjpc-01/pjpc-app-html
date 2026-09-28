@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Clock, BookOpen, Users, Loader2, AlertCircle, GraduationCap, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { gradeCanon, gradeLabel, gradeRank } from "@/lib/grades"
+import { useLanguage } from "@/contexts/language-context";
 
 // ============================================================
 // 类型
@@ -102,6 +103,7 @@ function getSubjectColor(subject: string): { bg: string; text: string } {
 // ============================================================
 
 export default function GradeGanttChart() {
+  const { t } = useLanguage();
   const [courses, setCourses] = useState<GanttCourse[]>([])
   const [entries, setEntries] = useState<GanttEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -183,7 +185,7 @@ export default function GradeGanttChart() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-indigo-500 mb-3" />
-          <p className="text-gray-500 text-sm">加载甘特图数据...</p>
+          <p className="text-gray-500 text-sm">{t("加载甘特图数据...")}</p>
         </div>
       </div>
     )
@@ -195,7 +197,7 @@ export default function GradeGanttChart() {
         <CardContent className="p-6 text-center">
           <AlertCircle className="h-10 w-10 mx-auto text-red-400 mb-3" />
           <p className="text-red-700 font-medium mb-4">{error}</p>
-          <Button variant="outline" onClick={loadData}><RefreshCw className="h-4 w-4 mr-2" />重试</Button>
+          <Button variant="outline" onClick={loadData}><RefreshCw className="h-4 w-4 mr-2" />{t("重试")}</Button>
         </CardContent>
       </Card>
     )
@@ -212,21 +214,21 @@ export default function GradeGanttChart() {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <GraduationCap className="h-4 w-4 text-indigo-500" />
-          年级时间表甘特图
+          {t("年级时间表甘特图")}
         </CardTitle>
-        <CardDescription>统一时间表（行=星期、列=一天时间），各年级课程平铺显示；用年级 filter 开关想看哪些年级</CardDescription>
+        <CardDescription>{t("统一时间表（行=星期、列=一天时间），各年级课程平铺显示；用年级 filter 开关想看哪些年级")}</CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
         {/* 年级 filter bar */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-gray-500 font-medium mr-1">年级：</span>
+          <span className="text-xs text-gray-500 font-medium mr-1">{t("年级：")}</span>
           <Badge
             variant="secondary"
             className="cursor-pointer select-none bg-slate-100 text-slate-700"
             onClick={selectAll}
           >
-            全选
+            {t("全选")}
           </Badge>
           {gradeOptions.map((g) => {
             const on = activeGrades.includes(g)
@@ -243,7 +245,7 @@ export default function GradeGanttChart() {
           })}
           <div className="flex-1" />
           <Badge variant="outline" className="gap-1 text-xs">
-            <BookOpen className="h-3 w-3" /> {visibleEntries.length} 排课
+            <BookOpen className="h-3 w-3" /> {visibleEntries.length} {t("排课")}
           </Badge>
         </div>
 
@@ -251,7 +253,7 @@ export default function GradeGanttChart() {
         {gradeOptions.length === 0 && (
           <div className="text-center py-10 text-gray-400">
             <GraduationCap className="h-10 w-10 mx-auto mb-2 text-gray-300" />
-            <p className="text-sm">暂无课程数据，请先在课程管理中创建课程</p>
+            <p className="text-sm">{t("暂无课程数据，请先在课程管理中创建课程")}</p>
           </div>
         )}
 

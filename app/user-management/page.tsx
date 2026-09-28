@@ -121,7 +121,7 @@ export default function UserManagementPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <ShieldOff className="h-12 w-12 text-red-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-red-600 mb-2">访问被拒绝</h2>
+          <h2 className="text-xl font-bold text-red-600 mb-2">{t("访问被拒绝")}</h2>
           <Button onClick={() => router.push("/")}>{t('system.back_to_home')}</Button>
         </div>
       </div>
@@ -132,26 +132,26 @@ export default function UserManagementPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">用户与权限管理</h1>
-          <p className="text-sm text-muted-foreground">管理用户账号、角色权限和档案绑定</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("用户与权限管理")}</h1>
+          <p className="text-sm text-muted-foreground">{t("管理用户账号、角色权限和档案绑定")}</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => router.push("/")} className="gap-2">
-          <ArrowLeft className="h-4 w-4" />返回
+          <ArrowLeft className="h-4 w-4" />{t("返回")}
         </Button>
       </div>
 
       <Tabs defaultValue="users" onValueChange={handleTabChange}>
         <TabsList className="grid grid-cols-2 w-full max-w-md">
-          <TabsTrigger value="users" className="flex items-center gap-2"><Users className="h-4 w-4" />用户列表</TabsTrigger>
-          <TabsTrigger value="permissions" className="flex items-center gap-2"><Shield className="h-4 w-4" />角色权限</TabsTrigger>
+          <TabsTrigger value="users" className="flex items-center gap-2"><Users className="h-4 w-4" />{t("用户列表")}</TabsTrigger>
+          <TabsTrigger value="permissions" className="flex items-center gap-2"><Shield className="h-4 w-4" />{t("角色权限")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users" className="space-y-4 mt-4">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <Users className="h-4 w-4" />所有用户
-                {!loading && <span className="text-sm font-normal text-muted-foreground">（{users.length} 人）</span>}
+                <Users className="h-4 w-4" />{t("所有用户")}
+                {!loading && <span className="text-sm font-normal text-muted-foreground">{t("（")}{users.length} {t("人）")}</span>}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -167,7 +167,7 @@ export default function UserManagementPage() {
                         <TableHead>{t('student.name')}</TableHead>
                         <TableHead>{t('report.email')}</TableHead>
                         <TableHead>{t('admin.role')}</TableHead>
-                        <TableHead>绑定档案</TableHead>
+                        <TableHead>{t("绑定档案")}</TableHead>
                         <TableHead>{t('user.verify')}</TableHead>
                         <TableHead>{t('admin.registration_time')}</TableHead>
                         <TableHead className="text-right">{t('teacher.actions')}</TableHead>
@@ -187,7 +187,7 @@ export default function UserManagementPage() {
                             >
                               {roleOptions.map((opt) => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
                             </select>
-                            {user.id === userProfile?.id && <span className="text-xs text-muted-foreground ml-1">（你）</span>}
+                            {user.id === userProfile?.id && <span className="text-xs text-muted-foreground ml-1">{t("（你）")}</span>}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1">
@@ -197,11 +197,11 @@ export default function UserManagementPage() {
                                   onChange={(e) => { if (e.target.value) linkProfile(user.id, e.target.value) }}
                                   className="text-xs rounded border border-gray-200 bg-white px-1 py-0.5 max-w-[160px] truncate"
                                 >
-                                  <option value="">— 未绑定 —</option>
-                                  <optgroup label="👨‍🏫 教师">
+                                  <option value="">{t("— 未绑定 —")}</option>
+                                  <optgroup label={t("👨‍🏫 教师")}>
                                     {teachers.map(t => (<option key={t.id} value={t.id}>{t.name || t.teacher_name || t.id}</option>))}
                                   </optgroup>
-                                  <optgroup label="🎓 学生">
+                                  <optgroup label={t("🎓 学生")}>
                                     {students.map(s => (<option key={s.id} value={s.id}>{s.name || s.student_name || s.id}</option>))}
                                   </optgroup>
                                 </select>
@@ -213,9 +213,9 @@ export default function UserManagementPage() {
                             <button onClick={() => toggleVerified(user.id, user.verified)} disabled={updating === user.id}
                               className="inline-flex items-center gap-1 hover:opacity-80 disabled:opacity-50">
                               {user.verified ? (
-                                <Badge className="bg-green-50 text-green-700 border-green-200"><MailCheck className="h-3 w-3 mr-1" />已验证</Badge>
+                                <Badge className="bg-green-50 text-green-700 border-green-200"><MailCheck className="h-3 w-3 mr-1" />{t("已验证")}</Badge>
                               ) : (
-                                <Badge variant="outline" className="text-muted-foreground"><MailX className="h-3 w-3 mr-1" />未验证</Badge>
+                                <Badge variant="outline" className="text-muted-foreground"><MailX className="h-3 w-3 mr-1" />{t("未验证")}</Badge>
                               )}
                             </button>
                           </TableCell>

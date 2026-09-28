@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Wifi, WifiOff, Globe, Home, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react'
 import { getPocketBase, reinitializePocketBase } from '@/lib/pocketbase'
+import { useLanguage } from "@/contexts/language-context";
 
 interface NetworkStatus {
   url: string
@@ -14,6 +15,7 @@ interface NetworkStatus {
 }
 
 export default function ConnectionStatus() {
+  const { t } = useLanguage();
   const [networkStatus, setNetworkStatus] = useState<NetworkStatus | null>(null)
   const [isChecking, setIsChecking] = useState(false)
   const [lastCheck, setLastCheck] = useState<Date | null>(null)
@@ -87,7 +89,7 @@ export default function ConnectionStatus() {
     return (
       <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg">
         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600"></div>
-        <span className="text-xs text-gray-700">初始化中...</span>
+        <span className="text-xs text-gray-700">{t("初始化中...")}</span>
       </div>
     )
   }
@@ -96,7 +98,7 @@ export default function ConnectionStatus() {
     return (
       <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
-        <span className="text-xs text-blue-700">检测中...</span>
+        <span className="text-xs text-blue-700">{t("检测中...")}</span>
       </div>
     )
   }
@@ -169,7 +171,7 @@ export default function ConnectionStatus() {
         onClick={handleReconnect}
         disabled={isChecking}
         className="p-1 text-gray-400 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        title="重新检测网络"
+        title={t("重新检测网络")}
       >
         <RefreshCw className={`h-3 w-3 ${isChecking ? 'animate-spin' : ''}`} />
       </button>

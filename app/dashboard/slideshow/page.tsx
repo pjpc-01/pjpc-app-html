@@ -53,7 +53,7 @@ export default function DashboardPage() {
   const { t } = useLanguage()
   return (
     <Suspense fallback={
-      <PageLayout title="分行仪表板" description={t('teacher.loading')} userRole="admin" background="from-slate-50 to-gray-50">
+      <PageLayout title={t("分行仪表板")} description={t('teacher.loading')} userRole="admin" background="from-slate-50 to-gray-50">
         <div className="text-center py-16"><Loader2 className="h-6 w-6 mx-auto animate-spin text-gray-400" /></div>
       </PageLayout>
     }>
@@ -64,6 +64,7 @@ export default function DashboardPage() {
 
 // ─── Birthday Widget ────────────────────────────────────────────────
 function BirthdayWidget({ students }: { students: Student[] }) {
+  const { t } = useLanguage();
   const now = new Date()
   const currentMonth = now.getMonth() // 0-indexed
 
@@ -81,14 +82,14 @@ function BirthdayWidget({ students }: { students: Student[] }) {
     })
 
   if (birthdays.length === 0) {
-    return <p className="text-gray-400 text-sm text-center py-8">本月没有寿星 🎂</p>
+    return <p className="text-gray-400 text-sm text-center py-8">{t("本月没有寿星 🎂")}</p>
   }
 
   const monthLabel = now.toLocaleDateString("zh-CN", { month: "long" })
 
   return (
     <div>
-      <p className="text-xs text-gray-400 mb-3">{monthLabel} · {birthdays.length} 位寿星</p>
+      <p className="text-xs text-gray-400 mb-3">{monthLabel} · {birthdays.length} {t("位寿星")}</p>
       <div className="space-y-2">
         {birthdays.map(s => {
           const day = s.dob ? new Date(s.dob).getDate() : "?"
@@ -99,11 +100,11 @@ function BirthdayWidget({ students }: { students: Student[] }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-800 truncate">{s.name}</p>
-                <p className="text-[11px] text-gray-400">{s.grade}</p>
+                <p className="text-[11px] text-gray-400">{t(s.grade)}</p>
               </div>
               <div className="text-right">
                 <p className="text-lg font-bold text-pink-500">{day}</p>
-                <p className="text-[10px] text-gray-400">日</p>
+                <p className="text-[10px] text-gray-400">{t("日")}</p>
               </div>
             </div>
           )
@@ -144,8 +145,8 @@ function EventsWidget({ events, onUpdate }: { events: any[]; onUpdate?: (events:
   if (events.length === 0 && !editing) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-400 text-sm mb-2">暂无活动</p>
-        {onUpdate && <Button variant="ghost" size="sm" className="text-xs" onClick={() => setEditing(true)}>+ 添加活动</Button>}
+        <p className="text-gray-400 text-sm mb-2">{t("暂无活动")}</p>
+        {onUpdate && <Button variant="ghost" size="sm" className="text-xs" onClick={() => setEditing(true)}>{t("+ 添加活动")}</Button>}
       </div>
     )
   }
@@ -180,13 +181,13 @@ function EventsWidget({ events, onUpdate }: { events: any[]; onUpdate?: (events:
       {onUpdate && (
         editing ? (
           <div className="flex items-center gap-2 mt-2 px-2">
-            <Input placeholder="活动名称" value={newTitle} onChange={e => setNewTitle(e.target.value)} className="h-7 text-xs flex-1" />
+            <Input placeholder={t("活动名称")} value={newTitle} onChange={e => setNewTitle(e.target.value)} className="h-7 text-xs flex-1" />
             <Input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className="h-7 text-xs w-28" />
             <Button size="sm" className="h-7 text-xs" onClick={addEvent}>{t('dashboard.add')}</Button>
             <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditing(false)}>{t('report.cancel')}</Button>
           </div>
         ) : (
-          <Button variant="ghost" size="sm" className="text-xs mt-1 w-full" onClick={() => setEditing(true)}>+ 添加活动</Button>
+          <Button variant="ghost" size="sm" className="text-xs mt-1 w-full" onClick={() => setEditing(true)}>{t("+ 添加活动")}</Button>
         )
       )}
     </div>
@@ -207,8 +208,8 @@ function AnnouncementWidget({ text, onUpdate }: { text: string; onUpdate?: (text
   if (!text && !editing) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-400 text-sm mb-2">暂无公告</p>
-        {onUpdate && <Button variant="ghost" size="sm" className="text-xs" onClick={() => setEditing(true)}>+ 写公告</Button>}
+        <p className="text-gray-400 text-sm mb-2">{t("暂无公告")}</p>
+        {onUpdate && <Button variant="ghost" size="sm" className="text-xs" onClick={() => setEditing(true)}>{t("+ 写公告")}</Button>}
       </div>
     )
   }
@@ -219,7 +220,7 @@ function AnnouncementWidget({ text, onUpdate }: { text: string; onUpdate?: (text
         <div className="space-y-2">
           <textarea value={draft} onChange={e => setDraft(e.target.value)}
             className="w-full min-h-[80px] p-2 text-sm border rounded-lg resize-y focus:outline-none focus:ring-2 focus:ring-blue-200"
-            placeholder="输入公告内容..." />
+            placeholder={t("输入公告内容...")} />
           <div className="flex gap-2">
             <Button size="sm" className="h-7 text-xs" onClick={save}>{t('report.save')}</Button>
             <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setDraft(text); setEditing(false) }}>{t('report.cancel')}</Button>
@@ -254,6 +255,7 @@ function SlideshowOverlay({
   announcementsByWidget: Record<string, string>
   onClose: () => void
 }) {
+  const { t } = useLanguage();
   const [idx, setIdx] = useState(0)
   const [paused, setPaused] = useState(false)
   const [events, setEvents] = useState<{ title: string; date: string; center: string }[]>([])
@@ -377,7 +379,7 @@ function SlideshowOverlay({
       <div className="flex items-center justify-between px-4 py-2 bg-gray-800/80 text-white shrink-0">
         <div className="flex items-center gap-3">
           <MonitorPlay className="h-4 w-4 text-blue-400" />
-          <span className="text-xs font-semibold">{centerName} · 幻灯片模式</span>
+          <span className="text-xs font-semibold">{centerName} {t("· 幻灯片模式")}</span>
           <Badge className="text-[10px] bg-gray-700 text-gray-300">{idx + 1}/{expandedList.length}</Badge>
         </div>
         <div className="flex items-center gap-2">
@@ -670,7 +672,7 @@ function DashboardContent() {
 
   if (loading) {
     return (
-      <PageLayout title="分行仪表板" description={t('teacher.loading')} userRole="admin" background="from-slate-50 to-gray-50">
+      <PageLayout title={t("分行仪表板")} description={t('teacher.loading')} userRole="admin" background="from-slate-50 to-gray-50">
         <div className="text-center py-16"><Loader2 className="h-6 w-6 mx-auto animate-spin text-gray-400" /></div>
       </PageLayout>
     )
@@ -692,7 +694,7 @@ function DashboardContent() {
       )}
 
       <PageLayout
-        title="分行仪表板"
+        title={t("分行仪表板")}
         description={`${centerStudents.length} 名学生 · ${enabledWidgets.length} 个组件`}
         userRole="admin"
         background="from-slate-50 to-gray-50"
@@ -721,7 +723,7 @@ function DashboardContent() {
               <Button variant="outline" size="sm" className="h-8 text-xs gap-1"
                 onClick={() => setSlideshow(true)} disabled={enabledWidgets.length === 0}>
                 <MonitorPlay className="h-3 w-3" />
-                幻灯片
+                {t("幻灯片")}
               </Button>
             </div>
           </div>
@@ -729,7 +731,7 @@ function DashboardContent() {
           {/* Edit mode: add widget buttons */}
           {editMode && (
             <div className="flex items-center gap-2 flex-wrap p-3 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-              <span className="text-xs text-gray-400 mr-1">添加组件：</span>
+              <span className="text-xs text-gray-400 mr-1">{t("添加组件：")}</span>
               {WIDGET_TYPES.map(t => (
                 <Button key={t.type} variant="ghost" size="sm" className="h-7 text-xs gap-1 bg-white border"
                   onClick={() => addWidget(t.type)}>
@@ -743,8 +745,8 @@ function DashboardContent() {
           {enabledWidgets.length === 0 ? (
             <div className="text-center py-20">
               <LayoutGrid className="h-10 w-10 mx-auto text-gray-200 mb-3" />
-              <p className="text-gray-400 mb-2">还没有组件</p>
-              <Button variant="outline" size="sm" className="text-xs" onClick={() => setEditMode(true)}>编辑并添加组件</Button>
+              <p className="text-gray-400 mb-2">{t("还没有组件")}</p>
+              <Button variant="outline" size="sm" className="text-xs" onClick={() => setEditMode(true)}>{t("编辑并添加组件")}</Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -779,7 +781,7 @@ function DashboardContent() {
                   <CardContent className="p-4">
                     {editMode && w.type === "leaderboard" && (
                       <div className="flex items-center gap-2 mb-3">
-                        <span className="text-[10px] text-gray-400">显示数量：</span>
+                        <span className="text-[10px] text-gray-400">{t("显示数量：")}</span>
                         {[5, 10, 15, 20].map(n => (
                           <button key={n}
                             onClick={() => updateWidgetSetting(w.id, "limit", n)}
@@ -799,7 +801,7 @@ function DashboardContent() {
           {/* Disabled widgets (edit mode only) */}
           {editMode && widgets.filter(w => !w.enabled).length > 0 && (
             <div className="mt-4">
-              <p className="text-xs text-gray-400 mb-2">已隐藏的组件：</p>
+              <p className="text-xs text-gray-400 mb-2">{t("已隐藏的组件：")}</p>
               <div className="flex gap-2 flex-wrap">
                 {widgets.filter(w => !w.enabled).map(w => (
                   <Badge key={w.id} variant="outline" className="cursor-pointer gap-1 text-[11px] py-1"

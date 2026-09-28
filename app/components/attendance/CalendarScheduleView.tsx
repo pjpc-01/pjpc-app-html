@@ -454,7 +454,7 @@ export default function CalendarScheduleView({
             </CardTitle>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setHolidayOpen(true)} className="gap-1">
-                <CalendarX2 className="h-3.5 w-3.5" />公假管理
+                <CalendarX2 className="h-3.5 w-3.5" />{t("公假管理")}
               </Button>
               <Button variant="outline" size="sm" onClick={() => {
                 const nm = addMonths(currentMonth, 1)
@@ -527,7 +527,7 @@ export default function CalendarScheduleView({
                   ))}
                   {dayLeaves.length > 2 && (
                     <div className="text-[10px] text-purple-700 font-medium px-1">
-                      +{dayLeaves.length - 2} 人请假
+                      +{dayLeaves.length - 2} {t("人请假")}
                     </div>
                   )}
 
@@ -544,7 +544,7 @@ export default function CalendarScheduleView({
                   ))}
                   {dayEvents.length > 3 && (
                     <div className="text-[10px] text-indigo-600 font-medium px-1">
-                      +{dayEvents.length - 3} 更多
+                      +{dayEvents.length - 3} {t("更多")}
                     </div>
                   )}
                 </button>
@@ -554,9 +554,9 @@ export default function CalendarScheduleView({
 
           {/* Legend */}
           <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-rose-500 inline-block" />公假（不排课）</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-purple-300 inline-block" />已批请假</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-300 inline-block" />已排班</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-rose-500 inline-block" />{t("公假（不排课）")}</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-purple-300 inline-block" />{t("已批请假")}</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-300 inline-block" />{t("已排班")}</span>
           </div>
         </CardContent>
       </Card>
@@ -573,7 +573,7 @@ export default function CalendarScheduleView({
                 {isToday(selectedDate) && <Badge className="ml-2">{t('attendance.today')}</Badge>}
               </CardTitle>
               <Button size="sm" onClick={() => setAddOpen(true)} className="gap-1 h-8">
-                <Plus className="h-3.5 w-3.5" />添加排班
+                <Plus className="h-3.5 w-3.5" />{t("添加排班")}
               </Button>
             </div>
           </CardHeader>
@@ -581,15 +581,15 @@ export default function CalendarScheduleView({
             {/* 公假提示 */}
             {selectedHoliday && (
               <div className="mb-3 p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm">
-                🎌 公假：{selectedHoliday.name_zh || selectedHoliday.name}
-                <div className="text-xs text-rose-500 mt-0.5">当天不排课</div>
+                {t("🎌 公假：")}{selectedHoliday.name_zh || selectedHoliday.name}
+                <div className="text-xs text-rose-500 mt-0.5">{t("当天不排课")}</div>
               </div>
             )}
 
             {/* 已批请假 */}
             {selectedLeaves.length > 0 && (
               <div className="mb-3">
-                <div className="text-xs font-medium text-purple-700 mb-1">请假教师（已批准）</div>
+                <div className="text-xs font-medium text-purple-700 mb-1">{t("请假教师（已批准）")}</div>
                 <div className="space-y-1">
                   {selectedLeaves.map((l) => (
                     <div key={l.id} className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-800 border border-purple-200">
@@ -629,7 +629,7 @@ export default function CalendarScheduleView({
                       size="icon"
                       className="h-7 w-7 text-muted-foreground hover:text-blue-600 hover:bg-blue-50"
                       onClick={() => openEdit(evt)}
-                      title="编辑排班"
+                      title={t("编辑排班")}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -639,7 +639,7 @@ export default function CalendarScheduleView({
                       className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50"
                       onClick={() => handleDelete(evt)}
                       disabled={deletingId === evt.id}
-                      title="删除排班"
+                      title={t("删除排班")}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -667,9 +667,9 @@ export default function CalendarScheduleView({
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div>
-              <Label className="text-xs">课程</Label>
+              <Label className="text-xs">{t("课程")}</Label>
               <Select value={form.courseId} onValueChange={handleCourseChange}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="选择课程" /></SelectTrigger>
+                <SelectTrigger className="mt-1"><SelectValue placeholder={t("选择课程")} /></SelectTrigger>
                 <SelectContent>
                   {courses.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
@@ -680,9 +680,9 @@ export default function CalendarScheduleView({
               </Select>
             </div>
             <div>
-              <Label className="text-xs">老师</Label>
+              <Label className="text-xs">{t("老师")}</Label>
               <Select value={form.teacherId} onValueChange={(v) => setForm((f) => ({ ...f, teacherId: v }))}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="选择老师" /></SelectTrigger>
+                <SelectTrigger className="mt-1"><SelectValue placeholder={t("选择老师")} /></SelectTrigger>
                 <SelectContent>
                   {teachers.map((t) => (
                     <SelectItem key={t.id} value={t.id}>{(t.name || t.teacher_name || '').trim()}</SelectItem>
@@ -692,17 +692,17 @@ export default function CalendarScheduleView({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">开始时间</Label>
+                <Label className="text-xs">{t("开始时间")}</Label>
                 <Input type="time" value={form.start} onChange={(e) => setForm((f) => ({ ...f, start: e.target.value }))} className="mt-1" />
               </div>
               <div>
-                <Label className="text-xs">结束时间</Label>
+                <Label className="text-xs">{t("结束时间")}</Label>
                 <Input type="time" value={form.end} onChange={(e) => setForm((f) => ({ ...f, end: e.target.value }))} className="mt-1" />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setAddOpen(false); setEditingEvent(null) }} disabled={saving}>取消</Button>
+            <Button variant="outline" onClick={() => { setAddOpen(false); setEditingEvent(null) }} disabled={saving}>{t("取消")}</Button>
             <Button onClick={handleAddSchedule} disabled={saving || !form.courseId || !form.teacherId || !form.start || !form.end}>
               {saving ? '保存中...' : (editingEvent ? '保存' : '添加')}
             </Button>
@@ -715,10 +715,10 @@ export default function CalendarScheduleView({
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CalendarX2 className="h-4 w-4" /> 公假管理
+              <CalendarX2 className="h-4 w-4" /> {t("公假管理")}
             </DialogTitle>
             <DialogDescription>
-              {format(currentMonth, "yyyy 年 M 月", { locale: zhCN })} 的公假（公假当天自动不排课）
+              {format(currentMonth, "yyyy 年 M 月", { locale: zhCN })} {t("的公假（公假当天自动不排课）")}
             </DialogDescription>
           </DialogHeader>
 
@@ -726,7 +726,7 @@ export default function CalendarScheduleView({
             {/* 本月公假列表 */}
             <div className="max-h-56 overflow-y-auto border rounded-lg divide-y">
               {holidays.length === 0 ? (
-                <p className="text-sm text-muted-foreground p-3 text-center">本月暂无公假</p>
+                <p className="text-sm text-muted-foreground p-3 text-center">{t("本月暂无公假")}</p>
               ) : (
                 holidays.map((h) => (
                   <div key={h.id} className="flex items-center justify-between px-3 py-2 text-sm">
@@ -736,7 +736,7 @@ export default function CalendarScheduleView({
                       {h.region && <Badge variant="outline" className="ml-2 text-[10px]">{h.region === 'federal' ? '联邦' : '雪州'}</Badge>}
                     </div>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-red-600"
-                      onClick={() => handleDeleteHoliday(h.id)} title="删除">
+                      onClick={() => handleDeleteHoliday(h.id)} title={t("删除")}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -747,27 +747,27 @@ export default function CalendarScheduleView({
             {/* 新增公假 */}
             <div className="grid grid-cols-12 gap-2 items-end border-t pt-3">
               <div className="col-span-4">
-                <Label className="text-xs">日期</Label>
+                <Label className="text-xs">{t("日期")}</Label>
                 <Input type="date" value={holidayForm.date} onChange={(e) => setHolidayForm((f) => ({ ...f, date: e.target.value }))} className="mt-1" />
               </div>
               <div className="col-span-5">
-                <Label className="text-xs">名称</Label>
-                <Input value={holidayForm.name_zh} placeholder="如：学校假期 / 雪州苏丹诞辰"
+                <Label className="text-xs">{t("名称")}</Label>
+                <Input value={holidayForm.name_zh} placeholder={t("如：学校假期 / 雪州苏丹诞辰")}
                   onChange={(e) => setHolidayForm((f) => ({ ...f, name_zh: e.target.value }))} className="mt-1" />
               </div>
               <div className="col-span-3">
-                <Label className="text-xs">类别</Label>
+                <Label className="text-xs">{t("类别")}</Label>
                 <Select value={holidayForm.region} onValueChange={(v) => setHolidayForm((f) => ({ ...f, region: v }))}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="federal">联邦</SelectItem>
-                    <SelectItem value="selangor">雪州</SelectItem>
+                    <SelectItem value="federal">{t("联邦")}</SelectItem>
+                    <SelectItem value="selangor">{t("雪州")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="col-span-12 flex justify-end">
                 <Button size="sm" onClick={handleAddHoliday} disabled={saving || !holidayForm.date || !holidayForm.name_zh} className="gap-1">
-                  <Plus className="h-3.5 w-3.5" />添加公假
+                  <Plus className="h-3.5 w-3.5" />{t("添加公假")}
                 </Button>
               </div>
             </div>

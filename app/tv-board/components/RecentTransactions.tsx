@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Clock, TrendingUp, TrendingDown, Minus, Gift } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context";
 
 interface RecentTransactionsProps {
   transactions: any[]
@@ -16,12 +17,13 @@ export default function RecentTransactions({
   error,
   isRealtime = false
 }: RecentTransactionsProps) {
+  const { t } = useLanguage();
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center text-gray-400">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-          <p>加载交易记录中...</p>
+          <p>{t("加载交易记录中...")}</p>
         </div>
       </div>
     )
@@ -31,7 +33,7 @@ export default function RecentTransactions({
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center text-red-400">
-          <p>加载失败: {error}</p>
+          <p>{t("加载失败:")} {error}</p>
         </div>
       </div>
     )
@@ -42,8 +44,8 @@ export default function RecentTransactions({
       <div className="h-full flex items-center justify-center">
         <div className="text-center text-gray-400">
           <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p className="text-lg font-medium mb-2">暂无交易记录</p>
-          <p className="text-sm opacity-75">积分变动将在这里显示</p>
+          <p className="text-lg font-medium mb-2">{t("暂无交易记录")}</p>
+          <p className="text-sm opacity-75">{t("积分变动将在这里显示")}</p>
         </div>
       </div>
     )
@@ -84,7 +86,7 @@ export default function RecentTransactions({
         transition={{ duration: 0.4 }}
       >
         <div className="flex items-center gap-2 mb-1">
-          <h3 className="text-lg font-bold text-white">最近交易</h3>
+          <h3 className="text-lg font-bold text-white">{t("最近交易")}</h3>
           <div className={`text-xs px-2 py-1 rounded ${
             isRealtime 
               ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
@@ -93,7 +95,7 @@ export default function RecentTransactions({
             {isRealtime ? '🟢 LIVE' : '🟡 POLLING'}
           </div>
         </div>
-        <p className="text-gray-400 text-sm">最近的积分变动记录</p>
+        <p className="text-gray-400 text-sm">{t("最近的积分变动记录")}</p>
       </motion.div>
 
       <div className="flex-1 overflow-y-auto">

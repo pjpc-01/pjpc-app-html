@@ -215,7 +215,7 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">加载仪表板中...</p>
+          <p className="text-gray-600">{t("加载仪表板中...")}</p>
         </div>
       </div>
     )
@@ -229,7 +229,7 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">所教年级学生</p>
+                <p className="text-sm font-medium text-gray-600">{t("所教年级学生")}</p>
                 <p className="text-2xl font-bold text-blue-600">{stats.totalStudents}</p>
               </div>
               <Users className="h-8 w-8 text-blue-600" />
@@ -241,9 +241,9 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">今日出勤</p>
+                <p className="text-sm font-medium text-gray-600">{t("今日出勤")}</p>
                 <p className="text-2xl font-bold text-green-600">{stats.todayAttendance}</p>
-                <p className="text-xs text-gray-500">出勤率 {stats.attendanceRate}%</p>
+                <p className="text-xs text-gray-500">{t("出勤率")} {stats.attendanceRate}%</p>
               </div>
               <UserCheck className="h-8 w-8 text-green-600" />
             </div>
@@ -254,9 +254,9 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">待批作业</p>
+                <p className="text-sm font-medium text-gray-600">{t("待批作业")}</p>
                 <p className="text-2xl font-bold text-orange-600">{stats.pendingAssignments}</p>
-                <p className="text-xs text-gray-500">已完成 {stats.completedAssignments}</p>
+                <p className="text-xs text-gray-500">{t("已完成")} {stats.completedAssignments}</p>
               </div>
               <BookOpen className="h-8 w-8 text-orange-600" />
             </div>
@@ -269,7 +269,7 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
               <div>
                 <p className="text-sm font-medium text-gray-600">{t('teacher.todays_classes')}</p>
                 <p className="text-2xl font-bold text-purple-600">{stats.todayClasses}</p>
-                <p className="text-xs text-gray-500">平均分 {stats.averageGrade}</p>
+                <p className="text-xs text-gray-500">{t("平均分")} {stats.averageGrade}</p>
               </div>
               <Calendar className="h-8 w-8 text-purple-600" />
             </div>
@@ -283,9 +283,9 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              今日课程表
+              {t("今日课程表")}
             </CardTitle>
-            <CardDescription>今天的课程安排</CardDescription>
+            <CardDescription>{t("今天的课程安排")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -312,7 +312,7 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
                         {getStatusIcon(schedule.status)}
                       </div>
                       <div>
-                        <p className="font-medium">{schedule.subject}</p>
+                        <p className="font-medium">{t(schedule.subject)}</p>
                         <p className="text-sm text-gray-600">{schedule.className}</p>
                       </div>
                     </div>
@@ -323,7 +323,7 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
                   </div>
                   <div className="mt-2 flex items-center justify-between text-sm text-gray-600">
                     <span>{schedule.room}</span>
-                    <span>{schedule.students} 名学生</span>
+                    <span>{schedule.students} {t("名学生")}</span>
                   </div>
                 </div>
               ))}
@@ -336,9 +336,9 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5" />
-              最近活动
+              {t("最近活动")}
             </CardTitle>
-            <CardDescription>最新的教学活动</CardDescription>
+            <CardDescription>{t("最新的教学活动")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -372,34 +372,34 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5" />
-            快速操作
+            {t("快速操作")}
           </CardTitle>
-          <CardDescription>常用功能快速访问</CardDescription>
+          <CardDescription>{t("常用功能快速访问")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Link href="/attendance">
               <Button variant="outline" className="w-full h-20 flex flex-col items-center gap-2">
                 <CreditCard className="h-6 w-6" />
-                <span className="text-sm">统一考勤</span>
+                <span className="text-sm">{t("统一考勤")}</span>
               </Button>
             </Link>
             <Link href="/schedule-management">
               <Button variant="outline" className="w-full h-20 flex flex-col items-center gap-2">
                 <BarChart3 className="h-6 w-6" />
-                <span className="text-sm">AI考勤系统</span>
+                <span className="text-sm">{t("AI考勤系统")}</span>
               </Button>
             </Link>
             <Link href="/attendance">
               <Button variant="outline" className="w-full h-20 flex flex-col items-center gap-2">
                 <UserCheck className="h-6 w-6" />
-                <span className="text-sm">点名</span>
+                <span className="text-sm">{t("点名")}</span>
               </Button>
             </Link>
             <Link href="/homework/new">
               <Button variant="outline" className="w-full h-20 flex flex-col items-center gap-2">
                 <BookOpen className="h-6 w-6" />
-                <span className="text-sm">布置作业</span>
+                <span className="text-sm">{t("布置作业")}</span>
               </Button>
             </Link>
             <Button variant="outline" className="w-full h-20 flex flex-col items-center gap-2"
@@ -407,7 +407,7 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
                 toast.info("通知功能", { description: "通知发送功能即将上线" })
               }}>
               <MessageSquare className="h-6 w-6" />
-              <span className="text-sm">发送通知</span>
+              <span className="text-sm">{t("发送通知")}</span>
             </Button>
           </div>
         </CardContent>

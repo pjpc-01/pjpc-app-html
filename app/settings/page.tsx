@@ -253,8 +253,8 @@ export default function SettingsPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">访问被拒绝</h2>
-          <p className="text-gray-600 mb-2">只有管理员可以访问系统设置</p>
+          <h2 className="text-2xl font-bold text-red-600 mb-4">{t("访问被拒绝")}</h2>
+          <p className="text-gray-600 mb-2">{t("只有管理员可以访问系统设置")}</p>
           <Button onClick={() => router.push("/")}>{t('system.back_to_home')}</Button>
         </div>
       </div>
@@ -272,11 +272,11 @@ export default function SettingsPage() {
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs flex items-center gap-1">
             <CheckCircle2 className="h-3 w-3 text-green-500" />
-            {userStats.total} 用户
+            {userStats.total} {t("用户")}
           </Badge>
           <Button variant="outline" onClick={() => router.push("/")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            返回仪表板
+            {t("返回仪表板")}
           </Button>
         </div>
       }
@@ -285,7 +285,7 @@ export default function SettingsPage() {
         {saveSuccess && (
             <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm">
               <CheckCircle2 className="h-4 w-4" />
-              保存成功
+              {t("保存成功")}
             </div>
           )}
           {saveError && (
@@ -303,7 +303,7 @@ export default function SettingsPage() {
                 <Users className="h-5 w-5 text-amber-700" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">总用户</p>
+                <p className="text-xs text-gray-500">{t("总用户")}</p>
                 <p className="text-xl font-bold">{userStats.total}</p>
               </div>
             </CardContent>
@@ -314,7 +314,7 @@ export default function SettingsPage() {
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">已验证用户</p>
+                <p className="text-xs text-gray-500">{t("已验证用户")}</p>
                 <p className="text-xl font-bold">{userStats.active}</p>
               </div>
             </CardContent>
@@ -325,7 +325,7 @@ export default function SettingsPage() {
                 <AlertTriangle className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">未验证用户</p>
+                <p className="text-xs text-gray-500">{t("未验证用户")}</p>
                 <p className="text-xl font-bold">{userStats.pending}</p>
               </div>
             </CardContent>
@@ -347,7 +347,7 @@ export default function SettingsPage() {
                 <History className="h-5 w-5 text-amber-700" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">审核日志</p>
+                <p className="text-xs text-gray-500">{t("审核日志")}</p>
                 <p className="text-xl font-bold">{auditLogs.length}</p>
               </div>
             </CardContent>
@@ -357,12 +357,12 @@ export default function SettingsPage() {
         {/* Settings Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full flex-wrap">
-            <TabsTrigger value="params" className="flex items-center gap-2"><Sliders className="h-4 w-4" />系统参数</TabsTrigger>
-            <TabsTrigger value="bank" className="flex items-center gap-2"><Building2 className="h-4 w-4" />银行</TabsTrigger>
-            <TabsTrigger value="rates" className="flex items-center gap-2"><Percent className="h-4 w-4" />费率</TabsTrigger>
-            <TabsTrigger value="permissions" className="flex items-center gap-2"><Shield className="h-4 w-4" />权限</TabsTrigger>
-            <TabsTrigger value="audit" className="flex items-center gap-2"><History className="h-4 w-4" />日志</TabsTrigger>
-            <TabsTrigger value="account" className="flex items-center gap-2"><UserCog className="h-4 w-4" />账户</TabsTrigger>
+            <TabsTrigger value="params" className="flex items-center gap-2"><Sliders className="h-4 w-4" />{t("系统参数")}</TabsTrigger>
+            <TabsTrigger value="bank" className="flex items-center gap-2"><Building2 className="h-4 w-4" />{t("银行")}</TabsTrigger>
+            <TabsTrigger value="rates" className="flex items-center gap-2"><Percent className="h-4 w-4" />{t("费率")}</TabsTrigger>
+            <TabsTrigger value="permissions" className="flex items-center gap-2"><Shield className="h-4 w-4" />{t("权限")}</TabsTrigger>
+            <TabsTrigger value="audit" className="flex items-center gap-2"><History className="h-4 w-4" />{t("日志")}</TabsTrigger>
+            <TabsTrigger value="account" className="flex items-center gap-2"><UserCog className="h-4 w-4" />{t("账户")}</TabsTrigger>
           </TabsList>
 
           {/* 1. Bank Account Settings */}
@@ -373,9 +373,9 @@ export default function SettingsPage() {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <Building2 className="h-5 w-5" />
-                      银行账户信息
+                      {t("银行账户信息")}
                     </CardTitle>
-                    <CardDescription>配置中心银行账户信息，用于发票和付款</CardDescription>
+                    <CardDescription>{t("配置中心银行账户信息，用于发票和付款")}</CardDescription>
                   </div>
                   <Button onClick={() => handleSave("bank")} disabled={saving}>
                     <Save className="h-4 w-4 mr-2" />
@@ -393,7 +393,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>账户名称</Label>
+                    <Label>{t("账户名称")}</Label>
                     <Input
                       value={bankSettings.accountName}
                       onChange={(e) => setBankSettings({ ...bankSettings, accountName: e.target.value })}
@@ -407,7 +407,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>账户类型</Label>
+                    <Label>{t("账户类型")}</Label>
                     <Input
                       value={bankSettings.accountType}
                       onChange={(e) => setBankSettings({ ...bankSettings, accountType: e.target.value })}
@@ -421,7 +421,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>货币</Label>
+                    <Label>{t("货币")}</Label>
                     <Input value="MYR (马来西亚令吉)" disabled />
                   </div>
                 </div>
@@ -429,8 +429,8 @@ export default function SettingsPage() {
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
                   <Banknote className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
                   <div className="text-sm text-amber-800">
-                    <p className="font-medium mb-1">银行信息用于发票和付款凭证</p>
-                    <p>确保银行账户信息准确，系统将使用此信息生成发票和接收付款。</p>
+                    <p className="font-medium mb-1">{t("银行信息用于发票和付款凭证")}</p>
+                    <p>{t("确保银行账户信息准确，系统将使用此信息生成发票和接收付款。")}</p>
                   </div>
                 </div>
               </CardContent>
@@ -445,9 +445,9 @@ export default function SettingsPage() {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <Percent className="h-5 w-5" />
-                      EPF / Socso / EIS 贡献费率
+                      {t("EPF / Socso / EIS 贡献费率")}
                     </CardTitle>
-                    <CardDescription>设置员工和雇主法定贡献费率（马来西亚标准）</CardDescription>
+                    <CardDescription>{t("设置员工和雇主法定贡献费率（马来西亚标准）")}</CardDescription>
                   </div>
                   <Button onClick={() => handleSave("rates")} disabled={saving}>
                     <Save className="h-4 w-4 mr-2" />
@@ -461,11 +461,11 @@ export default function SettingsPage() {
                   <div>
                     <div className="flex items-center gap-2 mb-4">
                       <PiggyBank className="h-5 w-5 text-orange-600" />
-                      <h3 className="font-semibold text-lg">EPF (KWSP) — 雇员公积金</h3>
+                      <h3 className="font-semibold text-lg">{t("EPF (KWSP) — 雇员公积金")}</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>雇员缴纳 (%)</Label>
+                        <Label>{t("雇员缴纳 (%)")}</Label>
                         <div className="relative">
                           <Input
                             type="number"
@@ -479,7 +479,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label>雇主缴纳 (%)</Label>
+                        <Label>{t("雇主缴纳 (%)")}</Label>
                         <div className="relative">
                           <Input
                             type="number"
@@ -501,11 +501,11 @@ export default function SettingsPage() {
                   <div>
                     <div className="flex items-center gap-2 mb-4">
                       <Shield className="h-5 w-5 text-amber-700" />
-                      <h3 className="font-semibold text-lg">SOCSO (PERKESO) — 社会保险</h3>
+                      <h3 className="font-semibold text-lg">{t("SOCSO (PERKESO) — 社会保险")}</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>雇员缴纳 (%)</Label>
+                        <Label>{t("雇员缴纳 (%)")}</Label>
                         <div className="relative">
                           <Input
                             type="number"
@@ -519,7 +519,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label>雇主缴纳 (%)</Label>
+                        <Label>{t("雇主缴纳 (%)")}</Label>
                         <div className="relative">
                           <Input
                             type="number"
@@ -541,11 +541,11 @@ export default function SettingsPage() {
                   <div>
                     <div className="flex items-center gap-2 mb-4">
                       <AlertTriangle className="h-5 w-5 text-amber-600" />
-                      <h3 className="font-semibold text-lg">EIS (SIP) — 就业保险</h3>
+                      <h3 className="font-semibold text-lg">{t("EIS (SIP) — 就业保险")}</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>雇员缴纳 (%)</Label>
+                        <Label>{t("雇员缴纳 (%)")}</Label>
                         <div className="relative">
                           <Input
                             type="number"
@@ -559,7 +559,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label>雇主缴纳 (%)</Label>
+                        <Label>{t("雇主缴纳 (%)")}</Label>
                         <div className="relative">
                           <Input
                             type="number"
@@ -579,9 +579,9 @@ export default function SettingsPage() {
                 <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
                   <Percent className="h-5 w-5 text-amber-700 mt-0.5 shrink-0" />
                   <div className="text-sm text-amber-800">
-                    <p className="font-medium mb-1">马来西亚法定贡献费率参考</p>
-                    <p>EPF 雇员 11% / 雇主 13% | SOCSO 雇员 0.5% / 雇主 1.75% | EIS 雇员 0.2% / 雇主 0.2%</p>
-                    <p className="text-xs mt-1">请根据最新政府公告调整费率。这些费率将用于教师薪资计算。</p>
+                    <p className="font-medium mb-1">{t("马来西亚法定贡献费率参考")}</p>
+                    <p>{t("EPF 雇员 11% / 雇主 13% | SOCSO 雇员 0.5% / 雇主 1.75% | EIS 雇员 0.2% / 雇主 0.2%")}</p>
+                    <p className="text-xs mt-1">{t("请根据最新政府公告调整费率。这些费率将用于教师薪资计算。")}</p>
                   </div>
                 </div>
               </CardContent>
@@ -596,9 +596,9 @@ export default function SettingsPage() {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <Sliders className="h-5 w-5" />
-                      系统参数配置
+                      {t("系统参数配置")}
                     </CardTitle>
-                    <CardDescription>配置中心基本信息、时区、运行模式等</CardDescription>
+                    <CardDescription>{t("配置中心基本信息、时区、运行模式等")}</CardDescription>
                   </div>
                   <Button onClick={() => handleSave("system")} disabled={saving}>
                     <Save className="h-4 w-4 mr-2" />
@@ -609,28 +609,28 @@ export default function SettingsPage() {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label>中心名称</Label>
+                    <Label>{t("中心名称")}</Label>
                     <Input
                       value={systemParams.centerName}
                       onChange={(e) => setSystemParams({ ...systemParams, centerName: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>中心代码</Label>
+                    <Label>{t("中心代码")}</Label>
                     <Input
                       value={systemParams.centerCode}
                       onChange={(e) => setSystemParams({ ...systemParams, centerCode: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>货币</Label>
+                    <Label>{t("货币")}</Label>
                     <div className="relative">
                       <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input className="pl-10" value="MYR (马来西亚令吉)" disabled />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>税率 (%)</Label>
+                    <Label>{t("税率 (%)")}</Label>
                     <div className="relative">
                       <Input
                         type="number"
@@ -642,7 +642,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>会话超时（分钟）</Label>
+                    <Label>{t("会话超时（分钟）")}</Label>
                     <Input
                       type="number"
                       value={systemParams.sessionTimeout}
@@ -654,12 +654,12 @@ export default function SettingsPage() {
                 <hr />
 
                 <div className="space-y-4">
-                  <h3 className="font-semibold">功能开关</h3>
+                  <h3 className="font-semibold">{t("功能开关")}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
-                        <p className="font-medium">开放注册</p>
-                        <p className="text-xs text-gray-500">允许新用户自行注册</p>
+                        <p className="font-medium">{t("开放注册")}</p>
+                        <p className="text-xs text-gray-500">{t("允许新用户自行注册")}</p>
                       </div>
                       <Switch
                         checked={systemParams.enableRegistration}
@@ -669,7 +669,7 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
                         <p className="font-medium">{t('announcement.system_notification')}</p>
-                        <p className="text-xs text-gray-500">启用系统通知推送</p>
+                        <p className="text-xs text-gray-500">{t("启用系统通知推送")}</p>
                       </div>
                       <Switch
                         checked={systemParams.enableNotifications}
@@ -679,7 +679,7 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
                         <p className="font-medium">{t('system.auto_backup')}</p>
-                        <p className="text-xs text-gray-500">每日自动备份数据库</p>
+                        <p className="text-xs text-gray-500">{t("每日自动备份数据库")}</p>
                       </div>
                       <Switch
                         checked={systemParams.enableAutoBackup}
@@ -688,8 +688,8 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
-                        <p className="font-medium text-red-600">维护模式</p>
-                        <p className="text-xs text-gray-500">仅管理员可访问系统</p>
+                        <p className="font-medium text-red-600">{t("维护模式")}</p>
+                        <p className="text-xs text-gray-500">{t("仅管理员可访问系统")}</p>
                       </div>
                       <Switch
                         checked={systemParams.maintenanceMode}
@@ -710,13 +710,13 @@ export default function SettingsPage() {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <History className="h-5 w-5" />
-                      审核日志
+                      {t("审核日志")}
                     </CardTitle>
-                    <CardDescription>系统操作记录和安全事件</CardDescription>
+                    <CardDescription>{t("系统操作记录和安全事件")}</CardDescription>
                   </div>
                   <Button variant="outline" onClick={fetchAuditLogs}>
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    刷新
+                    {t("刷新")}
                   </Button>
                 </div>
               </CardHeader>
@@ -724,13 +724,13 @@ export default function SettingsPage() {
                 {logsLoading ? (
                   <div className="text-center py-8 text-gray-400">
                     <RefreshCw className="h-8 w-8 mx-auto mb-2 animate-spin" />
-                    <p>加载审核日志...</p>
+                    <p>{t("加载审核日志...")}</p>
                   </div>
                 ) : auditLogs.length === 0 ? (
                   <div className="text-center py-12 text-gray-400">
                     <History className="h-12 w-12 mx-auto mb-4" />
-                    <p>暂无审核日志记录</p>
-                    <p className="text-xs mt-1">系统操作记录将在此显示</p>
+                    <p>{t("暂无审核日志记录")}</p>
+                    <p className="text-xs mt-1">{t("系统操作记录将在此显示")}</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">

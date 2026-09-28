@@ -31,9 +31,9 @@ const RELATIONSHIPS = [
 const statusBadge = (status: string) => {
   const { t } = useLanguage()
   switch (status) {
-    case "picked_up": return <Badge className="bg-emerald-100 text-emerald-700">已接走</Badge>
+    case "picked_up": return <Badge className="bg-emerald-100 text-emerald-700">{t("已接走")}</Badge>
     case "scheduled": return <Badge className="bg-blue-100 text-blue-700">{t('exam.scheduled')}</Badge>
-    case "delayed": return <Badge className="bg-amber-100 text-amber-700">延迟</Badge>
+    case "delayed": return <Badge className="bg-amber-100 text-amber-700">{t("延迟")}</Badge>
     case "cancelled": return <Badge className="bg-slate-100 text-slate-500">{t('report.cancel')}</Badge>
     default: return <Badge>{status}</Badge>
   }
@@ -102,30 +102,30 @@ export default function PickupManagementPage() {
   }
 
   return (
-    <PageLayout title={t('pickup.pickup_management')} description="登记和追踪学生接送情况">
+    <PageLayout title={t('pickup.pickup_management')} description={t("登记和追踪学生接送情况")}>
       {/* 晚点接送收费政策 */}
       <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
-        <div className="flex items-center gap-1 text-sm font-semibold text-amber-800">⏰ 晚点接送收费政策</div>
+        <div className="flex items-center gap-1 text-sm font-semibold text-amber-800">{t("⏰ 晚点接送收费政策")}</div>
         <div className="mt-1 text-xs leading-5 text-amber-700">
-          学生迟回家（家长晚来接）超过 <b>5 分钟</b>即计费：<b>7:05pm 之后</b>开始，每个不足一小时按一小时计 <b>RM5 / 小时</b>；首小时后每再多一小时<b>再叠加 RM5</b>。
+          {t("学生迟回家（家长晚来接）超过")} <b>{t("5 分钟")}</b>{t("即计费：")}<b>{t("7:05pm 之后")}</b>{t("开始，每个不足一小时按一小时计")} <b>{t("RM5 / 小时")}</b>{t("；首小时后每再多一小时")}<b>{t("再叠加 RM5")}</b>{t("。")}
         </div>
       </div>
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <Card><CardContent className="p-4 text-center">
-          <p className="text-xs text-slate-500">今日接送</p>
+          <p className="text-xs text-slate-500">{t("今日接送")}</p>
           <p className="text-2xl font-bold text-indigo-600">{stats.total}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
-          <p className="text-xs text-slate-500">已接走</p>
+          <p className="text-xs text-slate-500">{t("已接走")}</p>
           <p className="text-2xl font-bold text-emerald-600">{stats.pickedUp}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
-          <p className="text-xs text-slate-500">待接</p>
+          <p className="text-xs text-slate-500">{t("待接")}</p>
           <p className="text-2xl font-bold text-amber-600">{stats.scheduled}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
-          <p className="text-xs text-slate-500">家长确认</p>
+          <p className="text-xs text-slate-500">{t("家长确认")}</p>
           <p className="text-2xl font-bold text-blue-600">{stats.confirmed}</p>
         </CardContent></Card>
       </div>
@@ -134,9 +134,9 @@ export default function PickupManagementPage() {
       <div className="flex flex-wrap gap-3 mb-4">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input className="pl-9" placeholder="搜索学生..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <Input className="pl-9" placeholder={t("搜索学生...")} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
-        <Button onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-2" />登记接送</Button>
+        <Button onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-2" />{t("登记接送")}</Button>
       </div>
 
       {/* Pickup List */}
@@ -145,8 +145,8 @@ export default function PickupManagementPage() {
       ) : pickups.length === 0 ? (
         <Card><CardContent className="p-12 text-center text-slate-400">
           <Truck className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p>今日暂无接送记录</p>
-          <Button variant="outline" className="mt-4" onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-2" />登记第一条接送</Button>
+          <p>{t("今日暂无接送记录")}</p>
+          <Button variant="outline" className="mt-4" onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-2" />{t("登记第一条接送")}</Button>
         </CardContent></Card>
       ) : (
         <Card>
@@ -157,10 +157,10 @@ export default function PickupManagementPage() {
                   <TableHead>{t('common.student')}</TableHead>
                   <TableHead>{t('student.grade')}</TableHead>
                   <TableHead>{t('announcement.time')}</TableHead>
-                  <TableHead>接人者</TableHead>
+                  <TableHead>{t("接人者")}</TableHead>
                   <TableHead>{t('student.relationship')}</TableHead>
                   <TableHead>{t('report.phone')}</TableHead>
-                  <TableHead>车牌</TableHead>
+                  <TableHead>{t("车牌")}</TableHead>
                   <TableHead>{t('teacher.status')}</TableHead>
                   <TableHead>{t('pickup.confirm')}</TableHead>
                 </TableRow>
@@ -196,12 +196,12 @@ export default function PickupManagementPage() {
       {/* Record Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>登记接送</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("登记接送")}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>选择学生 *</Label>
+              <Label>{t("选择学生 *")}</Label>
               <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                <SelectTrigger><SelectValue placeholder="选择学生..." /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("选择学生...")} /></SelectTrigger>
                 <SelectContent>
                   {students.map(s => (
                     <SelectItem key={s.id} value={s.id}>{s.name} ({formatGrade(s.grade)})</SelectItem>
@@ -210,8 +210,8 @@ export default function PickupManagementPage() {
               </Select>
             </div>
             <div>
-              <Label>接人者姓名 *</Label>
-              <Input value={pickupBy} onChange={e => setPickupBy(e.target.value)} placeholder="接人者姓名" />
+              <Label>{t("接人者姓名 *")}</Label>
+              <Input value={pickupBy} onChange={e => setPickupBy(e.target.value)} placeholder={t("接人者姓名")} />
             </div>
             <div>
               <Label>{t('student.relationship')}</Label>
@@ -222,20 +222,20 @@ export default function PickupManagementPage() {
             </div>
             <div>
               <Label>{t('report.phone')}</Label>
-              <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="接人者电话" />
+              <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder={t("接人者电话")} />
             </div>
             <div>
-              <Label>车牌号</Label>
-              <Input value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value)} placeholder="接人车辆车牌" />
+              <Label>{t("车牌号")}</Label>
+              <Input value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value)} placeholder={t("接人车辆车牌")} />
             </div>
             <div>
               <Label>{t('teacher.notes')}</Label>
-              <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="备注信息" />
+              <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder={t("备注信息")} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('report.cancel')}</Button>
-            <Button onClick={handleRecord} disabled={!selectedStudent || !pickupBy}>确认登记</Button>
+            <Button onClick={handleRecord} disabled={!selectedStudent || !pickupBy}>{t("确认登记")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

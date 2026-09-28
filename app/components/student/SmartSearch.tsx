@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Search, X, Clock, TrendingUp, Users } from "lucide-react"
 import { Student } from "@/hooks/useStudents"
+import { useLanguage } from "@/contexts/language-context";
 
 interface SmartSearchProps {
   students: Student[]
@@ -33,6 +34,7 @@ export default function SmartSearch({
   onClear, 
   placeholder = "智能搜索：支持姓名、学号、年级、家长信息等..." 
 }: SmartSearchProps) {
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("")
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([])
@@ -319,7 +321,7 @@ export default function SmartSearch({
             </div>
           ) : (
             <div className="p-4 text-center text-gray-500 text-sm">
-              没有找到匹配的建议
+              {t("没有找到匹配的建议")}
             </div>
           )}
         </div>

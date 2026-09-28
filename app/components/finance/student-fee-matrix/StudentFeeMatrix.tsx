@@ -56,7 +56,7 @@ export const StudentFeeMatrix = () => {
   }, [students])
 
   if (studentFeesLoading) return <div className="py-12 text-center text-muted-foreground">{t('teacher.loading')}</div>
-  if (studentFeesError) return <div className="py-12 text-center text-red-600">加载失败: {studentFeesError}</div>
+  if (studentFeesError) return <div className="py-12 text-center text-red-600">{t("加载失败:")} {studentFeesError}</div>
 
   const createInvoice = async (studentId: string) => {
     const student = students.find(s => s.id === studentId)
@@ -198,7 +198,7 @@ export const StudentFeeMatrix = () => {
       />
 
       {filteredStudents.length === 0 ? (
-        <div className="py-12 text-center text-muted-foreground">没有匹配的学生</div>
+        <div className="py-12 text-center text-muted-foreground">{t("没有匹配的学生")}</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
           {filteredStudents.map(student => (

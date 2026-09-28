@@ -476,7 +476,7 @@ export default function StudentForm({
                   {avatarPreview || student?.avatar ? (
                     <img 
                       src={avatarPreview || (student?.avatar || '')} 
-                      alt="学生头像预览"
+                      alt={t("学生头像预览")}
                       className="w-20 h-20 rounded-full object-cover border-2 border-white shadow-lg"
                     />
                   ) : (
@@ -498,7 +498,7 @@ export default function StudentForm({
               
               <div className="flex-1">
                 <Label htmlFor="avatar" className="text-sm font-medium text-gray-700 mb-2 block">
-                  学生头像
+                  {t("学生头像")}
                 </Label>
                 <div className="flex items-center gap-3">
                   <Button
@@ -519,18 +519,18 @@ export default function StudentForm({
                     className="hidden"
                   />
                   <p className="text-xs text-gray-500">
-                    支持 JPG、PNG 格式，最大 2MB
+                    {t("支持 JPG、PNG 格式，最大 2MB")}
                   </p>
                 </div>
                 {avatarPreview && (
-                  <p className="text-xs text-green-600 mt-1">✓ 头像已选择</p>
+                  <p className="text-xs text-green-600 mt-1">{t("✓ 头像已选择")}</p>
                 )}
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="student_name">学生姓名 *</Label>
+                <Label htmlFor="student_name">{t("学生姓名 *")}</Label>
                 <Input
                   id="student_name"
                   value={formData.student_name || ''}
@@ -542,7 +542,7 @@ export default function StudentForm({
               </div>
 
                              <div>
-                 <Label htmlFor="student_id">学号 *</Label>
+                 <Label htmlFor="student_id">{t("学号 *")}</Label>
                  <div className="flex gap-2">
                    <Input
                      id="student_id"
@@ -568,17 +568,17 @@ export default function StudentForm({
                         }}
                        className="whitespace-nowrap"
                      >
-                       生成学号
+                       {t("生成学号")}
                      </Button>
                    )}
                  </div>
-                 {!isEditing && <p className="text-xs text-gray-500 mt-1">学号将根据性别、服务类型和中心自动生成，或点击"生成学号"按钮手动生成</p>}
-                 {isEditing && <p className="text-xs text-gray-500 mt-1">编辑模式下学号不可修改</p>}
+                 {!isEditing && <p className="text-xs text-gray-500 mt-1">{t("学号将根据性别、服务类型和中心自动生成，或点击\"生成学号\"按钮手动生成")}</p>}
+                 {isEditing && <p className="text-xs text-gray-500 mt-1">{t("编辑模式下学号不可修改")}</p>}
                  {errors.student_id && <p className="text-red-500 text-sm mt-1">{errors.student_id}</p>}
                </div>
 
               <div>
-                <Label htmlFor="nric">NRIC/护照</Label>
+                <Label htmlFor="nric">{t("NRIC/护照")}</Label>
                 <Input
                   id="nric"
                   value={formData.nric || ''}
@@ -597,14 +597,14 @@ export default function StudentForm({
                       }
                     }
                   }}
-                  placeholder="NRIC号码或护照号码"
+                  placeholder={t("NRIC号码或护照号码")}
                   className={errors.nric ? 'border-red-500' : ''}
                 />
                 {errors.nric && <p className="text-red-500 text-sm mt-1">{errors.nric}</p>}
               </div>
 
               <div>
-                <Label htmlFor="dob">出生日期 *</Label>
+                <Label htmlFor="dob">{t("出生日期 *")}</Label>
                 <Button
                   type="button"
                   variant="outline"
@@ -618,16 +618,16 @@ export default function StudentForm({
                   }}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.dob ? format(new Date(formData.dob), "PPP") : <span>选择出生日期</span>}
+                  {formData.dob ? format(new Date(formData.dob), "PPP") : <span>{t("选择出生日期")}</span>}
                 </Button>
                 {errors.dob && <p className="text-red-500 text-sm mt-1">{errors.dob}</p>}
               </div>
 
               <div>
-                <Label htmlFor="gender">性别 *</Label>
+                <Label htmlFor="gender">{t("性别 *")}</Label>
                 <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
                   <SelectTrigger className={errors.gender ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="选择性别" />
+                    <SelectValue placeholder={t("选择性别")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="male">{t('student.male')}</SelectItem>
@@ -641,7 +641,7 @@ export default function StudentForm({
                 <Label htmlFor="standard">{t('student.grade')}</Label>
                 <Select value={formData.standard} onValueChange={(value) => handleInputChange('standard', value)}>
                   <SelectTrigger className={errors.standard ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="选择年级" />
+                    <SelectValue placeholder={t("选择年级")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1">Standard 1</SelectItem>
@@ -659,7 +659,7 @@ export default function StudentForm({
                   </SelectContent>
                 </Select>
                 {formData.dob && formData.standard && (
-                  <p className="text-xs text-green-600 mt-1">✓ 年级已根据出生日期自动计算，也可手动选择</p>
+                  <p className="text-xs text-green-600 mt-1">{t("✓ 年级已根据出生日期自动计算，也可手动选择")}</p>
                 )}
                 {errors.standard && <p className="text-red-500 text-sm mt-1">{errors.standard}</p>}
               </div>
@@ -688,7 +688,7 @@ export default function StudentForm({
                   }}
                   className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
-                <Label htmlFor="is_peralihan" className="text-sm text-slate-600 cursor-pointer">Peralihan / Remove 班</Label>
+                <Label htmlFor="is_peralihan" className="text-sm text-slate-600 cursor-pointer">{t("Peralihan / Remove 班")}</Label>
               </div>
             </div>
           </div>
@@ -698,19 +698,19 @@ export default function StudentForm({
             <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">{t('report.school_info')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="school">学校 *</Label>
+                <Label htmlFor="school">{t("学校 *")}</Label>
                 <Input
                   id="school"
                   value={formData.school || ''}
                   onChange={(e) => handleInputChange('school', e.target.value)}
-                  placeholder="就读学校名称"
+                  placeholder={t("就读学校名称")}
                   className={errors.school ? 'border-red-500' : ''}
                 />
                 {errors.school && <p className="text-red-500 text-sm mt-1">{errors.school}</p>}
               </div>
 
               <div>
-                <Label htmlFor="center">中心 *</Label>
+                <Label htmlFor="center">{t("中心 *")}</Label>
                 <Select value={formData.center} onValueChange={(value) => {
                     handleInputChange('center', value)
                     // Also set centerId when center selection changes
@@ -718,14 +718,14 @@ export default function StudentForm({
                     if (matched) handleInputChange('centerId', matched.id)
                   }}>
                   <SelectTrigger className={errors.center ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="选择中心" />
+                    <SelectValue placeholder={t("选择中心")} />
                   </SelectTrigger>
                   <SelectContent>
                     {centers.map((c) => (
                       <SelectItem key={c.id} value={c.code}>{c.name}</SelectItem>
                     ))}
                     {centers.length === 0 && (
-                      <SelectItem value="PU1">PU1 分院</SelectItem>
+                      <SelectItem value="PU1">{t("PU1 分院")}</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
@@ -733,14 +733,14 @@ export default function StudentForm({
               </div>
 
               <div>
-                <Label htmlFor="serviceType">服务类型 *</Label>
+                <Label htmlFor="serviceType">{t("服务类型 *")}</Label>
                 <Select value={formData.serviceType} onValueChange={(value) => handleInputChange('serviceType', value)}>
                   <SelectTrigger className={errors.serviceType ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="选择服务类型" />
+                    <SelectValue placeholder={t("选择服务类型")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="afterschool">安亲</SelectItem>
-                    <SelectItem value="tuition">补习</SelectItem>
+                    <SelectItem value="afterschool">{t("安亲")}</SelectItem>
+                    <SelectItem value="tuition">{t("补习")}</SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.serviceType && <p className="text-red-500 text-sm mt-1">{errors.serviceType}</p>}
@@ -750,45 +750,45 @@ export default function StudentForm({
 
           {/* 父母信息 */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">父母信息</h3>
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">{t("父母信息")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="fatherName">父亲姓名</Label>
+                <Label htmlFor="fatherName">{t("父亲姓名")}</Label>
                 <Input
                   id="fatherName"
                   value={formData.fatherName || ''}
                   onChange={(e) => handleInputChange('fatherName', e.target.value)}
-                  placeholder="父亲姓名"
+                  placeholder={t("父亲姓名")}
                 />
               </div>
 
               <div>
-                <Label htmlFor="motherName">母亲姓名</Label>
+                <Label htmlFor="motherName">{t("母亲姓名")}</Label>
                 <Input
                   id="motherName"
                   value={formData.motherName || ''}
                   onChange={(e) => handleInputChange('motherName', e.target.value)}
-                  placeholder="母亲姓名"
+                  placeholder={t("母亲姓名")}
                 />
               </div>
 
               <div>
-                <Label htmlFor="fatherPhone">父亲电话</Label>
+                <Label htmlFor="fatherPhone">{t("父亲电话")}</Label>
                 <Input
                   id="fatherPhone"
                   value={formData.fatherPhone || ''}
                   onChange={(e) => handleInputChange('fatherPhone', e.target.value)}
-                  placeholder="父亲联系电话"
+                  placeholder={t("父亲联系电话")}
                 />
               </div>
 
               <div>
-                <Label htmlFor="motherPhone">母亲电话</Label>
+                <Label htmlFor="motherPhone">{t("母亲电话")}</Label>
                 <Input
                   id="motherPhone"
                   value={formData.motherPhone || ''}
                   onChange={(e) => handleInputChange('motherPhone', e.target.value)}
-                  placeholder="母亲联系电话"
+                  placeholder={t("母亲联系电话")}
                 />
               </div>
 
@@ -809,13 +809,13 @@ export default function StudentForm({
 
           {/* 紧急联络人 */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">紧急联络人</h3>
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">{t("紧急联络人")}</h3>
             <div className="space-y-3">
               {(formData.emergency_contacts || []).map((ec: any, idx: number) => (
                 <div key={idx} className="border rounded-lg p-3 space-y-2">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                      <Label>姓名</Label>
+                      <Label>{t("姓名")}</Label>
                       <Input
                         value={ec.name || ''}
                         onChange={(e) => {
@@ -823,11 +823,11 @@ export default function StudentForm({
                           list[idx] = { ...list[idx], name: e.target.value }
                           setFormData((prev: any) => ({ ...prev, emergency_contacts: list }))
                         }}
-                        placeholder="联系人姓名"
+                        placeholder={t("联系人姓名")}
                       />
                     </div>
                     <div>
-                      <Label>电话</Label>
+                      <Label>{t("电话")}</Label>
                       <Input
                         value={ec.phone || ''}
                         onChange={(e) => {
@@ -835,11 +835,11 @@ export default function StudentForm({
                           list[idx] = { ...list[idx], phone: e.target.value }
                           setFormData((prev: any) => ({ ...prev, emergency_contacts: list }))
                         }}
-                        placeholder="联系电话"
+                        placeholder={t("联系电话")}
                       />
                     </div>
                     <div>
-                      <Label>关系</Label>
+                      <Label>{t("关系")}</Label>
                       <Input
                         value={ec.relation || ''}
                         onChange={(e) => {
@@ -847,7 +847,7 @@ export default function StudentForm({
                           list[idx] = { ...list[idx], relation: e.target.value }
                           setFormData((prev: any) => ({ ...prev, emergency_contacts: list }))
                         }}
-                        placeholder="与学生关系"
+                        placeholder={t("与学生关系")}
                       />
                     </div>
                   </div>
@@ -861,7 +861,7 @@ export default function StudentForm({
                       setFormData((prev: any) => ({ ...prev, emergency_contacts: list }))
                     }}
                   >
-                    移除
+                    {t("移除")}
                   </Button>
                 </div>
               ))}
@@ -874,21 +874,21 @@ export default function StudentForm({
                   setFormData((prev: any) => ({ ...prev, emergency_contacts: list }))
                 }}
               >
-                + 添加紧急联系人
+                {t("+ 添加紧急联系人")}
               </Button>
             </div>
           </div>
 
           {/* 健康信息 */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">健康信息</h3>
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">{t("健康信息")}</h3>
             <div>
-              <Label htmlFor="healthInfo">健康/过敏记录</Label>
+              <Label htmlFor="healthInfo">{t("健康/过敏记录")}</Label>
               <Textarea
                 id="healthInfo"
                 value={formData.healthInfo || ''}
                 onChange={(e) => handleInputChange('healthInfo', e.target.value)}
-                placeholder="请详细描述学生的健康状况、过敏史、特殊需求等"
+                placeholder={t("请详细描述学生的健康状况、过敏史、特殊需求等")}
                 rows={3}
               />
             </div>
@@ -896,20 +896,20 @@ export default function StudentForm({
 
           {/* 接送信息 */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">接送信息</h3>
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">{t("接送信息")}</h3>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="pickupMethod">接送方式</Label>
+                <Label htmlFor="pickupMethod">{t("接送方式")}</Label>
                 <Select value={formData.pickupMethod} onValueChange={(value) => handleInputChange('pickupMethod', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择接送方式" />
+                    <SelectValue placeholder={t("选择接送方式")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="parent">父母接送</SelectItem>
-                    <SelectItem value="guardian">监护人接送</SelectItem>
-                    <SelectItem value="authorized">授权人接送</SelectItem>
-                    <SelectItem value="public">公共交通</SelectItem>
-                    <SelectItem value="walking">步行</SelectItem>
+                    <SelectItem value="parent">{t("父母接送")}</SelectItem>
+                    <SelectItem value="guardian">{t("监护人接送")}</SelectItem>
+                    <SelectItem value="authorized">{t("授权人接送")}</SelectItem>
+                    <SelectItem value="public">{t("公共交通")}</SelectItem>
+                    <SelectItem value="walking">{t("步行")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -924,7 +924,7 @@ export default function StudentForm({
                     <div key={idx} className="border rounded-lg p-3 space-y-2 bg-white">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
-                          <Label>姓名</Label>
+                          <Label>{t("姓名")}</Label>
                           <Input
                             value={pp.name || ''}
                             onChange={(e) => {
@@ -932,11 +932,11 @@ export default function StudentForm({
                               list[idx] = { ...list[idx], name: e.target.value }
                               setFormData((prev: any) => ({ ...prev, pickup_persons: list }))
                             }}
-                            placeholder="载送人姓名"
+                            placeholder={t("载送人姓名")}
                           />
                         </div>
                         <div>
-                          <Label>电话</Label>
+                          <Label>{t("电话")}</Label>
                           <Input
                             value={pp.phone || ''}
                             onChange={(e) => {
@@ -944,11 +944,11 @@ export default function StudentForm({
                               list[idx] = { ...list[idx], phone: e.target.value }
                               setFormData((prev: any) => ({ ...prev, pickup_persons: list }))
                             }}
-                            placeholder="联系电话"
+                            placeholder={t("联系电话")}
                           />
                         </div>
                         <div>
-                          <Label>关系</Label>
+                          <Label>{t("关系")}</Label>
                           <Input
                             value={pp.relation || ''}
                             onChange={(e) => {
@@ -956,7 +956,7 @@ export default function StudentForm({
                               list[idx] = { ...list[idx], relation: e.target.value }
                               setFormData((prev: any) => ({ ...prev, pickup_persons: list }))
                             }}
-                            placeholder="与学生关系"
+                            placeholder={t("与学生关系")}
                           />
                         </div>
                       </div>
@@ -970,7 +970,7 @@ export default function StudentForm({
                           setFormData((prev: any) => ({ ...prev, pickup_persons: list }))
                         }}
                       >
-                        移除
+                        {t("移除")}
                       </Button>
                     </div>
                   ))}
@@ -983,9 +983,9 @@ export default function StudentForm({
                       setFormData((prev: any) => ({ ...prev, pickup_persons: list }))
                     }}
                   >
-                    + 添加载送人
+                    {t("+ 添加载送人")}
                   </Button>
-                  <p className="text-xs text-gray-500">每天接送记录请在「接送管理」页面登记</p>
+                  <p className="text-xs text-gray-500">{t("每天接送记录请在「接送管理」页面登记")}</p>
                 </div>
               )}
             </div>
@@ -993,10 +993,10 @@ export default function StudentForm({
 
           {/* 注册和学费信息 */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">注册和学费信息</h3>
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">{t("注册和学费信息")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="registrationDate">注册日期</Label>
+                <Label htmlFor="registrationDate">{t("注册日期")}</Label>
                 <Button
                   type="button"
                   variant="outline"
@@ -1007,20 +1007,20 @@ export default function StudentForm({
                   onClick={() => setIsRegistrationCalendarOpen(true)}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.registrationDate ? format(new Date(formData.registrationDate), "PPP") : <span>选择注册日期</span>}
+                  {formData.registrationDate ? format(new Date(formData.registrationDate), "PPP") : <span>{t("选择注册日期")}</span>}
                 </Button>
               </div>
 
               <div>
-                <Label htmlFor="tuitionStatus">学费状态</Label>
+                <Label htmlFor="tuitionStatus">{t("学费状态")}</Label>
                 <Select value={formData.tuitionStatus} onValueChange={(value) => handleInputChange('tuitionStatus', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择学费状态" />
+                    <SelectValue placeholder={t("选择学费状态")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pending">{t('student.pending_payment')}</SelectItem>
                     <SelectItem value="paid">{t('student.paid')}</SelectItem>
-                    <SelectItem value="partial">部分付款</SelectItem>
+                    <SelectItem value="partial">{t("部分付款")}</SelectItem>
                     <SelectItem value="overdue">{t('student.overdue')}</SelectItem>
                   </SelectContent>
                 </Select>
@@ -1031,24 +1031,24 @@ export default function StudentForm({
           {/* 积分系统 */}
           <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-200">
             <div>
-              <Label className="text-sm font-medium">积分系统</Label>
-              <p className="text-xs text-amber-600">关闭后该学生不出现在排行榜和积分操作中</p>
+              <Label className="text-sm font-medium">{t("积分系统")}</Label>
+              <p className="text-xs text-amber-600">{t("关闭后该学生不出现在排行榜和积分操作中")}</p>
             </div>
             <select
               value={formData.points_enabled ? '1' : '0'}
               onChange={(e) => setFormData((prev: any) => ({ ...prev, points_enabled: e.target.value === '1' }))}
               className="text-sm rounded-md border border-amber-300 bg-white px-3 py-1.5 font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-amber-300"
             >
-              <option value="1">启用</option>
-              <option value="0">关闭</option>
+              <option value="1">{t("启用")}</option>
+              <option value="0">{t("关闭")}</option>
             </select>
           </div>
 
           {/* 报生纸副本 */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">报生纸副本</h3>
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">{t("报生纸副本")}</h3>
             <div>
-              <Label htmlFor="birthCertificate">上传报生纸副本</Label>
+              <Label htmlFor="birthCertificate">{t("上传报生纸副本")}</Label>
               <div className="mt-2">
                 <Input
                   id="birthCertificate"
@@ -1057,7 +1057,7 @@ export default function StudentForm({
                   onChange={handleFileChange}
                   className="cursor-pointer"
                 />
-                <p className="text-xs text-gray-500 mt-1">支持 PDF、JPG、JPEG、PNG 格式，最大 5MB</p>
+                <p className="text-xs text-gray-500 mt-1">{t("支持 PDF、JPG、JPEG、PNG 格式，最大 5MB")}</p>
                 {birthCertificateFile && (
                   <div className="flex items-center gap-2 mt-2 p-2 bg-green-50 border border-green-200 rounded">
                     <FileText className="h-4 w-4 text-green-600" />
@@ -1072,7 +1072,7 @@ export default function StudentForm({
           <Dialog open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>选择学生出生日期</DialogTitle>
+                <DialogTitle>{t("选择学生出生日期")}</DialogTitle>
               </DialogHeader>
               
               <div className="space-y-4">
@@ -1085,7 +1085,7 @@ export default function StudentForm({
                     className="text-xs h-6 p-1 w-full justify-between"
                     onClick={() => setShowQuickYears(!showQuickYears)}
                   >
-                    <span>快速选择年份</span>
+                    <span>{t("快速选择年份")}</span>
                     <span>{showQuickYears ? '▼' : '▶'}</span>
                   </Button>
                   
@@ -1093,7 +1093,7 @@ export default function StudentForm({
                     <div className="space-y-3 border-t pt-3">
                       {/* 小学年份 */}
                       <div className="space-y-2">
-                        <p className="text-xs text-blue-600 font-medium">小学 (7-12岁):</p>
+                        <p className="text-xs text-blue-600 font-medium">{t("小学 (7-12岁):")}</p>
                         <div className="grid grid-cols-6 gap-1">
                           {[2018, 2017, 2016, 2015, 2014, 2013].map((year) => (
                             <Button
@@ -1115,7 +1115,7 @@ export default function StudentForm({
                       
                       {/* 中学年份 */}
                       <div className="space-y-2">
-                        <p className="text-xs text-green-600 font-medium">中学 (13-17岁):</p>
+                        <p className="text-xs text-green-600 font-medium">{t("中学 (13-17岁):")}</p>
                         <div className="grid grid-cols-5 gap-1">
                           {[2012, 2011, 2010, 2009, 2008].map((year) => (
                             <Button
@@ -1137,7 +1137,7 @@ export default function StudentForm({
                       
                       {/* 预科年份 */}
                       <div className="space-y-2">
-                        <p className="text-xs text-purple-600 font-medium">预科 (18-19岁):</p>
+                        <p className="text-xs text-purple-600 font-medium">{t("预科 (18-19岁):")}</p>
                         <div className="grid grid-cols-1 gap-1">
                           {[2007].map((year) => (
                             <Button
@@ -1201,7 +1201,7 @@ export default function StudentForm({
                       setIsCalendarOpen(false)
                     }}
                   >
-                    清除
+                    {t("清除")}
                   </Button>
                 </div>
               </div>
@@ -1212,7 +1212,7 @@ export default function StudentForm({
           <Dialog open={isRegistrationCalendarOpen} onOpenChange={setIsRegistrationCalendarOpen}>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>选择注册日期</DialogTitle>
+                <DialogTitle>{t("选择注册日期")}</DialogTitle>
               </DialogHeader>
               
               <Calendar
@@ -1246,7 +1246,7 @@ export default function StudentForm({
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                请检查并修正表单中的错误信息
+                {t("请检查并修正表单中的错误信息")}
               </AlertDescription>
             </Alert>
           )}
@@ -1267,7 +1267,7 @@ export default function StudentForm({
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
-              取消
+              {t("取消")}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? '保存中...' : (isEditing ? '更新' : '添加')}

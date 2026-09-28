@@ -166,7 +166,7 @@ export default function BudgetManagement() {
             <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
             <SelectContent>
               {Array.from({ length: 12 }, (_, i) => (
-                <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}月</SelectItem>
+                <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}{t("月")}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -174,22 +174,22 @@ export default function BudgetManagement() {
             <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
             <SelectContent>
               {[2025, 2026, 2027].map(y => (
-                <SelectItem key={y} value={String(y)}>{y}年</SelectItem>
+                <SelectItem key={y} value={String(y)}>{y}{t("年")}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <Dialog open={showAdd} onOpenChange={v => { setShowAdd(v); if (!v) resetForm() }}>
           <DialogTrigger asChild>
-            <Button size="sm"><Plus className="h-4 w-4 mr-1" />设置预算</Button>
+            <Button size="sm"><Plus className="h-4 w-4 mr-1" />{t("设置预算")}</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>{editingId ? "编辑预算" : "设置预算"}</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div>
-                <Label>类别 *</Label>
+                <Label>{t("类别 *")}</Label>
                 <Select value={formData.category} onValueChange={v => setFormData(p => ({...p, category: v}))}>
-                  <SelectTrigger><SelectValue placeholder="选择费用类别" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t("选择费用类别")} /></SelectTrigger>
                   <SelectContent>
                     {BUDGET_CATEGORIES.map(c => (
                       <SelectItem key={c} value={c}>{CATEGORY_LABELS[c] || c}</SelectItem>
@@ -198,12 +198,12 @@ export default function BudgetManagement() {
                 </Select>
               </div>
               <div>
-                <Label>预算金额 (RM) *</Label>
+                <Label>{t("预算金额 (RM) *")}</Label>
                 <Input type="number" step="0.01" value={formData.budgetAmount} onChange={e => setFormData(p => ({...p, budgetAmount: e.target.value}))} placeholder="0.00" />
               </div>
               <div>
                 <Label>{t('teacher.notes')}</Label>
-                <Input value={formData.notes} onChange={e => setFormData(p => ({...p, notes: e.target.value}))} placeholder="预算说明" />
+                <Input value={formData.notes} onChange={e => setFormData(p => ({...p, notes: e.target.value}))} placeholder={t("预算说明")} />
               </div>
             </div>
             <DialogFooter>
@@ -218,19 +218,19 @@ export default function BudgetManagement() {
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-xs text-gray-500 mb-1">预算总额</p>
+            <p className="text-xs text-gray-500 mb-1">{t("预算总额")}</p>
             <p className="text-2xl font-bold text-gray-900">RM {summary.totalBudget.toFixed(2)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-xs text-gray-500 mb-1">实际支出</p>
+            <p className="text-xs text-gray-500 mb-1">{t("实际支出")}</p>
             <p className="text-2xl font-bold text-indigo-600">RM {summary.totalSpent.toFixed(2)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-xs text-gray-500 mb-1">结余</p>
+            <p className="text-xs text-gray-500 mb-1">{t("结余")}</p>
             <p className={`text-2xl font-bold ${summary.variance >= 0 ? "text-emerald-600" : "text-red-600"}`}>
               RM {summary.variance.toFixed(2)}
             </p>
@@ -245,8 +245,8 @@ export default function BudgetManagement() {
         <Card>
           <CardContent className="py-8 text-center text-gray-500">
             <DollarSign className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-            <p>暂无预算数据</p>
-            <p className="text-sm mt-1">点击"设置预算"添加 {year}年{month}月 预算</p>
+            <p>{t("暂无预算数据")}</p>
+            <p className="text-sm mt-1">{t("点击\"设置预算\"添加")} {year}{t("年")}{month}{t("月 预算")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -254,11 +254,11 @@ export default function BudgetManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>费用类别</TableHead>
-                <TableHead className="text-right">预算 (RM)</TableHead>
-                <TableHead className="text-right">实际 (RM)</TableHead>
-                <TableHead className="text-right">差异 (RM)</TableHead>
-                <TableHead>使用率</TableHead>
+                <TableHead>{t("费用类别")}</TableHead>
+                <TableHead className="text-right">{t("预算 (RM)")}</TableHead>
+                <TableHead className="text-right">{t("实际 (RM)")}</TableHead>
+                <TableHead className="text-right">{t("差异 (RM)")}</TableHead>
+                <TableHead>{t("使用率")}</TableHead>
                 <TableHead className="text-center">{t('teacher.status')}</TableHead>
                 <TableHead className="text-right">{t('teacher.actions')}</TableHead>
               </TableRow>
@@ -300,9 +300,9 @@ export default function BudgetManagement() {
                     </TableCell>
                     <TableCell className="text-center">
                       {isOver ? (
-                        <Badge variant="destructive" className="text-xs">超支</Badge>
+                        <Badge variant="destructive" className="text-xs">{t("超支")}</Badge>
                       ) : isWarning ? (
-                        <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800">接近上限</Badge>
+                        <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800">{t("接近上限")}</Badge>
                       ) : (
                         <Badge variant="default" className="text-xs bg-emerald-100 text-emerald-800">{t('common.normal')}</Badge>
                       )}
@@ -335,9 +335,9 @@ export default function BudgetManagement() {
           <CardContent className="p-4 flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
             <div>
-              <p className="font-medium text-red-800">超支提醒</p>
+              <p className="font-medium text-red-800">{t("超支提醒")}</p>
               <p className="text-sm text-red-600 mt-1">
-                以下类别已超出预算：
+                {t("以下类别已超出预算：")}
                 {budgets.filter(b => {
                   const amt = b.budgetAmount || 0
                   const sp = b.spent || 0

@@ -64,7 +64,7 @@ export default function InventoryPage() {
       actions={
         <Link href="/inventory/new">
           <Button className="bg-indigo-600 hover:bg-indigo-700">
-            <Plus className="h-4 w-4 mr-2" />新增商品
+            <Plus className="h-4 w-4 mr-2" />{t("新增商品")}
           </Button>
         </Link>
       }
@@ -76,7 +76,7 @@ export default function InventoryPage() {
             <div className="flex items-center gap-3">
               <div className="p-2 bg-indigo-100 rounded-lg"><Package className="h-5 w-5 text-indigo-600" /></div>
               <div>
-                <p className="text-sm text-gray-500">商品总数</p>
+                <p className="text-sm text-gray-500">{t("商品总数")}</p>
                 <p className="text-2xl font-bold">{items.length}</p>
               </div>
             </div>
@@ -87,7 +87,7 @@ export default function InventoryPage() {
             <div className="flex items-center gap-3">
               <div className="p-2 bg-emerald-100 rounded-lg"><Boxes className="h-5 w-5 text-emerald-600" /></div>
               <div>
-                <p className="text-sm text-gray-500">在售商品</p>
+                <p className="text-sm text-gray-500">{t("在售商品")}</p>
                 <p className="text-2xl font-bold">{activeItems}</p>
               </div>
             </div>
@@ -98,7 +98,7 @@ export default function InventoryPage() {
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-100 rounded-lg"><AlertTriangle className="h-5 w-5 text-amber-600" /></div>
               <div>
-                <p className="text-sm text-gray-500">低库存预警</p>
+                <p className="text-sm text-gray-500">{t("低库存预警")}</p>
                 <p className="text-2xl font-bold text-amber-600">{lowStockItems.length}</p>
               </div>
             </div>
@@ -109,7 +109,7 @@ export default function InventoryPage() {
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg"><TrendingUp className="h-5 w-5 text-blue-600" /></div>
               <div>
-                <p className="text-sm text-gray-500">库存总值 (成本)</p>
+                <p className="text-sm text-gray-500">{t("库存总值 (成本)")}</p>
                 <p className="text-2xl font-bold">RM {totalStockValue.toLocaleString()}</p>
               </div>
             </div>
@@ -120,27 +120,27 @@ export default function InventoryPage() {
       {/* Category Manager */}
       {categories.length === 0 ? (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-          <p className="text-sm text-amber-700 mb-2 font-medium">⚠️ 还没有库存分类，创建分类后才能添加商品</p>
+          <p className="text-sm text-amber-700 mb-2 font-medium">{t("⚠️ 还没有库存分类，创建分类后才能添加商品")}</p>
           <form onSubmit={async e => { e.preventDefault(); if (!newCat.trim()) return; setAddingCat(true); await createCategory({ name: newCat.trim(), status: "active" }); setNewCat(""); setAddingCat(false) }}
             className="flex gap-2">
-            <Input placeholder="输入分类名称（如：教材、文具、零食）" value={newCat} onChange={e => setNewCat(e.target.value)} className="flex-1" />
+            <Input placeholder={t("输入分类名称（如：教材、文具、零食）")} value={newCat} onChange={e => setNewCat(e.target.value)} className="flex-1" />
             <Button type="submit" disabled={addingCat || !newCat.trim()} size="sm">
-              <Plus className="h-4 w-4 mr-1" /> 添加分类
+              <Plus className="h-4 w-4 mr-1" /> {t("添加分类")}
             </Button>
           </form>
         </div>
       ) : (
         <div className="flex flex-wrap items-center gap-2 mb-4">
-          <span className="text-xs text-gray-400">分类：</span>
+          <span className="text-xs text-gray-400">{t("分类：")}</span>
           {categories.map(c => (
             <Badge key={c.id} variant="secondary" className="gap-1 cursor-default">
               {c.name}
-              <button onClick={() => removeCategory(c.id)} className="ml-1 hover:text-red-500" title="删除分类">&times;</button>
+              <button onClick={() => removeCategory(c.id)} className="ml-1 hover:text-red-500" title={t("删除分类")}>&times;</button>
             </Badge>
           ))}
           <form onSubmit={async e => { e.preventDefault(); if (!newCat.trim()) return; setAddingCat(true); await createCategory({ name: newCat.trim(), status: "active" }); setNewCat(""); setAddingCat(false) }}
             className="flex gap-1">
-            <Input placeholder="新分类" value={newCat} onChange={e => setNewCat(e.target.value)} className="w-24 h-7 text-xs" />
+            <Input placeholder={t("新分类")} value={newCat} onChange={e => setNewCat(e.target.value)} className="w-24 h-7 text-xs" />
             <Button type="submit" disabled={addingCat || !newCat.trim()} size="sm" className="h-7 text-xs"><Plus className="h-3 w-3" /></Button>
           </form>
         </div>
@@ -151,16 +151,16 @@ export default function InventoryPage() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="搜索商品名称..."
+            placeholder={t("搜索商品名称...")}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="pl-9"
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-[150px]"><SelectValue placeholder="全部分类" /></SelectTrigger>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder={t("全部分类")} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">全部分类</SelectItem>
+            <SelectItem value="all">{t("全部分类")}</SelectItem>
             {categories.filter(c => c.status === "active").map(c => (
               <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
             ))}
@@ -170,13 +170,13 @@ export default function InventoryPage() {
           <SelectTrigger className="w-[140px]"><SelectValue placeholder={t('common.all_status')} /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t('common.all_status')}</SelectItem>
-            <SelectItem value="active">在售</SelectItem>
-            <SelectItem value="discontinued">已停产</SelectItem>
-            <SelectItem value="low_stock">低库存</SelectItem>
+            <SelectItem value="active">{t("在售")}</SelectItem>
+            <SelectItem value="discontinued">{t("已停产")}</SelectItem>
+            <SelectItem value="low_stock">{t("低库存")}</SelectItem>
           </SelectContent>
         </Select>
         <Button variant="outline" onClick={() => refetch()}>
-          <PackageOpen className="h-4 w-4 mr-2" />刷新
+          <PackageOpen className="h-4 w-4 mr-2" />{t("刷新")}
         </Button>
       </div>
 
@@ -184,7 +184,7 @@ export default function InventoryPage() {
       {loading && (
         <div className="text-center py-12 text-gray-500">
           <Package className="h-8 w-8 mx-auto mb-2 animate-pulse" />
-          <p>加载库存数据...</p>
+          <p>{t("加载库存数据...")}</p>
         </div>
       )}
 
@@ -192,7 +192,7 @@ export default function InventoryPage() {
       {error && (
         <div className="text-center py-12 text-red-500">
           <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
-          <p>加载失败：{error}</p>
+          <p>{t("加载失败：")}{error}</p>
           <Button variant="outline" className="mt-2" onClick={() => refetch()}>{t('course.retry')}</Button>
         </div>
       )}
@@ -210,7 +210,7 @@ export default function InventoryPage() {
           {items.length === 0 && (
             <Link href="/inventory/new">
               <Button className="bg-indigo-600 hover:bg-indigo-700">
-                <Plus className="h-4 w-4 mr-2" />新增商品
+                <Plus className="h-4 w-4 mr-2" />{t("新增商品")}
               </Button>
             </Link>
           )}
@@ -224,12 +224,12 @@ export default function InventoryPage() {
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">商品名称</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">{t("商品名称")}</th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">{t('inventory.category')}</th>
                   <th className="text-left px-4 py-3 text-sm font-medium text-gray-500">{t('inventory.unit')}</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">进价</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">售价</th>
-                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">库存</th>
+                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">{t("进价")}</th>
+                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">{t("售价")}</th>
+                  <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">{t("库存")}</th>
                   <th className="text-center px-4 py-3 text-sm font-medium text-gray-500">{t('teacher.status')}</th>
                   <th className="text-right px-4 py-3 text-sm font-medium text-gray-500">{t('teacher.actions')}</th>
                 </tr>

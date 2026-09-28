@@ -20,7 +20,7 @@ export default function FinanceExpensesPage() {
     }>
       <PageLayout
         title={t('finance.expense_management')}
-        description="记录中心所有经营支出"
+        description={t("记录中心所有经营支出")}
         userRole="admin"
         status="系统正常"
         background="bg-gray-50"

@@ -122,7 +122,7 @@ export default function DailyLogsPage() {
   return (
     <PageLayout
       title={t('dailylog.daily_logs')}
-      description="记录学生每天的学习、用餐和情绪状态"
+      description={t("记录学生每天的学习、用餐和情绪状态")}
       userRole={userProfile?.role || 'teacher'}
       status=""
       actions={
@@ -157,25 +157,25 @@ export default function DailyLogsPage() {
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="bg-blue-100 p-2 rounded-lg"><Users className="h-5 w-5 text-blue-600" /></div>
-              <div><div className="text-xl font-bold">{loggedIds.size}</div><div className="text-xs text-gray-500">已记录</div></div>
+              <div><div className="text-xl font-bold">{loggedIds.size}</div><div className="text-xs text-gray-500">{t("已记录")}</div></div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="bg-amber-100 p-2 rounded-lg"><Plus className="h-5 w-5 text-amber-600" /></div>
-              <div><div className="text-xl font-bold">{studentsWithout.length}</div><div className="text-xs text-gray-500">待记录</div></div>
+              <div><div className="text-xl font-bold">{studentsWithout.length}</div><div className="text-xs text-gray-500">{t("待记录")}</div></div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="bg-emerald-100 p-2 rounded-lg"><CheckCircle2 className="h-5 w-5 text-emerald-600" /></div>
-              <div><div className="text-xl font-bold">{logs.filter(l => l.homework_done).length}</div><div className="text-xs text-gray-500">功课完成</div></div>
+              <div><div className="text-xl font-bold">{logs.filter(l => l.homework_done).length}</div><div className="text-xs text-gray-500">{t("功课完成")}</div></div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="bg-purple-100 p-2 rounded-lg"><Moon className="h-5 w-5 text-purple-600" /></div>
-              <div><div className="text-xl font-bold">{logs.filter(l => l.nap).length}</div><div className="text-xs text-gray-500">午睡了</div></div>
+              <div><div className="text-xl font-bold">{logs.filter(l => l.nap).length}</div><div className="text-xs text-gray-500">{t("午睡了")}</div></div>
             </CardContent>
           </Card>
         </div>
@@ -191,7 +191,7 @@ export default function DailyLogsPage() {
         {/* 已记录的学生 — 卡片视图 */}
         {!loading && logs.length > 0 && (
           <div>
-            <h3 className="text-sm font-medium text-gray-600 mb-3">已记录 ({logs.length})</h3>
+            <h3 className="text-sm font-medium text-gray-600 mb-3">{t("已记录 (")}{logs.length})</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {logs.map((log) => {
                 const student = log.expand?.studentId
@@ -222,7 +222,7 @@ export default function DailyLogsPage() {
                           onClick={() => handleQuickToggle(log.id, 'homework_done', !log.homework_done)}
                         >
                           {log.homework_done ? <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> : <XCircle className="h-3.5 w-3.5 mr-1" />}
-                          功课
+                          {t("功课")}
                         </Button>
                         {/* 午睡 */}
                         <Button
@@ -232,7 +232,7 @@ export default function DailyLogsPage() {
                           onClick={() => handleQuickToggle(log.id, 'nap', !log.nap)}
                         >
                           {log.nap ? <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> : <XCircle className="h-3.5 w-3.5 mr-1" />}
-                          午睡
+                          {t("午睡")}
                         </Button>
                       </div>
 
@@ -275,7 +275,7 @@ export default function DailyLogsPage() {
                           <Textarea
                             value={log.behavior_note}
                             onChange={(e) => handleQuickToggle(log.id, 'behavior_note', e.target.value)}
-                            placeholder="行为表现、特别事项..."
+                            placeholder={t("行为表现、特别事项...")}
                             rows={2}
                             className="text-sm"
                           />
@@ -292,7 +292,7 @@ export default function DailyLogsPage() {
         {/* 待记录学生 */}
         {!loading && studentsWithout.length > 0 && (
           <div>
-            <h3 className="text-sm font-medium text-amber-600 mb-3">待记录 ({studentsWithout.length})</h3>
+            <h3 className="text-sm font-medium text-amber-600 mb-3">{t("待记录 (")}{studentsWithout.length})</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {studentsWithout.map((s) => (
                 <Button
@@ -314,8 +314,8 @@ export default function DailyLogsPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <Users className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-              <h3 className="text-lg font-medium text-gray-500">暂无可记录的学生</h3>
-              <p className="text-sm text-gray-400 mt-1">请确保学生已分配到中心</p>
+              <h3 className="text-lg font-medium text-gray-500">{t("暂无可记录的学生")}</h3>
+              <p className="text-sm text-gray-400 mt-1">{t("请确保学生已分配到中心")}</p>
             </CardContent>
           </Card>
         )}

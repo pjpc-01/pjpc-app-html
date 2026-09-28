@@ -93,10 +93,10 @@ export default function TVBoardPage() {
         {/* 标题 */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-black text-gray-800 mb-4">
-            📺 TV Board 选择
+            {t("📺 TV Board 选择")}
           </h1>
           <p className="text-xl text-gray-600">
-            选择要显示的分行
+            {t("选择要显示的分行")}
           </p>
         </div>
 
@@ -120,13 +120,13 @@ export default function TVBoardPage() {
                   
                   {center.count !== undefined && (
                     <p className="text-gray-500 font-semibold">
-                      {center.count} 位学生
+                      {center.count} {t("位学生")}
                     </p>
                   )}
                   
                   <div className="mt-6">
                     <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold group-hover:from-blue-600 group-hover:to-purple-700 transition-all duration-300">
-                      进入 TV Board
+                      {t("进入 TV Board")}
                       <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
@@ -142,13 +142,13 @@ export default function TVBoardPage() {
         <div className="mt-12 text-center">
           <div className="bg-white rounded-2xl p-6 shadow-lg max-w-2xl mx-auto">
             <h3 className="text-lg font-semibold text-gray-700 mb-3">
-              📋 TV Board 功能说明
+              {t("📋 TV Board 功能说明")}
             </h3>
             <div className="text-gray-600 space-y-2">
-              <p>• 自动轮播显示学生积分、生日和公告</p>
-              <p>• 背景运行NFC考勤功能</p>
-              <p>• 支持手动导航和键盘控制</p>
-              <p>• 当天生日学生特殊显示效果</p>
+              <p>{t("• 自动轮播显示学生积分、生日和公告")}</p>
+              <p>{t("• 背景运行NFC考勤功能")}</p>
+              <p>{t("• 支持手动导航和键盘控制")}</p>
+              <p>{t("• 当天生日学生特殊显示效果")}</p>
             </div>
           </div>
         </div>

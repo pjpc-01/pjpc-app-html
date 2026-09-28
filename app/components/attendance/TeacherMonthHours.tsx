@@ -98,16 +98,16 @@ export default function TeacherMonthHours({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <Clock className="h-4 w-4 text-cyan-600" />
-            教师本月教学工时
-            <span className="text-xs font-normal text-gray-400">({y} 年 {m} 月)</span>
+            {t("教师本月教学工时")}
+            <span className="text-xs font-normal text-gray-400">({y} {t("年")} {m} {t("月)")}</span>
           </CardTitle>
         </div>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="flex items-center justify-center py-6 text-gray-400 text-sm">加载工时数据...</div>
+          <div className="flex items-center justify-center py-6 text-gray-400 text-sm">{t("加载工时数据...")}</div>
         ) : sorted.length === 0 ? (
-          <div className="text-sm text-muted-foreground py-4 text-center">暂无教师数据</div>
+          <div className="text-sm text-muted-foreground py-4 text-center">{t("暂无教师数据")}</div>
         ) : (
           <div className="space-y-1.5">
             {sorted.map(teacher => {

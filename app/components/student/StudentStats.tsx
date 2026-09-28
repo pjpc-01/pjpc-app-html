@@ -77,7 +77,7 @@ export default function StudentStats({
         <CardContent className="p-4">
           <div className="text-center text-gray-500">
             <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>没有找到匹配的学生</p>
+            <p>{t("没有找到匹配的学生")}</p>
           </div>
         </CardContent>
       </Card>
@@ -95,10 +95,10 @@ export default function StudentStats({
                 <Users className="h-4 w-4 text-amber-600" />
                 <span className="text-lg font-semibold">{stats.total}</span>
               </div>
-              <p className="text-xs text-gray-600">筛选结果</p>
+              <p className="text-xs text-gray-600">{t("筛选结果")}</p>
               {stats.percentage < 100 && (
                 <Badge variant="secondary" className="text-xs mt-1">
-                  {stats.percentage}% 的总数
+                  {stats.percentage}{t("% 的总数")}
                 </Badge>
               )}
             </div>
@@ -124,7 +124,7 @@ export default function StudentStats({
                 <Phone className="h-4 w-4 text-orange-500" />
                 <span className="text-lg font-semibold">{stats.transferred}</span>
               </div>
-              <p className="text-xs text-gray-600">已转学</p>
+              <p className="text-xs text-gray-600">{t("已转学")}</p>
             </div>
           </div>
 
@@ -135,7 +135,7 @@ export default function StudentStats({
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
-                  按状态分布
+                  {t("按状态分布")}
                 </h4>
                 <div className="space-y-1">
                   {Object.entries(stats.byStatus)
@@ -157,7 +157,7 @@ export default function StudentStats({
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
                   <GraduationCap className="h-3 w-3" />
-                  按年级分布
+                  {t("按年级分布")}
                 </h4>
                 <div className="space-y-1">
                   {Object.entries(stats.byGrade)
@@ -180,7 +180,7 @@ export default function StudentStats({
                <div>
                  <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
                    <TrendingUp className="h-3 w-3" />
-                   邮箱分布
+                   {t("邮箱分布")}
                  </h4>
                  <div className="space-y-1">
                    {Object.entries(stats.byEmail)
@@ -201,11 +201,11 @@ export default function StudentStats({
              <div>
                <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
                  <TrendingUp className="h-3 w-3" />
-                 其他统计
+                 {t("其他统计")}
                </h4>
                <div className="space-y-1">
                  <div className="flex justify-between items-center text-xs">
-                   <span>非活跃学生</span>
+                   <span>{t("非活跃学生")}</span>
                    <Badge variant="outline" className="text-xs">
                      {stats.inactive}
                    </Badge>

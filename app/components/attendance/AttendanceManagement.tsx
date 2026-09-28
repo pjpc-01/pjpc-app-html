@@ -99,7 +99,7 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">今日总打卡</p>
+                <p className="text-sm font-medium text-gray-600">{t("今日总打卡")}</p>
                 <p className="text-2xl font-bold">{todayStats.total}</p>
               </div>
               <Clock className="h-8 w-8 text-blue-500" />
@@ -123,7 +123,7 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">签退人数</p>
+                <p className="text-sm font-medium text-gray-600">{t("签退人数")}</p>
                 <p className="text-2xl font-bold text-orange-600">{todayStats.checkOut}</p>
               </div>
               <Building className="h-8 w-8 text-orange-500" />
@@ -135,7 +135,7 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">参与学生</p>
+                <p className="text-sm font-medium text-gray-600">{t("参与学生")}</p>
                 <p className="text-2xl font-bold text-purple-600">{todayStats.uniqueStudents}</p>
               </div>
               <User className="h-8 w-8 text-purple-500" />
@@ -149,7 +149,7 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            筛选和操作
+            {t("筛选和操作")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -165,7 +165,7 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
             </div>
 
             <div>
-              <Label htmlFor="type">考勤类型</Label>
+              <Label htmlFor="type">{t("考勤类型")}</Label>
               <Select value={selectedType} onValueChange={setSelectedType}>
                 <SelectTrigger>
                   <SelectValue />
@@ -184,7 +184,7 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
                 <Input
                   id="search"
-                  placeholder="姓名或ID"
+                  placeholder={t("姓名或ID")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-8"
@@ -195,7 +195,7 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
             <div className="flex items-end gap-2">
               <Button onClick={refreshData} variant="outline" className="flex-1">
                 <RefreshCw className="h-4 w-4 mr-2" />
-                刷新
+                {t("刷新")}
               </Button>
               <Button onClick={exportData} variant="outline">
                 <Download className="h-4 w-4" />
@@ -208,7 +208,7 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
       {/* 考勤记录表格 */}
       <Card>
         <CardHeader>
-          <CardTitle>考勤记录</CardTitle>
+          <CardTitle>{t("考勤记录")}</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -225,10 +225,10 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
               <Table>
                 <TableHeader>
                                      <TableRow>
-                     <TableHead>学生ID</TableHead>
+                     <TableHead>{t("学生ID")}</TableHead>
                      <TableHead>{t('student.student_name')}</TableHead>
                      <TableHead>{t('teacher.center')}</TableHead>
-                     <TableHead>设备</TableHead>
+                     <TableHead>{t("设备")}</TableHead>
                      <TableHead>{t('announcement.time')}</TableHead>
                      <TableHead>{t('common.type')}</TableHead>
                      <TableHead>{t('teacher.status')}</TableHead>
@@ -238,7 +238,7 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
                                      {filteredRecords.length === 0 ? (
                      <TableRow>
                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                         暂无考勤记录
+                         {t("暂无考勤记录")}
                        </TableCell>
                      </TableRow>
                    ) : (

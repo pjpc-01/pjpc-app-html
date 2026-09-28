@@ -337,13 +337,13 @@ export default function TeacherPerformanceManagement() {
       {/* 标题和操作 */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">教师绩效评估</h1>
-          <p className="text-gray-600">管理教师绩效评估和考核记录</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t("教师绩效评估")}</h1>
+          <p className="text-gray-600">{t("管理教师绩效评估和考核记录")}</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setEvaluationDialogOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
-            新建绩效评估
+            {t("新建绩效评估")}
           </Button>
         </div>
       </div>
@@ -355,7 +355,7 @@ export default function TeacherPerformanceManagement() {
             <div className="flex items-center">
               <BarChart3 className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">总评估数</p>
+                <p className="text-sm font-medium text-gray-600">{t("总评估数")}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.totalEvaluations}</p>
               </div>
             </div>
@@ -367,7 +367,7 @@ export default function TeacherPerformanceManagement() {
             <div className="flex items-center">
               <Star className="h-8 w-8 text-yellow-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">平均评分</p>
+                <p className="text-sm font-medium text-gray-600">{t("平均评分")}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.averageScore.toFixed(1)}</p>
               </div>
             </div>
@@ -436,19 +436,19 @@ export default function TeacherPerformanceManagement() {
             </div>
             
             <div>
-              <Label htmlFor="quarter_filter">季度</Label>
+              <Label htmlFor="quarter_filter">{t("季度")}</Label>
               <Select value={filters.quarter} onValueChange={(value) => 
                 setFilters(prev => ({ ...prev, quarter: value }))
               }>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择季度" />
+                  <SelectValue placeholder={t("选择季度")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部季度</SelectItem>
-                  <SelectItem value="1">第一季度</SelectItem>
-                  <SelectItem value="2">第二季度</SelectItem>
-                  <SelectItem value="3">第三季度</SelectItem>
-                  <SelectItem value="4">第四季度</SelectItem>
+                  <SelectItem value="all">{t("全部季度")}</SelectItem>
+                  <SelectItem value="1">{t("第一季度")}</SelectItem>
+                  <SelectItem value="2">{t("第二季度")}</SelectItem>
+                  <SelectItem value="3">{t("第三季度")}</SelectItem>
+                  <SelectItem value="4">{t("第四季度")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -459,7 +459,7 @@ export default function TeacherPerformanceManagement() {
                 setFilters(prev => ({ ...prev, status: value }))
               }>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择状态" />
+                  <SelectValue placeholder={t("选择状态")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('common.all_status')}</SelectItem>
@@ -477,19 +477,19 @@ export default function TeacherPerformanceManagement() {
       {/* 绩效评估列表 */}
       <Card>
         <CardHeader>
-          <CardTitle>绩效评估列表</CardTitle>
-          <CardDescription>查看和管理教师的绩效评估记录</CardDescription>
+          <CardTitle>{t("绩效评估列表")}</CardTitle>
+          <CardDescription>{t("查看和管理教师的绩效评估记录")}</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>{t('teacher.teacher')}</TableHead>
-                <TableHead>评估期间</TableHead>
-                <TableHead>总分</TableHead>
-                <TableHead>等级</TableHead>
+                <TableHead>{t("评估期间")}</TableHead>
+                <TableHead>{t("总分")}</TableHead>
+                <TableHead>{t("等级")}</TableHead>
                 <TableHead>{t('teacher.status')}</TableHead>
-                <TableHead>评估日期</TableHead>
+                <TableHead>{t("评估日期")}</TableHead>
                 <TableHead>{t('teacher.actions')}</TableHead>
               </TableRow>
             </TableHeader>
@@ -506,7 +506,7 @@ export default function TeacherPerformanceManagement() {
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{evaluation.year}年Q{evaluation.quarter}</p>
+                        <p className="font-medium">{evaluation.year}{t("年Q")}{evaluation.quarter}</p>
                         <p className="text-sm text-gray-500">{evaluation.evaluation_period}</p>
                       </div>
                     </TableCell>
@@ -573,9 +573,9 @@ export default function TeacherPerformanceManagement() {
       <Dialog open={!!viewingEvaluation} onOpenChange={(open) => !open && setViewingEvaluation(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>绩效评估详情</DialogTitle>
+            <DialogTitle>{t("绩效评估详情")}</DialogTitle>
             <DialogDescription>
-              {viewingEvaluation?.expand?.teacher_id?.name} — {viewingEvaluation?.year}年Q{viewingEvaluation?.quarter}
+              {viewingEvaluation?.expand?.teacher_id?.name} — {viewingEvaluation?.year}{t("年Q")}{viewingEvaluation?.quarter}
             </DialogDescription>
           </DialogHeader>
           {viewingEvaluation && (
@@ -586,15 +586,15 @@ export default function TeacherPerformanceManagement() {
                   <p className="font-medium">{viewingEvaluation.expand?.teacher_id?.name}</p>
                 </div>
                 <div>
-                  <Label>评估期间</Label>
+                  <Label>{t("评估期间")}</Label>
                   <p className="font-medium">{viewingEvaluation.evaluation_period}</p>
                 </div>
                 <div>
-                  <Label>总分</Label>
+                  <Label>{t("总分")}</Label>
                   <p className="text-2xl font-bold text-blue-600">{viewingEvaluation.overall_score}/10</p>
                 </div>
                 <div>
-                  <Label>等级</Label>
+                  <Label>{t("等级")}</Label>
                   <Badge className={getScoreLevel(viewingEvaluation.overall_score).color}>
                     {getScoreLevel(viewingEvaluation.overall_score).level}
                   </Badge>
@@ -602,33 +602,33 @@ export default function TeacherPerformanceManagement() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <Label>教学质量</Label>
+                  <Label>{t("教学质量")}</Label>
                   <p>{viewingEvaluation.teaching_quality}/10</p>
                 </div>
                 <div className="space-y-1">
-                  <Label>学生满意度</Label>
+                  <Label>{t("学生满意度")}</Label>
                   <p>{viewingEvaluation.student_satisfaction}/10</p>
                 </div>
                 <div className="space-y-1">
-                  <Label>出勤情况</Label>
+                  <Label>{t("出勤情况")}</Label>
                   <p>{viewingEvaluation.attendance_score}/10</p>
                 </div>
                 <div className="space-y-1">
-                  <Label>守时情况</Label>
+                  <Label>{t("守时情况")}</Label>
                   <p>{viewingEvaluation.punctuality_score}/10</p>
                 </div>
                 <div className="space-y-1">
-                  <Label>团队合作</Label>
+                  <Label>{t("团队合作")}</Label>
                   <p>{viewingEvaluation.teamwork_score}/10</p>
                 </div>
                 <div className="space-y-1">
-                  <Label>沟通能力</Label>
+                  <Label>{t("沟通能力")}</Label>
                   <p>{viewingEvaluation.communication_score}/10</p>
                 </div>
               </div>
               {viewingEvaluation.notes && (
                 <div>
-                  <Label>评估备注</Label>
+                  <Label>{t("评估备注")}</Label>
                   <p className="text-sm text-gray-600 mt-1">{viewingEvaluation.notes}</p>
                 </div>
               )}
@@ -644,8 +644,8 @@ export default function TeacherPerformanceManagement() {
       <Dialog open={evaluationDialogOpen} onOpenChange={setEvaluationDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>新建绩效评估</DialogTitle>
-            <DialogDescription>对教师进行全面的绩效评估</DialogDescription>
+            <DialogTitle>{t("新建绩效评估")}</DialogTitle>
+            <DialogDescription>{t("对教师进行全面的绩效评估")}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEvaluationSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
@@ -668,7 +668,7 @@ export default function TeacherPerformanceManagement() {
               </div>
               
               <div>
-                <Label htmlFor="evaluation_period">评估期间</Label>
+                <Label htmlFor="evaluation_period">{t("评估期间")}</Label>
                 <Input
                   id="evaluation_period"
                   value={evaluationForm.evaluation_period}
@@ -676,7 +676,7 @@ export default function TeacherPerformanceManagement() {
                     ...prev, 
                     evaluation_period: e.target.value 
                   }))}
-                  placeholder="例如：2024年第一季度"
+                  placeholder={t("例如：2024年第一季度")}
                 />
               </div>
             </div>
@@ -696,7 +696,7 @@ export default function TeacherPerformanceManagement() {
               </div>
               
               <div>
-                <Label htmlFor="quarter">季度</Label>
+                <Label htmlFor="quarter">{t("季度")}</Label>
                 <Select value={evaluationForm.quarter.toString()} onValueChange={(value) => 
                   setEvaluationForm(prev => ({ ...prev, quarter: parseInt(value) }))
                 }>
@@ -704,17 +704,17 @@ export default function TeacherPerformanceManagement() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">第一季度</SelectItem>
-                    <SelectItem value="2">第二季度</SelectItem>
-                    <SelectItem value="3">第三季度</SelectItem>
-                    <SelectItem value="4">第四季度</SelectItem>
+                    <SelectItem value="1">{t("第一季度")}</SelectItem>
+                    <SelectItem value="2">{t("第二季度")}</SelectItem>
+                    <SelectItem value="3">{t("第三季度")}</SelectItem>
+                    <SelectItem value="4">{t("第四季度")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               <div className="flex items-end">
                 <div className="text-center">
-                  <p className="text-sm font-medium text-gray-600">总分</p>
+                  <p className="text-sm font-medium text-gray-600">{t("总分")}</p>
                   <p className="text-2xl font-bold text-blue-600">
                     {calculateOverallScore({
                       teaching_quality: evaluationForm.teaching_quality,
@@ -731,11 +731,11 @@ export default function TeacherPerformanceManagement() {
 
             {/* 评分部分 */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">评分项目</h3>
+              <h3 className="text-lg font-semibold">{t("评分项目")}</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label>教学质量 (当前: {evaluationForm.teaching_quality})</Label>
+                  <Label>{t("教学质量 (当前:")} {evaluationForm.teaching_quality})</Label>
                   <Slider
                     value={[evaluationForm.teaching_quality]}
                     onValueChange={([value]) => setEvaluationForm(prev => ({ 
@@ -750,7 +750,7 @@ export default function TeacherPerformanceManagement() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>学生满意度 (当前: {evaluationForm.student_satisfaction})</Label>
+                  <Label>{t("学生满意度 (当前:")} {evaluationForm.student_satisfaction})</Label>
                   <Slider
                     value={[evaluationForm.student_satisfaction]}
                     onValueChange={([value]) => setEvaluationForm(prev => ({ 
@@ -765,7 +765,7 @@ export default function TeacherPerformanceManagement() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>出勤情况 (当前: {evaluationForm.attendance_score})</Label>
+                  <Label>{t("出勤情况 (当前:")} {evaluationForm.attendance_score})</Label>
                   <Slider
                     value={[evaluationForm.attendance_score]}
                     onValueChange={([value]) => setEvaluationForm(prev => ({ 
@@ -780,7 +780,7 @@ export default function TeacherPerformanceManagement() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>守时情况 (当前: {evaluationForm.punctuality_score})</Label>
+                  <Label>{t("守时情况 (当前:")} {evaluationForm.punctuality_score})</Label>
                   <Slider
                     value={[evaluationForm.punctuality_score]}
                     onValueChange={([value]) => setEvaluationForm(prev => ({ 
@@ -795,7 +795,7 @@ export default function TeacherPerformanceManagement() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>团队合作 (当前: {evaluationForm.teamwork_score})</Label>
+                  <Label>{t("团队合作 (当前:")} {evaluationForm.teamwork_score})</Label>
                   <Slider
                     value={[evaluationForm.teamwork_score]}
                     onValueChange={([value]) => setEvaluationForm(prev => ({ 
@@ -810,7 +810,7 @@ export default function TeacherPerformanceManagement() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>沟通能力 (当前: {evaluationForm.communication_score})</Label>
+                  <Label>{t("沟通能力 (当前:")} {evaluationForm.communication_score})</Label>
                   <Slider
                     value={[evaluationForm.communication_score]}
                     onValueChange={([value]) => setEvaluationForm(prev => ({ 
@@ -827,7 +827,7 @@ export default function TeacherPerformanceManagement() {
             </div>
 
             <div>
-              <Label htmlFor="notes">评估备注</Label>
+              <Label htmlFor="notes">{t("评估备注")}</Label>
               <Textarea
                 id="notes"
                 value={evaluationForm.notes}
@@ -836,15 +836,15 @@ export default function TeacherPerformanceManagement() {
                   notes: e.target.value 
                 }))}
                 rows={4}
-                placeholder="详细的评估意见和改进建议..."
+                placeholder={t("详细的评估意见和改进建议...")}
               />
             </div>
 
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setEvaluationDialogOpen(false)}>
-                取消
+                {t("取消")}
               </Button>
-              <Button type="submit">创建评估</Button>
+              <Button type="submit">{t("创建评估")}</Button>
             </div>
           </form>
         </DialogContent>

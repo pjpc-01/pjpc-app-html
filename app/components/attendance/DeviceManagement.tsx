@@ -132,7 +132,7 @@ export default function DeviceManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">总设备数</p>
+                <p className="text-sm font-medium text-gray-600">{t("总设备数")}</p>
                 <p className="text-2xl font-bold">{devices.length}</p>
               </div>
               <Settings className="h-8 w-8 text-blue-500" />
@@ -144,7 +144,7 @@ export default function DeviceManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">在线设备</p>
+                <p className="text-sm font-medium text-gray-600">{t("在线设备")}</p>
                 <p className="text-2xl font-bold text-green-600">
                   {devices.filter(d => d.status === 'active').length}
                 </p>
@@ -158,7 +158,7 @@ export default function DeviceManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">离线设备</p>
+                <p className="text-sm font-medium text-gray-600">{t("离线设备")}</p>
                 <p className="text-2xl font-bold text-red-600">
                   {devices.filter(d => d.status === 'inactive').length}
                 </p>
@@ -172,7 +172,7 @@ export default function DeviceManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">设备类型</p>
+                <p className="text-sm font-medium text-gray-600">{t("设备类型")}</p>
                 <p className="text-2xl font-bold text-purple-600">
                   {new Set(devices.map(d => d.type)).size}
                 </p>
@@ -187,10 +187,10 @@ export default function DeviceManagement() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>设备管理</CardTitle>
+            <CardTitle>{t("设备管理")}</CardTitle>
             <Button onClick={() => setShowAddForm(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              添加设备
+              {t("添加设备")}
             </Button>
           </div>
         </CardHeader>
@@ -199,12 +199,12 @@ export default function DeviceManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>设备名称</TableHead>
+                  <TableHead>{t("设备名称")}</TableHead>
                   <TableHead>{t('common.type')}</TableHead>
-                  <TableHead>位置</TableHead>
-                  <TableHead>IP地址</TableHead>
+                  <TableHead>{t("位置")}</TableHead>
+                  <TableHead>{t("IP地址")}</TableHead>
                   <TableHead>{t('teacher.status')}</TableHead>
-                  <TableHead>最后在线</TableHead>
+                  <TableHead>{t("最后在线")}</TableHead>
                   <TableHead>{t('teacher.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -276,7 +276,7 @@ export default function DeviceManagement() {
       {showAddForm && (
         <Card>
           <CardHeader>
-            <CardTitle>添加设备</CardTitle>
+            <CardTitle>{t("添加设备")}</CardTitle>
           </CardHeader>
           <CardContent>
             <AddDeviceForm 
@@ -291,7 +291,7 @@ export default function DeviceManagement() {
       {editingDevice && (
         <Card>
           <CardHeader>
-            <CardTitle>编辑设备</CardTitle>
+            <CardTitle>{t("编辑设备")}</CardTitle>
           </CardHeader>
           <CardContent>
             <EditDeviceForm 
@@ -335,7 +335,7 @@ function AddDeviceForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="name">设备名称</Label>
+          <Label htmlFor="name">{t("设备名称")}</Label>
           <Input
             id="name"
             value={formData.name}
@@ -344,20 +344,20 @@ function AddDeviceForm({
           />
         </div>
         <div>
-          <Label htmlFor="type">设备类型</Label>
+          <Label htmlFor="type">{t("设备类型")}</Label>
           <Select value={formData.type} onValueChange={(value: any) => setFormData(prev => ({ ...prev, type: value }))}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="desktop">桌面设备</SelectItem>
-              <SelectItem value="mobile">移动设备</SelectItem>
-              <SelectItem value="tablet">平板设备</SelectItem>
+              <SelectItem value="desktop">{t("桌面设备")}</SelectItem>
+              <SelectItem value="mobile">{t("移动设备")}</SelectItem>
+              <SelectItem value="tablet">{t("平板设备")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div>
-          <Label htmlFor="location">位置</Label>
+          <Label htmlFor="location">{t("位置")}</Label>
           <Input
             id="location"
             value={formData.location}
@@ -366,7 +366,7 @@ function AddDeviceForm({
           />
         </div>
         <div>
-          <Label htmlFor="ipAddress">IP地址</Label>
+          <Label htmlFor="ipAddress">{t("IP地址")}</Label>
           <Input
             id="ipAddress"
             value={formData.ipAddress}
@@ -384,10 +384,10 @@ function AddDeviceForm({
       </div>
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onCancel}>
-          取消
+          {t("取消")}
         </Button>
         <Button type="submit">
-          添加设备
+          {t("添加设备")}
         </Button>
       </div>
     </form>
@@ -422,7 +422,7 @@ function EditDeviceForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="name">设备名称</Label>
+          <Label htmlFor="name">{t("设备名称")}</Label>
           <Input
             id="name"
             value={formData.name}
@@ -431,20 +431,20 @@ function EditDeviceForm({
           />
         </div>
         <div>
-          <Label htmlFor="type">设备类型</Label>
+          <Label htmlFor="type">{t("设备类型")}</Label>
           <Select value={formData.type} onValueChange={(value: any) => setFormData(prev => ({ ...prev, type: value }))}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="desktop">桌面设备</SelectItem>
-              <SelectItem value="mobile">移动设备</SelectItem>
-              <SelectItem value="tablet">平板设备</SelectItem>
+              <SelectItem value="desktop">{t("桌面设备")}</SelectItem>
+              <SelectItem value="mobile">{t("移动设备")}</SelectItem>
+              <SelectItem value="tablet">{t("平板设备")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div>
-          <Label htmlFor="location">位置</Label>
+          <Label htmlFor="location">{t("位置")}</Label>
           <Input
             id="location"
             value={formData.location}
@@ -453,7 +453,7 @@ function EditDeviceForm({
           />
         </div>
         <div>
-          <Label htmlFor="ipAddress">IP地址</Label>
+          <Label htmlFor="ipAddress">{t("IP地址")}</Label>
           <Input
             id="ipAddress"
             value={formData.ipAddress}
@@ -471,10 +471,10 @@ function EditDeviceForm({
       </div>
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onCancel}>
-          取消
+          {t("取消")}
         </Button>
         <Button type="submit">
-          更新设备
+          {t("更新设备")}
         </Button>
       </div>
     </form>

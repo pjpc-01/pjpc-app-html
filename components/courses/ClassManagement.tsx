@@ -159,22 +159,22 @@ function CourseFormDialog({
         <div className="grid gap-4 py-4">
           {/* 课程名称 */}
           <div className="grid gap-2">
-            <Label htmlFor="title">课程名称 <span className="text-red-500">*</span></Label>
+            <Label htmlFor="title">{t("课程名称")} <span className="text-red-500">*</span></Label>
             <Input
               id="title"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="如：一年级华文"
+              placeholder={t("如：一年级华文")}
             />
           </div>
 
           {/* 科目 + 年级 */}
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="subject">科目 <span className="text-red-500">*</span></Label>
+              <Label htmlFor="subject">{t("科目")} <span className="text-red-500">*</span></Label>
               <Select value={form.subject} onValueChange={(v) => setForm({ ...form, subject: v })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择科目" />
+                  <SelectValue placeholder={t("选择科目")} />
                 </SelectTrigger>
                 <SelectContent>
                   {SUBJECT_OPTIONS.map((s) => (
@@ -184,10 +184,10 @@ function CourseFormDialog({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="grade_level">年级</Label>
+              <Label htmlFor="grade_level">{t("年级")}</Label>
               <Select value={form.grade_level || ''} onValueChange={(v) => setForm({ ...form, grade_level: v })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择年级" />
+                  <SelectValue placeholder={t("选择年级")} />
                 </SelectTrigger>
                 <SelectContent>
                   {GRADE_OPTIONS.map((g) => (
@@ -200,13 +200,13 @@ function CourseFormDialog({
 
           {/* 授课教师 */}
           <div className="grid gap-2">
-            <Label htmlFor="teacher_id">授课教师 <span className="text-xs text-gray-400 font-normal">(可选，可在排课时指定)</span></Label>
+            <Label htmlFor="teacher_id">{t("授课教师")} <span className="text-xs text-gray-400 font-normal">{t("(可选，可在排课时指定)")}</span></Label>
             <Select
               value={form.teacher_id || ''}
               onValueChange={(v) => setForm({ ...form, teacher_id: v })}
             >
               <SelectTrigger>
-                <SelectValue placeholder="选择授课教师" />
+                <SelectValue placeholder={t("选择授课教师")} />
               </SelectTrigger>
               <SelectContent>
                 {teachers.map((teacher) => (
@@ -219,7 +219,7 @@ function CourseFormDialog({
           {/* 双列：时长 + 最大人数 */}
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="duration">每节课时长（分钟）</Label>
+              <Label htmlFor="duration">{t("每节课时长（分钟）")}</Label>
               <Input
                 id="duration"
                 type="number"
@@ -228,7 +228,7 @@ function CourseFormDialog({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="max_students">最大学生数</Label>
+              <Label htmlFor="max_students">{t("最大学生数")}</Label>
               <Input
                 id="max_students"
                 type="number"
@@ -240,19 +240,19 @@ function CourseFormDialog({
 
           {/* 课程描述 */}
           <div className="grid gap-2">
-            <Label htmlFor="description">课程描述 / 大纲</Label>
+            <Label htmlFor="description">{t("课程描述 / 大纲")}</Label>
             <Textarea
               id="description"
               value={form.description || ''}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="课程内容简介、教学目标、教材说明..."
+              placeholder={t("课程内容简介、教学目标、教材说明...")}
               rows={3}
             />
           </div>
 
           {/* 状态 */}
           <div className="grid gap-2">
-            <Label>状态</Label>
+            <Label>{t("状态")}</Label>
             <div className="flex gap-3">
               {[
                 { value: 'active', label: '进行中' },
@@ -274,7 +274,7 @@ function CourseFormDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>取消</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t("取消")}</Button>
           <Button onClick={handleSave} disabled={saving}>
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
             {editingCourse ? '保存修改' : '创建课程'}
@@ -382,7 +382,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
     return (
       <div className="text-center py-16">
         <Loader2 className="h-10 w-10 animate-spin mx-auto text-gray-400" />
-        <p className="text-sm text-gray-500 mt-3">加载课程数据...</p>
+        <p className="text-sm text-gray-500 mt-3">{t("加载课程数据...")}</p>
       </div>
     )
   }
@@ -396,7 +396,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
           <h3 className="text-lg font-medium text-red-700 mb-1">{t('course.load_failed')}</h3>
           <p className="text-sm text-red-500 mb-4">{error}</p>
           <Button variant="outline" onClick={refetch}>
-            <RefreshCw className="h-4 w-4 mr-2" /> 重试
+            <RefreshCw className="h-4 w-4 mr-2" /> {t("重试")}
           </Button>
         </CardContent>
       </Card>
@@ -414,7 +414,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
             </div>
             <div>
               <div className="text-2xl font-bold">{stats.totalCourses ?? activeCourses.length}</div>
-              <div className="text-xs text-gray-500">课程总数</div>
+              <div className="text-xs text-gray-500">{t("课程总数")}</div>
             </div>
           </CardContent>
         </Card>
@@ -425,7 +425,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
             </div>
             <div>
               <div className="text-2xl font-bold">{Object.keys(gradeDistribution).length}</div>
-              <div className="text-xs text-gray-500">年级覆盖</div>
+              <div className="text-xs text-gray-500">{t("年级覆盖")}</div>
             </div>
           </CardContent>
         </Card>
@@ -436,7 +436,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
             </div>
             <div>
               <div className="text-2xl font-bold">{stats.activeCourses ?? activeCourses.filter(c => c.status === 'active').length}</div>
-              <div className="text-xs text-gray-500">进行中</div>
+              <div className="text-xs text-gray-500">{t("进行中")}</div>
             </div>
           </CardContent>
         </Card>
@@ -447,7 +447,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
             </div>
             <div>
               <div className="text-2xl font-bold">{Object.keys(stats.subjectDistribution || {}).length || new Set(activeCourses.map(c => c.subject).filter(Boolean)).size}</div>
-              <div className="text-xs text-gray-500">科目种类</div>
+              <div className="text-xs text-gray-500">{t("科目种类")}</div>
             </div>
           </CardContent>
         </Card>
@@ -458,7 +458,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="搜索课程或科目..."
+            placeholder={t("搜索课程或科目...")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -477,7 +477,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
         </Select>
         <Button onClick={() => { setEditingCourse(null); setAddDialogOpen(true) }}>
           <Plus className="h-4 w-4 mr-1" />
-          创建课程
+          {t("创建课程")}
         </Button>
       </div>
 
@@ -486,7 +486,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
         <Card>
           <CardContent className="p-12 text-center">
             <Users className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-            <h3 className="text-lg font-medium text-gray-600 mb-1">暂无课程数据</h3>
+            <h3 className="text-lg font-medium text-gray-600 mb-1">{t("暂无课程数据")}</h3>
             <p className="text-sm text-gray-400">
               {searchTerm || gradeFilter !== 'all' ? '没有符合筛选条件的课程' : '点击右上角「创建课程」开始'}
             </p>
@@ -503,7 +503,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
                 <Badge className={getGradeColor(grade) + ' text-sm px-3 py-1'}>
                   {GRADE_LABEL[grade] || grade}
                 </Badge>
-                <span className="text-xs text-gray-400">{gradeCourses.length} 个班级</span>
+                <span className="text-xs text-gray-400">{gradeCourses.length} {t("个班级")}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {gradeCourses.map((course) => {
@@ -520,7 +520,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
                             {course.status === 'active' ? '进行中' : course.status === 'inactive' ? '已暂停' : '已归档'}
                           </Badge>
                         </div>
-                        <CardDescription>{course.subject}</CardDescription>
+                        <CardDescription>{t(course.subject)}</CardDescription>
                       </CardHeader>
                       <CardContent className="pb-2 space-y-1 text-xs text-gray-500">
                         <div className="flex items-center gap-2">
@@ -538,7 +538,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="h-3.5 w-3.5 shrink-0" />
-                            {course.max_students || '?'}人
+                            {course.max_students || '?'}{t("人")}
                           </span>
                         </div>
                       </CardContent>
@@ -548,7 +548,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
                             variant="outline" size="sm" className="flex-1"
                             onClick={() => { setEditingCourse(course); setAddDialogOpen(true) }}
                           >
-                            <Edit className="h-3.5 w-3.5 mr-1" /> 编辑
+                            <Edit className="h-3.5 w-3.5 mr-1" /> {t("编辑")}
                           </Button>
                           <Button
                             variant="ghost" size="sm" className="text-red-500"
@@ -580,15 +580,15 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>删除课程</DialogTitle>
+            <DialogTitle>{t("删除课程")}</DialogTitle>
             <DialogDescription>
-              确定要删除「{deleteTarget?.title}」吗？此操作不可撤销。
+              {t("确定要删除「")}{deleteTarget?.title}{t("」吗？此操作不可撤销。")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>取消</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t("取消")}</Button>
             <Button variant="destructive" onClick={() => deleteTarget && handleDelete(deleteTarget)}>
-              删除
+              {t("删除")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -78,12 +78,12 @@ export default function NewInventoryItemPage() {
 
   return (
     <PageLayout
-      title="新增商品"
-      description="添加新商品到库存系统"
+      title={t("新增商品")}
+      description={t("添加新商品到库存系统")}
       actions={
         <Link href="/inventory">
           <Button variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-2" />返回库存
+            <ArrowLeft className="h-4 w-4 mr-2" />{t("返回库存")}
           </Button>
         </Link>
       }
@@ -94,9 +94,9 @@ export default function NewInventoryItemPage() {
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Name */}
               <div>
-                <Label htmlFor="name">商品名称 *</Label>
+                <Label htmlFor="name">{t("商品名称 *")}</Label>
                 <Input id="name" value={form.name} onChange={e => updateField("name", e.target.value)}
-                  placeholder="例：数学练习簿 Standard 4" required />
+                  placeholder={t("例：数学练习簿 Standard 4")} required />
               </div>
 
               {/* Category + Unit row */}
@@ -104,7 +104,7 @@ export default function NewInventoryItemPage() {
                 <div>
                   <Label>{t('inventory.category')}</Label>
                   <Select value={form.categoryId} onValueChange={v => updateField("categoryId", v)}>
-                    <SelectTrigger><SelectValue placeholder="选择分类" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t("选择分类")} /></SelectTrigger>
                     <SelectContent>
                       {categories.filter(c => c.status === "active").map(c => (
                         <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
@@ -115,7 +115,7 @@ export default function NewInventoryItemPage() {
                 <div>
                   <Label>{t('inventory.unit')}</Label>
                   <Select value={form.unit} onValueChange={v => updateField("unit", v)}>
-                    <SelectTrigger><SelectValue placeholder="选择单位" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t("选择单位")} /></SelectTrigger>
                     <SelectContent>
                       {UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
                     </SelectContent>
@@ -125,20 +125,20 @@ export default function NewInventoryItemPage() {
 
               {/* SKU */}
               <div>
-                <Label>商品编码 (SKU)</Label>
+                <Label>{t("商品编码 (SKU)")}</Label>
                 <Input value={form.sku} onChange={e => updateField("sku", e.target.value)}
-                  placeholder="可选，用于内部管理编号" />
+                  placeholder={t("可选，用于内部管理编号")} />
               </div>
 
               {/* Prices row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>进货价 (RM)</Label>
+                  <Label>{t("进货价 (RM)")}</Label>
                   <Input type="number" step="0.01" min="0" value={form.costPrice}
                     onChange={e => updateField("costPrice", e.target.value)} placeholder="0.00" />
                 </div>
                 <div>
-                  <Label>售价 (RM)</Label>
+                  <Label>{t("售价 (RM)")}</Label>
                   <Input type="number" step="0.01" min="0" value={form.sellingPrice}
                     onChange={e => updateField("sellingPrice", e.target.value)} placeholder="0.00" />
                 </div>
@@ -147,15 +147,15 @@ export default function NewInventoryItemPage() {
               {/* Stock row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>初始库存</Label>
+                  <Label>{t("初始库存")}</Label>
                   <Input type="number" min="0" value={form.stock}
                     onChange={e => updateField("stock", e.target.value)} />
                 </div>
                 <div>
-                  <Label>最低库存预警</Label>
+                  <Label>{t("最低库存预警")}</Label>
                   <Input type="number" min="0" value={form.minStock}
                     onChange={e => updateField("minStock", e.target.value)}
-                    placeholder="低于此数量时高亮提醒" />
+                    placeholder={t("低于此数量时高亮提醒")} />
                 </div>
               </div>
 
@@ -163,7 +163,7 @@ export default function NewInventoryItemPage() {
               <div>
                 <Label>{t('finance.description')}</Label>
                 <Textarea value={form.description} onChange={e => updateField("description", e.target.value)}
-                  placeholder="可选，商品说明/规格" rows={3} />
+                  placeholder={t("可选，商品说明/规格")} rows={3} />
               </div>
 
               {/* Error */}

@@ -119,11 +119,11 @@ export default function CourseManagement() {
   }
 
   if (teacherLoading) {
-    return <div className="p-6">加载教师信息中...</div>
+    return <div className="p-6">{t("加载教师信息中...")}</div>
   }
 
   if (!teacher) {
-    return <div className="p-6">未找到教师信息</div>
+    return <div className="p-6">{t("未找到教师信息")}</div>
   }
 
   return (
@@ -134,7 +134,7 @@ export default function CourseManagement() {
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              创建课程
+              {t("创建课程")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
@@ -144,22 +144,22 @@ export default function CourseManagement() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="title">课程名称 <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="title">{t("课程名称")} <span className="text-red-500">*</span></Label>
                   <Input
                     id="title"
                     value={newCourse.title}
                     onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
-                    placeholder="输入课程名称"
+                    placeholder={t("输入课程名称")}
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="subject">科目 <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="subject">{t("科目")} <span className="text-red-500">*</span></Label>
                   <Input
                     id="subject"
                     value={newCourse.subject}
                     onChange={(e) => setNewCourse({ ...newCourse, subject: e.target.value })}
-                    placeholder="输入科目"
+                    placeholder={t("输入科目")}
                     required
                   />
                 </div>
@@ -171,11 +171,11 @@ export default function CourseManagement() {
                     id="grade_level"
                     value={newCourse.grade_level}
                     onChange={(e) => setNewCourse({ ...newCourse, grade_level: e.target.value })}
-                    placeholder="输入年级"
+                    placeholder={t("输入年级")}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="duration">课程时长(分钟)</Label>
+                  <Label htmlFor="duration">{t("课程时长(分钟)")}</Label>
                   <Input
                     id="duration"
                     type="number"
@@ -185,7 +185,7 @@ export default function CourseManagement() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="max_students">最大学生数</Label>
+                <Label htmlFor="max_students">{t("最大学生数")}</Label>
                 <Input
                   id="max_students"
                   type="number"
@@ -194,12 +194,12 @@ export default function CourseManagement() {
                 />
               </div>
               <div>
-                <Label htmlFor="description">课程描述</Label>
+                <Label htmlFor="description">{t("课程描述")}</Label>
                 <Textarea
                   id="description"
                   value={newCourse.description}
                   onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
-                  placeholder="输入课程描述"
+                  placeholder={t("输入课程描述")}
                   rows={3}
                 />
               </div>
@@ -217,7 +217,7 @@ export default function CourseManagement() {
                     status: 'active'
                   })
                 }}>
-                  取消
+                  {t("取消")}
                 </Button>
                 <Button onClick={editingCourse ? handleUpdateCourse : handleCreateCourse}>
                   {editingCourse ? '更新课程' : '创建课程'}
@@ -251,7 +251,7 @@ export default function CourseManagement() {
                   <BookOpen className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">活跃课程</p>
+                  <p className="text-sm font-medium text-gray-600">{t("活跃课程")}</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.activeCourses}</p>
                 </div>
               </div>
@@ -277,7 +277,7 @@ export default function CourseManagement() {
                   <Clock className="h-5 w-5 text-orange-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">平均班级大小</p>
+                  <p className="text-sm font-medium text-gray-600">{t("平均班级大小")}</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.averageClassSize}</p>
                 </div>
               </div>
@@ -289,14 +289,14 @@ export default function CourseManagement() {
       {/* 课程列表 */}
       <Card>
         <CardHeader>
-          <CardTitle>我的课程</CardTitle>
+          <CardTitle>{t("我的课程")}</CardTitle>
         </CardHeader>
         <CardContent>
           {coursesLoading ? (
             <div className="text-center py-8">{t('teacher.loading')}</div>
           ) : courses.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              暂无课程，点击上方按钮创建第一个课程
+              {t("暂无课程，点击上方按钮创建第一个课程")}
             </div>
           ) : (
             <Table>
@@ -305,8 +305,8 @@ export default function CourseManagement() {
                   <TableHead>{t('course.course_name')}</TableHead>
                   <TableHead>{t('exam.subject')}</TableHead>
                   <TableHead>{t('student.grade')}</TableHead>
-                  <TableHead>时长</TableHead>
-                  <TableHead>最大学生数</TableHead>
+                  <TableHead>{t("时长")}</TableHead>
+                  <TableHead>{t("最大学生数")}</TableHead>
                   <TableHead>{t('teacher.status')}</TableHead>
                   <TableHead>{t('teacher.actions')}</TableHead>
                 </TableRow>
@@ -315,9 +315,9 @@ export default function CourseManagement() {
                 {courses.map((course) => (
                   <TableRow key={course.id}>
                     <TableCell className="font-medium">{course.title}</TableCell>
-                    <TableCell>{course.subject}</TableCell>
+                    <TableCell>{t(course.subject)}</TableCell>
                     <TableCell>{gradeLabel(course.grade_level)}</TableCell>
-                    <TableCell>{course.duration}分钟</TableCell>
+                    <TableCell>{course.duration}{t("分钟")}</TableCell>
                     <TableCell>{course.max_students}</TableCell>
                     <TableCell>
                       <Badge variant={course.status === 'active' ? 'default' : 'secondary'}>

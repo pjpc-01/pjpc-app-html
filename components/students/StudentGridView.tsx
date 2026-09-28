@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Edit, Eye, GraduationCap, MapPin, Phone, Mail, Users } from "lucide-react"
 import { convertGradeToChinese } from "@/app/components/student/utils"
 import { getStudentCenterName } from "@/lib/studentUtils"
+import { useLanguage } from "@/contexts/language-context";
 
 interface Student {
   id: string
@@ -31,6 +32,7 @@ interface StudentGridViewProps {
 }
 
 export default function StudentGridView({ students, onView, onEdit }: StudentGridViewProps) {
+  const { t } = useLanguage();
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {students.map((student) => (
@@ -77,7 +79,7 @@ export default function StudentGridView({ students, onView, onEdit }: StudentGri
                 onClick={() => onView(student)}
               >
                 <Eye className="h-4 w-4 mr-2" />
-                查看
+                {t("查看")}
               </Button>
               <Button
                 variant="outline"

@@ -41,7 +41,7 @@ export default function TeacherDetails({ open, onOpenChange, teacher }: TeacherD
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>教师详情 — {teacher.teacher_name || teacher.name}</DialogTitle>
+          <DialogTitle>{t("教师详情 —")} {teacher.teacher_name || teacher.name}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
@@ -54,11 +54,11 @@ export default function TeacherDetails({ open, onOpenChange, teacher }: TeacherD
                 <p className="text-base">{teacher.teacher_name || teacher.name || '未设置'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">教师工号</label>
+                <label className="text-sm font-medium text-gray-500">{t("教师工号")}</label>
                 <p className="text-base">{teacher.teacher_id || teacher.idNumber?.toString() || '未设置'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">NRIC 身份证号码</label>
+                <label className="text-sm font-medium text-gray-500">{t("NRIC 身份证号码")}</label>
                 <p className="text-base">{teacher.nric || '未设置'}</p>
               </div>
               <div>
@@ -74,12 +74,12 @@ export default function TeacherDetails({ open, onOpenChange, teacher }: TeacherD
                 <p className="text-base">{teacher.department || '未设置'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">职位</label>
+                <label className="text-sm font-medium text-gray-500">{t("职位")}</label>
                 <p className="text-base">{teacher.position || '未设置'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">教龄</label>
-                <p className="text-base">{teacher.experience || 0} 年</p>
+                <label className="text-sm font-medium text-gray-500">{t("教龄")}</label>
+                <p className="text-base">{teacher.experience || 0} {t("年")}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">{t('teacher.status')}</label>
@@ -94,22 +94,22 @@ export default function TeacherDetails({ open, onOpenChange, teacher }: TeacherD
 
           {/* ===== 个人信息 ===== */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold border-b pb-2">个人信息</h3>
+            <h3 className="text-lg font-semibold border-b pb-2">{t("个人信息")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-500">公民身份</label>
+                <label className="text-sm font-medium text-gray-500">{t("公民身份")}</label>
                 <p className="text-base">{teacher.isCitizen === true ? '马来西亚公民' : teacher.isCitizen === false ? '非公民' : '未设置'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">婚姻状况</label>
+                <label className="text-sm font-medium text-gray-500">{t("婚姻状况")}</label>
                 <p className="text-base">{teacher.marriedStatus === true ? '已婚' : teacher.marriedStatus === false ? '未婚' : '未设置'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">孩子数量</label>
+                <label className="text-sm font-medium text-gray-500">{t("孩子数量")}</label>
                 <p className="text-base">{teacher.totalChild ?? '未设置'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">NFC 卡号</label>
+                <label className="text-sm font-medium text-gray-500">{t("NFC 卡号")}</label>
                 <p className="text-base">{teacher.cardNumber || '未设置'}</p>
               </div>
             </div>
@@ -117,37 +117,37 @@ export default function TeacherDetails({ open, onOpenChange, teacher }: TeacherD
 
           {/* ===== 工作信息 ===== */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold border-b pb-2">工作信息</h3>
+            <h3 className="text-lg font-semibold border-b pb-2">{t("工作信息")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-500">入职日期</label>
+                <label className="text-sm font-medium text-gray-500">{t("入职日期")}</label>
                 <p className="text-base">{formatDate(teacher.joinDate || teacher.hireDate || '')}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">最后活跃</label>
+                <label className="text-sm font-medium text-gray-500">{t("最后活跃")}</label>
                 <p className="text-base">{formatDate(teacher.lastActive || '')}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">课程数量</label>
-                <p className="text-base">{teacher.courses || 0} 门</p>
+                <label className="text-sm font-medium text-gray-500">{t("课程数量")}</label>
+                <p className="text-base">{teacher.courses || 0} {t("门")}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">学生数量</label>
-                <p className="text-base">{teacher.students || 0} 名</p>
+                <label className="text-sm font-medium text-gray-500">{t("学生数量")}</label>
+                <p className="text-base">{teacher.students || 0} {t("名")}</p>
               </div>
             </div>
           </div>
 
           {/* ===== 银行信息 ===== */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold border-b pb-2">银行信息</h3>
+            <h3 className="text-lg font-semibold border-b pb-2">{t("银行信息")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="text-sm font-medium text-gray-500">{t('teacher.bank_name')}</label>
                 <p className="text-base">{teacher.bankName || '未设置'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">账户名称</label>
+                <label className="text-sm font-medium text-gray-500">{t("账户名称")}</label>
                 <p className="text-base">{teacher.bankAccountName || '未设置'}</p>
               </div>
               <div>
@@ -159,18 +159,18 @@ export default function TeacherDetails({ open, onOpenChange, teacher }: TeacherD
 
           {/* ===== KWSP / Socso / 税务 ===== */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold border-b pb-2">公积金 / Socso / 税务</h3>
+            <h3 className="text-lg font-semibold border-b pb-2">{t("公积金 / Socso / 税务")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-500">EPF / KWSP 号码</label>
+                <label className="text-sm font-medium text-gray-500">{t("EPF / KWSP 号码")}</label>
                 <p className="text-base">{teacher.epfNo || '未设置'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">Socso / PERKESO 号码</label>
+                <label className="text-sm font-medium text-gray-500">{t("Socso / PERKESO 号码")}</label>
                 <p className="text-base">{teacher.socsoNo || '未设置'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">税务号码 (Tax No)</label>
+                <label className="text-sm font-medium text-gray-500">{t("税务号码 (Tax No)")}</label>
                 <p className="text-base">{teacher.taxNo || '未设置'}</p>
               </div>
             </div>
@@ -178,7 +178,7 @@ export default function TeacherDetails({ open, onOpenChange, teacher }: TeacherD
 
           {/* ===== 联系信息 ===== */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold border-b pb-2">联系信息</h3>
+            <h3 className="text-lg font-semibold border-b pb-2">{t("联系信息")}</h3>
             <div className="space-y-3">
               <div>
                 <label className="text-sm font-medium text-gray-500">{t('teacher.address')}</label>
@@ -201,7 +201,7 @@ export default function TeacherDetails({ open, onOpenChange, teacher }: TeacherD
 
           {/* ===== 系统信息 ===== */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold border-b pb-2">系统信息</h3>
+            <h3 className="text-lg font-semibold border-b pb-2">{t("系统信息")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500">
               <div>
                 <label className="font-medium">{t('course.created_at')}</label>

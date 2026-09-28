@@ -168,7 +168,7 @@ export default function AttendanceSettingsPanel() {
         className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
       >
         <Settings2 className="h-4 w-4" />
-        考勤设置
+        {t("考勤设置")}
         {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
       </button>
 
@@ -181,10 +181,10 @@ export default function AttendanceSettingsPanel() {
               <>
                 {/* ─── Global Settings ─── */}
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 mb-2">全局默认</p>
+                  <p className="text-xs font-semibold text-gray-500 mb-2">{t("全局默认")}</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-[10px] text-gray-400">签到截止（迟到线）</Label>
+                      <Label className="text-[10px] text-gray-400">{t("签到截止（迟到线）")}</Label>
                       <Input
                         type="time"
                         value={config.checkin_deadline}
@@ -193,7 +193,7 @@ export default function AttendanceSettingsPanel() {
                       />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-gray-400">签退最早（早退线）</Label>
+                      <Label className="text-[10px] text-gray-400">{t("签退最早（早退线）")}</Label>
                       <Input
                         type="time"
                         value={config.checkout_minimum}
@@ -206,14 +206,14 @@ export default function AttendanceSettingsPanel() {
 
                 {/* ─── Grade Overrides ─── */}
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 mb-2">按年级</p>
+                  <p className="text-xs font-semibold text-gray-500 mb-2">{t("按年级")}</p>
                   {config.grade_overrides.length > 0 && (
                     <div className="space-y-1 mb-2">
                       {config.grade_overrides.map(g => (
                         <div key={g.grade} className="flex items-center gap-2 bg-gray-50 rounded px-2 py-1">
-                          <Badge variant="secondary" className="text-[10px]">{g.grade}</Badge>
-                          <span className="text-[10px] text-gray-500">签到 ≤{g.checkin_deadline}</span>
-                          <span className="text-[10px] text-gray-500">签退 ≥{g.checkout_minimum}</span>
+                          <Badge variant="secondary" className="text-[10px]">{t(g.grade)}</Badge>
+                          <span className="text-[10px] text-gray-500">{t("签到 ≤")}{g.checkin_deadline}</span>
+                          <span className="text-[10px] text-gray-500">{t("签退 ≥")}{g.checkout_minimum}</span>
                           <button onClick={() => removeGrade(g.grade)} className="ml-auto text-red-400 hover:text-red-600">
                             <Trash2 className="h-3 w-3" />
                           </button>
@@ -227,7 +227,7 @@ export default function AttendanceSettingsPanel() {
                       onChange={e => setNewGrade(e.target.value)}
                       className="h-7 text-xs border rounded px-2 bg-white w-28"
                     >
-                      <option value="">选择年级</option>
+                      <option value="">{t("选择年级")}</option>
                       {grades.filter(g => !config.grade_overrides.some(o => o.grade === g)).map(g => (
                         <option key={g} value={g}>{g}</option>
                       ))}
@@ -245,21 +245,21 @@ export default function AttendanceSettingsPanel() {
                       className="h-7 text-xs w-24"
                     />
                     <Button size="sm" variant="outline" onClick={addGrade} className="h-7 text-xs">
-                      <Plus className="h-3 w-3 mr-1" /> 添加
+                      <Plus className="h-3 w-3 mr-1" /> {t("添加")}
                     </Button>
                   </div>
                 </div>
 
                 {/* ─── Teacher Overrides ─── */}
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 mb-2">按老师</p>
+                  <p className="text-xs font-semibold text-gray-500 mb-2">{t("按老师")}</p>
                   {config.teacher_overrides.length > 0 && (
                     <div className="space-y-1 mb-2">
                       {config.teacher_overrides.map(t => (
                         <div key={t.teacher_id} className="flex items-center gap-2 bg-gray-50 rounded px-2 py-1">
                           <Badge variant="secondary" className="text-[10px]">{t.teacher_name}</Badge>
-                          <span className="text-[10px] text-gray-500">签到 ≤{t.checkin_deadline}</span>
-                          <span className="text-[10px] text-gray-500">签退 ≥{t.checkout_minimum}</span>
+                          <span className="text-[10px] text-gray-500">{t("签到 ≤")}{t.checkin_deadline}</span>
+                          <span className="text-[10px] text-gray-500">{t("签退 ≥")}{t.checkout_minimum}</span>
                           <button onClick={() => removeTeacher(t.teacher_id)} className="ml-auto text-red-400 hover:text-red-600">
                             <Trash2 className="h-3 w-3" />
                           </button>
@@ -273,7 +273,7 @@ export default function AttendanceSettingsPanel() {
                       onChange={e => setNewTeacherId(e.target.value)}
                       className="h-7 text-xs border rounded px-2 bg-white w-36"
                     >
-                      <option value="">选择老师</option>
+                      <option value="">{t("选择老师")}</option>
                       {teachers.map(t => (
                         <option key={t.id} value={t.id}>{t.name}</option>
                       ))}
@@ -291,7 +291,7 @@ export default function AttendanceSettingsPanel() {
                       className="h-7 text-xs w-24"
                     />
                     <Button size="sm" variant="outline" onClick={addTeacher} className="h-7 text-xs" disabled={!newTeacherId}>
-                      <Plus className="h-3 w-3 mr-1" /> 添加
+                      <Plus className="h-3 w-3 mr-1" /> {t("添加")}
                     </Button>
                   </div>
                 </div>
@@ -300,9 +300,9 @@ export default function AttendanceSettingsPanel() {
                 <div className="flex items-center gap-2 pt-2 border-t flex-wrap">
                   <Button onClick={handleSave} disabled={saving} size="sm" className="h-8 text-xs">
                     {saving ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Save className="h-3 w-3 mr-1" />}
-                    保存设置
+                    {t("保存设置")}
                   </Button>
-                  {saved && <Badge className="bg-green-100 text-green-700 text-[10px]">✓ 已保存</Badge>}
+                  {saved && <Badge className="bg-green-100 text-green-700 text-[10px]">{t("✓ 已保存")}</Badge>}
                 </div>
               </>
             ) : (

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { Trophy, Medal, Award, Star, Users } from "lucide-react"
 import { ThemeColors } from "../hooks/useTheme"
+import { useLanguage } from "@/contexts/language-context";
 
 interface StudentPointsDisplayProps {
   data: any[]
@@ -21,6 +22,7 @@ export default function StudentPointsDisplay({
   totalStudents,
   studentsPerPage = 12
 }: StudentPointsDisplayProps) {
+  const { t } = useLanguage();
   // 调试信息
   console.log('StudentPointsDisplay 渲染:', {
     dataLength: data?.length || 0,
@@ -80,7 +82,7 @@ export default function StudentPointsDisplay({
                 {student.current_points || 0}
               </div>
               <div className="text-base opacity-90">
-                积分
+                {t("积分")}
               </div>
             </div>
 

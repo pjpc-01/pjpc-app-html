@@ -115,7 +115,7 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
                 <p className="text-2xl font-bold text-blue-600">{analytics.total}</p>
                 <p className="text-xs text-blue-600 flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 mr-1" />
-                  较上月 +{analytics.monthlyGrowth[analytics.monthlyGrowth.length - 1].count - analytics.monthlyGrowth[analytics.monthlyGrowth.length - 2].count}
+                  {t("较上月 +")}{analytics.monthlyGrowth[analytics.monthlyGrowth.length - 1].count - analytics.monthlyGrowth[analytics.monthlyGrowth.length - 2].count}
                 </p>
               </div>
               <Users className="h-8 w-8 text-blue-600" />
@@ -131,7 +131,7 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
                 <p className="text-2xl font-bold text-green-600">{analytics.active}</p>
                 <p className="text-xs text-green-600 flex items-center mt-1">
                   <CheckCircle className="h-3 w-3 mr-1" />
-                  {analytics.activeRate.toFixed(1)}% 在读率
+                  {analytics.activeRate.toFixed(1)}{t("% 在读率")}
                 </p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600" />
@@ -143,11 +143,11 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">小学生</p>
+                <p className="text-sm font-medium text-gray-600">{t("小学生")}</p>
                 <p className="text-2xl font-bold text-orange-600">{analytics.primaryCount}</p>
                 <p className="text-xs text-orange-600 flex items-center mt-1">
                   <GraduationCap className="h-3 w-3 mr-1" />
-                  {analytics.primaryRate.toFixed(1)}% 占比
+                  {analytics.primaryRate.toFixed(1)}{t("% 占比")}
                 </p>
               </div>
               <GraduationCap className="h-8 w-8 text-orange-600" />
@@ -159,11 +159,11 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">中学生</p>
+                <p className="text-sm font-medium text-gray-600">{t("中学生")}</p>
                 <p className="text-2xl font-bold text-purple-600">{analytics.secondaryCount}</p>
                 <p className="text-xs text-purple-600 flex items-center mt-1">
                   <GraduationCap className="h-3 w-3 mr-1" />
-                  {analytics.secondaryRate.toFixed(1)}% 占比
+                  {analytics.secondaryRate.toFixed(1)}{t("% 占比")}
                 </p>
               </div>
               <GraduationCap className="h-8 w-8 text-purple-600" />
@@ -179,9 +179,9 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
-              年级分布
+              {t("年级分布")}
             </CardTitle>
-            <CardDescription>各年级学生数量分布</CardDescription>
+            <CardDescription>{t("各年级学生数量分布")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -191,7 +191,7 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
                     <Badge variant="outline" className="w-16 text-center">
                       {grade}
                     </Badge>
-                    <span className="text-sm font-medium">{count} 人</span>
+                    <span className="text-sm font-medium">{count} {t("人")}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-32 bg-gray-200 rounded-full h-2">
@@ -215,9 +215,9 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5" />
-              中心分布
+              {t("中心分布")}
             </CardTitle>
-            <CardDescription>各中心学生数量分布</CardDescription>
+            <CardDescription>{t("各中心学生数量分布")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -226,7 +226,7 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full bg-purple-500"></div>
                     <span className="text-sm font-medium truncate max-w-24">{center}</span>
-                    <span className="text-sm text-gray-500">{count} 人</span>
+                    <span className="text-sm text-gray-500">{count} {t("人")}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-32 bg-gray-200 rounded-full h-2">
@@ -252,9 +252,9 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Phone className="h-5 w-5" />
-              联系信息完整度
+              {t("联系信息完整度")}
             </CardTitle>
-            <CardDescription>学生家长联系信息统计</CardDescription>
+            <CardDescription>{t("学生家长联系信息统计")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
@@ -265,7 +265,7 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
                 </div>
                 <Progress value={analytics.phoneRate} className="h-2" />
                 <p className="text-xs text-gray-500 mt-1">
-                  完整度: {analytics.phoneRate.toFixed(1)}%
+                  {t("完整度:")} {analytics.phoneRate.toFixed(1)}%
                 </p>
               </div>
               
@@ -276,7 +276,7 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
                 </div>
                 <Progress value={analytics.emailRate} className="h-2" />
                 <p className="text-xs text-gray-500 mt-1">
-                  完整度: {analytics.emailRate.toFixed(1)}%
+                  {t("完整度:")} {analytics.emailRate.toFixed(1)}%
                 </p>
               </div>
             </div>
@@ -287,9 +287,9 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5" />
-              学生状态分析
+              {t("学生状态分析")}
             </CardTitle>
-            <CardDescription>学生状态分布统计</CardDescription>
+            <CardDescription>{t("学生状态分布统计")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -298,7 +298,7 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
                   <CheckCircle className="h-5 w-5 text-green-600" />
                   <div>
                     <p className="font-medium text-green-900">{t('dashboard.active_students')}</p>
-                    <p className="text-sm text-green-600">正常学习状态</p>
+                    <p className="text-sm text-green-600">{t("正常学习状态")}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -311,8 +311,8 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
                 <div className="flex items-center gap-3">
                   <XCircle className="h-5 w-5 text-red-600" />
                   <div>
-                    <p className="font-medium text-red-900">离校学生</p>
-                    <p className="text-sm text-red-600">已毕业或转学</p>
+                    <p className="font-medium text-red-900">{t("离校学生")}</p>
+                    <p className="text-sm text-red-600">{t("已毕业或转学")}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -330,9 +330,9 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            学生增长趋势
+            {t("学生增长趋势")}
           </CardTitle>
-          <CardDescription>近6个月学生数量变化</CardDescription>
+          <CardDescription>{t("近6个月学生数量变化")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-6 gap-4">
@@ -370,14 +370,14 @@ export default function StudentAnalytics({ students, filteredStudents }: Student
               <div className="flex items-center gap-3">
                 <Info className="h-5 w-5 text-blue-600" />
                 <div>
-                  <p className="font-medium text-blue-900">筛选结果</p>
+                  <p className="font-medium text-blue-900">{t("筛选结果")}</p>
                   <p className="text-sm text-blue-600">
-                    当前显示 {analytics.filtered} 个学生，共 {analytics.total} 个学生
+                    {t("当前显示")} {analytics.filtered} {t("个学生，共")} {analytics.total} {t("个学生")}
                   </p>
                 </div>
               </div>
               <Badge variant="outline" className="text-blue-600">
-                {((analytics.filtered / analytics.total) * 100).toFixed(1)}% 匹配
+                {((analytics.filtered / analytics.total) * 100).toFixed(1)}{t("% 匹配")}
               </Badge>
             </div>
           </CardContent>

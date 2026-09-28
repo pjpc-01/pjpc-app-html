@@ -59,6 +59,7 @@ export const StudentCard = ({
   getLocalAdjustment, setLocalDiscount,
   setLocalSixMonthPay, setLocalSixMonthPayRate,
 }: StudentCardProps) => {
+  const { t } = useLanguage();
   const studentId = student.id
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set(Object.keys(groupedFees)))
@@ -104,7 +105,7 @@ export const StudentCard = ({
                 variant={localEditMode ? "default" : "ghost"}
                 size="sm" className="h-7 w-7 p-0"
                 onClick={(e) => { e.stopPropagation(); setLocalEditMode(!localEditMode) }}
-                title="编辑该学生费用"
+                title={t("编辑该学生费用")}
               >
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
@@ -122,11 +123,11 @@ export const StudentCard = ({
             {/* ── Discount / Six-Month Pay Panel (visible when editing) ── */}
             {(localEditMode) && (
               <div className="px-5 py-3 bg-blue-50/50 border-b space-y-3">
-                <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">费用调整</p>
+                <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">{t("费用调整")}</p>
                 <div className="grid grid-cols-3 gap-3">
                   {/* Discount */}
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">月折扣 (RM)</Label>
+                    <Label className="text-xs text-muted-foreground">{t("月折扣 (RM)")}</Label>
                     <Input
                       type="number"
                       min="0"
@@ -138,7 +139,7 @@ export const StudentCard = ({
                   </div>
                   {/* Six Month Pay Toggle */}
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">六月一次付</Label>
+                    <Label className="text-xs text-muted-foreground">{t("六月一次付")}</Label>
                     <div className="flex items-center gap-2 pt-1">
                       <Switch
                         checked={adjustment.six_month_pay || false}
@@ -149,7 +150,7 @@ export const StudentCard = ({
                   </div>
                   {/* Six Month Pay Rate */}
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">六月付折扣率 (%)</Label>
+                    <Label className="text-xs text-muted-foreground">{t("六月付折扣率 (%)")}</Label>
                     <Input
                       type="number"
                       min="0"
@@ -192,7 +193,7 @@ export const StudentCard = ({
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{assignedCount}/{categoryFees.length} 项</span>
+                        <span>{assignedCount}/{categoryFees.length} {t("项")}</span>
                         {assignedAmount > 0 && <span className="text-green-600 font-medium">RM {assignedAmount}</span>}
                       </div>
                     </button>
@@ -234,7 +235,7 @@ export const StudentCard = ({
 
               {activeFees.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground text-sm">
-                  暂无可分配的费用项目
+                  {t("暂无可分配的费用项目")}
                 </div>
               )}
             </div>
@@ -245,15 +246,15 @@ export const StudentCard = ({
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认开具发票</AlertDialogTitle>
+            <AlertDialogTitle>{t("确认开具发票")}</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要为 {student.student_name} 开具发票吗？
+              {t("确定要为")} {student.student_name} {t("开具发票吗？")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('report.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => { onCreateInvoice(studentId); setShowConfirmDialog(false) }}>
-              确认开具
+              {t("确认开具")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -21,6 +21,7 @@ import {
 import { FileText, CheckCircle, AlertCircle, Download, Printer, Send, Eye, Receipt, Settings, Trash2, Loader2 } from "lucide-react"
 import { downloadReceiptPDF, generateReceiptPDF, generateReceiptHTML } from "@/lib/pdf-generator"
 import ReceiptSettingsManager, { type ReceiptSettingsPreset } from "@/app/components/finance/payment-management/ReceiptSettingsManager"
+import { useLanguage } from "@/contexts/language-context";
 
 const PROXY = "/api/pocketbase-proxy/api/collections"
 
@@ -181,20 +182,21 @@ export function useReceiptTools({ students, payments, invoices }: {
 
 /** 付款行内的一排收据按钮 */
 export function ReceiptActions({ receipt, tools }: { receipt: any; tools: ReceiptTools }) {
-  if (!receipt) return <span className="text-xs text-slate-300">未生成</span>
+  const { t } = useLanguage();
+  if (!receipt) return <span className="text-xs text-slate-300">{t("未生成")}</span>
   return (
     <div className="flex items-center justify-center gap-0.5">
       <span className="font-mono text-[11px] text-slate-500 mr-1">{receipt.receiptNumber}</span>
-      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="查看收据" onClick={() => tools.viewReceipt(receipt)}>
+      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title={t("查看收据")} onClick={() => tools.viewReceipt(receipt)}>
         <Eye className="h-3.5 w-3.5" />
       </Button>
-      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="打印" onClick={() => tools.print(receipt)}>
+      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title={t("打印")} onClick={() => tools.print(receipt)}>
         <Printer className="h-3.5 w-3.5" />
       </Button>
-      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="下载 PDF" onClick={() => tools.download(receipt)}>
+      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title={t("下载 PDF")} onClick={() => tools.download(receipt)}>
         <Download className="h-3.5 w-3.5" />
       </Button>
-      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-green-600 hover:text-green-700" title="发送给家长 (WhatsApp)" onClick={() => tools.send(receipt)}>
+      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-green-600 hover:text-green-700" title={t("发送给家长 (WhatsApp)")} onClick={() => tools.send(receipt)}>
         <Send className="h-3.5 w-3.5" />
       </Button>
     </div>
@@ -203,15 +205,16 @@ export function ReceiptActions({ receipt, tools }: { receipt: any; tools: Receip
 
 /** 收据详情（PDF 预览 + 下载/打印） */
 export function ReceiptDetailDialog({ tools }: { tools: ReceiptTools }) {
+  const { t } = useLanguage();
   const r = tools.selectedReceipt
   return (
     <Dialog open={tools.detailOpen} onOpenChange={tools.setDetailOpen}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Receipt className="h-5 w-5" /> 收据详情 - {r?.receiptNumber}
+            <Receipt className="h-5 w-5" /> {t("收据详情 -")} {r?.receiptNumber}
           </DialogTitle>
-          <DialogDescription>查看收据的详细信息</DialogDescription>
+          <DialogDescription>{t("查看收据的详细信息")}</DialogDescription>
         </DialogHeader>
         {r && (
           <div className="space-y-4">
@@ -220,17 +223,17 @@ export function ReceiptDetailDialog({ tools }: { tools: ReceiptTools }) {
                 srcDoc={generateReceiptHTML(r, tools.getPresetFor(r), tools.getStudentName(r.studentId))}
                 className="w-full border-0"
                 style={{ height: '70vh', minHeight: '500px' }}
-                title="收据预览"
+                title={t("收据预览")}
               />
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => tools.download(r)}>
-                <Download className="h-4 w-4 mr-2" /> 下载PDF
+                <Download className="h-4 w-4 mr-2" /> {t("下载PDF")}
               </Button>
               <Button variant="outline" onClick={() => tools.print(r)}>
-                <Printer className="h-4 w-4 mr-2" /> 打印
+                <Printer className="h-4 w-4 mr-2" /> {t("打印")}
               </Button>
-              <Button onClick={() => tools.setDetailOpen(false)}>关闭</Button>
+              <Button onClick={() => tools.setDetailOpen(false)}>{t("关闭")}</Button>
             </div>
           </div>
         )}
@@ -268,11 +271,12 @@ export function ReceiptStatsCards({ stats }: { stats: { total: number; issued: n
 
 /** 收据 PDF 设置 */
 export function ReceiptSettingsDialog({ open, onOpenChange, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; onSaved?: () => void }) {
+  const { t } = useLanguage();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Settings className="h-5 w-5" /> 收据 PDF 设置</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><Settings className="h-5 w-5" /> {t("收据 PDF 设置")}</DialogTitle>
         </DialogHeader>
         <ReceiptSettingsManager onSettingsChange={() => { onSaved?.(); onOpenChange(false) }} />
       </DialogContent>
@@ -282,6 +286,7 @@ export function ReceiptSettingsDialog({ open, onOpenChange, onSaved }: { open: b
 
 /** 收据回收站（软删的收据：恢复 / 永久删除） */
 export function ReceiptBinDialog({ open, onOpenChange, tools }: { open: boolean; onOpenChange: (v: boolean) => void; tools: ReceiptTools }) {
+  const { t } = useLanguage();
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -310,13 +315,13 @@ export function ReceiptBinDialog({ open, onOpenChange, tools }: { open: boolean;
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Trash2 className="h-5 w-5 text-red-500" /> 收据回收站</DialogTitle>
-          <DialogDescription>已删除的收据可恢复；永久删除不可逆。</DialogDescription>
+          <DialogTitle className="flex items-center gap-2"><Trash2 className="h-5 w-5 text-red-500" /> {t("收据回收站")}</DialogTitle>
+          <DialogDescription>{t("已删除的收据可恢复；永久删除不可逆。")}</DialogDescription>
         </DialogHeader>
         {loading ? (
           <div className="py-10 text-center"><Loader2 className="h-5 w-5 mx-auto animate-spin text-amber-500" /></div>
         ) : items.length === 0 ? (
-          <div className="py-10 text-center text-sm text-gray-400">回收站是空的</div>
+          <div className="py-10 text-center text-sm text-gray-400">{t("回收站是空的")}</div>
         ) : (
           <div className="divide-y">
             {items.map(r => (
@@ -331,8 +336,8 @@ export function ReceiptBinDialog({ open, onOpenChange, tools }: { open: boolean;
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => restore(r.id)}>恢复</Button>
-                  <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={() => purge(r.id)}>永久删除</Button>
+                  <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => restore(r.id)}>{t("恢复")}</Button>
+                  <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={() => purge(r.id)}>{t("永久删除")}</Button>
                 </div>
               </div>
             ))}

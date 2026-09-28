@@ -681,7 +681,7 @@ export default function CourseScheduling() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-indigo-500 mb-3" />
-          <p className="text-gray-500 text-sm">加载排课数据...</p>
+          <p className="text-gray-500 text-sm">{t("加载排课数据...")}</p>
         </div>
       </div>
     )
@@ -733,10 +733,10 @@ export default function CourseScheduling() {
       <div>
         <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
           <Calendar className="h-5 w-5 text-indigo-500" />
-          排课管理
+          {t("排课管理")}
         </h2>
         <p className="text-sm text-gray-500 mt-1">
-          先把课程放入时间表（选课程 + 开始时间，自动算结束），再为每个时段指定教师
+          {t("先把课程放入时间表（选课程 + 开始时间，自动算结束），再为每个时段指定教师")}
         </p>
       </div>
 
@@ -745,18 +745,18 @@ export default function CourseScheduling() {
         <div className="flex flex-wrap gap-3 text-sm">
           <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 gap-1">
             <BookOpen className="h-3 w-3" />
-            {filteredCourses.length} 课程
+            {filteredCourses.length} {t("课程")}
           </Badge>
           <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 gap-1">
             <Users className="h-3 w-3" />
-            {teachers.length} 教师
+            {teachers.length} {t("教师")}
           </Badge>
           <Badge variant="secondary" className="bg-amber-50 text-amber-700 gap-1">
             <Clock className="h-3 w-3" />
-            {filteredEntries.length} 排课
+            {filteredEntries.length} {t("排课")}
           </Badge>
           <Badge variant="secondary" className="bg-blue-50 text-blue-700 gap-1">
-            {DAYS.filter(d => filteredEntries.some(e => e.day_of_week === d)).length}/5 天
+            {DAYS.filter(d => filteredEntries.some(e => e.day_of_week === d)).length}{t("/5 天")}
           </Badge>
         </div>
 
@@ -766,9 +766,9 @@ export default function CourseScheduling() {
             variant="outline"
             size="sm"
             onClick={() => setShowPreview(true)}
-            title="全屏预览（适合给家长/学生看或投屏）"
+            title={t("全屏预览（适合给家长/学生看或投屏）")}
           >
-            <Presentation className="h-3.5 w-3.5 mr-1" />全屏预览
+            <Presentation className="h-3.5 w-3.5 mr-1" />{t("全屏预览")}
           </Button>
           {isEditing ? (
             <>
@@ -788,28 +788,28 @@ export default function CourseScheduling() {
                 disabled={isSavingSchedule}
                 className="bg-green-600 hover:bg-green-700"
               >
-                {isSavingSchedule ? <><Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />保存中...</> : <><Save className="h-3.5 w-3.5 mr-1" />保存</>}
+                {isSavingSchedule ? <><Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />{t("保存中...")}</> : <><Save className="h-3.5 w-3.5 mr-1" />{t("保存")}</>}
               </Button>
               <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
-                <X className="h-3.5 w-3.5 mr-1" />取消编辑
+                <X className="h-3.5 w-3.5 mr-1" />{t("取消编辑")}
               </Button>
             </>
           ) : (
             <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-              <Pencil className="h-3.5 w-3.5 mr-1" />编辑
+              <Pencil className="h-3.5 w-3.5 mr-1" />{t("编辑")}
             </Button>
           )}
           <GraduationCap className="h-4 w-4 text-gray-400" />
           <Select value={gradeFilter} onValueChange={setGradeFilter}>
             <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="选择年级" />
+              <SelectValue placeholder={t("选择年级")} />
             </SelectTrigger>
             <SelectContent>
               {gradeOptions.map(g => (
                 <SelectItem key={g} value={g}>{gradeLabel(g)}</SelectItem>
               ))}
               {gradeOptions.length === 0 && (
-                <SelectItem value="all" disabled>暂无年级</SelectItem>
+                <SelectItem value="all" disabled>{t("暂无年级")}</SelectItem>
               )}
             </SelectContent>
           </Select>
@@ -824,13 +824,13 @@ export default function CourseScheduling() {
           style={{ gridTemplateColumns: `110px repeat(${DAYS.length}, minmax(140px, 1fr))`, minWidth: 680 }}
         >
           <div className="bg-gray-100 p-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            时间段
+            {t("时间段")}
           </div>
           {DAYS.map(day => (
             <div key={`h-${day}`} className="bg-gray-100 p-3 text-center font-semibold text-gray-700">
               <div>{DAY_LABELS[day]}</div>
               <div className="text-xs text-gray-400 font-normal mt-0.5">
-                {filteredEntries.filter(e => e.day_of_week === day).length} 节
+                {filteredEntries.filter(e => e.day_of_week === day).length} {t("节")}
               </div>
             </div>
           ))}
@@ -865,14 +865,14 @@ export default function CourseScheduling() {
                   <button
                     className="text-green-600 hover:text-green-700 ml-0.5"
                     onClick={saveEditSlot}
-                    title="保存"
+                    title={t("保存")}
                   >
                     <Check className="h-3.5 w-3.5" />
                   </button>
                   <button
                     className="text-gray-400 hover:text-gray-600"
                     onClick={() => setEditingSlotId(null)}
-                    title="取消"
+                    title={t("取消")}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -881,7 +881,7 @@ export default function CourseScheduling() {
                 <button
                   className="group flex items-center gap-1 w-full justify-center hover:text-indigo-600"
                   onClick={() => startEditSlot(slot)}
-                  title="点击修改时间段"
+                  title={t("点击修改时间段")}
                 >
                   <Clock className="h-3 w-3" />
                   <span>{slot.start}-{slot.end}</span>
@@ -932,7 +932,7 @@ export default function CourseScheduling() {
                         </div>
                         <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-0.5">
                           {noTeacher ? (
-                            <span className="text-amber-600 font-medium italic truncate">待排教师</span>
+                            <span className="text-amber-600 font-medium italic truncate">{t("待排教师")}</span>
                           ) : (
                             <>
                               <UserCheck className="h-2.5 w-2.5 shrink-0" />
@@ -952,7 +952,7 @@ export default function CourseScheduling() {
                               e.stopPropagation()
                               handleDelete(entry)
                             }}
-                            title="删除排课"
+                            title={t("删除排课")}
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -970,7 +970,7 @@ export default function CourseScheduling() {
                           : 'flex-1 text-gray-300 hover:text-indigo-500 text-sm'
                       }`}
                       onClick={() => openAssignCourse(day, slot)}
-                      title="点击放入课程"
+                      title={t("点击放入课程")}
                     >
                       <Plus className={`${hasCourse ? 'h-3 w-3' : 'h-4 w-4'} mr-0.5`} />
                       <span className={hasCourse ? 'text-[10px]' : 'text-xs'}>{hasCourse ? '添加' : '添加课程'}</span>
@@ -1002,16 +1002,16 @@ export default function CourseScheduling() {
                 >
                   {getTimeOptions().map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
-                <button className="text-green-600 hover:text-green-700 ml-0.5" onClick={addInlineSlot} title="保存时段">
+                <button className="text-green-600 hover:text-green-700 ml-0.5" onClick={addInlineSlot} title={t("保存时段")}>
                   <Check className="h-3.5 w-3.5" />
                 </button>
-                <button className="text-gray-400 hover:text-gray-600" onClick={() => setInlineAdding(false)} title="取消">
+                <button className="text-gray-400 hover:text-gray-600" onClick={() => setInlineAdding(false)} title={t("取消")}>
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
             <div className="col-span-7 bg-gray-50 text-[10px] text-gray-400 flex items-center justify-center">
-              新时段将按时间自动排序
+              {t("新时段将按时间自动排序")}
             </div>
           </div>
         ) : (
@@ -1019,9 +1019,9 @@ export default function CourseScheduling() {
             <button
               className="bg-gray-50 hover:bg-indigo-50 text-indigo-500 flex items-center justify-center gap-1 py-2 border-r border-gray-100 text-xs font-medium transition-colors"
               onClick={() => setInlineAdding(true)}
-              title="添加时间段"
+              title={t("添加时间段")}
             >
-              <Plus className="h-3.5 w-3.5" /> 时段
+              <Plus className="h-3.5 w-3.5" /> {t("时段")}
             </button>
             <div className="col-span-7 bg-gray-50" />
           </div>
@@ -1033,21 +1033,21 @@ export default function CourseScheduling() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Clock className="h-4 w-4 text-indigo-500" />
-            所有排课 ({filteredEntries.length})
+            {t("所有排课 (")}{filteredEntries.length})
             {gradeFilter !== 'all' && (
               <Badge variant="secondary" className="text-xs bg-indigo-50 text-indigo-700">
                 {gradeLabel(gradeFilter)}
               </Badge>
             )}
           </CardTitle>
-          <CardDescription>当前学期课程安排总览</CardDescription>
+          <CardDescription>{t("当前学期课程安排总览")}</CardDescription>
         </CardHeader>
         <CardContent>
           {filteredEntries.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               <Calendar className="h-10 w-10 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">暂无排课数据</p>
-              <p className="text-xs mt-1">点击时间表格子，选课程放入时间表</p>
+              <p className="text-sm">{t("暂无排课数据")}</p>
+              <p className="text-xs mt-1">{t("点击时间表格子，选课程放入时间表")}</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -1088,7 +1088,7 @@ export default function CourseScheduling() {
                             <span className="flex items-center gap-1">
                               <UserCheck className="h-3 w-3" />
                               {noTeacher
-                                ? <span className="text-amber-600 italic">待排教师</span>
+                                ? <span className="text-amber-600 italic">{t("待排教师")}</span>
                                 : getTeacherName(entry.teacher_id)}
                             </span>
                             <span className="flex items-center gap-1">
@@ -1116,7 +1116,7 @@ export default function CourseScheduling() {
                             onClick={() => openAssignTeacher(entry)}
                           >
                             <UserCheck className="h-3 w-3 mr-1" />
-                            排教师
+                            {t("排教师")}
                           </Button>
                         )}
                         <Button
@@ -1124,7 +1124,7 @@ export default function CourseScheduling() {
                           size="sm"
                           className="text-red-400 hover:text-red-600 h-8 w-8 p-0"
                           onClick={() => handleDelete(entry)}
-                          title="删除排课"
+                          title={t("删除排课")}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -1144,7 +1144,7 @@ export default function CourseScheduling() {
       <Dialog open={assignCourseDialog} onOpenChange={setAssignCourseDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>放入课程</DialogTitle>
+            <DialogTitle>{t("放入课程")}</DialogTitle>
             <DialogDescription>
               {targetDay ? `${DAY_LABELS[targetDay]} · ${targetSlot?.start}-${targetSlot?.end}` : ''}
             </DialogDescription>
@@ -1153,11 +1153,11 @@ export default function CourseScheduling() {
           <div className="space-y-4 py-2">
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1.5 block">
-                选择课程 <span className="text-red-500">*</span>
+                {t("选择课程")} <span className="text-red-500">*</span>
               </Label>
               <Select value={assignCourseId} onValueChange={setAssignCourseId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择要排课的课程" />
+                  <SelectValue placeholder={t("选择要排课的课程")} />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredCourses.map(course => (
@@ -1167,7 +1167,7 @@ export default function CourseScheduling() {
                     </SelectItem>
                   ))}
                   {filteredCourses.length === 0 && (
-                    <SelectItem value="__none__" disabled>该年级暂无课程</SelectItem>
+                    <SelectItem value="__none__" disabled>{t("该年级暂无课程")}</SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -1175,7 +1175,7 @@ export default function CourseScheduling() {
 
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1.5 block">
-                开始时间 <span className="text-red-500">*</span>
+                {t("开始时间")} <span className="text-red-500">*</span>
               </Label>
               <select
                 value={assignStartTime}
@@ -1189,11 +1189,11 @@ export default function CourseScheduling() {
             {/* 自动算出的结束时间 */}
             {assignCourseId && (
               <div className="bg-indigo-50 rounded-lg p-3 flex items-center justify-between text-sm">
-                <span className="text-gray-600">结束时间（自动）</span>
+                <span className="text-gray-600">{t("结束时间（自动）")}</span>
                 <span className="font-bold text-indigo-700">
                   {assignEndTime}
                   <span className="text-xs text-gray-500 ml-2">
-                    ({courseMap.get(assignCourseId)?.duration || 60}分)
+                    ({courseMap.get(assignCourseId)?.duration || 60}{t("分)")}
                   </span>
                 </span>
               </div>
@@ -1202,11 +1202,11 @@ export default function CourseScheduling() {
 
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setAssignCourseDialog(false)}>
-              取消
+              {t("取消")}
             </Button>
             <Button onClick={handleAssignCourse}>
               <Plus className="h-4 w-4 mr-1" />
-              放入时间表
+              {t("放入时间表")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1218,10 +1218,10 @@ export default function CourseScheduling() {
       <Dialog open={assignTeacherDialog} onOpenChange={setAssignTeacherDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>指定教师</DialogTitle>
+            <DialogTitle>{t("指定教师")}</DialogTitle>
             <DialogDescription>
               {targetEntry ? (
-                <>为「{getCourseTitle(targetEntry.course_id)}」选择授课教师</>
+                <>{t("为「")}{getCourseTitle(targetEntry.course_id)}{t("」选择授课教师")}</>
               ) : ''}
             </DialogDescription>
           </DialogHeader>
@@ -1229,11 +1229,11 @@ export default function CourseScheduling() {
           <div className="space-y-4 py-2">
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-1.5 block">
-                选择教师 <span className="text-red-500">*</span>
+                {t("选择教师")} <span className="text-red-500">*</span>
               </Label>
               <Select value={assignTeacherId} onValueChange={setAssignTeacherId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择授课教师" />
+                  <SelectValue placeholder={t("选择授课教师")} />
                 </SelectTrigger>
                 <SelectContent>
                   {teachers.map(teacher => (
@@ -1248,11 +1248,11 @@ export default function CourseScheduling() {
 
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setAssignTeacherDialog(false)}>
-              取消
+              {t("取消")}
             </Button>
             <Button onClick={handleAssignTeacher}>
               <UserCheck className="h-4 w-4 mr-1" />
-              确认指定
+              {t("确认指定")}
             </Button>
           </DialogFooter>
         </DialogContent>

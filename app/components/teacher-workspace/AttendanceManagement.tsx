@@ -242,7 +242,7 @@ export default function AttendanceManagement({ teacherId }: AttendanceManagement
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">{t('teacher.attendance_management')}</h2>
-          <p className="text-gray-600 mt-1">记录学生出勤情况、查看考勤统计和趋势分析</p>
+          <p className="text-gray-600 mt-1">{t("记录学生出勤情况、查看考勤统计和趋势分析")}</p>
         </div>
         <div className="flex items-center gap-3">
           {error && <div className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md">{error}</div>}
@@ -261,19 +261,19 @@ export default function AttendanceManagement({ teacherId }: AttendanceManagement
       </div>
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2"><UserCheck className="h-5 w-5 text-blue-600" />快速考勤</CardTitle>
-          <CardDescription>选择日期和班级，快速记录学生出勤情况</CardDescription>
+          <CardTitle className="flex items-center gap-2"><UserCheck className="h-5 w-5 text-blue-600" />{t("快速考勤")}</CardTitle>
+          <CardDescription>{t("选择日期和班级，快速记录学生出勤情况")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">选择日期</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t("选择日期")}</label>
               <select value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                 {dateOptions.map(date => <option key={date} value={date}>{date}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">选择班级</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t("选择班级")}</label>
               <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                 {classOptions.map(className => <option key={className} value={className}>{className}</option>)}
               </select>
@@ -282,11 +282,11 @@ export default function AttendanceManagement({ teacherId }: AttendanceManagement
               <label className="block text-sm font-medium text-gray-700 mb-2">{t('teacher.search_students')}</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input placeholder="搜索学生姓名..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+                <Input placeholder={t("搜索学生姓名...")} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
               </div>
             </div>
             <div className="flex items-end">
-              <Button onClick={() => setIsQuickAttendanceOpen(true)} className="w-full"><Plus className="h-4 w-4 mr-2" />批量考勤</Button>
+              <Button onClick={() => setIsQuickAttendanceOpen(true)} className="w-full"><Plus className="h-4 w-4 mr-2" />{t("批量考勤")}</Button>
             </div>
           </div>
           <div className="space-y-3">

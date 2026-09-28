@@ -160,7 +160,7 @@ export default function ActivitiesPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" />
-              <CardTitle>{year}年{MONTH_NAMES[month - 1]}</CardTitle>
+              <CardTitle>{year}{t("年")}{MONTH_NAMES[month - 1]}</CardTitle>
             </div>
             <div className="flex items-center gap-1">
               <Button variant="outline" size="sm" onClick={goToday} className="text-xs h-8">{t("今天")}</Button>

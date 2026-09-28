@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Zap, Droplets, Building2, Home, School } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context";
 
 type Bill = {
   id: string
@@ -33,6 +34,7 @@ const BRANCH_LABELS: Record<string, { label: string; icon: React.ReactNode }> = 
 }
 
 export default function UtilityBillsCard() {
+  const { t } = useLanguage();
   const [bills, setBills] = useState<Bill[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -83,10 +85,10 @@ export default function UtilityBillsCard() {
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            公用事业
+            {t("公用事业")}
           </span>
           {loading ? (
-            <Badge variant="outline" className="text-base font-bold">加载中...</Badge>
+            <Badge variant="outline" className="text-base font-bold">{t("加载中...")}</Badge>
           ) : (
             <Badge variant="outline" className="text-base font-bold">
               RM {total.toFixed(2)}
@@ -97,7 +99,7 @@ export default function UtilityBillsCard() {
       <CardContent>
         {error && <p className="text-sm text-red-500">{error}</p>}
         {!loading && !error && bills.length === 0 && (
-          <p className="text-sm text-gray-400">暂无账单数据</p>
+          <p className="text-sm text-gray-400">{t("暂无账单数据")}</p>
         )}
         <div className="space-y-4">
           {Object.entries(branches).map(([branch, providers]) => {

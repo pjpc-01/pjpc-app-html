@@ -162,16 +162,16 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>{t('teacher.teacher_list')}</CardTitle>
-              <CardDescription>查看和管理所有教师信息及教学安排</CardDescription>
+              <CardDescription>{t("查看和管理所有教师信息及教学安排")}</CardDescription>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => alert("批量导入功能开发中")}>
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
-                批量导入
+                {t("批量导入")}
               </Button>
               <Button onClick={() => setIsAddDialogOpen(true)}>
                 <UserPlus className="h-4 w-4 mr-2" />
-                添加教师
+                {t("添加教师")}
               </Button>
             </div>
           </div>
@@ -183,7 +183,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="搜索教师姓名、工号、NRIC、邮箱、部门、职位或电话..."
+                  placeholder={t("搜索教师姓名、工号、NRIC、邮箱、部门、职位或电话...")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -195,10 +195,10 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
               handleFilterChange()
             }}>
               <SelectTrigger className="w-48">
-                <SelectValue placeholder="选择部门" />
+                <SelectValue placeholder={t("选择部门")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">所有部门</SelectItem>
+                <SelectItem value="all">{t("所有部门")}</SelectItem>
                 {departmentOptions.map((dept: string) => (
                   <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                 ))}
@@ -209,17 +209,17 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
               handleFilterChange()
             }}>
               <SelectTrigger className="w-48">
-                <SelectValue placeholder="选择状态" />
+                <SelectValue placeholder={t("选择状态")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">所有状态</SelectItem>
+                <SelectItem value="all">{t("所有状态")}</SelectItem>
                 <SelectItem value="active">{t('teacher.active')}</SelectItem>
                 <SelectItem value="on_leave">{t('teacher.leave')}</SelectItem>
                 <SelectItem value="inactive">{t('teacher.resigned')}</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" onClick={() => refetchTeachers()}>
-              刷新
+              {t("刷新")}
             </Button>
           </div>
 
@@ -228,11 +228,11 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>教师信息</TableHead>
-                  <TableHead>部门职位</TableHead>
+                  <TableHead>{t("教师信息")}</TableHead>
+                  <TableHead>{t("部门职位")}</TableHead>
                   <TableHead>{t('teacher.center')}</TableHead>
                   <TableHead>{t('teacher.contact_info')}</TableHead>
-                  <TableHead>教龄</TableHead>
+                  <TableHead>{t("教龄")}</TableHead>
                   <TableHead>{t('teacher.status')}</TableHead>
                   <TableHead>{t('teacher.actions')}</TableHead>
                 </TableRow>
@@ -241,13 +241,13 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
                 {teachersLoading ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8">
-                      加载中...
+                      {t("加载中...")}
                     </TableCell>
                   </TableRow>
                 ) : paginatedTeachers.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8">
-                      暂无教师数据
+                      {t("暂无教师数据")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -256,7 +256,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
                       <TableCell>
                         <div>
                           <div className="font-medium">{teacher.teacher_name || '未设置'}</div>
-                          <div className="text-sm text-gray-500">工号: {teacher.teacher_id || '未设置'}</div>
+                          <div className="text-sm text-gray-500">{t("工号:")} {teacher.teacher_id || '未设置'}</div>
                           <div className="text-sm text-gray-500">NRIC: {teacher.nric || '未设置'}</div>
                         </div>
                       </TableCell>
@@ -278,7 +278,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm">{teacher.experience || 0} 年</div>
+                        <div className="text-sm">{teacher.experience || 0} {t("年")}</div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={
@@ -352,8 +352,8 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <div className="text-sm text-gray-500">
-                显示第 {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredTeachers.length)} 条，
-                共 {filteredTeachers.length} 条记录
+                {t("显示第")} {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredTeachers.length)} 条，
+                共 {filteredTeachers.length} {t("条记录")}
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -362,7 +362,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
                 >
-                  上一页
+                  {t("上一页")}
                 </Button>
                 <div className="flex items-center gap-1">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -396,7 +396,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
                 >
-                  下一页
+                  {t("下一页")}
                 </Button>
               </div>
             </div>
@@ -432,7 +432,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
       <Dialog open={!!salaryTeacher} onOpenChange={(open) => !open && setSalaryTeacher(null)}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>薪资管理 — {salaryTeacher?.teacher_name || salaryTeacher?.name || '教师'}</DialogTitle>
+            <DialogTitle>{t("薪资管理 —")} {salaryTeacher?.teacher_name || salaryTeacher?.name || '教师'}</DialogTitle>
           </DialogHeader>
           <TeacherSalaryManagement />
         </DialogContent>

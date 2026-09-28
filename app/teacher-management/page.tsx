@@ -35,7 +35,7 @@ export default function TeacherManagementPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">正在验证权限...</p>
+          <p className="mt-2 text-gray-600">{t("正在验证权限...")}</p>
         </div>
       </div>
     )
@@ -50,18 +50,18 @@ export default function TeacherManagementPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">访问被拒绝</h2>
-          <p className="text-gray-600 mb-2">只有管理员可以访问教师管理功能</p>
+          <h2 className="text-2xl font-bold text-red-600 mb-4">{t("访问被拒绝")}</h2>
+          <p className="text-gray-600 mb-2">{t("只有管理员可以访问教师管理功能")}</p>
           <p className="text-sm text-gray-500 mb-4">
-            当前角色: {userProfile?.role || '未识别'} | 
+            {t("当前角色:")} {userProfile?.role || '未识别'} | 
             邮箱: {userProfile?.email || '未识别'}
           </p>
           <div className="space-y-2">
             <Button onClick={() => router.push('/login')} className="w-full">
-              登录管理员账户
+              {t("登录管理员账户")}
             </Button>
             <Button onClick={() => router.push('/')} variant="outline" className="w-full">
-              返回首页
+              {t("返回首页")}
             </Button>
           </div>
         </div>
@@ -72,7 +72,7 @@ export default function TeacherManagementPage() {
   return (
     <PageLayout
       title={t('teacher.teacher_list')}
-      description="管理所有教师信息、权限和教学安排"
+      description={t("管理所有教师信息、权限和教学安排")}
       userRole="admin"
       status="系统正常"
       background="bg-gray-50"
@@ -83,7 +83,7 @@ export default function TeacherManagementPage() {
           className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          返回仪表板
+          {t("返回仪表板")}
         </Button>
       }
     >

@@ -6,6 +6,7 @@ import { Globe } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 
 export default function LanguageSwitcher() {
+  const { t } = useLanguage();
   const { language, setLanguage } = useLanguage()
 
   return (
@@ -16,7 +17,7 @@ export default function LanguageSwitcher() {
         className="h-6 px-2 text-xs font-medium"
         onClick={() => setLanguage("zh")}
       >
-        中文
+        {t("中文")}
       </Button>
       <Button
         variant={language === "en" ? "default" : "ghost"}

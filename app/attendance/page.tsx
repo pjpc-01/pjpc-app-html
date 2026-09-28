@@ -10,7 +10,7 @@ export default function AttendancePage() {
   return (
     <PageLayout
       title={t('teacher.attendance_management')}
-      description="统一考勤打卡与记录 — 学生与教师"
+      description={t("统一考勤打卡与记录 — 学生与教师")}
       backUrl="/"
       userRole="admin"
       background="from-slate-50 to-blue-50"

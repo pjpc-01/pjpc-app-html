@@ -335,7 +335,7 @@ export default function PaymentManagement() {
       case 'failed':
         return <Badge className="bg-red-500 hover:bg-red-600">{t('finance.failed')}</Badge>
       case 'refunded':
-        return <Badge className="bg-purple-500 hover:bg-purple-600">已退款</Badge>
+        return <Badge className="bg-purple-500 hover:bg-purple-600">{t("已退款")}</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
@@ -357,27 +357,27 @@ export default function PaymentManagement() {
         <div>
           <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <CreditCard className="h-6 w-6 text-blue-500" />
-            付款和收据
+            {t("付款和收据")}
           </h2>
-          <p className="text-slate-500">处理学生缴费，自动生成收据并更新发票状态</p>
+          <p className="text-slate-500">{t("处理学生缴费，自动生成收据并更新发票状态")}</p>
         </div>
 
         {/* Center tabs（参照积分榜：全部/PU1中学/BATU14小学） */}
         <div className="flex items-center gap-2 flex-wrap">
           <Button size="sm" variant={centerTab === "all" ? "default" : "outline"} onClick={() => setCenterTab("all")} className="h-8">
-            全部
+            {t("全部")}
           </Button>
           <Button size="sm" variant={centerTab === "PU1" ? "default" : "outline"} onClick={() => setCenterTab("PU1")} className="h-8">
-            中学（PU1）
+            {t("中学（PU1）")}
           </Button>
           <Button size="sm" variant={centerTab === "BATU14" ? "default" : "outline"} onClick={() => setCenterTab("BATU14")} className="h-8">
-            小学（BATU14）
+            {t("小学（BATU14）")}
           </Button>
         </div>
         <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
-              <Plus className="h-4 w-4" /> 记录新付款
+              <Plus className="h-4 w-4" /> {t("记录新付款")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl overflow-hidden">
@@ -386,10 +386,10 @@ export default function PaymentManagement() {
                 <div className="p-2 bg-blue-100 rounded-lg">
                   <Wallet className="h-5 w-5 text-blue-600" />
                 </div>
-                <DialogTitle className="text-xl">处理付款记录</DialogTitle>
+                <DialogTitle className="text-xl">{t("处理付款记录")}</DialogTitle>
               </div>
               <DialogDescription>
-                请选择待缴费的发票并输入实付金额。系统将自动生成电子收据。
+                {t("请选择待缴费的发票并输入实付金额。系统将自动生成电子收据。")}
               </DialogDescription>
             </DialogHeader>
 
@@ -398,17 +398,17 @@ export default function PaymentManagement() {
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold flex items-center gap-2">
                     <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                    选择发票
+                    {t("选择发票")}
                   </Label>
                   <Select value={selectedInvoiceId} onValueChange={setSelectedInvoiceId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="请选择发票" />
+                      <SelectValue placeholder={t("请选择发票")} />
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px]">
                       <div className="px-2 py-1.5 border-b mb-1">
                         <Input
                           className="h-7 text-xs"
-                          placeholder="搜索学生姓名或发票号..."
+                          placeholder={t("搜索学生姓名或发票号...")}
                           value={invoiceSearch}
                           autoFocus
                           onKeyDown={(e) => e.stopPropagation()}
@@ -429,7 +429,7 @@ export default function PaymentManagement() {
                         inv.studentName.toLowerCase().includes(invoiceSearch.toLowerCase()) ||
                         inv.invoiceNumber.toLowerCase().includes(invoiceSearch.toLowerCase())
                       ).length === 0 && (
-                        <div className="py-4 text-center text-xs text-gray-400">无匹配发票</div>
+                        <div className="py-4 text-center text-xs text-gray-400">{t("无匹配发票")}</div>
                       )}
                     </SelectContent>
                   </Select>
@@ -438,19 +438,19 @@ export default function PaymentManagement() {
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold flex items-center gap-2">
                     <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
-                    支付方式
+                    {t("支付方式")}
                   </Label>
                   <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                     <SelectTrigger>
-                      <SelectValue placeholder="选择支付方式" />
+                      <SelectValue placeholder={t("选择支付方式")} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Bank Transfer">{t('finance.bank_transfer')}</SelectItem>
                       <SelectItem value="Cash">{t('finance.cash')}</SelectItem>
-                      <SelectItem value="Online Banking">网银</SelectItem>
+                      <SelectItem value="Online Banking">{t("网银")}</SelectItem>
                       <SelectItem value="TNG">Touch 'n Go eWallet</SelectItem>
                       <SelectItem value="DuitNow">DuitNow</SelectItem>
-                      <SelectItem value="Credit Card">信用卡</SelectItem>
+                      <SelectItem value="Credit Card">{t("信用卡")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -458,19 +458,19 @@ export default function PaymentManagement() {
 
               <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
                 <div className="text-center mb-4">
-                  <p className="text-xs text-slate-500 uppercase font-bold">付款汇总</p>
+                  <p className="text-xs text-slate-500 uppercase font-bold">{t("付款汇总")}</p>
                 </div>
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">发票总额:</span>
+                    <span className="text-slate-600">{t("发票总额:")}</span>
                     <span className="font-mono font-medium">RM {selectedInvoice?.totalAmount.toLocaleString() || "0.00"}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">已支付金额:</span>
+                    <span className="text-slate-600">{t("已支付金额:")}</span>
                     <span className="font-mono font-medium text-green-600">RM {calculatePaidAmount(selectedInvoiceId || "").toLocaleString()}</span>
                   </div>
                   <div className="border-t pt-3 flex justify-between text-base font-bold">
-                    <span className="text-slate-900">剩余待缴:</span>
+                    <span className="text-slate-900">{t("剩余待缴:")}</span>
                     <span className="font-mono text-blue-600">
                       RM {(selectedInvoice ? selectedInvoice.totalAmount - calculatePaidAmount(selectedInvoiceId) : 0).toLocaleString()}
                     </span>
@@ -483,7 +483,7 @@ export default function PaymentManagement() {
               <div className="space-y-2">
                 <Label className="text-sm font-semibold flex items-center gap-2">
                   <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                  本次实付金额 (RM)
+                  {t("本次实付金额 (RM)")}
                 </Label>
                 <Input 
                   type="number" step="0.01" 
@@ -502,7 +502,7 @@ export default function PaymentManagement() {
                   className="bg-blue-600 hover:bg-blue-700 text-white px-8 min-w-32"
                 >
                   {isSubmitting ? (
-                    <><Loader2 className="h-4 w-4 animate-spin mr-2" /> 处理中...</>
+                    <><Loader2 className="h-4 w-4 animate-spin mr-2" /> {t("处理中...")}</>
                   ) : (
                     "确认付款"
                   )}
@@ -516,14 +516,14 @@ export default function PaymentManagement() {
       {/* 收据统计 + 收据设置/回收站 */}
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-          <Receipt className="h-4 w-4 text-blue-500" /> 收据
+          <Receipt className="h-4 w-4 text-blue-500" /> {t("收据")}
         </p>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="h-8" onClick={() => setIsReceiptBinOpen(true)}>
-            <Trash2 className="h-3.5 w-3.5 mr-1" /> 回收站
+            <Trash2 className="h-3.5 w-3.5 mr-1" /> {t("回收站")}
           </Button>
           <Button variant="outline" size="sm" className="h-8" onClick={() => setIsReceiptSettingsOpen(true)}>
-            <Settings className="h-3.5 w-3.5 mr-1" /> 收据设置
+            <Settings className="h-3.5 w-3.5 mr-1" /> {t("收据设置")}
           </Button>
         </div>
       </div>
@@ -533,7 +533,7 @@ export default function PaymentManagement() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">收款总额</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500">{t("收款总额")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
@@ -543,7 +543,7 @@ export default function PaymentManagement() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">总退款金额</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500">{t("总退款金额")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-500">
@@ -553,7 +553,7 @@ export default function PaymentManagement() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">净收入</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500">{t("净收入")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
@@ -567,13 +567,13 @@ export default function PaymentManagement() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>付款流水明细</CardTitle>
-              <CardDescription>所有学生缴费记录及状态</CardDescription>
+              <CardTitle>{t("付款流水明细")}</CardTitle>
+              <CardDescription>{t("所有学生缴费记录及状态")}</CardDescription>
             </div>
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input 
-                placeholder="搜索学生 / 发票号 / 收据号..." 
+                placeholder={t("搜索学生 / 发票号 / 收据号...")} 
                 className="pl-9" 
                 value={searchQuery} 
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -584,17 +584,17 @@ export default function PaymentManagement() {
         <CardContent>
           {selectedIds.size > 0 && (
             <div className="flex items-center justify-between mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
-              <span className="text-sm text-red-700">已选择 <strong>{selectedIds.size}</strong> 条付款记录</span>
+              <span className="text-sm text-red-700">{t("已选择")} <strong>{selectedIds.size}</strong> {t("条付款记录")}</span>
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={clearSelection}><XCircle className="h-4 w-4 mr-1" />{t('finance.clear_selection')}</Button>
-                <Button variant="destructive" size="sm" onClick={() => setIsBatchDeleteOpen(true)}><Trash2 className="h-4 w-4 mr-1" />删除选中({selectedIds.size})</Button>
+                <Button variant="destructive" size="sm" onClick={() => setIsBatchDeleteOpen(true)}><Trash2 className="h-4 w-4 mr-1" />{t("删除选中(")}{selectedIds.size})</Button>
               </div>
             </div>
           )}
           {paymentsLoading ? (
             <div className="text-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-4" />
-              <p className="text-slate-500">加载付款记录中...</p>
+              <p className="text-slate-500">{t("加载付款记录中...")}</p>
             </div>
           ) : filteredPayments.length === 0 ? (
             <div className="text-center py-12">
@@ -615,10 +615,10 @@ export default function PaymentManagement() {
                   <TableHead>{t('finance.date')}</TableHead>
                   <TableHead>{t('common.student')}</TableHead>
                   <TableHead>{t('finance.invoice_no')}</TableHead>
-                  <TableHead>凭证号</TableHead>
-                  <TableHead className="text-center">收据</TableHead>
-                  <TableHead>支付方式</TableHead>
-                  <TableHead className="text-right">实付金额</TableHead>
+                  <TableHead>{t("凭证号")}</TableHead>
+                  <TableHead className="text-center">{t("收据")}</TableHead>
+                  <TableHead>{t("支付方式")}</TableHead>
+                  <TableHead className="text-right">{t("实付金额")}</TableHead>
                   <TableHead className="text-center">{t('teacher.status')}</TableHead>
                   <TableHead className="text-center">{t('teacher.actions')}</TableHead>
                 </TableRow>
@@ -649,7 +649,7 @@ export default function PaymentManagement() {
                       <TableCell className="text-right font-bold text-blue-600">
                         RM {payment.amount.toLocaleString()}
                         {partial && payment.status === 'completed' && (
-                          <span className="text-xs text-amber-500 ml-1 font-normal">(部分)</span>
+                          <span className="text-xs text-amber-500 ml-1 font-normal">{t("(部分)")}</span>
                         )}
                       </TableCell>
                       <TableCell className="text-center">
@@ -664,7 +664,7 @@ export default function PaymentManagement() {
                             onClick={() => openRefundDialog(payment)}
                           >
                             <Undo2 className="h-3.5 w-3.5 mr-1" />
-                            退款
+                            {t("退款")}
                           </Button>
                         )}
                       </TableCell>
@@ -679,14 +679,14 @@ export default function PaymentManagement() {
           {totalPaymentPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <span className="text-sm text-gray-500">
-                共 {filteredPayments.length} 条，每页 {PAYMENT_PER_PAGE} 条
+                {t("共")} {filteredPayments.length} {t("条，每页")} {PAYMENT_PER_PAGE} {t("条")}
               </span>
               <div className="flex gap-1">
-                <Button size="sm" variant="outline" disabled={paymentPage===1} onClick={() => setPaymentPage(p=>Math.max(1,p-1))}>上一页</Button>
+                <Button size="sm" variant="outline" disabled={paymentPage===1} onClick={() => setPaymentPage(p=>Math.max(1,p-1))}>{t("上一页")}</Button>
                 {Array.from({length: totalPaymentPages}, (_,i)=>i+1).map(p=>(
                   <Button key={p} size="sm" variant={p===paymentPage?"default":"outline"} onClick={()=>setPaymentPage(p)} className="min-w-[32px] h-8">{p}</Button>
                 ))}
-                <Button size="sm" variant="outline" disabled={paymentPage===totalPaymentPages} onClick={() => setPaymentPage(p=>Math.min(totalPaymentPages,p+1))}>下一页</Button>
+                <Button size="sm" variant="outline" disabled={paymentPage===totalPaymentPages} onClick={() => setPaymentPage(p=>Math.min(totalPaymentPages,p+1))}>{t("下一页")}</Button>
               </div>
             </div>
           )}
@@ -704,12 +704,12 @@ export default function PaymentManagement() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <Trash2 className="h-5 w-5" />
-              批量删除付款记录
+              {t("批量删除付款记录")}
             </DialogTitle>
             <DialogDescription />
             <div className="space-y-2 mt-2">
               <p className="text-sm">
-                确定要删除选中的 <span className="font-bold text-red-600">{selectedIds.size}</span> 条付款记录吗？
+                {t("确定要删除选中的")} <span className="font-bold text-red-600">{selectedIds.size}</span> {t("条付款记录吗？")}
               </p>
               <div className="bg-red-50 border border-red-200 rounded-md p-3 max-h-40 overflow-y-auto">
                 <ul className="text-xs space-y-0.5">
@@ -724,7 +724,7 @@ export default function PaymentManagement() {
                   })}
                 </ul>
               </div>
-              <p className="text-xs text-red-500 mt-2">⚠️ 此操作不可撤销！</p>
+              <p className="text-xs text-red-500 mt-2">{t("⚠️ 此操作不可撤销！")}</p>
             </div>
           </DialogHeader>
 
@@ -734,7 +734,7 @@ export default function PaymentManagement() {
               onClick={() => setIsBatchDeleteOpen(false)}
               disabled={isBatchDeleting}
             >
-              取消
+              {t("取消")}
             </Button>
             <Button
               variant="destructive"
@@ -744,12 +744,12 @@ export default function PaymentManagement() {
               {isBatchDeleting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  删除中...
+                  {t("删除中...")}
                 </>
               ) : (
                 <>
                   <Trash2 className="h-4 w-4 mr-2" />
-                  删除 {selectedIds.size} 条记录
+                  {t("删除")} {selectedIds.size} {t("条记录")}
                 </>
               )}
             </Button>
@@ -765,10 +765,10 @@ export default function PaymentManagement() {
               <div className="p-2 bg-red-100 rounded-lg">
                 <Undo2 className="h-5 w-5 text-red-600" />
               </div>
-              <DialogTitle className="text-xl">处理退款</DialogTitle>
+              <DialogTitle className="text-xl">{t("处理退款")}</DialogTitle>
             </div>
             <DialogDescription>
-              请填写退款信息。系统将记录退款并更新相关状态。
+              {t("请填写退款信息。系统将记录退款并更新相关状态。")}
             </DialogDescription>
           </DialogHeader>
 
@@ -776,22 +776,22 @@ export default function PaymentManagement() {
             <div className="space-y-4 py-4">
               <div className="p-3 bg-slate-50 rounded-lg border text-sm space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">原始付款金额:</span>
+                  <span className="text-slate-500">{t("原始付款金额:")}</span>
                   <span className="font-medium">RM {refundPayment.amount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">支付方式:</span>
+                  <span className="text-slate-500">{t("支付方式:")}</span>
                   <span className="font-medium">{refundPayment.method}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">付款日期:</span>
+                  <span className="text-slate-500">{t("付款日期:")}</span>
                   <span className="font-medium">{refundPayment.date.split('T')[0]}</span>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">
-                  退款金额 (RM)
+                  {t("退款金额 (RM)")}
                 </Label>
                 <Input
                   type="number" step="0.01"
@@ -804,25 +804,25 @@ export default function PaymentManagement() {
 
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">
-                  退款原因 <span className="text-red-500">*</span>
+                  {t("退款原因")} <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  placeholder="请输入退款原因"
+                  placeholder={t("请输入退款原因")}
                   value={refundReason}
                   onChange={(e) => setRefundReason(e.target.value)}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-semibold">退款方式</Label>
+                <Label className="text-sm font-semibold">{t("退款方式")}</Label>
                 <Select value={refundMethod} onValueChange={setRefundMethod}>
                   <SelectTrigger>
-                    <SelectValue placeholder="选择退款方式" />
+                    <SelectValue placeholder={t("选择退款方式")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="bank_transfer">{t('finance.bank_transfer')}</SelectItem>
                     <SelectItem value="cash">{t('finance.cash')}</SelectItem>
-                    <SelectItem value="credit_note">信用凭证</SelectItem>
+                    <SelectItem value="credit_note">{t("信用凭证")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -830,7 +830,7 @@ export default function PaymentManagement() {
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">{t('teacher.notes')}</Label>
                 <Input
-                  placeholder="可选备注信息"
+                  placeholder={t("可选备注信息")}
                   value={refundNotes}
                   onChange={(e) => setRefundNotes(e.target.value)}
                 />
@@ -844,7 +844,7 @@ export default function PaymentManagement() {
                   className="bg-red-600 hover:bg-red-700 text-white px-8 min-w-32"
                 >
                   {isRefunding ? (
-                    <><Loader2 className="h-4 w-4 animate-spin mr-2" /> 处理中...</>
+                    <><Loader2 className="h-4 w-4 animate-spin mr-2" /> {t("处理中...")}</>
                   ) : (
                     "确认退款"
                   )}

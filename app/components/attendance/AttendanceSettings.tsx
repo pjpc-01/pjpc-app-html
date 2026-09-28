@@ -125,7 +125,7 @@ export default function AttendanceSettings({ centerId }: AttendanceSettingsProps
       {saved && (
         <Alert>
           <CheckCircle className="h-4 w-4" />
-          <AlertDescription>配置已保存</AlertDescription>
+          <AlertDescription>{t("配置已保存")}</AlertDescription>
         </Alert>
       )}
 
@@ -142,7 +142,7 @@ export default function AttendanceSettings({ centerId }: AttendanceSettingsProps
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
-            考勤时间设置
+            {t("考勤时间设置")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -211,8 +211,8 @@ export default function AttendanceSettings({ centerId }: AttendanceSettingsProps
           <div className="pt-4 border-t">
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="autoCheckOut">自动签退</Label>
-                <p className="text-sm text-gray-600">在指定时间自动签退未签退的学生</p>
+                <Label htmlFor="autoCheckOut">{t("自动签退")}</Label>
+                <p className="text-sm text-gray-600">{t("在指定时间自动签退未签退的学生")}</p>
               </div>
               <Switch
                 id="autoCheckOut"
@@ -226,7 +226,7 @@ export default function AttendanceSettings({ centerId }: AttendanceSettingsProps
             
             {config.autoCheckOut && (
               <div className="mt-4">
-                <Label htmlFor="autoCheckOutTime">自动签退时间</Label>
+                <Label htmlFor="autoCheckOutTime">{t("自动签退时间")}</Label>
                 <Input
                   id="autoCheckOutTime"
                   type="time"
@@ -248,14 +248,14 @@ export default function AttendanceSettings({ centerId }: AttendanceSettingsProps
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
-            通知设置
+            {t("通知设置")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="enableNotifications">启用邮件通知</Label>
-              <p className="text-sm text-gray-600">考勤异常时发送邮件通知</p>
+              <Label htmlFor="enableNotifications">{t("启用邮件通知")}</Label>
+              <p className="text-sm text-gray-600">{t("考勤异常时发送邮件通知")}</p>
             </div>
             <Switch
               id="enableNotifications"
@@ -269,7 +269,7 @@ export default function AttendanceSettings({ centerId }: AttendanceSettingsProps
           
           {config.enableNotifications && (
             <div>
-              <Label htmlFor="notificationEmail">通知邮箱</Label>
+              <Label htmlFor="notificationEmail">{t("通知邮箱")}</Label>
               <Input
                 id="notificationEmail"
                 type="email"
@@ -291,15 +291,15 @@ export default function AttendanceSettings({ centerId }: AttendanceSettingsProps
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
-            其他设置
+            {t("其他设置")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="description">考勤说明</Label>
+            <Label htmlFor="description">{t("考勤说明")}</Label>
             <Textarea
               id="description"
-              placeholder="考勤规则说明..."
+              placeholder={t("考勤规则说明...")}
               value={config.description}
               onChange={(e) => setConfig(prev => ({
                 ...prev,
@@ -322,12 +322,12 @@ export default function AttendanceSettings({ centerId }: AttendanceSettingsProps
           {loading ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-              保存中...
+              {t("保存中...")}
             </>
           ) : (
             <>
               <Save className="h-4 w-4 mr-2" />
-              保存配置
+              {t("保存配置")}
             </>
           )}
         </Button>
@@ -336,23 +336,23 @@ export default function AttendanceSettings({ centerId }: AttendanceSettingsProps
       {/* 配置预览 */}
       <Card>
         <CardHeader>
-          <CardTitle>配置预览</CardTitle>
+          <CardTitle>{t("配置预览")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <p><strong>签到时间:</strong> {config.checkInStartTime} - {config.checkInEndTime}</p>
-              <p><strong>签退时间:</strong> {config.checkOutStartTime} - {config.checkOutEndTime}</p>
+              <p><strong>{t("签到时间:")}</strong> {config.checkInStartTime} - {config.checkInEndTime}</p>
+              <p><strong>{t("签退时间:")}</strong> {config.checkOutStartTime} - {config.checkOutEndTime}</p>
             </div>
             <div>
-              <p><strong>自动签退:</strong> 
+              <p><strong>{t("自动签退:")}</strong> 
                 {config.autoCheckOut ? (
-                  <Badge variant="default" className="ml-2">启用 ({config.autoCheckOutTime})</Badge>
+                  <Badge variant="default" className="ml-2">{t("启用 (")}{config.autoCheckOutTime})</Badge>
                 ) : (
                   <Badge variant="secondary" className="ml-2">{t('finance.disable')}</Badge>
                 )}
               </p>
-              <p><strong>邮件通知:</strong> 
+              <p><strong>{t("邮件通知:")}</strong> 
                 {config.enableNotifications ? (
                   <Badge variant="default" className="ml-2">{t('finance.enable')}</Badge>
                 ) : (

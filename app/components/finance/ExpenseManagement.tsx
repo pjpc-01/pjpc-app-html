@@ -254,15 +254,15 @@ export default function ExpenseManagement() {
             a.href = url; a.download = `expenses_${new Date().toISOString().slice(0, 10)}.csv`
             a.click(); URL.revokeObjectURL(url)
           }}>
-            <Download className="h-4 w-4" /> 导出账单
+            <Download className="h-4 w-4" /> {t("导出账单")}
           </Button>
           <Button variant="outline" onClick={() => setIsCategoryManagerOpen(true)} className="flex items-center gap-2">
-            <Tags className="h-4 w-4" /> 管理类别
+            <Tags className="h-4 w-4" /> {t("管理类别")}
           </Button>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white shadow-sm">
-                <Plus className="h-4 w-4" /> 添加支出
+                <Plus className="h-4 w-4" /> {t("添加支出")}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl overflow-hidden">
@@ -271,10 +271,10 @@ export default function ExpenseManagement() {
                   <div className="p-2 bg-red-100 rounded-lg">
                     <Plus className="h-5 w-5 text-red-600" />
                   </div>
-                  <DialogTitle className="text-xl">新增支出记录</DialogTitle>
+                  <DialogTitle className="text-xl">{t("新增支出记录")}</DialogTitle>
                 </div>
                 <DialogDescription>
-                  详细记录每一笔经营成本，确保财务报表准确无误。
+                  {t("详细记录每一笔经营成本，确保财务报表准确无误。")}
                 </DialogDescription>
               </DialogHeader>
               
@@ -283,7 +283,7 @@ export default function ExpenseManagement() {
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold flex items-center gap-2">
                       <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                      支出日期
+                      {t("支出日期")}
                     </Label>
                     <Input 
                       type="date" 
@@ -294,14 +294,14 @@ export default function ExpenseManagement() {
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold flex items-center gap-2">
                       <Tag className="h-3.5 w-3.5 text-muted-foreground" />
-                      支出类别
+                      {t("支出类别")}
                     </Label>
                     <Select 
                       value={newExpense.category} 
                       onValueChange={(v) => setNewExpense({...newExpense, category: v})}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="选择类别" />
+                        <SelectValue placeholder={t("选择类别")} />
                       </SelectTrigger>
                       <SelectContent>
                         {cat.categories.map(c => (
@@ -313,7 +313,7 @@ export default function ExpenseManagement() {
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold flex items-center gap-2">
                       <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                      金额 (RM)
+                      {t("金额 (RM)")}
                     </Label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">RM</span>
@@ -335,34 +335,34 @@ export default function ExpenseManagement() {
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold flex items-center gap-2">
                       <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
-                      支付方式
+                      {t("支付方式")}
                     </Label>
                     <Select 
                       value={newExpense.method} 
                       onValueChange={(v) => setNewExpense({...newExpense, method: v})}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="选择支付方式" />
+                        <SelectValue placeholder={t("选择支付方式")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Bank Transfer">{t('finance.bank_transfer')}</SelectItem>
                         <SelectItem value="Cash">{t('finance.cash')}</SelectItem>
-                        <SelectItem value="Credit Card">信用卡</SelectItem>
-                        <SelectItem value="Online Banking">网银</SelectItem>
+                        <SelectItem value="Credit Card">{t("信用卡")}</SelectItem>
+                        <SelectItem value="Online Banking">{t("网银")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold flex items-center gap-2">
                       <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
-                      所属分行
+                      {t("所属分行")}
                     </Label>
                     <Select 
                       value={newExpense.centerId} 
                       onValueChange={(v) => setNewExpense({...newExpense, centerId: v})}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="选择分行（可选）" />
+                        <SelectValue placeholder={t("选择分行（可选）")} />
                       </SelectTrigger>
                       <SelectContent>
                         {centers.map(c => (
@@ -374,10 +374,10 @@ export default function ExpenseManagement() {
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold flex items-center gap-2">
                       <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                      支出描述
+                      {t("支出描述")}
                     </Label>
                     <Textarea 
-                      placeholder="例如: 6月办公室租金, 某某老师薪资" 
+                      placeholder={t("例如: 6月办公室租金, 某某老师薪资")} 
                       value={newExpense.description} 
                       onChange={(e) => setNewExpense({...newExpense, description: e.target.value})}
                       className="resize-none"
@@ -388,7 +388,7 @@ export default function ExpenseManagement() {
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold flex items-center gap-2">
                       <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
-                      收据凭证（可选）
+                      {t("收据凭证（可选）")}
                     </Label>
                     <input
                       ref={fileInputRef}
@@ -401,7 +401,7 @@ export default function ExpenseManagement() {
                       <div className="relative border rounded-lg overflow-hidden">
                         <img 
                           src={receiptPreview} 
-                          alt="收据预览" 
+                          alt={t("收据预览")} 
                           className="w-full h-32 object-cover"
                         />
                         <Button
@@ -440,8 +440,8 @@ export default function ExpenseManagement() {
                         onClick={() => fileInputRef.current?.click()}
                       >
                         <Paperclip className="h-6 w-6 text-slate-400" />
-                        <span className="text-sm text-slate-500">点击上传收据照片或PDF</span>
-                        <span className="text-[11px] text-slate-400">支持 JPG / PNG / WebP / PDF，最大 {MAX_RECEIPT_MB}MB</span>
+                        <span className="text-sm text-slate-500">{t("点击上传收据照片或PDF")}</span>
+                        <span className="text-[11px] text-slate-400">{t("支持 JPG / PNG / WebP / PDF，最大")} {MAX_RECEIPT_MB}MB</span>
                       </Button>
                     )}
                   </div>
@@ -455,7 +455,7 @@ export default function ExpenseManagement() {
                   disabled={!isFormValid}
                   className="bg-red-600 hover:bg-red-700 text-white px-8"
                 >
-                  确认添加
+                  {t("确认添加")}
                 </Button>
               </div>
             </DialogContent>
@@ -472,21 +472,21 @@ export default function ExpenseManagement() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription className="text-slate-500 font-medium">记录笔数</CardDescription>
-            <CardTitle className="text-3xl font-bold text-slate-900">{safeExpenses.length} 笔</CardTitle>
+            <CardDescription className="text-slate-500 font-medium">{t("记录笔数")}</CardDescription>
+            <CardTitle className="text-3xl font-bold text-slate-900">{safeExpenses.length} {t("笔")}</CardTitle>
             {(() => {
               const n = safeExpenses.filter(e => !e.receipt).length
               return n > 0 ? (
-                <p className="text-xs text-red-600 mt-1 font-medium">{n} 笔缺收据凭证（报税要举证）</p>
+                <p className="text-xs text-red-600 mt-1 font-medium">{n} {t("笔缺收据凭证（报税要举证）")}</p>
               ) : (
-                <p className="text-xs text-green-600 mt-1">收据齐全 ✅</p>
+                <p className="text-xs text-green-600 mt-1">{t("收据齐全 ✅")}</p>
               )
             })()}
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription className="text-slate-500 font-medium">最大单笔支出</CardDescription>
+            <CardDescription className="text-slate-500 font-medium">{t("最大单笔支出")}</CardDescription>
             <CardTitle className="text-3xl font-bold text-slate-900">
               RM {safeExpenses.length > 0 ? Math.max(...safeExpenses.map(e => e.amount || 0)).toLocaleString() : 0}
             </CardTitle>
@@ -498,7 +498,7 @@ export default function ExpenseManagement() {
       {Object.keys(categoryTotals).length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">分类支出汇总</CardTitle>
+            <CardTitle className="text-lg">{t("分类支出汇总")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -522,17 +522,17 @@ export default function ExpenseManagement() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>支出流水明细</CardTitle>
-              <CardDescription>所有已记录的经营支出明细</CardDescription>
+              <CardTitle>{t("支出流水明细")}</CardTitle>
+              <CardDescription>{t("所有已记录的经营支出明细")}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               {months.length > 0 && (
                 <Select value={monthFilter} onValueChange={setMonthFilter}>
                   <SelectTrigger className="w-32">
-                    <SelectValue placeholder="全部月份" />
+                    <SelectValue placeholder={t("全部月份")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">全部月份</SelectItem>
+                    <SelectItem value="all">{t("全部月份")}</SelectItem>
                     {months.map(m => (
                       <SelectItem key={m} value={m}>{m}</SelectItem>
                     ))}
@@ -549,7 +549,7 @@ export default function ExpenseManagement() {
           {loading ? (
             <div className="text-center py-8 text-gray-500">{t('teacher.loading')}</div>
           ) : error ? (
-            <div className="text-center py-8 text-red-500">错误: {error}</div>
+            <div className="text-center py-8 text-red-500">{t("错误:")} {error}</div>
           ) : filteredExpenses.length === 0 ? (
             <div className="text-center py-8 text-gray-500">{t('finance.no_expense_records')}</div>
           ) : (
@@ -557,12 +557,12 @@ export default function ExpenseManagement() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[120px]">{t('finance.date')}</TableHead>
-                  <TableHead className="w-[150px]">类别</TableHead>
+                  <TableHead className="w-[150px]">{t("类别")}</TableHead>
                   <TableHead>{t('finance.description')}</TableHead>
-                  <TableHead className="w-[100px]">分行</TableHead>
-                  <TableHead className="w-[100px]">方式</TableHead>
-                  <TableHead className="w-[120px]">凭证号</TableHead>
-                  <TableHead className="w-[60px] text-center">凭证</TableHead>
+                  <TableHead className="w-[100px]">{t("分行")}</TableHead>
+                  <TableHead className="w-[100px]">{t("方式")}</TableHead>
+                  <TableHead className="w-[120px]">{t("凭证号")}</TableHead>
+                  <TableHead className="w-[60px] text-center">{t("凭证")}</TableHead>
                   <TableHead className="text-right w-[120px]">{t('finance.amount')}</TableHead>
                   <TableHead className="text-center w-[80px]">{t('teacher.actions')}</TableHead>
                 </TableRow>
@@ -598,13 +598,13 @@ export default function ExpenseManagement() {
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors"
-                          title="查看收据"
+                          title={t("查看收据")}
                         >
                           <Eye className="h-3.5 w-3.5" />
                         </a>
                       ) : (
-                        <span className="inline-flex items-center rounded-full bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 text-[10px] font-medium" title="没有收据附件，报税时无法举证">
-                          缺
+                        <span className="inline-flex items-center rounded-full bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 text-[10px] font-medium" title={t("没有收据附件，报税时无法举证")}>
+                          {t("缺")}
                         </span>
                       )}
                     </TableCell>

@@ -249,25 +249,25 @@ export default function FeeManagement() {
       <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>费用分类管理</DialogTitle>
-            <DialogDescription>自定义费用分类，添加或删除分类</DialogDescription>
+            <DialogTitle>{t("费用分类管理")}</DialogTitle>
+            <DialogDescription>{t("自定义费用分类，添加或删除分类")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="flex gap-2">
               <Input
                 value={newCatName}
                 onChange={e => setNewCatName(e.target.value)}
-                placeholder="新分类名称..."
+                placeholder={t("新分类名称...")}
                 className="h-9 text-sm flex-1"
                 onKeyDown={e => e.key === 'Enter' && handleAddCategory()}
               />
               <Button size="sm" onClick={handleAddCategory} disabled={!newCatName.trim()} className="h-9">
-                <Plus className="h-4 w-4 mr-1" />添加
+                <Plus className="h-4 w-4 mr-1" />{t("添加")}
               </Button>
             </div>
             <div className="space-y-1 max-h-60 overflow-y-auto">
               {feeCategories.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-4">暂无自定义分类</p>
+                <p className="text-sm text-gray-400 text-center py-4">{t("暂无自定义分类")}</p>
               ) : (
                 feeCategories.map(cat => (
                   <div key={cat.id} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg">
@@ -290,29 +290,29 @@ export default function FeeManagement() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5" />
-                费用项管理
+                {t("费用项管理")}
                 {!loading && !error && fees.length > 0 && (
                   <Badge variant="secondary" className="ml-2">
-                    {fees.length} 项
+                    {fees.length} {t("项")}
                   </Badge>
                 )}
               </CardTitle>
-              <CardDescription>管理所有费用项</CardDescription>
+              <CardDescription>{t("管理所有费用项")}</CardDescription>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => setCatDialogOpen(true)}>
-                分类管理
+                {t("分类管理")}
               </Button>
               <Button variant="outline" onClick={toggleAllCategories}>
                 {Object.keys(groupedFees).every(cat => expandedCategories.has(cat)) ? (
                   <>
                     <ChevronDown className="h-4 w-4 mr-2" />
-                    全部折叠
+                    {t("全部折叠")}
                   </>
                 ) : (
                   <>
                     <ChevronRight className="h-4 w-4 mr-2" />
-                    全部展开
+                    {t("全部展开")}
                   </>
                 )}
               </Button>
@@ -322,7 +322,7 @@ export default function FeeManagement() {
               </Button>
               <Button onClick={() => setIsAddFeeDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                新增费用项
+                {t("新增费用项")}
               </Button>
             </div>
           </div>
@@ -331,9 +331,9 @@ export default function FeeManagement() {
           {loading ? (
             <div className="text-center py-8 text-gray-500">{t('teacher.loading')}</div>
           ) : error ? (
-            <div className="text-center py-8 text-red-500">错误: {error}</div>
+            <div className="text-center py-8 text-red-500">{t("错误:")} {error}</div>
           ) : fees.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">暂无费用项</div>
+            <div className="text-center py-8 text-gray-500">{t("暂无费用项")}</div>
           ) : (
             <div className="space-y-4">
               {Object.entries(groupedFees).map(([category, categoryFees]) => {
@@ -363,7 +363,7 @@ export default function FeeManagement() {
                                 <div>
                                   <CardTitle className="text-lg">{getCategoryName(category)}</CardTitle>
                                   <CardDescription>
-                                    {categoryFees.length} 项 • {activeCount} 已启用
+                                    {categoryFees.length} {t("项 •")} {activeCount} {t("已启用")}
                                   </CardDescription>
                                 </div>
                               </div>
@@ -375,7 +375,7 @@ export default function FeeManagement() {
                                 </div>
                               </div>
                               <Badge variant="outline" className="text-sm">
-                                {categoryFees.length} 项
+                                {categoryFees.length} {t("项")}
                               </Badge>
                             </div>
                           </div>
@@ -388,9 +388,9 @@ export default function FeeManagement() {
                             <TableHeader>
                               <TableRow>
                                 <TableHead className="w-8"></TableHead>
-                                <TableHead>项目名称</TableHead>
+                                <TableHead>{t("项目名称")}</TableHead>
                                 <TableHead>{t('finance.amount')}</TableHead>
-                                <TableHead>费用类型</TableHead>
+                                <TableHead>{t("费用类型")}</TableHead>
                                 <TableHead>{t('teacher.status')}</TableHead>
                                 {isFeeEditMode && <TableHead>{t('finance.enable')}</TableHead>}
                                 {isFeeEditMode && <TableHead>{t('teacher.actions')}</TableHead>}

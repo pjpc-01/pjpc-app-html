@@ -92,12 +92,12 @@ export default function AdvancedFilters({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <Filter className="h-4 w-4" />
-            筛选
+            {t("筛选")}
           </CardTitle>
           <div className="flex items-center gap-1">
             {hasActive && (
               <Button variant="ghost" size="sm" onClick={onClear}>
-                <RotateCcw className="h-3.5 w-3.5 mr-1" />重置
+                <RotateCcw className="h-3.5 w-3.5 mr-1" />{t("重置")}
               </Button>
             )}
             <Button variant="ghost" size="sm" onClick={() => _setExpanded(!_expanded)}>
@@ -113,7 +113,7 @@ export default function AdvancedFilters({
           <div className="relative flex-1 min-w-[160px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="搜索姓名、学号、家长..."
+              placeholder={t("搜索姓名、学号、家长...")}
               value={filters.searchTerm}
               onChange={(e) => update('searchTerm', e.target.value)}
               className="pl-8 h-9 text-sm"
@@ -158,19 +158,19 @@ export default function AdvancedFilters({
           <div className="flex flex-wrap gap-1">
             {filters.selectedGrade !== "all" && (
               <Badge variant="secondary" className="text-xs gap-1">
-                年级: {filters.selectedGrade}
+                {t("年级:")} {filters.selectedGrade}
                 <X className="h-3 w-3 cursor-pointer hover:text-destructive" onClick={() => update('selectedGrade', 'all')} />
               </Badge>
             )}
             {filters.selectedStatus !== "all" && (
               <Badge variant="secondary" className="text-xs gap-1">
-                状态: {filters.selectedStatus}
+                {t("状态:")} {filters.selectedStatus}
                 <X className="h-3 w-3 cursor-pointer hover:text-destructive" onClick={() => update('selectedStatus', 'all')} />
               </Badge>
             )}
             {filters.selectedCenter !== "all" && (
               <Badge variant="secondary" className="text-xs gap-1">
-                中心: {filters.selectedCenter}
+                {t("中心:")} {filters.selectedCenter}
                 <X className="h-3 w-3 cursor-pointer hover:text-destructive" onClick={() => update('selectedCenter', 'all')} />
               </Badge>
             )}
@@ -220,7 +220,7 @@ export default function AdvancedFilters({
                 </Select>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">方向</Label>
+                <Label className="text-xs text-muted-foreground">{t("方向")}</Label>
                 <Select value={filters.sortOrder} onValueChange={(v: 'asc' | 'desc') => update('sortOrder', v)}>
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue />

@@ -113,10 +113,10 @@ export default function HomeworkDetailPage() {
 
   if (!homework) {
     return (
-      <PageLayout title="作业未找到" backUrl="/homework" userRole="admin">
+      <PageLayout title={t("作业未找到")} backUrl="/homework" userRole="admin">
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            作业不存在或已被删除
+            {t("作业不存在或已被删除")}
           </CardContent>
         </Card>
       </PageLayout>
@@ -134,8 +134,8 @@ export default function HomeworkDetailPage() {
           <div className="flex flex-wrap gap-4 items-start justify-between">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Badge variant="secondary">{homework.subject}</Badge>
-                <Badge variant="outline">{homework.grade}</Badge>
+                <Badge variant="secondary">{t(homework.subject)}</Badge>
+                <Badge variant="outline">{t(homework.grade)}</Badge>
                 {homework.expand?.centerId && (
                   <Badge variant="outline">{homework.expand.centerId.name}</Badge>
                 )}
@@ -146,16 +146,16 @@ export default function HomeworkDetailPage() {
               <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
-                  布置: {new Date(homework.assignedDate).toLocaleDateString("zh-CN")}
+                  {t("布置:")} {new Date(homework.assignedDate).toLocaleDateString("zh-CN")}
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="h-4 w-4" />
-                  截止: {new Date(homework.dueDate).toLocaleDateString("zh-CN")}
+                  {t("截止:")} {new Date(homework.dueDate).toLocaleDateString("zh-CN")}
                 </span>
                 {homework.expand?.teacherId && (
                   <span className="flex items-center gap-1">
                     <BookOpen className="h-4 w-4" />
-                    教师: {homework.expand.teacherId.name}
+                    {t("教师:")} {homework.expand.teacherId.name}
                   </span>
                 )}
               </div>
@@ -163,7 +163,7 @@ export default function HomeworkDetailPage() {
             <div className="flex gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold">{matchingStudents.length}</div>
-                <div className="text-xs text-muted-foreground">应提交</div>
+                <div className="text-xs text-muted-foreground">{t("应提交")}</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-blue-600">{submittedCount}</div>
@@ -180,7 +180,7 @@ export default function HomeworkDetailPage() {
             <Link href={`/homework/${homework.id}/grade`}>
               <Button variant="default">
                 <FileEdit className="h-4 w-4 mr-2" />
-                批量批改
+                {t("批量批改")}
               </Button>
             </Link>
           </div>
@@ -192,12 +192,12 @@ export default function HomeworkDetailPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            学生提交情况
+            {t("学生提交情况")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {matchingStudents.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">该年级暂无学生</p>
+            <p className="text-center py-8 text-muted-foreground">{t("该年级暂无学生")}</p>
           ) : (
             <div className="space-y-2">
               {matchingStudents.map((student: any) => {
@@ -236,7 +236,7 @@ export default function HomeworkDetailPage() {
                           </>
                         ) : (
                           <Badge variant="outline" className="text-muted-foreground">
-                            未提交
+                            {t("未提交")}
                           </Badge>
                         )}
                         {isExpanded ? (
@@ -254,7 +254,7 @@ export default function HomeworkDetailPage() {
                             {/* Content */}
                             {sub.content && (
                               <div>
-                                <label className="text-xs font-medium text-muted-foreground block mb-1">提交内容</label>
+                                <label className="text-xs font-medium text-muted-foreground block mb-1">{t("提交内容")}</label>
                                 <p className="text-sm bg-muted rounded p-2">{sub.content}</p>
                               </div>
                             )}
@@ -264,12 +264,12 @@ export default function HomeworkDetailPage() {
                               <div className="space-y-2">
                                 <div className="flex gap-2">
                                   <div className="w-24">
-                                    <label className="text-xs font-medium text-muted-foreground block mb-1">分数 (0-100)</label>
+                                    <label className="text-xs font-medium text-muted-foreground block mb-1">{t("分数 (0-100)")}</label>
                                     <Input
                                       type="number"
                                       min={0}
                                       max={100}
-                                      placeholder="分数"
+                                      placeholder={t("分数")}
                                       value={editingScores[sub.id]?.score ?? ""}
                                       onChange={(e) =>
                                         setEditingScores((prev) => ({
@@ -283,9 +283,9 @@ export default function HomeworkDetailPage() {
                                     />
                                   </div>
                                   <div className="flex-1">
-                                    <label className="text-xs font-medium text-muted-foreground block mb-1">评语</label>
+                                    <label className="text-xs font-medium text-muted-foreground block mb-1">{t("评语")}</label>
                                     <Input
-                                      placeholder="批改评语..."
+                                      placeholder={t("批改评语...")}
                                       value={editingScores[sub.id]?.feedback ?? ""}
                                       onChange={(e) =>
                                         setEditingScores((prev) => ({
@@ -313,7 +313,7 @@ export default function HomeworkDetailPage() {
                               <div className="space-y-2">
                                 <div className="flex items-center gap-4">
                                   <div>
-                                    <span className="text-xs font-medium text-muted-foreground">分数</span>
+                                    <span className="text-xs font-medium text-muted-foreground">{t("分数")}</span>
                                     <div className="flex items-center gap-1">
                                       <Award className="h-4 w-4 text-yellow-500" />
                                       <span className="font-medium">{sub.score}/100</span>
@@ -321,13 +321,13 @@ export default function HomeworkDetailPage() {
                                   </div>
                                   {sub.feedback && (
                                     <div>
-                                      <span className="text-xs font-medium text-muted-foreground">评语</span>
+                                      <span className="text-xs font-medium text-muted-foreground">{t("评语")}</span>
                                       <p className="text-sm">{sub.feedback}</p>
                                     </div>
                                   )}
                                   {sub.expand?.gradedBy && (
                                     <div>
-                                      <span className="text-xs font-medium text-muted-foreground">批改教师</span>
+                                      <span className="text-xs font-medium text-muted-foreground">{t("批改教师")}</span>
                                       <p className="text-sm">{sub.expand.gradedBy.name}</p>
                                     </div>
                                   )}
@@ -346,7 +346,7 @@ export default function HomeworkDetailPage() {
                                     setExpandedStudent(student.id) // Keep expanded
                                   }}
                                 >
-                                  重新批改
+                                  {t("重新批改")}
                                 </Button>
                               </div>
                             )}
@@ -354,14 +354,14 @@ export default function HomeworkDetailPage() {
                         )}
 
                         {sub.status === "pending" && (
-                          <p className="text-sm text-muted-foreground">学生尚未提交</p>
+                          <p className="text-sm text-muted-foreground">{t("学生尚未提交")}</p>
                         )}
                       </div>
                     )}
 
                     {isExpanded && !sub && (
                       <div className="px-4 pb-4 border-t pt-3">
-                        <p className="text-sm text-muted-foreground">学生尚未提交作业</p>
+                        <p className="text-sm text-muted-foreground">{t("学生尚未提交作业")}</p>
                       </div>
                     )}
                   </div>

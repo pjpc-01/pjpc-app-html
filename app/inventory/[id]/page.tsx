@@ -99,13 +99,13 @@ export default function InventoryItemDetailPage() {
   }
 
   if (loading) return (
-    <PageLayout title="商品详情" actions={<Link href="/inventory"><Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" />{t('inventory.back')}</Button></Link>}>
+    <PageLayout title={t("商品详情")} actions={<Link href="/inventory"><Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" />{t('inventory.back')}</Button></Link>}>
       <div className="text-center py-16 text-gray-500"><Package className="h-8 w-8 mx-auto mb-2 animate-pulse" /><p>{t('teacher.loading')}</p></div>
     </PageLayout>
   )
 
   if (error || !item) return (
-    <PageLayout title="商品详情" actions={<Link href="/inventory"><Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" />{t('inventory.back')}</Button></Link>}>
+    <PageLayout title={t("商品详情")} actions={<Link href="/inventory"><Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" />{t('inventory.back')}</Button></Link>}>
       <div className="text-center py-16 text-red-500"><AlertTriangle className="h-8 w-8 mx-auto mb-2" /><p>{error || "商品不存在"}</p></div>
     </PageLayout>
   )
@@ -132,10 +132,10 @@ export default function InventoryItemDetailPage() {
               <div><span className="text-gray-500">{t('inventory.category')}</span><p className="font-medium">{categoryName}</p></div>
               <div><span className="text-gray-500">{t('inventory.unit')}</span><p className="font-medium">{item.unit || "—"}</p></div>
               <div><span className="text-gray-500">{t('teacher.status')}</span><p><Badge className={item.status === "active" ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-800"}>{item.status === "active" ? "在售" : "停产"}</Badge></p></div>
-              <div><span className="text-gray-500">进货价</span><p className="font-medium">{item.costPrice != null ? `RM ${item.costPrice}` : "—"}</p></div>
-              <div><span className="text-gray-500">售价</span><p className="font-medium">{item.sellingPrice != null ? `RM ${item.sellingPrice}` : "—"}</p></div>
-              <div><span className="text-gray-500">毛利率</span><p className="font-medium">{item.costPrice && item.sellingPrice ? `${Math.round((item.sellingPrice - item.costPrice) / item.sellingPrice * 100)}%` : "—"}</p></div>
-              <div><span className="text-gray-500">最低库存</span><p className="font-medium">{item.minStock != null ? item.minStock : "未设置"}</p></div>
+              <div><span className="text-gray-500">{t("进货价")}</span><p className="font-medium">{item.costPrice != null ? `RM ${item.costPrice}` : "—"}</p></div>
+              <div><span className="text-gray-500">{t("售价")}</span><p className="font-medium">{item.sellingPrice != null ? `RM ${item.sellingPrice}` : "—"}</p></div>
+              <div><span className="text-gray-500">{t("毛利率")}</span><p className="font-medium">{item.costPrice && item.sellingPrice ? `${Math.round((item.sellingPrice - item.costPrice) / item.sellingPrice * 100)}%` : "—"}</p></div>
+              <div><span className="text-gray-500">{t("最低库存")}</span><p className="font-medium">{item.minStock != null ? item.minStock : "未设置"}</p></div>
               {item.description && <div className="col-span-3"><span className="text-gray-500">{t('finance.description')}</span><p className="mt-1 text-gray-700">{item.description}</p></div>}
             </div>
           </CardContent>
@@ -143,7 +143,7 @@ export default function InventoryItemDetailPage() {
 
         {/* Stock Summary */}
         <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><TrendingUp className="h-4 w-4" />库存概况</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><TrendingUp className="h-4 w-4" />{t("库存概况")}</CardTitle></CardHeader>
           <CardContent>
             <div className="text-center mb-4">
               <p className="text-4xl font-bold mb-1">{item.stock}</p>
@@ -152,16 +152,16 @@ export default function InventoryItemDetailPage() {
             {isLowStock && (
               <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg flex items-center gap-2 mb-3">
                 <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-                库存低于警戒线！({item.stock} / {item.minStock} {item.unit})
+                {t("库存低于警戒线！(")}{item.stock} / {item.minStock} {item.unit})
               </div>
             )}
             <div className="space-y-2">
               <Button onClick={openStockIn} className="w-full bg-emerald-600 hover:bg-emerald-700">
-                <TrendingUp className="h-4 w-4 mr-2" />入库
+                <TrendingUp className="h-4 w-4 mr-2" />{t("入库")}
               </Button>
               <Button onClick={openStockOut} className="w-full bg-amber-600 hover:bg-amber-700"
                 disabled={item.stock <= 0}>
-                <TrendingDown className="h-4 w-4 mr-2" />出库
+                <TrendingDown className="h-4 w-4 mr-2" />{t("出库")}
               </Button>
             </div>
           </CardContent>
@@ -172,8 +172,8 @@ export default function InventoryItemDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <History className="h-4 w-4" />库存流水
-            <span className="text-sm font-normal text-gray-400 ml-2">({transactions.length} 条记录)</span>
+            <History className="h-4 w-4" />{t("库存流水")}
+            <span className="text-sm font-normal text-gray-400 ml-2">({transactions.length} {t("条记录)")}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -182,7 +182,7 @@ export default function InventoryItemDetailPage() {
           ) : transactions.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>暂无库存记录</p>
+              <p>{t("暂无库存记录")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -194,8 +194,8 @@ export default function InventoryItemDetailPage() {
                     <th className="text-right py-2 pr-4">{t('inventory.quantity')}</th>
                     <th className="text-right py-2 pr-4">{t('inventory.unit_price')}</th>
                     <th className="text-right py-2 pr-4">{t('finance.amount')}</th>
-                    <th className="text-left py-2 pr-4">供应商/备注</th>
-                    <th className="text-left py-2 pr-4">凭证号</th>
+                    <th className="text-left py-2 pr-4">{t("供应商/备注")}</th>
+                    <th className="text-left py-2 pr-4">{t("凭证号")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -223,7 +223,7 @@ export default function InventoryItemDetailPage() {
                         {tx.totalAmount != null ? `RM ${tx.totalAmount}` : "—"}
                       </td>
                       <td className="py-2 pr-4 text-gray-600 max-w-[200px] truncate">
-                        {tx.supplier && <span className="block text-xs text-gray-400">供应商: {tx.supplier}</span>}
+                        {tx.supplier && <span className="block text-xs text-gray-400">{t("供应商:")} {tx.supplier}</span>}
                         {tx.notes || "—"}
                       </td>
                       <td className="py-2 pr-4 text-gray-500 text-xs">
@@ -246,19 +246,19 @@ export default function InventoryItemDetailPage() {
               {stockType === "stock_in" ? <TrendingUp className="h-4 w-4 text-emerald-600" /> : <TrendingDown className="h-4 w-4 text-amber-600" />}
               {stockType === "stock_in" ? "入库操作" : "出库操作"}
               <span className="text-sm font-normal text-gray-400 ml-2">
-                （当前库存: {item.stock} {item.unit || "件"}）
+                {t("（当前库存:")} {item.stock} {item.unit || "件"}{t("）")}
               </span>
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleStockSubmit} className="space-y-4">
             <div>
-              <Label>数量 *</Label>
+              <Label>{t("数量 *")}</Label>
               <Input type="number" min="1" value={txForm.quantity}
                 onChange={e => setTxForm(prev => ({ ...prev, quantity: e.target.value }))}
                 placeholder={`入库/出库数量（${item.unit || "件"}）`} required />
             </div>
             <div>
-              <Label>单价 (RM)</Label>
+              <Label>{t("单价 (RM)")}</Label>
               <Input type="number" step="0.01" min="0" value={txForm.unitPrice}
                 onChange={e => setTxForm(prev => ({ ...prev, unitPrice: e.target.value }))}
                 placeholder={t('inventory.optional')} />
@@ -267,10 +267,10 @@ export default function InventoryItemDetailPage() {
               <Label>{t('inventory.supplier')}</Label>
               <Input value={txForm.supplier}
                 onChange={e => setTxForm(prev => ({ ...prev, supplier: e.target.value }))}
-                placeholder="入库来源/出库去向" />
+                placeholder={t("入库来源/出库去向")} />
             </div>
             <div>
-              <Label>凭证号 / 采购单号</Label>
+              <Label>{t("凭证号 / 采购单号")}</Label>
               <Input value={txForm.reference}
                 onChange={e => setTxForm(prev => ({ ...prev, reference: e.target.value }))}
                 placeholder={t('inventory.optional')} />
@@ -279,7 +279,7 @@ export default function InventoryItemDetailPage() {
               <Label>{t('teacher.notes')}</Label>
               <Textarea value={txForm.notes}
                 onChange={e => setTxForm(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="可选备注" rows={2} />
+                placeholder={t("可选备注")} rows={2} />
             </div>
             {txError && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg">{txError}</div>}
             <div className="flex justify-end gap-3">

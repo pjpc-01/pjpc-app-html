@@ -262,14 +262,14 @@ export default function FinancialReports() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            财务报表
+            {t("财务报表")}
           </CardTitle>
-          <CardDescription>基于实际数据的收入支出统计报告</CardDescription>
+          <CardDescription>{t("基于实际数据的收入支出统计报告")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4 mb-4">
             <div className="flex-1">
-              <Label>报告类型</Label>
+              <Label>{t("报告类型")}</Label>
               <Select value={selectedReportType} onValueChange={setSelectedReportType}>
                 <SelectTrigger>
                   <SelectValue />
@@ -286,26 +286,26 @@ export default function FinancialReports() {
             <div className="flex items-end">
               <Button variant="default" className="bg-indigo-600 hover:bg-indigo-700" onClick={handleExportPnL}>
                 <Download className="h-4 w-4 mr-2" />
-                导出 PDF 报表
+                {t("导出 PDF 报表")}
               </Button>
             </div>
             <div className="w-44">
-              <Label>分行</Label>
+              <Label>{t("分行")}</Label>
               <Select value={centerFilter} onValueChange={setCenterFilter}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部分行</SelectItem>
+                  <SelectItem value="all">{t("全部分行")}</SelectItem>
                   {centerScope.options.map(o => (
                     <SelectItem key={o.code} value={o.code}>{o.name}</SelectItem>
                   ))}
-                  <SelectItem value={UNASSIGNED_CENTER}>未分配</SelectItem>
+                  <SelectItem value={UNASSIGNED_CENTER}>{t("未分配")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="flex-1">
-              <Label>选择月份</Label>
+              <Label>{t("选择月份")}</Label>
               <Input
                 type="month"
                 value={selectedMonth}
@@ -321,7 +321,7 @@ export default function FinancialReports() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5" />
-            收支概览
+            {t("收支概览")}
           </CardTitle>
           <CardDescription>
             {financialLoading ? "加载中..." : `以下是 ${monthLabel} 的经营数据（收入按账期归月，成本含教师薪资）`}
@@ -331,28 +331,28 @@ export default function FinancialReports() {
           {financialLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              <span>加载财务数据...</span>
+              <span>{t("加载财务数据...")}</span>
             </div>
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">{monthLabel} 收入</p>
+                  <p className="text-sm font-medium text-gray-600">{monthLabel} {t("收入")}</p>
                   <p className="text-2xl font-bold text-green-600">RM {fmtMoney(cur.revenue)}</p>
-                  <p className="text-xs text-gray-500">{cur.students} 位学生缴费</p>
+                  <p className="text-xs text-gray-500">{cur.students} {t("位学生缴费")}</p>
                 </div>
                 <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">{monthLabel} 薪资</p>
+                  <p className="text-sm font-medium text-gray-600">{monthLabel} {t("薪资")}</p>
                   <p className="text-2xl font-bold text-purple-600">RM {fmtMoney(cur.salary)}</p>
-                  <p className="text-xs text-gray-500">教师薪资（最大成本）</p>
+                  <p className="text-xs text-gray-500">{t("教师薪资（最大成本）")}</p>
                 </div>
                 <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">{monthLabel} 其他支出</p>
+                  <p className="text-sm font-medium text-gray-600">{monthLabel} {t("其他支出")}</p>
                   <p className="text-2xl font-bold text-red-600">RM {fmtMoney(cur.expense)}</p>
-                  <p className="text-xs text-gray-500">水电、杂项等</p>
+                  <p className="text-xs text-gray-500">{t("水电、杂项等")}</p>
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">{monthLabel} 净利润</p>
+                  <p className="text-sm font-medium text-gray-600">{monthLabel} {t("净利润")}</p>
                   <p className={`text-2xl font-bold ${cur.profit >= 0 ? "text-blue-600" : "text-red-600"}`}>
                     RM {fmtMoney(cur.profit)}
                   </p>
@@ -382,7 +382,7 @@ export default function FinancialReports() {
               {/* 支出明细 */}
               {expenseBreakdown.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-lg">支出明细</h3>
+                  <h3 className="font-semibold text-lg">{t("支出明细")}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {expenseBreakdown.map(exp => (
                       <div key={exp.category} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
@@ -400,7 +400,7 @@ export default function FinancialReports() {
               {/* 月度收支对比 */}
               {monthlyReportData.length > 0 && (
                 <div className="mt-6">
-                  <h3 className="font-semibold text-lg mb-4">月度收支对比</h3>
+                  <h3 className="font-semibold text-lg mb-4">{t("月度收支对比")}</h3>
                   <div className="space-y-3">
                     {monthlyReportData.map(data => {
                       const monthlyExp = data.expense
@@ -411,15 +411,15 @@ export default function FinancialReports() {
                           <div className="flex-1">
                             <p className="font-medium">{data.month}</p>
                             <div className="flex flex-wrap gap-4 text-sm">
-                              <span className="text-green-700">实收: <span className="font-medium">RM {fmtMoney(data.revenue)}</span></span>
-                              <span className="text-red-600">支出: <span className="font-medium">RM {fmtMoney(monthlyExp)}</span></span>
-                              <span className="text-orange-600">薪资: <span className="font-medium">RM {fmtMoney(monthlySalary)}</span></span>
-                              <span className="text-blue-700">开票: <span className="font-medium">{data.invoices} 张 / RM {fmtMoney(data.invoiceAmount)}</span></span>
+                              <span className="text-green-700">{t("实收:")} <span className="font-medium">RM {fmtMoney(data.revenue)}</span></span>
+                              <span className="text-red-600">{t("支出:")} <span className="font-medium">RM {fmtMoney(monthlyExp)}</span></span>
+                              <span className="text-orange-600">{t("薪资:")} <span className="font-medium">RM {fmtMoney(monthlySalary)}</span></span>
+                              <span className="text-blue-700">{t("开票:")} <span className="font-medium">{data.invoices} {t("张 / RM")} {fmtMoney(data.invoiceAmount)}</span></span>
                               {(() => {
                                 const unpaid = unpaidOfMonth(data.month)
                                 return (
                                   <span className={unpaid > 0.01 ? "text-red-700 font-semibold" : "text-slate-400"}>
-                                    未收: RM {fmtMoney(unpaid)}
+                                    {t("未收: RM")} {fmtMoney(unpaid)}
                                   </span>
                                 )
                               })()}
@@ -449,15 +449,15 @@ export default function FinancialReports() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5" />
-            财务总览（全部）
+            {t("财务总览（全部）")}
           </CardTitle>
-          <CardDescription>发票与缴费数据一致性检查</CardDescription>
+          <CardDescription>{t("发票与缴费数据一致性检查")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-gray-600">对账状态</p>
+                <p className="text-sm font-medium text-gray-600">{t("对账状态")}</p>
                 <div className="flex items-center gap-2 mt-1">
                   {reconciliationStatus.isBalanced ? (
                     <CheckCircle className="h-4 w-4 text-green-600" />
@@ -472,19 +472,19 @@ export default function FinancialReports() {
             </div>
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-gray-600">发票总金额</p>
+                <p className="text-sm font-medium text-gray-600">{t("发票总金额")}</p>
                 <p className="text-lg font-semibold">RM {fmtMoney(reconciliationStatus.totalInvoiced)}</p>
               </div>
             </div>
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-gray-600">缴费总金额</p>
+                <p className="text-sm font-medium text-gray-600">{t("缴费总金额")}</p>
                 <p className="text-lg font-semibold">RM {fmtMoney(reconciliationStatus.totalPaid)}</p>
               </div>
             </div>
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-gray-600">未收金额</p>
+                <p className="text-sm font-medium text-gray-600">{t("未收金额")}</p>
                 <p className={`text-lg font-semibold ${reconciliationStatus.difference >= 0 ? "text-green-600" : "text-red-600"}`}>
                   RM {fmtMoney(Math.abs(reconciliationStatus.difference))}
                 </p>
@@ -493,15 +493,15 @@ export default function FinancialReports() {
           </div>
           <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-gray-600">总发票数</p>
+              <p className="text-sm text-gray-600">{t("总发票数")}</p>
               <p className="text-xl font-bold text-blue-600">{reconciliationStatus.totalInvoices}</p>
             </div>
             <div className="text-center p-3 bg-green-50 rounded-lg">
-              <p className="text-sm text-gray-600">已缴费发票</p>
+              <p className="text-sm text-gray-600">{t("已缴费发票")}</p>
               <p className="text-xl font-bold text-green-600">{reconciliationStatus.paidInvoices}</p>
             </div>
             <div className="text-center p-3 bg-orange-50 rounded-lg">
-              <p className="text-sm text-gray-600">未缴费发票</p>
+              <p className="text-sm text-gray-600">{t("未缴费发票")}</p>
               <p className="text-xl font-bold text-orange-600">{reconciliationStatus.unpaidInvoices}</p>
             </div>
           </div>
@@ -514,28 +514,28 @@ export default function FinancialReports() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              月度收入报告
+              {t("月度收入报告")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {financialLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                <span>加载报告数据...</span>
+                <span>{t("加载报告数据...")}</span>
               </div>
             ) : monthlyReportData.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">暂无月度数据</div>
+              <div className="text-center py-8 text-gray-500">{t("暂无月度数据")}</div>
             ) : (
               <div className="space-y-6">
 
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>月份</TableHead>
-                      <TableHead>收入金额</TableHead>
-                      <TableHead>缴费学生</TableHead>
-                      <TableHead>发票数量</TableHead>
-                      <TableHead>平均收入</TableHead>
+                      <TableHead>{t("月份")}</TableHead>
+                      <TableHead>{t("收入金额")}</TableHead>
+                      <TableHead>{t("缴费学生")}</TableHead>
+                      <TableHead>{t("发票数量")}</TableHead>
+                      <TableHead>{t("平均收入")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -562,12 +562,12 @@ export default function FinancialReports() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5" />
-              收费项目分析
+              {t("收费项目分析")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {feeAnalysis.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">暂无缴费数据</div>
+              <div className="text-center py-8 text-gray-500">{t("暂无缴费数据")}</div>
             ) : (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -575,7 +575,7 @@ export default function FinancialReports() {
                     <div key={fee.item} className="text-center p-4 border rounded-lg">
                       <div className="text-lg font-semibold">{fee.item}</div>
                       <div className="text-2xl font-bold text-blue-600">RM {fmtMoney(fee.revenue)}</div>
-                      <div className="text-sm text-gray-600">{fee.students} 笔</div>
+                      <div className="text-sm text-gray-600">{fee.students} {t("笔")}</div>
                       <div className="text-xs text-gray-500">{fee.percentage}%</div>
                     </div>
                   ))}
@@ -583,11 +583,11 @@ export default function FinancialReports() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>支付方式</TableHead>
-                      <TableHead>收入金额</TableHead>
-                      <TableHead>笔数</TableHead>
-                      <TableHead>占比</TableHead>
-                      <TableHead>平均金额</TableHead>
+                      <TableHead>{t("支付方式")}</TableHead>
+                      <TableHead>{t("收入金额")}</TableHead>
+                      <TableHead>{t("笔数")}</TableHead>
+                      <TableHead>{t("占比")}</TableHead>
+                      <TableHead>{t("平均金额")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -614,12 +614,12 @@ export default function FinancialReports() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              收入趋势分析
+              {t("收入趋势分析")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {monthlyReportData.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">暂无趋势数据</div>
+              <div className="text-center py-8 text-gray-500">{t("暂无趋势数据")}</div>
             ) : (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -629,7 +629,7 @@ export default function FinancialReports() {
                         ? `${((monthlyReportData[0].revenue - monthlyReportData[1].revenue) / (monthlyReportData[1].revenue || 1) * 100).toFixed(1)}%`
                         : "N/A"}
                     </div>
-                    <div className="text-sm text-gray-600">环比增长</div>
+                    <div className="text-sm text-gray-600">{t("环比增长")}</div>
                   </div>
                   <div className="text-center p-4 border rounded-lg">
                     <div className="text-2xl font-bold text-blue-600">
@@ -637,17 +637,17 @@ export default function FinancialReports() {
                         ? `${((monthlyReportData[0].revenue - monthlyReportData[5].revenue) / (monthlyReportData[5].revenue || 1) * 100).toFixed(1)}%`
                         : "N/A"}
                     </div>
-                    <div className="text-sm text-gray-600">长期趋势</div>
+                    <div className="text-sm text-gray-600">{t("长期趋势")}</div>
                   </div>
                   <div className="text-center p-4 border rounded-lg">
                     <div className="text-2xl font-bold text-purple-600">
                       RM {fmtMoney((monthlyReportData[0]?.revenue || 0))}
                     </div>
-                    <div className="text-sm text-gray-600">当前月收入</div>
+                    <div className="text-sm text-gray-600">{t("当前月收入")}</div>
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <h3 className="font-semibold">月度趋势</h3>
+                  <h3 className="font-semibold">{t("月度趋势")}</h3>
                   {monthlyReportData.map((data, index) => {
                     const prevData = monthlyReportData[index + 1]
                     const growth = prevData ? ((data.revenue - prevData.revenue) / (prevData.revenue || 1) * 100).toFixed(1) : 0
@@ -683,24 +683,24 @@ export default function FinancialReports() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5" />
-              收支利润分析
+              {t("收支利润分析")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">{monthLabel} 收入</p>
+                  <p className="text-sm font-medium text-gray-600">{monthLabel} {t("收入")}</p>
                   <p className="text-2xl font-bold text-green-600">RM {fmtMoney(cur.revenue)}</p>
-                  <p className="text-xs text-gray-600">{cur.students} 位学生缴费</p>
+                  <p className="text-xs text-gray-600">{cur.students} {t("位学生缴费")}</p>
                 </div>
                 <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">{monthLabel} 总成本</p>
+                  <p className="text-sm font-medium text-gray-600">{monthLabel} {t("总成本")}</p>
                   <p className="text-2xl font-bold text-red-600">RM {fmtMoney(cur.cost)}</p>
-                  <p className="text-xs text-gray-600">薪资 + 其他支出</p>
+                  <p className="text-xs text-gray-600">{t("薪资 + 其他支出")}</p>
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600">{monthLabel} 净利润</p>
+                  <p className="text-sm font-medium text-gray-600">{monthLabel} {t("净利润")}</p>
                   <p className={`text-2xl font-bold ${cur.profit >= 0 ? "text-blue-600" : "text-red-600"}`}>
                     RM {fmtMoney(cur.profit)}
                   </p>
@@ -710,14 +710,14 @@ export default function FinancialReports() {
 
               {expenseBreakdown.length > 0 && (
                 <div>
-                  <h3 className="font-semibold text-lg mb-4">支出明细表</h3>
+                  <h3 className="font-semibold text-lg mb-4">{t("支出明细表")}</h3>
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>支出类别</TableHead>
+                        <TableHead>{t("支出类别")}</TableHead>
                         <TableHead>{t('finance.amount')}</TableHead>
-                        <TableHead>占比</TableHead>
-                        <TableHead>占收入比例</TableHead>
+                        <TableHead>{t("占比")}</TableHead>
+                        <TableHead>{t("占收入比例")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -767,9 +767,9 @@ export default function FinancialReports() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5" />
-            应收账款账龄分析
+            {t("应收账款账龄分析")}
           </CardTitle>
-          <CardDescription>按逾期天数分组的未收款项</CardDescription>
+          <CardDescription>{t("按逾期天数分组的未收款项")}</CardDescription>
         </CardHeader>
         <CardContent>
           {(() => {
@@ -810,7 +810,7 @@ export default function FinancialReports() {
                   ))}
                 </div>
                 <p className="text-xs text-slate-400 text-center">
-                  数据实时更新 · {safeInvoices.filter(inv => inv.status !== "paid").length} 笔未结清发票
+                  {t("数据实时更新 ·")} {safeInvoices.filter(inv => inv.status !== "paid").length} {t("笔未结清发票")}
                 </p>
               </>
             )
@@ -822,65 +822,65 @@ export default function FinancialReports() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5" />
-            资产负债概览
+            {t("资产负债概览")}
           </CardTitle>
           <CardDescription>
-        时点报表 · 截至数据最新日（累计口径，不随上方月份切换）：应收 / 应付 / 累计损益（银行与现金栏需先在「银行对账」导入真实流水）
+        {t("时点报表 · 截至数据最新日（累计口径，不随上方月份切换）：应收 / 应付 / 累计损益（银行与现金栏需先在「银行对账」导入真实流水）")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* 资产 */}
             <div className="space-y-3">
-              <h4 className="font-semibold text-slate-900 border-b pb-2">资产</h4>
+              <h4 className="font-semibold text-slate-900 border-b pb-2">{t("资产")}</h4>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-600">应收账款（未收发票）</span>
+                <span className="text-slate-600">{t("应收账款（未收发票）")}</span>
                 <span className="font-medium">RM {fmtMoney(balanceSheet.receivable)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-600">银行 + 现金</span>
-                <span className="text-slate-400 text-xs">待导入流水</span>
+                <span className="text-slate-600">{t("银行 + 现金")}</span>
+                <span className="text-slate-400 text-xs">{t("待导入流水")}</span>
               </div>
               <div className="flex justify-between text-sm pt-2 border-t font-semibold">
-                <span>资产合计（已知）</span>
+                <span>{t("资产合计（已知）")}</span>
                 <span>RM {fmtMoney(balanceSheet.receivable)}</span>
               </div>
             </div>
             {/* 负债 */}
             <div className="space-y-3">
-              <h4 className="font-semibold text-slate-900 border-b pb-2">负债</h4>
+              <h4 className="font-semibold text-slate-900 border-b pb-2">{t("负债")}</h4>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-600">应付薪资（当月未发）</span>
+                <span className="text-slate-600">{t("应付薪资（当月未发）")}</span>
                 <span className="font-medium">RM {fmtMoney(balanceSheet.payableSalary)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-600">应付供应商</span>
-                <span className="text-slate-400 text-xs">暂无记录</span>
+                <span className="text-slate-600">{t("应付供应商")}</span>
+                <span className="text-slate-400 text-xs">{t("暂无记录")}</span>
               </div>
               <div className="flex justify-between text-sm pt-2 border-t font-semibold">
-                <span>负债合计</span>
+                <span>{t("负债合计")}</span>
                 <span>RM {fmtMoney(balanceSheet.payableSalary)}</span>
               </div>
             </div>
             {/* 权益 / 损益 */}
             <div className="space-y-3">
-              <h4 className="font-semibold text-slate-900 border-b pb-2">累计损益</h4>
+              <h4 className="font-semibold text-slate-900 border-b pb-2">{t("累计损益")}</h4>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-600">累计收入（实收）</span>
+                <span className="text-slate-600">{t("累计收入（实收）")}</span>
                 <span className="font-medium text-green-600">RM {fmtMoney(balanceSheet.income)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-600">累计成本（支出 + 薪资）</span>
+                <span className="text-slate-600">{t("累计成本（支出 + 薪资）")}</span>
                 <span className="font-medium text-red-600">RM {fmtMoney(balanceSheet.cost)}</span>
               </div>
               <div className={`flex justify-between text-sm pt-2 border-t font-semibold ${balanceSheet.profit >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                <span>累计利润</span>
+                <span>{t("累计利润")}</span>
                 <span>RM {fmtMoney(balanceSheet.profit)}</span>
               </div>
             </div>
           </div>
           <p className="text-xs text-slate-400 mt-4">
-            注：这是一张「简版」资产负债概览。完整资产负债表需要银行余额、现金、固定资产与应付账款 —— 先在「银行对账」导入真实银行流水后可补齐。
+            {t("注：这是一张「简版」资产负债概览。完整资产负债表需要银行余额、现金、固定资产与应付账款 —— 先在「银行对账」导入真实银行流水后可补齐。")}
           </p>
         </CardContent>
       </Card>
