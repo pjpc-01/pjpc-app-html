@@ -518,7 +518,7 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
   }
 
   const handleSaveAsNew = async () => {
-    const name = prompt("预设名称：")
+    const name = prompt(t("预设名称："))
     if (!name) return
     const np = createDefaultPreset({ ...settings, id: Date.now().toString(), name, isDefault: false })
     try {
@@ -539,7 +539,7 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
   }
 
   const handleDeletePreset = async () => {
-    if (presets.length <= 1) { alert("至少需要保留一个预设"); return }
+    if (presets.length <= 1) { alert(t("至少需要保留一个预设")); return }
     try {
       await deletePreset(activeId)
       const updated = presets.filter(p => p.id !== activeId)

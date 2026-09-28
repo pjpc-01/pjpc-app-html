@@ -265,10 +265,10 @@ export default function PaymentManagement() {
       setIsPaymentDialogOpen(false)
       setSelectedInvoiceId("")
       setPaymentAmount("")
-      toast.success("付款处理成功，收据已生成")
+      toast.success(t("付款处理成功，收据已生成"))
     } catch (error) {
       console.error("Payment failed:", error)
-      toast.error("付款处理失败，请重试")
+      toast.error(t("付款处理失败，请重试"))
     } finally {
       setIsSubmitting(false)
     }
@@ -276,7 +276,7 @@ export default function PaymentManagement() {
 
   const handleRefund = async () => {
     if (!refundPayment || !refundAmount || parseFloat(refundAmount) <= 0 || !refundReason.trim()) {
-      toast.error("请填写退款金额和原因")
+      toast.error(t("请填写退款金额和原因"))
       return
     }
 
@@ -292,7 +292,7 @@ export default function PaymentManagement() {
         notes: refundNotes || undefined,
       })
 
-      toast.success("退款处理成功")
+      toast.success(t("退款处理成功"))
       setIsRefundDialogOpen(false)
       setRefundPayment(null)
       setRefundAmount("")
@@ -301,7 +301,7 @@ export default function PaymentManagement() {
       setRefundNotes("")
     } catch (error) {
       console.error("Refund failed:", error)
-      toast.error("退款处理失败，请重试")
+      toast.error(t("退款处理失败，请重试"))
     } finally {
       setIsRefunding(false)
     }

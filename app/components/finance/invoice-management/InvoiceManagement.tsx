@@ -1006,7 +1006,7 @@ Prospek Cemerlang`,
                   <Button onClick={() => {
                     // Save message formats to localStorage or backend
                     localStorage.setItem('invoiceMessageFormats', JSON.stringify(messageFormats))
-                    alert('消息格式已保存！')
+                    alert(t("消息格式已保存！"))
                   }}>
                     {t("保存设置")}
                   </Button>

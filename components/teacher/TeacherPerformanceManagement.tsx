@@ -160,7 +160,7 @@ export default function TeacherPerformanceManagement() {
       }
     } catch (error) {
       console.error('获取绩效评估失败:', error)
-      setError('获取绩效评估失败')
+      setError(t("获取绩效评估失败"))
     }
   }, [filters])
 
@@ -239,26 +239,26 @@ export default function TeacherPerformanceManagement() {
         setError(result.error)
       }
     } catch (error) {
-      setError('创建绩效评估失败')
+      setError(t("创建绩效评估失败"))
     }
   }
 
   // 删除绩效评估
   const handleDeleteEvaluation = async (evaluationId: string) => {
-    if (!confirm("确定要删除这条绩效评估记录吗？此操作不可恢复。")) return
+    if (!confirm(t("确定要删除这条绩效评估记录吗？此操作不可恢复。"))) return
     try {
       const response = await fetch(`/api/teacher-performance?id=${evaluationId}`, {
         method: 'DELETE'
       })
       const result = await response.json()
       if (result.success) {
-        toast.success("删除成功")
+        toast.success(t("删除成功"))
         fetchEvaluations()
       } else {
-        toast.error("删除失败", { description: result.error })
+        toast.error(t("删除失败"), { description: result.error })
       }
     } catch (error) {
-      toast.error("删除失败", { description: "网络错误，请重试" })
+      toast.error(t("删除失败"), { description: "网络错误，请重试" })
     }
   }
 

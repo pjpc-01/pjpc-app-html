@@ -123,15 +123,15 @@ export default function FeeManagement() {
       })
       setNewCatName("")
       loadCategories()
-    } catch { alert("添加失败") }
+    } catch { alert(t("添加失败")) }
   }
 
   const handleDeleteCategory = async (id: string) => {
-    if (!confirm("确定删除？")) return
+    if (!confirm(t("确定删除？"))) return
     try {
       await fetch(`/api/pocketbase-proxy/api/collections/fee_categories/records/${id}`, { method: 'DELETE' })
       loadCategories()
-    } catch { alert("删除失败") }
+    } catch { alert(t("删除失败")) }
   }
 
   const onToggleItemActive = async (feeId: string, active: boolean) => {
@@ -140,7 +140,7 @@ export default function FeeManagement() {
 
   const handleAddFeeItem = async () => {
     if (!newFeeItem.name.trim() || newFeeItem.amount <= 0) {
-      alert("请填写所有必需的费用项信息")
+      alert(t("请填写所有必需的费用项信息"))
       return
     }
 
@@ -159,7 +159,7 @@ export default function FeeManagement() {
       setIsAddFeeDialogOpen(false)
     } catch (error) {
       console.error("费用项创建失败:", error)
-      alert("创建费用项失败，请重试")
+      alert(t("创建费用项失败，请重试"))
     }
   }
 
@@ -182,7 +182,7 @@ export default function FeeManagement() {
     if (!editingFeeItem) return
 
     if (!newFeeItem.name.trim() || newFeeItem.amount <= 0) {
-      alert("请填写所有必需的费用项信息")
+      alert(t("请填写所有必需的费用项信息"))
       return
     }
 
@@ -192,17 +192,17 @@ export default function FeeManagement() {
       setIsEditFeeDialogOpen(false)
     } catch (error) {
       console.error("更新费用项失败:", error)
-      alert("更新费用项失败，请重试")
+      alert(t("更新费用项失败，请重试"))
     }
   }
 
   const handleDeleteFeeItem = async (feeId: string) => {
-    if (confirm("确定要删除此费用项吗？")) {
+    if (confirm(t("确定要删除此费用项吗？"))) {
       try {
         await deleteFee(feeId)
       } catch (error) {
         console.error("删除费用项失败:", error)
-        alert("删除费用项失败，请重试")
+        alert(t("删除费用项失败，请重试"))
       }
     }
   }

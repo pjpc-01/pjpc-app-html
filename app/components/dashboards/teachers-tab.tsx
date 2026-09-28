@@ -138,7 +138,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
 
   // 处理删除教师
   const handleDeleteTeacher = async (teacherId: string) => {
-    if (!confirm("确定要删除此教师？此操作不可撤销。")) return
+    if (!confirm(t("确定要删除此教师？此操作不可撤销。"))) return
     try {
       await deleteTeacher(teacherId)
       refetchTeachers()
@@ -165,7 +165,7 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
               <CardDescription>{t("查看和管理所有教师信息及教学安排")}</CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => alert("批量导入功能开发中")}>
+              <Button variant="outline" onClick={() => alert(t("批量导入功能开发中"))}>
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
                 {t("批量导入")}
               </Button>

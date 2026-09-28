@@ -435,7 +435,7 @@ export default function TeacherSalaryManagement() {
       }
     } catch (error) {
       console.error('获取薪资记录失败:', error)
-      setError('获取薪资记录失败')
+      setError(t("获取薪资记录失败"))
     }
   }, [filters])
 
@@ -597,11 +597,11 @@ export default function TeacherSalaryManagement() {
         toast.success(`薪资生成完成！成功: ${result.summary.success}, 跳过: ${result.summary.skipped}, 失败: ${result.summary.error}`)
         fetchSalaryRecords()
       } else {
-        toast.error('薪资生成失败', { description: result.error })
+        toast.error(t("薪资生成失败"), { description: result.error })
       }
     } catch (error) {
       console.error('自动生成薪资失败:', error)
-      toast.error('自动生成薪资失败')
+      toast.error(t("自动生成薪资失败"))
     } finally {
       setIsGenerating(false)
     }
@@ -610,9 +610,9 @@ export default function TeacherSalaryManagement() {
   // 绩效调整薪资
   const handlePerformanceAdjustment = async () => {
     // 这里可以添加一个对话框让用户选择教师和绩效评估
-    const teacherId = prompt('请输入教师ID:')
-    const evaluationId = prompt('请输入绩效评估ID:')
-    const adjustmentType = prompt('请输入调整类型 (conservative/moderate/aggressive):')
+    const teacherId = prompt(t("请输入教师ID:"))
+    const evaluationId = prompt(t("请输入绩效评估ID:"))
+    const adjustmentType = prompt(t("请输入调整类型 (conservative/moderate/aggressive):"))
     
     if (!teacherId || !evaluationId || !adjustmentType) {
       return
@@ -636,11 +636,11 @@ export default function TeacherSalaryManagement() {
         toast.success(`薪资调整完成！教师: ${teacherId}, 绩效评分: ${result.data.performance_score}, 调整幅度: ${result.data.adjustment_percentage}%`)
         fetchSalaryStructures()
       } else {
-        toast.error('薪资调整失败', { description: result.error })
+        toast.error(t("薪资调整失败"), { description: result.error })
       }
     } catch (error) {
       console.error('绩效薪资调整失败:', error)
-      toast.error('绩效薪资调整失败')
+      toast.error(t("绩效薪资调整失败"))
     } finally {
       setIsAdjusting(false)
     }
@@ -689,12 +689,12 @@ export default function TeacherSalaryManagement() {
         fetchSalaryStructures()
         toast.success(isEdit ? '薪资结构更新成功' : '薪资结构创建成功')
       } else {
-        toast.error('操作失败', { description: result.error })
+        toast.error(t("操作失败"), { description: result.error })
         setError(result.error)
       }
     } catch (error) {
-      toast.error('创建薪资结构失败')
-      setError('创建薪资结构失败')
+      toast.error(t("创建薪资结构失败"))
+      setError(t("创建薪资结构失败"))
     }
   }
 
@@ -771,15 +771,15 @@ export default function TeacherSalaryManagement() {
       })
       const result = await response.json()
       if (result.success) {
-        toast.success('薪资结构已删除')
+        toast.success(t("薪资结构已删除"))
         fetchSalaryStructures()
       } else {
-        toast.error('删除失败', { description: result.error })
+        toast.error(t("删除失败"), { description: result.error })
         setError(result.error)
       }
     } catch (error) {
-      toast.error('删除薪资结构失败')
-      setError('删除薪资结构失败')
+      toast.error(t("删除薪资结构失败"))
+      setError(t("删除薪资结构失败"))
     } finally {
       setIsStructureDeleteDialogOpen(false)
       setStructureToDelete(null)
@@ -801,15 +801,15 @@ export default function TeacherSalaryManagement() {
       })
       const result = await response.json()
       if (result.success) {
-        toast.success('薪资记录已移入回收站')
+        toast.success(t("薪资记录已移入回收站"))
         fetchSalaryRecords()
       } else {
-        toast.error('删除失败', { description: result.error })
+        toast.error(t("删除失败"), { description: result.error })
         setError(result.error)
       }
     } catch (error) {
-      toast.error('删除薪资记录失败')
-      setError('删除薪资记录失败')
+      toast.error(t("删除薪资记录失败"))
+      setError(t("删除薪资记录失败"))
     } finally {
       setIsRecordDeleteDialogOpen(false)
       setRecordToDelete(null)
@@ -1050,14 +1050,14 @@ export default function TeacherSalaryManagement() {
           notes: ''
         })
         fetchSalaryRecords()
-        toast.success("薪资记录创建成功")
+        toast.success(t("薪资记录创建成功"))
       } else {
-        toast.error("创建失败", { description: result.error })
+        toast.error(t("创建失败"), { description: result.error })
         setError(result.error)
       }
     } catch (error) {
-      toast.error("操作失败", { description: t('teacher.network_error') })
-      setError('操作失败')
+      toast.error(t("操作失败"), { description: t('teacher.network_error') })
+      setError(t("操作失败"))
     }
   }
 
@@ -1403,7 +1403,7 @@ export default function TeacherSalaryManagement() {
                         <Button size="sm" variant="outline" className="h-8 text-xs" onClick={async () => { await fetch(`/api/teacher-salary?type=record&id=${r.id}&action=restore`, { method: "DELETE" }); fetchDeletedRecords(); fetchSalaryRecords(1); }}>
                           {t("恢复")}
                         </Button>
-                        <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={async () => { if (!confirm("确定要永久删除这条薪资记录吗？此操作不可恢复！")) return; await fetch(`/api/teacher-salary?type=record&id=${r.id}&action=permanent`, { method: "DELETE" }); fetchDeletedRecords(); }}>
+                        <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={async () => { if (!confirm(t("确定要永久删除这条薪资记录吗？此操作不可恢复！"))) return; await fetch(`/api/teacher-salary?type=record&id=${r.id}&action=permanent`, { method: "DELETE" }); fetchDeletedRecords(); }}>
                           {t("永久删除")}
                         </Button>
                       </div>
@@ -1524,7 +1524,7 @@ export default function TeacherSalaryManagement() {
                               const formatted = phone ? phone.replace(/\s+/g, '').replace(/^0/, '60').replace(/^\+/, '') : ''
                               
                               if (!formatted) {
-                                alert('该教师没有电话号码，请先在教师管理填上电话。')
+                                alert(t("该教师没有电话号码，请先在教师管理填上电话。"))
                                 return
                               }
                               const teacherName = teacher?.name || '教师'

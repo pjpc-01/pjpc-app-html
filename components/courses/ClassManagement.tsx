@@ -127,11 +127,11 @@ function CourseFormDialog({
 
   const handleSave = async () => {
     if (!form.title.trim()) {
-      toast.error('请输入课程名称')
+      toast.error(t("请输入课程名称"))
       return
     }
     if (!form.subject) {
-      toast.error('请选择科目')
+      toast.error(t("请选择科目"))
       return
     }
     try {
@@ -360,7 +360,7 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
   const handleDelete = async (course: Course) => {
     try {
       await deleteCourse(course.id)
-      toast.success('课程已删除')
+      toast.success(t("课程已删除"))
       setDeleteTarget(null)
       refetch()
     } catch (err) {

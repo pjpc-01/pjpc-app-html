@@ -52,6 +52,7 @@ export interface ReceiptTools {
 export function useReceiptTools({ students, payments, invoices }: {
   students: any[]; payments: any[]; invoices: any[]
 }): ReceiptTools {
+  const { t } = useLanguage();
   const [pdfSettings, setPdfSettings] = useState<ReceiptSettingsPreset>(DEFAULT_PRESET)
   const [centerPresetMap, setCenterPresetMap] = useState<Record<string, string>>({})
   const [allPresets, setAllPresets] = useState<ReceiptSettingsPreset[]>([])
@@ -153,7 +154,7 @@ export function useReceiptTools({ students, payments, invoices }: {
     const phone = student?.mother_phone || student?.father_phone || student?.emergencyContact || student?.parentPhone || ''
     const formattedPhone = phone ? phone.replace(/\s+/g, '').replace(/^0/, '60').replace(/^\+/, '') : ''
     if (!formattedPhone) {
-      alert('该学生没有家长电话号码，请先在学生管理填上家长电话。')
+      alert(t("该学生没有家长电话号码，请先在学生管理填上家长电话。"))
       return
     }
     try {
@@ -306,7 +307,7 @@ export function ReceiptBinDialog({ open, onOpenChange, tools }: { open: boolean;
     load()
   }
   const purge = async (id: string) => {
-    if (!confirm('确定要永久删除这张收据吗？此操作不可恢复！')) return
+    if (!confirm(t("确定要永久删除这张收据吗？此操作不可恢复！"))) return
     await fetch(`${PROXY}/receipts/${id}`, { method: 'DELETE' })
     load()
   }

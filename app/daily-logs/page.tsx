@@ -70,7 +70,7 @@ export default function DailyLogsPage() {
         setStudents(data.students)
       }
     } catch {
-      toast.error('加载学生失败')
+      toast.error(t("加载学生失败"))
     } finally {
       setStudentsLoading(false)
     }
@@ -86,7 +86,7 @@ export default function DailyLogsPage() {
   // 快速创建日志
   const handleQuickCreate = async (studentId: string) => {
     const teacherId = userProfile?.id || ''
-    if (!teacherId) { toast.error('请先登录'); return }
+    if (!teacherId) { toast.error(t("请先登录")); return }
     try {
       await createLog({
         studentId,
@@ -98,10 +98,10 @@ export default function DailyLogsPage() {
         mood: '',
         behavior_note: '',
       })
-      toast.success('日志已创建')
+      toast.success(t("日志已创建"))
     } catch (err: any) {
       if (err.message === 'EXISTING_LOG') {
-        toast('该学生已有今日日志')
+        toast(t("该学生已有今日日志"))
       } else {
         toast.error(err.message || '创建失败')
       }

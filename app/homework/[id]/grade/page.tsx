@@ -109,7 +109,7 @@ export default function BatchGradingPage() {
 
         setItems(list)
       } catch (e) {
-        toast.error("加载失败")
+        toast.error(t("加载失败"))
       } finally {
         setLoading(false)
       }
@@ -127,7 +127,7 @@ export default function BatchGradingPage() {
   const handleSaveAll = async () => {
     const dirtyItems = items.filter((i) => i.dirty && i.status !== "graded")
     if (dirtyItems.length === 0) {
-      toast.info("没有需要保存的变更")
+      toast.info(t("没有需要保存的变更"))
       return
     }
 

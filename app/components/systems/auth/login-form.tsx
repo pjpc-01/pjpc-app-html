@@ -70,20 +70,20 @@ export default function LoginForm() {
     setError("")
 
     if (signupForm.password !== signupForm.confirmPassword) {
-      setError("密码确认不匹配")
+      setError(t("密码确认不匹配"))
       setLoading(false)
       return
     }
 
     if (!signupForm.role) {
-      setError("请选择用户角色")
+      setError(t("请选择用户角色"))
       setLoading(false)
       return
     }
 
     try {
       await signUp(signupForm.email, signupForm.password, signupForm.name, signupForm.role)
-      setSuccess("🎉 注册成功！请等待管理员审核，审核通过后即可登录。")
+      setSuccess(t("🎉 注册成功！请等待管理员审核，审核通过后即可登录。"))
       // 清空注册表单
       setSignupForm({ name: "", email: "", password: "", confirmPassword: "", role: "" })
       // 切换到登录标签，方便用户直接登录
@@ -103,7 +103,7 @@ export default function LoginForm() {
 
     try {
       await resetPassword(resetForm.email)
-      setSuccess("重置密码邮件已发送，请检查您的邮箱")
+      setSuccess(t("重置密码邮件已发送，请检查您的邮箱"))
     } catch (error: any) {
       console.error("重置密码错误:", error)
       setError(error.message)
