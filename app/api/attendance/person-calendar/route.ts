@@ -48,11 +48,12 @@ export async function GET(request: NextRequest) {
       if (!calendar[date]) calendar[date] = { check_ins: [], check_outs: [] }
 
       const notes = r.notes || ''
-      const ts = r.check_in || r.created
-      if (notes.startsWith('[签退]') || r.check_out) {
-        calendar[date].check_outs.push(ts)
+      // 一行可能同时含签到+签退（2026-09-28 修复后的模型）；老脏数据的 [签退] 行把离开时间存在 check_in
+      if (notes.startsWith('[签退]')) {
+        if (r.check_in) calendar[date].check_outs.push(r.check_in)
       } else {
-        calendar[date].check_ins.push(ts)
+        if (r.check_in) calendar[date].check_ins.push(r.check_in)
+        if (r.check_out) calendar[date].check_outs.push(r.check_out)
       }
     }
 
