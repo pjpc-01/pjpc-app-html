@@ -824,3 +824,26 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 3. ✅ 已修：`hooks/useInvoices.ts` 手动开单/改金额时**不写 `invoices.amount`** → 全库 100 张 `amount=0`，已回填。
 
 4. ⚠️ **发票 period 语义**：现有数据是「period = 开票月」（例：`INV-202608-024` period=2026-08、开票 08-27、到期 09-14），与老板「8月开9月的单」的口径一致，**暂不动**。
+
+---
+
+## 2026-09-28 考勤系统「没有签退」排查与修复
+
+🔴 **根因（两层，都是真 bug）**：
+1. `app/api/attendance/checkin/route.ts:66` —— 用 `date = "${today}"` 查「今天已有的记录」，但 `date` 是 PocketBase 的 **date 类型**字段（存成 `2026-09-28 00:00:00.000Z`），实测**永远返回 0 条** → `prev` 永远空 → `action` **永远判成「签到」**，签退分支从来没被触发。
+2. 就算判出签退，写库段（原 `:97-114`）也是**无论签到签退都新建一条**，`check_out: ''` → 签退时间被塞进新行的 `check_in`，`check_out` 恒空。
+
+📊 **数据实证**：`student_attendance` 3534 条里只有 **11 条**有 `check_out`；`teacher_attendance` 569 条里只有 **5 条**；788 条 `[签退]` 记录形态是「离开时间存在 `check_in`」。
+
+💰 **连带伤害**：薪资按 `check_out` 算工时（`app/api/salary/auto-generate/route.ts:138-141`、`app/api/teacher-salary/route.ts:97-99`）→ 无排班、靠打卡计薪的老师**工时算成 0**。
+
+🟢 **已修并实测通过**：签退改为 **PATCH 今天那条未签退的签到记录**写 `check_out`（不再新建行）；日期过滤改为范围比较。实测：第一次刷卡 → 签到（新建）；第二次 → **同一行**写入 `check_out`，`action=签退` ✓
+
+⚠️ **同样写法还有 3 处未修（同一类 bug，会漏当天/跨零点数据）**：
+- `app/api/nfc/read/route.ts:237`（`date = "$2026-09-28"`）
+- `app/api/nfc/read/route.ts:365`
+- `app/api/teacher-attendance/route.ts:94`、`:320`
+
+📌 注：`app/api/teacher-attendance/route.ts:239` 前人已用 `(date ~ "..." || date >= ... || date <= ...)` 绕过，说明这个坑有人踩过但没修全。
+
+❓ 待定：788 条历史脏数据（签退被存成独立行、`check_out` 空）是否要回填？

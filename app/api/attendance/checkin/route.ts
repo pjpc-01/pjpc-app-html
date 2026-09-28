@@ -17,6 +17,15 @@ async function pbCreate(token: string, collection: string, data: any) {
   return res.json()
 }
 
+async function pbUpdate(token: string, collection: string, id: string, data: any) {
+  const res = await fetch(`${PB_URL}/api/collections/${collection}/records/${id}`, {
+    method: 'PATCH',
+    headers: { Authorization: token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  return res.json()
+}
+
 function nowStr() { return new Date().toISOString() }
 
 // 本地日期 YYYY-MM-DD (不用UTC)
@@ -57,7 +66,10 @@ export async function POST(request: NextRequest) {
     // 用 date 字段（todayLocal() 写入的本地日期）判断“今天已有的记录”。
     // ⚠️ 不要用 created 比较：PB 的 created 是 UTC，本地 00:00-08:00 打卡的记录会被漏掉，
     // 导致同一天被判定成两次“签到”（而不是签到+签退），积分也会重复发。
-    const dateFilter = `${idField}="${person_id}" && date = "${today}"`
+    // ⚠️ date 是 PB 的 date 类型字段（存成 "2026-09-28 00:00:00.000Z"），
+    //    用 date = "2026-09-28" 永远查不到（实测 0 条）→ action 会永远判成「签到」。
+    //    必须用范围比较。
+    const dateFilter = `${idField}="${person_id}" && date >= "${today} 00:00:00" && date <= "${today} 23:59:59"`
     const prevRes = await fetch(
       `${PB_URL}/api/collections/${collectionName}/records?perPage=10&sort=-created&filter=${encodeURIComponent(dateFilter)}`,
       { headers: { Authorization: token } }
@@ -93,25 +105,52 @@ export async function POST(request: NextRequest) {
     const actionLabel = action === 'check_in' ? '签到' : '签退'
     const actionNotes = `[${actionLabel}] ${notes || `NFC打卡 - ${method}`}`
 
-    // ── Create record ────────────────────────────
-    const recordData: any = {
+    // ── Write record ─────────────────────────────
+    // 签到：新建一条记录。
+    // 签退：更新「今天那条还没签退的签到记录」的 check_out —— 以前无论签到签退都新建，
+    //       导致 check_out 永远为空、签退时间被塞进新行的 check_in，薪资按 check_out
+    //       算工时的老师因此算成 0。
+    const baseData: any = {
       [idField]: person_id,
       [nameField]: resolvedName,
       center: resolvedCenter,
       date: today,
-      check_in: now.toISOString(),
-      check_out: '',
       status: 'present',
       method,
-      notes: actionNotes,
       device_info: JSON.stringify({ method, action, source: 'nfc' }),
     }
     if (isTeacher) {
-      recordData.branch_code = resolvedCenter
-      recordData.branch_name = resolvedCenter
+      baseData.branch_code = resolvedCenter
+      baseData.branch_name = resolvedCenter
     }
 
-    const record = await pbCreate(token, collectionName, recordData)
+    let record: any
+    if (action === 'check_out') {
+      const openRow = (prevRes.items || []).find((r: any) =>
+        (r.notes || '').startsWith('[签到]') && !r.check_out
+      )
+      if (openRow) {
+        record = await pbUpdate(token, collectionName, openRow.id, {
+          check_out: now.toISOString(),
+          notes: `${openRow.notes} | [签退] ${method}`,
+        })
+      } else {
+        // 找不到对应的签到行（历史脏数据/跨天）：退回新建，绝不丢打卡
+        record = await pbCreate(token, collectionName, {
+          ...baseData,
+          check_in: now.toISOString(),
+          check_out: now.toISOString(),
+          notes: actionNotes,
+        })
+      }
+    } else {
+      record = await pbCreate(token, collectionName, {
+        ...baseData,
+        check_in: now.toISOString(),
+        check_out: '',
+        notes: actionNotes,
+      })
+    }
 
     // ── Points integration ─────────────────────
     let pointsResult: any = null
