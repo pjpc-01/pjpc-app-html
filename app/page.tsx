@@ -35,9 +35,22 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("overview")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
+  // 会话是否真的存在：同步读 SDK 写好的 localStorage，避免「首帧抢在会话恢复之前踢人」
+  const hasStoredSession = () => {
+    try {
+      const raw = localStorage.getItem("pocketbase_auth")
+      if (!raw) return false
+      return !!JSON.parse(raw)?.token
+    } catch {
+      return false
+    }
+  }
+
   // 未认证用户重定向到登录页
+  // ⚠️ 必须带 hasStoredSession()：loading 默认 false 且 user 是异步恢复的，
+  //    只判 !loading && !user 会在首帧就把已登录用户踢去 /login（刷新即登出）。
   useEffect(() => {
-    if (!loading && !user && !userProfile) {
+    if (!loading && !user && !userProfile && !hasStoredSession()) {
       router.replace("/login")
     }
   }, [loading, user, userProfile, router])
