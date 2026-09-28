@@ -839,11 +839,12 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 
 🟢 **已修并实测通过**：签退改为 **PATCH 今天那条未签退的签到记录**写 `check_out`（不再新建行）；日期过滤改为范围比较。实测：第一次刷卡 → 签到（新建）；第二次 → **同一行**写入 `check_out`，`action=签退` ✓
 
-⚠️ **同样写法还有 3 处未修（同一类 bug，会漏当天/跨零点数据）**：
-- `app/api/nfc/read/route.ts:237`（`date = "$2026-09-28"`）
-- `app/api/nfc/read/route.ts:365`
-- `app/api/teacher-attendance/route.ts:94`、`:320`
+🟢 **同款写法的 4 处已一并修掉**（老板 2026-09-28 指示「修」）：
+- `app/api/nfc/read/route.ts:237`（学生刷卡签到/签退判断）
+- `app/api/nfc/read/route.ts:365`（教师刷卡）
+- `app/api/teacher-attendance/route.ts:94`（「检查教师现有记录」—— 上面已算好 startOfDay/endOfDay 却漏用）
+- `app/api/teacher-attendance/route.ts:320`（学生考勤列表 GET）
 
-📌 注：`app/api/teacher-attendance/route.ts:239` 前人已用 `(date ~ "..." || date >= ... || date <= ...)` 绕过，说明这个坑有人踩过但没修全。
+📌 注：`app/api/teacher-attendance/route.ts:239` 前人已用 `(date ~ "..." || date >= ... || date <= ...)` 绕过，说明这个坑有人踩过但没修全。现已统一为范围比较。
 
 ❓ 待定：788 条历史脏数据（签退被存成独立行、`check_out` 空）是否要回填？

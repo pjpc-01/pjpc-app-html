@@ -234,7 +234,7 @@ export async function POST(request: NextRequest) {
         
         // 检查今天是否已有考勤记录
         const existingRecords = await pb.collection('student_attendance').getList(1, 1, {
-          filter: `student_id = "${studentId}" && center = "${centerId || 'unknown'}" && date = "${today}"`,
+          filter: `student_id = "${studentId}" && center = "${centerId || 'unknown'}" && date >= "${today} 00:00:00" && date <= "${today} 23:59:59"`,
           sort: '-created'
         })
         
@@ -362,7 +362,7 @@ export async function POST(request: NextRequest) {
         
         // 检查今天是否已有考勤记录
         const existingRecords = await pb.collection('teacher_attendance').getList(1, 1, {
-          filter: `teacher_id = "${teacherId}" && branch_code = "${centerId || 'unknown'}" && date = "${today}"`,
+          filter: `teacher_id = "${teacherId}" && branch_code = "${centerId || 'unknown'}" && date >= "${today} 00:00:00" && date <= "${today} 23:59:59"`,
           sort: '-created'
         })
         
