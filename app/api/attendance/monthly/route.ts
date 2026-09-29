@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminToken } from '@/lib/pb-admin-token'
 import { toLocalMonthKey } from "@/lib/utils"
+import { gradeCanon } from "@/lib/grades"
 
 const PB_URL = 'http://127.0.0.1:8090'
 
@@ -100,7 +101,7 @@ export async function GET(request: NextRequest) {
         student_id: s.id,
         student_name: s.name,
         center: s.center,
-        grade: s.grade,
+        grade: gradeCanon(s.grade),
         working_days: workingDays,
         present_days: present,
         absent_days: absent,
