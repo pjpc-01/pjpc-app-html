@@ -888,4 +888,5 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 
 **数据清洗（2026-09-29 已做）**：41 位学生的 `students.grade` 从裸数字洗成 canonical —— `7→Form 1`(14)、`1→Standard 1`(10)、`3→Standard 3`(6)、`4→Standard 4`(4)、`8→Form 2`(4)、`2→Standard 2`(2)、`9→Form 3`(1)；改后全库裸数字 **0** 位。
 - 备份（可回滚）：`/home/pjpc/backups/grade-normalize-20260929_094026/students-before.json`（131 位全量）
-- 只洗了 `students.grade`。`courses.grade_level` 本来就是规范值；`homework.grade` / `teacher_teaching_reports.grade` 用中文名（另一套体系）；**`invoices.studentGrade` 仍是历史快照含 `7`/`8` 等**（发票是财务记录，未动，待老板决定）。
+- 只洗了 `students.grade`。`courses.grade_level` 本来就是规范值；`homework.grade` / `teacher_teaching_reports.grade` 用中文名（另一套体系）。
+- **`invoices.studentGrade` 也已洗**（2026-09-29，老板拍板 🅰️）：56 张 → canonical（`7→Form 1` 等），291 张含软删全库裸数字归零。备份：`/home/pjpc/backups/invoice-grade-normalize-20260929_113058/invoices-before.json`。`明年新生`(2) / `Peralihan` 等合法值保持不动。
