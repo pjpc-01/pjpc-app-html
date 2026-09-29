@@ -946,3 +946,20 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 🔬 **端到端实测**：09-14 缺勤 **52 人** → 给其中一人建当天病假(已批准) → 缺勤 **51 人**（该生已排除）→ 删除测试记录 → 回到 **52 人** ✓ 列表接口 total=1 ✓ 新页面 200 ✓
 
 📌 注意：`teacher_leave_record` 与 `student_leave_record` 是两套独立表，**教师**请假仍走 `/teacher-attendance-reports` 页里的请假管理。
+
+---
+
+## 2026-09-29 手机端修复：课程管理 + 全站标题被汉堡遮挡
+
+🔴 **真根因 1（全站）**：`PageLayout` 标题行在手机端**没有给左上角汉堡按钮让位**（汉堡 `fixed top-3 left-3`，右边界 48px；标题起点 16px）→ 标题头两个字被盖住（课程管理只看到「管理」）。
+- 为什么只有部分页中招：传了 `backUrl` 的页面有「返回」箭头占位 → 标题天然落到 x=60 ✓；**没传 backUrl 的页面（课程管理、发票管理…）标题就在 x=16 → 被盖**。
+- 修法：源头改 `components/layouts/PageLayout.tsx`，标题行加 `pl-10 lg:pl-0`（lg 起无汉堡）。
+
+🔴 **真根因 2（课程管理）**：排课表格 `min-w-[680px]` 被 `overflow-hidden` 包着、**没有滚动容器** → 整页被顶到 696px，手机左右滑动/"跳着跳那"。
+- 修法：外面套 `overflow-x-auto`，表格改容器内横滑；工具栏行加 `flex-wrap` 防溢出。
+
+✅ 实测：整页 `scrollWidth` **696 → 390**（=视口，不再横漂）；标题 x **16 → 56**（让开汉堡 48）；表格容器 366 内横滑 688 ✓；截图人眼确认排版规整。
+
+⚠️ **本项目 Tailwind 坑**：间距尺度**不生成 `pl-11`**（单文件跑 tailwind CLI 也不生成；已生成的有 pl-2/3/4/8/9/10）。改 class 前先 `grep -o '\.pl-N{' .next/static/css/*.css` 确认，否则类名在 DOM 上却零宽度生效（本次白改一轮 `pl-11`）。
+
+📋 **同类问题仍存在（手机端横向溢出，未修）**：`/finance/invoices`(434px) `/card-management`(238) `/finance/fees`(210) `/finance/reports`(163) `/finance/payments`(128) `/daily-logs`(69) `/finance/expenses`(14) —— 基本是宽表格缺 `overflow-x-auto` 包裹，同一处方。
