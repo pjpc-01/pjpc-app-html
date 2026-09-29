@@ -1,4 +1,5 @@
 "use client"
+import { gradeLabel } from '@/lib/grades'
 
 import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -399,7 +400,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
                       </div>
                       <div>
                         <span className={`font-medium text-xs ${item._isAbsent ? "text-gray-400 line-through" : "text-gray-800"}`}>{item.person_name}</span>
-                        {item.grade && <span className="text-[10px] text-gray-400 ml-1.5">{t(item.grade)}</span>}
+                        {item.grade && <span className="text-[10px] text-gray-400 ml-1.5">{gradeLabel(item.grade)}</span>}
                       </div>
                     </div>
                   </td>

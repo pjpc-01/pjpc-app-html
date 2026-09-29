@@ -1,4 +1,5 @@
 "use client"
+import { gradeLabel } from '@/lib/grades'
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -205,7 +206,7 @@ export default function DailyLogsPage() {
                       <div className="flex justify-between items-start">
                         <div>
                           <CardTitle className="text-base">{student?.name || '未知学生'}</CardTitle>
-                          <CardDescription>{student?.grade || ''}</CardDescription>
+                          <CardDescription>{student?.grade ? gradeLabel(student.grade) : ''}</CardDescription>
                         </div>
                         <Button variant="ghost" size="sm" className="h-7 w-7 p-0"
                           onClick={() => setEditingLog(isEditing ? null : log.id)}>
@@ -304,7 +305,7 @@ export default function DailyLogsPage() {
                   onClick={() => handleQuickCreate(s.id)}
                 >
                   <span className="font-medium text-sm text-center break-words w-full">{s.name}</span>
-                  <span className="text-xs text-gray-400">{s.grade || s.standard}</span>
+                  <span className="text-xs text-gray-400">{gradeLabel(s.grade || s.standard)}</span>
                 </Button>
               ))}
             </div>
