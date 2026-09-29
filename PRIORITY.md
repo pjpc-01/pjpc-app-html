@@ -886,4 +886,6 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 **修法（只动 API 出口，数据与页面未动）**：引入 `lib/grades.ts` 的 `gradeCanon()`，3 处显示值归一化、2 处比对补三路归一（与 `checkin/route.ts:221-224` 对齐）。
 **验证**：report 60 人裸数字 0；`Standard 1/2/3 → 11:00`、`Standard 4/5/6 → 16:00`（配置值命中），`Form 1/2 → 13:30`（无配置=默认）。tester 39 页全绿。
 
-📌 **未做（待定）**：那 41 位学生的 `students.grade` 仍是裸数字（只是显示层已兜住）—— 是否洗成 canonical 待老板拍板。
+**数据清洗（2026-09-29 已做）**：41 位学生的 `students.grade` 从裸数字洗成 canonical —— `7→Form 1`(14)、`1→Standard 1`(10)、`3→Standard 3`(6)、`4→Standard 4`(4)、`8→Form 2`(4)、`2→Standard 2`(2)、`9→Form 3`(1)；改后全库裸数字 **0** 位。
+- 备份（可回滚）：`/home/pjpc/backups/grade-normalize-20260929_094026/students-before.json`（131 位全量）
+- 只洗了 `students.grade`。`courses.grade_level` 本来就是规范值；`homework.grade` / `teacher_teaching_reports.grade` 用中文名（另一套体系）；**`invoices.studentGrade` 仍是历史快照含 `7`/`8` 等**（发票是财务记录，未动，待老板决定）。
