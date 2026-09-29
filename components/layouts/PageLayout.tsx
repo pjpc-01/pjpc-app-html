@@ -29,7 +29,8 @@ export default function PageLayout({
   return (
     <div className="space-y-4">
       {/* 页面标题栏 */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      {/* 手机端左上角有汉堡按钮，标题行需让位（lg 起无汉堡） */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pl-10 lg:pl-0">
         <div className="flex items-center gap-3 min-w-0">
           {backUrl && (
             <Link href={backUrl}>

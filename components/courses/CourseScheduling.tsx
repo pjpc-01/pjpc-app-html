@@ -761,7 +761,7 @@ export default function CourseScheduling() {
         </div>
 
         {/* 年级筛选（排课表按当前年级编辑，无"全部"选项） */}
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex flex-wrap items-center gap-2 ml-auto">
           <Button
             variant="outline"
             size="sm"
@@ -816,7 +816,8 @@ export default function CourseScheduling() {
         </div>
       </div>
 
-      {/* 每周课程表网格 — 行=时间段（左竖排），列=星期（顶横排） */}
+      {/* 每周课程表网格 — 行=时间段（左竖排），列=星期（顶横排）。手机端在容器内横滑，不顶破整页 */}
+      <div className="overflow-x-auto -mx-1 px-1">
       <div className="grid gap-px bg-gray-200 rounded-lg overflow-hidden min-w-[680px]">
         {/* 表头行：左列标题 + 星期横排 */}
         <div
@@ -1026,6 +1027,7 @@ export default function CourseScheduling() {
             <div className="col-span-7 bg-gray-50" />
           </div>
         )}
+      </div>
       </div>
 
       {/* 排课列表（底部） */}
