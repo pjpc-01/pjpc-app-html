@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     const prev = prevRes.items?.[0]
     // 今天那条「已签到、还没签退」的行 —— 签退要 PATCH 它
-    const openRow = (prevRes.items || []).find((r: any) =>
+    let openRow = (prevRes.items || []).find((r: any) =>
       (r.notes || '').startsWith('[签到]') && !r.check_out
     )
     // 今天是否已完整走过一次「签到 + 签退」
@@ -97,7 +97,9 @@ export async function POST(request: NextRequest) {
         { status: 200 }
       )
     } else {
-      action = 'check_in'
+      // 今天还没记录：可能是跨天（昨晚来、现在凌晨走）→ 回看 24h 有没有「已签到未签退」的行
+      openRow = await findOpenRowWithin24h(token, collectionName, idField, person_id)
+      action = openRow ? 'check_out' : 'check_in'
     }
 
     // ── 防误刷：同一人两次刷卡间隔过短 = 重复读卡，不写库（实测有 1.2 秒误刷被判签退 → 工时算 0）
@@ -142,7 +144,7 @@ export async function POST(request: NextRequest) {
     let record: any
     if (action === 'check_out') {
       // 今天没有开着的签到行 → 回看 24 小时（晚上来、凌晨走，签退落到新一天）
-      const target = openRow || await findOpenRowWithin24h(token, collectionName, idField, person_id)
+      const target = openRow
       if (target) {
         record = await pbUpdate(token, collectionName, target.id, {
           check_out: now.toISOString(),
