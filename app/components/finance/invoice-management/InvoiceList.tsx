@@ -1,4 +1,5 @@
 "use client"
+import { isInvoiceOverdue } from '@/lib/invoice-status'
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -162,7 +163,7 @@ export function InvoiceList({
     }
 
     if (invoicePayments.length === 0) {
-      return invoice.status === 'overdue'
+      return isInvoiceOverdue(invoice)
         ? <Badge variant="destructive">{t("逾期")}</Badge>
         : <Badge variant="outline">{t("未缴费")}</Badge>
     }
@@ -175,7 +176,7 @@ export function InvoiceList({
     } else if (totalPaid > 0) {
       return <Badge variant="secondary">{t("半缴费")}</Badge>
     } else {
-      return invoice.status === 'overdue'
+      return isInvoiceOverdue(invoice)
         ? <Badge variant="destructive">{t("逾期")}</Badge>
         : <Badge variant="outline">{t("未缴费")}</Badge>
     }

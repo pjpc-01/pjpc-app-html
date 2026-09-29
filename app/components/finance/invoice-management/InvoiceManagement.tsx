@@ -1,4 +1,5 @@
 "use client"
+import { isInvoiceOverdue } from '@/lib/invoice-status'
 
 import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -747,7 +748,7 @@ Prospek Cemerlang`,
               <div>
                 <p className="text-sm text-gray-600">{t('student.overdue')}</p>
                 <p className="text-2xl font-bold">
-                  {centerFilteredInvoices.filter(inv => inv.status === 'overdue').length}
+                  {centerFilteredInvoices.filter(inv => isInvoiceOverdue(inv)).length}
                 </p>
               </div>
             </div>

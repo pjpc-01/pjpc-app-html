@@ -62,7 +62,7 @@ export default function FinanceOverview() {
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold">RM {financialStats.monthlyRevenue.toLocaleString()}</div>
+                <div className="text-2xl font-bold">RM {Number(financialStats.monthlyRevenue || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 <p className="text-xs text-muted-foreground">{t("本月实时收入")}</p>
               </>
             )}
@@ -122,7 +122,7 @@ export default function FinanceOverview() {
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold">RM {financialStats.totalRevenue.toLocaleString()}</div>
+                <div className="text-2xl font-bold">RM {Number(financialStats.totalRevenue || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 <p className="text-xs text-muted-foreground">{t("累计总收入")}</p>
               </>
             )}
@@ -143,7 +143,7 @@ export default function FinanceOverview() {
             ) : (
               <>
                 <div className={`text-2xl font-bold ${financialStats.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  RM {financialStats.netProfit.toLocaleString()}
+                  RM {Number(financialStats.netProfit || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
                 <p className="text-xs text-muted-foreground">{t("收入 - 支出")}</p>
               </>
@@ -175,7 +175,7 @@ export default function FinanceOverview() {
                       <div className={`text-sm font-medium ${
                         transaction.type === 'refund' ? 'text-red-600' : 'text-green-600'
                       }`}>
-                        {transaction.type === 'refund' ? '-' : '+'}RM {transaction.amount.toLocaleString()}
+                        {transaction.type === 'refund' ? '-' : '+'}RM {Number(transaction.amount || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                       <div className="text-xs text-gray-500">{transaction.paymentMethod}</div>
                     </div>
@@ -217,7 +217,7 @@ export default function FinanceOverview() {
                   .map(([month, revenue]) => (
                     <div key={month} className="flex justify-between items-center">
                       <span className="text-sm">{month}</span>
-                      <Badge variant="outline">RM {revenue.toLocaleString()}</Badge>
+                      <Badge variant="outline">RM {Number(revenue || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Badge>
                     </div>
                   ))}
               </div>

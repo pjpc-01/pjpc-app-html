@@ -19,11 +19,13 @@ export default function ParentNotificationsPage() {
     const fetchAnnouncements = async () => {
       setFetching(true)
       try {
-        const res = await fetch(
-          `/api/pocketbase-proxy/api/collections/announcements/records?perPage=20&sort=-created`
-        )
+        // 原写法直连 /collections/announcements（该集合不存在 → 404，家长永远看不到公告）
+        // 改为走既有 /api/announcements（读 activities，与 TV 看板同一数据源）
+        const res = await fetch(`/api/announcements?perPage=20&sort=-created`)
         const data = await res.json()
-        setAnnouncements(data?.items || [])
+        setAnnouncements(
+          (data && (data.items || data.data || data.records)) || (Array.isArray(data) ? data : [])
+        )
       } catch (e) {
         console.error("Failed to fetch announcements:", e)
       } finally {
