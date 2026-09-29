@@ -85,8 +85,18 @@ export async function POST(request: NextRequest) {
     })
     const checkedInIds = new Set((checkins.items || []).map((r: any) => r.student_id))
 
-    // 4. Find absent students
-    const absentIds = targetStudents.filter((s: any) => !checkedInIds.has(s.id)).map((s: any) => s.id)
+    // 3b. 已批准请假的学生当天不算缺勤（student_leave_record；表不存在也不影响）
+    const onLeave = new Set<string>()
+    try {
+      const leaves = await pbGet(token, 'student_leave_record', {
+        perPage: '500', fields: 'student_id',
+        filter: `status="approved" && start_date <= "${today} 23:59:59" && end_date >= "${today} 00:00:00"`,
+      })
+      for (const r of (leaves.items || [])) onLeave.add(r.student_id)
+    } catch { /* ignore */ }
+
+    // 4. Find absent students（排除已签到 + 已批准请假）
+    const absentIds = targetStudents.filter((s: any) => !checkedInIds.has(s.id) && !onLeave.has(s.id)).map((s: any) => s.id)
     const absentStudents = targetStudents.filter((s: any) => absentIds.includes(s.id))
 
     if (absentStudents.length === 0) {

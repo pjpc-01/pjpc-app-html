@@ -224,8 +224,18 @@ export async function GET(request: NextRequest) {
       const studentsRes = await fetch(studentsUrl, { headers: { Authorization: token } }).then(r => r.json())
 
       const checkedInIds = new Set(report.filter(r => r.person_type === 'student').map(r => r.person_id))
+      // 已批准请假的学生当天不算缺勤（表不存在也不影响）
+      const onLeave = new Set<string>()
+      try {
+        const lf = `status="approved" && start_date <= "${date} 23:59:59" && end_date >= "${date} 00:00:00"`
+        const lr = await fetch(
+          `${PB_URL}/api/collections/student_leave_record/records?perPage=500&fields=student_id&filter=${encodeURIComponent(lf)}`,
+          { headers: { Authorization: token } }
+        ).then(r => r.json())
+        for (const r of (lr.items || [])) onLeave.add(r.student_id)
+      } catch { /* ignore */ }
       absentStudents = (studentsRes.items || [])
-        .filter((s: any) => !checkedInIds.has(s.id))
+        .filter((s: any) => !checkedInIds.has(s.id) && !onLeave.has(s.id))
         .map((s: any) => ({
           person_id: s.id,
           person_name: s.name,

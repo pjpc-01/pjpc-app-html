@@ -931,3 +931,18 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 - 两条改动本身无害，但**活树里并不存在这两个问题**（活树 `components/teacher/` 下根本没有「老师考勤列表」这个页面组件）。要真加「老师看自己考勤」，得在活树上新建。
 
 📌 **结构性遗留**：项目里同时存在 `app/components/**`（76 文件）与 `components/**`（99 文件）两棵树，`@/` 指向根 `components/`；`app/components/` 是历史遗留副本，仍在用（finance/attendance/report 等有引用），但混用容易再次误改死文件。**改动前必须确认 `@/` 解析到哪棵树。**
+
+---
+
+## 2026-09-29 新增：学生请假（第 7 条随之解决）
+
+🟢 **已做（结构对齐教师请假 `teacher_leave_record` / `TeacherLeaveManagement`，按老板选择 🅰️：无审批流、录入即生效）**
+- **集合**：`student_leave_record`（id `pbc_956395409`）—— `student_id`(relation→students) / `leave_type`(sick·personal·emergency·other) / `start_date` / `end_date` / `total_days` / `reason` / `status`(pending·approved·rejected·cancelled) / `applied_date` / `approved_by` / `approved_date` / `rejection_reason` / `notes`
+- **API**：`app/api/student-leave/route.ts`（GET/POST/PUT/DELETE）。POST 默认 `status='approved'`（录入即生效），天数含首尾自动算。
+- **组件**：`components/students/StudentLeaveManagement.tsx`（汇总卡、按学生/状态/月份筛选、新增/编辑弹窗、批准/拒绝/删除）
+- **页面**：`app/student-leave/page.tsx`；侧边栏「教务 → 学生请假」（`CHILD_PERM` 映射 `education.students`，面包屑「教务」）
+- **缺勤排除（第 7 条）**：`api/attendance/report/route.ts` 缺勤名单 + `api/attendance/absent/route.ts` 每日 18:00 扣分，均排除「已批准且日期覆盖当天」的学生。
+
+🔬 **端到端实测**：09-14 缺勤 **52 人** → 给其中一人建当天病假(已批准) → 缺勤 **51 人**（该生已排除）→ 删除测试记录 → 回到 **52 人** ✓ 列表接口 total=1 ✓ 新页面 200 ✓
+
+📌 注意：`teacher_leave_record` 与 `student_leave_record` 是两套独立表，**教师**请假仍走 `/teacher-attendance-reports` 页里的请假管理。
