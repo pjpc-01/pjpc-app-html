@@ -910,3 +910,7 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 ❌ **两条原判断有误，更正**
 - **「缺勤扣分没实现」= 误报**：`api/attendance/absent/route.ts` 一直完整可用，`instrumentation.ts` 挂了 `startAbsentScheduler()`（每天 18:00 跑，周末跳过，按 `point_logs.reason~"缺勤"` 去重），`point_logs` 里确有 `缺勤扣分 (日期)` 记录。**真正缺的只有早退**。
 - **「缺勤未排除已批准请假」= 目前无解**：全库**只有 `teacher_leave_record`（教师请假），没有学生请假集合** → 学生请假根本没数据来源。要做需先有「学生请假」数据。
+3. **TV 大屏刷卡**（`app/tv-board/components/systems/nfc-background-runner.tsx`）—— 原来走**平行逻辑**：POST `/api/attendance/student|teacher`（各自一套 check_in/check_out 判断、用 UTC 日期、**没有积分联动/防误刷/跨天**）。现改为统一 POST **`/api/attendance/checkin`**，与 USB 刷卡器同一套逻辑；顺带把 TV 板设备号写进 `notes`。
+   - 📌 澄清：子代理报的「学生 405 / 老师缺 type 400」指的是 `app/components/systems/nfc-background-runner.tsx` —— 那个文件**没有任何地方 import**（tv-board 引的是自己那份同名文件），属**死代码**。
+   - `api/attendance/student|teacher` 两条平行路由仍存在，现无人使用，可后续清理。
+5. **跨天打卡（补全）**：不只是签退时回看 24h —— 决策层就要判：今天无记录但 24h 内有「已签到未签退」的行 → 判 `check_out`（原来会误判成新的 `check_in`，凌晨走的人签退永远不生效）。

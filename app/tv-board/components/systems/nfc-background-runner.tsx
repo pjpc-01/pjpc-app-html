@@ -260,20 +260,18 @@ async function processAttendance(
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const attendanceData = {
-        student_id: student.student_id || student.id,
-        student_name: student.student_name,
+        person_id: student.student_id || student.id,
+        person_name: student.student_name,
+        person_type: 'student',
         center: center,
-        attendance_time: new Date().toISOString(),
-        device_id: deviceInfo.deviceId,
-        device_name: deviceInfo.deviceName,
-        status: 'present',
-        type: 'student'
+        method: 'nfc',
+        notes: `TV板 ${deviceInfo.deviceId || deviceInfo.deviceName || ''}`.trim(),
       }
 
       tvLog('记录学生考勤', { attendanceData })
 
-      // 调用API记录到student_attendance集合
-      const response = await fetch('/api/attendance/student', {
+      // 统一走主打卡接口：与 USB 刷卡器同一套逻辑（签退配对 / 防误刷 / 跨天 / 积分联动）
+      const response = await fetch('/api/attendance/checkin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -314,20 +312,18 @@ async function recordTeacherAttendance(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const attendanceData = {
-      teacher_id: teacher.teacher_id,
-      teacher_name: teacher.teacher_name || teacher.name,
+      person_id: teacher.teacher_id || teacher.id,
+      person_name: teacher.teacher_name || teacher.name,
+      person_type: 'teacher',
       center: center,
-      attendance_time: new Date().toISOString(),
-      device_id: deviceInfo.deviceId,
-      device_name: deviceInfo.deviceName,
-      status: 'present',
-      type: 'teacher'
+      method: 'nfc',
+      notes: `TV板 ${deviceInfo.deviceId || deviceInfo.deviceName || ''}`.trim(),
     }
 
     tvLog('记录教师考勤', { attendanceData })
 
-    // 调用API记录到teacher_attendance集合
-    const response = await fetch('/api/attendance/teacher', {
+    // 统一走主打卡接口（同上）
+    const response = await fetch('/api/attendance/checkin', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
