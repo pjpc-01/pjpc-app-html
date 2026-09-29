@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminToken } from '@/lib/pb-admin-token'
+import { gradeCanon } from '@/lib/grades'
 
 const PB_URL = 'http://127.0.0.1:8090'
 
@@ -71,7 +72,11 @@ export async function GET(request: NextRequest) {
       if (studentId) {
         const grade = studentGrades[studentId]
         if (grade) {
-          const go = (settings.grade_overrides || []).find((g: any) => g.grade === grade)
+          const canon = gradeCanon(grade)
+          const go = (settings.grade_overrides || []).find((g: any) => {
+            const goGrade = g.grade
+            return goGrade === canon || goGrade === grade || gradeCanon(goGrade) === canon
+          })
           if (go) return { dl: go.checkin_deadline, min: go.checkout_minimum }
         }
       }
@@ -191,7 +196,7 @@ export async function GET(request: NextRequest) {
         person_name: p.person_name,
         person_type: p.person_type,
         center: studentCenters[p.student_id] || p.center || '',
-        grade: studentGrades[p.student_id] || '',
+        grade: gradeCanon(studentGrades[p.student_id]) || '',
         check_in: firstIn?.iso || null,
         check_in_time: firstIn?.time || null,
         check_out: lastOut?.iso || null,
@@ -226,7 +231,7 @@ export async function GET(request: NextRequest) {
           person_name: s.name,
           person_type: 'student',
           center: s.center,
-          grade: s.grade,
+          grade: gradeCanon(s.grade),
         }))
     } catch { /* ignore */ }
 

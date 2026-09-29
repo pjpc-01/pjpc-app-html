@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminToken } from '@/lib/pb-admin-token'
+import { gradeCanon } from '@/lib/grades'
 
 const PB_URL = 'http://127.0.0.1:8090'
 
@@ -135,7 +136,8 @@ export function resolveDeadlines(
   }
   // Grade override
   if (grade && settings.grade_overrides) {
-    const go = settings.grade_overrides.find(g => g.grade === grade)
+    const canon = gradeCanon(grade)
+    const go = settings.grade_overrides.find(g => g.grade === canon || g.grade === grade || gradeCanon(g.grade) === canon)
     if (go) return { deadline: go.checkin_deadline, minimum: go.checkout_minimum }
   }
   // Global default
