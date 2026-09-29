@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const conditions = []
 
     if (date) {
-      conditions.push(`date = "${date}"`)
+      conditions.push(`date >= "${String(date).slice(0, 10)} 00:00:00" && date <= "${String(date).slice(0, 10)} 23:59:59"`)
     }
     if (employeeId) {
       conditions.push(`teacher_id = "${employeeId}"`)

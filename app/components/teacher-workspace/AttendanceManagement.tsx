@@ -91,7 +91,7 @@ export default function AttendanceManagement({ teacherId }: AttendanceManagement
         const response = await fetch('/api/student-attendance')
         if (response.ok) {
           const data = await response.json()
-          const formattedRecords: AttendanceRecord[] = (data.data || []).map((record: any) => ({
+          const formattedRecords: AttendanceRecord[] = (data.records || []).map((record: any) => ({
             id: record.id,
             studentId: record.student_id,
             studentName: record.student_name,

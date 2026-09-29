@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { formatGrade } from '@/lib/utils'
+import { gradeCanon } from '@/lib/grades'
 import { getAdminToken } from '@/lib/pb-admin-token'
 
 const PB_URL = 'http://127.0.0.1:8090'
@@ -75,31 +76,45 @@ export async function POST(request: NextRequest) {
       { headers: { Authorization: token } }
     ).then(r => r.json())
 
-    let action: 'check_in' | 'check_out'
     const prev = prevRes.items?.[0]
-    // Check if there's already a check_in today — only allow one
-    const hasCheckIn = prevRes.items?.some((r: any) => {
-      const notes = r.notes || ''
-      return notes.startsWith('[签到]') || (!notes.startsWith('[签退]') && !r.check_out)
-    })
-    if (!prev) {
+    // 今天那条「已签到、还没签退」的行 —— 签退要 PATCH 它
+    const openRow = (prevRes.items || []).find((r: any) =>
+      (r.notes || '').startsWith('[签到]') && !r.check_out
+    )
+    // 今天是否已完整走过一次「签到 + 签退」
+    const completedToday = (prevRes.items || []).some((r: any) => !!r.check_out)
+
+    let action: 'check_in' | 'check_out'
+    if (openRow) {
+      action = 'check_out'
+    } else if (!prev) {
       action = 'check_in'
-    } else if (hasCheckIn) {
-      // Already checked in today — try check_out if not done yet
-      const hasCheckOut = prevRes.items?.some((r: any) => (r.notes || '').startsWith('[签退]') || r.check_out)
-      if (hasCheckOut) {
-        // Both check-in and check-out exist today
-        if (prev.notes?.startsWith('[签到]') || (!prev.notes?.startsWith('[签退]') && !prev.check_out)) {
-          // Last was check-in, allow another check_out
-          action = 'check_out'
-        } else {
-          return NextResponse.json({ error: '今天已完成签到和签退', action: 'none' }, { status: 200 })
-        }
-      } else {
-        action = 'check_out'
-      }
+    } else if (completedToday) {
+      // 已有完整一进一出 → 不再新建。以前这里会退回新建，产生 check_in=check_out 的脏行。
+      return NextResponse.json(
+        { success: false, action: 'none', action_key: 'none', error: '今天已完成签到和签退',
+          person_type, person: { id: person_id, name: resolvedName, type: person_type } },
+        { status: 200 }
+      )
     } else {
       action = 'check_in'
+    }
+
+    // ── 防误刷：同一人两次刷卡间隔过短 = 重复读卡，不写库（实测有 1.2 秒误刷被判签退 → 工时算 0）
+    const MIN_SCAN_GAP_MS = 60 * 1000
+    const lastStamp = action === 'check_out' && openRow
+      ? (openRow.check_in || openRow.created)
+      : (prev ? (prev.check_out || prev.check_in || prev.created) : null)
+    if (lastStamp) {
+      const gapMs = now.getTime() - new Date(lastStamp).getTime()
+      if (gapMs >= 0 && gapMs < MIN_SCAN_GAP_MS) {
+        return NextResponse.json(
+          { success: false, action: 'none', action_key: 'none',
+            message: `重复刷卡（间隔 ${Math.round(gapMs / 1000)} 秒），已忽略`,
+            person_type, person: { id: person_id, name: resolvedName, type: person_type } },
+          { status: 200 }
+        )
+      }
     }
 
     const actionLabel = action === 'check_in' ? '签到' : '签退'
@@ -126,16 +141,15 @@ export async function POST(request: NextRequest) {
 
     let record: any
     if (action === 'check_out') {
-      const openRow = (prevRes.items || []).find((r: any) =>
-        (r.notes || '').startsWith('[签到]') && !r.check_out
-      )
-      if (openRow) {
-        record = await pbUpdate(token, collectionName, openRow.id, {
+      // 今天没有开着的签到行 → 回看 24 小时（晚上来、凌晨走，签退落到新一天）
+      const target = openRow || await findOpenRowWithin24h(token, collectionName, idField, person_id)
+      if (target) {
+        record = await pbUpdate(token, collectionName, target.id, {
           check_out: now.toISOString(),
-          notes: `${openRow.notes} | [签退] ${method}`,
+          notes: `${target.notes} | [签退] ${method}`,
         })
       } else {
-        // 找不到对应的签到行（历史脏数据/跨天）：退回新建，绝不丢打卡
+        // 历史脏数据：退回新建，绝不丢打卡
         record = await pbCreate(token, collectionName, {
           ...baseData,
           check_in: now.toISOString(),
@@ -154,9 +168,9 @@ export async function POST(request: NextRequest) {
 
     // ── Points integration ─────────────────────
     let pointsResult: any = null
-    if (!isTeacher && action === 'check_in') {
+    if (!isTeacher) {
       try {
-        pointsResult = await handlePointsIntegration(token, person_id, resolvedCenter, record)
+        pointsResult = await handlePointsIntegration(token, person_id, resolvedCenter, record, action)
       } catch { /* points failure shouldn't block attendance */ }
     }
 
@@ -178,8 +192,32 @@ export async function POST(request: NextRequest) {
 
 // ─── Points Integration ──────────────────────────
 
+async function resolveGradeLines(token: string, studentId: string, settings: any) {
+  let deadline = settings.checkin_deadline
+  let minimum = settings.checkout_minimum
+  try {
+    const studentRes = await fetch(
+      `${PB_URL}/api/collections/students/records/${studentId}?fields=grade`,
+      { headers: { Authorization: token } }
+    ).then(r => r.json())
+    const raw = studentRes.grade
+    if (raw) {
+      const canon = gradeCanon(raw)
+      const go = (settings.grade_overrides || []).find((g: any) => {
+        const goGrade = g.grade
+        return goGrade === canon || goGrade === raw || gradeCanon(goGrade) === canon || formatGrade(goGrade) === canon
+      })
+      if (go) {
+        if (go.checkin_deadline) deadline = go.checkin_deadline
+        if (go.checkout_minimum) minimum = go.checkout_minimum
+      }
+    }
+  } catch { /* 用全局默认 */ }
+  return { deadline, minimum }
+}
+
 async function handlePointsIntegration(
-  token: string, studentId: string, center: string, record: any
+  token: string, studentId: string, center: string, record: any, action: 'check_in' | 'check_out' = 'check_in'
 ) {
   // Load settings
   let settings: any = {
@@ -209,103 +247,86 @@ async function handlePointsIntegration(
 
   if (!settings.enable_points) return { skipped: true }
 
-  // Get student grade for per-grade deadline
-  let deadline = settings.checkin_deadline
-  try {
-    const studentRes = await fetch(
-      `${PB_URL}/api/collections/students/records/${studentId}?fields=grade`,
-      { headers: { Authorization: token } }
-    ).then(r => r.json())
-    const grade = studentRes.grade
-    if (grade) {
-      const normalized = formatGrade(grade)
-      const go = (settings.grade_overrides || []).find((g: any) => {
-        const goGrade = g.grade
-        return goGrade === normalized || goGrade === grade || formatGrade(goGrade) === normalized
-      })
-      if (go) {
-        deadline = go.checkin_deadline
-        console.log(`[POINTS DEBUG] grade=${grade} deadline=${deadline} (override)`)
-      }
-    }
-  } catch { /* use global deadline */ }
+  // 年级专属的截止 / 最低签退时间
+  const { deadline, minimum } = await resolveGradeLines(token, studentId, settings)
 
-  // Check if check-in is late
-  const checkinTime = record.check_in || record.created
-  const t = new Date(checkinTime)
-  const timeStr = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`
+  // ── 签退：早退扣分（points_early 以前从未被读过）──
+  if (action === 'check_out') {
+    if (!minimum) return { skipped: true, reason: '未配置最低签退时间' }
+    const outStr = hhmm(record.check_out || record.created)
+    if (!(outStr < minimum)) return { skipped: true, reason: `正常签退（${outStr} ≥ ${minimum}）` }
+    const pts = settings.points_early ?? -1
+    if (!pts) return { skipped: true, reason: '早退不扣分（points_early=0）' }
+    const reason = `考勤早退 (${outStr}, 线 ${minimum})`
+    console.log(`[POINTS DEBUG] early-out outStr=${outStr} minimum=${minimum} points=${pts}`)
+    return await applyAttendancePoints(token, studentId, pts, reason, ['考勤早退'])
+  }
 
-  const isLate = timeStr > deadline
-  const points = isLate ? settings.points_late : (settings.points_checkin ?? 2)
+  // ── 签到：迟到 / 准时 ──
+  const timeStr = hhmm(record.check_in || record.created)
+  const isLate = !!deadline && timeStr > deadline
+  const points = isLate ? (settings.points_late ?? -1) : (settings.points_checkin ?? 2)
   const reason = isLate ? `考勤迟到 (${timeStr}, 线 ${deadline})` : '考勤打卡签到'
-  console.log(`[POINTS DEBUG] timeStr=${timeStr} deadline=${deadline} isLate=${isLate} points=${points}`)
+  console.log(`[POINTS DEBUG] checkin timeStr=${timeStr} deadline=${deadline} isLate=${isLate} points=${points}`)
+  const res = await applyAttendancePoints(token, studentId, points, reason,
+    isLate ? ['考勤迟到', '考勤打卡签到'] : ['考勤打卡签到', '考勤迟到'])
+  return { ...res, is_late: isLate }
+}
 
-  // Check if student already got points today (avoid duplicate)
-  // ⚠️ dedup on point_logs (has reason + student fields); points collection lacks reason field → 400
+/** 本地 HH:MM */
+function hhmm(iso: string): string {
+  const t = new Date(iso)
+  return `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
+}
+
+/** 写考勤积分：当日「同类型」去重 + 积分守卫。dedupTerms 用 PB 的 ~ 匹配 reason */
+async function applyAttendancePoints(
+  token: string, studentId: string, points: number, reason: string, dedupTerms: string[]
+) {
   const today = todayLocal()
-  // ⚠️ point_logs 的 created 是 UTC：本地“今天”对应 UTC [昨天16:00, 今天16:00)。
-  // 直接用 "${today} 00:00:00" 会漏掉本地 00:00-08:00 的记录 → 早上打卡的积分会被重复发放。
+  // ⚠️ point_logs 的 created 是 UTC：本地"今天"= UTC [昨天16:00, 今天16:00)
   const localDayStart = new Date(`${today}T00:00:00+08:00`)
   const utcFmt = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ')
-  const ptsFilter = `student="${studentId}" && created >= "${utcFmt(localDayStart)}" && created < "${utcFmt(new Date(localDayStart.getTime() + 86400000))}" && reason ~ "考勤"`
+  const termExpr = dedupTerms.map(t => `reason ~ "${t}"`).join(' || ')
+  const ptsFilter = `student="${studentId}" && created >= "${utcFmt(localDayStart)}" && created < "${utcFmt(new Date(localDayStart.getTime() + 86400000))}" && (${termExpr})`
   const existingPts = await fetch(
     `${PB_URL}/api/collections/point_logs/records?perPage=1&filter=${encodeURIComponent(ptsFilter)}`,
     { headers: { Authorization: token } }
   ).then(r => r.json())
+  if (existingPts.items?.length > 0) return { skipped: true, reason: '今日同类考勤积分已发放' }
 
-  if (existingPts.items?.length > 0) {
-    console.log(`[POINTS DEBUG] 今日已有点数记录: studentId=${studentId}, ptsFilter=${ptsFilter}`)
-    return { skipped: true, reason: '今日已发放考勤积分' }
-  }
-
-  // Get current student points
   const student = await fetch(
     `${PB_URL}/api/collections/students/records/${studentId}`,
     { headers: { Authorization: token } }
   ).then(r => r.json())
-
-  // 积分守卫：积分系统已关闭的学生不发考勤积分
-  if (student.points_enabled === false) {
-    console.log(`[POINTS DEBUG] 积分系统已关闭，跳过考勤加分: studentId=${studentId}`)
-    return { skipped: true, reason: '积分系统已关闭' }
-  }
+  if (student.points_enabled === false) return { skipped: true, reason: '积分系统已关闭' }
 
   const currentPoints = student.points || 0
   const newPoints = currentPoints + points
-
-  // Update student points
   await fetch(`${PB_URL}/api/collections/students/records/${studentId}`, {
     method: 'PATCH',
     headers: { Authorization: token, 'Content-Type': 'application/json' },
     body: JSON.stringify({ points: newPoints }),
   })
-
-  // Create points log
   await pbCreate(token, 'points', {
-    studentId,
-    points: points,
-    reason,
-    teacher_id: 'system',
-    created: nowStr(),
+    studentId, points, reason, teacher_id: 'system', created: nowStr(),
   })
-
-  // Create point_logs (transaction history)
   await pbCreate(token, 'point_logs', {
-    student: studentId,
-    amount: points,
-    points_before: currentPoints,
-    points_after: newPoints,
-    reason,
-    teacher: null,
-    created: nowStr(),
+    student: studentId, amount: points, points_before: currentPoints, points_after: newPoints,
+    reason, teacher: null, created: nowStr(),
   })
+  return { granted: true, points, reason, points_before: currentPoints, points_after: newPoints }
+}
 
-  return {
-    granted: true,
-    points,
-    is_late: isLate,
-    reason,
-    points_before: currentPoints,
-    points_after: newPoints,
-  }
+/** 找该人最近 24h 内「已签到未签退」的行（跨天签退） */
+async function findOpenRowWithin24h(token: string, collection: string, idField: string, personId: string) {
+  try {
+    const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString().slice(0, 19).replace('T', ' ')
+    const filter = `${idField}="${personId}" && created >= "${since}"`
+    const res = await fetch(
+      `${PB_URL}/api/collections/${collection}/records?perPage=20&sort=-created&filter=${encodeURIComponent(filter)}`,
+      { headers: { Authorization: token } }
+    ).then(r => r.json())
+    return (res.items || []).find((r: any) => (r.notes || '').startsWith('[签到]') && !r.check_out) || null
+  } catch { return null }
 }

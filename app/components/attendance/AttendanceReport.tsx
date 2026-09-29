@@ -72,7 +72,7 @@ export function AttendanceReport() {
         const teachers = teachersData.teachers || []
         
         // 获取考勤数据
-        const attendanceResponse = await fetch(`/api/teacher-attendance?date=${today}`)
+        const attendanceResponse = await fetch(`/api/teacher-attendance?date=${today}&type=teacher`)
         const attendanceData = await attendanceResponse.json()
         const attendanceRecords = attendanceData.records || []
         

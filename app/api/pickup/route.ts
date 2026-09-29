@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const conditions: string[] = []
     if (studentId) conditions.push(`studentId = "${studentId}"`)
-    if (date) conditions.push(`pickup_date = "${date}"`)
+    if (date) conditions.push(`pickup_date >= "${String(date).slice(0, 10)} 00:00:00" && pickup_date <= "${String(date).slice(0, 10)} 23:59:59"`)
     if (status) conditions.push(`status = "${status}"`)
     const filter = conditions.join(' && ')
 
