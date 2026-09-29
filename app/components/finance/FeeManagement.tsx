@@ -286,7 +286,7 @@ export default function FeeManagement() {
 
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-wrap justify-between items-center gap-2">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5" />
@@ -299,7 +299,7 @@ export default function FeeManagement() {
               </CardTitle>
               <CardDescription>{t("管理所有费用项")}</CardDescription>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={() => setCatDialogOpen(true)}>
                 {t("分类管理")}
               </Button>

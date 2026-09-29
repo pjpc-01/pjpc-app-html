@@ -452,11 +452,11 @@ export function InvoiceList({
 
           {/* Invoice Pagination */}
           {totalInvoicePages > 1 && (
-            <div className="flex items-center justify-between mt-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-4">
               <span className="text-sm text-gray-500">
                 {t("共")} {activeInvoices.length} {t("条，每页")} {INVOICE_PER_PAGE} {t("条")}
               </span>
-              <div className="flex gap-1">
+              <div className="flex flex-wrap gap-1">
                 <Button size="sm" variant="outline" disabled={invoicePage===1} onClick={() => setInvoicePage(p=>Math.max(1,p-1))}>{t("上一页")}</Button>
                 {Array.from({length: totalInvoicePages}, (_,i)=>i+1).map(p=>(
                   <Button key={p} size="sm" variant={p===invoicePage?"default":"outline"} onClick={()=>setInvoicePage(p)} className="min-w-[32px] h-8">{p}</Button>

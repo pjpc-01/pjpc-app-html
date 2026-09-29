@@ -267,7 +267,7 @@ export default function FinancialReports() {
           <CardDescription>{t("基于实际数据的收入支出统计报告")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 mb-4">
+          <div className="flex flex-wrap gap-4 mb-4">
             <div className="flex-1">
               <Label>{t("报告类型")}</Label>
               <Select value={selectedReportType} onValueChange={setSelectedReportType}>
