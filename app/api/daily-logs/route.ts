@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     let filter = ''
     const conditions = []
-    if (date) conditions.push(`date = "${date}"`)
+    if (date) conditions.push(`date >= "${String(date).slice(0, 10)} 00:00:00" && date <= "${String(date).slice(0, 10)} 23:59:59"`)
     if (studentId) conditions.push(`studentId = "${studentId}"`)
     if (teacherId) conditions.push(`teacherId = "${teacherId}"`)
     if (centerId) conditions.push(`centerId = "${centerId}"`)
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     // 检查是否已有今天的日志（同一学生同一天）
     try {
       const existing = await pb.collection('daily_logs').getList(1, 1, {
-        filter: `studentId = "${studentId}" && date = "${date}"`,
+        filter: `studentId = "${studentId}" && date >= "${String(date).slice(0, 10)} 00:00:00" && date <= "${String(date).slice(0, 10)} 23:59:59"`,
       })
       if (existing.items.length > 0) {
         return NextResponse.json(

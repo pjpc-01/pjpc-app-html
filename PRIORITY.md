@@ -890,3 +890,23 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 - 备份（可回滚）：`/home/pjpc/backups/grade-normalize-20260929_094026/students-before.json`（131 位全量）
 - 只洗了 `students.grade`。`courses.grade_level` 本来就是规范值；`homework.grade` / `teacher_teaching_reports.grade` 用中文名（另一套体系）。
 - **`invoices.studentGrade` 也已洗**（2026-09-29，老板拍板 🅰️）：56 张 → canonical（`7→Form 1` 等），291 张含软删全库裸数字归零。备份：`/home/pjpc/backups/invoice-grade-normalize-20260929_113058/invoices-before.json`。`明年新生`(2) / `Peralihan` 等合法值保持不动。
+
+---
+
+## 2026-09-29 考勤第二批修复（8 条）
+
+🟢 **已修**
+4. **`date = "X"` 打 date 类型字段** —— 全站 8 处清完：`daily-logs:22,60`、`teacher-attendance-only:54`、`schedule:19`、`schedule/check-conflicts:44`、`schedule/conflicts:25,174`、`pickup:21`。改成范围比较（与 `checkin` 同款写法）。
+   - **实测铁证**：`teacher-attendance-only?date=2026-09-29` **7 条**、09-28 18 条、09-25 10 条；`/api/schedule?date` 8/5/5 条 —— 修前这些全是 **0**。
+   - `daily_logs`(0) / `pickup_records`(0) 目前无数据，属预防性修复。
+6. **老师工作台考勤列表恒空** —— `teacher-workspace/AttendanceManagement.tsx` 读 `data.data` 改 `data.records`（接口返回 `{records,total}`）。
+8. **`AttendanceReport.tsx`** 调 `/api/teacher-attendance` 补 `&type=teacher`（原来拉回学生数据 → 老师全 Unknown）。
+2. **防误刷间隔** —— 同一人两次刷卡 <60 秒判「重复刷卡」直接忽略、不写库（实测有 1.2 秒误刷被判签退 → 工时算 0）。
+   - 同时修掉**第 3 次刷卡建脏行**：今天已有完整一进一出 → 返回 `action:'none'`，不再退回新建 `check_in=check_out` 的脏行。
+5. **跨天打卡** —— 签退时今天找不到开着的签到行，会回看 **24 小时**内该人未签退的签到行再 PATCH（晚上来、凌晨走不再算 0 工时）。
+1. **早退扣分** —— `points_early` 以前从未被读取，现在签退时比对（年级 override 的）`checkout_minimum`，早退按 `points_early` 扣分，reason `考勤早退 (...)`，与签到分**分别去重**（同一天可既有打卡分又有早退扣分）。
+   - 🔧 顺手把 `handlePointsIntegration` 拆出 `resolveGradeLines()` + `applyAttendancePoints()`，签到/早退共用。
+
+❌ **两条原判断有误，更正**
+- **「缺勤扣分没实现」= 误报**：`api/attendance/absent/route.ts` 一直完整可用，`instrumentation.ts` 挂了 `startAbsentScheduler()`（每天 18:00 跑，周末跳过，按 `point_logs.reason~"缺勤"` 去重），`point_logs` 里确有 `缺勤扣分 (日期)` 记录。**真正缺的只有早退**。
+- **「缺勤未排除已批准请假」= 目前无解**：全库**只有 `teacher_leave_record`（教师请假），没有学生请假集合** → 学生请假根本没数据来源。要做需先有「学生请假」数据。

@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       filter += filter ? ` && teacher_name ~ "${teacherName}"` : `teacher_name ~ "${teacherName}"`
     }
     if (date) {
-      filter += filter ? ` && date = "${date}"` : `date = "${date}"`
+      filter += filter ? ` && date >= "${String(date).slice(0, 10)} 00:00:00" && date <= "${String(date).slice(0, 10)} 23:59:59"` : `date >= "${String(date).slice(0, 10)} 00:00:00" && date <= "${String(date).slice(0, 10)} 23:59:59"`
     }
     if (status) {
       filter += filter ? ` && status = "${status}"` : `status = "${status}"`

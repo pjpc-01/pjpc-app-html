@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 构建查询条件
-    let filter = `employee_id = "${employeeId}" && date = "${date}"`
+    let filter = `employee_id = "${employeeId}" && date >= "${String(date).slice(0, 10)} 00:00:00" && date <= "${String(date).slice(0, 10)} 23:59:59"`
     
     // 排除当前编辑的排班
     if (excludeScheduleId) {
@@ -171,7 +171,7 @@ export async function GET(request: NextRequest) {
 
     // 获取该日期的现有排班
     const existingSchedules = await pb.collection('schedules').getList(1, 100, {
-      filter: `date = "${date}"`,
+      filter: `date >= "${String(date).slice(0, 10)} 00:00:00" && date <= "${String(date).slice(0, 10)} 23:59:59"`,
       sort: 'start_time'
     })
 
