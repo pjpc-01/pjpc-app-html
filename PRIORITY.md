@@ -1003,3 +1003,19 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 ⚠️ **本次踩的两个大坑（已写进 skill）**
 1. **`next.config.mjs` 里 `typescript.ignoreBuildErrors: true` + `eslint.ignoreDuringBuilds: true`** → **build 通过完全不代表没错误**！本次 `InvoiceList/InvoiceManagement` 用了 `isInvoiceOverdue` 却忘了 import，`npm run build` 依然退出 0，实际打开发票页直接 **client-side exception 白屏** → 靠真浏览器实测才发现。
 2. 把 `import` 插到文件**第一行**会废掉 `"use client"` 指令（Next 报 `The "use client" directive must be placed before other expressions`）→ import 必须插在指令**之后**。
+
+---
+
+## 2026-09-30 「我能自己做的」清账（第二部分）
+
+🟢 **年级显示层收尾（源头）**
+- `components/attendance/UnifiedAttendanceHub.tsx:402` 原用 `t(item.grade)`（i18n 翻译器，不是年级归一化器）→ 改 **`gradeLabel()`**（`lib/grades.ts` 唯一真源）。
+- `app/daily-logs/page.tsx` 两处（已记录卡片 `student.grade`、待记录按钮 `s.grade || s.standard`）→ 同样走 `gradeLabel()`。
+- 实测真浏览器：两页不白屏、无 JS 错误、年级全中文（一年级/中一/…），无裸数字 ✓
+- 加上 09-29 已洗的 41 位学生 + 56 张发票，「年级格式混乱」这条**数据层+显示层都清了**。
+
+❌ **两条 PRIORITY 经核实是误判，不需要动（已划掉）**
+1. **「薪资记录缺「分行」字段 → 分行损益算不准」** —— 错判。`lib/center-scope.ts` 早就设计了映射：`teacher_salary_records.teacher_id → teachers.centerId`；`crossCenter=true` 的老师（如 SITI NUR MAULIDIYAH）薪资按分行数 **50/50 均分**。实测 38 条薪资里 **36 条正常归行**（7-9 月 PU1/BATU14 各半），唯二的「未分配」正是 SITI，而她的 `crossCenter=true` → 代码会拆两半 ✓。**加 center 字段反而会和现有映射打架，不做。**
+2. **「`claim_forms` 5 条权限规则全 null，该补」** —— 错判。`expenses` / `teacher_leave_record` 等**所有业务集合的规则都是 null**（这是本项目的一贯设计：集合全部锁死，读写统一走 Next.js API 路由 + `authenticateAdmin`）。claim_forms 并不特殊，**给它单独开规则反而削弱安全**。
+
+📌 **真正还缺数据的只有一条**：SITI 的 `centerId` 是空的（靠 `crossCenter` 兜住了，不影响损益），若要更精确可补上她的两个分行。
