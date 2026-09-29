@@ -641,7 +641,7 @@ Prospek Cemerlang`,
           <p className="text-gray-600">{t("管理学校发票和付款状态")}</p>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             onClick={() => setIsSettingsDialogOpen(true)}

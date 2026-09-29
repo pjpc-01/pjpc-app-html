@@ -677,11 +677,11 @@ export default function PaymentManagement() {
 
           {/* Payment Pagination */}
           {totalPaymentPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-4">
               <span className="text-sm text-gray-500">
                 {t("共")} {filteredPayments.length} {t("条，每页")} {PAYMENT_PER_PAGE} {t("条")}
               </span>
-              <div className="flex gap-1">
+              <div className="flex flex-wrap gap-1">
                 <Button size="sm" variant="outline" disabled={paymentPage===1} onClick={() => setPaymentPage(p=>Math.max(1,p-1))}>{t("上一页")}</Button>
                 {Array.from({length: totalPaymentPages}, (_,i)=>i+1).map(p=>(
                   <Button key={p} size="sm" variant={p===paymentPage?"default":"outline"} onClick={()=>setPaymentPage(p)} className="min-w-[32px] h-8">{p}</Button>

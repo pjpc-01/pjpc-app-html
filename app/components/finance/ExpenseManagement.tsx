@@ -234,13 +234,13 @@ export default function ExpenseManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-wrap justify-between items-end gap-2">
         <div>
           <div className="flex items-center gap-2">
             <ArrowDownCircle className="h-6 w-6 text-red-500" />
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Button variant="outline" className="flex items-center gap-2" onClick={() => {
             const csv = "日期,类别,描述,分行,方式,金额\n" + filteredExpenses.map(e => {
               const catName = cat.labelOf(e.category)

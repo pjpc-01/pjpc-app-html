@@ -126,7 +126,7 @@ export default function DailyLogsPage() {
       userRole={userProfile?.role || 'teacher'}
       status=""
       actions={
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => {
             const d = new Date(selectedDate + 'T00:00:00')
             d.setDate(d.getDate() - 1)
@@ -136,7 +136,9 @@ export default function DailyLogsPage() {
           </Button>
           <Button variant={selectedDate === today() ? "default" : "outline"} size="sm" onClick={() => setSelectedDate(today())}>
             <Calendar className="h-4 w-4 mr-1" />
-            {dateDisplay}
+            {/* 手机端用短日期，避免长日期把工具栏顶出屏幕 */}
+            <span className="hidden sm:inline">{dateDisplay}</span>
+            <span className="sm:hidden">{format(new Date(selectedDate + 'T00:00:00'), 'MM/dd EEE', { locale: zhCN })}</span>
           </Button>
           <Button variant="outline" size="sm" onClick={() => {
             const d = new Date(selectedDate + 'T00:00:00')
@@ -298,10 +300,10 @@ export default function DailyLogsPage() {
                 <Button
                   key={s.id}
                   variant="outline"
-                  className="h-auto py-3 flex flex-col items-center gap-1 hover:border-indigo-300 hover:bg-indigo-50"
+                  className="h-auto py-3 flex flex-col items-center gap-1 whitespace-normal hover:border-indigo-300 hover:bg-indigo-50"
                   onClick={() => handleQuickCreate(s.id)}
                 >
-                  <span className="font-medium text-sm">{s.name}</span>
+                  <span className="font-medium text-sm text-center break-words w-full">{s.name}</span>
                   <span className="text-xs text-gray-400">{s.grade || s.standard}</span>
                 </Button>
               ))}

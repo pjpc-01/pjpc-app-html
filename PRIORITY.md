@@ -963,3 +963,17 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 ⚠️ **本项目 Tailwind 坑**：间距尺度**不生成 `pl-11`**（单文件跑 tailwind CLI 也不生成；已生成的有 pl-2/3/4/8/9/10）。改 class 前先 `grep -o '\.pl-N{' .next/static/css/*.css` 确认，否则类名在 DOM 上却零宽度生效（本次白改一轮 `pl-11`）。
 
 📋 **同类问题仍存在（手机端横向溢出，未修）**：`/finance/invoices`(434px) `/card-management`(238) `/finance/fees`(210) `/finance/reports`(163) `/finance/payments`(128) `/daily-logs`(69) `/finance/expenses`(14) —— 基本是宽表格缺 `overflow-x-auto` 包裹，同一处方。
+
+---
+
+## 2026-09-29 手机端修复（第二批）：全站 7 页横向溢出清零
+
+🟢 **改法**（都是同一类病：**分页行/工具栏行没换行**，把整页顶宽；表格本身其实已有滚动容器）
+- 📄 分页行 `flex gap-1` + 外层 `flex items-center justify-between` → 两处都加 `flex-wrap`（`invoice-management/InvoiceList.tsx`、`PaymentManagement.tsx`）——这是 434px/128px 溢出的主犯（15 个页码按钮排一行）。
+- 🔘 页头工具栏按钮行加 `flex-wrap`：`invoice-management/InvoiceManagement.tsx`（设置/自动生成/创建发票）、`FeeManagement.tsx`（分类管理/展开/编辑/新增）、`ExpenseManagement.tsx`（导出/管理类别/添加支出）、`card-management/page.tsx`（刷新/发卡 + 筛选行 + 工具栏外层）。
+- 📊 `reports-overview/FinancialReports.tsx` 顶部筛选行 `flex gap-4 mb-4` → 加 `flex-wrap`。
+- 📅 `daily-logs/page.tsx`：①「待记录」长名字按钮 —— shadcn `Button` 自带 `whitespace-nowrap`，超长马来名（`艾曼达 Amanda Raisha Mikaya binti Mohd Rozaidi`）被拉成一行 345px → 按钮加 `whitespace-normal` + span 加 `text-center break-words w-full`；② 右上角日期导航条长日期（`2026年09月29日 星期二`）顶出 416px → 手机端改用短格式 `MM/dd EEE`（`sm:hidden`/`hidden sm:inline` 双 span）+ 行加 `flex-wrap`。
+
+✅ **实测（真 Chromium 390×844 扫全站 40 页）**：**全部零横向溢出**（`documentElement.scrollWidth === 390`）；桌面 tester 39 页 errors=0 badReqs=0。
+
+📌 **以后新页面自查两条**：① 分页行/按钮行一律写 `flex flex-wrap`；② shadcn `Button` 里放长文本（人名/日期）必须 `whitespace-normal` + 换行，别依赖默认 `whitespace-nowrap`。
