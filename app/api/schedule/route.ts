@@ -40,7 +40,9 @@ export async function GET(request: NextRequest) {
         await authenticateAdmin(pb)
       }
       
-      const schedules = await pb.collection('schedules').getList(1, 100, {
+      // 默认 500（原 100 导致「今日课节」少算：全表 265 条只取最新 100 条）
+      const perPage = Math.min(2000, Math.max(1, Number(searchParams.get('perPage')) || 500))
+      const schedules = await pb.collection('schedules').getList(1, perPage, {
         filter,
         sort: '-created'
       })

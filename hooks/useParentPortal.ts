@@ -42,8 +42,10 @@ export function useParentPortal(): PortalData {
 
     try {
       // 1. Find parent record linked to this user
+      // 注意：parents 集合没有 userId 字段（原写法 filter=userId='...' 恒 400）→ 改用 email 关联
+      const parentFilter = user.email ? `email="${user.email}"` : `name="${userProfile?.name || ''}"`
       const parentRes = await fetch(
-        `/api/pocketbase-proxy/api/collections/parents/records?filter=userId%3D%27${user.id}%27&perPage=1`
+        `/api/pocketbase-proxy/api/collections/parents/records?filter=${encodeURIComponent(parentFilter)}&perPage=1`
       )
       const parentData = await parentRes.json()
       const parentRecords = parentData?.items || []

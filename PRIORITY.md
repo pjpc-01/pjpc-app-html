@@ -977,3 +977,29 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 ✅ **实测（真 Chromium 390×844 扫全站 40 页）**：**全部零横向溢出**（`documentElement.scrollWidth === 390`）；桌面 tester 39 页 errors=0 badReqs=0。
 
 📌 **以后新页面自查两条**：① 分页行/按钮行一律写 `flex flex-wrap`；② shadcn `Button` 里放长文本（人名/日期）必须 `whitespace-normal` + 换行，别依赖默认 `whitespace-nowrap`。
+
+---
+
+## 2026-09-30 PRIORITY 五条「屏幕上数字不对」全部修完
+
+🟢 **① 教师排班「今日出勤」假数（`teacher-attendance/route.ts:239/243/247`）**
+过滤写成 `(date ~ X || date >= X || date <= X)` → `>=`/`<=` 必有一个成立 = **恒真** = 不过滤，拿最新 50 条当今天。改为真范围 `date >= "X 00:00:00" && date <= "X 23:59:59"`（startDate/endDate 同理）。实测 `?date=2026-09-30` → **2 条且只有今天**（原 50 条混杂）。
+
+🟢 **② 财务概览「本月净利润 -29,464.888」3 位小数（`FinanceOverview.tsx`）**
+`toLocaleString()` 无参数 → 浮点尾数裸露。5 处金额统一改 `toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })`。实测 → **RM -29,464.89**（与财务报表页一致）。
+
+🟢 **③ 逾期数两页不一致（3 vs 0）→ 建单一口径 `lib/invoice-status.ts`**
+根因：系统从不把 `status` 置成 `overdue`，发票页按 `status==='overdue'` 数 → 恒 0；财务概览按到期日算 → 3。
+新建 `isInvoiceOverdue()`（未付清 且 `dueDate` 已过；排除 paid/cancelled/draft/**carried_forward** —— 后者余额已并进下月新单，再算即重复），统一接入 `useFinancialStats` / `useInvoices` / `InvoiceList` / `InvoiceManagement`。
+实测两页同为 **3**（明细 = `INV-202609-038/039/170`，均已过期未付；`INV-202608-095/131` 是 carried_forward 不计）。**注意字段名是 `dueDate`（camelCase），不是 `due_date`。**
+
+🟢 **④ 家长端「通知消息」永远空（404 + 400）**
+- `app/parent/notifications/page.tsx` 直连 `/collections/announcements/records` —— **该集合不存在** → 404。改走既有 `/api/announcements`（读 `activities`，与 TV 看板同源）。
+- `hooks/useParentPortal.ts:46` 用 `parents?filter=userId='…'` —— **parents 集合没有 userId 字段** → 恒 400。改按 `email` 关联。
+
+🟢 **⑤ 教育概览「今日课节 3」少算（`api/schedule/route.ts`）**
+`getList(1, 100)` 硬编码 → 全表 265 条只取最新 100 条。改为 `perPage` 可传参、默认 **500**（上限 2000）。实测无日期返回 **265 条**，教育概览「今日课节 **5**」与 DB 一致。
+
+⚠️ **本次踩的两个大坑（已写进 skill）**
+1. **`next.config.mjs` 里 `typescript.ignoreBuildErrors: true` + `eslint.ignoreDuringBuilds: true`** → **build 通过完全不代表没错误**！本次 `InvoiceList/InvoiceManagement` 用了 `isInvoiceOverdue` 却忘了 import，`npm run build` 依然退出 0，实际打开发票页直接 **client-side exception 白屏** → 靠真浏览器实测才发现。
+2. 把 `import` 插到文件**第一行**会废掉 `"use client"` 指令（Next 报 `The "use client" directive must be placed before other expressions`）→ import 必须插在指令**之后**。

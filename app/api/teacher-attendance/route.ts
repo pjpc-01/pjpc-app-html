@@ -236,15 +236,17 @@ export async function GET(request: NextRequest) {
       }
       if (date) {
         if (filter) filter += ' && '
-        filter += `(date ~ "${date}" || date >= "${date}" || date <= "${date}")`
+        // 原写法 (date ~ X || date >= X || date <= X) 恒真（>=/<= 必有一个成立）→ 等于不过滤
+        const d0 = String(date).slice(0, 10)
+        filter += `date >= "${d0} 00:00:00" && date <= "${d0} 23:59:59"`
       }
       if (startDate) {
         if (filter) filter += ' && '
-        filter += `(date >= "${startDate}" || date ~ "${startDate}")`
+        filter += `date >= "${String(startDate).slice(0, 10)} 00:00:00"`
       }
       if (endDate) {
         if (filter) filter += ' && '
-        filter += `(date <= "${endDate}" || date ~ "${endDate}")`
+        filter += `date <= "${String(endDate).slice(0, 10)} 23:59:59"`
       }
       if (teacherName) {
         if (filter) filter += ' && '

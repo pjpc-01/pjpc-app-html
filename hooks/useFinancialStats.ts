@@ -1,3 +1,4 @@
+import { isInvoiceOverdue } from '@/lib/invoice-status'
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/pocketbase-auth-context'
 import { fetchSecureData } from '@/lib/secure-api-client'
@@ -212,6 +213,7 @@ export const useFinancialStats = (centerCode?: string) => {
       let receivable = 0
       let pendingCount = 0, overdueCount = 0, pendingAmt = 0, overdueAmt = 0
       const today = new Date(); today.setHours(0, 0, 0, 0)
+      const todayISO = new Date().toISOString().slice(0, 10)
       for (const i of fInvoices) {
         if (i?.deleted) continue
         const amt = Number(i.totalAmount ?? i.total_amount) || 0
@@ -225,14 +227,9 @@ export const useFinancialStats = (centerCode?: string) => {
           invCountByMonth[m] = (invCountByMonth[m] || 0) + 1
         }
         const unpaid = i.status === 'issued' || i.status === 'pending' || i.status === 'unpaid'
-        if (unpaid) {
-          pendingCount++; pendingAmt += amt
-          const due = i.dueDate || i.due_date
-          if (due) {
-            const d = new Date(due)
-            if (d < today) { overdueCount++; overdueAmt += amt }
-          }
-        }
+        if (unpaid) { pendingCount++; pendingAmt += amt }
+        // 逾期口径与发票管理页统一（lib/invoice-status.ts）
+        if (isInvoiceOverdue(i, todayISO)) { overdueCount++; overdueAmt += amt }
       }
 
       // ── 月度序列 ──

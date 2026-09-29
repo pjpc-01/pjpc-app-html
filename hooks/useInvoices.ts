@@ -1,3 +1,4 @@
+import { isInvoiceOverdue } from '@/lib/invoice-status'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchSecureData, createRecord, updateRecord, deleteRecord } from '@/lib/secure-api-client'
 import { toLocalMonthKey, defaultInvoiceDates } from "@/lib/utils"
@@ -246,7 +247,7 @@ export const useInvoices = () => {
     const total = invoices.length
     const paid = invoices.filter(inv => inv.status === 'paid').length
     const issued = invoices.filter(inv => inv.status === 'issued').length
-    const overdue = invoices.filter(inv => inv.status === 'overdue').length
+    const overdue = invoices.filter(inv => isInvoiceOverdue(inv)).length
     const totalAmount = invoices.reduce((sum, inv) => sum + inv.totalAmount, 0)
     const paidAmount = invoices
       .filter(inv => inv.status === 'paid')
