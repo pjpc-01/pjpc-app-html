@@ -914,3 +914,20 @@ export const defaultInvoiceDates = (base = new Date()) => ({
    - 📌 澄清：子代理报的「学生 405 / 老师缺 type 400」指的是 `app/components/systems/nfc-background-runner.tsx` —— 那个文件**没有任何地方 import**（tv-board 引的是自己那份同名文件），属**死代码**。
    - `api/attendance/student|teacher` 两条平行路由仍存在，现无人使用，可后续清理。
 5. **跨天打卡（补全）**：不只是签退时回看 24h —— 决策层就要判：今天无记录但 24h 内有「已签到未签退」的行 → 判 `check_out`（原来会误判成新的 `check_in`，凌晨走的人签退永远不生效）。
+
+---
+
+## 2026-09-29 死代码清理
+
+🟢 **已删（逐个 grep 确认 0 引用；`git rm` 可回滚）**
+- `app/api/attendance/student/route.ts`、`app/api/attendance/teacher/route.ts` —— 考勤的**平行写入口**（各一套 check_in/check_out 判断、无积分/防误刷/跨天）。TV 大屏已统一到 `/api/attendance/checkin`，这两条彻底没人用。
+- `app/components/systems/nfc-background-runner.tsx` —— 子代理误判「被 tv-board 引用」的文件；tv-board 引的是**自己那份同名文件**，这份 0 import。
+- `app/components/systems/AttendanceRecords.tsx`、`app/components/systems/DeviceManagement.tsx` —— 同在 systems/ 下，0 引用。
+- `app/components/teacher-workspace/`（整目录 4 文件：AttendanceManagement / StudentManagement / NotificationCenter / index.ts）—— `/teacher-workspace` 页面实际 import 的是 **`@/components/teacher/TeacherDashboard` 等活树组件**，这棵 `app/components/teacher-workspace/` 0 引用。
+
+⚠️ **连带更正（重要）**：本页第 6、8 条的修复**改在了死文件上** ——
+- 第 6 条「老师工作台考勤列表恒空」改的是 `app/components/teacher-workspace/AttendanceManagement.tsx`（死）。
+- 第 8 条「AttendanceReport 补 type=teacher」改的是 `app/components/attendance/AttendanceReport.tsx`（**0 import，也是死的**）。
+- 两条改动本身无害，但**活树里并不存在这两个问题**（活树 `components/teacher/` 下根本没有「老师考勤列表」这个页面组件）。要真加「老师看自己考勤」，得在活树上新建。
+
+📌 **结构性遗留**：项目里同时存在 `app/components/**`（76 文件）与 `components/**`（99 文件）两棵树，`@/` 指向根 `components/`；`app/components/` 是历史遗留副本，仍在用（finance/attendance/report 等有引用），但混用容易再次误改死文件。**改动前必须确认 `@/` 解析到哪棵树。**
