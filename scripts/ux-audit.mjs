@@ -27,6 +27,7 @@ const NAV = [
   ['系统/考勤中心', '/attendance'], ['系统/卡片管理', '/card-management'], ['系统/积分操作', '/points'],
   ['系统/积分规则', '/points/rules'], ['系统/积分排行', '/points/leaderboard'], ['系统/用户管理', '/user-management'],
   ['系统/分行管理', '/center-management'], ['系统/设置', '/settings'], ['系统/管理面板', '/admin'],
+  ['系统/学生自助刷卡', '/student-kiosk'],
 ];
 
 // 1) 用 PB superuser 代登录拿身份（不需要任何人的密码）

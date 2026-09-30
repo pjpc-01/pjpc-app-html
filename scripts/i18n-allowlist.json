@@ -6,6 +6,7 @@
     "app/components/finance/student-fee-matrix/StudentFeeMatrixHeader.tsx",
     "app/loading.tsx",
     "app/tv-board/components/",
-    "components/shared/error-boundary.tsx"
+    "components/shared/error-boundary.tsx",
+    "app/student-report/[id]/StudentReportContent.tsx"
   ]
 }
