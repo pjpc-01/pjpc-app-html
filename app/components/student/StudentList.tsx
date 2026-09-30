@@ -2,15 +2,15 @@
 
 import { useState, useMemo } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Edit, Eye, Trash2, MoreHorizontal, FileText, UserX, UserCheck } from "lucide-react"
+import { RowActions } from "@/components/ui/row-actions"
+import { Edit, Eye, Trash2, FileText, UserX, UserCheck } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Student } from "@/hooks/useStudents"
 import { convertGradeToChinese } from "./utils"
 import { studentAvatarUrl } from "@/lib/utils"
-import PermissionGate from "@/components/shared/PermissionGate"
+import { can } from "@/lib/permissions"
 import type { UserRole } from "@/lib/permissions"
 import { useLanguage } from "@/contexts/language-context"
 
@@ -222,69 +222,19 @@ export default function StudentList({
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
-                <div className="flex items-center justify-end gap-1">
-                  {/* 停学/复学 —— 常显,不用先勾选学生 */}
-                  {onToggleStatus && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={`h-8 px-2 text-xs gap-1 ${student.status === 'active'
-                        ? "border-orange-200 text-orange-600 hover:bg-orange-50"
-                        : "border-green-200 text-green-600 hover:bg-green-50"}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleStatus(student);
-                      }}
-                      title={student.status === 'active' ? '标记为已停学' : '恢复在读'}
-                    >
-                      {student.status === 'active'
-                        ? <><UserX className="h-3.5 w-3.5" />{t("停学")}</>
-                        : <><UserCheck className="h-3.5 w-3.5" />{t("复学")}</>}
-                    </Button>
-                  )}
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {onViewReport && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-blue-400 hover:text-blue-600 hover:bg-blue-50"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onViewReport(student);
-                      }}
-                      title={t("学生报告")}
-                    >
-                      <FileText className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                  <PermissionGate permission="students.edit" role={userRole} showDisabled>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-muted-foreground hover:text-accent-foreground hover:bg-accent"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditStudent(student);
-                      }}
-                    >
-                      <Edit className="h-3.5 w-3.5" />
-                    </Button>
-                  </PermissionGate>
-                  <PermissionGate permission="students.delete" role={userRole} showDisabled>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-red-400 hover:text-red-600 hover:bg-red-50"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteStudent(student.id);
-                      }}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </PermissionGate>
-                  </div>
-                </div>
+                <RowActions
+                  actions={[
+                    { label: t("查看"), icon: Eye, onClick: () => onViewStudent(student) },
+                    can(userRole, "students.edit") && { label: t("编辑"), icon: Edit, onClick: () => onEditStudent(student) },
+                    onViewReport && { label: t("学生报告"), icon: FileText, onClick: () => onViewReport(student) },
+                    onToggleStatus && {
+                      label: student.status === "active" ? t("停学") : t("复学"),
+                      icon: student.status === "active" ? UserX : UserCheck,
+                      onClick: () => onToggleStatus(student),
+                    },
+                    can(userRole, "students.delete") && { label: t("删除"), icon: Trash2, onClick: () => onDeleteStudent(student.id), destructive: true },
+                  ]}
+                />
               </TableCell>
             </TableRow>
           ))}
