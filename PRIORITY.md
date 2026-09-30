@@ -1088,3 +1088,26 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 1. `scripts/i18n-allowlist.json` 临时加了一条豁免：`app/student-report/[id]/StudentReportContent.tsx`（该在途文件有 113 行裸中文，会让 `npm run build` 的 prebuild i18n 检查挂掉）。**等该文件的中文包进 `t()` 后请移出豁免名单。**
 2. kiosk 页自带 HID 监听，`GlobalCardScanner` 也会处理同一按键 → 每次刷卡多一次 `/api/nfc/tap` 调用（无害、无报错），后续可择一。
 3. **NFC 刷卡链路仍未在真实读卡器上做过整机实测**（本轮全部为代码级 + 模拟键盘事件验证）。
+
+---
+
+## 2026-09-30 第二轮：按钮收束 5 页 + 家长↔学生关联补齐 + 收据入口核查
+
+🟢 **2. 「⋯ 下拉」推广 5 页（已上线）**
+- 改 4 文件：`components/courses/ClassManagement.tsx`（课程卡片 删除→⋯）、`components/teacher/TeacherSalaryManagement.tsx`（薪资结构行/记录行）、`app/components/finance/invoice-management/InvoiceList.tsx`（发票行 5 按钮→查看+⋯）、`app/components/finance/shared/useReceiptTools.tsx`（付款行收据 4 按钮→查看+⋯）
+- 按钮数：薪资 174→135、发票 132→88、付款 116→89；课程管理 181→182（原每卡 编辑+删除图标，删除搬进 ⋯，数量中性）；**学生费用 245 保持不动**
+- **学生费用为什么不收（助手亲自逐个数清）**：245 个按钮 = 114「开单」（每生一行主操作）+ 114 `lucide-chevron-right`（每生展开箭头）+ 17 外壳图标 —— **真的没有可收束的按钮堆**，不是漏做。`app/components/finance/student-fee-matrix/*` 的矩阵控件一律未动。
+- 验证：发票 ⋯ = 下载/打印/发送/删除 ✓；付款 ⋯ = 打印/下载 PDF/发送给家长 ✓；课程 81 个 ⋯、薪资 37 个 ⋯、发票 15、付款 14 ✓；5 页手机 390 无溢出 ✓；ux-audit 40 页 0 错 0 失败请求 ✓；`check:i18n` 通过 ✓
+- 遗留：付款页每行的「退款」按钮仍是独立按钮（本次范围外），如需一并收进 ⋯ 下次再说。
+
+🟢 **3. 家长↔学生关联（数据，无代码改动）**
+- 关联唯一数据源 = **中间表 `student_parents`**（`studentId`/`parentId`/`relationship`/`isPrimary`）；`parents`/`students` 本身没有关联字段（证据 `hooks/useParents.ts:46-51`）。
+- 严格规则（姓名完全一致 **且** 电话完全一致，不做模糊匹配）：**自动写入 22 条**（14 名学生 / 22 位家长，其中 7 位家长原本完全无关联）。备份：`/home/pjpc/backups/parent-student-link-20260930_190454/`（before.json + plan.json + write_results.json）。
+- 助手独立复验：`student_parents` 172→**194**（=+22 ✓）、0 重复对、0 指向已删记录、**22 条逐条核对「姓名+电话都对」= 22/22 通过**、0 条姓氏可疑（Tee→Tee、Ng→Ng、Cheong→Cheong 等）。
+- **待人工确认 72 项未写入**（清单见 `/home/pjpc/backups/parent-student-link-20260930_190454/待确认清单.csv`）：只姓名一致 66、只电话一致 4、一家长对多学生 2。
+
+🟢 **4. 收据菜单/旧页 —— 结论：不用改**
+- 菜单里**已无「收据」独立入口**（本轮菜单分组改造后自然消失）→ 该待办可划掉。
+- `app/finance/receipts/page.tsx` 只有 10 行，是 2026-09-22 有意保留的**重定向存根**（`afd00a0`：路由改重定向防书签 404）→ **不该删**。
+- 收据功能已并入「付款和收据」（`useReceiptTools.tsx`：receipts ↔ payments 1:1）。
+- 唯一残留：`AppShell.tsx` 的 `NAV_LABEL_MAP` 有一行无人使用的 `"收据管理"` 映射（无害）；因该文件此刻有另一 agent 的在途改动，**暂不碰**，待其落地再清。

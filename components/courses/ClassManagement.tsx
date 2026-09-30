@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { RowActions } from '@/components/ui/row-actions'
 import {
   Select,
   SelectContent,
@@ -543,20 +544,16 @@ export default function ClassManagement({ showTitle = true }: { showTitle?: bool
                         </div>
                       </CardContent>
                       <CardFooter className="pt-2">
-                        <div className="flex gap-2 w-full">
-                          <Button
-                            variant="outline" size="sm" className="flex-1"
-                            onClick={() => { setEditingCourse(course); setAddDialogOpen(true) }}
-                          >
-                            <Edit className="h-3.5 w-3.5 mr-1" /> {t("编辑")}
-                          </Button>
-                          <Button
-                            variant="ghost" size="sm" className="text-red-500"
-                            onClick={() => setDeleteTarget(course)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
+                        <RowActions
+                          primary={{
+                            label: t("编辑"), icon: Edit,
+                            onClick: () => { setEditingCourse(course); setAddDialogOpen(true) },
+                          }}
+                          actions={[{
+                            label: t("删除"), icon: Trash2, destructive: true,
+                            onClick: () => setDeleteTarget(course),
+                          }]}
+                        />
                       </CardFooter>
                     </Card>
                   )
