@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { RowActions } from "@/components/ui/row-actions"
 import { getSocsoEmployee, getSocsoEmployer, getEisContribution, getPCB } from "@/lib/perkeso-rates"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -1323,14 +1324,16 @@ export default function TeacherSalaryManagement() {
                       </TableCell>
                       <TableCell>{formatDate(structure.effective_date)}</TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={() => handleEditStructure(structure)}>
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => handleDeleteStructure(structure.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
+                        <RowActions
+                          primary={{
+                            label: t("编辑"), icon: Edit,
+                            onClick: () => handleEditStructure(structure),
+                          }}
+                          actions={[{
+                            label: t("删除"), icon: Trash2, destructive: true,
+                            onClick: () => handleDeleteStructure(structure.id),
+                          }]}
+                        />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1496,72 +1499,70 @@ export default function TeacherSalaryManagement() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={() => {
-                            setSelectedPayslipRecord(record)
-                            setIsPayslipDetailOpen(true)
-                          }}>
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => handleDeleteRecord(record.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              downloadPayslipPDF(record, getPayslipPresetForRecord(record), record.expand?.teacher_id?.name || '教师', record.expand?.teacher_id ? { epfNo: record.expand.teacher_id.epfNo, socsoNo: record.expand.teacher_id.socsoNo, bankName: record.expand.teacher_id.bankName, bankAccountNo: record.expand.teacher_id.bankAccountNo } : undefined)
-                            }}
-                          >
-                            <FileDown className="w-4 h-4 text-blue-600" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={async () => {
-                              const teacher = record.expand?.teacher_id
-                              const phone = (teacher as any)?.phone || (teacher as any)?.whatsapp || ''
-                              const formatted = phone ? phone.replace(/\s+/g, '').replace(/^0/, '60').replace(/^\+/, '') : ''
-                              
-                              if (!formatted) {
-                                alert(t("该教师没有电话号码，请先在教师管理填上电话。"))
-                                return
-                              }
-                              const teacherName = teacher?.name || '教师'
-                              
-                              try {
-                                const pdfBlob = await generatePayslipPDF(record, getPayslipPresetForRecord(record), teacherName, teacher ? { epfNo: (teacher as any).epfNo, socsoNo: (teacher as any).socsoNo, bankName: (teacher as any).bankName, bankAccountNo: (teacher as any).bankAccountNo } : undefined)
-                                const pdfFile = new File([pdfBlob], `Payslip_${teacherName}_${record.year}_${record.month}.pdf`, { type: 'application/pdf' })
+                        <RowActions
+                          primary={{
+                            label: t("查看"), icon: Eye,
+                            onClick: () => {
+                              setSelectedPayslipRecord(record)
+                              setIsPayslipDetailOpen(true)
+                            },
+                          }}
+                          actions={[
+                            {
+                              label: t("下载薪资单"), icon: FileDown,
+                              onClick: () => {
+                                downloadPayslipPDF(record, getPayslipPresetForRecord(record), record.expand?.teacher_id?.name || '教师', record.expand?.teacher_id ? { epfNo: record.expand.teacher_id.epfNo, socsoNo: record.expand.teacher_id.socsoNo, bankName: record.expand.teacher_id.bankName, bankAccountNo: record.expand.teacher_id.bankAccountNo } : undefined)
+                              },
+                            },
+                            {
+                              label: t("发送给教师(WhatsApp)"), icon: Send,
+                              onClick: async () => {
+                                const teacher = record.expand?.teacher_id
+                                const phone = (teacher as any)?.phone || (teacher as any)?.whatsapp || ''
+                                const formatted = phone ? phone.replace(/\s+/g, '').replace(/^0/, '60').replace(/^\+/, '') : ''
                                 
-                                if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-                                  try {
-                                    await navigator.share({ files: [pdfFile], title: `薪资单 ${teacherName}` })
-                                    return
-                                  } catch { /* fall through */ }
+                                if (!formatted) {
+                                  alert(t("该教师没有电话号码，请先在教师管理填上电话。"))
+                                  return
                                 }
+                                const teacherName = teacher?.name || '教师'
                                 
-                                // Fallback: download + open WhatsApp
-                                const url = URL.createObjectURL(pdfBlob)
-                                const a = document.createElement('a')
-                                a.href = url
-                                a.download = `Payslip_${teacherName}_${record.year}_${record.month}.pdf`
-                                document.body.appendChild(a)
-                                a.click()
-                                document.body.removeChild(a)
-                                setTimeout(() => URL.revokeObjectURL(url), 5000)
-                                
-                                const encodedMsg = encodeURIComponent('📎 请贴上刚下载的薪资单PDF文件')
-                                window.open(`https://wa.me/${formatted}?text=${encodedMsg}`, '_blank')
-                              } catch (err) {
-                                console.error('Payslip send failed:', err)
-                                const encodedMsg = encodeURIComponent('📎 请贴上刚下载的薪资单PDF文件')
-                                window.open(`https://wa.me/${formatted}?text=${encodedMsg}`, '_blank')
-                              }
-                            }}
-                          >
-                            <Send className="w-4 h-4" />
-                          </Button>
-                        </div>
+                                try {
+                                  const pdfBlob = await generatePayslipPDF(record, getPayslipPresetForRecord(record), teacherName, teacher ? { epfNo: (teacher as any).epfNo, socsoNo: (teacher as any).socsoNo, bankName: (teacher as any).bankName, bankAccountNo: (teacher as any).bankAccountNo } : undefined)
+                                  const pdfFile = new File([pdfBlob], `Payslip_${teacherName}_${record.year}_${record.month}.pdf`, { type: 'application/pdf' })
+                                  
+                                  if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+                                    try {
+                                      await navigator.share({ files: [pdfFile], title: `薪资单 ${teacherName}` })
+                                      return
+                                    } catch { /* fall through */ }
+                                  }
+                                  
+                                  // Fallback: download + open WhatsApp
+                                  const url = URL.createObjectURL(pdfBlob)
+                                  const a = document.createElement('a')
+                                  a.href = url
+                                  a.download = `Payslip_${teacherName}_${record.year}_${record.month}.pdf`
+                                  document.body.appendChild(a)
+                                  a.click()
+                                  document.body.removeChild(a)
+                                  setTimeout(() => URL.revokeObjectURL(url), 5000)
+                                  
+                                  const encodedMsg = encodeURIComponent('📎 请贴上刚下载的薪资单PDF文件')
+                                  window.open(`https://wa.me/${formatted}?text=${encodedMsg}`, '_blank')
+                                } catch (err) {
+                                  console.error('Payslip send failed:', err)
+                                  const encodedMsg = encodeURIComponent('📎 请贴上刚下载的薪资单PDF文件')
+                                  window.open(`https://wa.me/${formatted}?text=${encodedMsg}`, '_blank')
+                                }
+                              },
+                            },
+                            {
+                              label: t("删除"), icon: Trash2, destructive: true,
+                              onClick: () => handleDeleteRecord(record.id),
+                            },
+                          ]}
+                        />
                       </TableCell>
                     </TableRow>
                   ))}

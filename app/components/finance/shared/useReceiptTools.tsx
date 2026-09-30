@@ -15,6 +15,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { RowActions } from "@/components/ui/row-actions"
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
@@ -186,20 +187,19 @@ export function ReceiptActions({ receipt, tools }: { receipt: any; tools: Receip
   const { t } = useLanguage();
   if (!receipt) return <span className="text-xs text-slate-300">{t("未生成")}</span>
   return (
-    <div className="flex items-center justify-center gap-0.5">
+    <div className="flex items-center justify-center">
       <span className="font-mono text-[11px] text-slate-500 mr-1">{receipt.receiptNumber}</span>
-      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title={t("查看收据")} onClick={() => tools.viewReceipt(receipt)}>
-        <Eye className="h-3.5 w-3.5" />
-      </Button>
-      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title={t("打印")} onClick={() => tools.print(receipt)}>
-        <Printer className="h-3.5 w-3.5" />
-      </Button>
-      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title={t("下载 PDF")} onClick={() => tools.download(receipt)}>
-        <Download className="h-3.5 w-3.5" />
-      </Button>
-      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-green-600 hover:text-green-700" title={t("发送给家长 (WhatsApp)")} onClick={() => tools.send(receipt)}>
-        <Send className="h-3.5 w-3.5" />
-      </Button>
+      <RowActions
+        primary={{
+          label: t("查看"), icon: Eye,
+          onClick: () => tools.viewReceipt(receipt),
+        }}
+        actions={[
+          { label: t("打印"), icon: Printer, onClick: () => tools.print(receipt) },
+          { label: t("下载 PDF"), icon: Download, onClick: () => tools.download(receipt) },
+          { label: t("发送给家长(WhatsApp)"), icon: Send, onClick: () => tools.send(receipt) },
+        ]}
+      />
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { isInvoiceOverdue } from '@/lib/invoice-status'
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { RowActions } from "@/components/ui/row-actions"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
@@ -406,44 +407,18 @@ export function InvoiceList({
                     }</TableCell>
                     <TableCell>{formatDate(invoice.dueDate)}</TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => onView(invoice)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => onDownload(invoice)}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => onPrint(invoice)}
-                        >
-                          <Printer className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => onSend(invoice)}
-                        >
-                          <Send className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleDeleteClick(invoice)}
-                          className="bg-red-500 hover:bg-red-600 text-white"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <RowActions
+                        primary={{
+                          label: t("查看"), icon: Eye,
+                          onClick: () => onView(invoice),
+                        }}
+                        actions={[
+                          { label: t("下载"), icon: Download, onClick: () => onDownload(invoice) },
+                          { label: t("打印"), icon: Printer, onClick: () => onPrint(invoice) },
+                          { label: t("发送"), icon: Send, onClick: () => onSend(invoice) },
+                          { label: t("删除"), icon: Trash2, destructive: true, onClick: () => handleDeleteClick(invoice) },
+                        ]}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
