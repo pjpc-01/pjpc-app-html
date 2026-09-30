@@ -116,81 +116,181 @@ const NAV_LABEL_MAP: Record<string, string> = {
   "财务工作台": "nav.accountant_workspace",
   "报告详情": "breadcrumb.report_detail",
   "未知": "breadcrumb.unknown",
+  "学生": "nav.group.students",
+  "教学": "nav.group.teaching",
+  "教师": "nav.group.teachers",
+  "资源": "nav.group.resources",
+  "收费": "nav.group.income",
+  "支出": "nav.group.expense",
+  "人事": "nav.group.hr",
+  "账务": "nav.group.accounting",
+  "考勤门禁": "nav.group.attendance_gate",
+  "积分": "nav.group.points",
+  "组织": "nav.group.org",
+  "设置": "nav.group.settings",
 }
 
+const OVERVIEW_NAV: NavItem[] = [
+  { label: "仪表板", href: "/", icon: LayoutDashboard },
+  { label: "幻灯片", href: "/dashboard/slideshow", icon: MonitorPlay },
+  { label: "TV看板", href: "/tv-board", icon: MonitorPlay },
+]
+
+const EDU_STUDENTS_GROUP: NavItem[] = [
+  { label: "学生列表", href: "/student-management", icon: Users },
+  { label: "学生报告", href: "/student-reports", icon: FileText },
+  { label: "家长管理", href: "/parent-management", icon: Users },
+  { label: "接送管理", href: "/pickup", icon: Truck },
+  { label: "学生请假", href: "/student-leave", icon: CalendarCheck },
+  { label: "每日日志", href: "/daily-logs", icon: FileEdit },
+]
+
+const EDU_TEACHING_GROUP: NavItem[] = [
+  { label: "课程管理", href: "/course-management", icon: BookOpen },
+  { label: "作业管理", href: "/homework", icon: FileEdit },
+  { label: "成绩管理", href: "/grades", icon: GraduationCap },
+  { label: "活动管理", href: "/activities", icon: CalendarCheck },
+]
+
+const EDU_TEACHERS_GROUP: NavItem[] = [
+  { label: "教师列表", href: "/teacher-management", icon: UserCog },
+  { label: "教师排班", href: "/teacher-attendance-reports", icon: CalendarCheck },
+  { label: "教学评估", href: "/teacher-teaching-report", icon: ClipboardCheck },
+  { label: "绩效管理", href: "/teacher-performance", icon: Award },
+]
+
+const EDU_RESOURCES_GROUP: NavItem[] = [
+  { label: "资源库", href: "/resource-library", icon: BookOpen, disabled: true },
+]
+
+// 完整的教务 children：叶子（教育概览）+ 学生/教学/教师/资源 二级分组
+const EDU_FULL_CHILDREN: NavItem[] = [
+  { label: "教育概览", href: "/education", icon: GraduationCap },
+  { label: "学生", icon: Users, children: EDU_STUDENTS_GROUP },
+  { label: "教学", icon: BookOpen, children: EDU_TEACHING_GROUP },
+  { label: "教师", icon: UserCog, children: EDU_TEACHERS_GROUP },
+  { label: "资源", icon: Package, children: EDU_RESOURCES_GROUP },
+]
+
+// office_admin 的教务：去掉「资源」二级分组
+const EDU_OFFICE_CHILDREN: NavItem[] = [
+  { label: "教育概览", href: "/education", icon: GraduationCap },
+  { label: "学生", icon: Users, children: EDU_STUDENTS_GROUP },
+  { label: "教学", icon: BookOpen, children: EDU_TEACHING_GROUP },
+  { label: "教师", icon: UserCog, children: EDU_TEACHERS_GROUP },
+]
+
+const FIN_OVERVIEW_LEAF: NavItem = { label: "财务概览", href: "/finance/overview", icon: PiggyBank }
+
+const FIN_INCOME_GROUP: NavItem[] = [
+  { label: "收费管理", href: "/finance/fees", icon: Receipt },
+  { label: "学生费用", href: "/finance/student-fees", icon: GraduationCap },
+  { label: "发票管理", href: "/finance/invoices", icon: FileText },
+  { label: "付款和收据", href: "/finance/payments", icon: CreditCard },
+]
+
+const FIN_EXPENSE_GROUP: NavItem[] = [
+  { label: "支出管理", href: "/finance/expenses", icon: Wallet },
+  { label: "报销单 (Claim Form)", href: "/claim-form", icon: Wallet },
+  { label: "库存管理", href: "/inventory", icon: Package },
+]
+
+const FIN_HR_GROUP: NavItem[] = [
+  { label: "薪资管理", href: "/finance/payroll", icon: DollarSign },
+]
+
+const FIN_ACCOUNTING_GROUP: NavItem[] = [
+  { label: "银行对账", href: "/finance/bank", icon: Building2 },
+  { label: "预算管理", href: "/finance/budget", icon: PieChart },
+  { label: "财务报表", href: "/finance/reports", icon: BarChart3 },
+]
+
+const FIN_FULL_CHILDREN: NavItem[] = [
+  FIN_OVERVIEW_LEAF,
+  { label: "收费", icon: Receipt, children: FIN_INCOME_GROUP },
+  { label: "支出", icon: Wallet, children: FIN_EXPENSE_GROUP },
+  { label: "人事", icon: DollarSign, children: FIN_HR_GROUP },
+  { label: "账务", icon: BarChart3, children: FIN_ACCOUNTING_GROUP },
+]
+
+const SYS_ATTENDANCE_GATE_GROUP: NavItem[] = [
+  { label: "考勤中心", href: "/attendance", icon: ClipboardCheck },
+  { label: "卡片管理", href: "/card-management", icon: CreditCard },
+]
+
+const SYS_POINTS_GROUP: NavItem[] = [
+  { label: "积分操作", href: "/points", icon: Star },
+  { label: "积分规则", href: "/points/rules", icon: ScrollText },
+  { label: "积分排行", href: "/points/leaderboard", icon: Trophy },
+]
+
+const SYS_ORG_GROUP: NavItem[] = [
+  { label: "用户管理", href: "/user-management", icon: Users },
+  { label: "分行管理", href: "/center-management", icon: Building },
+]
+
+const SYS_SETTINGS_GROUP: NavItem[] = [
+  { label: "系统设置", href: "/settings", icon: Settings },
+  { label: "管理面板", href: "/admin", icon: Settings },
+]
+
+// office_admin 的系统：只保留「考勤门禁」和「积分」两个二级分组
+const SYS_OFFICE_CHILDREN: NavItem[] = [
+  { label: "考勤门禁", icon: ClipboardCheck, children: SYS_ATTENDANCE_GATE_GROUP },
+  { label: "积分", icon: Star, children: SYS_POINTS_GROUP },
+]
+
+const SYS_FULL_CHILDREN: NavItem[] = [
+  { label: "考勤门禁", icon: ClipboardCheck, children: SYS_ATTENDANCE_GATE_GROUP },
+  { label: "积分", icon: Star, children: SYS_POINTS_GROUP },
+  { label: "组织", icon: Building, children: SYS_ORG_GROUP },
+  { label: "设置", icon: Settings, children: SYS_SETTINGS_GROUP },
+]
+
+// 完整菜单树（admin 与 _default 共用）
+const FULL_NAV: NavItem[] = [
+  { label: "概览", href: "/", icon: LayoutDashboard, children: OVERVIEW_NAV },
+  { label: "教务", href: "/education", icon: GraduationCap, children: EDU_FULL_CHILDREN },
+  { label: "财务", href: "/finance/overview", icon: DollarSign, children: FIN_FULL_CHILDREN },
+  { label: "系统", href: "/settings", icon: Settings, children: SYS_FULL_CHILDREN },
+]
+
 const ROLE_CONFIGS: Record<string, RoleConfig> = {
-  // All roles share the same full nav tree — filterByPerms handles visibility
   _default: {
     title: "PJPC",
+    navItems: FULL_NAV,
+  },
+  admin: {
+    title: "PJPC",
+    navItems: FULL_NAV,
+  },
+  teacher: {
+    title: "教师工作台",
     navItems: [
-      {
-        label: "概览",
-        href: "/",
-        icon: LayoutDashboard,
-        children: [
-          { label: "仪表板", href: "/", icon: LayoutDashboard },
-          { label: "幻灯片", href: "/dashboard/slideshow", icon: MonitorPlay },
-          { label: "TV看板", href: "/tv-board", icon: MonitorPlay },
-        ],
-      },
+      { label: "我的工作台", href: "/teacher-workspace", icon: ClipboardCheck },
       {
         label: "教务",
         href: "/education",
         icon: GraduationCap,
         children: [
-          { label: "教育概览", href: "/education", icon: GraduationCap },
           { label: "学生列表", href: "/student-management", icon: Users },
-          { label: "学生报告", href: "/student-reports", icon: FileText },
-          { label: "家长管理", href: "/parent-management", icon: Users },
+          { label: "每日日志", href: "/daily-logs", icon: FileEdit },
           { label: "作业管理", href: "/homework", icon: FileEdit },
           { label: "成绩管理", href: "/grades", icon: GraduationCap },
-          { label: "接送管理", href: "/pickup", icon: Truck },
-          { label: "学生请假", href: "/student-leave", icon: CalendarCheck },
-          { label: "每日日志", href: "/daily-logs", icon: FileEdit },
-          { label: "资源库", href: "/resource-library", icon: BookOpen, disabled: true },
-          { label: "教师列表", href: "/teacher-management", icon: UserCog },
-          { label: "教师排班", href: "/teacher-attendance-reports", icon: CalendarCheck },
-          { label: "活动管理", href: "/activities", icon: CalendarCheck },
           { label: "课程管理", href: "/course-management", icon: BookOpen },
           { label: "教学评估", href: "/teacher-teaching-report", icon: ClipboardCheck },
-          { label: "绩效管理", href: "/teacher-performance", icon: Award },
+          { label: "学生请假", href: "/student-leave", icon: CalendarCheck },
         ],
       },
-      {
-        label: "财务",
-        href: "/finance/overview",
-        icon: DollarSign,
-        children: [
-          { label: "财务概览", href: "/finance/overview", icon: PiggyBank },
-          { label: "收费管理", href: "/finance/fees", icon: Receipt },
-          { label: "学生费用", href: "/finance/student-fees", icon: GraduationCap },
-          { label: "发票管理", href: "/finance/invoices", icon: FileText },
-          { label: "付款和收据", href: "/finance/payments", icon: CreditCard },
-          { label: "薪资管理", href: "/finance/payroll", icon: DollarSign },
-          { label: "支出管理", href: "/finance/expenses", icon: Wallet },
-          { label: "报销单 (Claim Form)", href: "/claim-form", icon: Wallet },
-          { label: "银行对账", href: "/finance/bank", icon: Building2 },
-          { label: "预算管理", href: "/finance/budget", icon: PieChart },
-          { label: "财务报表", href: "/finance/reports", icon: BarChart3 },
-          { label: "库存管理", href: "/inventory", icon: Package },
-        ],
-      },
-      {
-        label: "系统",
-        href: "/settings",
-        icon: Settings,
-        children: [
-          { label: "考勤中心", href: "/attendance", icon: ClipboardCheck },
-          { label: "卡片管理", href: "/card-management", icon: CreditCard },
-          { label: "积分操作", href: "/points", icon: Star },
-          { label: "积分规则", href: "/points/rules", icon: ScrollText },
-          { label: "积分排行", href: "/points/leaderboard", icon: Trophy },
-          { label: "用户管理", href: "/user-management", icon: Users },
-          { label: "分行管理", href: "/center-management", icon: Building },
-          { label: "系统设置", href: "/settings", icon: Settings },
-          { label: "管理面板", href: "/admin", icon: Settings },
-        ],
-      },
+    ],
+  },
+  office_admin: {
+    title: "行政",
+    navItems: [
+      { label: "概览", href: "/", icon: LayoutDashboard, children: OVERVIEW_NAV },
+      { label: "教务", href: "/education", icon: GraduationCap, children: EDU_OFFICE_CHILDREN },
+      { label: "财务", href: "/finance/overview", icon: DollarSign, children: FIN_FULL_CHILDREN },
+      { label: "系统", href: "/settings", icon: Settings, children: SYS_OFFICE_CHILDREN },
     ],
   },
 }
@@ -351,7 +451,7 @@ export default function AppShell({
     localStorage.removeItem(`pjpc_nav_order_${userRole}`)
   }
 
-  const config = ROLE_CONFIGS._default
+  const config = ROLE_CONFIGS[userRole] ?? ROLE_CONFIGS._default
   const { logout, user, loading } = useAuth()
 
   // Permission key mapping for nav items
@@ -461,17 +561,28 @@ export default function AppShell({
     })
   }
 
-  // Auto-expand parent menu if a child is active
+  // Auto-expand ALL ancestors of the active item (leaf may be level 2 or 3, sub-groups have no href)
   useEffect(() => {
-    filteredNavItems.forEach((item) => {
-      if (item.children) {
-        const hasActiveChild = item.children.some((child) => isActive(child.href))
-        if (hasActiveChild) {
-          setExpandedMenus((prev) => new Set(prev).add(item.label))
+    const collectActiveAncestors = (items: NavItem[], ancestors: string[] = []): string[] => {
+      for (const item of items) {
+        if (item.children?.length) {
+          const found = collectActiveAncestors(item.children, [...ancestors, item.label])
+          if (found.length) return found
+        } else if (item.href && isActive(item.href)) {
+          return ancestors
         }
       }
-    })
-  }, [pathname, config.navItems])
+      return []
+    }
+    const ancestors = collectActiveAncestors(filteredNavItems)
+    if (ancestors.length) {
+      setExpandedMenus((prev) => {
+        const next = new Set(prev)
+        ancestors.forEach((a) => next.add(a))
+        return next
+      })
+    }
+  }, [pathname, config?.navItems, searchParams])
 
   // Close mobile sidebar on route change
   useEffect(() => {
