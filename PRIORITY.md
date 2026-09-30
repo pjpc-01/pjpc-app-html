@@ -1040,3 +1040,25 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 
 🟡 **待用户决定**：每日日志「待记录」那 128 个每生一按钮要不要也收（改成勾选多个 + 批量记）？收了对日常高频操作可能是倒退，暂不动。
 **待办**：③ 三端门户（老师 4 tab / 家长端界面 / 学生端完整版，用户已拍板）；④ 「⋯ 下拉」推广到其余高按钮页（学生费用 244 / 课程管理 181 / 薪资 174 / 发票 132 / 付款 116）。
+
+---
+
+## 2026-09-30 阶段 3：老师端 4-tab 重排 + 家长端门户外壳（本次 commit）
+
+🟢 **① 老师工作台 `app/teacher-workspace/page.tsx`（7 tab → 4 tab）**
+- 新 tab：**今日 / 我的学生 / 我的课程（原课程表+作业管理合并）/ 我的考勤与积分（新增）**
+- 原「个人档案 / 统计报告 / 设置」+ 登出 → **右上角头像下拉菜单**，功能零丢失
+- 「我的考勤与积分」= `/api/attendance/person-calendar?person_type=teacher` 读 `teacher_attendance`；老师自身积分无数据源 → 显式「暂无数据」空状态（不造假、未新建集合）
+- 未改 `TabbedPage`；admin 访问仍跳 `/admin-dashboard`（实测）
+- 实测：4 个 tab 文字正确、菜单项 = 个人档案/统计报告/设置/登出 且点「个人档案」不崩、手机 390 无溢出
+
+🟢 **② 家长端门户（只改界面，未建账号）**
+- 新建 `app/parent/layout.tsx`：手机优先统一外壳 + **底部固定 5 项 Tab**（首页/孩子/成绩/缴费/通知），`usePathname()` 高亮，iOS 安全区 `env(safe-area-inset-bottom)`，内容 `pb-28` 不被遮挡
+- 新建 `app/parent/leave/page.tsx`：家长请假申请（选孩子 + 类型 + 起止日期 + 原因）→ POST `/api/student-leave`（`status='pending'`、`applied_date` 今日、`total_days` 自算）；**当前 0 个家长账号 → 友好空状态「暂无孩子信息」**（不白屏）
+- `/parent/dailylogs` 保留可用、不进底栏（从「孩子」页进）
+- 顺带修既有 bug：`/parent/notifications` 因 `/api/announcements` 返回 `{success,data:{items}}` 而 `announcements.map` 崩溃 → 页面内解包
+- 实测：7 个家长页全部 白屏=false、底栏 5/5 在、手机 390 无溢出、console 0 错误
+
+🟢 **③ 端到端复验（助手独立执行）**：真浏览器 POST `/api/student-leave` 一条测试记录（学生 林倢慧，id `spnh4m509t7kmhm`）→ 库中确认存在 → DELETE → **确认 0 条残留**；ux-audit 39 页 0 错误 0 失败请求。
+
+🟡 **仍待办**：家长账号（当前 0 个，用户拍板「先不建」）；学生端完整版（积分+课表+作业+请假，需建学生账号体系）；「⋯ 下拉」推广到其余高按钮页（学生费用 244 / 课程管理 181 / 薪资 174 / 发票 132 / 付款 116）。

@@ -23,8 +23,9 @@ export default function ParentNotificationsPage() {
         // 改为走既有 /api/announcements（读 activities，与 TV 看板同一数据源）
         const res = await fetch(`/api/announcements?perPage=20&sort=-created`)
         const data = await res.json()
+        const payload = data?.data || data
         setAnnouncements(
-          (data && (data.items || data.data || data.records)) || (Array.isArray(data) ? data : [])
+          (payload && (payload.items || payload.data || payload.records)) || (Array.isArray(payload) ? payload : [])
         )
       } catch (e) {
         console.error("Failed to fetch announcements:", e)
