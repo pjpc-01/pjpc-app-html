@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog"
+import { RowActions } from "@/components/ui/row-actions"
 import { useLanguage } from "@/contexts/language-context"
 import { Label } from "@/components/ui/label"
 import {
@@ -181,13 +182,10 @@ export default function ParentManagementPage() {
                       <TableCell className="text-sm">{p.email || "-"}</TableCell>
                       <TableCell className="text-sm">{p.occupation || "-"}</TableCell>
                       <TableCell>
-                        <button
-                          onClick={() => setShowStudents(p)}
-                          className="inline-flex items-center gap-1 text-amber-700 hover:text-amber-800 hover:underline"
-                        >
+                        <span className="inline-flex items-center gap-1 text-amber-700">
                           <GraduationCap className="h-3.5 w-3.5" />
                           {p.studentCount || 0}
-                        </button>
+                        </span>
                       </TableCell>
                       <TableCell>
                         <Badge variant={p.status === "active" ? "default" : "secondary"}>
@@ -195,14 +193,13 @@ export default function ParentManagementPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => openEdit(p)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" className="text-red-500" onClick={() => handleDelete(p.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <RowActions
+                          actions={[
+                            { label: t("编辑"), icon: Edit, onClick: () => openEdit(p) },
+                            { label: t("关联学生"), icon: GraduationCap, onClick: () => setShowStudents(p) },
+                            { label: t("删除"), icon: Trash2, onClick: () => handleDelete(p.id), destructive: true },
+                          ]}
+                        />
                       </TableCell>
                     </TableRow>
                   ))}

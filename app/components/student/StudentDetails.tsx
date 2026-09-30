@@ -11,6 +11,7 @@ import {
   SheetDescription 
 } from "@/components/ui/sheet"
 import { useLanguage } from "@/contexts/language-context"
+import { studentAvatarUrl } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Edit, 

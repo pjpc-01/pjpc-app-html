@@ -11,6 +11,7 @@ import { useDailyLogs, MOOD_EMOJI, MEAL_EMOJI, MEAL_LABELS, MOOD_LABELS, type Da
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { RowActions } from '@/components/ui/row-actions'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
@@ -215,61 +216,40 @@ export default function DailyLogsPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      {/* 快速切换组 */}
-                      <div className="grid grid-cols-2 gap-2">
-                        {/* 功课 */}
-                        <Button
-                          variant={log.homework_done ? "default" : "outline"}
-                          size="sm"
-                          className={log.homework_done ? "bg-emerald-500 hover:bg-emerald-600" : ""}
-                          onClick={() => handleQuickToggle(log.id, 'homework_done', !log.homework_done)}
-                        >
-                          {log.homework_done ? <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> : <XCircle className="h-3.5 w-3.5 mr-1" />}
-                          {t("功课")}
-                        </Button>
-                        {/* 午睡 */}
-                        <Button
-                          variant={log.nap ? "default" : "outline"}
-                          size="sm"
-                          className={log.nap ? "bg-indigo-500 hover:bg-indigo-600" : ""}
-                          onClick={() => handleQuickToggle(log.id, 'nap', !log.nap)}
-                        >
-                          {log.nap ? <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> : <XCircle className="h-3.5 w-3.5 mr-1" />}
-                          {t("午睡")}
-                        </Button>
+                      {/* 当前状态一览 */}
+                      <div className="flex flex-wrap gap-1.5">
+                        <Badge variant={log.homework_done ? "default" : "outline"} className={log.homework_done ? "bg-emerald-500 hover:bg-emerald-600" : ""}>
+                          {t("功课")}{t("：")}{log.homework_done ? "已记" : "未记"}
+                        </Badge>
+                        <Badge variant={log.nap ? "default" : "outline"} className={log.nap ? "bg-indigo-500 hover:bg-indigo-600" : ""}>
+                          {t("午睡")}{t("：")}{log.nap ? "已记" : "未记"}
+                        </Badge>
+                        <Badge variant={log.meal ? "default" : "outline"} className={log.meal ? "bg-amber-500 hover:bg-amber-600" : ""}>
+                          {log.meal ? `${MEAL_EMOJI[log.meal]} ${MEAL_LABELS[log.meal].split(' ')[1]}` : "未记餐"}
+                        </Badge>
+                        <Badge variant={log.mood ? "default" : "outline"} className={log.mood ? "bg-emerald-500 hover:bg-emerald-600" : ""}>
+                          {log.mood ? `${MOOD_EMOJI[log.mood]} ${MOOD_LABELS[log.mood].split(' ')[1]}` : "未记心情"}
+                        </Badge>
                       </div>
 
-                      {/* 用餐 */}
-                      <div className="flex gap-1.5">
-                        {['ate_all', 'ate_some', 'refused'].map((m) => (
-                          <Button
-                            key={m}
-                            variant={log.meal === m ? "default" : "outline"}
-                            size="sm"
-                            className={`flex-1 text-xs ${log.meal === m ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
-                            onClick={() => handleQuickToggle(log.id, 'meal', log.meal === m ? '' : m)}
-                          >
-                            {MEAL_EMOJI[m]} {MEAL_LABELS[m].split(' ')[1]}
-                          </Button>
-                        ))}
-                      </div>
-
-                      {/* 心情 */}
-                      <div className="flex gap-1.5">
-                        {['happy', 'neutral', 'upset'].map((md) => (
-                          <Button
-                            key={md}
-                            variant={log.mood === md ? "default" : "outline"}
-                            size="sm"
-                            className={`flex-1 text-xs ${log.mood === md ? 
-                              md === 'happy' ? 'bg-emerald-500' : md === 'upset' ? 'bg-red-500' : 'bg-gray-500'
-                              : ''}`}
-                            onClick={() => handleQuickToggle(log.id, 'mood', log.mood === md ? '' : md)}
-                          >
-                            {MOOD_EMOJI[md]} {MOOD_LABELS[md].split(' ')[1]}
-                          </Button>
-                        ))}
-                      </div>
+                      {/* 行内操作：功课为最常用主操作，其余进「⋯」 */}
+                      <RowActions
+                        primary={{
+                          label: t("功课"),
+                          icon: log.homework_done ? CheckCircle2 : XCircle,
+                          variant: log.homework_done ? "default" : "outline",
+                          onClick: () => handleQuickToggle(log.id, 'homework_done', !log.homework_done),
+                        }}
+                        actions={[
+                          { label: log.nap ? "取消午睡" : "标记午睡", icon: Moon, onClick: () => handleQuickToggle(log.id, 'nap', !log.nap) },
+                          { label: `记餐 · ${MEAL_LABELS.ate_all.split(' ')[1]}`, onClick: () => handleQuickToggle(log.id, 'meal', log.meal === 'ate_all' ? '' : 'ate_all') },
+                          { label: `记餐 · ${MEAL_LABELS.ate_some.split(' ')[1]}`, onClick: () => handleQuickToggle(log.id, 'meal', log.meal === 'ate_some' ? '' : 'ate_some') },
+                          { label: `记餐 · ${MEAL_LABELS.refused.split(' ')[1]}`, onClick: () => handleQuickToggle(log.id, 'meal', log.meal === 'refused' ? '' : 'refused') },
+                          { label: `记心情 · ${MOOD_LABELS.happy.split(' ')[1]}`, onClick: () => handleQuickToggle(log.id, 'mood', log.mood === 'happy' ? '' : 'happy') },
+                          { label: `记心情 · ${MOOD_LABELS.neutral.split(' ')[1]}`, onClick: () => handleQuickToggle(log.id, 'mood', log.mood === 'neutral' ? '' : 'neutral') },
+                          { label: `记心情 · ${MOOD_LABELS.upset.split(' ')[1]}`, onClick: () => handleQuickToggle(log.id, 'mood', log.mood === 'upset' ? '' : 'upset') },
+                        ]}
+                      />
 
                       {/* 编辑模式 — 备注 */}
                       {isEditing && (
