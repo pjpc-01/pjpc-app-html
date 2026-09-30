@@ -64,7 +64,10 @@ export default function GlobalCardScanner() {
     if (!user) return
 
     const isPointsPage = pathname === "/points"
-    console.log(`💳 [读卡器] 检测到卡号: ${cardId} ${isPointsPage ? "(积分模式)" : "(考勤模式)"}`)
+    // 学生自助刷卡页：刷卡只用于识别学生（显示其资料），不记录考勤打卡
+    const isKioskPage = pathname === "/student-kiosk"
+    const isIdentifyPage = isPointsPage || isKioskPage
+    console.log(`💳 [读卡器] 检测到卡号: ${cardId} ${isIdentifyPage ? "(识别模式)" : "(考勤模式)"}`)
     show("loading", `读取卡号: ${cardId}`)
 
     try {
@@ -81,8 +84,8 @@ export default function GlobalCardScanner() {
 
       const person = tapData.person
 
-      // 积分页：派出学生信息，不打卡
-      if (isPointsPage && tapData.person_type === "student") {
+      // 识别模式（积分页 / 学生自助刷卡页）：派出学生信息，不打卡
+      if (isIdentifyPage && tapData.person_type === "student") {
         show("success", `🎯 ${person.name}`)
         window.dispatchEvent(new CustomEvent("pjpc:student-scanned", {
           detail: { studentId: person.id, studentName: person.name }

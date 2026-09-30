@@ -150,6 +150,14 @@ export default function TVBoardPage() {
               <p>{t("• 支持手动导航和键盘控制")}</p>
               <p>{t("• 当天生日学生特殊显示效果")}</p>
             </div>
+            <div className="mt-4">
+              <Link
+                href="/student-kiosk"
+                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all duration-300"
+              >
+                {t("学生自助刷卡 kiosk")}
+              </Link>
+            </div>
           </div>
         </div>
       </div>
