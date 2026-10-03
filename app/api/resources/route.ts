@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPocketBase, authenticateAdmin } from '@/lib/pocketbase'
+import { gradeRank } from '@/lib/grades'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,7 +59,20 @@ export async function GET(request: NextRequest) {
       } catch { /* 忽略单条失败 */ }
     }))
 
-    const items = result.items.map((r: any) => ({
+    // 默认排序：年级(canonical 顺序,一年级→中六) → 科目 → 类型 → 最新上传。
+    // 年级顺序取 lib/grades.ts 的 gradeRank（全站唯一真源，别在这儿自己写顺序表）。
+    // 注：先拿 PB 分页再排，所以是「每页内部有序」；资源数小于 perPage 时即等于全局有序。
+    const ordered = [...result.items].sort((a: any, b: any) => {
+      const byGrade = gradeRank(a.grade) - gradeRank(b.grade)
+      if (byGrade) return byGrade
+      const bySubject = String(a.subject || '').localeCompare(String(b.subject || ''), 'zh')
+      if (bySubject) return bySubject
+      const byType = String(a.type || '').localeCompare(String(b.type || ''), 'zh')
+      if (byType) return byType
+      return String(b.created || '').localeCompare(String(a.created || ''))
+    })
+
+    const items = ordered.map((r: any) => ({
       id: r.id,
       title: r.title || '',
       description: r.description || '',
