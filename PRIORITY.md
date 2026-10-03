@@ -1134,3 +1134,17 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 - **已修**：`ExecutionTimeLimit` 改为 **`PT0S`（不限时）**，触发时间(06:15)/动作(`wsl.exe`)未变。`PJPC-WSL-NightlyShutdown` 的 PT15M 合理，未动。
 - 排查/修复流程已写入 skill：`pjpc-development-standards/references/wsl-nightly-cycle.md`。
 - 用户明确**不加**“每 15 分钟自动唤醒”保险任务。
+
+### ✅ 资源库已上线（2026-10-03，`08909d2`，三支已推）
+- 助手独立复验(真浏览器)：上传 4 份 sejarah 卷子 → 元数据 历史/Form 1/试卷·练习 + 文件大小与磁盘**逐字节相符**；筛「试卷」2 张、搜 UASA 2 张、预览新标签页 200(text/html)、⋯ 菜单下载真实落文件且计数 1→2、软删后消失、手机 390 无溢出、0 console 错；build 退出 0；ux-audit 40 页 0/0；check:i18n 通过。
+- **顺手修掉 subagent 漏掉的一个真 bug**：`useResources` 的 `initialQuery` 是对象字面量 → 进 useCallback 依赖 → 每次渲染换身份 → `useEffect([fetchResources])` 无限重拉（实测 8 秒 40+ 请求，页面被拖到选择器全超时）。修法：初值放 ref + 依赖置空（改后 8 秒 1 次），页面防抖 effect 跳过首帧。
+- **首屏已有内容**：4 份 F1 历史卷子（练习题 v2 / UASA 模拟卷 v2 为当前版；另两份标「旧版」）。原件仍在 `~/.hermes/attachments/`，PB 存储 + 每日 18:30/00:55 全量备份（含 pb_data_store 上传文件）自动覆盖。
+- 🟡 待用户拍板：① 资源 file 字段是否放宽到「最多 3 个」（交互 HTML + 打印 PDF + 答案版）② 是否让试卷的答案直接写进系统（复用 homework_submissions，老师在系统内批改）。
+
+### ✅ 试卷"不要自动提交"改造（2026-10-03 晚）
+- **用户明确**:不要 8099 自动 submit,只要「点一下 → 显示全部答案 + 自动复制 → 自己粘到聊天」。
+- 4 份 F1 Sejarah 卷子:**砍掉 ①② 两段自动提交**(fetch + 隐藏表单 + `window.hermes.send`),只留"整理答案 + 复制";按钮改名「📋 显示全部答案并复制(再粘贴给老师)」;去掉 `sink` iframe。实测 6/6 份页面**连 8099 次数 = 0、外部请求 = 0**(完全离线)、0 JS 错。
+- 另 2 份由已删 profile 做的卷子(六年级数学 / BM UASA 六年级)**原本连复制都没有** → 加了一键导出条(显示正确答案 + 数据+DOM 双路整理成文字 + execCommand/剪贴板双路复制)。
+- **退役 8099**:`sejarah-paper.service` 已 disable + 删除 unit + daemon-reload;`~/.hermes/sejarah-paper/inbox/` 里 5 个历史提交文件保留(没删);备份镜像里那份死 unit 也清了。
+- 资源库 6 份交互卷**已用新文件重新入库**(旧记录软删),标题改为「可复制答案」;抽查库内文件:不含 8099 ✓ 含导出按钮 ✓。
+- 备份:`~/backups/papers-no-autosubmit-20261003_134327/`(6 份原件)。
