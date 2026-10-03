@@ -14,7 +14,6 @@ import {
   Edit,
   Eye,
   Trash2,
-  FileSpreadsheet,
   UserPlus,
   DollarSign,
   UserX,
@@ -165,10 +164,6 @@ export default function TeachersTab({ setActiveTab }: TeachersTabProps) {
               <CardDescription>{t("查看和管理所有教师信息及教学安排")}</CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => alert(t("批量导入功能开发中"))}>
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                {t("批量导入")}
-              </Button>
               <Button onClick={() => setIsAddDialogOpen(true)}>
                 <UserPlus className="h-4 w-4 mr-2" />
                 {t("添加教师")}

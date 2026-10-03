@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useCurrentTeacher } from "@/hooks/useCurrentTeacher"
 import TeacherDashboard from "@/components/teacher/TeacherDashboard"
@@ -60,9 +61,14 @@ function SettingsPanel({ teacher, user, t }: { teacher: any; user: any; t: (k: s
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="text-center py-8 text-gray-500">
-              <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p>{t("课程管理功能开发中...")}</p>
+            <div className="p-4 border rounded-lg bg-blue-50">
+              <h4 className="font-medium mb-2 text-blue-800">{t("课程与班级")}</h4>
+              <p className="text-sm text-blue-600 mb-3">{t("查看和管理您的课程安排")}</p>
+              <Link href="/course-management">
+                <Button variant="outline" size="sm" className="text-blue-600 border-blue-300">
+                  <ExternalLink className="h-4 w-4 mr-1" />{t("进入课程管理")}
+                </Button>
+              </Link>
             </div>
           </div>
         </CardContent>
@@ -260,24 +266,6 @@ function AttendanceAndPoints({ teacherId, teacherName, t }: { teacherId: string;
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* 我的积分 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5" />
-            {t("我的积分")}
-          </CardTitle>
-          <CardDescription>{t("查看您的积分与奖励情况")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-gray-400">
-            <Trophy className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-            <p className="text-gray-500">{t("暂无数据")}</p>
-            <p className="text-sm text-gray-400 mt-1">{t("教师积分功能暂未开放")}</p>
-          </div>
         </CardContent>
       </Card>
     </div>

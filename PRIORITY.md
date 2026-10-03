@@ -1111,3 +1111,26 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 - `app/finance/receipts/page.tsx` 只有 10 行，是 2026-09-22 有意保留的**重定向存根**（`afd00a0`：路由改重定向防书签 404）→ **不该删**。
 - 收据功能已并入「付款和收据」（`useReceiptTools.tsx`：receipts ↔ payments 1:1）。
 - 唯一残留：`AppShell.tsx` 的 `NAV_LABEL_MAP` 有一行无人使用的 `"收据管理"` 映射（无害）；因该文件此刻有另一 agent 的在途改动，**暂不碰**，待其落地再清。
+
+---
+
+## 2026-10-03 三件事：资源库落地 + 交互卷剪贴板修复 + WSL「开机10分钟就死」根因
+
+🟢 **1. 资源库 `/resource-library`（从空壳改真功能）**
+- **旧状**：`app/components/features/resource-library.tsx` 310 行**硬编码假数据**（假卡片/假“张老师”/假下载次数），无 API、无集合；菜单项 `disabled: true` 置灰不可点。
+- **新建数据层**：PB 集合 **`resources`**（id `pbc_rys9172304`，17 字段）—— `title`(必填) / `description` / `subject` / `grade` / `type`(试卷/练习/讲义/教案/参考/多媒体/其他) / `tags` / `link` / `file`(单文件 ≤50MB) / `uploadedBy` / `uploaderName` / `downloads` / `center` / `status`(active/archived) / `deleted`(软删) + 系统字段。迁移文件 `pb_migrations/1790916000_created_resources.js`（重启 PB 自动应用 ✓ 已验证集合存在）。权限规则按本项目惯例全 null（读写走 Next.js API + authenticateAdmin）。
+- **权限已就位**：`role_permissions` 里 **teacher 已有 `education.resources: true`**，`/resource-library` 在 CHILD_PERM 已映射 → 启用菜单后老师即可见（无需改权限数据）。
+- **进行中**：API（`/api/resources` GET/POST、`/[id]` PATCH/DELETE 软删）+ `hooks/useResources.ts` + 界面重写（搜索/科目-年级-类型筛选/卡片/上传/预览/下载/删除）+ 启用菜单 + 删置灰机制；subagent `deleg_fc5c3383` 交付后由助手独立复验。
+
+🟢 **2. 交互试卷「提交时自动复制」在桌面端预览窗失效 —— 已修**
+- **根因（实测复现）**：桌面端 Open preview 用 Electron `<webview>`，`navigator.clipboard.writeText()` 被权限策略拒（`NotAllowedError`），而原代码失败分支是**空函数** → 静默不复制。
+- **修法**：4 份试卷 HTML（`~/.hermes/attachments/F1_Sejarah_{Practice,UASA_Mock}{,_v2}.html`）改成**三路兜底** —— 先 `document.execCommand('copy')`（无需权限、手势内有效），再试现代 API，都不行就明确提示按 Ctrl+C；并加可见按钮「📋 再复制一次」。备份 `~/backups/sejarah-html-copyfix-20261003_123641/`。
+- **验证**：Chromium 两种权限状态实测 —— 允许时剪贴板真有内容；**拒绝时（=预览窗）现代 API 报 NotAllowedError、execCommand 成功**；两次提交都真到 server（已清理测试文件并还原 `inbox/latest.txt`）。
+- 遗留：未能在**真桌面端预览窗**内验证（安装版 CDP 关闭），已请用户重开预览试。
+
+🟢 **3. WSL「白天突然不回消息」根因 = 计划任务的 10 分钟执行时限**
+- **不是**电源设置（实测 AC 睡眠/休眠均为 0 = 永不睡眠）。
+- **根因**：`PJPC-WSL-MorningStart` 任务 `ExecutionTimeLimit=PT10M` —— 动作是 `wsl.exe`（会一直挂着当客户端），06:15 启动后 **06:25 撞满 10 分钟被调度器连进程树一起杀** → WSL 被拆（06:26:23 虚拟网卡删除，boot 记录止于 06:25:23；结果码 267014=0x41306 任务被强制终止）。之后无人碰电脑 → 直到 12:20 才被唤醒。
+- **已修**：`ExecutionTimeLimit` 改为 **`PT0S`（不限时）**，触发时间(06:15)/动作(`wsl.exe`)未变。`PJPC-WSL-NightlyShutdown` 的 PT15M 合理，未动。
+- 排查/修复流程已写入 skill：`pjpc-development-standards/references/wsl-nightly-cycle.md`。
+- 用户明确**不加**“每 15 分钟自动唤醒”保险任务。
