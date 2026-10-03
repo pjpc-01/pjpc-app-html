@@ -267,6 +267,8 @@ export const ZH_TO_EN: Record<string, string> = {
   "正在验证身份...": "Verifying Identity...",
   "跳转登录...": "Redirecting to Login...",
   "资源库系统": "Resource Library",
+  "其他": "Others",
+  "这个分类下暂无资源": "No resources in this category",
   "教学资源共享、学习资料下载和多媒体内容管理": "Share teaching resources, download learning materials, and manage multimedia content",
   "学生管理系统": "Student Management System",
   "管理学生档案、学习进度和出勤记录": "Manage student profiles, learning progress, and attendance records",

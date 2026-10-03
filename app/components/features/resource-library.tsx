@@ -13,13 +13,34 @@ import { Search, Upload, Download, ExternalLink, Trash2, FileType, Link2, Loader
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useResources, ResourceItem } from "@/hooks/useResources"
-import { gradeLabel, GRADE_CANON_ALL } from "@/lib/grades"
+import { gradeLabel, gradeCanon, gradeRank, GRADE_LABEL, GRADE_CANON_ALL } from "@/lib/grades"
 
 // 学科（筛选 + 上传下拉）
 const SUBJECTS = ["数学", "华文", "马来文", "英文", "科学", "历史", "地理", "道德教育", "美术", "音乐", "体育", "其他"]
 
 // 资源类型（与 PB 集合 select values 一致）
 const TYPES = ["试卷", "练习", "讲义", "教案", "参考", "多媒体", "其他"]
+
+// 年级分组配色（与「课程管理」同一套）
+const GRADE_COLORS: Record<string, string> = {
+  'Peralihan': 'bg-cyan-100 text-cyan-700',
+  'Standard 1': 'bg-red-100 text-red-700', 'Standard 2': 'bg-orange-100 text-orange-700',
+  'Standard 3': 'bg-amber-100 text-amber-700', 'Standard 4': 'bg-yellow-100 text-yellow-700',
+  'Standard 5': 'bg-lime-100 text-lime-700', 'Standard 6': 'bg-green-100 text-green-700',
+  'Form 1': 'bg-blue-100 text-blue-700', 'Form 2': 'bg-indigo-100 text-indigo-700',
+  'Form 3': 'bg-violet-100 text-violet-700', 'Form 4': 'bg-purple-100 text-purple-700',
+  'Form 5': 'bg-pink-100 text-pink-700', 'Form 6': 'bg-fuchsia-100 text-fuchsia-700',
+}
+const getGradeColor = (g: string) => GRADE_COLORS[gradeCanon(g)] || 'bg-gray-100 text-gray-600'
+
+// 类型分栏（练习题 / 模拟考卷 分开看 → 少两个下拉）
+const TABS = [
+  { key: "all", label: "全部" },
+  { key: "练习", label: "练习" },
+  { key: "试卷", label: "试卷" },
+  { key: "其他", label: "其他" },
+] as const
+type TabKey = typeof TABS[number]["key"]
 
 // 可预览的文件扩展名（html / pdf / 图片 → 新标签页打开）
 const PREVIEWABLE = new Set(["html", "htm", "pdf", "png", "jpg", "jpeg", "gif", "svg", "webp"])
@@ -52,17 +73,17 @@ export default function ResourceLibrary() {
 
   const [q, setQ] = useState("")
   const [subject, setSubject] = useState("all")
-  const [grade, setGrade] = useState("all")
-  const [type, setType] = useState("all")
+  const [tab, setTab] = useState<TabKey>("all")
   const [page, setPage] = useState(1)
+  const PER_PAGE = 200   // 一次拿全，才能按年级分组
 
   const { items, totalItems, totalPages, page: curPage, loading, error, createResource, removeResource, incrementDownloads, refetch } =
-    useResources({ page: 1, per_page: 12 })
+    useResources({ page: 1, per_page: PER_PAGE })
 
-  // 筛选/翻页变化 → 拉取
+  // 搜索/科目变化 → 拉取（年级、类型改为「分组 + 分栏」，不再走接口筛选）
   const doFetch = useCallback((p: number) => {
-    refetch({ q, subject, grade, type, page: p, per_page: 12 })
-  }, [q, subject, grade, type, refetch])
+    refetch({ q, subject, page: p, per_page: PER_PAGE })
+  }, [q, subject, refetch])
 
   // 筛选取值变化 → 防抖拉取。首次挂载由 useResources 自己拉一次，这里跳过以免重复请求
   const firstFilterRun = useRef(true)
@@ -70,7 +91,7 @@ export default function ResourceLibrary() {
     if (firstFilterRun.current) { firstFilterRun.current = false; return }
     const id = setTimeout(() => { setPage(1); doFetch(1) }, 350)
     return () => clearTimeout(id)
-  }, [q, subject, grade, type, doFetch])
+  }, [q, subject, doFetch])
 
   // 上传弹窗状态
   const [open, setOpen] = useState(false)
@@ -178,6 +199,21 @@ export default function ResourceLibrary() {
 
   const field = (key: string, val: string) => setForm(f => ({ ...f, [key]: val }))
 
+  // 分栏过滤（练习 / 试卷 客户端切）+ 按年级分组
+  const inTab = (r: ResourceItem, key: TabKey) => {
+    if (key === "all") return true
+    if (key === "其他") return !["练习", "试卷"].includes(r.type || "")
+    return (r.type || "") === key
+  }
+  const tabCount = (key: TabKey) => items.filter((r) => inTab(r, key)).length
+  const shown = items.filter((r) => inTab(r, tab))
+  const grouped = shown.reduce<Record<string, ResourceItem[]>>((acc, r) => {
+    const g = gradeCanon(r.grade) || (r.grade || "") || "未设置年级"
+    ;(acc[g] ||= []).push(r)
+    return acc
+  }, {})
+  const gradeKeys = Object.keys(grouped).sort((a, b) => gradeRank(a) - gradeRank(b))
+
   return (
     <div className="space-y-6">
       {/* 标题行（手机端给汉堡让位） */}
@@ -199,6 +235,20 @@ export default function ResourceLibrary() {
       {/* 搜索 + 筛选 */}
       <Card>
         <CardContent className="pt-5">
+          {/* 类型分栏：练习题 / 模拟考卷 分开看 */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {TABS.map((x) => (
+              <Button
+                key={x.key}
+                size="sm"
+                variant={tab === x.key ? "default" : "outline"}
+                onClick={() => setTab(x.key)}
+              >
+                {t(x.label)}
+                <span className={tab === x.key ? "ml-1.5 opacity-80" : "ml-1.5 text-gray-400"}>{tabCount(x.key)}</span>
+              </Button>
+            ))}
+          </div>
           <div className="flex flex-col lg:flex-row lg:items-center gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -215,20 +265,6 @@ export default function ResourceLibrary() {
                 <SelectContent className="max-h-64 overflow-y-auto">
                   <SelectItem value="all">{t("全部科目")}</SelectItem>
                   {SUBJECTS.map(s => <SelectItem key={s} value={s}>{t(s)}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Select value={grade} onValueChange={(v) => setGrade(v)}>
-                <SelectTrigger className="w-[130px]"><SelectValue placeholder={t("全部年级")} /></SelectTrigger>
-                <SelectContent className="max-h-64 overflow-y-auto">
-                  <SelectItem value="all">{t("全部年级")}</SelectItem>
-                  {GRADE_CANON_ALL.map(g => <SelectItem key={g} value={g}>{gradeLabel(g)}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Select value={type} onValueChange={(v) => setType(v)}>
-                <SelectTrigger className="w-[130px]"><SelectValue placeholder={t("全部类型")} /></SelectTrigger>
-                <SelectContent className="max-h-64 overflow-y-auto">
-                  <SelectItem value="all">{t("全部类型")}</SelectItem>
-                  {TYPES.map(x => <SelectItem key={x} value={x}>{t(x)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -252,10 +288,22 @@ export default function ResourceLibrary() {
           <FolderOpen className="h-12 w-12 mb-3" />
           <p className="text-sm">{t("暂无资源")}</p>
         </div>
+      ) : shown.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+          <FolderOpen className="h-12 w-12 mb-3" />
+          <p className="text-sm">{t("这个分类下暂无资源")}</p>
+        </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {items.map((r) => {
+          <div className="space-y-6">
+          {gradeKeys.map((gk) => (
+            <div key={gk}>
+              <div className="flex items-center gap-2 mb-3">
+                <Badge className={getGradeColor(gk) + " text-sm px-3 py-1"}>{GRADE_LABEL[gk] || gk}</Badge>
+                <span className="text-xs text-gray-400">{grouped[gk].length} {t("份")}</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {grouped[gk].map((r) => {
               const previewable = isPreviewable(r)
               return (
                 <Card key={r.id} className="flex flex-col">
@@ -272,7 +320,6 @@ export default function ResourceLibrary() {
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {r.type && <Badge variant="outline">{t(r.type)}</Badge>}
                       {r.subject && <Badge variant="secondary">{t(r.subject)}</Badge>}
-                      {r.grade && <Badge variant="outline">{gradeLabel(r.grade)}</Badge>}
                     </div>
                     <div className="space-y-1.5 text-sm text-gray-600 flex-1">
                       <div className="flex justify-between">
@@ -321,6 +368,9 @@ export default function ResourceLibrary() {
                 </Card>
               )
             })}
+              </div>
+            </div>
+          ))}
           </div>
 
           {totalPages > 1 && (
