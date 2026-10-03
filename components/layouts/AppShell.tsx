@@ -52,7 +52,6 @@ type NavItem = {
   href?: string
   icon: React.ElementType
   children?: NavItem[]
-  disabled?: boolean   // 功能未开放：菜单保留但置灰、不可点击（用户要求：不隐藏，只灰掉）
 }
 
 type RoleConfig = {
@@ -160,7 +159,7 @@ const EDU_TEACHERS_GROUP: NavItem[] = [
 ]
 
 const EDU_RESOURCES_GROUP: NavItem[] = [
-  { label: "资源库", href: "/resource-library", icon: BookOpen, disabled: true },
+  { label: "资源库", href: "/resource-library", icon: BookOpen },
 ]
 
 // 完整的教务 children：叶子（教育概览）+ 学生/教学/教师/资源 二级分组
@@ -655,15 +654,6 @@ export default function AppShell({
               </div>
             )}
           </>
-        ) : item.disabled ? (
-          <div
-            title={t("功能开发中，暂未开放")}
-            aria-disabled="true"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 cursor-not-allowed select-none"
-          >
-            <item.icon className="w-4 h-4 flex-shrink-0 opacity-60" />
-            <span className="truncate">{NAV_LABEL_MAP[item.label] ? t(NAV_LABEL_MAP[item.label]) : item.label}</span>
-          </div>
         ) : (
           <Link
             href={addCenterParam(item.href) || "#"}
