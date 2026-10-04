@@ -14,6 +14,7 @@ import { useGrades, GradeRecord, GradeStats } from "@/hooks/useGrades"
 import { useStudents } from "@/hooks/useStudents"
 import { Trophy, BarChart3, Search, Save, AlertCircle, GraduationCap, Building, Download, Loader2, Medal, AlertTriangle, ExternalLink } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
+import { gradeLabel, gradeCanon, gradeRank, GRADE_CANON } from "@/lib/grades"
 
 // 吸顶表头样式：滚动长名单时保持「学生 / 年级 / 各科目」始终可见
 const STICKY_TH = "bg-slate-50"
@@ -268,15 +269,14 @@ export default function GradesManagementPage() {
       {activeTab === "report" && (() => {
         const gradeSubjects = ["华文", "国文", "英文", "科学", "数学", "历史", "地理", "伊斯兰教育", "道德", "RBT", "美术", "体育", "电脑"]
         const std = (s: any) => s.grade || s.standard || ""
-        const order: Record<string, number> = {"Standard 1":1,"Standard 2":2,"Standard 3":3,"Standard 4":4,"Standard 5":5,"Standard 6":6,"标准1":1,"标准2":2,"标准3":3,"标准4":4,"标准5":5,"标准6":6,"1":1,"2":2,"3":3,"4":4,"5":5,"6":6,"Peralihan":7,"Form 1":8,"Form 2":9,"Form 3":10,"Form 4":11,"Form 5":12,"中一":8,"中二":9,"中三":10,"中四":11,"中五":12,"明年新生":99}
         const centerStudents = students
           .filter((s: any) => {
             if (centerFilter !== "all" && (s.center || s.centerId || "") !== centerFilter) return false
             if (s.status === "graduated" || s.status === "dropped") return false
-            if (reportGradeFilter !== "all" && std(s) !== reportGradeFilter) return false
+            if (reportGradeFilter !== "all" && gradeCanon(std(s)) !== gradeCanon(reportGradeFilter)) return false
             return true
           })
-          .sort((a: any, b: any) => (order[std(a)] || 0) - (order[std(b)] || 0))
+          .sort((a: any, b: any) => gradeRank(std(a)) - gradeRank(std(b)))
         return (
           <Card className="mb-6">
             <CardHeader className="pb-2">
@@ -293,18 +293,9 @@ export default function GradesManagementPage() {
                   <SelectTrigger className="w-28 h-7 text-xs"><SelectValue placeholder={t("全部年级")} /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t("全部年级")}</SelectItem>
-                    <SelectItem value="Standard 1">Standard 1</SelectItem>
-                    <SelectItem value="Standard 2">Standard 2</SelectItem>
-                    <SelectItem value="Standard 3">Standard 3</SelectItem>
-                    <SelectItem value="Standard 4">Standard 4</SelectItem>
-                    <SelectItem value="Standard 5">Standard 5</SelectItem>
-                    <SelectItem value="Standard 6">Standard 6</SelectItem>
-                    <SelectItem value="Peralihan">Peralihan</SelectItem>
-                    <SelectItem value="Form 1">Form 1</SelectItem>
-                    <SelectItem value="Form 2">Form 2</SelectItem>
-                    <SelectItem value="Form 3">Form 3</SelectItem>
-                    <SelectItem value="Form 4">Form 4</SelectItem>
-                    <SelectItem value="Form 5">Form 5</SelectItem>
+                    {GRADE_CANON.map((g) => (
+                      <SelectItem key={g} value={g}>{gradeLabel(g)}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

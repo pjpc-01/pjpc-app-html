@@ -17,6 +17,7 @@ export interface ResourceItem {
   status?: string
   created?: string
   fileUrl?: string | null
+  fileSize?: number
 }
 
 export interface ResourceListData {

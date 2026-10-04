@@ -4,6 +4,30 @@
 
 ---
 
+## ⏸️ 本轮进度记录（2026-10-03，暂停中）
+
+**背景**：助手模型被反复切换 → 根因 = **opencode-go 欠费，触发 fallback 到 google / gemini-2.5-flash**（`config.yaml` 的 `fallback_providers`）。补费后测试调用已恢复正常。
+
+**本轮已完成**
+- **资源库改版**：按年级分块（同课程管理样式）+「练习 / 试卷 / 其他」分栏，去掉年级/类型下拉 → 提交 `9360464`（**只推 adrian-branch**；stable/main 已回退至 `af87d6f`）
+- **teacher profile 上传通道**：投放箱 `profiles/teacher/workspace/upload/` + 每 2 分钟扫描自动入库（`pjpc-teacher-upload.service` / `.timer`）；命名 `<年级>_<科目>_<类型>_<标题>`，容错同义写法；实测 teacher 自己写文件也能自动入库
+- **本地文件名统一**：attachments / worksheets / teacher 示例 + 资源库 8 条标题
+- **顺带优化**：PocketBase 日志库 264MB → 4KB；`~/worksheets` 纳入备份（原不在任何备份里）；旧 `~/worksheets` 目录删除
+
+**暂停中：发票改真矢量 PDF（C 方案）**
+- 做法：发票 HTML（`generateInvoiceHTML`）→ Chromium `print-to-pdf`（真矢量 + 中文子集字体）
+- 实测体积：现在 **213.5 KB / 文字层 0 字符** → 矢量 **253.2 KB / 589 字符** → 矢量 + logo 压缩 **203.6 KB / 589 字符**（logo 原为 56 KB PNG，压成 9 KB JPEG）
+- 预览产物：`/tmp/pdfproto/invoice-opt.pdf`、`compare2.png`（tmp 会清理，可重生成）
+- 落地计划：**只改 `lib/pdf-generator.ts` 的发票路径**（`generateInvoicePDF` 换成 Playwright print-to-pdf + logo 压缩）；收据/薪资/报告不动；现有 215 张旧 PDF 不受影响；⚠️ 该文件有 alicia 在途改动，落地前需协调
+- **目前代码一行未改**
+
+**待办**
+- **Hermes 更新**：git 安装（`~/.hermes/hermes-agent`），落后 upstream **239 个提交** → 需 `git pull` + 重启网关（会短暂掉线，需挑时间）
+- **兜底模型决策**：是否把 `fallback_providers` 的 gemini 换回主模型 / 直接去掉（避免再次静默"换模型"）
+- 主表格 #14 i18n 残留（3 个文件写死年级）、家长-学生 62 条补关联（严规则：姓名完全一致 + 姓氏一致 + 无电话冲突）
+
+---
+
 ## 一、主表格（编号项）
 
 | # | 事项 | 状态 | 说明 |
