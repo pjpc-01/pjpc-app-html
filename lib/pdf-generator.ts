@@ -313,7 +313,7 @@ const RASTER_MIME = 'image/jpeg' as const
 const RASTER_QUALITY = 0.9
 const RASTER_FORMAT = 'JPEG'
 
-export const generateInvoicePDF = async (invoice: Invoice, settings: InvoiceSettingsPreset): Promise<Blob> => {
+const generateInvoicePDFLegacy = async (invoice: Invoice, settings: InvoiceSettingsPreset): Promise<Blob> => {
   // 1. Generate HTML
   const html = generateInvoiceHTML(invoice, settings)
 
@@ -390,6 +390,27 @@ export const generateInvoicePDF = async (invoice: Invoice, settings: InvoiceSett
     if (iframe.parentNode) {
       document.body.removeChild(iframe)
     }
+  }
+}
+
+// 发票 PDF：优先走服务端「真矢量」（文字可搜索/可复制/放大不糊），
+// 失败或异常时自动回退到原来的整页截图方案 —— 保证开票流程永不因 PDF 挂掉。
+export const generateInvoicePDF = async (invoice: Invoice, settings: InvoiceSettingsPreset): Promise<Blob> => {
+  const html = generateInvoiceHTML(invoice, settings)
+  try {
+    const res = await fetch('/api/invoice/pdf-vector', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ html }),
+    })
+    if (!res.ok) throw new Error(`矢量接口返回 ${res.status}`)
+    const buf = await res.arrayBuffer()
+    const head = new TextDecoder().decode(buf.slice(0, 5))
+    if (buf.byteLength < 1000 || head !== '%PDF-') throw new Error('矢量 PDF 内容异常')
+    return new Blob([buf], { type: 'application/pdf' })
+  } catch (e) {
+    console.warn('[发票] 矢量 PDF 生成失败，回退截图方案：', e)
+    return generateInvoicePDFLegacy(invoice, settings)
   }
 }
 

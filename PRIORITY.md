@@ -14,12 +14,14 @@
 - **本地文件名统一**：attachments / worksheets / teacher 示例 + 资源库 8 条标题
 - **顺带优化**：PocketBase 日志库 264MB → 4KB；`~/worksheets` 纳入备份（原不在任何备份里）；旧 `~/worksheets` 目录删除
 
-**暂停中：发票改真矢量 PDF（C 方案）**
+**✅ 已完成：发票改真矢量 PDF（C 方案，2026-10-04）**
 - 做法：发票 HTML（`generateInvoiceHTML`）→ Chromium `print-to-pdf`（真矢量 + 中文子集字体）
 - 实测体积：现在 **213.5 KB / 文字层 0 字符** → 矢量 **253.2 KB / 589 字符** → 矢量 + logo 压缩 **203.6 KB / 589 字符**（logo 原为 56 KB PNG，压成 9 KB JPEG）
 - 预览产物：`/tmp/pdfproto/invoice-opt.pdf`、`compare2.png`（tmp 会清理，可重生成）
 - 落地计划：**只改 `lib/pdf-generator.ts` 的发票路径**（`generateInvoicePDF` 换成 Playwright print-to-pdf + logo 压缩）；收据/薪资/报告不动；现有 215 张旧 PDF 不受影响；⚠️ 该文件有 alicia 在途改动，落地前需协调
-- **目前代码一行未改**
+- **落地方式**：新增 `app/api/invoice/pdf-vector/route.ts`（客户端发 HTML → 服务端 Chromium 打矢量 PDF + 压 logo）；`lib/pdf-generator.ts` 的 `generateInvoicePDF` 改为调该接口，**失败自动回退**原截图方案（老实现保留为 `generateInvoicePDFLegacy`）；`next.config.mjs` 把 playwright 加进 `serverExternalPackages`
+- **实测**：接口 200 / `X-Pdf-Mode: vector`；`INV-202610-004` **213.5KB·0字符 → 203.8KB·589字符**；app 内「下载」真调接口（0 报错）；「存档上传」验证 208,721 bytes / 589 字符
+- **未做**：现有 215 张旧 PDF 仍是截图版（不主动覆盖）；发送/打印共用同一 Blob，结构上已是矢量
 
 **待办**
 - **Hermes 更新**：git 安装（`~/.hermes/hermes-agent`），落后 upstream **239 个提交** → 需 `git pull` + 重启网关（会短暂掉线，需挑时间）

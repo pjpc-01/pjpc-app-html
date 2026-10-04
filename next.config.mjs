@@ -49,7 +49,7 @@ const nextConfig = {
 
   // Proxy handled by app/api/pocketbase-proxy/[...path]/route.ts with admin auth
 
-  serverExternalPackages: ['googleapis'],
+  serverExternalPackages: ['googleapis', 'playwright'],
 
   experimental: {
     instrumentationHook: true,
