@@ -35,6 +35,7 @@ export interface ReportSettingsPreset {
   schoolName: string
   schoolNameEn: string
   schoolLogo: string
+  schoolLogo2: string
   schoolAddress: string
   schoolPhone: string
   schoolEmail: string
@@ -72,6 +73,7 @@ const createDefaultPreset = (overrides?: Partial<ReportSettingsPreset>): ReportS
   schoolName: "",
   schoolNameEn: "",
   schoolLogo: "",
+  schoolLogo2: "",
   schoolAddress: "",
   schoolPhone: "",
   schoolEmail: "",
@@ -266,9 +268,10 @@ export const generateReportPreviewHTML = (settings: ReportSettingsPreset): strin
   const goalCharacter = settings.futureGoalCharacter || "培养良好的学习和生活习惯，做一个全面发展的学生。"
   const summaryText = settings.summary || "本学期，我在学习和生活中都取得了一定的进步，但也认识到自己的不足。"
 
-  const logoBlock = settings.schoolLogo
-    ? `<div style="width:56px;height:56px;margin:0 auto 8px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
-        <img src="${settings.schoolLogo}" alt="logo" style="width:100%;height:100%;object-fit:contain;" />
+  const logoBlock = (settings.schoolLogo || settings.schoolLogo2)
+    ? `<div style="display:flex;justify-content:center;align-items:center;gap:10px;margin:0 auto 8px;">
+        ${settings.schoolLogo ? `<div style="width:56px;height:56px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img src="${settings.schoolLogo}" alt="logo" style="width:100%;height:100%;object-fit:contain;" crossorigin="anonymous" /></div>` : ''}
+        ${settings.schoolLogo2 ? `<div style="width:56px;height:56px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img src="${settings.schoolLogo2}" alt="logo2" style="width:100%;height:100%;object-fit:contain;" crossorigin="anonymous" /></div>` : ''}
       </div>`
     : ''
 
@@ -425,6 +428,7 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
   const [previewHTML, setPreviewHTML] = useState("")
   const [fullscreenPreviewHTML, setFullscreenPreviewHTML] = useState("")
   const logoSpanRef = useRef<HTMLInputElement>(null)
+  const logo2SpanRef = useRef<HTMLInputElement>(null)
   const previewRef = useRef<HTMLIFrameElement>(null)
 
   // Compute preview HTML only on client side to avoid SSR/CSR mismatch from Math.random()
@@ -444,7 +448,7 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
         const items = (data.items || []).map((r: any) => ({
           id: r.id, name: r.name || '默认设置',
           schoolName: r.schoolName || '', schoolNameEn: r.schoolNameEn || '',
-          schoolLogo: r.schoolLogo || '', schoolAddress: r.schoolAddress || '',
+          schoolLogo: r.schoolLogo || '', schoolLogo2: r.schoolLogo2 || '', schoolAddress: r.schoolAddress || '',
           schoolPhone: r.schoolPhone || '', schoolEmail: r.schoolEmail || '',
           primaryColor: r.primaryColor || '#3b82f6',
           headerTitle: r.headerTitle || '学生报告',
@@ -509,6 +513,14 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
     if (!file) return
     const reader = new FileReader()
     reader.onload = ev => updateSettings({ schoolLogo: ev.target?.result as string })
+    reader.readAsDataURL(file)
+  }
+
+  const handleLogo2Upload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => updateSettings({ schoolLogo2: ev.target?.result as string })
     reader.readAsDataURL(file)
   }
 
@@ -644,6 +656,7 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                   </div>
                   <div>
                     <Label className="text-sm font-semibold mb-2 block">{t("学校标志 (Logo)")}</Label>
+                    <p className="text-xs text-muted-foreground mb-1">{t("左：主Logo")}</p>
                     <div className="flex items-center gap-4 mt-1">
                       <div className="w-20 h-20 rounded-xl border-2 border-dashed border-muted bg-muted/20 flex items-center justify-center overflow-hidden flex-shrink-0 group relative cursor-pointer hover:border-primary/40 transition-colors"
                         onClick={() => logoSpanRef.current?.click()}>
@@ -670,6 +683,40 @@ export default function ReportSettingsManager({ onSettingsChange, activePresetId
                         {settings.schoolLogo && (
                           <Button variant="ghost" size="sm" onClick={() => updateSettings({ schoolLogo: '' })} className="text-red-500 hover:text-red-600 hover:bg-red-50">
                             <Trash2 className="h-3.5 w-3.5 mr-1" />{t("移除Logo")}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-semibold mb-2 block">{t("学校标志 2 (Logo 2)")}</Label>
+                    <p className="text-xs text-muted-foreground mb-1">{t("右：副Logo / 分院Logo")}</p>
+                    <div className="flex items-center gap-4 mt-1">
+                      <div className="w-20 h-20 rounded-xl border-2 border-dashed border-muted bg-muted/20 flex items-center justify-center overflow-hidden flex-shrink-0 group relative cursor-pointer hover:border-primary/40 transition-colors"
+                        onClick={() => logo2SpanRef.current?.click()}>
+                        {settings.schoolLogo2 ? (
+                          <>
+                            <img src={settings.schoolLogo2} alt="logo2" className="w-full h-full object-contain p-1" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Upload className="h-5 w-5 text-white" />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-center text-muted-foreground">
+                            <Building2 className="h-8 w-8" />
+                            <span className="text-[10px] mt-1">{t('report.click_to_upload')}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <input ref={logo2SpanRef} type="file" accept="image/*" onChange={handleLogo2Upload} className="hidden" />
+                        <Button variant="outline" size="sm" onClick={() => logo2SpanRef.current?.click()}>
+                          <Upload className="h-4 w-4 mr-1" />{t("上传Logo 2")}
+                        </Button>
+                        <p className="text-xs text-muted-foreground">{t("建议正方形，PNG/SVG")}</p>
+                        {settings.schoolLogo2 && (
+                          <Button variant="ghost" size="sm" onClick={() => updateSettings({ schoolLogo2: '' })} className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                            <Trash2 className="h-3.5 w-3.5 mr-1" />{t("移除Logo 2")}
                           </Button>
                         )}
                       </div>

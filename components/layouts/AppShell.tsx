@@ -273,6 +273,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
         icon: GraduationCap,
         children: [
           { label: "学生列表", href: "/student-management", icon: Users },
+          { label: "学生报告", href: "/student-reports", icon: FileText },
           { label: "每日日志", href: "/daily-logs", icon: FileEdit },
           { label: "作业管理", href: "/homework", icon: FileEdit },
           { label: "成绩管理", href: "/grades", icon: GraduationCap },

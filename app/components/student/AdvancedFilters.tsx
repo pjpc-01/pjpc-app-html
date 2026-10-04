@@ -14,8 +14,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useLanguage } from "@/contexts/language-context"
+import { GRADE_CANON_ALL } from "@/lib/grades"
 import { 
-  Filter, 
+  Filter,
   X, 
   Search,
   ChevronDown,
@@ -66,7 +67,11 @@ export default function AdvancedFilters({
   const [_expanded, _setExpanded] = useState(false)
 
   const filterOptions = useMemo(() => {
-    const grades = Array.from(new Set(students.map(s => s.standard).filter(Boolean))).sort()
+    // 年级选项固定用 GRADE_CANON_ALL（含明年新生），再合并数据中存在的自定义年级
+    // "明年新生" 排在最上面，其余按 GRADE_CANON_ALL 顺序
+    const dataGrades = Array.from(new Set(students.map(s => s.standard).filter(Boolean)))
+    const rest = Array.from(new Set([...GRADE_CANON_ALL, ...dataGrades])).filter(g => g !== '明年新生')
+    const grades = ['明年新生', ...rest]
     const statuses = Array.from(new Set(students.map(s => s.status).filter(Boolean))).sort()
     const centers = Array.from(new Set(students.map(s => s.center).filter(Boolean))).sort()
     const genders = Array.from(new Set(students.map(s => s.gender).filter(Boolean))).sort()

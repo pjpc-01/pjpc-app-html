@@ -28,6 +28,11 @@
 - **兜底模型决策**：是否把 `fallback_providers` 的 gemini 换回主模型 / 直接去掉（避免再次静默"换模型"）
 - 主表格 #14 i18n 残留（3 个文件写死年级）、家长-学生 62 条补关联（严规则：姓名完全一致 + 姓氏一致 + 无电话冲突）
 
+**顺手发现的既有问题（2026-10-04，**不是 alicia 造成的，HEAD 里就有**）**
+- ⚠️ `app/components/student/StudentFilters.tsx` 给 `AdvancedFilters` 传的是 `onFiltersChange`，但 `AdvancedFilters` 的 props 是 `value / onChange / onClear` → **学生管理页的「高级筛选」点了不生效**（props 被忽略）。待修。
+- `app/components/student/StudentForm.tsx` 曾 import 不存在的 `@/types/student`（本次顺手改成 `@/hooks/useStudents`）。
+- `app/grades/page.tsx` 用 `(s as any)` 访问 `s.name / s.grade / s.avg`，`Student` 类型太松（既有，未修）。
+
 ---
 
 ## 一、主表格（编号项）

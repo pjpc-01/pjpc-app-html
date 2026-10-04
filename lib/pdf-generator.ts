@@ -9,6 +9,52 @@ import { StudentReport, ReportSubject } from '@/hooks/useStudentReports'
 import { getSocsoEmployer, getEisContribution } from '@/lib/perkeso-rates'
 import { scoreToGrade } from '@/lib/utils'
 
+// ── Enrichment Class 名单：学生(中文名) → 参加的课程名（2026-09-28） ──
+export const ENRICHMENT_MAP: Record<string, string> = {
+  "伍宇恒": "BM Lvl 2 · BI",
+  "伍若淇": "BI",
+  "侯俊昊": "BC LVL 1",
+  "刘晋宏": "BM Lvl 1",
+  "刘芝榛": "BM Lvl 2",
+  "卡立": "BC LVL 2",
+  "叶纹仙": "BM Lvl 2",
+  "叶纹君": "BM Lvl 1",
+  "张耀天": "BM Lvl 2",
+  "张艺谋": "BM Lvl 2",
+  "徐嘉霃": "BM Lvl 2 · BC LVL 2 · BI",
+  "拉亦来卡": "BC LVL 1",
+  "林倢慧": "BM Lvl 1",
+  "潘晴": "BM Lvl 2",
+  "程芊瑜": "BC LVL 1",
+  "罗玉晶": "BM Lvl 2",
+  "胡建沣": "BC LVL 2 · BM Lvl 2 · BI",
+  "艾思琳": "BM Lvl 2",
+  "艾迷": "BC LVL 2",
+  "苏佳炆": "BM Lvl 2",
+  "莎拉": "BC LVL 1",
+  "萃森": "BC LVL 1",
+  "郑皓键": "BM Lvl 2",
+  "陆美珈": "BM Lvl 2 · BI",
+  "陈宗政": "BM Lvl 2",
+  "黄于恩": "BM Lvl 1 · BI",
+  "黄柏玮": "BC LVL 1",
+  "龙泓升": "BC LVL 1 · BM Lvl 2",
+  "龙泓宇": "BM Lvl 1 · BC LVL 1",
+  "周颁哲": "BC LVL 2",
+}
+// 由学生名字(含中文)解析出 Enrichment Class 课程名，无则返回 ''
+export const resolveEnrichment = (name?: string): string => {
+  if (!name) return ''
+  return Object.entries(ENRICHMENT_MAP).find(([cn]) => name.includes(cn))?.[1] || ''
+}
+// Enrichment 各科评价条目：把合并课程名拆成 [{subject, evaluation}]（供老师逐科写评价）
+export const resolveEnrichmentSubjects = (name?: string): { subject: string; evaluation: string }[] => {
+  const merged = resolveEnrichment(name)
+  if (!merged) return []
+  return merged.split(/[·,、]/).map(s => s.trim()).filter(Boolean)
+    .map(subject => ({ subject, evaluation: '' }))
+}
+
 export type { InvoiceSettingsPreset } from '@/app/components/finance/invoice-management/InvoiceSettingsManager'
 export type { ReceiptSettingsPreset } from '@/app/components/finance/payment-management/ReceiptSettingsManager'
 export type { PayslipSettingsPreset } from '@/app/components/report/PayslipSettingsManager'
@@ -764,7 +810,7 @@ export const REPORT_EN_DEFAULT = {
   summary: 'This term I made progress in both studies and life, but also realised my weaknesses. I will hold myself to a higher standard and keep improving!',
 }
 
-export const generateReportHTML = (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }, options?: { hideGrowth?: boolean; lang?: 'zh' | 'en' }): string => {
+export const generateReportHTML = (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }, options?: { hideGrowth?: boolean; lang?: 'zh' | 'en'; photoDataUrls?: Record<string, string> }): string => {
   const color = settings.primaryColor || "#3b82f6"
   const lang: 'zh' | 'en' = options?.lang || ((report as any).language === 'en' ? 'en' : 'zh')
   const isEn = lang === 'en'
@@ -792,7 +838,12 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
   }
   const midtermAvg = computeAvg('midterm')
   const finalAvg = computeAvg('final')
-  const overallAvg = report.overall_avg ?? (midtermAvg !== null && finalAvg !== null ? Math.round((midtermAvg + finalAvg) / 2 * 10) / 10 : null)
+  // ⚠️ 平均分 = 期末(final) 5科加起来除五（2026-09-28 用户要求）
+  //    DB 的 overall_avg/final_avg 全是旧默认 0，`??` 不会兜底 0，所以直接按 final 现算
+  const finalScoreList = subjects.map(s => s.final).filter((s: any) => s !== null && s !== undefined) as number[]
+  const overallAvg = finalScoreList.length > 0
+    ? Math.round(finalScoreList.reduce((a, b) => a + b, 0) / subjects.length * 10) / 10
+    : null
 
   const subjectRows = subjects.map(subj => {
     const evalText = subj.evaluation || scoreToGrade(subj.final)
@@ -852,9 +903,14 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
     return age + (isEn ? " yrs old" : "岁")
   })() : "—"
 
-  const logoBlock = settings.schoolLogo
-    ? `<div style="width:56px;height:56px;margin:0 auto 8px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+  const logoBlock = (settings.schoolLogo || settings.schoolLogo2)
+    ? `<div style="display:flex;justify-content:center;align-items:center;gap:10px;margin:0 auto 8px;">
+        ${settings.schoolLogo ? `<div style="width:56px;height:56px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
         <img src="${settings.schoolLogo}" alt="logo" style="width:100%;height:100%;object-fit:contain;" />
+      </div>` : ''}
+        ${settings.schoolLogo2 ? `<div style="width:56px;height:56px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+        <img src="${settings.schoolLogo2}" alt="logo2" style="width:100%;height:100%;object-fit:contain;" />
+      </div>` : ''}
       </div>`
     : ''
 
@@ -1011,6 +1067,7 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
       <p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">${L('自我评价','Self-Evaluation')}：</p>
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;font-size:13px;color:#4b5563;">${report.self_evaluation}</div>
     </div>` : ''}
+    <div id="report-split"></div>
     ${report.teacher_comment ? `
     <div style="margin-top:10px;">
       <p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">${L('老师评语',"Teacher's Comment")}：</p>
@@ -1021,16 +1078,53 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
       <p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">${L('功课班评语','Homework Class Comment')}：</p>
       <div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:10px 14px;font-size:13px;color:#4b5563;">${report.homework_comment}</div>
     </div>` : ''}
+    ${(() => {
+      // Enrichment Class：逐科显示。优先用报告的 enrichment[]；否则回退名单课程名
+      const ecSubjects = Array.isArray(report.enrichment) && report.enrichment.length > 0
+        ? report.enrichment
+        : (report.enrichment_class || resolveEnrichment(student?.name))
+            .split(/[·,、]/)
+            .map((s: string) => ({ subject: s.trim(), evaluation: '' }))
+            .filter((o: any) => o.subject)
+      if (!ecSubjects.length) return ''
+      const ecRows = ecSubjects.map((ec: any) =>
+        `<p style="margin:0;font-size:13px;color:#4b5563;line-height:1.6;"><b>${ec.subject}</b>${ec.evaluation ? ` — ${ec.evaluation}` : ''}</p>`
+      ).join('')
+      return `
+    <div style="margin-top:10px;">
+      <p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">Enrichment Class：</p>
+      <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:10px 14px;font-size:13px;color:#4b5563;">${ecRows}</div>
+    </div>`
+    })()}
+    ${(() => {
+      const photos = report.report_photos
+        ? (Array.isArray(report.report_photos) ? report.report_photos : [report.report_photos])
+        : []
+      if (!photos.length) return ''
+      const cid = "px7z29k647g5697"
+      const photoImgs = photos.map((fn, i) =>
+        `<img src="/api/pocketbase-proxy/api/files/${cid}/${report.id}/${encodeURIComponent(fn)}" alt="report-photo-${i}" style="width:340px;height:255px;object-fit:contain;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;" />`
+      ).join('')
+      return `
+      <div style="margin-top:10px;">
+        <p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">${L('学习成果 / 活动照片','Work Photos')}：</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">${photoImgs}</div>
+      </div>`
+    })()}
   </div>
+
+  <!-- 分页标记：homework class comment 之后强制第二页（PDF 生成时拆分用） -->
+  <div id="report-split"></div>
 
   ${(() => {
     const secs = settings.sections && settings.sections.length > 0 ? settings.sections : [
       { id: "problems", type: "problems", title: "二、存在问题", enabled: true },
       { id: "improvements", type: "improvements", title: "三、改进措施与建议", enabled: true },
       { id: "goals", type: "goals", title: "四、未来目标", enabled: true },
-      { id: "summary", type: "summary", title: "五、总结", enabled: true },
+      { id: "summary", type: "summary", title: "五、总结", enabled: false },
     ]
-    return secs.filter((s: any) => s.enabled).map((section: any) => {
+    // ⛔ 学生报告不显示「总结」（2026-09-28 用户要求）
+    return secs.filter((s: any) => s.enabled && s.type !== 'summary').map((section: any) => {
       switch(section.type) {
         case 'problems':
           return `<div class="card">
@@ -1110,49 +1204,110 @@ export const generateReportPDF = async (report: StudentReport, settings: ReportS
     // Wait for fonts/images to load
     await new Promise((r) => setTimeout(r, 600))
 
-    // Capture the report container
-    const wrapper = iframeDoc.querySelector('.report') as HTMLElement || iframeDoc.body
-    const canvas = await html2canvas(wrapper, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-    })
-
-    // Calculate page dimensions
     const A4_WIDTH_MM = 210
     const A4_HEIGHT_MM = 297
-    const imgWidth = A4_WIDTH_MM
-    const imgHeight = (canvas.height * imgWidth) / canvas.width
-    const pageHeight = A4_HEIGHT_MM
-
-    // Create PDF - handle multi-page
     const pdf = new jsPDF('p', 'mm', 'a4')
+    const imgWidth = A4_WIDTH_MM
 
-    if (imgHeight <= pageHeight + 5) {
-      pdf.addImage(canvas.toDataURL(RASTER_MIME, RASTER_QUALITY), RASTER_FORMAT, 0, 0, imgWidth, imgHeight)
+    // 把 .report 从 #report-split 拆成两段：第一张 = 头部~homework comment，第二张 = 剩余
+    const wrapper = iframeDoc.querySelector('.report') as HTMLElement || iframeDoc.body
+    const split = iframeDoc.getElementById('report-split')
+
+    const renderSegmentToPage = async (segmentEl: HTMLElement) => {
+      const canvas = await html2canvas(segmentEl, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+      })
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      const pageHeight = A4_HEIGHT_MM
+
+      if (imgHeight <= pageHeight + 5) {
+        // Single page
+        pdf.addImage(canvas.toDataURL(RASTER_MIME, RASTER_QUALITY), RASTER_FORMAT, 0, 0, imgWidth, imgHeight)
+      } else {
+        // Multi-page: split segment canvas across pages
+        let remainingHeight = canvas.height
+        let srcY = 0
+        let pageNum = 0
+        while (remainingHeight > 0) {
+          if (pageNum > 0) pdf.addPage()
+          const srcH = Math.min(remainingHeight, Math.floor((pageHeight / imgHeight) * canvas.height))
+          const pageCanvas = document.createElement('canvas')
+          pageCanvas.width = canvas.width
+          pageCanvas.height = srcH
+          const ctx = pageCanvas.getContext('2d')!
+          ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH)
+          const pageImgData = pageCanvas.toDataURL(RASTER_MIME, RASTER_QUALITY)
+          const pageImgH = (pageCanvas.height * imgWidth) / pageCanvas.width
+          pdf.addImage(pageImgData, RASTER_FORMAT, 0, 0, imgWidth, pageImgH)
+          srcY += srcH
+          remainingHeight -= srcH
+          pageNum++
+        }
+      }
+    }
+
+    if (split) {
+      // 拆多段：每段独立成页。取 wrapper 里所有 #report-split 作为断点
+      const segments: HTMLElement[] = []
+      let curSeg = iframeDoc.createElement('div')
+      curSeg.className = 'report'
+      segments.push(curSeg)
+
+      const nodes = Array.from(wrapper.childNodes)
+      for (const node of nodes) {
+        if (node instanceof HTMLElement && node.id === 'report-split') {
+          curSeg = iframeDoc.createElement('div')
+          curSeg.className = 'report'
+          segments.push(curSeg)
+          continue
+        }
+        curSeg.appendChild(node)
+      }
+
+      for (const seg of segments) {
+        wrapper.parentNode!.insertBefore(seg, wrapper)
+      }
+      if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper)
+
+      for (let i = 0; i < segments.length; i++) {
+        if (i > 0) pdf.addPage()
+        await renderSegmentToPage(segments[i])
+      }
     } else {
-      let remainingHeight = canvas.height
-      let srcY = 0
-      let pageNum = 0
+      // 无标记：保持原逻辑（整页截图 + 硬切）
+      const canvas = await html2canvas(wrapper, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+      })
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      const pageHeight = A4_HEIGHT_MM
 
-      while (remainingHeight > 0) {
-        if (pageNum > 0) pdf.addPage()
-
-        const srcH = Math.min(remainingHeight, Math.floor((pageHeight / imgHeight) * canvas.height))
-        const pageCanvas = document.createElement('canvas')
-        pageCanvas.width = canvas.width
-        pageCanvas.height = srcH
-        const ctx = pageCanvas.getContext('2d')!
-        ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH)
-
-        const pageImgData = pageCanvas.toDataURL(RASTER_MIME, RASTER_QUALITY)
-        const pageImgH = (pageCanvas.height * imgWidth) / pageCanvas.width
-        pdf.addImage(pageImgData, RASTER_FORMAT, 0, 0, imgWidth, pageImgH)
-
-        srcY += srcH
-        remainingHeight -= srcH
-        pageNum++
+      if (imgHeight <= pageHeight + 5) {
+        pdf.addImage(canvas.toDataURL(RASTER_MIME, RASTER_QUALITY), RASTER_FORMAT, 0, 0, imgWidth, imgHeight)
+      } else {
+        let remainingHeight = canvas.height
+        let srcY = 0
+        let pageNum = 0
+        while (remainingHeight > 0) {
+          if (pageNum > 0) pdf.addPage()
+          const srcH = Math.min(remainingHeight, Math.floor((pageHeight / imgHeight) * canvas.height))
+          const pageCanvas = document.createElement('canvas')
+          pageCanvas.width = canvas.width
+          pageCanvas.height = srcH
+          const ctx = pageCanvas.getContext('2d')!
+          ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH)
+          const pageImgData = pageCanvas.toDataURL(RASTER_MIME, RASTER_QUALITY)
+          const pageImgH = (pageCanvas.height * imgWidth) / pageCanvas.width
+          pdf.addImage(pageImgData, RASTER_FORMAT, 0, 0, imgWidth, pageImgH)
+          srcY += srcH
+          remainingHeight -= srcH
+          pageNum++
+        }
       }
     }
 
