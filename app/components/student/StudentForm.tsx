@@ -12,7 +12,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { User, Upload, Edit, UserPlus, CalendarIcon, AlertTriangle, FileText } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
-import { Student } from '@/types/student'
+import { Student } from '@/hooks/useStudents'
 import { validateEmail, validatePhone, validateStudentId, sanitizeText } from '@/lib/validation'
 import { useLanguage } from "@/contexts/language-context"
 
@@ -78,6 +78,11 @@ export default function StudentForm({
   const [birthCertificateFile, setBirthCertificateFile] = useState<File | null>(null)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [isOtherSchool, setIsOtherSchool] = useState(false)
+  const SCHOOL_OPTIONS = [
+    'SJKC Han Ming', 'SJKC Sin Ming', 'SMK PU1', 'SMK Batu 14',
+    'SMK Puchong Permai', 'SJKC Yak Chee', 'Bright Robin',
+  ]
 
   const isEditing = !!student
 
@@ -119,6 +124,12 @@ export default function StudentForm({
         birthCertificate: student.birthCertificate || null,
         avatar: student.avatar || null
       })
+      // 编辑模式：若学校不在预设选项列表内，自动切换到"其他"输入
+      if (student.school && !SCHOOL_OPTIONS.includes(student.school)) {
+        setIsOtherSchool(true)
+      } else {
+        setIsOtherSchool(false)
+      }
     } else {
       setFormData({
         student_name: '',
@@ -644,6 +655,7 @@ export default function StudentForm({
                     <SelectValue placeholder={t("选择年级")} />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="明年新生">{t("明年新生")}</SelectItem>
                     <SelectItem value="1">Standard 1</SelectItem>
                     <SelectItem value="2">Standard 2</SelectItem>
                     <SelectItem value="3">Standard 3</SelectItem>
@@ -699,13 +711,34 @@ export default function StudentForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="school">{t("学校 *")}</Label>
-                <Input
-                  id="school"
-                  value={formData.school || ''}
-                  onChange={(e) => handleInputChange('school', e.target.value)}
-                  placeholder={t("就读学校名称")}
-                  className={errors.school ? 'border-red-500' : ''}
-                />
+                <Select value={isOtherSchool ? '__other__' : (formData.school || '')} onValueChange={(value) => {
+                    if (value === '__other__') {
+                      setIsOtherSchool(true)
+                      handleInputChange('school', '')
+                    } else {
+                      setIsOtherSchool(false)
+                      handleInputChange('school', value)
+                    }
+                  }}>
+                  <SelectTrigger className={errors.school ? 'border-red-500' : ''}>
+                    <SelectValue placeholder={isOtherSchool ? t("请输入学校名称") : t("选择学校")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SCHOOL_OPTIONS.map((sc) => (
+                      <SelectItem key={sc} value={sc}>{sc}</SelectItem>
+                    ))}
+                    <SelectItem value="__other__">{t("其他")}</SelectItem>
+                  </SelectContent>
+                </Select>
+                {isOtherSchool && (
+                  <Input
+                    id="school"
+                    value={formData.school || ''}
+                    onChange={(e) => handleInputChange('school', e.target.value)}
+                    placeholder={t("请输入学校名称")}
+                    className={`mt-2 ${errors.school ? 'border-red-500' : ''}`}
+                  />
+                )}
                 {errors.school && <p className="text-red-500 text-sm mt-1">{errors.school}</p>}
               </div>
 

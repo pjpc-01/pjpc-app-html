@@ -56,6 +56,18 @@ const isFilled = (v: any, key?: string): boolean => {
   return v !== null && v !== undefined
 }
 
+// 科目评价「完毕」数（写了具体内容才算）—— 与编辑页判定一致
+const SUBJECT_SIMPLE_WORDS = ["待加强", "微弱", "需加强", "待改进", "需要加强", "较差", "一般"]
+const subjectEvalDoneCount = (r: any): number => {
+  const subs = Array.isArray(r?.subjects) ? r.subjects : []
+  return subs.filter((s: any) => {
+    const ev = (s?.evaluation || "").trim()
+    if (!ev) return false
+    if (SUBJECT_SIMPLE_WORDS.some(w => ev.includes(w)) && ev.length < 20 && !/[，。.!？,]/.test(ev)) return false
+    return true
+  }).length
+}
+
 const reportProgress = (r: any) => {
   const empty = REPORT_FIELDS.filter(([k]) => !isFilled(r[k], k)).map(([, label]) => label)
   return { filled: REPORT_FIELDS.length - empty.length, total: REPORT_FIELDS.length, empty }
@@ -100,8 +112,21 @@ export default function StudentReportsPage() {
   const [creating, setCreating] = useState(false)
   const [createLang, setCreateLang] = useState<'zh' | 'en'>('zh')
 
-  // 列表页按年级筛选
+  // 列表页按年级筛选（跟 URL ?grade= 同步：从报告页返回时保持年级）
   const [listGrade, setListGrade] = useState("")
+
+  // 初始化：从 URL 读年级参数
+  useEffect(() => {
+    const g = new URLSearchParams(window.location.search).get("grade")
+    if (g) setListGrade(g)
+  }, [])
+
+  // 切换年级 → 写回 URL（这样返回/刷新时年级不丢）
+  const handleListGradeChange = (g: string) => {
+    setListGrade(g)
+    const url = g ? `/student-reports?grade=${encodeURIComponent(g)}` : "/student-reports"
+    window.history.replaceState(null, "", url)
+  }
 
   // 学生年级映射（normalize 便于匹配）
   const studentGradeMap = (() => {
@@ -241,8 +266,8 @@ export default function StudentReportsPage() {
 
   return (
     <PageLayout
-      title="学生报告"
-      description="教师填写学生的学期成绩与评语"
+      title={t("学生报告")}
+      description={t("教师填写学生的学期成绩与评语")}
       userRole="admin"
       status="系统正常"
       background="bg-gray-50"
@@ -250,11 +275,11 @@ export default function StudentReportsPage() {
       <div className="flex items-center justify-end gap-2 mb-4">
         <Button size="sm" onClick={() => { setSearchTerm(""); setFilterGrade(""); setCreateOpen(true) }}>
           <Plus className="h-4 w-4 mr-2" />
-          新建报告
+          {t("新建报告")}
         </Button>
         <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
           <Settings className="h-4 w-4 mr-2" />
-          报告格式设置
+          {t("报告格式设置")}
         </Button>
       </div>
 
@@ -262,7 +287,7 @@ export default function StudentReportsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            学生报告列表
+            {t("学生报告列表")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -273,34 +298,34 @@ export default function StudentReportsPage() {
           ) : (
             <>
               <div className="flex items-center gap-2 mb-4">
-                <label className="text-sm text-gray-500 shrink-0">按年级筛选：</label>
+                <label className="text-sm text-gray-500 shrink-0">{t("按年级筛选：")}</label>
                 <select
                   value={listGrade}
-                  onChange={(e) => setListGrade(e.target.value)}
+                  onChange={(e) => handleListGradeChange(e.target.value)}
                   className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 min-w-[140px]"
                 >
-                  <option value="">全部年级</option>
+                  <option value="">{t("全部年级")}</option>
                   {listGradeOptions.map((g) => (
                     <option key={g} value={g}>{GRADE_LABEL[g] || g}</option>
                   ))}
                 </select>
                 {listGrade && (
-                  <Button size="sm" variant="ghost" onClick={() => setListGrade("")} className="text-xs">清除</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setListGrade("")} className="text-xs">{t("清除")}</Button>
                 )}
-                <span className="text-xs text-gray-400 ml-auto">{filteredReports.length} 份报告</span>
+                <span className="text-xs text-gray-400 ml-auto">{filteredReports.length} {t("份报告")}</span>
               </div>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12">照片</TableHead>
-                    <TableHead>学生</TableHead>
-                    <TableHead>年级</TableHead>
-                    <TableHead>学期</TableHead>
-                    <TableHead>年份</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>创建时间</TableHead>
-                    <TableHead>填写进度</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead className="w-12">{t("照片")}</TableHead>
+                    <TableHead>{t("学生")}</TableHead>
+                    <TableHead>{t("年级")}</TableHead>
+                    <TableHead>{t("学期")}</TableHead>
+                    <TableHead>{t("年份")}</TableHead>
+                    <TableHead>{t("状态")}</TableHead>
+                    <TableHead>{t("创建时间")}</TableHead>
+                    <TableHead>{t("填写进度")}</TableHead>
+                    <TableHead>{t("操作")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -331,13 +356,14 @@ export default function StudentReportsPage() {
                           className={`text-xs font-medium whitespace-nowrap ${prog.empty.length === 0 ? "text-green-600" : "text-amber-600"}`}
                           title={prog.empty.length ? `未填：${prog.empty.join("、")}` : "全部已填"}
                         >
-                          已填 {prog.filled} · 未填 {prog.empty.length}
+                          {t("已填")} {prog.filled} {t("· 未填")} {prog.empty.length}
+                          {" · "}{t("科目评价完毕")} {subjectEvalDoneCount(r)}/{(r.subjects || []).length}
                         </span>
                       </TableCell>
                       <TableCell>
                         <Link href={`/student-report/${r.id}`}>
                           <Button size="sm" variant="outline">
-                            <Eye className="h-4 w-4 mr-1" />查看/填写
+                            <Eye className="h-4 w-4 mr-1" />{t("查看/填写")}
                           </Button>
                         </Link>
                       </TableCell>
@@ -356,9 +382,9 @@ export default function StudentReportsPage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />选择学生 — 新建学期报告
+              <Plus className="h-5 w-5" />{t("选择学生 — 新建学期报告")}
             </DialogTitle>
-            <DialogDescription>按班级筛选或搜索学生，为其创建本学期的成绩与评语报告</DialogDescription>
+            <DialogDescription>{t("按班级筛选或搜索学生，为其创建本学期的成绩与评语报告")}</DialogDescription>
           </DialogHeader>
           <div className="flex gap-2 mb-3">
             <select
@@ -366,7 +392,7 @@ export default function StudentReportsPage() {
               onChange={(e) => setFilterGrade(e.target.value)}
               className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 min-w-[140px]"
             >
-              <option value="">全部班级</option>
+              <option value="">{t("全部班级")}</option>
               {gradeOptions.map((g) => (
                 <option key={g} value={g}>{g}</option>
               ))}
@@ -376,39 +402,39 @@ export default function StudentReportsPage() {
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="输入学生姓名或学号搜索..."
+                placeholder={t("输入学生姓名或学号搜索...")}
                 className="pl-9 h-10"
                 autoFocus
               />
             </div>
           </div>
           <div className="flex gap-2 mb-3 items-center">
-            <span className="text-sm text-gray-500 shrink-0">报告语言:</span>
+            <span className="text-sm text-gray-500 shrink-0">{t("报告语言:")}</span>
             <select
               value={createLang}
               onChange={(e) => setCreateLang(e.target.value as 'zh' | 'en')}
               className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 min-w-[120px]"
             >
-              <option value="zh">中文</option>
+              <option value="zh">{t("中文")}</option>
               <option value="en">English</option>
             </select>
-            <span className="text-xs text-gray-400">友族学生建议选 English</span>
+            <span className="text-xs text-gray-400">{t("友族学生建议选 English")}</span>
           </div>
           <div className="max-h-[50vh] overflow-y-auto border rounded-lg">
             {studentsLoading ? (
               <p className="text-gray-500 text-center py-8">
-                <Loader2 className="h-5 w-5 mx-auto animate-spin mb-2" />加载学生...
+                <Loader2 className="h-5 w-5 mx-auto animate-spin mb-2" />{t("加载学生...")}
               </p>
             ) : filteredStudents.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">没有找到匹配的学生</p>
+              <p className="text-gray-500 text-center py-8">{t("没有找到匹配的学生")}</p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>姓名</TableHead>
-                    <TableHead>学号</TableHead>
-                    <TableHead>年级</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead>{t("姓名")}</TableHead>
+                    <TableHead>{t("学号")}</TableHead>
+                    <TableHead>{t("年级")}</TableHead>
+                    <TableHead>{t("操作")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -420,7 +446,7 @@ export default function StudentReportsPage() {
                       <TableCell>
                         <Button size="sm" onClick={() => handleCreateReport(s)} disabled={creating}>
                           {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                          新建/打开
+                          {t("新建/打开")}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -437,9 +463,9 @@ export default function StudentReportsPage() {
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />报告格式设置
+              <Settings className="h-5 w-5" />{t("报告格式设置")}
             </DialogTitle>
-            <DialogDescription>自定义学生报告的打印/PDF样式，所有报告统一应用</DialogDescription>
+            <DialogDescription>{t("自定义学生报告的打印/PDF样式，所有报告统一应用")}</DialogDescription>
           </DialogHeader>
           <ReportSettingsManager
             onSettingsChange={(s) => setReportSettings(s)}

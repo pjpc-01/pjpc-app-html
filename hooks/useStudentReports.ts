@@ -25,6 +25,9 @@ export interface StudentReport {
   self_evaluation: string
   teacher_comment: string
   homework_comment: string
+  report_photos?: string[] | string
+  enrichment_class?: string
+  enrichment?: { subject: string; evaluation: string }[]
   problems: string[]
   improvements: string[]
   future_goals_academic: string
