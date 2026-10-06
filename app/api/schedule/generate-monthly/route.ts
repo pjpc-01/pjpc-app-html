@@ -11,13 +11,14 @@ export async function POST(request: NextRequest) {
     const pb = await getPocketBase()
     if (!pb.authStore.isValid) await authenticateAdmin(pb)
 
-    // 1) 找所有时薪老师
-    const hourly = await pb.collection('teacher_salary_structures').getList(1, 100, {
-      filter: 'salary_type = "hourly" && status = "active"',
+    // 1) 排班按「时间表」全班铺开：取所有在职老师
+    //    （薪资口径另外只管时薪，见 app/api/salary/auto-generate —— 月薪不按排班算钱）
+    const activeTeachers = await pb.collection('teachers').getFullList({
+      filter: 'status = "active"',
     })
-    const hourlyTeacherIds = new Set(hourly.items.map((s: any) => s.teacher_id))
-    if (hourlyTeacherIds.size === 0) {
-      return NextResponse.json({ success: true, message: '没有时薪老师，无需生成排班', generated: 0 })
+    const schedulerTeacherIds = new Set(activeTeachers.map((t: any) => t.id))
+    if (schedulerTeacherIds.size === 0) {
+      return NextResponse.json({ success: true, message: '没有在职老师，无需生成排班', generated: 0 })
     }
 
     // 2) 找课程排班（时间表），仅限这些时薪老师的
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
       filter: 'schedule_type = "course_schedule"',
       sort: 'day_of_week,start_time',
     })
-    const timetable = courseSchedules.filter((s: any) => hourlyTeacherIds.has(s.teacher_id))
+    const timetable = courseSchedules.filter((s: any) => s.teacher_id && schedulerTeacherIds.has(s.teacher_id))
 
     // 3) 计算本月（从今天起）所有日期及其星期
     const now = new Date()
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
       skipped,
       skippedHoliday,
       skippedLeave,
-      teacherCount: hourlyTeacherIds.size,
+      teacherCount: new Set(timetable.map((t: any) => t.teacher_id)).size,
     })
   } catch (error) {
     console.error('自动生成排班失败:', error)
