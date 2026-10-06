@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useCourses, useCourseStats } from '@/hooks/useCourses'
-import { GRADE_CANON, GRADE_LABEL, gradeCanon, gradeLabel } from '@/lib/grades'
+import { GRADE_CANON, GRADE_LABEL, gradeCanon, gradeLabel, gradeColor } from '@/lib/grades'
 import { Course, CourseCreateData, SUBJECT_OPTIONS } from '@/lib/pocketbase-courses'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -60,26 +60,9 @@ const EMPTY_FORM: CourseCreateData = {
   status: 'active',
 }
 
-// 颜色映射
-// 颜色映射（canonical 键；原来漏了中一~中六/Form 6）
-const GRADE_COLORS: Record<string, string> = {
-  'Peralihan': 'bg-cyan-100 text-cyan-700',
-  'Standard 1': 'bg-red-100 text-red-700',
-  'Standard 2': 'bg-orange-100 text-orange-700',
-  'Standard 3': 'bg-amber-100 text-amber-700',
-  'Standard 4': 'bg-yellow-100 text-yellow-700',
-  'Standard 5': 'bg-lime-100 text-lime-700',
-  'Standard 6': 'bg-green-100 text-green-700',
-  'Form 1': 'bg-blue-100 text-blue-700',
-  'Form 2': 'bg-indigo-100 text-indigo-700',
-  'Form 3': 'bg-violet-100 text-violet-700',
-  'Form 4': 'bg-purple-100 text-purple-700',
-  'Form 5': 'bg-pink-100 text-pink-700',
-  'Form 6': 'bg-fuchsia-100 text-fuchsia-700',
-}
-
+// 配色唯一来源：lib/grades（gradeColor）
 function getGradeColor(grade: string): string {
-  return GRADE_COLORS[gradeCanon(grade)] || 'bg-gray-100 text-gray-600'
+  return gradeColor(grade)
 }
 
 function getStatusBadge(status?: string) {

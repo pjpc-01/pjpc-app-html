@@ -81,6 +81,7 @@ export default function SettingsPage() {
 
   // --- Audit Logs ---
   const [auditLogs, setAuditLogs] = useState<any[]>([])
+  const [auditTotal, setAuditTotal] = useState(0)
   const [logsLoading, setLogsLoading] = useState(true)
 
   // --- Users (overview) ---
@@ -226,6 +227,7 @@ export default function SettingsPage() {
       const res = await fetch("/api/audit-logs")
       const data = await res.json()
       setAuditLogs(data.logs || [])
+      setAuditTotal(Number(data.total) || (data.logs?.length || 0))
     } catch {
       setAuditLogs([])
     } finally {
@@ -348,7 +350,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <p className="text-xs text-gray-500">{t("审核日志")}</p>
-                <p className="text-xl font-bold">{auditLogs.length}</p>
+                <p className="text-xl font-bold">{auditTotal > 0 ? auditTotal.toLocaleString() : auditLogs.length}</p>
               </div>
             </CardContent>
           </Card>

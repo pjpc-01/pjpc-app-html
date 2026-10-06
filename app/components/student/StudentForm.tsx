@@ -443,10 +443,11 @@ export default function StudentForm({
     return result
   }
 
-  // Peralihan: maps Form → grade one step below, Form 1 → "remove"
+  // Peralihan（过渡班）= 比同年龄低一级：Form N → 上一级，Form 1 → Peralihan 班
+  // ⚠️ 原来这里写的是数字（'Form 2': '7'）→ 会往 students.grade 写 '7'/'8'，是全库年级数据混乱的源头
   const PERALIHAN_SHIFT_FROM: Record<string, string> = {
-    'Form 1': 'remove', 'Form 2': '7', 'Form 3': '8',
-    'Form 4': '9', 'Form 5': '10', 'Form 6': '11',
+    'Form 1': 'Peralihan', 'Form 2': 'Form 1', 'Form 3': 'Form 2',
+    'Form 4': 'Form 3', 'Form 5': 'Form 4', 'Form 6': 'Form 5',
   }
 
   // 当出生日期改变时，自动计算年级

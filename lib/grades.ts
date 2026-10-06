@@ -87,3 +87,18 @@ export const gradeRank = (raw: string | undefined | null): number => {
   const i = (GRADE_CANON as readonly string[]).indexOf(canon)
   return i === -1 ? GRADE_CANON.length + 1 : i
 }
+
+/** canonical → 徽章配色（课程管理 / 资源库 / 成绩页共用一套色标；别再在页面里抄一份） */
+export const GRADE_COLORS: Record<string, string> = {
+  'Peralihan': 'bg-cyan-100 text-cyan-700',
+  'Standard 1': 'bg-red-100 text-red-700', 'Standard 2': 'bg-orange-100 text-orange-700',
+  'Standard 3': 'bg-amber-100 text-amber-700', 'Standard 4': 'bg-yellow-100 text-yellow-700',
+  'Standard 5': 'bg-lime-100 text-lime-700', 'Standard 6': 'bg-green-100 text-green-700',
+  'Form 1': 'bg-blue-100 text-blue-700', 'Form 2': 'bg-indigo-100 text-indigo-700',
+  'Form 3': 'bg-violet-100 text-violet-700', 'Form 4': 'bg-purple-100 text-purple-700',
+  'Form 5': 'bg-pink-100 text-pink-700', 'Form 6': 'bg-fuchsia-100 text-fuchsia-700',
+}
+
+/** 任何乱值 → 徽章配色（未知值给灰） */
+export const gradeColor = (raw: string | undefined | null): string =>
+  GRADE_COLORS[gradeCanon(raw)] || 'bg-gray-100 text-gray-600'
