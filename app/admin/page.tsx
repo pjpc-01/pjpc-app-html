@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, CheckCircle, AlertTriangle, UserPlus, Users, Key } from 'lucide-react'
 import { useAuth } from '@/contexts/pocketbase-auth-context'
 import { useLanguage } from "@/contexts/language-context"
+import { computeUnreceived } from '@/lib/invoice-status'
 
 export default function AdminDashboard() {
   const { t } = useLanguage()
@@ -40,23 +41,15 @@ export default function AdminDashboard() {
         count(`/api/pocketbase-proxy/api/collections/students/records?perPage=1`),
         count(`/api/pocketbase-proxy/api/collections/teachers/records?perPage=1&filter=${encodeURIComponent('status="active"')}`),
       ])
-      // 待缴费用 = 未结清发票的「票额 − 已收」
+      // 待缴费用 = 未收金额（全站唯一口径：lib/invoice-status.ts::computeUnreceived）
       let unpaid: number | null = null
       try {
-        const invRes = await fetch(`${B}/collections/invoices/records?perPage=300&filter=${encodeURIComponent('status != "paid" && deleted != true')}`)
+        const invRes = await fetch(`${B}/collections/invoices/records?perPage=500&filter=${encodeURIComponent('deleted != true')}`)
         const invData = await invRes.json()
+        const payRes = await fetch(`${B}/collections/payments/records?perPage=500`)
+        const payData = await payRes.json()
         if (Array.isArray(invData.items)) {
-          const payRes = await fetch(`${B}/collections/payments/records?perPage=500`)
-          const payData = await payRes.json()
-          const paidByInvoice: Record<string, number> = {}
-          for (const p of payData.items || []) {
-            const key = p.invoiceId || p.invoice
-            if (key) paidByInvoice[key] = (paidByInvoice[key] || 0) + (p.amount || 0)
-          }
-          unpaid = invData.items.reduce(
-            (sum: number, x: any) => sum + Math.max(0, (x.totalAmount || x.amount || 0) - (paidByInvoice[x.id] || 0)),
-            0
-          )
+          unpaid = computeUnreceived(invData.items, payData.items || [])
         }
       } catch {}
       if (!cancelled) {

@@ -595,7 +595,8 @@ Prospek Cemerlang`,
       const invs = centerActiveInvoices.filter(i => invMonthOf(i) === ym)
       const invoiced = invs.reduce((s, i) => s + (Number(i.totalAmount) || 0), 0)
       const collected = paidByMonth.get(ym) || 0
-      const outstanding = invs.reduce((s, i) => s + Math.max((Number(i.totalAmount) || 0) - (paidByInvoice.get(i.id) || 0), 0), 0)
+      // 未收 = max(0, 应收 − 实收)，与 lib/invoice-status.ts 同一口径（别逐张 max(0) 求和：多收的零头会被丢掉）
+      const outstanding = Math.max(0, invoiced - collected)
       if (invs.length === 0 && collected === 0) continue
       rows.push({
         ym,
@@ -629,7 +630,7 @@ Prospek Cemerlang`,
     })
     const invs = centerActiveInvoices.filter(i => invMonthOf(i) === ym)
     const invoiced = invs.reduce((s, i) => s + (Number(i.totalAmount) || 0), 0)
-    const outstanding = invs.reduce((s, i) => s + Math.max((Number(i.totalAmount) || 0) - (paidByInvoice.get(i.id) || 0), 0), 0)
+    const outstanding = Math.max(0, invoiced - collected)
     return { ym, label: `${now.getFullYear()} 年 ${now.getMonth() + 1} 月`, invoiced, collected, outstanding, count: invs.length }
   }, [centerActiveInvoices, payments, paidByInvoice])
 

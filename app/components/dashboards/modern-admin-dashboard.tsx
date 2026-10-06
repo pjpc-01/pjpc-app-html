@@ -1,5 +1,6 @@
 "use client"
 
+import { buildCenterMaps, inCenterScope, centerOfInvoiceId, centerOfExpense } from '@/lib/center-scope'
 import { formatGrade } from "@/lib/utils"
 import React, { useState, useEffect, useMemo, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -78,7 +79,8 @@ interface TeacherRecord {
 
 interface PaymentRecord {
   id: string
-  centerId: string
+  invoiceId: string
+  centerId?: string
   amount: number
   date: string
   created: string
@@ -392,12 +394,22 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
 
   // ─── Center comparison ───────────────────────────────────────────────────
 
+  // 分行归属统一走 lib/center-scope（payments 根本没有 centerId，必须经发票反查学生所属分行）
+  const centerMaps = useMemo(
+    () => buildCenterMaps(centers, students, teachers, invoices),
+    [centers, students, teachers, invoices]
+  )
+
   const centerComparisonData = useMemo(() => {
     return centers.map((c) => {
-      const cStudents = students.filter((s) => s.centerId === c.id)
+      // 学生：优先 center(code)，退回 centerId(UUID)
+      const cStudents = students.filter(
+        (s) => s.center === c.code || s.centerId === c.id
+      )
       const cTeachers = teachers.filter((t) => t.centerId === c.id)
-      const cPayments = payments.filter((p) => p.centerId === c.id)
-      const cExpenses = expenses.filter((e) => e.centerId === c.id)
+      // 收款：payments → invoiceId → 发票 → 学生 → 分行 code（这就是原来恒 0 的原因）
+      const cPayments = payments.filter((p) => centerOfInvoiceId(p.invoiceId, centerMaps) === c.code)
+      const cExpenses = expenses.filter((e) => centerOfExpense(e, centerMaps) === c.code)
       return {
         id: c.id,
         code: c.code,
@@ -409,7 +421,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
         activeStudents: cStudents.filter((s) => s.status === "active").length,
       }
     })
-  }, [centers, students, teachers, payments, expenses])
+  }, [centers, students, teachers, payments, expenses, centerMaps])
 
   const centerStudentComparison = useMemo(
     () =>

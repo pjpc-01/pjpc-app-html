@@ -13,7 +13,7 @@ import { Search, Upload, Download, ExternalLink, Trash2, FileType, Link2, Loader
 import { useLanguage } from "@/contexts/language-context"
 import { useAuth } from "@/contexts/pocketbase-auth-context"
 import { useResources, ResourceItem } from "@/hooks/useResources"
-import { gradeLabel, gradeCanon, gradeRank, GRADE_LABEL, GRADE_CANON_ALL } from "@/lib/grades"
+import { gradeLabel, gradeCanon, gradeRank, GRADE_LABEL, GRADE_CANON_ALL, gradeColor } from "@/lib/grades"
 
 // 学科（筛选 + 上传下拉）
 const SUBJECTS = ["数学", "华文", "马来文", "英文", "科学", "历史", "地理", "道德教育", "美术", "音乐", "体育", "其他"]
@@ -21,17 +21,8 @@ const SUBJECTS = ["数学", "华文", "马来文", "英文", "科学", "历史",
 // 资源类型（与 PB 集合 select values 一致）
 const TYPES = ["试卷", "练习", "讲义", "教案", "参考", "多媒体", "其他"]
 
-// 年级分组配色（与「课程管理」同一套）
-const GRADE_COLORS: Record<string, string> = {
-  'Peralihan': 'bg-cyan-100 text-cyan-700',
-  'Standard 1': 'bg-red-100 text-red-700', 'Standard 2': 'bg-orange-100 text-orange-700',
-  'Standard 3': 'bg-amber-100 text-amber-700', 'Standard 4': 'bg-yellow-100 text-yellow-700',
-  'Standard 5': 'bg-lime-100 text-lime-700', 'Standard 6': 'bg-green-100 text-green-700',
-  'Form 1': 'bg-blue-100 text-blue-700', 'Form 2': 'bg-indigo-100 text-indigo-700',
-  'Form 3': 'bg-violet-100 text-violet-700', 'Form 4': 'bg-purple-100 text-purple-700',
-  'Form 5': 'bg-pink-100 text-pink-700', 'Form 6': 'bg-fuchsia-100 text-fuchsia-700',
-}
-const getGradeColor = (g: string) => GRADE_COLORS[gradeCanon(g)] || 'bg-gray-100 text-gray-600'
+// 年级配色（与「课程管理」同一套；唯一定义在 lib/grades）
+const getGradeColor = (g: string) => gradeColor(g)
 
 // 类型分栏（练习题 / 模拟考卷 分开看 → 少两个下拉）
 const TABS = [
