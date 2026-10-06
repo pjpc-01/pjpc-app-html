@@ -644,12 +644,15 @@ export default function CourseScheduling() {
   // ============================================================
 
   function getEntries(day: DayOfWeek, start: string, end: string): CourseScheduleEntry[] {
-    // 课程显示在其「开始时间」所属的时段行：start <= 课程.start < end
     // 只显示时间表模板(isTemplate=true)；date 生成的月度排班不渲染进时间表网格
-    return filteredEntries.filter(
-      e => e.isTemplate !== false &&
-        e.day_of_week === day && e.start_time >= start && e.start_time < end
-    ).sort((a, b) => a.start_time.localeCompare(b.start_time) || a.course_id.localeCompare(b.course_id))
+    const pool = filteredEntries.filter(e => e.isTemplate !== false && e.day_of_week === day)
+    // ① 精确时段完全一致 → 落在「本行」，每节课只进自己那一行（不会重复）
+    const exact = pool.filter(e => e.start_time === start && e.end_time === end)
+    // ② 兜底：某节课的时段在时段表里找不到对应行（比如后来新加的课时）→ 按「起始时间落在本行区间」安置，避免漏课
+    const loose = pool.filter(e =>
+      e.start_time >= start && e.start_time < end &&
+      !timeSlots.some(sl => sl.start === e.start_time && sl.end === e.end_time))
+    return [...exact, ...loose].sort((a, b) => a.start_time.localeCompare(b.start_time) || a.course_id.localeCompare(b.course_id))
   }
 
   function hasCourseInSlot(day: DayOfWeek, start: string, end: string): boolean {
