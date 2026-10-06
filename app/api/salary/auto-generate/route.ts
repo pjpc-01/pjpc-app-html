@@ -108,6 +108,9 @@ export async function POST(request: NextRequest) {
         const seenSlots = new Set<string>()
 
         schedules.items.forEach(schedule => {
+          // 口径：月薪不按排班算工时（时薪才按工时）。非时薪一律不把排班工时计入，
+          // 直接走下面的打卡分支，与「排班加入前」的行为完全一致 —— 排班表变化不会影响月薪。
+          if (structure.salary_type !== 'hourly') return
           if (schedule.start_time && schedule.end_time) {
             const start = new Date(`2000-01-01T${schedule.start_time}`)
             const end = new Date(`2000-01-01T${schedule.end_time}`)
