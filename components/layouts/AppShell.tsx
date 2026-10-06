@@ -199,6 +199,7 @@ const FIN_HR_GROUP: NavItem[] = [
 ]
 
 const FIN_ACCOUNTING_GROUP: NavItem[] = [
+  { label: "债务管理", href: "/finance/debts", icon: Wallet },
   { label: "银行对账", href: "/finance/bank", icon: Building2 },
   { label: "预算管理", href: "/finance/budget", icon: PieChart },
   { label: "财务报表", href: "/finance/reports", icon: BarChart3 },
@@ -477,6 +478,7 @@ export default function AppShell({
     "/finance/payments": "finance.payments",
     "/finance/payroll": "finance.payroll", "/finance/expenses": "finance.expenses",
     "/finance/bank": "finance.bank", "/finance/budget": "finance.budget",
+    "/finance/debts": "finance.debts",
     "/finance/reports": "finance.reports", "/inventory": "finance.inventory",
     "/attendance": "system.attendance", "/card-management": "system.cards",
     "/points": "system.points", "/points/rules": "system.points_rules",
@@ -715,6 +717,7 @@ export default function AppShell({
     "/finance/expenses": { label: "支出管理", parent: "财务" },
     "/finance/bank": { label: "银行对账", parent: "财务" },
     "/finance/budget": { label: "预算管理", parent: "财务" },
+    "/finance/debts": { label: "债务管理", parent: "财务" },
     "/finance/reports": { label: "财务报表", parent: "财务" },
     "/inventory": { label: "库存管理", parent: "财务" },
     "/attendance": { label: "考勤中心", parent: "系统" },
