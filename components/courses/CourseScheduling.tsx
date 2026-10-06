@@ -80,6 +80,12 @@ interface CourseScheduleEntry {
 type DayOfWeek = 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri'
 
 const DAYS: DayOfWeek[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+
+// 课程表网格宽度：左「时间段」列 + 每天最小宽度 × 天数。
+// ⚠️ 别再写死 680 —— 真实内容宽 = 110 + 5×140 = 810，写 680 会把最右一列裁掉（手机横滑也看不到）。
+const TIME_COL_W = 110
+const DAY_COL_MIN_W = 140
+const GRID_MIN_W = TIME_COL_W + DAYS.length * DAY_COL_MIN_W
 const DAY_LABELS: Record<DayOfWeek, string> = {
   Mon: '周一',
   Tue: '周二',
@@ -818,11 +824,11 @@ export default function CourseScheduling() {
 
       {/* 每周课程表网格 — 行=时间段（左竖排），列=星期（顶横排）。手机端在容器内横滑，不顶破整页 */}
       <div className="overflow-x-auto -mx-1 px-1">
-      <div className="grid gap-px bg-gray-200 rounded-lg overflow-hidden min-w-[680px]">
+      <div className="grid gap-px bg-gray-200 rounded-lg overflow-hidden w-max min-w-full">
         {/* 表头行：左列标题 + 星期横排 */}
         <div
           className="grid items-stretch"
-          style={{ gridTemplateColumns: `110px repeat(${DAYS.length}, minmax(140px, 1fr))`, minWidth: 680 }}
+          style={{ gridTemplateColumns: `${TIME_COL_W}px repeat(${DAYS.length}, minmax(${DAY_COL_MIN_W}px, 1fr))`, minWidth: GRID_MIN_W }}
         >
           <div className="bg-gray-100 p-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
             {t("时间段")}
@@ -842,7 +848,7 @@ export default function CourseScheduling() {
           <div
             key={`row-${slot.id}`}
             className="grid items-stretch"
-            style={{ gridTemplateColumns: `110px repeat(${DAYS.length}, minmax(140px, 1fr))`, minWidth: 680 }}
+            style={{ gridTemplateColumns: `${TIME_COL_W}px repeat(${DAYS.length}, minmax(${DAY_COL_MIN_W}px, 1fr))`, minWidth: GRID_MIN_W }}
           >
             {/* 时间段列（左竖排）— 点击原地编辑 */}
             <div className="bg-white p-1.5 text-xs text-gray-500 font-medium flex items-center justify-center border-r border-gray-100">
@@ -985,7 +991,7 @@ export default function CourseScheduling() {
 
         {/* 添加时段行（网格底部加号）— 仅编辑态显示 */}
         {!isEditing ? null : inlineAdding ? (
-          <div className="grid items-stretch" style={{ gridTemplateColumns: `110px repeat(${DAYS.length}, minmax(140px, 1fr))`, minWidth: 680 }}>
+          <div className="grid items-stretch" style={{ gridTemplateColumns: `${TIME_COL_W}px repeat(${DAYS.length}, minmax(${DAY_COL_MIN_W}px, 1fr))`, minWidth: GRID_MIN_W }}>
             <div className="bg-white p-1.5 flex items-center justify-center border-r border-gray-100">
               <div className="flex items-center gap-1">
                 <select
@@ -1016,7 +1022,7 @@ export default function CourseScheduling() {
             </div>
           </div>
         ) : (
-          <div className="grid items-stretch" style={{ gridTemplateColumns: `110px repeat(${DAYS.length}, minmax(140px, 1fr))`, minWidth: 680 }}>
+          <div className="grid items-stretch" style={{ gridTemplateColumns: `${TIME_COL_W}px repeat(${DAYS.length}, minmax(${DAY_COL_MIN_W}px, 1fr))`, minWidth: GRID_MIN_W }}>
             <button
               className="bg-gray-50 hover:bg-indigo-50 text-indigo-500 flex items-center justify-center gap-1 py-2 border-r border-gray-100 text-xs font-medium transition-colors"
               onClick={() => setInlineAdding(true)}

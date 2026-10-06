@@ -260,7 +260,7 @@ export default function GradeGanttChart() {
         {/* 甘特图主体：统一一张时间表，行=星期，列=一天时间，选中年级的课平铺 */}
         {gradeOptions.length > 0 && (
           <div className="overflow-x-auto">
-            <div className="min-w-[1280px]">
+            <div className="min-w-[1280px] w-max">
               {/* 时间刻度头 */}
               <div className="flex">
                 <div className="w-14 shrink-0" />
