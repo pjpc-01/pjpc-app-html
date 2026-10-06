@@ -122,7 +122,10 @@
   - ✅ **前提已解除（2026-10-06）**：按老板发来的 FC Puchong Utama 时间表**校正了周模板**并对齐后排班已生成 **102 条**（8 位时薪老师；10/6 起，10/1-5 属已过不补）
   - 时间表校正 3 处：① 新增 Thu 08:30-10:00 **Form 2 English**（GAN SOH YEE）② Fri Form 1 GEO 结束 **13:00 → 12:30** ③ Tue Form 2 MALAY **10:45-12:05 → 10:40-12:00**
   - 下一步：生成 10 月薪资（等老板确认）
-  - 顺带发现：`courses` 里 **Form 2 English 有两门重复**（`z28mh37m9iwt9ls` / `6y3uu9vgtiw4k7q`，同一老师）；2 条**孤儿模板行**（`qg84bfe6hp8jls3` Fri / `ztshshd0e73rnm6` Mon，course 已不存在）；部分课程标题**带尾随空格**（如 `'Form 2 BC '`）
+  - ✅ **顺带发现的 3 个脏数据已清（2026-10-06）**，备份 `~/.hermes/backups/course-dup-cleanup-20261006_192551/`：
+    ① `Form 2 English` 重复两门 → 把未被模板引用的 `6y3uu9vgtiw4k7q` 置 `status='archived'`（课程页会过滤掉，历史排班行仍可解析，不丢数据）
+    ② 2 条孤儿模板行（course 已不存在）→ 已删（`qg84bfe6hp8jls3` Fri / `ztshshd0e73rnm6` Mon）
+    ③ 2 门课程标题尾随空格 → 已 trim（`'Form 2 BC '`→`Form 2 BC`、`'STANDARD 3 BC '`→`STANDARD 3 BC`）
 - ✅ 已解决：凭证编号体系、资产负债表简版、26 张发票补账期、票号重复已重编 + 唯一索引
 
 ### 已知但**不需要动**的
