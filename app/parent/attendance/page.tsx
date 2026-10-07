@@ -113,7 +113,7 @@ export default function ParentAttendancePage() {
                           {new Date(rec.date || rec.created).toLocaleDateString("zh-CN")}
                         </span>
                         <Badge variant={rec.status === "present" ? "default" : "destructive"}>
-                          {rec.status === "present" ? "✅ 已签到" : "❌ 缺勤"}
+                          {rec.status === "present" ? t("已签到") : t("缺勤")}
                         </Badge>
                       </div>
                     ))}

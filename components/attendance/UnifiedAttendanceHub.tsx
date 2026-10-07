@@ -367,10 +367,10 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
         </div>
         <div className="flex items-center gap-4 ml-auto">
         {[
-          { label: "总人数", value: totalPeople, color: "text-blue-600" },
-          { label: "已签到", value: checkedIn, color: "text-green-600" },
-          { label: "迟到", value: lateCount, color: "text-orange-500" },
-          { label: "缺勤", value: absentCount, color: "text-gray-400" },
+          { label: t("总人数"), value: totalPeople, color: "text-blue-600" },
+          { label: t("已签到"), value: checkedIn, color: "text-green-600" },
+          { label: t("迟到"), value: lateCount, color: "text-orange-500" },
+          { label: t("缺勤"), value: absentCount, color: "text-gray-400" },
         ].map((s, i) => (
           <div key={i} className="flex items-center gap-1.5">
             <span className="text-[11px] text-gray-400">{s.label}</span>
@@ -387,7 +387,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
           <table className="w-full text-sm">
             <thead><tr className="bg-gray-50/80 border-b sticky top-0 backdrop-blur">
               {["姓名","身份","签到","签退","时长","状态"].map(h => (
-                <th key={h} className="text-left px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
+                <th key={h} className="text-left px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{t(h)}</th>
               ))}
             </tr></thead>
             <tbody>
