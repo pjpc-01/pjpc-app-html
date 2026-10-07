@@ -45,6 +45,9 @@ const WIDGET_TYPES: WidgetTypeInfo[] = [
   { type: "examTargetsOverview", label: "考试目标（总览）", icon: <Target className="h-4 w-4" />, defaultTitle: "考试目标 · 全班", defaultSettings: { mode: "overview" } },
 ]
 
+/** 考试目标总览在幻灯片里每页人数（与拆分幻灯片的逻辑保持一致） */
+const EXAM_PAGE_SIZE = 10
+
 const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: "w1", type: "leaderboard", title: "积分排行榜", settings: { limit: 10 }, enabled: true },
   { id: "w2", type: "birthdays", title: "本月寿星", settings: { showAge: false }, enabled: true },
@@ -288,7 +291,7 @@ function SlideshowOverlay({
   const list = widgets.filter(w => w.enabled)
   const centerStudents = students.filter(s => s.center === centerName || s.center === (centerName.includes("中学") ? "PU1" : "BATU14"))
 
-  // Expand leaderboard widgets into pages of 30
+  // Expand leaderboard widgets into pages of 30（考试目标改为双栏一屏显示，不再拆页）
   const expandedList = list.flatMap(w => {
     if (w.type !== "leaderboard") return [{ ...w, page: 1, pageCount: 1 }]
     const sorted = [...centerStudents].sort((a, b) => b.points - a.points)
