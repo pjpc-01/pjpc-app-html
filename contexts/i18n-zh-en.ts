@@ -3180,5 +3180,8 @@ export const ZH_TO_EN: Record<string, string> = {
   "较弱": "Weak",
   "未评估": "Not assessed",
   "—": "—",
+  "有": "",
+  "项天数未保存": "day item(s) not saved",
+  "保存天数": "Save Days",
 };
 

@@ -62,6 +62,8 @@ export const FeeCard = ({
   const [showInvoiceConfirm, setShowInvoiceConfirm] = useState(false)
   const [dayQuantities, setDayQuantities] = useState<Record<string, number>>({})
   const [savingQty, setSavingQty] = useState<Set<string>>(new Set())
+  // 改了但还没保存的天数（批量保存用）
+  const [dirtyDays, setDirtyDays] = useState<Set<string>>(new Set())
 
   // Load quantities for daily-type fees from PB (only on mount)
   const loadedRef = useRef(false)
@@ -153,6 +155,16 @@ export const FeeCard = ({
       next.has(cat) ? next.delete(cat) : next.add(cat)
       return next
     })
+  }
+
+  // 批量保存所有改过的天数（一次点完，不再每次失焦就存）
+  const saveAllDays = async () => {
+    const ids = Array.from(dirtyDays)
+    if (ids.length === 0) return
+    setDirtyDays(new Set())
+    for (const id of ids) {
+      await updateDayQuantity(id, dayQuantities[id] || 1)
+    }
   }
 
   const assignedCount = activeFees.filter(f => isAssigned?.(studentId, f.id)).length
@@ -368,10 +380,13 @@ export const FeeCard = ({
                                     onChange={(e) => {
                                       e.stopPropagation()
                                       setDayQuantities(prev => ({ ...prev, [fee.id]: Math.max(1, parseInt(e.target.value) || 1) }))
+                                      setDirtyDays(prev => new Set(prev).add(fee.id))
                                     }}
                                     onBlur={(e) => {
                                       const v = Math.max(1, parseInt(e.target.value) || 1)
-                                      updateDayQuantity(fee.id, v)
+                                      // 只记本地 + 标记未保存，等按「保存天数」一次性提交
+                                      setDayQuantities(prev => ({ ...prev, [fee.id]: v }))
+                                      setDirtyDays(prev => new Set(prev).add(fee.id))
                                     }}
                                     onClick={(e) => e.stopPropagation()}
                                     disabled={savingQty.has(fee.id)}
@@ -397,6 +412,14 @@ export const FeeCard = ({
                 </div>
               )
             })}
+            {dirtyDays.size > 0 && (
+              <div className="px-4 py-2 border-t bg-amber-50/50 flex items-center justify-between gap-2">
+                <span className="text-[11px] text-amber-700">{t("有")} {dirtyDays.size} {t("项天数未保存")}</span>
+                <Button size="sm" onClick={saveAllDays} disabled={savingQty.size > 0} className="h-7 text-xs">
+                  {savingQty.size > 0 ? t("保存中…") : `${t("保存天数")} (${dirtyDays.size})`}
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       )}
