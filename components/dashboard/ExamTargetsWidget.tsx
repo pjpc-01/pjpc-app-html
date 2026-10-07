@@ -1,17 +1,18 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { Loader2, Target } from "lucide-react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { Loader2, Target, Check } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context";
 
 /* ============================================================
    考试目标（幻灯片 widget / 独立页面共用）
    - mode="overview"：全班总览表
    - mode="rotate"  ：每人一屏，自动轮播
+   - editable=true：总览表里每格分数可直接改（失焦/回车保存）
 
    配色跟「成绩管理 / 学生报告」页面保持一致：
      分数 ≥80 → 绿(emerald-600)   50–79 → 深灰(slate-700)   <50 → 红(red-600)
-     ≥80 的行加淡绿底；卡片白底 / 边框 slate-200 / 文字 slate
+     等级字母 A≥80 B70 C60 D50 E40 F<40（小灰字，跟在分数右边）
    注意：PB 数字字段空值会存成 0，而目标分 0 没有意义 → 0 一律视为「尚未填写」，显示为 —
    ============================================================ */
 
@@ -47,45 +48,47 @@ const avgText = (v: number | null) =>
     : v >= 50 ? "text-slate-700"
     : "text-red-600"
 
+/** 分数 → 等级字母（与成绩页一致：A≥80 B70 C60 D50 E40 F<40） */
+const gradeLetter = (v: number | null): string =>
+  v === null ? "" : v >= 80 ? "A" : v >= 70 ? "B" : v >= 60 ? "C" : v >= 50 ? "D" : v >= 40 ? "E" : "F"
+
 export function useExamGoals(refreshMs = 0) {
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [students, setStudents] = useState<GoalStudent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
-  useEffect(() => {
-    let alive = true
-    const load = async () => {
-      try {
-        const r = await fetch("/api/exam-targets", { cache: "no-store" })
-        const j = await r.json()
-        if (!alive) return
-        if (j?.success) {
-          setSubjects(j.data.subjects || [])
-          setStudents((j.data.students || []).map((s: any) => {
-            const vals = (Object.values(s.scores || {}) as (number | null)[]).map(val).filter((x): x is number => x !== null)
-            return {
-              ...s,
-              avg: vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null,
-              filled: vals.length,
-            }
-          }))
-        } else setError(j?.error || "load_failed")
-      } catch (e) {
-        if (alive) setError(String(e))
-      } finally {
-        if (alive) setLoading(false)
-      }
+  const load = useCallback(async () => {
+    try {
+      const r = await fetch("/api/exam-targets", { cache: "no-store" })
+      const j = await r.json()
+      if (j?.success) {
+        setSubjects(j.data.subjects || [])
+        setStudents((j.data.students || []).map((s: any) => {
+          const vals = (Object.values(s.scores || {}) as (number | null)[]).map(val).filter((x): x is number => x !== null)
+          return {
+            ...s,
+            avg: vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null,
+            filled: vals.length,
+          }
+        }))
+      } else setError(j?.error || "load_failed")
+    } catch (e) {
+      setError(String(e))
+    } finally {
+      setLoading(false)
     }
+  }, [])
+
+  useEffect(() => {
     load()
     if (refreshMs > 0) {
       const t = setInterval(load, refreshMs)
-      return () => { alive = false; clearInterval(t) }
+      return () => clearInterval(t)
     }
-    return () => { alive = false }
-  }, [refreshMs])
+  }, [load, refreshMs])
 
-  return { subjects, students, loading, error }
+  return { subjects, students, loading, error, reload: load }
 }
 
 /* ---------------- 单人一屏 ---------------- */
@@ -119,7 +122,10 @@ export function StudentGoalCard({ st, subjects }: { st: GoalStudent; subjects: S
             <div key={s.key} className="rounded-xl bg-white border border-slate-200 px-2 py-3 text-center shadow-sm">
               <div className="text-sm text-slate-500 font-semibold">{s.abbr}</div>
               <div className="text-[11px] text-slate-400 mt-0.5">{s.cn}</div>
-              <div className={`text-4xl font-bold mt-2 tabular-nums ${toneText(v)}`}>{v ?? "—"}</div>
+              <div className={`text-4xl font-bold mt-2 tabular-nums ${toneText(v)}`}>
+                {v ?? "—"}
+                {v !== null && <span className="text-base font-normal ml-1 text-slate-400">{gradeLetter(v)}</span>}
+              </div>
               <div className="h-1.5 rounded-full bg-slate-100 mt-3 overflow-hidden">
                 <div className={`h-full rounded-full ${toneBar(v)}`} style={{ width: `${v ?? 0}%` }} />
               </div>
@@ -160,7 +166,14 @@ export function StudentGoalCard({ st, subjects }: { st: GoalStudent; subjects: S
 }
 
 /* ---------------- 全班总览表 ---------------- */
-export function GoalsOverview({ students, subjects, limit = 0 }: { students: GoalStudent[]; subjects: Subject[]; limit?: number }) {
+export function GoalsOverview({
+  students, subjects, limit = 0, editable = false, onSave, savingKey = "",
+}: {
+  students: GoalStudent[]; subjects: Subject[]; limit?: number
+  editable?: boolean
+  onSave?: (studentId: string, subjectKey: string, raw: string) => void
+  savingKey?: string
+}) {
   const { t } = useLanguage();
   const list = limit > 0 ? students.slice(0, limit) : students
   return (
@@ -185,9 +198,29 @@ export function GoalsOverview({ students, subjects, limit = 0 }: { students: Goa
               </div>
               {subjects.map(s => {
                 const v = val(st.scores[s.key])
+                const busy = savingKey === `${st.id}:${s.key}`
+                if (editable) {
+                  return (
+                    <div key={s.key} className="flex items-center justify-center">
+                      <input
+                        key={`${st.id}-${s.key}-${v ?? "e"}`}
+                        type="number" min={0} max={100} inputMode="numeric"
+                        defaultValue={v ?? ""}
+                        placeholder="—"
+                        disabled={busy}
+                        onBlur={e => onSave?.(st.id, s.key, e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur() }}
+                        className={`w-14 h-8 text-center text-base tabular-nums rounded-md border border-slate-300 bg-white
+                          focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200
+                          ${busy ? "opacity-50" : ""} ${toneText(v)} font-semibold`}
+                      />
+                    </div>
+                  )
+                }
                 return (
                   <div key={s.key} className={`text-center text-lg font-semibold tabular-nums ${toneText(v)}`}>
                     {v ?? <span className="font-normal">—</span>}
+                    {v !== null && <span className="text-[10px] ml-0.5 font-normal text-slate-400">{gradeLetter(v)}</span>}
                   </div>
                 )
               })}
@@ -199,9 +232,13 @@ export function GoalsOverview({ students, subjects, limit = 0 }: { students: Goa
         })}
       </div>
       <div className="pt-2.5 mt-1 border-t border-slate-200 text-[11px] flex flex-wrap gap-x-4 items-center shrink-0">
-        <span className="text-emerald-600 font-semibold">80+</span>
-        <span className="text-slate-600 font-semibold">50–79</span>
-        <span className="text-red-600 font-semibold">{t("50 以下")}</span>
+        <span className="text-slate-500">{t("等级")}</span>
+        <span className="text-emerald-600 font-semibold">A ≥80</span>
+        <span className="text-slate-600">B ≥70</span>
+        <span className="text-slate-600">C ≥60</span>
+        <span className="text-slate-600">D ≥50</span>
+        <span className="text-slate-600">E ≥40</span>
+        <span className="text-red-600 font-semibold">F &lt;40</span>
         <span className="text-slate-400">{t("— 尚未填写")}</span>
         <span className="ml-auto text-slate-400">{t("共")} {students.length} {t("人")}</span>
       </div>
@@ -212,24 +249,55 @@ export function GoalsOverview({ students, subjects, limit = 0 }: { students: Goa
 /* ---------------- 幻灯片 widget 出口 ---------------- */
 export default function ExamTargetsWidget({
   settings,
+  editable = false,
 }: {
   settings?: { mode?: "rotate" | "overview"; interval?: number; limit?: number; grade?: string }
+  editable?: boolean
 }) {
   const { t } = useLanguage();
   const mode = settings?.mode || "rotate"
   const intervalMs = Math.max(3, settings?.interval || 7) * 1000
-  const { subjects, students, loading, error } = useExamGoals(mode === "rotate" ? 60000 : 0)
+  const { subjects, students, loading, error, reload } = useExamGoals(mode === "rotate" ? 60000 : 0)
   const list = useMemo(
     () => (settings?.grade ? students.filter(s => s.grade === settings.grade) : students),
     [students, settings?.grade]
   )
   const [i, setI] = useState(0)
+  const [savingKey, setSavingKey] = useState("")
+  const [savedTick, setSavedTick] = useState(false)
 
   useEffect(() => {
     if (mode !== "rotate" || list.length <= 1) return
     const t2 = setInterval(() => setI(p => (p + 1) % list.length), intervalMs)
     return () => clearInterval(t2)
   }, [mode, list.length, intervalMs])
+
+  /** 改一格分数（空 = 清成未填） */
+  const handleSave = async (studentId: string, subjectKey: string, raw: string) => {
+    const trimmed = String(raw).trim()
+    const num = trimmed === "" ? 0 : Math.max(0, Math.min(100, Math.round(Number(trimmed))))
+    if (Number.isNaN(num)) return
+    const st = students.find(x => x.id === studentId)
+    const cur = st ? Number(val(st.scores[subjectKey]) ?? 0) : 0
+    if (num === cur) return
+    setSavingKey(`${studentId}:${subjectKey}`)
+    try {
+      const r = await fetch(`/api/exam-targets?id=${studentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scores: { [subjectKey]: num } }),
+      })
+      const j = await r.json()
+      if (!j?.success) throw new Error(j?.error || "save_failed")
+      setSavedTick(true)
+      setTimeout(() => setSavedTick(false), 1800)
+    } catch (e) {
+      alert(`${t("保存失败")}：${e instanceof Error ? e.message : e}`)
+    } finally {
+      setSavingKey("")
+      await reload()
+    }
+  }
 
   if (loading) return <div className="h-full grid place-items-center text-slate-400"><Loader2 className="h-6 w-6 animate-spin" /></div>
   if (error) return <div className="h-full grid place-items-center text-red-600 text-sm">{t("加载失败：")}{error}</div>
@@ -240,10 +308,16 @@ export default function ExamTargetsWidget({
       <div className="h-full flex flex-col">
         <div className="flex items-center gap-2 text-slate-500 text-sm mb-3 shrink-0">
           <Target className="h-4 w-4 text-indigo-500" /><span>{t("考试目标 · 全班总览")}</span>
-          <span className="ml-auto text-slate-400 text-xs">{t("每 60 秒自动刷新")}</span>
+          {editable && <span className="text-[11px] text-indigo-500 bg-indigo-50 border border-indigo-100 rounded px-1.5 py-0.5">{t("点分数即可改，改完按回车")}</span>}
+          {savingKey && <span className="text-[11px] text-slate-400">{t("保存中…")}</span>}
+          {savedTick && <span className="text-[11px] text-emerald-600 flex items-center gap-0.5"><Check className="h-3 w-3" />{t("已保存")}</span>}
+          <span className="ml-auto text-slate-400 text-xs">{editable ? "" : t("每 60 秒自动刷新")}</span>
         </div>
         <div className="flex-1 min-h-0">
-          <GoalsOverview students={list} subjects={subjects} limit={settings?.limit || 0} />
+          <GoalsOverview
+            students={list} subjects={subjects} limit={settings?.limit || 0}
+            editable={editable} onSave={handleSave} savingKey={savingKey}
+          />
         </div>
       </div>
     )

@@ -4,13 +4,14 @@ import { useState } from "react"
 import PageLayout from "@/components/layouts/PageLayout"
 import { useLanguage } from "@/contexts/language-context"
 import { Button } from "@/components/ui/button"
-import { Maximize2, LayoutGrid, Users } from "lucide-react"
+import { Maximize2, LayoutGrid, Users, Pencil, Check } from "lucide-react"
 import ExamTargetsWidget from "@/components/dashboard/ExamTargetsWidget"
 
 export default function ExamTargetsPage() {
   const { t } = useLanguage()
   const [mode, setMode] = useState<"overview" | "rotate">("overview")
   const [interval, setIntervalSec] = useState(7)
+  const [editMode, setEditMode] = useState(false)
 
   const goFullscreen = () => {
     const el = document.getElementById("exam-targets-stage")
@@ -54,6 +55,15 @@ export default function ExamTargetsPage() {
             ))}
           </div>
         )}
+        <Button
+          variant={editMode ? "default" : "outline"}
+          size="sm"
+          className={editMode ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+          onClick={() => { setEditMode(v => !v); setMode("overview") }}
+        >
+          {editMode ? <Check className="h-4 w-4 mr-1" /> : <Pencil className="h-4 w-4 mr-1" />}
+          {editMode ? t("完成编辑") : t("编辑分数")}
+        </Button>
         <Button variant="outline" size="sm" className="ml-auto" onClick={goFullscreen}>
           <Maximize2 className="h-4 w-4 mr-1" />{t("全屏放映")}
         </Button>
@@ -64,7 +74,7 @@ export default function ExamTargetsPage() {
         className="rounded-2xl bg-white border border-slate-200 shadow-sm p-6 min-h-[560px] flex flex-col"
       >
         <div className="flex-1 min-h-0">
-          <ExamTargetsWidget settings={{ mode, interval }} />
+          <ExamTargetsWidget settings={{ mode: editMode ? "overview" : mode, interval }} editable={editMode} />
         </div>
       </div>
 
