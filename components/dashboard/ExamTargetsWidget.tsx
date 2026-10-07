@@ -6,9 +6,11 @@ import { useLanguage } from "@/contexts/language-context";
 
 /* ============================================================
    考试目标（幻灯片 widget / 独立页面共用）
-   - mode="overview"：全班总览表（按 Form 1 → 2 → 3 分组，组标题在名字上面）
+   - mode="overview"：全班总览表，按 Form 1 → 2 → 3 分组（组标题在名字上面）
+        · 非编辑态：自动分栏（人多就 2 栏），一屏全部显示，不需要翻页
+        · 编辑态  ：单栏 + 可滚动，方便逐格改
    - mode="rotate"  ：每人一屏，自动轮播
-   - editable=true：总览表里每格分数可直接改（失焦/回车保存）
+   - editable=true ：分数可直接改（失焦/回车保存）
 
    配色：分数 ≥80 → 绿；40–79 → 深灰；**<40 才红**（老板定）
    等级字母 A≥80 B70 C60 D50 E40 F<40（小灰字，跟在分数右边）
@@ -61,6 +63,17 @@ const gradeZh = (g: string): string => {
   if (s.includes("peralihan")) return "预备班"
   const n = gradeRank(g)
   return n <= 6 ? ["", "中一", "中二", "中三", "中四", "中五", "中六"][n] || "" : ""
+}
+
+/** 按年级分组（Form 1 → 2 → 3 → 其他） */
+const groupByGrade = (students: GoalStudent[]): [string, GoalStudent[]][] => {
+  const m = new Map<string, GoalStudent[]>()
+  for (const st of students) {
+    const g = st.grade || "（未填年级）"
+    if (!m.has(g)) m.set(g, [])
+    m.get(g)!.push(st)
+  }
+  return [...m.entries()].sort((a, b) => gradeRank(a[0]) - gradeRank(b[0]))
 }
 
 export function useExamGoals(refreshMs = 0) {
@@ -171,94 +184,116 @@ export function StudentGoalCard({ st, subjects }: { st: GoalStudent; subjects: S
   )
 }
 
-/* ---------------- 全班总览表（按年级分组） ---------------- */
+/* ---------------- 一栏小组（表头 + 分组行） ---------------- */
+function GradeLane({
+  students, subjects, editable, onSave, savingKey, compact,
+}: {
+  students: GoalStudent[]; subjects: Subject[]
+  editable: boolean
+  onSave?: (studentId: string, subjectKey: string, raw: string) => void
+  savingKey: string
+  compact: boolean
+}) {
+  const { t } = useLanguage();
+  const groups = useMemo(() => groupByGrade(students), [students])
+  const cols = `minmax(${compact ? 104 : 190}px,1.5fr) repeat(${subjects.length}, 1fr)`
+  const nameCls = compact ? "text-[13px]" : "text-[15px]"
+  const numCls = compact ? "text-[15px]" : "text-lg"
+
+  return (
+    <div className="flex-1 min-w-0">
+      <div className="grid items-center gap-x-1.5 pb-1.5 border-b border-slate-200 text-slate-500 text-[13px]"
+        style={{ gridTemplateColumns: cols }}>
+        <div className="text-left pl-1">{t("学生")}</div>
+        {subjects.map(s => <div key={s.key} className="text-center">{s.abbr}</div>)}
+      </div>
+      {groups.map(([grade, rows]) => (
+        <div key={grade}>
+          <div className="flex items-center gap-1.5 bg-slate-100 border-y border-slate-200 px-1.5 py-[3px]">
+            <span className={`font-bold text-slate-700 tracking-wide ${compact ? "text-[12px]" : "text-[13px]"}`}>{grade}</span>
+            {gradeZh(grade) && <span className="text-[11px] text-slate-500">{gradeZh(grade)}</span>}
+            <span className="text-[10px] text-slate-400 ml-auto">{rows.length} {t("人")}</span>
+          </div>
+          {rows.map((st, i) => {
+            const allHigh = subjects.every(s => { const v = val(st.scores[s.key]); return v !== null && v >= 80 })
+            return (
+              <div key={st.id}
+                className={`grid items-center gap-x-1.5 py-[3px] border-b border-slate-100 ${
+                  allHigh ? "bg-emerald-50/60" : i % 2 ? "bg-slate-50/70" : "bg-white"
+                }`}
+                style={{ gridTemplateColumns: cols }}>
+                <div className="text-left pl-1 min-w-0">
+                  <div className={`${nameCls} font-semibold text-slate-800 truncate`}>{st.name}</div>
+                </div>
+                {subjects.map(s => {
+                  const v = val(st.scores[s.key])
+                  const busy = savingKey === `${st.id}:${s.key}`
+                  if (editable) {
+                    return (
+                      <div key={s.key} className="flex items-center justify-center">
+                        <input
+                          key={`${st.id}-${s.key}-${v ?? "e"}`}
+                          type="number" min={0} max={100} inputMode="numeric"
+                          defaultValue={v ?? ""}
+                          placeholder="—"
+                          disabled={busy}
+                          onBlur={e => onSave?.(st.id, s.key, e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur() }}
+                          className={`w-14 h-8 text-center text-base tabular-nums rounded-md border border-slate-300 bg-white
+                            focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200
+                            ${busy ? "opacity-50" : ""} ${toneText(v)} font-semibold`}
+                        />
+                      </div>
+                    )
+                  }
+                  return (
+                    <div key={s.key} className={`text-center ${numCls} font-semibold tabular-nums ${toneText(v)}`}>
+                      {v ?? <span className="font-normal">—</span>}
+                      {v !== null && <span className={`ml-0.5 font-normal text-slate-400 ${compact ? "text-[9px]" : "text-[10px]"}`}>{gradeLetter(v)}</span>}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ---------------- 全班总览（自动分栏，一屏显示） ---------------- */
 export function GoalsOverview({
-  students, subjects, limit = 0, editable = false, onSave, savingKey = "",
+  students, subjects, limit = 0, editable = false, onSave, savingKey = "", columns = 1,
 }: {
   students: GoalStudent[]; subjects: Subject[]; limit?: number
   editable?: boolean
   onSave?: (studentId: string, subjectKey: string, raw: string) => void
   savingKey?: string
+  columns?: number
 }) {
   const { t } = useLanguage();
   const list = limit > 0 ? students.slice(0, limit) : students
-  const cols = `minmax(190px,1.6fr) repeat(${subjects.length}, 1fr)`
-
-  // 按年级分组：Form 1 → 2 → 3 → 其他；组内保持后端给的顺序（年级,姓名）
-  const groups = useMemo(() => {
-    const m = new Map<string, GoalStudent[]>()
-    for (const st of list) {
-      const g = st.grade || "（未填年级）"
-      if (!m.has(g)) m.set(g, [])
-      m.get(g)!.push(st)
-    }
-    return [...m.entries()].sort((a, b) => gradeRank(a[0]) - gradeRank(b[0]))
-  }, [list])
+  const lanes = editable ? 1 : Math.max(1, columns)
+  const chunks = useMemo(() => {
+    if (lanes <= 1) return [list]
+    const per = Math.ceil(list.length / lanes)
+    return Array.from({ length: lanes }, (_, i) => list.slice(i * per, (i + 1) * per)).filter(c => c.length)
+  }, [list, lanes])
 
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="grid items-center gap-x-2 pb-2 border-b border-slate-200 text-slate-500 text-sm shrink-0"
-        style={{ gridTemplateColumns: cols }}>
-        <div className="text-left pl-1">{t("学生")}</div>
-        {subjects.map(s => <div key={s.key} className="text-center">{s.abbr}</div>)}
-      </div>
-
-      <div className={`flex-1 ${editable ? "overflow-y-auto" : "overflow-hidden"}`}>
-        {groups.map(([grade, rows]) => (
-          <div key={grade}>
-            {/* 年级分组标题 */}
-            <div className="flex items-center gap-2 bg-slate-100 border-y border-slate-200 px-2 py-[5px]">
-              <span className="text-[13px] font-bold text-slate-700 tracking-wide">{grade}</span>
-              {gradeZh(grade) && <span className="text-[12px] text-slate-500">{gradeZh(grade)}</span>}
-              <span className="text-[11px] text-slate-400 ml-auto">{rows.length} {t("人")}</span>
-            </div>
-            {rows.map((st, i) => {
-              const allHigh = subjects.every(s => { const v = val(st.scores[s.key]); return v !== null && v >= 80 })
-              return (
-                <div key={st.id}
-                  className={`grid items-center gap-x-2 py-[5px] border-b border-slate-100 ${
-                    allHigh ? "bg-emerald-50/60" : i % 2 ? "bg-slate-50/70" : "bg-white"
-                  }`}
-                  style={{ gridTemplateColumns: cols }}>
-                  <div className="text-left pl-1 min-w-0">
-                    <div className="text-[15px] font-semibold text-slate-800 truncate">{st.name}</div>
-                  </div>
-                  {subjects.map(s => {
-                    const v = val(st.scores[s.key])
-                    const busy = savingKey === `${st.id}:${s.key}`
-                    if (editable) {
-                      return (
-                        <div key={s.key} className="flex items-center justify-center">
-                          <input
-                            key={`${st.id}-${s.key}-${v ?? "e"}`}
-                            type="number" min={0} max={100} inputMode="numeric"
-                            defaultValue={v ?? ""}
-                            placeholder="—"
-                            disabled={busy}
-                            onBlur={e => onSave?.(st.id, s.key, e.target.value)}
-                            onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur() }}
-                            className={`w-14 h-8 text-center text-base tabular-nums rounded-md border border-slate-300 bg-white
-                              focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200
-                              ${busy ? "opacity-50" : ""} ${toneText(v)} font-semibold`}
-                          />
-                        </div>
-                      )
-                    }
-                    return (
-                      <div key={s.key} className={`text-center text-lg font-semibold tabular-nums ${toneText(v)}`}>
-                        {v ?? <span className="font-normal">—</span>}
-                        {v !== null && <span className="text-[10px] ml-0.5 font-normal text-slate-400">{gradeLetter(v)}</span>}
-                      </div>
-                    )
-                  })}
-                </div>
-              )
-            })}
-          </div>
+      <div className={`flex-1 min-h-0 flex gap-4 ${editable ? "overflow-y-auto" : "overflow-hidden"} items-start`}>
+        {chunks.map((chunk, ci) => (
+          <GradeLane
+            key={ci} students={chunk} subjects={subjects}
+            editable={editable} onSave={onSave} savingKey={savingKey}
+            compact={lanes > 1}
+          />
         ))}
       </div>
 
-      <div className="pt-2.5 mt-1 border-t border-slate-200 text-[11px] flex flex-wrap gap-x-4 items-center shrink-0">
+      <div className="pt-2 mt-1 border-t border-slate-200 text-[11px] flex flex-wrap gap-x-4 items-center shrink-0">
         <span className="text-slate-500">{t("等级")}</span>
         <span className="text-emerald-600 font-semibold">A ≥80</span>
         <span className="text-slate-600">B ≥70</span>
@@ -292,35 +327,12 @@ export default function ExamTargetsWidget({
   const [i, setI] = useState(0)
   const [savingKey, setSavingKey] = useState("")
   const [savedTick, setSavedTick] = useState(false)
-  // —— 总览表分页（幻灯片里自动翻页）——
-  const [pageSize, setPageSize] = useState(10)
-  const [pg, setPg] = useState(0)
 
   useEffect(() => {
     if (mode !== "rotate" || list.length <= 1) return
     const t2 = setInterval(() => setI(p => (p + 1) % list.length), intervalMs)
     return () => clearInterval(t2)
   }, [mode, list.length, intervalMs])
-
-  // 每页人数：视口高度换算（表头 34 + 预留 2 个组标题 52，每行 30 保守估），封顶 12
-  useEffect(() => {
-    const calc = () => {
-      const vh = typeof window === "undefined" ? 1080 : window.innerHeight
-      setPageSize(Math.max(4, Math.min(10, Math.floor((vh * 0.75 - 86) / 30))))
-    }
-    calc()
-    window.addEventListener("resize", calc)
-    return () => window.removeEventListener("resize", calc)
-  }, [])
-
-  const pageTotal = Math.max(1, Math.ceil(list.length / pageSize))
-  useEffect(() => { setPg(0) }, [pageSize, list.length])
-  // 幻灯片里自动翻页（编辑态不翻，全部平铺可滚动）
-  useEffect(() => {
-    if (editable || pageTotal <= 1) return
-    const t3 = setInterval(() => setPg(p => (p + 1) % pageTotal), 8000)
-    return () => clearInterval(t3)
-  }, [editable, pageTotal])
 
   /** 改一格分数（空 = 清成未填） */
   const handleSave = async (studentId: string, subjectKey: string, raw: string) => {
@@ -354,27 +366,22 @@ export default function ExamTargetsWidget({
   if (!list.length) return <div className="h-full grid place-items-center text-slate-400 text-sm">{t("还没有考试目标数据")}</div>
 
   if (mode === "overview") {
-    const shown = editable ? list : list.slice(pg * pageSize, (pg + 1) * pageSize)
+    // 人少不分栏；人多自动 2 栏，一屏看完（不再翻页、不再被裁）
+    const cols = list.length > 8 ? 2 : 1
     return (
       <div className="h-full flex flex-col">
-        <div className="flex items-center gap-2 text-slate-500 text-sm mb-3 shrink-0">
+        <div className="flex items-center gap-2 text-slate-500 text-sm mb-2 shrink-0">
           <Target className="h-4 w-4 text-indigo-500" /><span>{t("考试目标 · 全班总览")}</span>
           {editable && <span className="text-[11px] text-indigo-500 bg-indigo-50 border border-indigo-100 rounded px-1.5 py-0.5">{t("点分数即可改，改完按回车")}</span>}
           {savingKey && <span className="text-[11px] text-slate-400">{t("保存中…")}</span>}
           {savedTick && <span className="text-[11px] text-emerald-600 flex items-center gap-0.5"><Check className="h-3 w-3" />{t("已保存")}</span>}
-          {!editable && pageTotal > 1 && (
-            <span className="text-[11px] text-slate-500 bg-slate-100 rounded px-1.5 py-0.5 tabular-nums">
-              {t("第")} {pg + 1} / {pageTotal} {t("页")}
-            </span>
-          )}
-          <span className="ml-auto text-slate-400 text-xs">
-            {editable ? "" : pageTotal > 1 ? t("每 8 秒翻页") : t("每 60 秒自动刷新")}
-          </span>
+          <span className="ml-auto text-slate-400 text-xs">{editable ? "" : t("每 60 秒自动刷新")}</span>
         </div>
         <div className="flex-1 min-h-0">
           <GoalsOverview
-            students={shown} subjects={subjects} limit={editable ? (settings?.limit || 0) : 0}
+            students={list} subjects={subjects}
             editable={editable} onSave={handleSave} savingKey={savingKey}
+            columns={cols}
           />
         </div>
       </div>
