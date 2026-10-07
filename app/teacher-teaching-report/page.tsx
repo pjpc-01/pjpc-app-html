@@ -658,7 +658,7 @@ export default function TeacherTeachingReportPage() {
                       <FileText className="h-8 w-8 text-blue-500" />
                       <div>
                         <div className="font-medium">
-                          {r.subject || t("未指定科目")} — {r.grade || t("未指定年级")}
+                          {t(r.subject) || t("未指定科目")} — {t(r.grade) || t("未指定年级")}
                         </div>
                         <div className="text-sm text-gray-500">
                           {r.teacher_name} · {r.date} · {ASSESSMENT_PERIODS.find(p => p.value === r.assessment_period)?.label ? t(ASSESSMENT_PERIODS.find(p => p.value === r.assessment_period)!.label) : r.assessment_period}
