@@ -40,6 +40,7 @@ import {
   MonitorPlay,
   GripVertical,
   Edit3,
+  Target,
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import LanguageSwitcher from "@/components/LanguageSwitcher"
@@ -64,6 +65,7 @@ const NAV_LABEL_MAP: Record<string, string> = {
   "仪表板": "nav.dashboard",
   "幻灯片": "nav.slideshow",
   "TV看板": "nav.tv_board",
+  "考试目标": "nav.exam_targets",
   "教务": "nav.education",
   "教育概览": "breadcrumb.education_overview",
   "学生列表": "nav.students",
@@ -133,6 +135,7 @@ const OVERVIEW_NAV: NavItem[] = [
   { label: "仪表板", href: "/", icon: LayoutDashboard },
   { label: "幻灯片", href: "/dashboard/slideshow", icon: MonitorPlay },
   { label: "TV看板", href: "/tv-board", icon: MonitorPlay },
+  { label: "考试目标", href: "/exam-targets", icon: Target },
 ]
 
 const EDU_STUDENTS_GROUP: NavItem[] = [
