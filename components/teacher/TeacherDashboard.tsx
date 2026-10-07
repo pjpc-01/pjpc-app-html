@@ -313,7 +313,7 @@ export default function TeacherDashboard({ teacherId }: TeacherDashboardProps) {
                       </div>
                       <div>
                         <p className="font-medium">{t(schedule.subject)}</p>
-                        <p className="text-sm text-gray-600">{schedule.className}</p>
+                        <p className="text-sm text-gray-600">{t(schedule)}</p>
                       </div>
                     </div>
                     <div className="text-right">

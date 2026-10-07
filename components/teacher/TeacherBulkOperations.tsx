@@ -244,7 +244,7 @@ export default function TeacherBulkOperations({
                 
                 <div>
                   <Label htmlFor="subject">{t("任教科目")}</Label>
-                  <Select value={bulkEditData.subject} onValueChange={(value) => setBulkEditData(prev => ({ ...prev, subject: value }))}>
+                  <Select value={t(bulkEditData)} onValueChange={(value) => setBulkEditData(prev => ({ ...prev, subject: value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder={t('assignment.select_subject')} />
                     </SelectTrigger>
@@ -426,7 +426,7 @@ export default function TeacherBulkOperations({
                   <Input
                     id="messageSubject"
                     placeholder={t("消息主题")}
-                    value={messageData.subject}
+                    value={t(messageData)}
                     onChange={(e) => setMessageData(prev => ({ ...prev, subject: e.target.value }))}
                   />
                 </div>

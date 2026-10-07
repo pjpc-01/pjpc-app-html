@@ -393,7 +393,7 @@ export default function ResourceLibrary() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label>{t("科目")}</Label>
-                <Select value={form.subject} onValueChange={(v) => field("subject", v)}>
+                <Select value={t(form)} onValueChange={(v) => field("subject", v)}>
                   <SelectTrigger><SelectValue placeholder={t("选择科目...")} /></SelectTrigger>
                   <SelectContent className="max-h-64 overflow-y-auto">
                     {SUBJECTS.map(s => <SelectItem key={s} value={s}>{t(s)}</SelectItem>)}
@@ -402,7 +402,7 @@ export default function ResourceLibrary() {
               </div>
               <div className="space-y-1.5">
                 <Label>{t("年级")}</Label>
-                <Select value={form.grade} onValueChange={(v) => field("grade", v)}>
+                <Select value={t(form)} onValueChange={(v) => field("grade", v)}>
                   <SelectTrigger><SelectValue placeholder={t("选择年级...")} /></SelectTrigger>
                   <SelectContent className="max-h-64 overflow-y-auto">
                     {GRADE_CANON_ALL.map(g => <SelectItem key={g} value={g}>{gradeLabel(g)}</SelectItem>)}

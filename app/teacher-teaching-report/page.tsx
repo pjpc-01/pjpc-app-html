@@ -831,10 +831,10 @@ export default function TeacherTeachingReportPage() {
                 <div>
                   <Label>{t("科目 Subject")}</Label>
                   {isView ? (
-                    <Input value={report.subject} disabled />
+                    <Input value={t(report)} disabled />
                   ) : (
                     <Select
-                      value={report.subject}
+                      value={t(report)}
                       onValueChange={v => updateField("subject", v)}
                     >
                       <SelectTrigger>
@@ -851,10 +851,10 @@ export default function TeacherTeachingReportPage() {
                 <div>
                   <Label>{t("年级 Grade")}</Label>
                   {isView ? (
-                    <Input value={report.grade} disabled />
+                    <Input value={t(report)} disabled />
                   ) : (
                     <Select
-                      value={report.grade}
+                      value={t(report)}
                       onValueChange={v => updateField("grade", v)}
                     >
                       <SelectTrigger>
@@ -960,7 +960,7 @@ export default function TeacherTeachingReportPage() {
                     <>
                       <Select value="" onValueChange={addStudentToPerformance}>
                         <SelectTrigger className="w-[280px]">
-                          <SelectValue placeholder={`${t("选择")} ${report.grade} ${t("的学生添加...（")}${gradeStudents.length}${t("人）")}`} />
+                          <SelectValue placeholder={`${t("选择")} ${t(report)} ${t("的学生添加...（")}${gradeStudents.length}${t("人）")}`} />
                         </SelectTrigger>
                         <SelectContent className="max-h-64 overflow-y-auto">
                           {gradeStudents.length === 0 ? (

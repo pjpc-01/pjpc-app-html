@@ -157,7 +157,7 @@ export default function CourseManagement() {
                   <Label htmlFor="subject">{t("科目")} <span className="text-red-500">*</span></Label>
                   <Input
                     id="subject"
-                    value={newCourse.subject}
+                    value={t(newCourse)}
                     onChange={(e) => setNewCourse({ ...newCourse, subject: e.target.value })}
                     placeholder={t("输入科目")}
                     required

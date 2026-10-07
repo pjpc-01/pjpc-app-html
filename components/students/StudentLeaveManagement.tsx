@@ -299,7 +299,7 @@ export default function StudentLeaveManagement() {
             </div>
             <div>
               <Label>{t("原因")}</Label>
-              <Textarea rows={2} value={form.reason} onChange={(e) => setForm(f => ({ ...f, reason: e.target.value }))} />
+              <Textarea rows={2} value={t(form)} onChange={(e) => setForm(f => ({ ...f, reason: e.target.value }))} />
             </div>
             <div>
               <Label>{t("备注")}</Label>

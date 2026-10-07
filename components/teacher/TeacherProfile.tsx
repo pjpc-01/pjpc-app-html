@@ -451,7 +451,7 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
                     <div key={leave.id} className="p-3 border rounded-lg">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <p className="font-medium">{leave.reason}</p>
+                          <p className="font-medium">{t(leave)}</p>
                           <p className="text-sm text-gray-600">
                             {leave.startDate} {t("至")} {leave.endDate} ({leave.days}{t("天)")}
                           </p>
@@ -503,7 +503,7 @@ export default function TeacherProfile({ teacherId }: TeacherProfileProps) {
                   <div key={classItem.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h3 className="font-semibold text-lg">{classItem.className}</h3>
+                        <h3 className="font-semibold text-lg">{t(classItem)}</h3>
                         <p className="text-gray-600">{t(classItem.subject)} - {t(classItem.grade)}</p>
                       </div>
                       <Badge variant="outline">{classItem.center}</Badge>

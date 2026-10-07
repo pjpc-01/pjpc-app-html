@@ -127,7 +127,7 @@ export default function HomeworkDetailPage() {
   const submittedCount = submissions.filter((s) => s.status === "submitted").length
 
   return (
-    <PageLayout title={homework.title} description={`${homework.subject} · ${homework.grade}`} backUrl="/homework" userRole="admin">
+    <PageLayout title={homework.title} description={`${t(homework)} · ${t(homework)}`} backUrl="/homework" userRole="admin">
       {/* Homework Info Card */}
       <Card className="mb-6">
         <CardContent className="pt-6">

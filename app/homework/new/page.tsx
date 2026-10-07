@@ -112,7 +112,7 @@ export default function NewHomeworkPage() {
               <div>
                 <Label>{t("科目 *")}</Label>
                 <Select
-                  value={form.subject}
+                  value={t(form)}
                   onValueChange={(v) => setForm((f) => ({ ...f, subject: v }))}
                 >
                   <SelectTrigger>
@@ -130,7 +130,7 @@ export default function NewHomeworkPage() {
               <div>
                 <Label>{t("年级 *")}</Label>
                 <Select
-                  value={form.grade}
+                  value={t(form)}
                   onValueChange={(v) => setForm((f) => ({ ...f, grade: v }))}
                 >
                   <SelectTrigger>

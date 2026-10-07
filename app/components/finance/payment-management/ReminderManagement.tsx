@@ -406,7 +406,7 @@ export default function ReminderManagement() {
             <div>
               <Label>{t("邮件主题")}</Label>
               <Input
-                value={newTemplate.subject}
+                value={t(newTemplate)}
                 onChange={(e) => setNewTemplate(prev => ({ ...prev, subject: e.target.value }))}
                 placeholder={t("缴费提醒 - {学生姓名}")}
               />
@@ -478,7 +478,7 @@ export default function ReminderManagement() {
             <div>
               <Label>{t("邮件主题")}</Label>
               <Input
-                value={newTemplate.subject}
+                value={t(newTemplate)}
                 onChange={(e) => setNewTemplate(prev => ({ ...prev, subject: e.target.value }))}
                 placeholder={t("缴费提醒 - {学生姓名}")}
               />
