@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Loader2, Target, Check } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context";
 
@@ -292,9 +292,8 @@ export default function ExamTargetsWidget({
   const [i, setI] = useState(0)
   const [savingKey, setSavingKey] = useState("")
   const [savedTick, setSavedTick] = useState(false)
-  // —— 总览表分页（高度自适应，幻灯片里自动翻页）——
-  const listRef = useRef<HTMLDivElement | null>(null)
-  const [pageSize, setPageSize] = useState(14)
+  // —— 总览表分页（幻灯片里自动翻页）——
+  const [pageSize, setPageSize] = useState(10)
   const [pg, setPg] = useState(0)
 
   useEffect(() => {
@@ -303,20 +302,16 @@ export default function ExamTargetsWidget({
     return () => clearInterval(t2)
   }, [mode, list.length, intervalMs])
 
-  // 总览：按容器高度决定每页几人（表头 34px + 预留 2 个组标题，每行按 30px 保守估）
+  // 每页人数：视口高度换算（表头 34 + 预留 2 个组标题 52，每行 30 保守估），封顶 12
   useEffect(() => {
-    const el = listRef.current
-    if (!el) return
     const calc = () => {
-      const h = (el.clientHeight || 0) - 34 - 52
-      setPageSize(Math.max(4, Math.floor(h / 30)))
+      const vh = typeof window === "undefined" ? 1080 : window.innerHeight
+      setPageSize(Math.max(4, Math.min(10, Math.floor((vh * 0.75 - 86) / 30))))
     }
     calc()
-    if (typeof ResizeObserver === "undefined") return
-    const ro = new ResizeObserver(calc)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [mode, loading])
+    window.addEventListener("resize", calc)
+    return () => window.removeEventListener("resize", calc)
+  }, [])
 
   const pageTotal = Math.max(1, Math.ceil(list.length / pageSize))
   useEffect(() => { setPg(0) }, [pageSize, list.length])
@@ -376,7 +371,7 @@ export default function ExamTargetsWidget({
             {editable ? "" : pageTotal > 1 ? t("每 8 秒翻页") : t("每 60 秒自动刷新")}
           </span>
         </div>
-        <div className="flex-1 min-h-0" ref={listRef}>
+        <div className="flex-1 min-h-0">
           <GoalsOverview
             students={shown} subjects={subjects} limit={editable ? (settings?.limit || 0) : 0}
             editable={editable} onSave={handleSave} savingKey={savingKey}
