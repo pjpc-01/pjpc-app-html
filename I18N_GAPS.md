@@ -1,87 +1,36 @@
-# 英文模式下残留中文清单（3706 处 / 157 个文件）
+1|# 英文模式下残留中文清单（3706 处 / 157 个文件）
+2|
+3|统计时间：2026-10-07   扫描范围：app/ + components/（不含语言字典）
+4|
+5|## 根因
+6|
+7|代码里普遍写成 `t("中文原文")`，但语言字典用的是 key 风格（`nav.students` / `report.average_score`），
+8|两边对不上 → 全站 3758 处 t() 调用里只有 52 处能真正翻译，其余 3706 处英文模式下仍显示中文。
+9|
+10|## 一、导航栏（只有 6 个词没映射，最好修）
+11|
+12|AppShell.tsx 的 NAV_LABEL_MAP 缺这 6 个：
 
-统计时间：2026-10-07   扫描范围：app/ + components/（不含语言字典）
+---
 
-## 根因
+## 更新（本轮实际结果）
 
-代码里普遍写成 `t("中文原文")`，但语言字典用的是 key 风格（`nav.students` / `report.average_score`），
-两边对不上 → 全站 3758 处 t() 调用里只有 52 处能真正翻译，其余 3706 处英文模式下仍显示中文。
+### 已解决
+- 英文兜底表从 **2696 → 3130 条**（+434），覆盖：请假/债务/考试目标/Kiosk/家长门户/教学评估/报表章节/费用分类/银行名/科目/角色权限/考勤状态/学期段/关系称谓。
+- 导航栏 3 个漏词（学生请假 / 教学评估 / 债务管理）已补。
+- `AppShell` 分行切换器「全部」走 `t("common.all")`；`DebtManagement` 汇总卡片 label/小字已包 `t()`。
 
-## 一、导航栏（只有 6 个词没映射，最好修）
+### 关键教训（必须遵守）
+**不要用 codemod 给「模块级常量数组」包 `t()`**。`t` 只在组件体内存在，包到组件外 → `ReferenceError: t is not defined` → layout chunk 崩 → **全站白屏**。
+- 本次踩过：约 180 处被误包 → 已全部回退（`git` 还原 44 个文件）。
+- 症状：build 成功（`ignoreBuildErrors: true`），但页面显示 "Application error: a client-side exception"。
+- **验收陷阱**：只统计「残留中文」的探针会返回「0 条」的假通过（错误页是英文）。必须同时断言页面有真实内容 + 监听 `pageerror`。
 
-AppShell.tsx 的 NAV_LABEL_MAP 缺这 6 个：
+### 剩余待办（正确修法）
+模块级数组里的中文（表格列头、筛选项、图表标签、权限树、报表章节模板等），修法二选一：
+1. **渲染处翻译**（推荐）：`{ROWS.map(r => ({...r, label: t(r.label)}))}` / `{t(col.label)}`
+2. 把数组**移进组件体内**再包 `t()`
 
-- 学生请假
-- 活动管理
-- 教师排班
-- 教学评估
-- 绩效管理
-- 债务管理
+涉及文件（部分）：`app/components/attendance/*`(表头)、`components/teacher/AdvancedTeacherFilters.tsx`、`app/points/rules/page.tsx`、`app/pickup/page.tsx`、`app/parent/*`、`app/components/finance/AddFeeDialog.tsx`、`app/components/report/ReportSettingsManager.tsx`、`components/ui/global-search.tsx`、`components/admin/PermissionEditor.tsx`、`app/dashboard/slideshow/page.tsx`、`app/teacher-teaching-report/page.tsx`。
 
-## 二、教师评估 / 绩效相关（老板点名）
-
-- app/teacher-teaching-report/page.tsx — 105 处
-- app/teacher-performance/page.tsx — 4 处
-- components/teacher/TeacherPerformanceManagement.tsx — 59 处
-- components/teacher/TeacherSalaryManagement.tsx — 192 处
-- components/teacher/TeacherStats.tsx — 27 处
-- components/teacher/TeacherDetails.tsx — 26 处
-- components/teacher/TeacherForm.tsx — 48 处
-- components/teacher/TeacherBulkOperations.tsx — 65 处
-- components/teacher/TeacherLeaveManagement.tsx — 55 处
-- components/teacher/TeacherProfile.tsx — 40 处
-- components/teacher/AdvancedTeacherFilters.tsx — 24 处
-- components/teacher/TeacherDashboard.tsx — 20 处
-- components/teacher/ClassSchedule.tsx — 19 处
-- components/teacher/TeacherAnalytics.tsx — 30 处
-- components/teacher/StudentProfileView.tsx — 20 处
-- app/components/dashboards/teachers-tab.tsx — 21 处
-
-## 三、全站最多的 40 个文件
-
--  192 处  components/teacher/TeacherSalaryManagement.tsx
--  105 处  app/teacher-teaching-report/page.tsx
--   94 处  app/components/student/StudentForm.tsx
--   89 处  app/components/finance/reports-overview/FinancialReports.tsx
--   79 处  app/components/attendance/LeaveManagement.tsx
--   75 处  app/components/report/ReportSettingsManager.tsx
--   73 处  app/components/finance/PaymentManagement.tsx
--   72 处  components/courses/CourseScheduling.tsx
--   65 处  components/teacher/TeacherBulkOperations.tsx
--   64 处  app/components/finance/BankReconciliation.tsx
--   61 处  app/teacher-workspace/page.tsx
--   59 处  components/teacher/TeacherPerformanceManagement.tsx
--   58 处  app/components/finance/invoice-management/InvoiceManagement.tsx
--   56 处  components/students/StudentLeaveManagement.tsx
--   56 处  app/components/finance/invoice-management/InvoiceSettingsManager.tsx
--   56 处  app/components/finance/invoice-management/InvoiceList.tsx
--   56 处  app/settings/page.tsx
--   55 处  components/teacher/TeacherLeaveManagement.tsx
--   55 处  app/components/finance/payment-management/ReminderManagement.tsx
--   54 处  app/points/page.tsx
--   52 处  app/components/features/resource-library.tsx
--   48 处  components/teacher/TeacherForm.tsx
--   48 处  app/components/report/PayslipSettingsManager.tsx
--   48 处  app/claim-form/page.tsx
--   47 处  app/components/dashboards/accountant-dashboard.tsx
--   47 处  app/student-report/[id]/StudentReportContent.tsx
--   46 处  app/components/finance/payment-management/ReceiptSettingsManager.tsx
--   46 处  app/card-management/page.tsx
--   45 处  components/shared/checkin-navigation.tsx
--   45 处  app/components/finance/DebtManagement.tsx
--   43 处  app/components/finance/ExpenseManagement.tsx
--   43 处  app/grades/page.tsx
--   40 处  components/teacher/TeacherProfile.tsx
--   37 处  app/components/dashboards/modern-admin-dashboard.tsx
--   37 处  app/student-reports/page.tsx
--   35 处  components/courses/ClassManagement.tsx
--   35 处  components/attendance/UnifiedAttendanceHub.tsx
--   33 处  app/components/attendance/CalendarScheduleView.tsx
--   33 处  app/education/page.tsx
--   32 处  app/pickup/page.tsx
-
-## 四、建议
-
-1. **导航栏**：补 6 个映射 + 6 条英文（几分钟，立竿见影）
-2. **教师评估/绩效**：约 10 个文件 / 600+ 处，需补英文词条（可批量机翻 + 人工过一遍）
-3. **全站**：3700+ 处属大工程，建议按模块分批（财务 → 学生 → 考勤 → 报表）
+不建议翻译的（保持中文）：学生/教师姓名、DB 里的年级值（一年级/中一）、报告评语正文、科目/成绩的原始数据值。
