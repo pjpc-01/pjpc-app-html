@@ -560,8 +560,8 @@ function CalendarReport() {
           <div className="border rounded-lg overflow-hidden">
             {/* Weekday headers */}
             <div className="grid grid-cols-7 bg-gray-50 border-b">
-              {["日","一","二","三","四","五","六"].map((d, i) => (
-                <div key={d} className={`py-2 text-center text-xs font-semibold ${i === 0 || i === 6 ? "text-red-400" : "text-gray-500"}`}>{d}</div>
+              {["周日","周一","周二","周三","周四","周五","周六"].map((d, i) => (
+                <div key={d} className={`py-2 text-center text-xs font-semibold ${i === 0 || i === 6 ? "text-red-400" : "text-gray-500"}`}>{t(d)}</div>
               ))}
             </div>
             {/* Days */}
