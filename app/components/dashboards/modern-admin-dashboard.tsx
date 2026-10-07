@@ -144,10 +144,10 @@ const EXPENSE_COLOR = "#ea580c" // orange-600
 
 // ─── Helper: group-by + count ────────────────────────────────────────────────
 
-function groupCount<T>(items: T[], keyFn: (item: T) => string): { name: string; value: number }[] {
+function groupCount<T>(items: T[], keyFn: (item: T) => string, fallback = "未分类"): { name: string; value: number }[] {
   const map = new Map<string, number>()
   for (const item of items) {
-    const key = keyFn(item) || "未分类"
+    const key = keyFn(item) || fallback
     map.set(key, (map.get(key) || 0) + 1)
   }
   return Array.from(map.entries())
@@ -158,11 +158,12 @@ function groupCount<T>(items: T[], keyFn: (item: T) => string): { name: string; 
 function groupSum<T>(
   items: T[],
   keyFn: (item: T) => string,
-  valFn: (item: T) => number
+  valFn: (item: T) => number,
+  fallback = "未分类"
 ): { name: string; value: number }[] {
   const map = new Map<string, number>()
   for (const item of items) {
-    const key = keyFn(item) || "未分类"
+    const key = keyFn(item) || fallback
     map.set(key, (map.get(key) || 0) + valFn(item))
   }
   return Array.from(map.entries())
@@ -316,7 +317,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
   // ─── Student analytics ───────────────────────────────────────────────────
 
   const gradeDistribution = useMemo(
-    () => groupCount(filteredStudents, (s) => s.grade || ""),
+    () => groupCount(filteredStudents, (s) => t(s.grade) || "", t("未分类")),
     [filteredStudents]
   )
 
@@ -324,9 +325,9 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
     () => {
       const raw = groupCount(filteredStudents, (s) => {
         const g = (s.gender || "").toLowerCase()
-        if (g === "male" || g === "男") return "男"
-        if (g === "female" || g === "女") return "女"
-        return "未知"
+        if (g === "male" || g === "男") return t("男")
+        if (g === "female" || g === "女") return t("女")
+        return t("未知")
       })
       return raw
     },
@@ -388,7 +389,7 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
 
   const feeItemDistribution = useMemo(
     () =>
-      groupSum(feeItems, (f) => f.category || "未分类", (f) => Number(f.amount) || 0),
+      groupSum(feeItems, (f) => t(f.category) || "", (f) => Number(f.amount) || 0, t("未分类")),
     [feeItems]
   )
 
@@ -435,14 +436,14 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
   // ─── Center filter options ───────────────────────────────────────────────
 
   const centerFilterOptions = useMemo(
-    () => [{ id: "all", code: "全部", name: "所有分行" }, ...centers],
+    () => [{ id: "all", code: t("全部"), name: t("所有分行") }, ...centers],
     [centers]
   )
 
   const selectedCenterName = useMemo(() => {
-    if (selectedCenter === "all") return "所有分行"
+    if (selectedCenter === "all") return t("所有分行")
     const c = centers.find((cc) => cc.id === selectedCenter)
-    return c ? `${c.code} ${c.name}` : "未知分行"
+    return c ? `${c.code} ${c.name}` : t("未知分行")
   }, [selectedCenter, centers])
 
   // ─── Render ──────────────────────────────────────────────────────────────
@@ -856,13 +857,13 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
                     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                     fontSize: "12px",
                   }}
-                  formatter={(value: number, name: string) => [`RM ${value.toLocaleString()}`, name === "income" ? "收入" : "支出"]}
+                  formatter={(value: number, name: string) => [`RM ${value.toLocaleString()}`, name === "income" ? t("收入") : t("支出")]}
                 />
                 <Legend
                   verticalAlign="top"
                   height={28}
                   iconType="circle"
-                  formatter={(value) => (value === "income" ? "收入" : "支出")}
+                  formatter={(value) => (value === "income" ? t("收入") : t("支出"))}
                 />
                 <Area
                   type="monotone"
