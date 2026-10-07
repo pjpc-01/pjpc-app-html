@@ -139,7 +139,7 @@ export function StudentGoalCard({ st, subjects }: { st: GoalStudent; subjects: S
         )}
       </div>
 
-      <div className="grid grid-cols-7 gap-2.5 mt-6">
+      <div className="grid gap-2.5 mt-6" style={{ gridTemplateColumns: `repeat(${Math.max(1, subjects.length)}, minmax(0, 1fr))` }}>
         {subjects.map(s => {
           const v = val(st.scores[s.key])
           return (
