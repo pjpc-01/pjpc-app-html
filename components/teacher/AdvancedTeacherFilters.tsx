@@ -287,7 +287,7 @@ export default function AdvancedTeacherFilters({
                   )}
                 >
                   <Icon className="h-3 w-3 mr-1" />
-                  {option.label}
+                  {t(option.label)}
                 </Button>
               )
             })}
@@ -314,7 +314,7 @@ export default function AdvancedTeacherFilters({
               <SelectItem value="all">{t('course.all_subjects')}</SelectItem>
               {subjectOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+                  {t(option.label)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -328,7 +328,7 @@ export default function AdvancedTeacherFilters({
               <SelectItem value="all">{t("全部部门")}</SelectItem>
               {departmentOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+                  {t(option.label)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -342,7 +342,7 @@ export default function AdvancedTeacherFilters({
               <SelectItem value="all">{t('common.all_status')}</SelectItem>
               {statusOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+                  {t(option.label)}
                 </SelectItem>
               ))}
             </SelectContent>
