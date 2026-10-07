@@ -31,6 +31,7 @@ interface GanttEntry {
   end_time: string
   course_grade?: string
   course_title?: string
+  teacher_name?: string
 }
 
 const PROXY_BASE = "/api/pocketbase-proxy/api/collections/schedules/records"
@@ -138,6 +139,7 @@ export default function GradeGanttChart() {
         end_time: item.end_time || "",
         course_grade: item.course_grade || "",
         course_title: item.course_title || "",
+        teacher_name: item.teacher_name || "",
       })))
     } catch (err) {
       console.error("加载甘特图数据失败:", err)
@@ -317,15 +319,17 @@ export default function GradeGanttChart() {
                                 key={entry.id}
                                 className={`absolute h-[32px] rounded-md ${bg} text-white text-[11px] px-2 flex items-center overflow-hidden shadow-sm cursor-pointer`}
                                 style={{ left: `${left}%`, width: `${width}%`, top: idx * 36 }}
-                                title={`${course?.title || entry.course_title} · ${grade} · ${DAY_LABELS[day]} ${entry.start_time}-${entry.end_time}`}
+                                title={`${course?.title || entry.course_title} · ${grade} · ${DAY_LABELS[day]} ${entry.start_time}-${entry.end_time}${entry.teacher_name ? ' · ' + entry.teacher_name : ''}`}
                               >
                                 <span className="font-bold shrink-0 mr-1.5">{grade}</span>
                                 <span className="truncate font-medium">
                                   {course?.title || entry.course_title || entry.course_id.slice(0, 8)}
                                 </span>
-                                <span className="ml-auto shrink-0 pl-1.5 text-[10px] opacity-90">
-                                  {entry.start_time}-{entry.end_time}
-                                </span>
+                                {entry.teacher_name ? (
+                                  <span className="ml-auto shrink-0 pl-1.5 text-[10px] opacity-90 truncate max-w-[45%]">
+                                    {entry.teacher_name}
+                                  </span>
+                                ) : null}
                               </div>
                             )
                           })
