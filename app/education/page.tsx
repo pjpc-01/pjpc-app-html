@@ -463,7 +463,7 @@ export default function EducationOverviewPage() {
             ) : (
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
                 {gradeGroups.slice(0, 10).map((g) => (
-                  <div key={g.grade} className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 transition-colors">
+                  <div key={t(g)} className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 transition-colors">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <Users className="h-4 w-4 text-primary" />

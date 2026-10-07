@@ -396,7 +396,7 @@ export default function GradesManagementPage() {
                 {subjectStats.map(s => {
                   const max = Math.max(...Object.values(s.dist), 1)
                   return (
-                    <div key={s.subject} className="flex items-center gap-3">
+                    <div key={t(s)} className="flex items-center gap-3">
                       <div className="w-20 text-xs font-medium shrink-0 text-right">{t(s.subject)}</div>
                       <div className="flex-1 flex items-center gap-1">
                         {(["A", "B", "C", "D", "F"] as const).map(l => {

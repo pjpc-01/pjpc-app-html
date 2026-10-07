@@ -74,7 +74,7 @@ export default function ParentGradesPage() {
   const groupByTerm = (grades: GradeRecord[]) => {
     const groups: Record<string, GradeRecord[]> = {}
     grades.forEach(g => {
-      const key = `${g.term} ${g.year}`
+      const key = `${t(g)} ${g.year}`
       if (!groups[key]) groups[key] = []
       groups[key].push(g)
     })

@@ -156,7 +156,7 @@ function CourseFormDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="subject">{t("科目")} <span className="text-red-500">*</span></Label>
-              <Select value={form.subject} onValueChange={(v) => setForm({ ...form, subject: v })}>
+              <Select value={t(form)} onValueChange={(v) => setForm({ ...form, subject: v })}>
                 <SelectTrigger>
                   <SelectValue placeholder={t("选择科目")} />
                 </SelectTrigger>

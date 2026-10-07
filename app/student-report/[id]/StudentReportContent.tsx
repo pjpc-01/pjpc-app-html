@@ -641,7 +641,7 @@ export default function StudentReportContent() {
                     {enrichmentSubjects.map((en: any, i: number) => (
                       <div key={i} className="flex flex-col gap-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-gray-600">{en.subject}</span>
+                          <span className="text-xs font-medium text-gray-600">{t(en)}</span>
                         </div>
                         <Textarea
                           value={en.evaluation || ''}

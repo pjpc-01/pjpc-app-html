@@ -519,7 +519,7 @@ export default function TeacherPerformanceManagement() {
                     </TableCell>
                     <TableCell>
                       <Badge className={`${scoreLevel.color} bg-opacity-20`}>
-                        {scoreLevel.level}
+                        {t(scoreLevel)}
                       </Badge>
                     </TableCell>
                     <TableCell>

@@ -524,7 +524,7 @@ export default function StudentKioskPage() {
                       />
                       <Input
                         placeholder={t("请假原因（可选）")}
-                        value={leaveForm.reason}
+                        value={t(leaveForm)}
                         onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
                         className="text-sm"
                       />

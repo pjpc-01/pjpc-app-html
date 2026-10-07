@@ -935,7 +935,7 @@ Prospek Cemerlang`,
                       <Label htmlFor="whatsappSubject">{t("消息主题")}</Label>
                       <Input
                         id="whatsappSubject"
-                        value={messageFormats.whatsapp.subject}
+                        value={t(messageFormats.whatsapp)}
                         onChange={(e) => setMessageFormats(prev => ({
                           ...prev,
                           whatsapp: { ...prev.whatsapp, subject: e.target.value }
@@ -976,7 +976,7 @@ Prospek Cemerlang`,
                       <Label htmlFor="emailSubject">{t("邮件主题")}</Label>
                       <Input
                         id="emailSubject"
-                        value={messageFormats.email.subject}
+                        value={t(messageFormats.email)}
                         onChange={(e) => setMessageFormats(prev => ({
                           ...prev,
                           email: { ...prev.email, subject: e.target.value }

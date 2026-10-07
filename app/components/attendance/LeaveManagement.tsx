@@ -447,7 +447,7 @@ export function LeaveManagement() {
                           </div>
                           <div>
                             <span className="text-gray-500">{t("请假原因:")}</span>
-                            <p className="font-medium">{request.reason}</p>
+                            <p className="font-medium">{t(request)}</p>
                           </div>
                         </div>
                       </div>

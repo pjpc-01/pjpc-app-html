@@ -210,7 +210,7 @@ export default function AttendanceSettingsPanel() {
                   {config.grade_overrides.length > 0 && (
                     <div className="space-y-1 mb-2">
                       {config.grade_overrides.map(g => (
-                        <div key={g.grade} className="flex items-center gap-2 bg-gray-50 rounded px-2 py-1">
+                        <div key={t(g)} className="flex items-center gap-2 bg-gray-50 rounded px-2 py-1">
                           <Badge variant="secondary" className="text-[10px]">{t(g.grade)}</Badge>
                           <span className="text-[10px] text-gray-500">{t("签到 ≤")}{g.checkin_deadline}</span>
                           <span className="text-[10px] text-gray-500">{t("签退 ≥")}{g.checkout_minimum}</span>

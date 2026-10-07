@@ -246,7 +246,7 @@ export default function AttendanceManagement({ centerId }: AttendanceManagementP
                                              <TableRow key={record.id}>
                          <TableCell className="font-mono">{record.studentId}</TableCell>
                          <TableCell>{record.studentName}</TableCell>
-                         <TableCell>{record.centerName}</TableCell>
+                         <TableCell>{t(record)}</TableCell>
                          <TableCell>{record.deviceName || '未知设备'}</TableCell>
                          <TableCell>
                            {new Date(record.timestamp).toLocaleString('zh-CN')}

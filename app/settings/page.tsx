@@ -613,7 +613,7 @@ export default function SettingsPage() {
                   <div className="space-y-2">
                     <Label>{t("中心名称")}</Label>
                     <Input
-                      value={systemParams.centerName}
+                      value={t(systemParams)}
                       onChange={(e) => setSystemParams({ ...systemParams, centerName: e.target.value })}
                     />
                   </div>
