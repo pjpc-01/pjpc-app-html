@@ -3173,5 +3173,12 @@ export const ZH_TO_EN: Record<string, string> = {
   "为每位学生选择适用的收费项目": "Select the applicable fee items for each student",
   "种商品": "product(s)",
   "项低库存": "low stock",
+  "中等": "Fair",
+  "需加强": "Needs Improvement",
+  "待加强": "Needs Improvement",
+  "需努力": "Needs Effort",
+  "较弱": "Weak",
+  "未评估": "Not assessed",
+  "—": "—",
 };
 
