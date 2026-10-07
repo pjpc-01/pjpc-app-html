@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Plus, Trash2, GripVertical, Play, Pause, Settings2, ChevronLeft, ChevronRight, LayoutGrid, MonitorPlay, Trophy, Cake, Calendar, Megaphone, X, MoveUp, MoveDown, Palette, Eye, EyeOff } from "lucide-react"
+import { Loader2, Plus, Trash2, GripVertical, Play, Pause, Settings2, ChevronLeft, ChevronRight, LayoutGrid, MonitorPlay, Trophy, Cake, Calendar, Megaphone, X, MoveUp, MoveDown, Palette, Eye, EyeOff, Target } from "lucide-react"
 import { LeaderboardList, type LeaderboardStudent } from "@/components/shared/LeaderboardList"
+import ExamTargetsWidget from "@/components/dashboard/ExamTargetsWidget"
 import { useLanguage } from "@/contexts/language-context"
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -19,7 +20,7 @@ interface Student {
 
 interface WidgetConfig {
   id: string
-  type: "leaderboard" | "birthdays" | "events" | "announcement"
+  type: "leaderboard" | "birthdays" | "events" | "announcement" | "examTargetsRotate" | "examTargetsOverview"
   title: string
   settings: Record<string, any>
   enabled: boolean
@@ -40,6 +41,8 @@ const WIDGET_TYPES: WidgetTypeInfo[] = [
   { type: "birthdays", label: "本月生日", icon: <Cake className="h-4 w-4" />, defaultTitle: "本月寿星", defaultSettings: { showAge: false } },
   { type: "events", label: "活动预告", icon: <Calendar className="h-4 w-4" />, defaultTitle: "活动预告", defaultSettings: { events: [] } },
   { type: "announcement", label: "公告栏", icon: <Megaphone className="h-4 w-4" />, defaultTitle: "公告栏", defaultSettings: { text: "" } },
+  { type: "examTargetsRotate", label: "考试目标（轮播）", icon: <Target className="h-4 w-4" />, defaultTitle: "考试目标", defaultSettings: { mode: "rotate", interval: 7 } },
+  { type: "examTargetsOverview", label: "考试目标（总览）", icon: <Target className="h-4 w-4" />, defaultTitle: "考试目标 · 全班", defaultSettings: { mode: "overview" } },
 ]
 
 const DEFAULT_WIDGETS: WidgetConfig[] = [
@@ -364,6 +367,13 @@ function SlideshowOverlay({
         const pageStudents = pageCount > 1 ? mapped.slice((pageNum - 1) * 30, pageNum * 30) : mapped
         return <LeaderboardList students={pageStudents} variant="light" multiColumn={true} startRank={startRank} />
       }
+      case "examTargetsRotate":
+      case "examTargetsOverview":
+        return (
+          <ExamTargetsWidget
+            settings={{ ...w.settings, mode: w.type === "examTargetsOverview" ? "overview" : "rotate" }}
+          />
+        )
       case "birthdays": return <BirthdayWidget students={centerStudents} />
       case "events": return <EventsWidget
         events={events.length > 0 ? events : (eventsByWidget[w.id] || w.settings.events || [])} />
@@ -644,6 +654,13 @@ function DashboardContent() {
         }))
         return <LeaderboardList students={mapped} variant="light" />
       }
+      case "examTargetsRotate":
+      case "examTargetsOverview":
+        return (
+          <ExamTargetsWidget
+            settings={{ ...w.settings, mode: w.type === "examTargetsOverview" ? "overview" : "rotate" }}
+          />
+        )
       case "birthdays":
         return <BirthdayWidget students={centerStudents} />
       case "events":
