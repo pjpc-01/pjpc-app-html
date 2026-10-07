@@ -336,8 +336,8 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
   const statusDistribution = useMemo(
     () =>
       groupCount(filteredStudents, (s) => {
-        if (s.status === "active") return "在读"
-        return "离校"
+        if (s.status === "active") return t("在读")
+        return t("离校")
       }),
     [filteredStudents]
   )
@@ -346,9 +346,9 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
 
   const departmentDistribution = useMemo(
     () =>
-      groupCount(filteredTeachers, (t) => {
-        const dept = (t.department || "").trim()
-        return dept || "未分配"
+      groupCount(filteredTeachers, (tc) => {
+        const dept = (tc.department || "").trim()
+        return t(dept) || t("未分配")
       }),
     [filteredTeachers]
   )
