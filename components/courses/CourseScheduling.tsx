@@ -888,15 +888,24 @@ export default function CourseScheduling() {
                   </button>
                 </div>
               ) : isEditing ? (
-                <button
-                  className="group flex items-center gap-1 w-full justify-center hover:text-indigo-600"
-                  onClick={() => startEditSlot(slot)}
-                  title={t("点击修改时间段")}
-                >
-                  <Clock className="h-3 w-3" />
-                  <span>{slot.start}-{slot.end}</span>
-                  <Pencil className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 text-indigo-400" />
-                </button>
+                <div className="group flex items-center gap-1 w-full justify-center">
+                  <button
+                    className="flex items-center gap-1 hover:text-indigo-600"
+                    onClick={() => startEditSlot(slot)}
+                    title={t("点击修改时间段")}
+                  >
+                    <Clock className="h-3 w-3" />
+                    <span>{slot.start}-{slot.end}</span>
+                    <Pencil className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 text-indigo-400" />
+                  </button>
+                  <button
+                    className="shrink-0 text-gray-300 hover:text-red-600"
+                    onClick={() => handleRemoveTimeSlot(slot.id)}
+                    title={t("删除时间段")}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               ) : (
                 <span className="flex items-center gap-1 text-gray-600">
                   <Clock className="h-3 w-3 text-gray-400" />
