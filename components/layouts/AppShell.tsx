@@ -864,7 +864,7 @@ export default function AppShell({
                   }`}
                 >
                   <c.icon className="h-3 w-3" />
-                  {c.code}
+                  {c.id === "all" ? t("common.all") : c.code}
                 </button>
               )))}
             </div>
