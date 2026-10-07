@@ -157,10 +157,10 @@ export default function DebtManagement() {
   }
 
   const cards = [
-    { label: "债务总额", value: rm(summary?.totalPrincipal ?? 0), sub: `${summary?.count ?? 0} 笔 · 进行中 ${summary?.activeCount ?? 0}`, icon: Landmark, cls: "bg-rose-500" },
-    { label: "已还合计", value: rm(summary?.totalPaid ?? 0), sub: "累计还款", icon: HandCoins, cls: "bg-emerald-500" },
-    { label: "剩余欠款", value: rm(summary?.totalRemaining ?? 0), sub: "本金 − 已还", icon: TrendingDown, cls: "bg-amber-500" },
-    { label: "每月应还", value: rm(summary?.monthlyTotal ?? 0), sub: "进行中的债务合计", icon: CalendarClock, cls: "bg-blue-500" },
+    { label: t("债务总额"), value: rm(summary?.totalPrincipal ?? 0), sub: `${summary?.count ?? 0} ${t("笔")} · ${t("进行中")} ${summary?.activeCount ?? 0}`, icon: Landmark, cls: "bg-rose-500" },
+    { label: t("已还合计"), value: rm(summary?.totalPaid ?? 0), sub: t("累计还款"), icon: HandCoins, cls: "bg-emerald-500" },
+    { label: t("剩余欠款"), value: rm(summary?.totalRemaining ?? 0), sub: t("本金 − 已还"), icon: TrendingDown, cls: "bg-amber-500" },
+    { label: t("每月应还"), value: rm(summary?.monthlyTotal ?? 0), sub: t("进行中的债务合计"), icon: CalendarClock, cls: "bg-blue-500" },
   ]
 
   return (
