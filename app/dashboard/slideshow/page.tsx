@@ -45,8 +45,9 @@ const WIDGET_TYPES: WidgetTypeInfo[] = [
   { type: "examTargetsOverview", label: "考试目标（总览）", icon: <Target className="h-4 w-4" />, defaultTitle: "考试目标 · 全班", defaultSettings: { mode: "overview" } },
 ]
 
-/** 考试目标总览在幻灯片里每页人数（与拆分幻灯片的逻辑保持一致） */
-const EXAM_PAGE_SIZE = 10
+/** 考试目标总览在幻灯片里每页人数（与拆分幻灯片的逻辑保持一致）
+ *  调大到 30：让一个年级（如 Form 1）能在一页里排完，不再被切成两页 */
+const EXAM_PAGE_SIZE = 30
 
 const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: "w1", type: "leaderboard", title: "积分排行榜", settings: { limit: 10 }, enabled: true },
