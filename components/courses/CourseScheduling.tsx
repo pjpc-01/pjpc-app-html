@@ -82,8 +82,9 @@ type DayOfWeek = 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri'
 const DAYS: DayOfWeek[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
 
 // 课程表网格宽度：左「时间段」列 + 每天最小宽度 × 天数。
-// ⚠️ 别再写死 680 —— 真实内容宽 = 110 + 5×140 = 810，写 680 会把最右一列裁掉（手机横滑也看不到）。
-const TIME_COL_W = 110
+// ⚠️ 别再写死 680 —— 内容宽必须 ≥ TIME_COL_W + 天数×DAY_COL_MIN_W，写死会把最右一列裁掉（手机横滑也看不到）。
+// 时段列取 170：编辑态里要放「开始/结束 两个下拉 + 保存/取消」，110 会被截断看不到时间。
+const TIME_COL_W = 170
 const DAY_COL_MIN_W = 140
 const GRID_MIN_W = TIME_COL_W + DAYS.length * DAY_COL_MIN_W
 const DAY_LABELS: Record<DayOfWeek, string> = {
@@ -120,7 +121,11 @@ async function pbRequest(path: string, options?: RequestInit) {
     const text = await res.text()
     throw new Error(`PB API Error (${res.status}): ${text.slice(0, 200)}`)
   }
-  return res.json()
+  // PB 的 DELETE 返回 204 且没有 body —— 直接 res.json() 会抛 "Unexpected end of JSON input"，
+  // 导致调用方以为删除失败（实际服务端已删）。统一容错：空响应返回 null。
+  if (res.status === 204) return null
+  const text = await res.text()
+  return text ? JSON.parse(text) : null
 }
 
 // ============================================================
@@ -422,7 +427,10 @@ export default function CourseScheduling() {
     if (!ensureEditing()) return
     const slot = timeSlots.find(s => s.id === id)
     if (slot) {
-      const used = scheduleEntries.some(e => e.start_time === slot.start && e.end_time === slot.end)
+      // 只按「当前年级的时间表模板」判断，别拿全库排班来挡（别的年级用同一时段不算占用）
+      const used = filteredEntries.some(
+        e => e.isTemplate !== false && e.start_time === slot.start && e.end_time === slot.end
+      )
       if (used) {
         toast.error(t("该时间段已有排课，无法删除"))
         return
