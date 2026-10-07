@@ -3160,5 +3160,18 @@ export const ZH_TO_EN: Record<string, string> = {
   "资历": "Experience",
   "组别": "Group",
   "教师筛选": "Teacher Filters",
+  "星期日": "Sun",
+  "星期一": "Mon",
+  "星期二": "Tue",
+  "星期三": "Wed",
+  "星期四": "Thu",
+  "星期五": "Fri",
+  "星期六": "Sat",
+  "所有年级": "All Grades",
+  "本月": "This Month",
+  "上月": "Last Month",
+  "为每位学生选择适用的收费项目": "Select the applicable fee items for each student",
+  "种商品": "product(s)",
+  "项低库存": "low stock",
 };
 
