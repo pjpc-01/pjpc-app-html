@@ -1323,8 +1323,14 @@ export const defaultInvoiceDates = (base = new Date()) => ({
        → 所以问题**大概率是「已提交」的报告被锁**（本轮探针没成功点开已提交行，待下次确认：`app/student-report/[id]/` 里按 status 判断是否禁用编辑）
 - [ ] **2)** 中学学生报告的「报告格式设置」**无法添加科目**
       **实测结论（2026-10-07）**：确认 `ReportSettingsManager.tsx` 的 `defaultSubjects:["华文","国文","英文","科学","数学"]` 是**全局一份**、不按年级分。
-       界面里**有**「添加科目...」输入框（~895 行），但只作用于这份全局配置 → 中学报告拿不到自己的科目表。
-       修法：按「小学 / 中学」拆成两份科目配置（或按 grade 存 preset）
+       **真正根因（2026-10-07 深挖）**：`app/student-report/[id]/StudentReportContent.tsx`
+         · 第 28 行 `SETTINGS_KEY = "student_report_default_subjects"` → 小学/中学**共用一把 localStorage key** ✗
+         · 第 53 行 `filter=(isDefault=true)` → 保存时**永远只 PATCH「默认」那份预设** ✗
+         → 结论：在中学报告里加/改科目，永远只写进 BT.14(小学) 那份，「PU 中学」预设从不更新 ✗
+       修法（二选一）：
+         A. 轻量：key 按年级拆 `...:{小学|中学}`，且写 PB 时按学生年级找对应预设（Form/Peralihan→中学, Standard→小学）
+         B. 正规：`report_settings` 加 `gradeType` 字段（小学/中学）+ 设置页加选择器 + 报告按年级取预设
+       （3 份预设现状：BT.14 isDefault=小学 / PU 中学 / 默认设置；三份 defaultSubjects 都是华文国文英文科学数学 5 科）
 - [ ] **3)** **报告本身也不能编辑**（与 1 同类，确认是否同一个门禁）
 
 ### 学生费用（4）
