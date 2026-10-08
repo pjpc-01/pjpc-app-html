@@ -1379,3 +1379,17 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 **未覆盖 8 页**（找不到可点 item 入口）：教师列表 / 成绩 / 学生费用 / 支出 / 积分 / 资源库 / 教学评估 / 每日日志。
 
 **修法建议**：列表页筛选状态提到 URL query（`?q=` / `?grade=`）或父级 state，弹窗关闭后不要整体重新拉取列表。
+
+### A 项（filter 被清空）进度 — 2026-10-08
+
+**已完成**：`lib/use-persisted-filter.ts` —— sessionStorage 持久化筛选值的 hook，每页接入只需把 `useState("")` 换成 `usePersistedFilter("<唯一key>")`。
+
+**待办（6 个页面，逐页做：定位筛选组件 → 换 hook → build → 实测 → 才提交）**
+- [ ] `/student-management` 学生列表 —— 搜索框**不在** page.tsx；候选 `components/teacher/SmartStudentSelector.tsx`（它的 placeholder「搜索学生姓名、学号、家长...」与实测一致，但**全库没有别的文件引用它**，疑似死组件 → 要确认列表真正的搜索组件在哪）
+- [ ] `/finance/invoices` 发票管理 —— 搜索组件 `app/components/finance/invoice-management/InvoiceByStudent.tsx:122`
+- [ ] `/finance/payments` 付款和收据 —— 候选 `app/components/finance/PaymentManagement.tsx:411`
+- [ ] `/finance/payroll` 薪资管理 —— 关弹窗后筛选控件整个消失（最严重，需先查是重挂载还是条件渲染）
+- [ ] `/homework` 作业管理 —— 跳页后清空
+- [ ] `/inventory` 库存管理 —— 跳页后清空
+
+**每页验收**：改完跑 `node verify-backbtn.mjs` 同类探针或手动：设筛选 → 开 item → 关 → 筛选仍在。
