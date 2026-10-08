@@ -393,7 +393,7 @@ export const generateReportPreviewHTML = (settings: ReportSettingsPreset): strin
       <div class="student-avatar">👤</div>
       <div class="info-grid">
         <b>${SAMPLE_STUDENT.name}</b><br/>
-        编号: ${SAMPLE_STUDENT.studentId} · 年级: ${t(SAMPLE_STUDENT)}<br/>
+        编号: ${SAMPLE_STUDENT.studentId} · 年级: ${SAMPLE_STUDENT.grade}<br/>
         出生: ${SAMPLE_STUDENT.dob} · 年龄: ${SAMPLE_STUDENT.age}岁<br/>
         报告日期: ${SAMPLE_STUDENT.reportDate}
       </div>
