@@ -29,7 +29,6 @@ await ctx.addInitScript(({ t, m }) => {
 const path = u => u.replace(SITE, '').split('?')[0];
 const report = [];
 
-const setFilter = () => document.evaluate ? null : null; // placeholder (浏览器内执行用下面的字符串)
 const FILTER_JS = `(() => {
   const vis = el => !!(el.offsetWidth || el.offsetHeight);
   const s = [...document.querySelectorAll('select')].filter(vis).find(x => x.options.length > 2);
