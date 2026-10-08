@@ -3,7 +3,7 @@
 import React from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export interface PageLayoutProps {
   title: string
@@ -26,6 +26,12 @@ export default function PageLayout({
   actions,
   children,
 }: PageLayoutProps) {
+  const router = useRouter()
+  // 返回按钮：有浏览历史就真的回上一页；直接打开页面(无历史)才回 backUrl
+  const goBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) router.back()
+    else router.push(backUrl || "/")
+  }
   return (
     <div className="space-y-4">
       {/* 页面标题栏 */}
@@ -33,11 +39,9 @@ export default function PageLayout({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pl-10 lg:pl-0">
         <div className="flex items-center gap-3 min-w-0">
           {backUrl && (
-            <Link href={backUrl}>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={goBack}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
           )}
           <div className="min-w-0">
             <h2 className="text-lg font-semibold text-gray-900 truncate">{title}</h2>
