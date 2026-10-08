@@ -311,7 +311,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
                           {getStatusText(item.status)}
                         </Badge>
                       </div>
-                      <p className="text-gray-600">{t(item)}</p>
+                      <p className="text-gray-600">{t(item.subject || "")}</p>
                       {item.description && (
                         <p className="text-sm text-gray-500 mt-1">{item.description}</p>
                       )}
@@ -335,7 +335,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
                             setSchedule(prev => prev.map(s => 
                               s.id === item.id ? { ...s, status: 'active' } : s
                             ))
-                            toast.success(t("课程已开始"), { description: `${t(item)} - ${t(item)}` })
+                            toast.success(t("课程已开始"), { description: t(item.subject || "") })
                           }}>
                           <Play className="h-3 w-3 mr-1" />
                           {t("开始")}
@@ -347,7 +347,7 @@ export default function ClassSchedule({ teacherId }: ClassScheduleProps) {
                             setSchedule(prev => prev.map(s => 
                               s.id === item.id ? { ...s, status: 'completed' } : s
                             ))
-                            toast.success(t("课程已完成"), { description: `${t(item)} - ${t(item)}` })
+                            toast.success(t("课程已完成"), { description: t(item.subject || "") })
                           }}>
                           <Pause className="h-3 w-3 mr-1" />
                           {t("暂停")}
