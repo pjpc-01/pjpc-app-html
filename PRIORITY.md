@@ -1345,3 +1345,18 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 - [ ] **6)** 人事 → 薪金管理 也要 **按月清算** + **存档**
        **实测结论**：同 5，功能没建 → 新功能
       已知：全码库 grep「清算」= **0 处** → 5、6 两个功能**目前完全没建**，属新功能
+
+---
+
+## UX 专项检测（2026-10-08 新增脚本 scripts/ux-back-filter.mjs）
+
+用户反馈：pjpcapp 的 UX 有两个毛病 —— ① 点进 item 后按 Back 直接弹回首页；② 列表页的 filter 进去再出来被重置。
+已做自动化检测脚本 `scripts/ux-back-filter.mjs`（只读）。第一轮结果：
+
+- [x] `/student-reports`  → Back ✔ 回到列表 | Filter ✔ 保留  | **正常**
+- [ ] `/homework`        → Back ✔ | Filter **✘ 被清空**  | 待修
+- [ ] `/inventory`       → Back ✔ | Filter **✘ 被清空**  | 待修
+- [ ] 其余 12 页（学生列表/教师列表/学生费用/发票/付款/支出/薪资/积分/资源库/成绩/教学评估/每日日志）
+      → item 是**弹窗**（不换 URL），Back 测不到；filter 需改成「开弹窗→关掉→看 filter」才能覆盖
+
+**下一步**：脚本加「开弹窗→关闭→检查 filter」的流程，把 12 页也覆盖；再按结果修页面（filter 保留 = 用 URL query 存筛选状态 或 提升 state）。
