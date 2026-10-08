@@ -1393,3 +1393,19 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 - [ ] `/inventory` 库存管理 —— 跳页后清空
 
 **每页验收**：改完跑 `node verify-backbtn.mjs` 同类探针或手动：设筛选 → 开 item → 关 → 筛选仍在。
+
+### A 项第1页实测结论（2026-10-08）— **换 state 没解决问题** ⚠️
+
+实测 `verify-smfilter.mjs`（/student-management）：
+- 搜索框输入 `a` → **列表行数 50→50 完全没变**（说明这个框根本没接到 `filters.searchTerm` 的过滤逻辑）
+- 点第一行 → 弹窗出现 ✓；关掉 → 搜索框值**被清空** ✗
+
+**结论**：页面里能看到的那个搜索框**不是**绑在 `filters` state 上（是另一个 state，或非受控 input）。
+→ 所以把 `useState` 换成 `usePersistedState` 换对了位置也用不上（那个框不读它）。
+
+**下轮第一件事**：挖出学生列表搜索框的真正归属（`SearchAndFilter` 子组件？非受控 input？），找到再治，别猜。
+
+**本轮已落地（已推 adrian-branch 3e462c4，未全推）**：
+- `lib/use-persisted-filter.ts` 通用 hook（`usePersistedState<T>`，兼容 useState 函式更新）
+- 学生列表 `filters` state 已改持久化（虽然界面上那个框不吃它）
+- 删除死组件 `components/teacher/SmartStudentSelector.tsx`（全库 0 引用，−411 行）
