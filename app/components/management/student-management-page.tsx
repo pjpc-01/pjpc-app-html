@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import PageLayout from "@/components/layouts/PageLayout"
 import { isPrimaryGrade, isSecondaryGrade } from "@/lib/grades"
 import TabbedPage from "@/components/layouts/TabbedPage"
+import { usePersistedState } from "@/lib/use-persisted-filter"
 import StatsGrid from "@/components/ui/StatsGrid"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -244,7 +245,7 @@ export default function StudentManagementPage() {
   
   // 状态管理
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set())
-  const [filters, setFilters] = useState<FilterState>({
+  const [filters, setFilters] = usePersistedState<FilterState>("sm.filters", {
     searchTerm: "",
     selectedGrade: "all",
     selectedCenter: "",
