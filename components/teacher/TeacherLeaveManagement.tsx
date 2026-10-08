@@ -531,7 +531,7 @@ export default function TeacherLeaveManagement() {
                     </div>
                   </TableCell>
                   <TableCell>{record.total_days} {t("天")}</TableCell>
-                  <TableCell className="max-w-xs truncate">{t(record)}</TableCell>
+                  <TableCell className="max-w-xs truncate">{record.reason || ""}</TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(record.status)}>
                       {getStatusName(record.status)}
@@ -663,7 +663,7 @@ export default function TeacherLeaveManagement() {
               <Label htmlFor="reason">{t("请假原因")}</Label>
               <Textarea
                 id="reason"
-                value={t(leaveForm)}
+                value={leaveForm.reason || ""}
                 onChange={(e) => setLeaveForm(prev => ({ 
                   ...prev, 
                   reason: e.target.value 
