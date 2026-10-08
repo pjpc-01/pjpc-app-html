@@ -45,21 +45,25 @@ const loadDefaultSubjects = (): string[] => {
   return DEFAULT_SUBJECTS
 }
 
-const saveDefaultSubjects = async (subjects: string[]) => {
+const saveDefaultSubjects = async (subjects: string[], presetId?: string) => {
   if (typeof window === "undefined") return
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(subjects))
-  // Also persist to PB report_settings
+  // Also persist to PB report_settings（有 presetId 就写那一份，没有才退回 isDefault）
   try {
-    const res = await fetch('/api/pocketbase-proxy/api/collections/report_settings/records?filter=(isDefault=true)&perPage=1')
-    if (res.ok) {
-      const data = await res.json()
-      if (data.items?.length > 0) {
-        await fetch(`/api/pocketbase-proxy/api/collections/report_settings/records/${data.items[0].id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ defaultSubjects: subjects }),
-        })
+    let targetId = presetId
+    if (!targetId) {
+      const res = await fetch('/api/pocketbase-proxy/api/collections/report_settings/records?filter=(isDefault=true)&perPage=1')
+      if (res.ok) {
+        const data = await res.json()
+        targetId = data.items?.[0]?.id
       }
+    }
+    if (targetId) {
+      await fetch(`/api/pocketbase-proxy/api/collections/report_settings/records/${targetId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ defaultSubjects: subjects }),
+      })
     }
   } catch (e) { console.error('Save defaultSubjects failed:', e) }
 }
@@ -195,7 +199,7 @@ export default function StudentReportContent() {
             // Also sync defaultSubjects to the editable state
             if (r.defaultSubjects?.length) {
               setDefaultSubjects(r.defaultSubjects)
-              saveDefaultSubjects(r.defaultSubjects)
+              saveDefaultSubjects(r.defaultSubjects, r.id)
             }
           }
         }
@@ -267,7 +271,7 @@ export default function StudentReportContent() {
     const updated = [...defaultSubjects, name]
     setDefaultSubjects(updated)
     setReportSettings(prev => ({ ...prev, defaultSubjects: updated }))
-    saveDefaultSubjects(updated)
+    saveDefaultSubjects(updated, reportSettings.id)
     setNewSubjectName("")
   }
 
@@ -275,13 +279,13 @@ export default function StudentReportContent() {
     const updated = defaultSubjects.filter(s => s !== name)
     setDefaultSubjects(updated)
     setReportSettings(prev => ({ ...prev, defaultSubjects: updated }))
-    saveDefaultSubjects(updated)
+    saveDefaultSubjects(updated, reportSettings.id)
   }
 
   const handleResetDefaultSubjects = () => {
     setDefaultSubjects([...DEFAULT_SUBJECTS])
     setReportSettings(prev => ({ ...prev, defaultSubjects: [...DEFAULT_SUBJECTS] }))
-    saveDefaultSubjects([...DEFAULT_SUBJECTS])
+    saveDefaultSubjects([...DEFAULT_SUBJECTS], reportSettings.id)
   }
 
   // Print the iframe content
@@ -808,7 +812,7 @@ export default function StudentReportContent() {
               setReportSettings(s)
               if (s.defaultSubjects?.length) {
                 setDefaultSubjects(s.defaultSubjects)
-                saveDefaultSubjects(s.defaultSubjects)
+                saveDefaultSubjects(s.defaultSubjects, reportSettings.id)
               }
             }}
             activePresetId={reportSettings.id}
