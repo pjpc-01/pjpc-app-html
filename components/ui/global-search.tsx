@@ -49,7 +49,7 @@ const QUICK_NAV: SearchResult[] = [
   { id: "expenses", label: "支出管理", href: "/finance/expenses", icon: DollarSign, category: "finance" },
   { id: "payroll", label: "薪资管理", href: "/finance/payroll", icon: DollarSign, category: "finance" },
   { id: "reports", label: "财务报表", href: "/finance/reports", icon: FileText, category: "finance" },
-  { id: "attendance", label: "考勤报表", href: "/attendance-reports", icon: FileText, category: "other" },
+  { id: "attendance", label: "考勤报表", href: "/attendance", icon: FileText, category: "other" },
   { id: "checkin", label: "学生签到", href: "/student-checkin", icon: Users, category: "student" },
   { id: "teacher-checkin", label: "教师签到", href: "/teacher-checkin", icon: UserCog, category: "teacher" },
   { id: "homework", label: "作业管理", href: "/homework", icon: BookOpen, category: "other" },
