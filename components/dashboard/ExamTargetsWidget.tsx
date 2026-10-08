@@ -277,8 +277,19 @@ export function GoalsOverview({
   const lanes = editable ? 1 : Math.max(1, columns)
   const chunks = useMemo(() => {
     if (lanes <= 1) return [list]
-    const per = Math.ceil(list.length / lanes)
-    return Array.from({ length: lanes }, (_, i) => list.slice(i * per, (i + 1) * per)).filter(c => c.length)
+    // 按年级分组，再平衡地分到各栏（同一个年级绝不拆开）
+    const groups = [...groupByGrade(list)].sort((a, b) => b[1].length - a[1].length)
+    const target = Math.ceil(list.length / lanes)
+    const out: GoalStudent[][] = []
+    let cur: GoalStudent[] = []
+    for (const [, rows] of groups) {
+      if (cur.length && cur.length + rows.length > target && out.length < lanes - 1) {
+        out.push(cur); cur = []
+      }
+      cur = cur.concat(rows)
+    }
+    if (cur.length) out.push(cur)
+    return out
   }, [list, lanes])
 
   return (
@@ -288,7 +299,7 @@ export function GoalsOverview({
           <GradeLane
             key={ci} students={chunk} subjects={subjects}
             editable={editable} onSave={onSave} savingKey={savingKey}
-            compact={lanes > 1}
+            compact={lanes > 1 || list.length > 8}
           />
         ))}
       </div>
@@ -366,7 +377,7 @@ export default function ExamTargetsWidget({
   if (!list.length) return <div className="h-full grid place-items-center text-slate-400 text-sm">{t("还没有考试目标数据")}</div>
 
   if (mode === "overview") {
-    // 人少不分栏；人多自动 2 栏，一屏看完（不再翻页、不再被裁）
+    // 人多就左右两栏；但按年级分组分栏（同一个年级不会被拆到两栏）
     const cols = list.length > 8 ? 2 : 1
     return (
       <div className="h-full flex flex-col">
