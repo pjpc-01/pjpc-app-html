@@ -1360,3 +1360,22 @@ export const defaultInvoiceDates = (base = new Date()) => ({
       → item 是**弹窗**（不换 URL），Back 测不到；filter 需改成「开弹窗→关掉→看 filter」才能覆盖
 
 **下一步**：脚本加「开弹窗→关闭→检查 filter」的流程，把 12 页也覆盖；再按结果修页面（filter 保留 = 用 URL query 存筛选状态 或 提升 state）。
+
+### UX 检测 v2 结果（2026-10-08 · 已覆盖弹窗型）
+
+**弹窗后 filter 被清空（4 个）— 对应用户反馈「进 item 再出来 filter 没了」**
+- [ ] `/student-management` 学生列表 → 搜索框被清空
+- [ ] `/finance/invoices` 发票管理 → 搜索框被清空
+- [ ] `/finance/payments` 付款和收据 → 搜索框被清空
+- [ ] `/finance/payroll` 薪资管理 → 关掉弹窗后筛选控件整个没了
+
+**跳页后 filter 被清空（2 个）**
+- [ ] `/homework` 作业管理
+- [ ] `/inventory` 库存管理
+
+**Back 去向**：测到的 3 个跳页型（作业/库存/学生报告）Back 都正常回列表 ✓；
+其余 item 是弹窗型，浏览器 Back 不适用 → 用户报的「Back 弹回首页」未复现，怀疑是详情页里的「返回」按钮行为，待单独查。
+
+**未覆盖 8 页**（找不到可点 item 入口）：教师列表 / 成绩 / 学生费用 / 支出 / 积分 / 资源库 / 教学评估 / 每日日志。
+
+**修法建议**：列表页筛选状态提到 URL query（`?q=` / `?grade=`）或父级 state，弹窗关闭后不要整体重新拉取列表。
