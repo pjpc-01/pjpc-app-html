@@ -34,7 +34,12 @@ const FILTER_JS = `(() => {
   const s = [...document.querySelectorAll('select')].filter(vis).find(x => x.options.length > 2);
   if (s) { s.value = s.options[1].value; s.dispatchEvent(new Event('change', { bubbles: true })); return { kind: 'select', label: (s.getAttribute('aria-label') || s.name || '').slice(0, 18) }; }
   const t = [...document.querySelectorAll('input')].filter(vis).find(x => /搜索|查询|search/i.test(x.placeholder || ''));
-  if (t) { t.value = 'a'; t.dispatchEvent(new Event('input', { bubbles: true })); return { kind: 'text', label: (t.placeholder || '').slice(0, 18) }; }
+  if (t) {
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(t, 'a');
+    t.dispatchEvent(new Event('input', { bubbles: true }));
+    return { kind: 'text', label: (t.placeholder || '').slice(0, 18) };
+  }
   return null;
 })()`;
 const READ_JS = `(() => {
