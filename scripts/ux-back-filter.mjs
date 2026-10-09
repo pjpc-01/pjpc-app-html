@@ -100,6 +100,16 @@ for (const [name, href] of PAGES) {
       const vis = el => !!(el.offsetWidth || el.offsetHeight);
       const kw = /查看|详情|编辑|填写|View|Detail|Edit/;
       let el = [...document.querySelectorAll('table tbody tr button, table tbody tr a, [role=row] button')].filter(vis).find(b => kw.test(b.innerText || b.getAttribute('aria-label') || ''));
+      // 退化 1：整行最后一个单元格里的按钮/链接（常见的"操作"列）
+      if (!el) {
+        const ops = [...document.querySelectorAll('table tbody tr td:last-child button, table tbody tr td:last-child a')].filter(vis);
+        if (ops.length) el = ops[ops.length - 1];
+      }
+      // 退化 2：带 title/aria-label 的图标按钮
+      if (!el) {
+        const icon = [...document.querySelectorAll('table tbody tr button[title], table tbody tr button[aria-label], table tbody tr a[title]')].filter(vis);
+        if (icon.length) el = icon[0];
+      }
       if (!el) { const tr = [...document.querySelectorAll('table tbody tr')].filter(vis).find(t => t.querySelector('td')); if (tr) el = tr; }
       if (!el) return null;
       el.setAttribute('data-uxprobe2', '1');
@@ -127,9 +137,10 @@ for (const [name, href] of PAGES) {
         const st = await page.evaluate(READ_JS);
         row.rowsDialog = `${before}→${await rowCount()}`;
         row.filterDialog = still ? '✘弹窗关不掉'
-          : !st ? '✘控件没了'
-            : probe ? (probe.kind === 'select' ? (st.idx > 0 ? '✔保留' : '✘重置') : (st.value === 'a' ? '✔保留' : '✘清空'))
-              : '(无筛选控件)';
+          : (probe === null && !st) ? '(本来就没筛选控件)'
+            : !st ? '✘控件没了'
+              : probe ? (probe.kind === 'select' ? (st.idx > 0 ? '✔保留' : '✘重置') : (st.value === 'a' ? '✔保留' : '✘清空'))
+                : '(无筛选控件)';
       }
     } else row.filterDialog = '无可点item';
   } catch (e) {
