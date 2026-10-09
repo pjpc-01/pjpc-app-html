@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import Link from "next/link"
 import PageLayout from "@/components/layouts/PageLayout"
+import { usePersistedState } from "@/lib/use-persisted-filter"
 import { useInventoryItems, useInventoryCategories, useLowStockItems } from "@/hooks/useInventory"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -33,9 +34,9 @@ export default function InventoryPage() {
   const { categories, create: createCategory, remove: removeCategory } = useInventoryCategories()
   const { items: lowStockItems } = useLowStockItems()
 
-  const [search, setSearch] = useState("")
-  const [categoryFilter, setCategoryFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [search, setSearch] = usePersistedState("inv.search", "")
+  const [categoryFilter, setCategoryFilter] = usePersistedState<string>("inv.category", "all")
+  const [statusFilter, setStatusFilter] = usePersistedState<string>("inv.status", "all")
   const [newCat, setNewCat] = useState("")
   const [addingCat, setAddingCat] = useState(false)
 
