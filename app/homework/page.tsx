@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import Link from "next/link"
 import PageLayout from "@/components/layouts/PageLayout"
+import { usePersistedState } from "@/lib/use-persisted-filter"
 import { useHomeworkList } from "@/hooks/useHomework"
 import { GRADE_OPTIONS_ZH } from "@/lib/grades"
 import { useCenters } from "@/hooks/useCenters"
@@ -51,9 +52,9 @@ export default function HomeworkPage() {
   const { t } = useLanguage()
   const { homeworkList, loading, error } = useHomeworkList()
   const { centers } = useCenters()
-  const [filterSubject, setFilterSubject] = useState<string>("all")
-  const [filterGrade, setFilterGrade] = useState<string>("all")
-  const [searchQuery, setSearchQuery] = useState("")
+  const [filterSubject, setFilterSubject] = usePersistedState<string>("hw.subject", "all")
+  const [filterGrade, setFilterGrade] = usePersistedState<string>("hw.grade", "all")
+  const [searchQuery, setSearchQuery] = usePersistedState("hw.search", "")
 
   const filtered = homeworkList.filter((hw) => {
     if (filterSubject !== "all" && hw.subject !== filterSubject) return false
