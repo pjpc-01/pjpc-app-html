@@ -346,7 +346,26 @@ export default function AppShell({
       .catch(() => {})
   }, [])
 
-  // Load custom nav order from localStorage (top-level only)
+  // 取当前登录 token（兼容 PB SDK 存在 localStorage 的各种键名）
+  const findAuthToken = (): string | null => {
+    try {
+      const direct = localStorage.getItem('pocketbase_auth')
+      if (direct) {
+        const t = JSON.parse(direct)?.token
+        if (t) return t
+      }
+      for (const k of Object.keys(localStorage)) {
+        if (!/auth/i.test(k)) continue
+        try {
+          const t = JSON.parse(localStorage.getItem(k) || '')?.token
+          if (t) return t
+        } catch {}
+      }
+    } catch {}
+    return null
+  }
+
+  // 1) 先读 localStorage 缓存（首次渲染立刻生效，不等服务器）
   useEffect(() => {
     try {
       const saved = localStorage.getItem(`pjpc_nav_order_${userRole}`)
@@ -354,10 +373,54 @@ export default function AppShell({
     } catch {}
   }, [userRole])
 
-  // Save nav order to localStorage
+  // 2) 再从服务器拉本人保存的顺序，灌回缓存（服务器权威 —— 换电脑/换浏览器也保留）
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const token = findAuthToken()
+        const res = await fetch('/api/users/nav-order', {
+          headers: token ? { Authorization: token } : {},
+        })
+        const d = await res.json()
+        if (cancelled || !d?.order) return
+        localStorage.setItem(`pjpc_nav_order_${userRole}`, JSON.stringify(d.order.top || []))
+        Object.entries(d.order.groups || {}).forEach(([k, v]: [string, any]) => {
+          localStorage.setItem(`pjpc_nav_order_${userRole}_${k}`, JSON.stringify(v))
+        })
+        setNavOrder(Array.isArray(d.order.top) ? d.order.top : [])
+      } catch {}
+    }
+    load()
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userRole])
+
+  // 3) 把当前所有自定义顺序推回服务器（顶层 + 各分组）
+  const pushNavOrderToDB = async () => {
+    try {
+      const prefix = `pjpc_nav_order_${userRole}`
+      const top = JSON.parse(localStorage.getItem(prefix) || '[]')
+      const groups: Record<string, string[]> = {}
+      Object.keys(localStorage)
+        .filter(k => k.startsWith(prefix + '_'))
+        .forEach(k => {
+          try { groups[k.slice(prefix.length + 1)] = JSON.parse(localStorage.getItem(k) || '[]') } catch {}
+        })
+      const token = findAuthToken()
+      await fetch('/api/users/nav-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: token } : {}) },
+        body: JSON.stringify({ order: { top, groups } }),
+      })
+    } catch {}
+  }
+
+  // Save nav order（缓存 + 服务器）
   const saveNavOrder = (order: string[]) => {
     setNavOrder(order)
     localStorage.setItem(`pjpc_nav_order_${userRole}`, JSON.stringify(order))
+    pushNavOrderToDB()
   }
 
   // 排序用的稳定键:有 href 用 href(路径永不随语言/文案变化),分组没有 href 才退回 label
@@ -451,6 +514,7 @@ export default function AppShell({
       const parent = items.find(i => i.label === parentLabel)
       const orderKey = `pjpc_nav_order_${userRole}_${parent ? navKey(parent) : parentLabel}`
       localStorage.setItem(orderKey, JSON.stringify(newKeys))
+      pushNavOrderToDB()
     } else {
       saveNavOrder(newKeys)
     }
@@ -469,6 +533,8 @@ export default function AppShell({
     } catch {
       localStorage.removeItem(`pjpc_nav_order_${userRole}`)
     }
+    // 同步清掉服务器上的自定义顺序（变成默认顺序）
+    pushNavOrderToDB()
   }
 
   const config = ROLE_CONFIGS[userRole] ?? ROLE_CONFIGS._default
