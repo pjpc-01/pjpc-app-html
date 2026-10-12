@@ -7,6 +7,8 @@
 
 ## 🔴 当前最紧急（老板指定）
 
+> 🆕 **2026-10-11 复核**：#1 NFC UID 统一 —— 仍待办；#2 学生成绩报告（DataStudio 导入）—— 仍待办；#3 Finance 全测试 —— **已完成**（SOCSO/EIS/PCB/EPF 全过）；#4 创建教师 agent profile —— **已完成**（teacher / ma-agent / joseph-agent / alicia-agent / points-agent / discord 均已上线）；#5 考勤打卡积分验证 —— 部分完成（缺勤扣分链路已通）。
+
 | # | 事项 | 问题 | 现状 |
 |---|------|------|------|
 | 1 | **NFC UID 统一** | Card reader (USB) 和手机 Web NFC 扫出来的 uid 格式不同，没有 convert | `nfc_cards` 126条，`card_uid` 十进制有值但 `nfc_uid` hex 全空 |
@@ -149,6 +151,15 @@
 ---
 
 ## 三、现在做到哪了？（2026-08-08）
+
+> 🆕 **2026-10-11 复核（本次更新）**：本节以下内容**停留在 2026-08-08**，其中**路由表已大幅过时** ——
+> 旧表里的这些**已不存在**：`/unified-attendance`（→ `/attendance`）、`/schedule-management`（并入 `/course-management`）、
+> `/attendance-reports`（已删）、`/finance-management`、`/payroll-management`、`/points-management`、
+> `/student-points`、`/student-checkin`、`/teacher-checkin`。
+> **现网实际 45 个路由**，逐页体检脚本：`scripts/ux-back-filter.mjs`（每周一 09:13 cron 自动跑）、`scripts/dev-check.sh`。
+> **这两月（8/8 → 10/11，286 个提交）主线**：① i18n 残留清理 + 白屏修复（对象当文字渲染、模块级 `t()`）；
+> ② UX 巡检落地（返回键弹首页 / 筛选被清空 / 死链，均已修）；③ 考试目标看板与幻灯片；
+> ④ 学生报告设置（科目按预设保存）；⑤ teacher / discord 等 bot profile 上线。
 
 ### 📊 整体进度（2026-08-08 更新）
 
