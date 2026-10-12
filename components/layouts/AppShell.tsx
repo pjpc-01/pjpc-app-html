@@ -360,13 +360,16 @@ export default function AppShell({
     localStorage.setItem(`pjpc_nav_order_${userRole}`, JSON.stringify(order))
   }
 
+  // 排序用的稳定键:有 href 用 href(路径永不随语言/文案变化),分组没有 href 才退回 label
+  const navKey = (i: NavItem): string => i.href || i.label
+
   // Apply custom order to nav items
   // Top-level: use navOrder state
   // Children: read per-parent localStorage key
   const applyNavOrder = (items: NavItem[]): NavItem[] => {
     const sorted = navOrder.length ? [...items].sort((a, b) => {
-      const ai = navOrder.indexOf(a.label)
-      const bi = navOrder.indexOf(b.label)
+      const ai = navOrder.indexOf(navKey(a))
+      const bi = navOrder.indexOf(navKey(b))
       return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi)
     }) : [...items]
     
@@ -375,13 +378,13 @@ export default function AppShell({
       // Read per-parent child order from localStorage
       try {
         const childOrderStr = typeof window !== 'undefined' 
-          ? localStorage.getItem(`pjpc_nav_order_${userRole}_${item.label}`) 
+          ? localStorage.getItem(`pjpc_nav_order_${userRole}_${navKey(item)}`) 
           : null
         if (!childOrderStr) return item
         const childOrder: string[] = JSON.parse(childOrderStr)
         const sortedChildren = [...item.children].sort((a, b) => {
-          const ai = childOrder.indexOf(a.label)
-          const bi = childOrder.indexOf(b.label)
+          const ai = childOrder.indexOf(navKey(a))
+          const bi = childOrder.indexOf(navKey(b))
           return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi)
         })
         return { ...item, children: sortedChildren }
@@ -416,43 +419,56 @@ export default function AppShell({
     if (draggedParent !== parentLabel) return
 
     const items = applyNavOrder(filteredNavItems)
-    let labels: string[]
-    let fromIdx: number
-    let toIdx: number
-
+    // 同一层的条目(按当前显示顺序)
+    let src: NavItem[]
     if (parentLabel) {
       // Reordering children within a parent
       const parent = items.find(i => i.label === parentLabel)
       if (!parent?.children) return
-      labels = parent.children.map(c => c.label)
-      fromIdx = labels.indexOf(draggedLabel)
-      toIdx = labels.indexOf(targetLabel)
+      src = parent.children
     } else {
       // Reordering top-level items
-      labels = items.map(i => i.label)
-      fromIdx = labels.indexOf(draggedLabel)
-      toIdx = labels.indexOf(targetLabel)
+      src = items
     }
+    const labels = src.map(c => c.label)
+    const fromIdx = labels.indexOf(draggedLabel)
+    const toIdx = labels.indexOf(targetLabel)
     if (fromIdx < 0 || toIdx < 0) return
 
     const newLabels = [...labels]
     newLabels.splice(fromIdx, 1)
     newLabels.splice(toIdx, 0, draggedLabel)
 
+    // ★ 存进 localStorage 的是「稳定键」(leaf 用 href / 分组退回 label)，
+    //   不是菜单文字 —— 否则切换语言或改文案后自定义顺序会整体失效
+    const newKeys = newLabels.map(lab => {
+      const it = src.find(x => x.label === lab)
+      return it ? navKey(it) : lab
+    })
+
     if (parentLabel) {
-      // Save child order with parent prefix
-      const orderKey = `pjpc_nav_order_${userRole}_${parentLabel}`
-      localStorage.setItem(orderKey, JSON.stringify(newLabels))
+      // Save child order with parent prefix (用父级稳定键)
+      const parent = items.find(i => i.label === parentLabel)
+      const orderKey = `pjpc_nav_order_${userRole}_${parent ? navKey(parent) : parentLabel}`
+      localStorage.setItem(orderKey, JSON.stringify(newKeys))
     } else {
-      saveNavOrder(newLabels)
+      saveNavOrder(newKeys)
     }
     // Force re-render by toggling navOrder
-    setNavOrder([...newLabels])
+    setNavOrder([...newKeys])
   }
 
   const resetNavOrder = () => {
     setNavOrder([])
-    localStorage.removeItem(`pjpc_nav_order_${userRole}`)
+    // 清掉所有自定义顺序:顶层 + 每个分组的
+    try {
+      const prefix = `pjpc_nav_order_${userRole}`
+      Object.keys(localStorage)
+        .filter(k => k === prefix || k.startsWith(prefix + "_"))
+        .forEach(k => localStorage.removeItem(k))
+    } catch {
+      localStorage.removeItem(`pjpc_nav_order_${userRole}`)
+    }
   }
 
   const config = ROLE_CONFIGS[userRole] ?? ROLE_CONFIGS._default
