@@ -216,11 +216,11 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
         const proxy = "/api/pocketbase-proxy/api/collections"
         const urls = {
           centers: `${proxy}/centers/records?perPage=20&sort=code`,
-          students: `${proxy}/students/records?perPage=500&sort=-created&expand=centerId`,
-          teachers: `${proxy}/teachers/records?perPage=500&sort=-created&expand=centerId`,
-          payments: `${proxy}/payments/records?perPage=500&sort=-created`,
-          expenses: `${proxy}/expenses/records?perPage=500&sort=-date`,
-          invoices: `${proxy}/invoices/records?perPage=500&sort=-created`,
+          students: `${proxy}/students/records?perPage=500&sort=-created&expand=centerId&filter=${encodeURIComponent('deleted!=true')}`,
+          teachers: `${proxy}/teachers/records?perPage=500&sort=-created&expand=centerId&filter=${encodeURIComponent('deleted!=true')}`,
+          payments: `${proxy}/payments/records?perPage=500&sort=-created&filter=${encodeURIComponent('deleted!=true')}`,
+          expenses: `${proxy}/expenses/records?perPage=500&sort=-date&filter=${encodeURIComponent('deleted!=true')}`,
+          invoices: `${proxy}/invoices/records?perPage=500&sort=-created&filter=${encodeURIComponent('deleted!=true')}`,
           feeItems: `${proxy}/fee_items/records?perPage=500&sort=-created`,
           refunds: `${proxy}/refunds/records?perPage=500&sort=-created`,
         }

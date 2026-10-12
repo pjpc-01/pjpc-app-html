@@ -391,7 +391,7 @@ export function InvoiceList({
                     </TableCell>
                     <TableCell>{invoice.studentNumber || '-'}</TableCell>
                     <TableCell>{invoice.studentName}</TableCell>
-                    <TableCell>{formatGrade(invoice.grade)}</TableCell>
+                    <TableCell>{formatGrade((invoice as any).studentGrade)}</TableCell>
                     <TableCell className="font-semibold text-green-600">
                       {formatCurrency(invoice.totalAmount)}
                     </TableCell>

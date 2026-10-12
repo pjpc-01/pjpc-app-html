@@ -38,7 +38,7 @@ export const usePayments = () => {
       const data = await fetchSecureData<Payment[]>('payments', {
         fullList: true,
         sort: '-date',
-        filter: 'deleted=false'
+        filter: 'deleted!=true'
       })
       setPayments(data || [])
       setIsMockMode(false)

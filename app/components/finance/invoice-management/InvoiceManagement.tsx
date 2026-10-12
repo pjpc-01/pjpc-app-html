@@ -557,7 +557,16 @@ Prospek Cemerlang`,
   // 金额统计：开票总额 / 已收金额 / 未收金额（排除草稿、已取消和已删除） - 随中心 tab 一起算
     const centerActiveInvoices = useMemo(() => centerFilteredInvoices.filter(inv => inv.status !== 'draft' && inv.status !== 'cancelled' && !inv.deleted), [centerFilteredInvoices])
   const centerTotalInvoiced = useMemo(() => centerActiveInvoices.reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0), [centerActiveInvoices])
-  const centerTotalPaid = useMemo(() => centerActiveInvoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (Number(inv.totalAmount) || 0), 0), [centerActiveInvoices])
+  const centerTotalPaid = useMemo(() => {
+    // 已收 = 实际收款（含部分付款），不是「已缴清发票的票面额」——
+    // 后者会漏掉部分付款发票上已经收到的钱（曾导致本页未收金额比报表多 RM 952）
+    const ids = new Set(centerActiveInvoices.map(i => i.id))
+    let sum = 0
+    payments.forEach(p => {
+      if (p.status === 'completed' && ids.has(p.invoiceId)) sum += (Number(p.amount) || 0)
+    })
+    return sum
+  }, [centerActiveInvoices, payments])
   const centerTotalUnpaid = Math.max(centerTotalInvoiced - centerTotalPaid, 0)
 
   // 发票归属月：账期(period)优先，没填才用开票日 —— 与财务报表口径一致
