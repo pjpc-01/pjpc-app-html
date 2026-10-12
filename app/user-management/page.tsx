@@ -91,6 +91,27 @@ export default function UserManagementPage() {
     finally { setUpdating(null) }
   }
 
+  // 管理员重设密码（不依赖邮件/ SMTP）
+  const resetUserPassword = async (user: any) => {
+    const who = user.name || user.email || user.id
+    const pwd = window.prompt(who + " — " + t("设一个临时密码(至少 6 位)，请线下告知本人："))
+    if (!pwd) return
+    if (pwd.length < 6) { window.alert(t("密码至少 6 位")); return }
+    setUpdating(user.id)
+    try {
+      const res = await fetch("/api/users/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, newPassword: pwd }),
+      })
+      const d = await res.json()
+      if (d?.success) window.alert(t("密码已重设，请线下告知本人：") + pwd)
+      else window.alert(t("重设失败：") + (d?.error || String(res.status)))
+    } catch (e) {
+      window.alert(t("重设失败：") + (e instanceof Error ? e.message : ""))
+    } finally { setUpdating(null) }
+  }
+
   const linkProfile = async (userId: string, profileId: string) => {
     setUpdating(userId)
     try {
@@ -225,6 +246,11 @@ export default function UserManagementPage() {
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
                               {updating === user.id && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                              <Button variant="ghost" size="sm" className="h-8 px-2 text-xs text-amber-700 hover:text-amber-900 hover:bg-amber-100/60"
+                                title={t("重设密码")}
+                                onClick={() => resetUserPassword(user)} disabled={updating === user.id}>
+                                {t("重设密码")}
+                              </Button>
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive-foreground hover:bg-destructive/10"
                                 onClick={() => deleteUser(user.id)} disabled={updating === user.id || user.id === userProfile?.id}>
                                 <Trash2 className="h-4 w-4" />
