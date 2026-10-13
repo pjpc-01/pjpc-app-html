@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
           })
 
           attendanceList.items.forEach(att => {
-            const attDate = (att.check_in || '').split('T')[0]
+            const attDate = (att.check_in || '').split('T')[0].split(' ')[0]
             if (scheduledDates.has(attDate)) return // 这天有排班，跳过
 
             const checkIn = att.check_in ? new Date(att.check_in) : null
@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
         })
         const seenAttDates = new Set<string>()
         attendanceList2.items.forEach(att => {
-          const attDate = (att.check_in || '').split('T')[0]
+          const attDate = (att.check_in || '').split('T')[0].split(' ')[0]
           if (seenAttDates.has(attDate)) return
           seenAttDates.add(attDate)
           if (scheduledDates.has(attDate)) return // 排班日期已算过加班
