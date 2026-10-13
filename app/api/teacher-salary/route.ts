@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
           filter: `teacher_id = "${teacherId}" && check_in >= "${startDate}" && check_in < "${endExclusive}T23:59:59.999Z"`
         })
         attendanceList.items.forEach(att => {
-          const attDate = (att.check_in || '').split('T')[0]
+          const attDate = (att.check_in || '').split('T')[0].split(' ')[0]
           if (scheduledDates.has(attDate)) return
           const checkIn = att.check_in ? new Date(att.check_in) : null
           const checkOut = att.check_out ? new Date(att.check_out) : null
