@@ -52,6 +52,8 @@ export default function UnifiedAttendanceHub() {
   const [reportLoading, setReportLoading] = useState(true)
   const [reportTab, setReportTab] = useState<"today" | "calendar" | "filter">("today")
   const [absentStudents, setAbsentStudents] = useState<AbsentStudent[]>([])
+  // 从「今日考勤」点人名 → 跳到该人的月出勤
+  const [jumpPerson, setJumpPerson] = useState<{ id: string; name: string; type: string } | null>(null)
   // 筛选报表状态
   const [filterRows, setFilterRows] = useState<ScanRecord[]>([])
   const [filterLoading, setFilterLoading] = useState(false)
@@ -262,7 +264,7 @@ export default function UnifiedAttendanceHub() {
           </CardHeader>
           <CardContent className="p-0">
             {reportTab === "today" ? (
-              <TodayReport report={report} reportStats={reportStats} reportLoading={reportLoading} fmtTime={fmtTime} calcDuration={calcDuration} absentStudents={absentStudents} />
+              <TodayReport report={report} reportStats={reportStats} reportLoading={reportLoading} fmtTime={fmtTime} calcDuration={calcDuration} absentStudents={absentStudents} onSelectPerson={(p) => { setJumpPerson(p); setReportTab("calendar") }} />
             ) : reportTab === "calendar" ? (
               <CalendarReport
                 people={(() => {
@@ -278,6 +280,7 @@ export default function UnifiedAttendanceHub() {
                   })
                   return Array.from(m.values()).sort((a, b) => a.name.localeCompare(b.name, "zh"))
                 })()}
+                jumpTo={jumpPerson}
               />
             ) : (
               <FilterReport
@@ -295,18 +298,19 @@ export default function UnifiedAttendanceHub() {
 
 // ─── 今日考勤 ──────────────────────────────────────────
 
-function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration, absentStudents }: {
+function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration, absentStudents, onSelectPerson }: {
   report: ReportItem[]; reportStats: ReportStats; reportLoading: boolean
   fmtTime: (iso: string | null) => string; calcDuration: (ci: string | null, co: string | null) => string
   absentStudents: AbsentStudent[]
+  onSelectPerson?: (p: { id: string; name: string; type: string }) => void
 }) {
   const { t } = useLanguage()
   const [centerFilter, setCenterFilter] = useState<"all" | "PU1" | "BATU14" | "teacher">("all")
   const [statusFilter, setStatusFilter] = useState<"all" | "checked_in" | "not_checked_in">("all")
   // Merge: present students first, then absent students at bottom
-  const allRows: { person_name: string; person_type: string; center: string; grade?: string; check_in_time: string | null; check_out_time: string | null; is_late: boolean; is_early: boolean; status: string; _isAbsent: boolean }[] = [
+  const allRows: { person_id?: string; person_name: string; person_type: string; center: string; grade?: string; check_in_time: string | null; check_out_time: string | null; is_late: boolean; is_early: boolean; status: string; _isAbsent: boolean }[] = [
     ...report.map(r => ({ ...r, _isAbsent: false })),
-    ...absentStudents.map(a => ({ person_name: a.person_name, person_type: a.person_type, center: a.center, grade: a.grade, check_in_time: null, check_out_time: null, is_late: false, is_early: false, status: "absent", _isAbsent: true })),
+    ...absentStudents.map(a => ({ person_id: a.person_id, person_name: a.person_name, person_type: a.person_type, center: a.center, grade: a.grade, check_in_time: null, check_out_time: null, is_late: false, is_early: false, status: "absent", _isAbsent: true })),
   ]
 
   const filteredRows = allRows.filter(r => {
@@ -406,7 +410,10 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
             </tr></thead>
             <tbody>
               {filteredRows.map((item, idx) => (
-                <tr key={idx} className={`border-b border-gray-50 transition-colors ${item._isAbsent ? "bg-gray-50/50 opacity-60" : "hover:bg-gray-50/50"}`}>
+                <tr key={idx}
+                  onClick={() => item.person_id && onSelectPerson?.({ id: item.person_id, name: item.person_name, type: item.person_type })}
+                  title={item.person_id ? t("点击查看该人本月出勤") : undefined}
+                  className={`border-b border-gray-50 transition-colors ${item.person_id && onSelectPerson ? "cursor-pointer" : ""} ${item._isAbsent ? "bg-gray-50/50 opacity-60" : "hover:bg-gray-50/50"}`}>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2.5">
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${item._isAbsent ? "bg-gray-100" : item.person_type === "teacher" ? "bg-purple-50" : "bg-blue-50"}`}>
@@ -457,7 +464,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
 
 // ─── 考勤日历 ──────────────────────────────────────────
 
-function CalendarReport({ people = [] }: { people?: { id: string; name: string; type: string }[] }) {
+function CalendarReport({ people = [], jumpTo = null }: { people?: { id: string; name: string; type: string }[]; jumpTo?: { id: string; name: string; type: string } | null }) {
   const { t } = useLanguage()
   const [search, setSearch] = useState("")
   const [results, setResults] = useState<any[]>([])
@@ -467,6 +474,16 @@ function CalendarReport({ people = [] }: { people?: { id: string; name: string; 
   const [loading, setLoading] = useState(false)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [pickerTab, setPickerTab] = useState<"student" | "teacher">("student")
+
+  // 从「今日考勤」点人名跳进来 → 直接选中该人，并把分组切到他的身份
+  // 依赖用 jumpTo?.id（字符串）：避免对象每次渲染换身份导致重复重置
+  useEffect(() => {
+    if (!jumpTo) return
+    setSelected({ id: jumpTo.id, name: jumpTo.name, type: jumpTo.type })
+    setPickerTab(jumpTo.type === "teacher" ? "teacher" : "student")
+    setSelectedDay(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jumpTo?.id])
 
   const doSearch = useCallback(async (q: string) => {
     if (q.length < 1) { setResults([]); return }
