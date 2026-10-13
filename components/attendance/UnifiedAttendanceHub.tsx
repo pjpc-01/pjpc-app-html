@@ -264,7 +264,21 @@ export default function UnifiedAttendanceHub() {
             {reportTab === "today" ? (
               <TodayReport report={report} reportStats={reportStats} reportLoading={reportLoading} fmtTime={fmtTime} calcDuration={calcDuration} absentStudents={absentStudents} />
             ) : reportTab === "calendar" ? (
-              <CalendarReport />
+              <CalendarReport
+                people={(() => {
+                  // 可点选名单 = 今日在场的 + 缺勤的（两者合起来 ≈ 全校），按 类型-id 去重
+                  const m = new Map<string, { id: string; name: string; type: string }>()
+                  ;([...report, ...absentStudents] as any[]).forEach((p) => {
+                    if (!p?.person_id || !p?.person_name) return
+                    m.set(`${p.person_type}-${p.person_id}`, {
+                      id: p.person_id,
+                      name: p.person_name,
+                      type: p.person_type,
+                    })
+                  })
+                  return Array.from(m.values()).sort((a, b) => a.name.localeCompare(b.name, "zh"))
+                })()}
+              />
             ) : (
               <FilterReport
                 start={filterStart} end={filterEnd} type={filterType}
@@ -443,7 +457,7 @@ function TodayReport({ report, reportStats, reportLoading, fmtTime, calcDuration
 
 // ─── 考勤日历 ──────────────────────────────────────────
 
-function CalendarReport() {
+function CalendarReport({ people = [] }: { people?: { id: string; name: string; type: string }[] }) {
   const { t } = useLanguage()
   const [search, setSearch] = useState("")
   const [results, setResults] = useState<any[]>([])
@@ -452,6 +466,7 @@ function CalendarReport() {
   const [calendar, setCalendar] = useState<Record<string, { check_ins: string[]; check_outs: string[] }>>({})
   const [loading, setLoading] = useState(false)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
+  const [pickerTab, setPickerTab] = useState<"student" | "teacher">("student")
 
   const doSearch = useCallback(async (q: string) => {
     if (q.length < 1) { setResults([]); return }
@@ -496,6 +511,45 @@ function CalendarReport() {
 
   return (
     <div>
+      {/* 点选名单：不用打字，直接点老师或学生 → 看他的考勤表 */}
+      {people.length > 0 && (
+        <div className="border-b bg-gray-50/50">
+          <div className="flex items-center gap-1 px-4 pt-3">
+            <button
+              onClick={() => setPickerTab("student")}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                pickerTab === "student" ? "bg-blue-100 text-blue-700" : "text-gray-500 hover:text-gray-700"
+              }`}
+            >{t("学生")} ({people.filter(p => p.type === "student").length})</button>
+            <button
+              onClick={() => setPickerTab("teacher")}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                pickerTab === "teacher" ? "bg-purple-100 text-purple-700" : "text-gray-500 hover:text-gray-700"
+              }`}
+            >{t("教师")} ({people.filter(p => p.type === "teacher").length})</button>
+            {selected && (
+              <button
+                onClick={() => { setSelected(null); setCalendar({}); setSelectedDay(null) }}
+                className="ml-auto text-xs text-gray-400 hover:text-gray-600"
+              >{t("关闭")}</button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5 px-4 py-3 max-h-44 overflow-y-auto">
+            {people.filter(p => p.type === pickerTab).map(p => (
+              <button
+                key={`${p.type}-${p.id}`}
+                onClick={() => { setSelected({ id: p.id, name: p.name, type: p.type }); setSearch(""); setResults([]); setSelectedDay(null) }}
+                className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                  selected?.id === p.id
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white hover:bg-blue-50 border-gray-200 text-gray-700"
+                }`}
+              >{p.name}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Search bar */}
       <div className="flex items-center gap-3 px-4 py-3 border-b">
         <div className="relative flex-1">
