@@ -474,6 +474,7 @@ function CalendarReport({ people = [], jumpTo = null }: { people?: { id: string;
   const [loading, setLoading] = useState(false)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [pickerTab, setPickerTab] = useState<"student" | "teacher">("student")
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar")
 
   // 从「今日考勤」点人名跳进来 → 直接选中该人，并把分组切到他的身份
   // 依赖用 jumpTo?.id（字符串）：避免对象每次渲染换身份导致重复重置
@@ -563,6 +564,51 @@ function CalendarReport({ people = [], jumpTo = null }: { people?: { id: string;
                 }`}
               >{p.name}</button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* 视图切换:日历 / 列表 */}
+      {selected && (
+        <div className="flex items-center gap-1 px-4 pt-3">
+          <button onClick={() => setViewMode("calendar")}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-cyan-100 text-cyan-700" : "text-gray-500 hover:text-gray-700"}`}>
+            {t("日历")}
+          </button>
+          <button onClick={() => setViewMode("list")}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${viewMode === "list" ? "bg-cyan-100 text-cyan-700" : "text-gray-500 hover:text-gray-700"}`}>
+            {t("列表")}
+          </button>
+        </div>
+      )}
+
+      {/* 列表视图:一行一条记录,方便逐条看 */}
+      {selected && viewMode === "list" && (
+        <div className="px-4 py-3">
+          <div className="text-xs text-gray-500 mb-2">
+            {selected.name} · {monthLabel} · {t("共")} {summaryDays} {t("天有记录")}
+          </div>
+          <div className="max-h-80 overflow-y-auto border rounded-lg divide-y bg-white text-sm">
+            {Object.keys(calendar).sort().reverse().map(d => {
+              const day = calendar[d] || { check_ins: [], check_outs: [] }
+              const ins = day.check_ins || []
+              const outs = day.check_outs || []
+              return (
+                <div key={d} className="flex items-center gap-3 px-3 py-2">
+                  <div className="w-28 shrink-0 font-medium">{d}</div>
+                  <div className="w-20 shrink-0 text-xs text-gray-500">{t("签到")}</div>
+                  <div className="w-20 shrink-0">{ins[0] ? fmtDayTime(ins[0]) : "—"}</div>
+                  <div className="w-20 shrink-0 text-xs text-gray-500">{t("签退")}</div>
+                  <div className="w-20 shrink-0">{outs.length ? fmtDayTime(outs[outs.length - 1]) : "—"}</div>
+                  <div className="ml-auto text-xs text-gray-400">{ins.length} {t("进")} / {outs.length} {t("出")}</div>
+                </div>
+              )
+            })}
+            {Object.keys(calendar).length === 0 && (
+              <div className="px-3 py-6 text-center text-gray-400 text-sm">
+                {t("本月暂无考勤记录（可切换月份看看）")}
+              </div>
+            )}
           </div>
         </div>
       )}
