@@ -12,6 +12,7 @@ import {
 import { useLanguage } from "@/contexts/language-context"
 import NfcTapReader from "./NfcTapReader"
 import { toLocalMonthKey } from "@/lib/utils"
+import { useTeachers } from "@/hooks/useTeachers"
 
 // ─── Types ─────────────────────────────────────────────
 
@@ -54,6 +55,8 @@ export default function UnifiedAttendanceHub() {
   const [absentStudents, setAbsentStudents] = useState<AbsentStudent[]>([])
   // 从「今日考勤」点人名 → 跳到该人的月出勤
   const [jumpPerson, setJumpPerson] = useState<{ id: string; name: string; type: string } | null>(null)
+  // 全部在职老师（用于个人考勤点选名单，不依赖今天有没有刷卡）
+  const { teachers } = useTeachers()
   // 筛选报表状态
   const [filterRows, setFilterRows] = useState<ScanRecord[]>([])
   const [filterLoading, setFilterLoading] = useState(false)
@@ -268,8 +271,16 @@ export default function UnifiedAttendanceHub() {
             ) : reportTab === "calendar" ? (
               <CalendarReport
                 people={(() => {
-                  // 可点选名单 = 今日在场的 + 缺勤的（两者合起来 ≈ 全校），按 类型-id 去重
+                  // 可点选名单 = 全部在职老师 + 今日在场的 + 缺勤的（按 类型-id 去重）
                   const m = new Map<string, { id: string; name: string; type: string }>()
+                  // ① 全部在职老师：不再依赖「今天有没有刷卡」
+                  ;(teachers as any[]).forEach((tc) => {
+                    if (!tc?.id) return
+                    const nm = String(tc.teacher_name || tc.name || '').trim()
+                    if (!nm) return
+                    m.set(`teacher-${tc.id}`, { id: tc.id, name: nm, type: 'teacher' })
+                  })
+                  // ② 今日在场的 + 缺勤的
                   ;([...report, ...absentStudents] as any[]).forEach((p) => {
                     if (!p?.person_id || !p?.person_name) return
                     m.set(`${p.person_type}-${p.person_id}`, {
