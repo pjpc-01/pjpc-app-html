@@ -88,7 +88,9 @@ export async function GET(request: NextRequest) {
       // 打卡兜底（无排班的日期）
       if (schedules.items.length > 0 && scheduledDates.size > 0) {
         const attendanceList = await pb.collection('teacher_attendance').getList(1, 500, {
-          filter: `teacher_id = "${teacherId}" && check_in >= "${startDate}" && check_in < "${endExclusive}T23:59:59.999Z"`
+          // ⚠️ 必须按 date 字段做范围比较：原来用 check_in < "下月1日T23:59:59.999Z" 会把下月 1 号整天算进来
+          //   （GAN SOH YEE 2026-09 多算了 10/01 的 3.12h → 12h 变 15.12h）
+          filter: `teacher_id = "${teacherId}" && date >= "${startDate}" && date < "${endExclusive}"`
         })
         attendanceList.items.forEach(att => {
           const attDate = (att.check_in || '').split('T')[0].split(' ')[0]
