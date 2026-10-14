@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
         // 打卡兜底：只补没有排班的日期
         if (schedules.items.length > 0 && scheduledDates.size > 0) {
           const attendanceList = await pb.collection('teacher_attendance').getList(1, 500, {
-            filter: `teacher_id = "${teacher.id}" && check_in >= "${startDate}" && check_in < "${endExclusive}T23:59:59.999Z"`
+            filter: `teacher_id = "${teacher.id}" && date >= "${startDate}" && date < "${endExclusive}"`
           })
 
           attendanceList.items.forEach(att => {
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
         } else {
           // 无排班：直接用打卡
           const attendanceList = await pb.collection('teacher_attendance').getList(1, 500, {
-            filter: `teacher_id = "${teacher.id}" && check_in >= "${startDate}" && check_in < "${endExclusive}T23:59:59.999Z"`
+            filter: `teacher_id = "${teacher.id}" && date >= "${startDate}" && date < "${endExclusive}"`
           })
 
           attendanceList.items.forEach(att => {
@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
         }
         // 打卡日期也检查加班
         const attendanceList2 = await pb.collection('teacher_attendance').getList(1, 500, {
-          filter: `teacher_id = "${teacher.id}" && check_in >= "${startDate}" && check_in < "${endExclusive}T23:59:59.999Z"`
+          filter: `teacher_id = "${teacher.id}" && date >= "${startDate}" && date < "${endExclusive}"`
         })
         const seenAttDates = new Set<string>()
         attendanceList2.items.forEach(att => {
