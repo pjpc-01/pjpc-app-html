@@ -47,10 +47,19 @@ export async function GET(request: NextRequest) {
         sort: '-created'
       })
 
+      // ★ 补课程名：schedules 集合**没有 course_title 字段**，课程名存在 courses.title。
+      //   不补的话各排班页只能显示老师名，或退化成 course_id.slice(0,8) 的 ID 碎片（看着像"名字错了"）。
+      const courseMap: Record<string, string> = {}
+      try {
+        const crs = await pb.collection('courses').getList(1, 500, { fields: 'id,title,subject' })
+        crs.items.forEach((c: any) => { courseMap[c.id] = (c.title || c.subject || '').trim() })
+      } catch { /* 拿不到课程名不影响排班本身 */ }
+
       // 处理日期格式，将 ISO 日期字符串转换为 yyyy-MM-dd 格式
       const processedSchedules = schedules.items.map((schedule: any) => ({
         ...schedule,
-        date: schedule.date ? schedule.date.split(' ')[0] : schedule.date
+        date: schedule.date ? schedule.date.split(' ')[0] : schedule.date,
+        course_title: (schedule.course_title || '').trim() || courseMap[schedule.course_id] || '',
       }))
 
       return NextResponse.json({
