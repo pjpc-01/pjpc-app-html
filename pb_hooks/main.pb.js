@@ -18,7 +18,7 @@ onRecordAfterCreateSuccess((e) => {
     const rec = e.record;
     let cname = "";
     try { cname = rec && rec.collection ? rec.collection().name : ""; } catch (x0) {}
-    if (app && rec && cname && cname !== "audit_logs") {
+    if (app && rec && cname && cname !== "audit_logs" && cname !== "schedules") {
       const coll = app.findCollectionByNameOrId("audit_logs");
       if (coll) {
         const a = new Record(coll);
@@ -26,12 +26,19 @@ onRecordAfterCreateSuccess((e) => {
         a.set("description", cname + " #" + rec.id);
         let actor = "";
         try {
-          if (e.httpContext && typeof e.httpContext.request === "function") {
-            const h = e.httpContext.request().header;
-            if (h) actor = String(h.get("x-actor") || h.get("user-agent") || "");
+          // PB 0.39 里 e.httpContext 拿不到请求头（实测一直静默失败）→ 用 e.requestInfo()
+          let hdrs = null;
+          try { const ri = e.requestInfo ? e.requestInfo() : null; if (ri && ri.headers) hdrs = ri.headers; } catch (x) {}
+          if (!hdrs) { try { if (e.httpContext && typeof e.httpContext.request === "function") hdrs = e.httpContext.request().header; } catch (x) {} }
+          if (hdrs) {
+            const g = (k) => (typeof hdrs.get === "function" ? hdrs.get(k) : (hdrs[k] || hdrs[k.toLowerCase()] || ""));
+            actor = String(g("x-actor") || "");
+          }
+          if (!actor) {
+            try { const ri2 = e.requestInfo ? e.requestInfo() : null; if (ri2 && ri2.auth && ri2.auth.get) actor = String(ri2.auth.get("email") || ri2.auth.get("name") || ""); } catch (x) {}
           }
         } catch (x) {}
-        if (actor) a.set("user_name", actor.slice(0, 500));
+        if (actor) { try { actor = decodeURIComponent(actor); } catch (x) {} a.set("user_name", actor.slice(0, 500)); }
         a.set("metadata", JSON.stringify({ collection: cname, record_id: rec.id, action: "create" }));
         app.save(a);
       }
@@ -48,7 +55,7 @@ onRecordAfterUpdateSuccess((e) => {
     const rec = e.record;
     let cname = "";
     try { cname = rec && rec.collection ? rec.collection().name : ""; } catch (x0) {}
-    if (app && rec && cname && cname !== "audit_logs") {
+    if (app && rec && cname && cname !== "audit_logs" && cname !== "schedules") {
       let changes = {};
       let hasChange = false;
       try {
@@ -73,12 +80,19 @@ onRecordAfterUpdateSuccess((e) => {
           a.set("description", cname + " #" + rec.id);
           let actor = "";
           try {
-            if (e.httpContext && typeof e.httpContext.request === "function") {
-              const h = e.httpContext.request().header;
-              if (h) actor = String(h.get("x-actor") || h.get("user-agent") || "");
+            // PB 0.39 里 e.httpContext 拿不到请求头 → 用 e.requestInfo()
+            let hdrs = null;
+            try { const ri = e.requestInfo ? e.requestInfo() : null; if (ri && ri.headers) hdrs = ri.headers; } catch (x) {}
+            if (!hdrs) { try { if (e.httpContext && typeof e.httpContext.request === "function") hdrs = e.httpContext.request().header; } catch (x) {} }
+            if (hdrs) {
+              const g = (k) => (typeof hdrs.get === "function" ? hdrs.get(k) : (hdrs[k] || hdrs[k.toLowerCase()] || ""));
+              actor = String(g("x-actor") || "");
+            }
+            if (!actor) {
+              try { const ri2 = e.requestInfo ? e.requestInfo() : null; if (ri2 && ri2.auth && ri2.auth.get) actor = String(ri2.auth.get("email") || ri2.auth.get("name") || ""); } catch (x) {}
             }
           } catch (x) {}
-          if (actor) a.set("user_name", actor.slice(0, 500));
+          if (actor) { try { actor = decodeURIComponent(actor); } catch (x) {} a.set("user_name", actor.slice(0, 500)); }
           a.set("description", cname + " #" + rec.id + " | " + JSON.stringify(changes).slice(0, 800));
           a.set("metadata", JSON.stringify({ collection: cname, record_id: rec.id, action: "update", changes: changes }));
           app.save(a);
@@ -97,7 +111,7 @@ onRecordAfterDeleteSuccess((e) => {
     const rec = e.record;
     let cname = "";
     try { cname = rec && rec.collection ? rec.collection().name : ""; } catch (x0) {}
-    if (app && rec && cname && cname !== "audit_logs") {
+    if (app && rec && cname && cname !== "audit_logs" && cname !== "schedules") {
       const coll = app.findCollectionByNameOrId("audit_logs");
       if (coll) {
         const a = new Record(coll);
@@ -105,12 +119,19 @@ onRecordAfterDeleteSuccess((e) => {
         a.set("description", cname + " #" + rec.id);
         let actor = "";
         try {
-          if (e.httpContext && typeof e.httpContext.request === "function") {
-            const h = e.httpContext.request().header;
-            if (h) actor = String(h.get("x-actor") || h.get("user-agent") || "");
+          // PB 0.39 里 e.httpContext 拿不到请求头（实测一直静默失败）→ 用 e.requestInfo()
+          let hdrs = null;
+          try { const ri = e.requestInfo ? e.requestInfo() : null; if (ri && ri.headers) hdrs = ri.headers; } catch (x) {}
+          if (!hdrs) { try { if (e.httpContext && typeof e.httpContext.request === "function") hdrs = e.httpContext.request().header; } catch (x) {} }
+          if (hdrs) {
+            const g = (k) => (typeof hdrs.get === "function" ? hdrs.get(k) : (hdrs[k] || hdrs[k.toLowerCase()] || ""));
+            actor = String(g("x-actor") || "");
+          }
+          if (!actor) {
+            try { const ri2 = e.requestInfo ? e.requestInfo() : null; if (ri2 && ri2.auth && ri2.auth.get) actor = String(ri2.auth.get("email") || ri2.auth.get("name") || ""); } catch (x) {}
           }
         } catch (x) {}
-        if (actor) a.set("user_name", actor.slice(0, 500));
+        if (actor) { try { actor = decodeURIComponent(actor); } catch (x) {} a.set("user_name", actor.slice(0, 500)); }
         a.set("metadata", JSON.stringify({ collection: cname, record_id: rec.id, action: "delete" }));
         app.save(a);
       }

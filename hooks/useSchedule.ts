@@ -39,17 +39,6 @@ export interface ScheduleTemplate {
   updated?: string
 }
 
-export interface AutoScheduleRequest {
-  startDate: string
-  endDate: string
-  center?: string
-  preferences?: {
-    prioritizeExperience?: boolean
-    avoidOvertime?: boolean
-    balanceWorkload?: boolean
-  }
-}
-
 export const useSchedule = () => {
   const { user, userProfile } = useAuth()
   const [schedules, setSchedules] = useState<Schedule[]>([])
@@ -269,42 +258,6 @@ export const useSchedule = () => {
     }
   }, [user, userProfile])
 
-  // 智能排班
-  const autoSchedule = useCallback(async (request: AutoScheduleRequest) => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const response = await fetch('/api/schedule/auto-schedule', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        // 重新获取排班数据
-        await fetchSchedules({
-          startDate: request.startDate,
-          endDate: request.endDate,
-          center: request.center
-        })
-        return data.schedules
-      } else {
-        throw new Error(data.error || '智能排班失败')
-      }
-    } catch (err) {
-      console.error('智能排班失败:', err)
-      setError(err instanceof Error ? err.message : '智能排班失败')
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }, [fetchSchedules])
-
   // 创建排班模板
   const createTemplate = useCallback(async (templateData: Partial<ScheduleTemplate>) => {
     try {
@@ -412,7 +365,6 @@ export const useSchedule = () => {
     createSchedule,
     updateSchedule,
     deleteSchedule,
-    autoSchedule,
     createTemplate,
     updateTemplate,
     deleteTemplate

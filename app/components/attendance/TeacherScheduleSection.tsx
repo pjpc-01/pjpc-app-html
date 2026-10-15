@@ -36,6 +36,9 @@ export default function TeacherScheduleSection() {
   const [logLoading, setLogLoading] = useState(false)
   const [teacherNameMap, setTeacherNameMap] = useState<Record<string, string>>({})
   const [courseNameMap, setCourseNameMap] = useState<Record<string, string>>({})
+  const [changeLogOpen, setChangeLogOpen] = useState(false)
+  const [changeLogs, setChangeLogs] = useState<any[]>([])
+  const [changeLogLoading, setChangeLogLoading] = useState(false)
 
   const loadScheduleLogs = useCallback(async (targetMonth: Date) => {
     setLogLoading(true)
@@ -64,6 +67,40 @@ export default function TeacherScheduleSection() {
       setLogLoading(false)
     }
   }, [])
+
+  const loadChangeLogs = useCallback(async () => {
+    setChangeLogLoading(true)
+    try {
+      // 审计里排班相关记录的 action 形如 "update:schedules" / "create:schedules" / "delete:schedules"
+      const filter = encodeURIComponent('action ~ "schedules"')
+      const res = await fetch(`/api/pocketbase-proxy/api/collections/audit_logs/records?filter=${filter}&sort=-created&perPage=200`)
+      const data = await res.json()
+      setChangeLogs(data?.items || [])
+    } catch {
+      setChangeLogs([])
+    } finally {
+      setChangeLogLoading(false)
+    }
+  }, [])
+
+  const shortVal = (v: any) => {
+    const s = v === null || v === undefined ? "" : String(v)
+    return s.length > 20 ? s.slice(0, 18) + "…" : s
+  }
+  const changeSummary = (rec: any) => {
+    try {
+      const md = typeof rec?.metadata === "string" ? JSON.parse(rec.metadata) : rec?.metadata
+      const ch = md?.changes || {}
+      const keys = Object.keys(ch)
+      if (!keys.length) return md?.action === "create" ? t("新建") : md?.action === "delete" ? t("删除") : t("无字段变化")
+      return keys.slice(0, 4).map((k) => `${k}: ${shortVal(ch[k]?.from)} → ${shortVal(ch[k]?.to)}`).join("；")
+    } catch {
+      return rec?.description || ""
+    }
+  }
+  const changeTime = (rec: any) => {
+    try { return format(new Date(String(rec?.created || "").replace(" ", "T")), "MM-dd HH:mm") } catch { return "" }
+  }
 
   const logTeacherName = (rec: any) =>
     (rec?.teacher_name || "").trim() || teacherNameMap[rec?.teacher_id] || ""
@@ -162,6 +199,18 @@ export default function TeacherScheduleSection() {
           <ListOrdered className="h-4 w-4" />
           {t("排班记录")}
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+          onClick={() => {
+            setChangeLogOpen(true)
+            loadChangeLogs()
+          }}
+        >
+          <ListOrdered className="h-4 w-4" />
+          {t("改动日志")}
+        </Button>
       </div>
 
       {/* 月视图（月份状态提升，工时面板跟随切换） */}
@@ -216,6 +265,45 @@ export default function TeacherScheduleSection() {
                   </div>
                 )
               })
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 排班改动日志 Dialog —— 谁在几时改了哪条排班、改了哪些字段 */}
+      <Dialog open={changeLogOpen} onOpenChange={setChangeLogOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ListOrdered className="h-4 w-4" />
+              {t("排班改动日志")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("最近 200 条排班改动：时间 / 谁 / 改了哪些字段（旧值 → 新值），由系统审计自动记录。")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto border rounded-lg divide-y">
+            {changeLogLoading ? (
+              <div className="flex items-center justify-center py-10 text-gray-500">
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />{t("加载中...")}
+              </div>
+            ) : changeLogs.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-10">{t("暂无排班改动记录")}</p>
+            ) : (
+              changeLogs.map((rec) => (
+                <div key={rec.id} className="px-3 py-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 shrink-0">{changeTime(rec)}</span>
+                    <span className="font-medium truncate">
+                      {(rec.user_name || "").trim() || <span className="text-red-600">{t("未知操作人")}</span>}
+                    </span>
+                    <Badge variant="outline" className="shrink-0 text-[10px]">
+                      {String(rec.action || "").split(":")[0]}
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-gray-600 mt-1 break-all">{changeSummary(rec)}</div>
+                </div>
+              ))
             )}
           </div>
         </DialogContent>
