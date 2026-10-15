@@ -76,7 +76,9 @@ for (const [name, href] of NAV) {
     });
     const shot = `${SHOTS}/${name.replace(/[\/\\]/g, '_')}.png`;
     await page.screenshot({ path: shot, fullPage: true }).catch(() => {});
-    results.push({ name, href, finalUrl: page.url(), redirected: !page.url().includes(href === '/' ? '3001' : href), ...meta, textLen: text.length, text: text.slice(0, 2500), errors, badReqs: [...new Set(badReqs)].slice(0, 8), shot });
+    // 卡在「加载中」也算失败：页面加载完后不该还挂着 loading 字样（学生费用页曾这样被漏报）
+    const stuckLoading = /加载中|载入中|Loading/i.test(text);
+    results.push({ name, href, finalUrl: page.url(), redirected: !page.url().includes(href === '/' ? '3001' : href), ...meta, textLen: text.length, stuckLoading, text: text.slice(0, 2500), errors, badReqs: [...new Set(badReqs)].slice(0, 8), shot });
     console.log(`[${i}] ${name} — 按钮${meta.buttons} 输入${meta.inputs} 错误${errors.length} 失败请求${badReqs.length}`);
   } catch (e) {
     results.push({ name, href, loadError: String(e).slice(0, 200) });
