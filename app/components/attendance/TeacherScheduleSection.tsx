@@ -35,6 +35,7 @@ export default function TeacherScheduleSection() {
   const [scheduleLogs, setScheduleLogs] = useState<any[]>([])
   const [logLoading, setLogLoading] = useState(false)
   const [teacherNameMap, setTeacherNameMap] = useState<Record<string, string>>({})
+  const [courseNameMap, setCourseNameMap] = useState<Record<string, string>>({})
 
   const loadScheduleLogs = useCallback(async (targetMonth: Date) => {
     setLogLoading(true)
@@ -42,16 +43,22 @@ export default function TeacherScheduleSection() {
       const filter = encodeURIComponent(
         `date>="${format(startOfMonth(targetMonth), "yyyy-MM-dd")}" && date<="${format(endOfMonth(targetMonth), "yyyy-MM-dd")}"`
       )
-      const [schedRes, teacherRes] = await Promise.all([
+      const [schedRes, teacherRes, courseRes] = await Promise.all([
         fetch(`/api/pocketbase-proxy/api/collections/schedules/records?filter=${filter}&sort=-date,start_time&perPage=300`),
         fetch("/api/teachers?limit=200"),
+        // ★ schedules 没有 course_title 字段 → 课程名要从 courses.title 连过来
+        fetch("/api/pocketbase-proxy/api/collections/courses/records?perPage=500&fields=id,title,subject"),
       ])
       const schedData = await schedRes.json()
       const tData = await teacherRes.json()
+      const cData = await courseRes.json()
       const tlist = tData?.data || tData?.items || []
       const tmap: Record<string, string> = {}
       tlist.forEach((tc: any) => { if (tc.id) tmap[tc.id] = (tc.name || tc.teacher_name || "").trim() })
       setTeacherNameMap(tmap)
+      const cmap: Record<string, string> = {}
+      ;(cData?.items || []).forEach((c: any) => { if (c.id) cmap[c.id] = (c.title || c.subject || "").trim() })
+      setCourseNameMap(cmap)
       setScheduleLogs(schedData?.items || [])
     } finally {
       setLogLoading(false)
@@ -61,7 +68,10 @@ export default function TeacherScheduleSection() {
   const logTeacherName = (rec: any) =>
     (rec?.teacher_name || "").trim() || teacherNameMap[rec?.teacher_id] || ""
   const logCourseName = (rec: any) =>
-    (rec?.course_title || "").trim() || (rec?.notes === "从时间表自动生成" ? "（时间表展开）" : "") || ""
+    (rec?.course_title || "").trim()
+    || courseNameMap[rec?.course_id]
+    || (rec?.notes === "从时间表自动生成" ? "（时间表展开）" : "")
+    || ""
   const logSource = (rec: any) => {
     if (rec?.notes) return rec.notes
     if (rec?.schedule_type === "course_schedule") return "排课管理"
