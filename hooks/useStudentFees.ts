@@ -55,7 +55,9 @@ export function useStudentFees() {
   const pbRef = useRef<any>(null);
 
   const { user, connectionStatus } = useAuth();
-  const [pb, setPb] = useState<any>(null);
+  const [pb, setPb] = useState<any>(null)
+  // 稳定的布尔依赖：pb 是对象，每次 new 实例都会换身份 → 会让下面的拉取 effect 空转
+  const pbReady = !!pb;
 
   const debugLog = useCallback((message: string, data?: any) => {
     const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
@@ -147,7 +149,7 @@ export function useStudentFees() {
         setLoading(false);
       }
     }
-  }, [pb, safeParse, debugLog]);
+  }, [pbReady, safeParse, debugLog]);
 
   // Check if a fee is assigned to a student
   const isAssigned = useCallback((studentId: string, feeId: string): boolean => {
@@ -639,7 +641,7 @@ export function useStudentFees() {
     return () => {
       cancelled = true;
     };
-  }, [pb, safeParse, debugLog]);
+  }, [pbReady, safeParse, debugLog]);
 
   // Cleanup on unmount
   useEffect(() => {
