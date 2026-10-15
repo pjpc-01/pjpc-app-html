@@ -9,6 +9,12 @@
 
 > 🆕 **2026-10-11 复核**：#1 NFC UID 统一 —— 仍待办；#2 学生成绩报告（DataStudio 导入）—— 仍待办；#3 Finance 全测试 —— **已完成**（SOCSO/EIS/PCB/EPF 全过）；#4 创建教师 agent profile —— **已完成**（teacher / ma-agent / joseph-agent / alicia-agent / points-agent / discord 均已上线）；#5 考勤打卡积分验证 —— 部分完成（缺勤扣分链路已通）。
 
+> 🆕 **2026-10-12 巡检（仅只读核实）**：#1 NFC UID 统一 —— 仍待办（`nfc_cards` 实测 **135** 条，`nfc_uid` 仍空）；
+> #2 学生成绩报告 —— 仍待办（`grades` 484 条，Form1-5 仍未拉全）；#3 Finance 全测试 —— 维持已完成；#5 考勤打卡积分验证 —— 维持部分完成。
+> ⚠️ #4「创建教师 agent profile」：**下方表格第 4 行仍写「未开始」**，与本块上方 10-11 复核「已完成」自相矛盾（旧表未回填，本次保留原文不删）。
+> ⚠️ 本清单未收录 2026-10-12 UX 巡检新抓的 2 条现网 bug（发票列表「年级」列恒空、仪表板「总收入」含已删收款 RM 4,337.00）——
+> 它们只存在于 `PRIORITY.md`「五、UX」，蓝图侧无对应条目（是否要在这里建 bug 清单待定）。
+
 | # | 事项 | 问题 | 现状 |
 |---|------|------|------|
 | 1 | **NFC UID 统一** | Card reader (USB) 和手机 Web NFC 扫出来的 uid 格式不同，没有 convert | `nfc_cards` 126条，`card_uid` 十进制有值但 `nfc_uid` hex 全空 |
@@ -161,6 +167,15 @@
 > ② UX 巡检落地（返回键弹首页 / 筛选被清空 / 死链，均已修）；③ 考试目标看板与幻灯片；
 > ④ 学生报告设置（科目按预设保存）；⑤ teacher / discord 等 bot profile 上线。
 
+> 🆕 **2026-10-12 巡检（本次更新）**：再核一遍，上一块（10-11）的数字**又过时了** ——
+> ① **现网 = 61 个 `app/**/page.tsx`**（较 10-11 声明的「45」多 16），其中 2 个是纯重定向：`/finance-management`（→ `/finance/overview`）、`/finance/receipts`（→ `/finance/payments`）。
+> ② **上一块写「`/finance-management` 已不存在」是错的** —— 该路由仍在（只是重定向）。实测真正消失的是这 10 条：
+>    `/unified-attendance`、`/schedule-management`、`/attendance-reports`、`/payroll-management`、`/points-management`、`/student-points`、`/student-checkin`、`/teacher-checkin`、`/admin/students`、**`/admin/wifi-networks`**（最后这条 10-11 块漏列，本次新发现）。
+> ③ 下方「页面路由 (52 条)」标题的 **52** 与表内实际 **46** 行都对不上 → **现网 61**。
+> ④ **实际有、本表从没写过（25 条）**：`/points`、`/points/leaderboard`、`/points/rules`、`/settings`、`/education`、`/activities`、`/claim-form`、`/exam-targets`、`/dashboard/slideshow`、`/grades`、`/pickup`、`/student-kiosk`、`/student-leave`、`/student-reports`、`/student-report/[id]`、`/teacher-performance`、`/teacher-teaching-report`、`/parent/dailylogs`、`/parent/leave`、`/finance/invoices`、`/finance/debts`、`/finance/payroll`、`/finance/student-fees`、`/finance/receipts`。
+> ⑤ **API 路由：本表写「20 条」、6.A 写「40+」→ 实测 84 个 `app/api/**/route.ts`**。
+> ⑥ **PB Collections：本表列 23 个、6.A 写「30+」→ 读库实测 71 个**（新增 `course_time_slots`/`exam_targets`/`point_logs`/`nfc_devices`/`claim_forms`/`debts`/`utility_bills`/`student_reports`/`public_holidays`/`payslip_settings` 等，见下方 Collections 节的 10-12 块）。
+
 ### 📊 整体进度（2026-08-08 更新）
 
 | 模块 | 进度 | 备注 |
@@ -284,6 +299,9 @@
 | `inventory_items` | ✅ **新** | 商品主数据（名称/分类/价格/库存/警戒线） |
 | `inventory_transactions` | ✅ **新** | 库存流水（入库/出库/调整） |
 
+> 🆕 **2026-10-12 巡检**：本表（2026-08-08 口径）只列 23 个 collection，**读库实测 71 个**。表外新增（节选）：
+> `course_time_slots`（59 条，排课时间段模板）、`exam_targets`（24）、`grades`（484）、`daily_logs`（结构已建，当前 0 条）、`pickup_records`（结构已建，当前 0 条）、`photo_moments`、`claim_forms`、`debts` / `debt_payments`、`utility_bills`、`bank_accounts` / `bank_transactions` / `budgets` / `reconciliation_runs` / `refunds`、`point_logs`（5,055）、`points`（2,885）、`points_transactions`、`nfc_cards`（135）、`nfc_devices`、`student_reports`、`report_settings` / `receipt_settings` / `invoice_settings` / `salary_settings` / `payslip_settings` / `center_presets`、`role_permissions`、`teacher_salary_structures` / `teacher_salary_records` / `teacher_performance_evaluation` / `teacher_teaching_reports`、`teacher_leave_record` / `student_leave_record`、`student_attendance` / `teacher_attendance` / `attendance_settings`、`schedule_logs`、`audit_logs`（14,081）、`expense_categories`、`public_holidays`、`dashboard_widgets`、`activities`。
+
 ### 💡 核心智能设计
 
 **多中心自动计算** — 这是我们系统最巧妙的设计：
@@ -327,6 +345,15 @@
 ---
 
 ## 五、分阶段路线图
+
+> 🆕 **2026-10-12 巡检**：本节多处阶段状态与现网脱节 ——
+> ① **Phase 4（智能化）表**仍把「家长自助 Portal / 成绩管理 / 作业考试 / 库存管理」标 ⏳ —— **实际全部已上线**（家长端 8 页含 `/parent/dailylogs`，另有 `/grades`、`/homework`、`/inventory`）。
+>    仍未做的只剩：暗色模式、Cmd+K 全局搜索、骨架屏/空状态、可配置 Dashboard Widget、按钮级权限、高级数据分析。
+> ② **`student-management-page.tsx` 被本节/6.D/16.2/「下一步优先级」#4 反复判为「未拆分的巨型死代码」—— 这是误判**：
+>    实测该文件 **1,028 行**，且 `/student-management` **正在引用它**（`app/student-management/page.tsx:6`）→ **不是死代码，不能删**。
+> ③ **6.B「安亲班核心缺失 — 一个都没有」整节已过时**：每日日志（`daily_logs` 表 + `/daily-logs` + `/parent/dailylogs`）、成绩（`grades` **484** 条 + `/grades`）、接送（`pickup_records` + `/pickup`）均已落地；6.B.2「report-cards 只是占位符」同样不成立。
+> ④ **5g-4 的「积分排行榜 / 兑换 / 家长查看 ⏳ 未做」已过时** → `/points/leaderboard`、`/points/rules` 在线（`points` **2,885** 条 / `point_logs` **5,055** 条）。
+> ⑤ **6.C / 第四节财务差距表**说 PDF 导出、银行对账、预算、AR 账龄、部分付款退款「❌ 无」—— 与同文件 Phase 3 的 ✅、以及现网 `/api/finance/{ar-aging,bank-accounts,budgets,refunds}` + `/finance/{reports,bank,budget,debts}` 互相矛盾（第四节整节待重写）。
 
 ### ✅ Phase 1：修 Bug + 图表（已完成）
 
@@ -1753,6 +1780,12 @@ teacher 组件两处都有、finance 组件有双层（顶层级 + 子目录级�
 ---
 
 ## 十七、NFC 考勤 + 积分系统 — 专项审计 (2026-06-23)
+
+> 🆕 **2026-10-12 复核**：本节（2026-06-23）的结论**已全部作废** —— 「前端写了一堆、后端表全空、整个 NFC/积分系统是空壳」不再成立。
+> 17.1 表里标「**不存在！**」的三张表**都已建并在跑**：`nfc_cards` **135** 条、`points` **2,885** 条、`points_transactions` 已建（另有 `point_logs` **5,055** 条）。
+> 17.4 功能清单也基本落地：发卡/绑卡（`/card-management` + `/api/cards`）、NFC 打卡（`/api/nfc/tap`）、积分加减（`/points`）、排行榜（`/points/leaderboard`）、规则（`/points/rules`）。
+> 仍待办只剩：**#1 NFC UID 统一**（`nfc_uid` 仍空，属「当前最紧急」）、积分兑换、家长查看积分。
+> ⚠️ 阅读本节请只当历史，勿据其作技术判断。
 
 > 用户确认：已有 Synorex 卡 ID，需要 NFC 联动考勤和积分。学生积分系统尚未实现。
 

@@ -20,11 +20,38 @@ interface Activity {
   center: string
   category: string
   description?: string
+  time?: string
 }
 
 const CATEGORIES = ["教学", "活动", "假期", "比赛", "其他"]
+const LEAVE_PROXY = "/api/pocketbase-proxy/api/collections/teacher_leave_record/records"
+const LEAVE_TYPE_LABEL: Record<string, string> = { annual: "年假", sick: "病假", emergency: "紧急", maternity: "产假", paternity: "陪产假", unpaid: "无薪假" }
+
+interface TeacherLeave {
+  id: string
+  teacher: string
+  type: string
+  status: string
+  start: string
+  end: string
+}
 const WEEKDAYS_SHORT = ["日", "一", "二", "三", "四", "五", "六"]
 const MONTH_NAMES = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"]
+
+// 可预约时段：10:00–17:00，每小时 1 格
+const TIME_SLOTS = ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"]
+const slotLabel = (s: string) => {
+  const h = Number(s.split(":")[0])
+  const ampm = h < 12 ? "AM" : "PM"
+  const h12 = h % 12 === 0 ? 12 : h % 12
+  return `${h12}:00 ${ampm}`
+}
+const slotShort = (s: string) => {
+  const h = Number(s.split(":")[0])
+  const ampm = h < 12 ? "AM" : "PM"
+  const h12 = h % 12 === 0 ? 12 : h % 12
+  return `${h12}${ampm}`
+}
 
 const fmtDate = (y: number, m: number, d: number) => `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`
 const todayStr = () => fmtDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate())
@@ -37,10 +64,11 @@ export default function ActivitiesPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const today = todayStr()
   const [activities, setActivities] = useState<Activity[]>([])
+  const [leaves, setLeaves] = useState<TeacherLeave[]>([])
   const [error, setError] = useState("")
   const [centerFilter, setCenterFilter] = useState("all")
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [form, setForm] = useState({ title: "", center: "all", category: "活动", description: "" })
+  const [form, setForm] = useState({ title: "", center: "all", category: "活动", description: "", time: "" })
 
   const prevMonth = () => {
     if (month === 1) { setYear(y => y - 1); setMonth(12) }
@@ -68,6 +96,7 @@ export default function ActivitiesPage() {
       setActivities((data?.items || []).map((a: any) => ({
         id: a.id, title: a.title, date: String(a.date).slice(0, 10),
         center: a.center || 'all', category: a.category || '活动', description: a.description,
+        time: a.time || "",
       })))
       setError("")
     } catch (e) {
@@ -75,7 +104,31 @@ export default function ActivitiesPage() {
     }
   }, [year, month])
 
-  useEffect(() => { loadActivities() }, [loadActivities])
+  const loadLeaves = useCallback(async () => {
+    const monthStart = fmtDate(year, month, 1)
+    const monthEnd = fmtDate(year, month, new Date(year, month, 0).getDate())
+    const filter = `start_date <= "${monthEnd}" && end_date >= "${monthStart}"`
+    try {
+      const res = await fetch(`${LEAVE_PROXY}?filter=${encodeURIComponent(filter)}&sort=start_date&perPage=200&expand=teacher_id`)
+      const data = await res.json()
+      setLeaves((data?.items || []).map((l: any) => {
+        let ex = (l.expand || {}).teacher_id
+        if (Array.isArray(ex)) ex = ex[0]
+        return {
+          id: l.id,
+          teacher: (ex && ex.name) || "",
+          type: LEAVE_TYPE_LABEL[l.leave_type] || l.leave_type || "",
+          status: l.status || "",
+          start: String(l.start_date).slice(0, 10),
+          end: String(l.end_date).slice(0, 10),
+        }
+      }))
+    } catch (e) {
+      // 请假加载失败不影响活动日历
+    }
+  }, [year, month])
+
+  useEffect(() => { loadActivities(); loadLeaves() }, [loadActivities, loadLeaves])
 
   const grid = useMemo(() => {
     const firstDay = new Date(year, month - 1, 1)
@@ -103,20 +156,49 @@ export default function ActivitiesPage() {
     return map
   }, [visibleActivities])
 
-  const selectedActivities = selectedDate ? (activityMap[selectedDate] || []) : []
+  const leaveMap = useMemo(() => {
+    const map: Record<string, TeacherLeave[]> = {}
+    for (const l of leaves) {
+      if (!l.start) continue
+      const cur = new Date(l.start + "T00:00:00")
+      const endD = new Date((l.end || l.start) + "T00:00:00")
+      let guard = 0
+      while (cur <= endD && guard++ < 400) {
+        const ds = fmtDate(cur.getFullYear(), cur.getMonth() + 1, cur.getDate())
+        if (!map[ds]) map[ds] = []
+        map[ds].push(l)
+        cur.setDate(cur.getDate() + 1)
+      }
+    }
+    return map
+  }, [leaves])
+
+  const selectedActivities = selectedDate
+    ? [...(activityMap[selectedDate] || [])].sort((a, b) => (a.time || "99").localeCompare(b.time || "99"))
+    : []
+
+  const selectedLeaves = selectedDate ? (leaveMap[selectedDate] || []) : []
+
+  const takenSet = useMemo(() => {
+    const s = new Set<string>()
+    if (!selectedDate) return s
+    for (const a of activities) if (a.date === selectedDate && a.time) s.add(a.time)
+    return s
+  }, [activities, selectedDate])
 
   const addActivity = async () => {
     if (!form.title.trim() || !selectedDate) return
+    if (form.time && takenSet.has(form.time)) { setError(t("该时段已被占用，请选其他时段")); return }
     try {
       const res = await fetch(PROXY, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: form.title.trim(), date: selectedDate, center: form.center, category: form.category, description: form.description }),
+        body: JSON.stringify({ title: form.title.trim(), date: selectedDate, center: form.center, category: form.category, description: form.description, time: form.time }),
       })
       const d = await res.json()
       if (d?.id) {
         setDialogOpen(false)
-        setForm({ title: "", center: "all", category: "活动", description: "" })
+        setForm({ title: "", center: "all", category: "活动", description: "", time: "" })
         await loadActivities()
       } else {
         setError(d?.message || t("添加失败"))
@@ -195,14 +277,20 @@ export default function ActivitiesPage() {
                       </span>
                       <div className="mt-0.5 space-y-0.5">
                         {dayActs.slice(0, 3).map(a => (
-                          <div key={a.id} className="flex items-center gap-1" title={a.title}>
+                          <div key={a.id} className="flex items-center gap-1" title={`${a.time ? slotLabel(a.time) + " " : ""}${a.title}`}>
                             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${a.center === 'all' ? 'bg-amber-400' : 'bg-violet-400'}`} />
                             <span className="text-[10px] text-gray-600 truncate leading-tight">
+                              {a.time && <span className="text-primary font-semibold">{slotShort(a.time)} </span>}
                               {(a.title || t("活动")).length > 8 ? (a.title || t("活动")).slice(0, 8) + "…" : (a.title || t("活动"))}
                             </span>
                           </div>
                         ))}
                         {dayActs.length > 3 && <span className="text-[10px] text-gray-400">+{dayActs.length - 3} {t("活动")}</span>}
+                        {(leaveMap[dateStr]?.length || 0) > 0 && (
+                          <span className="inline-block text-[9px] px-1 rounded bg-indigo-100 text-indigo-600 font-medium leading-4">
+                            {t("师假")} {leaveMap[dateStr].length}
+                          </span>
+                        )}
                       </div>
                     </button>
                   )
@@ -224,6 +312,20 @@ export default function ActivitiesPage() {
                 <Button size="sm" onClick={() => setDialogOpen(true)} className="w-full mb-3 h-8 text-xs gap-1">
                   <Plus className="h-3 w-3" />{t("添加活动")}
                 </Button>
+                <div className="mb-3">
+                  <div className="text-[11px] font-medium text-gray-500 mb-1.5">{t("预约时段")} · 10:00 AM – 5:00 PM</div>
+                  <div className="grid grid-cols-4 gap-1">
+                    {TIME_SLOTS.map(s => {
+                      const isTaken = takenSet.has(s)
+                      return (
+                        <div key={s} className={`text-[10px] text-center rounded-md py-1 border ${isTaken ? "bg-red-50 border-red-200 text-red-500" : "bg-emerald-50 border-emerald-200 text-emerald-600"}`}>
+                          {slotShort(s)}
+                          <div className="text-[8px] leading-tight">{isTaken ? t("已占") : t("可预约")}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
                 {selectedActivities.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">
                     <Calendar className="h-6 w-6 mx-auto mb-1 opacity-30" />
@@ -235,7 +337,10 @@ export default function ActivitiesPage() {
                       <div key={a.id} className="p-2 rounded-lg border bg-white">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <div className="text-sm font-medium">{a.title}</div>
+                            <div className="text-sm font-medium">
+                              {a.time && <span className="text-primary font-mono text-xs mr-1.5">{slotLabel(a.time)}</span>}
+                              {a.title}
+                            </div>
                             <div className="flex items-center gap-1 mt-1 flex-wrap">
                               <Badge variant="secondary" className="text-[9px]">{a.category}</Badge>
                               <Badge variant="outline" className={`text-[9px] ${a.center === 'all' ? "text-amber-600" : "text-blue-600"}`}>
@@ -250,6 +355,24 @@ export default function ActivitiesPage() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+                {selectedLeaves.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="text-[11px] font-medium text-gray-500 mb-1.5">{t("老师请假")}</div>
+                    <div className="space-y-1">
+                      {selectedLeaves.map(l => (
+                        <div key={l.id} className="flex items-center justify-between gap-2 bg-white rounded-md border px-2 py-1">
+                          <span className="text-xs truncate">{l.teacher || t("老师")}</span>
+                          <span className="flex items-center gap-1 flex-shrink-0">
+                            <Badge variant="secondary" className="text-[9px]">{l.type}</Badge>
+                            <span className={`text-[9px] font-medium ${l.status === "approved" ? "text-emerald-600" : "text-amber-600"}`}>
+                              {l.status === "approved" ? t("已批") : t("待批")}
+                            </span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -290,6 +413,26 @@ export default function ActivitiesPage() {
                   {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label className="text-xs">{t("预约时段（可选）")}</Label>
+              <div className="grid grid-cols-4 gap-1.5 mt-1">
+                <button type="button" onClick={() => setForm({ ...form, time: "" })}
+                  className={`text-[11px] rounded-md py-1.5 border transition-colors ${form.time === "" ? "bg-primary text-primary-foreground border-primary" : "bg-white border-gray-200 text-gray-500 hover:border-primary"}`}>
+                  {t("无")}
+                </button>
+                {TIME_SLOTS.map(s => {
+                  const isTaken = takenSet.has(s)
+                  const active = form.time === s
+                  return (
+                    <button key={s} type="button" disabled={isTaken}
+                      onClick={() => setForm({ ...form, time: s })}
+                      className={`text-[11px] rounded-md py-1.5 border transition-colors ${isTaken ? "bg-gray-100 border-gray-200 text-gray-300 cursor-not-allowed line-through" : active ? "bg-primary text-primary-foreground border-primary" : "bg-white border-gray-200 text-gray-700 hover:border-primary"}`}>
+                      {slotShort(s)}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
             <div>
               <Label className="text-xs">{t("备注（可选）")}</Label>

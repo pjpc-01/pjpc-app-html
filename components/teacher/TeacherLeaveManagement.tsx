@@ -55,6 +55,7 @@ export interface TeacherLeaveRecord {
   approved_date?: string
   rejection_reason?: string
   substitute_teacher?: string
+  period?: 'full_day' | 'morning' | 'afternoon'
   notes?: string
   expand?: {
     teacher_id: {
@@ -98,12 +99,13 @@ export default function TeacherLeaveManagement() {
   // Form states
   const [leaveForm, setLeaveForm] = useState({
     teacher_id: '',
-    leave_type: 'annual' as const,
+    leave_type: 'annual' as TeacherLeaveRecord['leave_type'],
     start_date: '',
     end_date: '',
     reason: '',
     substitute_teacher: '',
-    notes: ''
+    notes: '',
+    period: 'full_day' as 'full_day' | 'morning' | 'afternoon'
   })
   
   const [approvalForm, setApprovalForm] = useState<{
@@ -201,7 +203,8 @@ export default function TeacherLeaveManagement() {
           end_date: '',
           reason: '',
           substitute_teacher: '',
-          notes: ''
+          notes: '',
+          period: 'full_day'
         })
         fetchLeaveRecords()
       } else {
@@ -528,6 +531,11 @@ export default function TeacherLeaveManagement() {
                     <div>
                       <p className="font-medium">{formatDate(record.start_date)}</p>
                       <p className="text-sm text-gray-500">{t("至")} {formatDate(record.end_date)}</p>
+                      {record.period && record.period !== 'full_day' && (
+                        <Badge variant="secondary" className="mt-1 text-[10px]">
+                          {record.period === 'morning' ? t("早上半天") : t("下午半天")}
+                        </Badge>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>{record.total_days} {t("天")}</TableCell>
@@ -561,7 +569,8 @@ export default function TeacherLeaveManagement() {
                           end_date: record.end_date,
                           reason: record.reason,
                           substitute_teacher: record.substitute_teacher || '',
-                          notes: record.notes || ''
+                          notes: record.notes || '',
+                          period: record.period || 'full_day'
                         })
                         setLeaveDialogOpen(true)
                       }}>
@@ -657,6 +666,23 @@ export default function TeacherLeaveManagement() {
                   min={leaveForm.start_date}
                 />
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="period">{t("请假时段")}</Label>
+              <Select value={leaveForm.period} onValueChange={(value: any) =>
+                setLeaveForm(prev => ({ ...prev, period: value }))
+              }>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="full_day">{t("全天")}</SelectItem>
+                  <SelectItem value="morning">{t("早上半天")}</SelectItem>
+                  <SelectItem value="afternoon">{t("下午半天")}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500 mt-1">{t("选半天 = 天数算 0.5 天")}</p>
             </div>
 
             <div>

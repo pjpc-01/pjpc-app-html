@@ -63,13 +63,15 @@ export async function POST(request: NextRequest) {
     await authenticateAdmin(pb)
 
     const body = await request.json()
-    const { teacher_id, leave_type, start_date, end_date, reason, substitute_teacher, notes } = body
+    const { teacher_id, leave_type, start_date, end_date, reason, substitute_teacher, notes, period } = body
 
-    // 计算请假天数
+    // 计算请假天数（半天 = 0.5 天）
     const start = new Date(start_date)
     const end = new Date(end_date)
     const timeDiff = end.getTime() - start.getTime()
-    const totalDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1
+    const dayCount = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1
+    const isHalfDay = period === 'morning' || period === 'afternoon'
+    const totalDays = isHalfDay ? dayCount * 0.5 : dayCount
 
     const leaveRecord: Partial<TeacherLeaveRecord> = {
       teacher_id,
@@ -81,7 +83,8 @@ export async function POST(request: NextRequest) {
       status: 'pending',
       applied_date: new Date().toISOString(),
       substitute_teacher,
-      notes
+      notes,
+      period: period || 'full_day'
     }
 
     const record = await pb.collection('teacher_leave_record').create(leaveRecord)
