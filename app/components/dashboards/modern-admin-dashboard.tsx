@@ -216,10 +216,12 @@ export default function ModernAdminDashboard({ activeTab, setActiveTab }: Modern
         const proxy = "/api/pocketbase-proxy/api/collections"
         const urls = {
           centers: `${proxy}/centers/records?perPage=20&sort=code`,
-          students: `${proxy}/students/records?perPage=500&sort=-created&expand=centerId&filter=${encodeURIComponent('deleted!=true')}`,
-          teachers: `${proxy}/teachers/records?perPage=500&sort=-created&expand=centerId&filter=${encodeURIComponent('deleted!=true')}`,
+          // ⚠️ 只有 payments / invoices 有 deleted 字段；students / teachers / expenses 没有，
+          //    对它们用 deleted!=true 会被 PB 判为非法字段直接 400（整包数据取不回来）。
+          students: `${proxy}/students/records?perPage=500&sort=-created&expand=centerId`,
+          teachers: `${proxy}/teachers/records?perPage=500&sort=-created&expand=centerId`,
           payments: `${proxy}/payments/records?perPage=500&sort=-created&filter=${encodeURIComponent('deleted!=true')}`,
-          expenses: `${proxy}/expenses/records?perPage=500&sort=-date&filter=${encodeURIComponent('deleted!=true')}`,
+          expenses: `${proxy}/expenses/records?perPage=500&sort=-date`,
           invoices: `${proxy}/invoices/records?perPage=500&sort=-created&filter=${encodeURIComponent('deleted!=true')}`,
           feeItems: `${proxy}/fee_items/records?perPage=500&sort=-created`,
           refunds: `${proxy}/refunds/records?perPage=500&sort=-created`,
