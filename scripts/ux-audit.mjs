@@ -16,7 +16,7 @@ const NAV = [
   ['概览/仪表板', '/'], ['概览/幻灯片', '/dashboard/slideshow'], ['概览/TV看板', '/tv-board'],
   ['教务/教育概览', '/education'], ['教务/学生列表', '/student-management'], ['教务/学生报告', '/student-reports'],
   ['教务/家长管理', '/parent-management'], ['教务/作业管理', '/homework'], ['教务/成绩管理', '/grades'],
-  ['教务/接送管理', '/pickup'], ['教务/每日日志', '/daily-logs'], ['教务/资源库', '/resource-library'],
+  ['教务/考试目标', '/exam-targets'], ['教务/接送管理', '/pickup'], ['教务/每日日志', '/daily-logs'], ['教务/资源库', '/resource-library'],
   ['教务/教师列表', '/teacher-management'], ['教务/教师排班', '/teacher-attendance-reports'],
   ['教务/活动管理', '/activities'], ['教务/课程管理', '/course-management'],
   ['教务/教学评估', '/teacher-teaching-report'], ['教务/绩效管理', '/teacher-performance'],
