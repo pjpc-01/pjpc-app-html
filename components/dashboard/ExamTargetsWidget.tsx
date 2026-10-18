@@ -196,12 +196,17 @@ function GradeLane({
 }) {
   const { t } = useLanguage();
   const groups = useMemo(() => groupByGrade(students), [students])
-  const cols = `minmax(${compact ? 104 : 190}px,1.5fr) repeat(${subjects.length}, 1fr)`
+  const nameMin = compact ? 140 : 190
+  // 手机端不能把 7 个科目硬挤进 390px（会挤成一团看不清）→ 给每科一个最小宽度，装不下就横向滑
+  const subjMin = 56
+  const tableMinW = nameMin + subjects.length * subjMin
+  const cols = `minmax(${nameMin}px,1.5fr) repeat(${subjects.length}, minmax(${subjMin}px,1fr))`
   const nameCls = compact ? "text-[13px]" : "text-[15px]"
   const numCls = compact ? "text-[15px]" : "text-lg"
 
   return (
-    <div className="flex-1 min-w-0">
+    <div className="flex-1 min-w-0 overflow-x-auto">
+      <div style={{ minWidth: tableMinW }}>
       <div className="grid items-center gap-x-1.5 pb-1.5 border-b border-slate-200 text-slate-500 text-[13px]"
         style={{ gridTemplateColumns: cols }}>
         <div className="text-left pl-1">{t("学生")}</div>
@@ -258,6 +263,7 @@ function GradeLane({
           })}
         </div>
       ))}
+      </div>
     </div>
   )
 }
