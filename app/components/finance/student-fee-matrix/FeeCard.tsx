@@ -373,12 +373,22 @@ export const FeeCard = ({
                                 >{t("6月")}</button>
                               )}
                               {(editMode || localEditMode) && fee.type === 'daily' && assigned ? (
-                                <span className="flex items-center gap-0.5">
+                                <span className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                  {/* ⚠️ 原来只有一个 40×20 的输入框，上下箭头小到点不中（用户反馈「按不到」）→ 改成加/减按钮 + 加大输入框 */}
+                                  <button
+                                    type="button"
+                                    disabled={savingQty.has(fee.id) || (dayQuantities[fee.id] || 1) <= 1}
+                                    onClick={() => {
+                                      const v = Math.max(1, (dayQuantities[fee.id] || 1) - 1)
+                                      setDayQuantities(prev => ({ ...prev, [fee.id]: v }))
+                                      setDirtyDays(prev => new Set(prev).add(fee.id))
+                                    }}
+                                    className="w-6 h-6 shrink-0 rounded border border-slate-300 text-slate-600 leading-none hover:bg-slate-100 disabled:opacity-40"
+                                  >−</button>
                                   <input
-                                    type="number" min={1} step={1}
+                                    type="number" min={1} step={1} inputMode="numeric"
                                     value={dayQuantities[fee.id] || 1}
                                     onChange={(e) => {
-                                      e.stopPropagation()
                                       setDayQuantities(prev => ({ ...prev, [fee.id]: Math.max(1, parseInt(e.target.value) || 1) }))
                                       setDirtyDays(prev => new Set(prev).add(fee.id))
                                     }}
@@ -388,10 +398,19 @@ export const FeeCard = ({
                                       setDayQuantities(prev => ({ ...prev, [fee.id]: v }))
                                       setDirtyDays(prev => new Set(prev).add(fee.id))
                                     }}
-                                    onClick={(e) => e.stopPropagation()}
                                     disabled={savingQty.has(fee.id)}
-                                    className="w-10 h-5 text-[10px] text-center border rounded"
+                                    className="w-12 h-6 text-xs text-center border border-slate-300 rounded tabular-nums"
                                   />
+                                  <button
+                                    type="button"
+                                    disabled={savingQty.has(fee.id)}
+                                    onClick={() => {
+                                      const v = (dayQuantities[fee.id] || 1) + 1
+                                      setDayQuantities(prev => ({ ...prev, [fee.id]: v }))
+                                      setDirtyDays(prev => new Set(prev).add(fee.id))
+                                    }}
+                                    className="w-6 h-6 shrink-0 rounded border border-slate-300 text-slate-600 leading-none hover:bg-slate-100 disabled:opacity-40"
+                                  >+</button>
                                   <span className="text-[10px] text-slate-400">{t("天")}</span>
                                 </span>
                               ) : null}
