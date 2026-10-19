@@ -9,38 +9,65 @@ import { StudentReport, ReportSubject } from '@/hooks/useStudentReports'
 import { getSocsoEmployer, getEisContribution } from '@/lib/perkeso-rates'
 import { scoreToGrade } from '@/lib/utils'
 
-// ── Enrichment Class 名单：学生(中文名) → 参加的课程名（2026-09-28） ──
+// ── Enrichment Class 名单：学生(中文名) → 参加的课程名（2026-10-16 依最新分班表更新，57 人） ──
 export const ENRICHMENT_MAP: Record<string, string> = {
+  "亚沙迪": "BC",
+  "亚菲": "BC",
+  "伊乐": "BC",
   "伍宇恒": "BM Lvl 2 · BI",
   "伍若淇": "BI",
+  "何泽田": "BI",
   "侯俊昊": "BC LVL 1",
   "刘晋宏": "BM Lvl 1",
+  "刘权霆": "BI",
   "刘芝榛": "BM Lvl 2",
+  "加华": "BC",
   "卡立": "BC LVL 2",
+  "叶凯恒": "BM Lvl 1 · BC · BI",
+  "叶凯轩": "BM Lvl 1",
+  "叶程恺": "BM Lvl 1",
   "叶纹仙": "BM Lvl 2",
   "叶纹君": "BM Lvl 1",
+  "周颁哲": "BC LVL 2",
+  "塔润雅": "BM Lvl 1 · BC · BI",
+  "帆提": "BC",
   "张耀天": "BM Lvl 2",
+  "张耀阳": "BM Lvl 2",
   "张艺谋": "BM Lvl 2",
   "徐嘉霃": "BM Lvl 2 · BC LVL 2 · BI",
+  "徐誉洋": "BM Lvl 1 · BC · BI",
   "拉亦来卡": "BC LVL 1",
+  "朱宸妍": "BI",
+  "李珮瑄": "BM Lvl 1 · BC · BI",
   "林倢慧": "BM Lvl 1",
+  "林湧昇": "BM Lvl 2",
+  "沈仁平": "BM Lvl 1 · BC · BI",
   "潘晴": "BM Lvl 2",
-  "程芊瑜": "BC LVL 1",
+  "王沅菖": "BM Lvl 2 · BC · BI",
+  "程宣瑜": "BC",
+  "程芊瑜": "BC LVL 2",
+  "罗兆俊": "BC",
   "罗玉晶": "BM Lvl 2",
-  "胡建沣": "BC LVL 2 · BM Lvl 2 · BI",
+  "胡建沣": "BM Lvl 2 · BC LVL 2 · BI",
   "艾思琳": "BM Lvl 2",
+  "艾曼达": "BC",
+  "艾登": "BM Lvl 1 · BC · BI",
   "艾迷": "BC LVL 2",
   "苏佳炆": "BM Lvl 2",
+  "苏宏杰": "BM Lvl 1 · BC · BI",
   "莎拉": "BC LVL 1",
   "萃森": "BC LVL 1",
+  "许瑜桐": "BM Lvl 2",
+  "郑俊浠": "BM Lvl 2 · BC",
   "郑皓键": "BM Lvl 2",
+  "陆美玥": "BI",
   "陆美珈": "BM Lvl 2 · BI",
+  "陈姿錡": "BM Lvl 1 · BC · BI",
   "陈宗政": "BM Lvl 2",
   "黄于恩": "BM Lvl 1 · BI",
   "黄柏玮": "BC LVL 1",
-  "龙泓升": "BC LVL 1 · BM Lvl 2",
+  "龙泓升": "BM Lvl 2 · BC LVL 1",
   "龙泓宇": "BM Lvl 1 · BC LVL 1",
-  "周颁哲": "BC LVL 2",
 }
 // 由学生名字(含中文)解析出 Enrichment Class 课程名，无则返回 ''
 export const resolveEnrichment = (name?: string): string => {
@@ -820,15 +847,20 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
   const EN_SUBJECT_NAMES: Record<string, string> = { '华文': 'Chinese', '国文': 'Bahasa Melayu', '英文': 'English', '科学': 'Science', '数学': 'Mathematics', '地理': 'Geography', '历史': 'History', '美术': 'Art', '音乐': 'Music', '体育': 'Physical Education', '道德': 'Moral Education' }
   const subjectLabel = (name: string) => isEn ? (EN_SUBJECT_NAMES[name] || name) : name
 
-  // Use preset subjects as template, match scores from report
+  // ⚠️ 学生自己的科目清单优先（老师可个别客制）；报告没有任何科目时才套用全站模板
   const presetSubjects: string[] = (settings as any).defaultSubjects || []
   const reportSubjectMap = new Map((report.subjects || []).map((s: any) => [s.name, s]))
-  const subjects = presetSubjects.length > 0
-    ? presetSubjects.map(name => {
+  const subjects: any[] = (Array.isArray(report.subjects) && report.subjects.length > 0)
+    ? report.subjects.map((rs: any) => ({
+        name: rs.name,
+        midterm: rs.midterm ?? null,
+        final: rs.final ?? null,
+        evaluation: rs.evaluation || (rs.final != null ? scoreToEval(rs.final) : ''),
+      }))
+    : presetSubjects.map(name => {
         const rs = reportSubjectMap.get(name)
         return { name, midterm: rs?.midterm ?? null, final: rs?.final ?? null, evaluation: rs?.evaluation || (rs?.final != null ? scoreToEval(rs.final) : '') }
       })
-    : (report.subjects || [])
 
   // Compute averages
   const computeAvg = (key: 'midterm' | 'final') => {
@@ -1102,13 +1134,19 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
         : []
       if (!photos.length) return ''
       const cid = "px7z29k647g5697"
-      const photoImgs = photos.map((fn, i) =>
+      const imgs = photos.filter((fn: string) => !/\.pdf$/i.test(fn))
+      const pdfs = photos.filter((fn: string) => /\.pdf$/i.test(fn))
+      const photoImgs = imgs.map((fn, i) =>
         `<img src="/api/pocketbase-proxy/api/files/${cid}/${report.id}/${encodeURIComponent(fn)}" alt="report-photo-${i}" style="width:340px;height:255px;object-fit:contain;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;" />`
+      ).join('')
+      const pdfRows = pdfs.map(fn =>
+        `<div style="font-size:12px;color:#b91c1c;padding:4px 8px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;margin-bottom:4px;">PDF：${decodeURIComponent(String(fn))}</div>`
       ).join('')
       return `
       <div style="margin-top:10px;">
-        <p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">${L('学习成果 / 活动照片','Work Photos')}：</p>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;">${photoImgs}</div>
+        ${imgs.length ? `<p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">${L('学习成果 / 活动照片','Work Photos')}：</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">${photoImgs}</div>` : ''}
+        ${pdfs.length ? `<p style="font-size:13px;font-weight:600;color:#4b5563;margin:8px 0 4px;">${L('附件 PDF','Attachments (PDF)')}：</p>${pdfRows}` : ''}
       </div>`
     })()}
   </div>
