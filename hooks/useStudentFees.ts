@@ -393,6 +393,19 @@ export function useStudentFees() {
       return { savedCount: 0, failures };
     }
 
+    // ⚠️ 写之前先全量读一次最新的 student_fees。
+    //    原来用内存快照(feeByStudentId)里的 quantity 重建 fee_items ——
+    //    只要快照比刚落库的天数旧一步，「退出编辑（保存）」就会把用户刚调好的
+    //    天数盖回默认 1。这里用库里的最新值，从根上杜绝覆盖。
+    let freshByStudent = new Map<string, any>()
+    try {
+      const freshRecords = await pbInstance.collection("student_fees").getFullList();
+      freshRecords.forEach((r: any) => { if (r?.student_id) freshByStudent.set(r.student_id, r) })
+      debugLog(`🔄 Re-read ${freshRecords.length} student_fees records before writing`);
+    } catch (err) {
+      debugLog('⚠️ Could not re-read student_fees before writing; falling back to in-memory copy:', err);
+    }
+
     // Process each student's assignments individually so a single failure
     // does not abort the rest of the batch.
     for (const [studentId, feeIds] of localFeeAssignments) {
@@ -407,8 +420,11 @@ export function useStudentFees() {
         const totalAmount = Math.max(0, baseAmount - (discountType === 'percent' ? baseAmount * (discount / 100) : discount));
 
         // Create fee items array — preserve existing quantities from PB
-        const existingRecord = feeByStudentId.get(studentId);
-        const existingItems = existingRecord?.fee_items || []
+        // 优先用刚落库的最新记录(保住刚调好的天数)，退回内存快照
+        const existingRecord = freshByStudent.get(studentId) || feeByStudentId.get(studentId);
+        const rawExisting = existingRecord?.fee_items
+        // 全量读回来的 fee_items 是 JSON 字符串；内存快照里已经是数组 —— 两种都要接
+        const existingItems: any[] = typeof rawExisting === 'string' ? safeParse(rawExisting) : (rawExisting || [])
         const existingQty: Record<string, number> = {}
         existingItems.forEach((fi: any) => { if (fi.quantity) existingQty[fi.id] = fi.quantity })
         const feeItems = allFees
