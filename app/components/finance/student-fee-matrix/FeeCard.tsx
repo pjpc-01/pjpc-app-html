@@ -70,7 +70,7 @@ export const FeeCard = ({
   useEffect(() => {
     if (loadedRef.current) return
     loadedRef.current = true
-    fetch(`/api/pocketbase-proxy/api/collections/student_fees/records?perPage=1&filter=(student_id="${studentId}")`)
+    fetch(`/api/pocketbase-proxy/api/collections/student_fees/records?perPage=1&filter=(student_id="${studentId}")`, { cache: 'no-store' })
       .then(r => r.json()).then(d => {
         if (d.items?.[0]?.fee_items) {
           const items = typeof d.items[0].fee_items === 'string' ? JSON.parse(d.items[0].fee_items) : d.items[0].fee_items
@@ -90,7 +90,7 @@ export const FeeCard = ({
     setDayQuantities(prev => ({ ...prev, [feeId]: newQty }))
     setSavingQty(prev => new Set(prev).add(feeId))
     try {
-      const r = await fetch(`/api/pocketbase-proxy/api/collections/student_fees/records?perPage=1&filter=(student_id="${studentId}")`)
+      const r = await fetch(`/api/pocketbase-proxy/api/collections/student_fees/records?perPage=1&filter=(student_id="${studentId}")`, { cache: 'no-store' })
       const d = await r.json()
       // 本卡片上其它按天计费项目的天数（本地状态优先）
       const qtyOf = (id: string) => (id === feeId ? newQty : (dayQuantities[id] || 1))
@@ -157,7 +157,26 @@ export const FeeCard = ({
     })
   }
 
-  // 批量保存所有改过的天数（一次点完，不再每次失焦就存）
+  // ⚡ 改完自动保存（防抖 800ms）—— 不再要求用户手动按「保存天数」。
+  //    原来的病根：用户调完天数、没注意到要按按钮 → 以为「存不了」，
+  //    一刷新又回到 1 天。改成自动存，这条路直接消失。
+  const daySaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const latestDayQty = useRef(dayQuantities)
+  latestDayQty.current = dayQuantities
+  const updateDayQuantityRef = useRef(updateDayQuantity)
+  updateDayQuantityRef.current = updateDayQuantity
+  useEffect(() => {
+    if (dirtyDays.size === 0) return
+    if (daySaveTimer.current) clearTimeout(daySaveTimer.current)
+    daySaveTimer.current = setTimeout(() => {
+      const ids = Array.from(dirtyDays)
+      setDirtyDays(new Set())
+      ids.forEach(id => { void updateDayQuantityRef.current(id, latestDayQty.current[id] || 1) })
+    }, 800)
+    return () => { if (daySaveTimer.current) clearTimeout(daySaveTimer.current) }
+  }, [dirtyDays])
+
+  // 批量保存所有改过的天数（手动兜底；正常情况下已由上面的自动保存处理）
   const saveAllDays = async () => {
     const ids = Array.from(dirtyDays)
     if (ids.length === 0) return

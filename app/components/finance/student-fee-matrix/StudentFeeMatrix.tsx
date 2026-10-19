@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useFees } from "@/hooks/useFees"
 import { useStudents } from "@/hooks/useStudents"
 import { useStudentFees } from "@/hooks/useStudentFees"
@@ -27,6 +27,9 @@ export const StudentFeeMatrix = () => {
   const [selectedGradeFilter, setSelectedGradeFilter] = useState<string>("all")
   const [batchMode, setBatchMode] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  // 只在「第一次加载」显示加载画面 —— 否则每次后台刷新都会整页卸载、卡片状态全丢
+  const [everLoaded, setEverLoaded] = useState(false)
+  useEffect(() => { if (!studentFeesLoading) setEverLoaded(true) }, [studentFeesLoading])
 
   const allFees = fees
 
@@ -55,7 +58,10 @@ export const StudentFeeMatrix = () => {
     return grades.sort((a, b) => gradeRank(a) - gradeRank(b))
   }, [students])
 
-  if (studentFeesLoading) return <div className="py-12 text-center text-muted-foreground">{t('teacher.loading')}</div>
+  // ⚠️ 只在第一次加载时显示加载画面。以前这里无条件判 loading —— 而每次改天数都会
+  //    触发 onRefreshFees → setLoading(true) → 整页被替换成「加载中」→ 所有 FeeCard
+  //    被卸载，展开状态和刚调的天数全丢，重挂后回到默认 1 天。
+  if (studentFeesLoading && !everLoaded) return <div className="py-12 text-center text-muted-foreground">{t('teacher.loading')}</div>
   if (studentFeesError) return <div className="py-12 text-center text-red-600">{t("加载失败:")} {studentFeesError}</div>
 
   const createInvoice = async (studentId: string) => {
