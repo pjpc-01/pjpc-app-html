@@ -131,6 +131,25 @@
     ③ 2 门课程标题尾随空格 → 已 trim（`'Form 2 BC '`→`Form 2 BC`、`'STANDARD 3 BC '`→`STANDARD 3 BC`）
 - ✅ 已解决：凭证编号体系、资产负债表简版、26 张发票补账期、票号重复已重编 + 唯一索引
 
+### 🆕 2026-10-19 每周体检新发现（待处理）
+
+**只读全站体检（dev-check + 41 页真浏览器 + Back/筛选 + 智能会计师 + 死代码 + 用法扫描）**
+
+- 🔴 **审计「谁改的」实际只覆盖排班** —— `audit_logs` 近 30 天 **14,274 条**里只有 **6 条**有 `user_name`（全是 2026-10-15 排班的测试记录）；学生 / 积分 / 考勤 / 发票 / 薪资等全部为空。
+  - 根因：PB 0.39.6 钩子拿不到请求头，代理层补记只写了 `schedules` 一条路径（`app/api/pocketbase-proxy/[...path]/route.ts:120`）。
+  - 建议：把代理层补记推广到全部集合（或钩子改从 `e.auth` 取登录人），否则出事追不到人。
+- 🟡 **17 个 API 接口全库零调用**（`app/components/lib/hooks/scripts/pb_hooks` 全搜不到调用方）：
+  - 无任何引用（连文档都没有）：`/api/backup`、`/api/courses/[id]`、`/api/finance/bank-accounts`、`/api/finance/bank-transactions`、`/api/google-sheets/fetch`、`/api/schedule/check-conflicts`、`/api/teacher-accounts/generate`、`/api/teacher-accounts/link-card`、`/api/teacher-attendance-only`
+  - 只在文档里被提过：`/api/attendance/analytics`、`/api/attendance/monthly`、`/api/finance/ar-aging`、`/api/reports/attendance`、`/api/schedule/conflicts`、`/api/schedule/permissions`、`/api/teachers/update`、`/api/websocket`
+  - 建议：确认没有外部在调（NFC 桥 / 平板）后删；共 85 个 route，零调用占 20%。
+- 🟡 **6 个零引用前端组件**（上次清的 `app/components/attendance/` 6 个之后，本次新扫）：
+  - `app/tv-board/components/` 的 `AnimatedNumber` / `ParticleBackground` / `ProgressBoard` / `RankingChange` / `StatusIndicator`（tv-board 主页面一个都没 import）
+  - `components/ui/drawer.tsx`
+- 🟡 **两个孤儿集合**（0 条记录 + 全库零代码引用）：`photo_moments`、`points_transactions`（积分流水实际在 `point_logs`，5,782 条）→ 建议删集合。
+- 🟡 **半成品：表在、代码在、零使用** —— `homework_submissions` **0 条**（作业页有 `/homework/[id]/grade` 批改入口）、`student_leave_record` **0 条**（`teacher_leave_record` 30 条）→ 确认是「没人用」还是「没法用」。
+- ℹ️ **本轮全绿（不在上次报告里、也无需处理）**：41 页 0 控制台错误 / 0 失败请求 / 0 stuckLoading / 0 异常重定向；手机 390px 抽查 9 页（含 /exam-targets、/finance/student-fees、/grades、/points）均无整页横向溢出；Back 去向 + 列表筛选 0 问题（上周记的「学生列表搜索框被清空」已无复现）；仪表板 400 已消失。
+- ℹ️ **账务侧只对比出好转**：未收 5,236.50 → **1,029.00**；发票 216→217 / 收款 205→213 / 薪资 41→44；上轮已知项（9 月 5 张重复薪资 RM13,745.30、8 月少 1 张、凭证缺 11 笔、10 月薪资未生成、44 条薪资缺分行、3 张发票收付不一致）**均无变化，待老板点头**。
+
 ### 🆕 2026-10-12 智能会计师审计新发现（待处理）
 - 🔴 **2026-09 薪资 5 张重复单** —— 同一老师、同月、两条都是「有效」都在被计算 → **多算 RM 13,745.30**
   - 重复明细（旧单 created 09-17 ／ 新单 created 10-05~10-07，两条都活着）：
@@ -1462,3 +1481,47 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 - **非问题、仅备忘**：银行对账两个账户余额仍 **RM 0.00**（等导流水，正常）；接送管理 / 预算管理 / 报销单 / 绩效管理 / 库存管理 数据少或为空是**真的没录**，功能与按钮都在；`/inventory` 唯一商品「单线簿」进价/售价都是 0（2026-07-14 建的旧记录，待确认是否要填价）。
 - **口径待老板拍板（沿用上周，未变）**：① 教师排班「今日出勤 / 缺勤 / 出勤率」是否要含学生（现只算教师，缺勤恒 0、出勤率恒 100%）② 接送管理 / 预算管理 真做还是置灰。
 - **收尾**：只改 `PRIORITY.md`（未 commit、未 push）；临时分析脚本写在 `~/.hermes/cache/scratch/`，不落在仓库。
+
+---
+
+### 🔁 每周体检（合并）复跑 —— 2026-10-19 09:00（周一）
+
+**报告**：`[Cron] PJPC 每周体检（合并）`
+
+#### 🔴 待处理：审计「谁改的」等于没有
+
+- `audit_logs` 近 30 天 **14,274 条，只有 6 条带名字**，全是 15/10 排班测试。
+- 学生 / 积分 / 考勤 / 发票 / 薪资 **全空**。
+- 原因：代理层补记 `audit_logs` **只写了排班一条路径**。
+- **建议**：把 `x-actor → audit_logs` 补记扩到全部集合（学生、积分、考勤、发票、薪资、支出等）。
+
+#### 🟡 待确认：17 个接口全库零调用（85 个 route 占 20%）
+
+`/api/backup`、`/api/finance/bank-accounts`、`/api/finance/bank-transactions`、`/api/google-sheets/fetch`、`/api/courses/[id]`、`/api/schedule/check-conflicts`、`/api/teacher-accounts/generate`、`/api/teacher-accounts/link-card`、`/api/teacher-attendance-only`，+ 8 个只在旧文档里出现过。
+
+→ **确认外部（NFC 桥 / 平板）没人调，就删。**
+
+#### 🟡 6 个零引用组件
+
+tv-board 的 `AnimatedNumber`、`ParticleBackground`、`ProgressBoard`、`RankingChange`、`StatusIndicator`（主页面一个都没 import）+ `ui/drawer.tsx` → **建议直接删**。
+
+#### 🟡 两个孤儿集合
+
+`photo_moments`、`points_transactions` —— **0 条记录 + 全库零代码引用**（积分流水实际在 `point_logs`，5,782 条）→ 删掉别留着混淆。
+
+#### 🟡 两张表零使用
+
+- `homework_submissions` **0 条**，但作业页却有批改入口 `/homework/[id]/grade`
+- `student_leave_record` **0 条**（教师请假 30 条）
+
+→ **查清是没人用，还是没法用。**
+
+#### 🟢 其余全绿
+
+41 页 0 报错 / 0 失败请求 / 0 卡「加载中」；手机 390px 抽查 9 页无横向溢出；账务未收 **5,236.50 → 1,029.00**。
+
+#### 本轮同日已修（未推）
+
+- 考试目标页手机端挤成一团（`0e66469`）
+- 仪表板 400：上一版给 students/teachers/expenses 误加 `deleted!=true`，这三集合**没有该字段** → 整包 400（`8b5fcb3`）
+- 学生费用「天数按不到」：输入框 40×20 点不中 → 改成 −/+ 按钮（`dd20872`）
