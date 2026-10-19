@@ -21,7 +21,7 @@ import {
   Loader2, Settings, X, PlusCircle
 } from "lucide-react"
 import ReportSettingsManager, { type ReportSettingsPreset } from "@/app/components/report/ReportSettingsManager"
-import { downloadReportPDF, generateReportHTML, resolveEnrichment, resolveEnrichmentSubjects } from "@/lib/pdf-generator"
+import { downloadReportPDF, generateReportHTML, resolveEnrichment } from "@/lib/pdf-generator"
 import { useLanguage } from "@/contexts/language-context";
 
 const DEFAULT_SUBJECTS = ["华文", "国文", "英文", "科学", "数学"]
@@ -80,6 +80,8 @@ export default function StudentReportContent() {
   const [report, setReport] = useState<StudentReport | null>(null)
   const [editMode, setEditMode] = useState(false)
   const [saving, setSaving] = useState(false)
+  // 分数输入草稿：保留「85.」这类中间状态，才能填小数（parseInt 会把小数点吃掉）
+  const [scoreDraft, setScoreDraft] = useState<Record<string, string>>({})
   const printRef = useRef<any>(null)
 
   // ─── 老师只能改自己教的科目（按科目 + 学生年级）───
@@ -302,19 +304,19 @@ export default function StudentReportContent() {
   const studentName = (student as any)?.name || ''
   // 学生中文名 → 命中的 Enrichment 课程名（未命中则为空 → 不显示栏）
   const matchedEnrichment = resolveEnrichment(studentName)
-  const showEnrichment = !!matchedEnrichment
-  // Enrichment 各科评价：优先用报告已存的 [{subject, evaluation}]，否则从名单生成（空评价）
+  // 显示条件：在名单上，或报告已存 Enrichment（客制课程，如 TEP）
+  const showEnrichment = !!matchedEnrichment || !!report?.enrichment_class || (Array.isArray(report?.enrichment) && report.enrichment.length > 0)
+  // Enrichment 各科评价：优先用报告已存的 [{subject, evaluation}]，否则从名单 / enrichment_class 生成（空评价）
   const enrichmentSubjects = ((): { subject: string; evaluation: string }[] => {
     if (!showEnrichment) return []
     if (Array.isArray(report?.enrichment) && report.enrichment.length > 0) return report.enrichment as any
-    const defaults = resolveEnrichmentSubjects(studentName)
-    // 若报告已有数据但少了名单里的科，补齐（保持已填评价）合并
+    // 课程名来源：名单优先，否则用报告自订的 enrichment_class（如 TEP）
+    const merged = matchedEnrichment || String((report as any)?.enrichment_class || '')
     const existing = (Array.isArray(report?.enrichment) ? report.enrichment : []) as any[]
-    const subjects = defaults.map(d => {
-      const found = existing.find((e: any) => e.subject === d.subject)
-      return found ? { ...d, evaluation: found.evaluation || '' } : d
+    return merged.split(/[·,、]/).map(s => s.trim()).filter(Boolean).map(subject => {
+      const found = existing.find((e: any) => e.subject === subject)
+      return { subject, evaluation: found?.evaluation || '' }
     })
-    return subjects
   })()
 
   const REPORT_COLLECTION_ID = "px7z29k647g5697" // student_reports
@@ -529,10 +531,12 @@ export default function StudentReportContent() {
                               }} className="h-8 text-sm" />
                           </TableCell>
                           <TableCell className="text-center">
-                            <Input type="number" min={0} max={100} value={subj.midterm ?? ''} disabled={!canEditSubject(subj.name)} onChange={e => {
-                              const subs = [...report.subjects]; subs[idx] = {...subs[idx], midterm: e.target.value ? parseInt(e.target.value) : null};
+                            <Input type="text" inputMode="decimal" placeholder="-" value={scoreDraft[`${idx}-m`] ?? (subj.midterm != null ? String(subj.midterm) : '')} disabled={!canEditSubject(subj.name)} onChange={e => {
+                              const raw = e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')
+                              setScoreDraft(p => ({ ...p, [`${idx}-m`]: raw }))
+                              const subs = [...report.subjects]; subs[idx] = {...subs[idx], midterm: raw === '' || raw === '.' ? null : parseFloat(raw)};
                               setReport({...report, subjects: subs});
-                            }} className="w-16 h-8 text-sm text-center mx-auto" />
+                            }} onBlur={() => setScoreDraft(p => { const n = { ...p }; delete n[`${idx}-m`]; return n })} className="w-16 h-8 text-sm text-center mx-auto" />
                             {subj.midterm != null && (
                               <span className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${gradeColorClass(scoreToGrade(subj.midterm))}`}>
                                 {scoreToGrade(subj.midterm)}
@@ -540,10 +544,12 @@ export default function StudentReportContent() {
                             )}
                           </TableCell>
                           <TableCell className="text-center">
-                            <Input type="number" min={0} max={100} value={subj.final ?? ''} disabled={!canEditSubject(subj.name)} onChange={e => {
-                              const subs = [...report.subjects]; subs[idx] = {...subs[idx], final: e.target.value ? parseInt(e.target.value) : null};
+                            <Input type="text" inputMode="decimal" placeholder="-" value={scoreDraft[`${idx}-f`] ?? (subj.final != null ? String(subj.final) : '')} disabled={!canEditSubject(subj.name)} onChange={e => {
+                              const raw = e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')
+                              setScoreDraft(p => ({ ...p, [`${idx}-f`]: raw }))
+                              const subs = [...report.subjects]; subs[idx] = {...subs[idx], final: raw === '' || raw === '.' ? null : parseFloat(raw)};
                               setReport({...report, subjects: subs});
-                            }} className="w-16 h-8 text-sm text-center mx-auto" />
+                            }} onBlur={() => setScoreDraft(p => { const n = { ...p }; delete n[`${idx}-f`]; return n })} className="w-16 h-8 text-sm text-center mx-auto" />
                             {subj.final != null && (
                               <span className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${gradeColorClass(scoreToGrade(subj.final))}`}>
                                 {scoreToGrade(subj.final)}
@@ -606,7 +612,7 @@ export default function StudentReportContent() {
               {/* 上传文档/照片 */}
               <div>
                 <Label className="text-xs font-semibold">{t("上传文档/照片")}</Label>
-                <p className="text-xs text-gray-400 mt-0.5">{t("上传作业/活动照片，会显示在报告和PDF里")}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{t("可上传照片（jpg/png/webp/gif）或 PDF 文件，最多 6 个、每个 20MB；照片会显示在报告和PDF里")}</p>
                 <div className="mt-1 flex items-center gap-2">
                   <input
                     type="file"
@@ -618,13 +624,28 @@ export default function StudentReportContent() {
                 </div>
                 {(report.report_photos && normalizePhotos(report.report_photos).length > 0) ? (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {normalizePhotos(report.report_photos).map((p, i) => (
+                    {normalizePhotos(report.report_photos).map((p, i) => {
+                      const isPdf = /\.pdf$/i.test(p)
+                      return (
                       <div key={i} className="relative group">
-                        <img
-                          src={photoUrl(p, report)}
-                          alt={`upload-${i}`}
-                          className="w-20 h-20 object-cover rounded-lg border border-gray-200"
-                        />
+                        {isPdf ? (
+                          <a
+                            href={photoUrl(p, report)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-20 h-20 rounded-lg border border-gray-200 bg-red-50 flex flex-col items-center justify-center gap-1 hover:border-red-400"
+                            title={p}
+                          >
+                            <FileText className="h-6 w-6 text-red-500" />
+                            <span className="text-[9px] text-red-600 font-medium">PDF</span>
+                          </a>
+                        ) : (
+                          <img
+                            src={photoUrl(p, report)}
+                            alt={`upload-${i}`}
+                            className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                          />
+                        )}
                         <button
                           type="button"
                           onClick={() => removePhoto(i)}
@@ -632,7 +653,8 @@ export default function StudentReportContent() {
                           aria-label="删除"
                         >×</button>
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 ) : null}
               </div>
@@ -645,7 +667,7 @@ export default function StudentReportContent() {
                     {enrichmentSubjects.map((en: any, i: number) => (
                       <div key={i} className="flex flex-col gap-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-gray-600">{t(en)}</span>
+                          <span className="text-xs font-medium text-gray-600">{t(en.subject)}</span>
                         </div>
                         <Textarea
                           value={en.evaluation || ''}
