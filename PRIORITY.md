@@ -6,6 +6,14 @@
 
 ## 🚦 总表（唯一可信：现在还剩什么）
 
+### ✅ 2026-10-20 垃圾清理（已完成）
+- **孤儿集合已删**：`photo_moments` / `points_transactions`（0 条记录 + 全库零引用；DB 已备份到 `~/backups/pb-20261020_100603`）
+- **6 个零引用组件已删**：tv-board 的 AnimatedNumber / ParticleBackground / ProgressBoard / RankingChange / StatusIndicator + `components/ui/drawer.tsx`
+- **18 个全库零调用的 API 接口已删**（attendance/analytics、attendance/monthly、backup、courses/[id]、finance/ar-aging、finance/bank-accounts、finance/bank-transactions、google-sheets/fetch、nfc/read、reports/attendance、schedule/check-conflicts、schedule/conflicts、schedule/permissions、teacher-accounts/generate、teacher-accounts/link-card、teacher-attendance-only、teachers/update、websocket）
+  - 保留 `/api/resources/[id]`（`hooks/useResources.ts` 仍在用）
+  - 全部可从 git 复原
+- 删完实测：56 个页面全 200、tv-board 正常、关键接口无误伤、构建通过
+
 ### 🔴 卡着活的
 - **主体类型**：Sdn Bhd（Form C+审计）还是 Enterprise（Form B）→ 卡着账套口径与税务细化，建议优先拍板
 - 🔴 **2026-09 薪资有 5 张重复单**（同老师同月、两条都有效都在算）→ 多算 **RM 13,745.30**；9 月净发显示 41,697.61，去重后应为 **27,952.31**（2026-10-12 智能会计师审计发现）→ 等你点头清掉旧的那 5 条

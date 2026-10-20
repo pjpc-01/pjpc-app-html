@@ -83,6 +83,11 @@
           "name": "student_id",
           "type": "text",
           "required": false
+        },
+        {
+          "name": "nav_order",
+          "type": "json",
+          "required": false
         }
       ]
     },
@@ -2793,62 +2798,6 @@
       ]
     },
     {
-      "name": "points_transactions",
-      "type": "base",
-      "fields": [
-        {
-          "name": "id",
-          "type": "text",
-          "required": true
-        },
-        {
-          "name": "studentId",
-          "type": "relation",
-          "required": true
-        },
-        {
-          "name": "points",
-          "type": "number",
-          "required": true
-        },
-        {
-          "name": "reason",
-          "type": "text",
-          "required": false
-        },
-        {
-          "name": "category",
-          "type": "select",
-          "required": false
-        },
-        {
-          "name": "operatorId",
-          "type": "relation",
-          "required": false
-        },
-        {
-          "name": "nfc_card_uid",
-          "type": "text",
-          "required": false
-        },
-        {
-          "name": "date",
-          "type": "date",
-          "required": false
-        },
-        {
-          "name": "created",
-          "type": "autodate",
-          "required": false
-        },
-        {
-          "name": "updated",
-          "type": "autodate",
-          "required": false
-        }
-      ]
-    },
-    {
       "name": "pickup_records",
       "type": "base",
       "fields": [
@@ -2909,67 +2858,6 @@
         },
         {
           "name": "parent_confirmed",
-          "type": "bool",
-          "required": false
-        },
-        {
-          "name": "created",
-          "type": "autodate",
-          "required": false
-        },
-        {
-          "name": "updated",
-          "type": "autodate",
-          "required": false
-        }
-      ]
-    },
-    {
-      "name": "photo_moments",
-      "type": "base",
-      "fields": [
-        {
-          "name": "id",
-          "type": "text",
-          "required": true
-        },
-        {
-          "name": "studentId",
-          "type": "relation",
-          "required": true
-        },
-        {
-          "name": "teacherId",
-          "type": "relation",
-          "required": false
-        },
-        {
-          "name": "image_url",
-          "type": "text",
-          "required": false
-        },
-        {
-          "name": "caption",
-          "type": "text",
-          "required": false
-        },
-        {
-          "name": "date",
-          "type": "date",
-          "required": true
-        },
-        {
-          "name": "category",
-          "type": "select",
-          "required": false
-        },
-        {
-          "name": "parent_viewed",
-          "type": "bool",
-          "required": false
-        },
-        {
-          "name": "liked",
           "type": "bool",
           "required": false
         },
@@ -3398,6 +3286,11 @@
           "name": "updated",
           "type": "autodate",
           "required": false
+        },
+        {
+          "name": "period",
+          "type": "select",
+          "required": false
         }
       ]
     },
@@ -3548,6 +3441,21 @@
         {
           "name": "language",
           "type": "text",
+          "required": false
+        },
+        {
+          "name": "report_photos",
+          "type": "file",
+          "required": false
+        },
+        {
+          "name": "enrichment_class",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "enrichment",
+          "type": "json",
           "required": false
         }
       ]
@@ -3750,6 +3658,11 @@
         {
           "name": "activities",
           "type": "json",
+          "required": false
+        },
+        {
+          "name": "schoolLogo2",
+          "type": "text",
           "required": false
         }
       ]
@@ -4358,6 +4271,11 @@
           "name": "description",
           "type": "text",
           "required": false
+        },
+        {
+          "name": "time",
+          "type": "text",
+          "required": false
         }
       ]
     },
@@ -4662,6 +4580,391 @@
         {
           "name": "finance_at",
           "type": "text",
+          "required": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "student_leave_record",
+      "type": "base",
+      "fields": [
+        {
+          "name": "id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "student_id",
+          "type": "relation",
+          "required": true
+        },
+        {
+          "name": "leave_type",
+          "type": "select",
+          "required": true
+        },
+        {
+          "name": "start_date",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "end_date",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "total_days",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true
+        },
+        {
+          "name": "applied_date",
+          "type": "date",
+          "required": false
+        },
+        {
+          "name": "approved_by",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "approved_date",
+          "type": "date",
+          "required": false
+        },
+        {
+          "name": "rejection_reason",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "resources",
+      "type": "base",
+      "fields": [
+        {
+          "name": "id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "subject",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "grade",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "type",
+          "type": "select",
+          "required": false
+        },
+        {
+          "name": "tags",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "link",
+          "type": "url",
+          "required": false
+        },
+        {
+          "name": "file",
+          "type": "file",
+          "required": false
+        },
+        {
+          "name": "uploadedBy",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "uploaderName",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "downloads",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "center",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false
+        },
+        {
+          "name": "deleted",
+          "type": "bool",
+          "required": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "debts",
+      "type": "base",
+      "fields": [
+        {
+          "name": "id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "type",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "principal",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "monthlyAmount",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "paymentDay",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "startDate",
+          "type": "date",
+          "required": false
+        },
+        {
+          "name": "dueDate",
+          "type": "date",
+          "required": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false
+        },
+        {
+          "name": "note",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "voucher_no",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "deleted",
+          "type": "bool",
+          "required": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "debt_payments",
+      "type": "base",
+      "fields": [
+        {
+          "name": "id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "debtId",
+          "type": "relation",
+          "required": true
+        },
+        {
+          "name": "date",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "amount",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "note",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "deleted",
+          "type": "bool",
+          "required": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "exam_targets",
+      "type": "base",
+      "fields": [
+        {
+          "name": "id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "student_id",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "student_name",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "grade",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "term",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "year",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "bm",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "bi",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "bc",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "mt",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "sc",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "sej",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "geo",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "note",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "deleted",
+          "type": "bool",
           "required": false
         },
         {

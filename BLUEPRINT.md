@@ -5,6 +5,7 @@
 
 > 🆕 **2026-10-19 每周体检（只读，全站）**：服务 / 页面 / API 全绿 —— 41 页 0 控制台错 · 0 失败请求 · 0 卡「加载中」· 0 异常重定向；手机 390px 抽查 9 页无横向溢出；账务未收 **RM 5,236.50 → 1,029.00**（好转）。
 > 新发现 4 类：① 审计「谁改的」实际只覆盖 `schedules`（近 30 天 14,274 条仅 6 条有 `user_name`）② **17 个 API 接口全库零调用** ③ **6 个零引用组件**（tv-board 5 个 + `components/ui/drawer.tsx`）④ 孤儿集合 `photo_moments` / `points_transactions` + 零使用表 `homework_submissions` / `student_leave_record`。
+> ✅ **2026-10-20 已清理 ②③④**：18 个零调用接口 + 6 个零引用组件 + 2 个孤儿集合已删（DB 已备份）；`homework_submissions` / `student_leave_record` 仍有代码引用，保留。
 > 明细见 `PRIORITY.md`「🆕 2026-10-19 每周体检新发现（待处理）」。
 
 ---
