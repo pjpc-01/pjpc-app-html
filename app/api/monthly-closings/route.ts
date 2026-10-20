@@ -80,15 +80,30 @@ async function computeInvoiceMonth(month: string, token: string) {
     }
   }).sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber))
 
-  // 更早月份仍未付清 = 结转
+  // 更早月份仍未付清 = 结转（同时留明细，方便点开看是哪几张票）
   let carried = 0
   let carriedCount = 0
+  const carriedRows: any[] = []
   for (const i of earlier) {
     const total = num(i.totalAmount) || num(i.amount)
     const paid = Math.min(paidOf[i.id] || 0, total)
     const out = Math.max(0, total - paid)
-    if (out > 0.004) { carried += out; carriedCount++ }
+    if (out > 0.004) {
+      carried += out
+      carriedCount++
+      carriedRows.push({
+        id: i.id,
+        invoiceNumber: i.invoiceNumber || '',
+        studentName: i.studentName || '',
+        period: String(i.period || ''),
+        total: r2(total),
+        paid: r2(paid),
+        outstanding: r2(out),
+        dueDate: i.dueDate || '',
+      })
+    }
   }
+  carriedRows.sort((a, b) => String(a.period).localeCompare(String(b.period)) || a.invoiceNumber.localeCompare(b.invoiceNumber))
 
   // 本月现金流入（按收款日期）
   let cashIn = 0
@@ -132,6 +147,7 @@ async function computeInvoiceMonth(month: string, token: string) {
     details: {
       invoices: rows,
       unpaid: unpaidRows,
+      carriedInvoices: carriedRows,
     },
   }
 }
