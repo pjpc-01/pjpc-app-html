@@ -116,6 +116,12 @@ export default function MonthlyClosing() {
 
   return (
     <div className="space-y-4">
+      {/* 打印/导出成 PDF 时:隐藏侧边栏和顶栏，只留报表本身 */}
+      <style>{`@media print {
+        aside, nav, header, [data-sidebar] { display: none !important; }
+        main { margin: 0 !important; padding: 0 !important; }
+        .no-print { display: none !important; }
+      }`}</style>
       {/* 顶部:类型 + 月份 */}
       <Card>
         <CardHeader className="pb-3">
@@ -151,6 +157,7 @@ export default function MonthlyClosing() {
                 {busy ? "处理中…" : "生成月结"}
               </Button>
             )}
+            <Button variant="outline" size="sm" onClick={() => window.print()}>{t("打印 / 导出")}</Button>
           </div>
 
           {isClosed && (
@@ -184,6 +191,42 @@ export default function MonthlyClosing() {
                   {box("上月结转未收", money(s.carriedForward), s.carriedForward > 0 ? "bad" : undefined)}
                   {box("本月退款", money(s.refunded))}
                 </div>
+
+                {(view.details?.carriedInvoices || []).length > 0 && (
+                  <details className="rounded-md border">
+                    <summary className="cursor-pointer px-3 py-2 text-sm font-medium">
+                      {t("上月结转未收明细（")}{view.details.carriedInvoices.length}{t(" 张 · 共 ")}{money(s.carriedForward)}{t("）")}
+                    </summary>
+                    <div className="overflow-x-auto border-t">
+                      <table className="w-full text-xs">
+                        <thead className="bg-slate-50">
+                          <tr className="text-left">
+                            <th className="px-3 py-2">{t("账期")}</th>
+                            <th className="px-3 py-2">{t("发票号")}</th>
+                            <th className="px-3 py-2">{t("学生")}</th>
+                            <th className="px-3 py-2 text-right">{t("金额")}</th>
+                            <th className="px-3 py-2 text-right">{t("已收")}</th>
+                            <th className="px-3 py-2 text-right">{t("未收")}</th>
+                            <th className="px-3 py-2">{t("到期")}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {view.details.carriedInvoices.map((r: any) => (
+                            <tr key={r.id} className="border-t">
+                              <td className="px-3 py-1.5">{r.period}</td>
+                              <td className="px-3 py-1.5 font-mono">{r.invoiceNumber}</td>
+                              <td className="px-3 py-1.5">{r.studentName}</td>
+                              <td className="px-3 py-1.5 text-right">{money(r.total)}</td>
+                              <td className="px-3 py-1.5 text-right">{money(r.paid)}</td>
+                              <td className="px-3 py-1.5 text-right text-red-600">{money(r.outstanding)}</td>
+                              <td className="px-3 py-1.5">{String(r.dueDate || "").slice(0, 10)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </details>
+                )}
 
                 <div>
                   <div className="text-sm font-medium mb-2">{t("本月发票明细（")}{month}{t("）")}</div>

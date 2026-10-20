@@ -612,7 +612,7 @@ export default function StudentReportContent() {
               {/* 上传文档/照片 */}
               <div>
                 <Label className="text-xs font-semibold">{t("上传文档/照片")}</Label>
-                <p className="text-xs text-gray-400 mt-0.5">{t("可上传照片（jpg/png/webp/gif）或 PDF 文件，最多 6 个、每个 20MB；照片会显示在报告和PDF里")}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{t("每份报告都可上传照片（jpg/png/webp/gif）或 PDF 文件，最多 10 个、每个 50MB；照片会显示在报告和PDF里，PDF 列成附件")}</p>
                 <div className="mt-1 flex items-center gap-2">
                   <input
                     type="file"
