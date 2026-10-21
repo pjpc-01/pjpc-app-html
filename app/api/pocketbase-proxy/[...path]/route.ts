@@ -92,10 +92,37 @@ const ADMIN_ONLY = new Set([
 /** 这些角色可以正常用系统（除 ADMIN_ONLY 之外） */
 const STAFF_ROLES = new Set(['admin', 'teacher', 'office_admin'])
 
+/**
+ * 学生账号：只读，且【只能看自己】。
+ * 集合 → 用来判定「是不是他本人」的字段。
+ * 请求里原本的 filter 会被 AND 上这个条件，学生改不掉（服务端拼的）。
+ */
+const STUDENT_SELF_FIELD: Record<string, string> = {
+  students: 'id',
+  student_reports: 'studentId',
+  points: 'studentId',
+  point_logs: 'student',
+  student_attendance: 'student_id',
+  exam_targets: 'student_id',
+}
+/** 学生可以整表读的（不含个人数据） */
+const STUDENT_OPEN_READ = new Set(['courses', 'centers', 'homework', 'report_settings'])
+
+/** 把「只看自己」的条件拼进查询串；返回新的 path+query */
+function withStudentFilter(pbPath: string, search: string, field: string, sid: string): string {
+  const params = new URLSearchParams(search)
+  const mine = `${field} = "${sid.replace(/"/g, '')}"`
+  const old = params.get('filter')
+  params.set('filter', old ? `(${old}) && ${mine}` : mine)
+  const q = params.toString()
+  return q ? `${pbPath}?${q}` : pbPath
+}
+
 async function proxyRequest(method: string, request: NextRequest) {
   const url = new URL(request.url)
   const pbPath = url.pathname.replace('/api/pocketbase-proxy', '')
-  const targetUrl = `${POCKETBASE_URL}${pbPath}${method === 'GET' ? url.search : ''}`
+  let targetPath = pbPath
+  let targetSearch = method === 'GET' ? url.search : ''
 
   const headers: Record<string, string> = {}
   let body: any // string | ArrayBuffer（multipart 上传要用 arrayBuffer）
@@ -114,11 +141,40 @@ async function proxyRequest(method: string, request: NextRequest) {
       }
     } else {
       const col = collectionOf(pbPath)
-      if (!STAFF_ROLES.has(session.role)) {
-        // 未知/未开放角色（学生账号将来接在这条上）
+      if (session.role === 'student') {
+        // ★ 学生：只读 + 只看自己（服务端拼条件，前端改不了）
+        if (method !== 'GET') {
+          return NextResponse.json({ error: '学生账号只能查看' }, { status: 403 })
+        }
+        const sid = String(session.studentId || '')
+        if (!sid) {
+          return NextResponse.json({ error: '这个账号还没绑定学生资料，请联系老师' }, { status: 403 })
+        }
+        const field = col ? STUDENT_SELF_FIELD[col] : undefined
+        const rid = pbPath.match(/\/records\/([^/]+)$/)
+        if (field) {
+          if (rid) {
+            // 单条详情：先确认这条是不是他本人
+            const tok = await getAdminToken()
+            const chk = await fetch(`${POCKETBASE_URL}/api/collections/${col}/records/${rid[1]}`, {
+              headers: { Authorization: `Bearer ${tok}` },
+            })
+            if (!chk.ok) return NextResponse.json({ error: '没有权限访问该数据' }, { status: chk.status === 404 ? 404 : 403 })
+            const rec = await chk.json().catch(() => null)
+            if (!rec || String(rec[field]) !== sid) {
+              return NextResponse.json({ error: '没有权限访问该数据' }, { status: 403 })
+            }
+          } else {
+            targetPath = withStudentFilter(pbPath, targetSearch, field, sid)
+            targetSearch = ''
+          }
+        } else if (!col || !STUDENT_OPEN_READ.has(col)) {
+          return NextResponse.json({ error: '没有权限访问该数据' }, { status: 403 })
+        }
+      } else if (!STAFF_ROLES.has(session.role)) {
+        // 未知/未开放角色
         return NextResponse.json({ error: '没有权限' }, { status: 403 })
-      }
-      if (session.role !== 'admin' && col && ADMIN_ONLY.has(col)) {
+      } else if (session.role !== 'admin' && col && ADMIN_ONLY.has(col)) {
         return NextResponse.json({ error: '没有权限访问该数据' }, { status: 403 })
       }
     }
@@ -146,6 +202,7 @@ async function proxyRequest(method: string, request: NextRequest) {
     }
   }
 
+  const targetUrl = `${POCKETBASE_URL}${targetPath}${targetSearch}`
   const response = await fetch(targetUrl, { method, headers, body })
 
   if (response.status === 204) {
