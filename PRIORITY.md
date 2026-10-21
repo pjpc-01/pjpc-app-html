@@ -6,6 +6,16 @@
 
 ## 🚦 总表（唯一可信：现在还剩什么）
 
+### 🔒 2026-10-21 安全堵洞（第一步·已完成）
+**问题**：`/api/pocketbase-proxy` 对所有请求一律套 superuser token，且集合权限全空 → **公网不带任何登录**就能读工资表、学生名册、发票、付款（实测 `pjpcapp.com/.../teacher_salary_records` 返回 200 + base_salary）。
+**已做**：
+- 代理加守门：除「登录类接口」和「图片文件（`/api/files/*`，`<img>` 不带 token）」外，**必须登录**；角色策略 —— admin 全放行；teacher / office_admin 挡掉 `users` / `audit_logs` / `teacher_salary_records` / `teacher_salary_structures` / `salary_parameters` / `monthly_closings`；未知角色 403。
+- 服务端内部调用（`/api/students` 等转发）用 `x-pjpc-internal` + `PROXY_INTERNAL_KEY`（新 key 写进 `.env.local`，**不下发浏览器**）。
+- 全局 fetch 拦截器抽成 `lib/auth-fetch.ts`，在根 layout **第一个 import** 执行：站内 `/api` 请求统一补 token（PB SDK 发的是**裸 token**，没有 `Bearer ` 前缀 —— 代理两种都认）。
+- `/api/teacher-salary`（工资）加 `requireRoles(['admin','office_admin'])`，公网现在 401。
+**验收**：公网不带登录 → 工资/学生/发票/付款/审计 **全 401**；管理员全 200；老师取学生/课程/作业 200、工资/审计/用户 **403**；老师 PATCH 工资 **403**；登录接口正常（错密码 400）；41 页扫描 **0 失败请求 / 0 控制台错误 / 0 卡加载**。
+**⛔ 还开着（下一步做学生账号前必须一起处理）**：应用接口 `/api/students`、`/api/points`、`/api/teachers`、`/api/exam-targets`、`/api/centers` 仍是**不带登录可读 200** —— 因为电视看板 `/tv-board` 靠它们且不登录。要关就得让看板登录一次（或给它单独发一个只读令牌）。
+
 ### 🔜 待接（用户 2026-10-21 指示，留意）
 - **AI 老师（Codex）接入**：先拿「中学生名册」给外部 Codex 当 AI 老师，用来 **track 学生学习程度**；等 Codex 那边改善到一定程度，**把它的记忆拉过来**，再把 Codex 放进 pjpcapp 里。
   · 名册导出：`/home/pjpc/exports/secondary-students-<日期>.{json,csv,md}`（**不在 git 里**，含学生姓名/ID）

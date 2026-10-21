@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       
       const response = await fetch(`${origin}/api/pocketbase-proxy/api/collections/students/records`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-pjpc-internal': process.env.PROXY_INTERNAL_KEY || '' },
         body: JSON.stringify(record)
       })
       

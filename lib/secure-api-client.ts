@@ -8,10 +8,17 @@
  */
 const fetchFromAPI = async (endpoint: string, options: RequestInit = {}) => {
   try {
+    // 代理已加守门：浏览器端由 lib/auth-fetch.ts 补 token；
+    // 服务端渲染时没有 localStorage，只能用内部钥匙（PROXY_INTERNAL_KEY，不下发浏览器）
+    const serverInternal: Record<string, string> =
+      typeof window === 'undefined' && process.env.PROXY_INTERNAL_KEY
+        ? { 'x-pjpc-internal': process.env.PROXY_INTERNAL_KEY }
+        : {}
     const response = await fetch(endpoint, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        ...serverInternal,
         ...options.headers,
       },
     })

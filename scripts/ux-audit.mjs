@@ -31,10 +31,11 @@ const NAV = [
 ];
 
 // 1) 用 PB superuser 代登录拿身份（不需要任何人的密码）
-const uid = (await (await fetch(`${PROXY}/collections/users/records?perPage=1&filter=email%3D%22admin%40pjpc.com%22`)).json()).items[0].id;
-const imp = await (await fetch(`${PROXY}/collections/users/impersonate/${uid}`, { method: 'POST' })).json();
-if (!imp.token) { console.error('代登录失败:', JSON.stringify(imp).slice(0, 300)); process.exit(1); }
-console.log(`✓ 以 ${imp.record.name}(${imp.record.role}) 身份浏览`);
+// 代理加了守门后不能匿名查 users/impersonate → 走 scripts/probes/_auth.mjs 直连 PB
+const { adminAuth } = await import('./probes/_auth.mjs');
+const imp = await adminAuth();
+if (!imp.token) { console.error('代登录失败'); process.exit(1); }
+console.log(`✓ 以 ${imp.model?.name}(${imp.model?.role}) 身份浏览`);
 
 const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'zh-CN' });

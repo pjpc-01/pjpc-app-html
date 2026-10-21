@@ -42,15 +42,87 @@ function isAuthEndpoint(path: string): boolean {
   return AUTH_ENDPOINTS.some(ep => path.endsWith(ep) || path.includes(ep))
 }
 
+// ─── 守门：谁在调、能碰什么 ─────────────────────────────────────────────
+// 原来所有请求都套 superuser token → 不带任何登录就能读工资表/学生/发票（公网实测 200）。
+// 现在：除登录类接口与图片文件外，一律要求有效登录，并按角色挡敏感集合。
+type Session = { id: string; role: string; studentId?: string } | null
+const sessionCache = new Map<string, { s: Session; exp: number }>()
+
+async function getSession(request: NextRequest): Promise<Session> {
+  const auth = request.headers.get('Authorization') || ''
+  // PocketBase JS SDK 发的是裸 token（没有 "Bearer " 前缀），两种都认
+  const m = auth.match(/^\s*(?:Bearer\s+)?(\S+)\s*$/i)
+  if (!m) return null
+  const token = m[1].trim()
+  const hit = sessionCache.get(token)
+  if (hit && Date.now() < hit.exp) return hit.s
+  try {
+    const r = await fetch(`${POCKETBASE_URL}/api/collections/users/auth-refresh`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!r.ok) {
+      sessionCache.set(token, { s: null, exp: Date.now() + 30_000 })
+      return null
+    }
+    const d = await r.json()
+    const s: Session = {
+      id: d?.record?.id || '',
+      role: String(d?.record?.role || ''),
+      studentId: d?.record?.student_id || '',
+    }
+    sessionCache.set(token, { s, exp: Date.now() + 60_000 })
+    return s
+  } catch { return null }
+}
+
+/** 从 /api/collections/<name>/... 取出集合名 */
+function collectionOf(pbPath: string): string {
+  const m = pbPath.match(/\/api\/collections\/([^/]+)/)
+  return m ? m[1] : ''
+}
+
+/** 只有 admin 能碰的集合：账号 / 审计 / 工资 / 月结 */
+const ADMIN_ONLY = new Set([
+  'users', 'audit_logs',
+  'teacher_salary_records', 'teacher_salary_structures', 'salary_parameters',
+  'monthly_closings',
+])
+
+/** 这些角色可以正常用系统（除 ADMIN_ONLY 之外） */
+const STAFF_ROLES = new Set(['admin', 'teacher', 'office_admin'])
+
 async function proxyRequest(method: string, request: NextRequest) {
   const url = new URL(request.url)
   const pbPath = url.pathname.replace('/api/pocketbase-proxy', '')
   const targetUrl = `${POCKETBASE_URL}${pbPath}${method === 'GET' ? url.search : ''}`
 
   const headers: Record<string, string> = {}
-  let body: string | undefined
+  let body: any // string | ArrayBuffer（multipart 上传要用 arrayBuffer）
 
   if (!isAuthEndpoint(pbPath)) {
+    // ★ 图片文件（<img> 标签不会带 Authorization）放行，其余必须登录
+    const isPublicFile = method === 'GET' && pbPath.startsWith('/api/files/')
+    // ★ 服务端自己的接口（/api/students 等）内部转发时没有用户 token → 用内部钥匙识别
+    const internalKey = process.env.PROXY_INTERNAL_KEY || ''
+    const isInternal = !!internalKey && request.headers.get('x-pjpc-internal') === internalKey
+    const session = isInternal ? { id: 'internal', role: 'admin' } : await getSession(request)
+
+    if (!session) {
+      if (!isPublicFile) {
+        return NextResponse.json({ error: '请先登录' }, { status: 401 })
+      }
+    } else {
+      const col = collectionOf(pbPath)
+      if (!STAFF_ROLES.has(session.role)) {
+        // 未知/未开放角色（学生账号将来接在这条上）
+        return NextResponse.json({ error: '没有权限' }, { status: 403 })
+      }
+      if (session.role !== 'admin' && col && ADMIN_ONLY.has(col)) {
+        return NextResponse.json({ error: '没有权限访问该数据' }, { status: 403 })
+      }
+    }
+
     // Non-auth endpoints: use admin token
     const token = await getAdminToken()
     if (!token) return NextResponse.json({ error: 'Auth failed' }, { status: 500 })
