@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import ReportSettingsManager, { type ReportSettingsPreset } from "@/app/components/report/ReportSettingsManager"
 import { downloadReportPDF, generateReportHTML, resolveEnrichment } from "@/lib/pdf-generator"
+import { renderAllReportPdfs } from "@/lib/pdf-raster"
 import { useLanguage } from "@/contexts/language-context";
 
 const DEFAULT_SUBJECTS = ["华文", "国文", "英文", "科学", "数学"]
@@ -135,6 +136,8 @@ export default function StudentReportContent() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [defaultSubjects, setDefaultSubjects] = useState<string[]>(loadDefaultSubjects)
   const [newSubjectName, setNewSubjectName] = useState("")
+  // 给「这一份报告」加科目的输入框（模板默认科目只管新建报告，管不到已存在的）
+  const [newReportSubject, setNewReportSubject] = useState("")
 
   // ─── Report settings (customizable PDF format) ───
   const [reportSettings, setReportSettings] = useState<ReportSettingsPreset>({
@@ -290,6 +293,26 @@ export default function StudentReportContent() {
     saveDefaultSubjects([...DEFAULT_SUBJECTS], reportSettings.id)
   }
 
+  // ─── 这一份报告的科目：增加 / 删除 ───
+  // 中学报告原来只能用模板那五科（华文/国文/英文/科学/数学），加不了 Sejarah 这些。
+  const handleAddReportSubject = () => {
+    const name = newReportSubject.trim()
+    if (!name || !report) return
+    const subs: any[] = [...(report.subjects || [])]
+    if (subs.some((s: any) => String(s?.name || '').trim() === name)) return
+    subs.push({ name, midterm: null, final: null, evaluation: '' })
+    setReport({ ...report, subjects: subs } as any)
+    setNewReportSubject('')
+  }
+
+  const handleRemoveReportSubject = (idx: number) => {
+    if (!report) return
+    const subs: any[] = [...(report.subjects || [])]
+    if (subs.length <= 1) return
+    subs.splice(idx, 1)
+    setReport({ ...report, subjects: subs } as any)
+  }
+
   // Print the iframe content
   const handlePrint = () => {
     const iframe = printRef.current as HTMLIFrameElement | null
@@ -330,6 +353,38 @@ export default function StudentReportContent() {
   // 拼 PB 文件 URL（报告通过 proxy 读）
   const photoUrl = (filename: string, rep: StudentReport) =>
     `/api/pocketbase-proxy/api/files/${REPORT_COLLECTION_ID}/${rep.id}/${encodeURIComponent(filename)}`
+
+  // ─── PDF → 图片：上传的 PDF 每页渲染成图，报告预览 + 导出 PDF 都看得见内容 ───
+  const [pdfPageImages, setPdfPageImages] = useState<Record<string, string[]>>({})
+  useEffect(() => {
+    if (!report) return
+    const pdfs = normalizePhotos((report as any).report_photos).filter((f: string) => /\.pdf$/i.test(f))
+    if (!pdfs.length) return
+    let cancelled = false
+    renderAllReportPdfs(pdfs.map((f: string) => ({ filename: f, url: photoUrl(f, report) })))
+      .then((res: Record<string, string[]>) => {
+        if (!cancelled) setPdfPageImages((prev) => ({ ...prev, ...res }))
+      })
+      .catch((e) => console.warn("[report] PDF 渲染失败", e))
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [report?.report_photos, report?.id])
+
+  // ─── iframe 自动撑高：iframe 写死 minHeight:900 会把报告下半部（照片 / PDF 页）藏进内部滚动条，外面滚不到 ───
+  const [iframeHeight, setIframeHeight] = useState(900)
+  const syncIframeHeight = useCallback(() => {
+    const el = printRef.current as HTMLIFrameElement | null
+    try {
+      const h = el?.contentDocument?.documentElement?.scrollHeight
+      if (h && h > 100) setIframeHeight(h + 24)
+    } catch { /* 跨域保护时忽略 */ }
+  }, [])
+
+  // PDF 页面渲染完 → 内容变高，重新量一次
+  useEffect(() => {
+    const t = setTimeout(syncIframeHeight, 400)
+    return () => clearTimeout(t)
+  }, [pdfPageImages, report?.report_photos, syncIframeHeight])
 
   // 上传照片：multipart PATCH 追加到 report_photos 字段
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -388,7 +443,7 @@ export default function StudentReportContent() {
         dob: student.dob,
         grade: student.grade,
         avatar: avatarSrc,
-      })
+      }, { pdfPageImages })
     } catch (e: any) {
       alert("PDF下载失败: " + (e.message || "未知错误"))
     } finally {
@@ -468,9 +523,10 @@ export default function StudentReportContent() {
             dob: student?.dob || '',
             grade: student?.grade || '',
             avatar: avatarSrc,
-          }, { hideGrowth: editMode }) : ''}
+          }, { hideGrowth: editMode, pdfPageImages }) : ''}
+          onLoad={syncIframeHeight}
           className="w-full border-0 rounded-lg bg-white"
-          style={{ minHeight: '900px', height: 'auto' }}
+          style={{ minHeight: '900px', height: `${iframeHeight}px` }}
           title={t("学生报告")}
           sandbox="allow-same-origin"
         />
@@ -516,6 +572,7 @@ export default function StudentReportContent() {
                         <TableHead className="text-center">{t("期末 (等级)")}</TableHead>
                         <TableHead className="text-center">{t("评价")}</TableHead>
                         <TableHead className="text-center">{t("状态")}</TableHead>
+                        <TableHead className="w-10"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -580,10 +637,34 @@ export default function StudentReportContent() {
                               </span>
                             )}
                           </TableCell>
+                          <TableCell className="text-center">
+                            <button
+                              type="button"
+                              title={t("删除这个科目")}
+                              disabled={!canEditSubject(subj.name) || (report.subjects || []).length <= 1}
+                              onClick={() => handleRemoveReportSubject(idx)}
+                              className="h-7 w-7 rounded border text-gray-500 hover:bg-red-50 hover:text-red-600 hover:border-red-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                            >×</button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
+                  <div className="flex items-center gap-2 border-t bg-slate-50 px-2 py-2">
+                    <Input
+                      value={newReportSubject}
+                      onChange={e => setNewReportSubject(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddReportSubject() } }}
+                      placeholder={t("输入科目名，例如 Sejarah")}
+                      className="h-8 text-sm max-w-[220px]"
+                    />
+                    <Button type="button" size="sm" variant="outline" onClick={handleAddReportSubject} disabled={!newReportSubject.trim()}>
+                      {t("添加科目")}
+                    </Button>
+                    <span className="text-[11px] text-muted-foreground">
+                      {t("只影响这一份报告；模板的默认科目在「格式」里改")}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -633,11 +714,22 @@ export default function StudentReportContent() {
                             href={photoUrl(p, report)}
                             target="_blank"
                             rel="noreferrer"
-                            className="w-20 h-20 rounded-lg border border-gray-200 bg-red-50 flex flex-col items-center justify-center gap-1 hover:border-red-400"
+                            className="w-20 h-20 rounded-lg border border-gray-200 bg-red-50 flex flex-col items-center justify-center gap-1 hover:border-red-400 overflow-hidden"
                             title={p}
                           >
-                            <FileText className="h-6 w-6 text-red-500" />
-                            <span className="text-[9px] text-red-600 font-medium">PDF</span>
+                            {pdfPageImages[p]?.[0] ? (
+                              <>
+                                <img src={pdfPageImages[p][0]} alt={p} className="w-full h-[68px] object-cover object-top" />
+                                <span className="text-[8px] text-red-600 font-semibold leading-none pb-0.5">
+                                  PDF · {pdfPageImages[p].length}{t("页")}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <FileText className="h-6 w-6 text-red-500" />
+                                <span className="text-[9px] text-red-600 font-medium">PDF</span>
+                              </>
+                            )}
                           </a>
                         ) : (
                           <img
@@ -657,6 +749,33 @@ export default function StudentReportContent() {
                     })}
                   </div>
                 ) : null}
+
+                {/* PDF 内容预览：把 PDF 每页渲染成图，内容看得见 */}
+                {Object.keys(pdfPageImages).length > 0 && (
+                  <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-2.5">
+                    <p className="text-[11px] font-semibold text-gray-600 mb-2">
+                      {t("PDF 内容预览")}（{t("每页渲染成图，报告和导出的 PDF 都会显示")}）
+                    </p>
+                    {Object.entries(pdfPageImages).map(([fn, pages]) => (
+                      <div key={fn} className="mb-2 last:mb-0">
+                        <p className="text-[10px] text-gray-500 mb-1 truncate" title={fn}>{fn}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {pages.length ? pages.map((src, i) => (
+                            <img
+                              key={i}
+                              src={src}
+                              alt={`${fn}-p${i + 1}`}
+                              title={`${t("第")} ${i + 1} ${t("页")}`}
+                              className="w-16 h-20 object-contain bg-white border border-gray-200 rounded"
+                            />
+                          )) : (
+                            <span className="text-[10px] text-gray-400">{t("渲染中…")}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Enrichment Class（只对名单上的学生显示，逐科写评价） */}
