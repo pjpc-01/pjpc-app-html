@@ -837,7 +837,7 @@ export const REPORT_EN_DEFAULT = {
   summary: 'This term I made progress in both studies and life, but also realised my weaknesses. I will hold myself to a higher standard and keep improving!',
 }
 
-export const generateReportHTML = (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }, options?: { hideGrowth?: boolean; lang?: 'zh' | 'en'; photoDataUrls?: Record<string, string> }): string => {
+export const generateReportHTML = (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }, options?: { hideGrowth?: boolean; lang?: 'zh' | 'en'; photoDataUrls?: Record<string, string>; pdfPageImages?: Record<string, string[]> }): string => {
   const color = settings.primaryColor || "#3b82f6"
   const lang: 'zh' | 'en' = options?.lang || ((report as any).language === 'en' ? 'en' : 'zh')
   const isEn = lang === 'en'
@@ -1139,9 +1139,18 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
       const photoImgs = imgs.map((fn, i) =>
         `<img src="/api/pocketbase-proxy/api/files/${cid}/${report.id}/${encodeURIComponent(fn)}" alt="report-photo-${i}" style="width:340px;height:255px;object-fit:contain;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;" />`
       ).join('')
-      const pdfRows = pdfs.map(fn =>
-        `<div style="font-size:12px;color:#b91c1c;padding:4px 8px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;margin-bottom:4px;">PDF：${decodeURIComponent(String(fn))}</div>`
-      ).join('')
+      const pdfRows = pdfs.map(fn => {
+        const fileRow = `<div style="font-size:12px;color:#b91c1c;padding:4px 8px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;margin-bottom:6px;">PDF：${decodeURIComponent(String(fn))}</div>`
+        // PDF 每一页的图（由 lib/pdf-raster.ts 在父层先渲染成 dataURL 才传进来）
+        const pages = (options?.pdfPageImages || {})[String(fn)] || []
+        if (!pages.length) return fileRow
+        const pageImgs = pages.map((src: string, i: number) =>
+          `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+             <img src="${src}" alt="pdf-page-${i + 1}" style="width:340px;height:440px;object-fit:contain;background:#fff;border-radius:8px;border:1px solid #e5e7eb;" />
+             <span style="font-size:10px;color:#9ca3af;">${L('第', 'p.')}${i + 1}${L('页', '')}${pages.length > 1 ? ' / ' + pages.length : ''}</span>
+           </div>`).join('')
+        return fileRow + `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">${pageImgs}</div>`
+      }).join('')
       return `
       <div style="margin-top:10px;">
         ${imgs.length ? `<p style="font-size:13px;font-weight:600;color:#4b5563;margin-bottom:4px;">${L('学习成果 / 活动照片','Work Photos')}：</p>
@@ -1220,8 +1229,8 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
 }
 
 // ── Report PDF Generation ──
-export const generateReportPDF = async (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }): Promise<Blob> => {
-  const html = generateReportHTML(report, settings, student)
+export const generateReportPDF = async (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }, options?: { hideGrowth?: boolean; lang?: 'zh' | 'en'; pdfPageImages?: Record<string, string[]> }): Promise<Blob> => {
+  const html = generateReportHTML(report, settings, student, options)
 
   // Create hidden iframe to render full HTML
   const iframe = document.createElement('iframe')
@@ -1358,9 +1367,9 @@ export const generateReportPDF = async (report: StudentReport, settings: ReportS
   }
 }
 
-export const downloadReportPDF = async (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }): Promise<void> => {
+export const downloadReportPDF = async (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }, options?: { hideGrowth?: boolean; lang?: 'zh' | 'en'; pdfPageImages?: Record<string, string[]> }): Promise<void> => {
   try {
-    const blob = await generateReportPDF(report, settings, student)
+    const blob = await generateReportPDF(report, settings, student, options)
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
