@@ -123,6 +123,11 @@ export async function GET(request: NextRequest) {
       if (month) {
         filter += ` && month = ${month}`
       }
+      // 状态筛选（paid / draft）—— 原来没接，前端加了「状态」下拉但接口不认
+      const statusParam = searchParams.get('status')
+      if (statusParam) {
+        filter += ` && status = "${statusParam}"`
+      }
 
       const page = parseInt(searchParams.get('page') || '1')
       // 兼容 limit / perPage / per_page（前端历史上三种叫法都出现过）
