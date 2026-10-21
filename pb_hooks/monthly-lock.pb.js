@@ -29,6 +29,7 @@ onRecordUpdateRequest((e) => {
   if (locked) {
     throw new ForbiddenError("发票所属月份「" + month + "」已结账，不能修改。请先到 财务 → 月度结账 反结账。");
   }
+  e.next(); // ← 必须调用，否则默认处理不会执行（改了/删了也等于没改）
 }, "invoices")
 
 // ── 发票：删 ─────────────────────────────────────────────
@@ -49,6 +50,7 @@ onRecordDeleteRequest((e) => {
   if (locked) {
     throw new ForbiddenError("发票所属月份「" + month + "」已结账，不能删除。请先到 财务 → 月度结账 反结账。");
   }
+  e.next(); // ← 必须调用，否则默认处理不会执行（改了/删了也等于没改）
 }, "invoices")
 
 // ── 收款：改 ─────────────────────────────────────────────
@@ -74,6 +76,7 @@ onRecordUpdateRequest((e) => {
   if (locked) {
     throw new ForbiddenError("这笔收款属于已结账月份「" + month + "」，不能修改。请先反结账。");
   }
+  e.next(); // ← 必须调用，否则默认处理不会执行（改了/删了也等于没改）
 }, "payments")
 
 // ── 收款：删 ─────────────────────────────────────────────
@@ -99,6 +102,7 @@ onRecordDeleteRequest((e) => {
   if (locked) {
     throw new ForbiddenError("这笔收款属于已结账月份「" + month + "」，不能删除。请先反结账。");
   }
+  e.next(); // ← 必须调用，否则默认处理不会执行（改了/删了也等于没改）
 }, "payments")
 
 // ── 薪资：改 ─────────────────────────────────────────────
@@ -124,6 +128,7 @@ onRecordUpdateRequest((e) => {
   if (locked) {
     throw new ForbiddenError("薪资所属月份「" + month + "」已结账，不能修改。请到 人事 → 月度结账 反结账，或另开调整单。");
   }
+  e.next(); // ← 必须调用，否则默认处理不会执行（改了/删了也等于没改）
 }, "teacher_salary_records")
 
 // ── 薪资：删 ─────────────────────────────────────────────
@@ -148,4 +153,5 @@ onRecordDeleteRequest((e) => {
   if (locked) {
     throw new ForbiddenError("薪资所属月份「" + month + "」已结账，不能删除。请先反结账。");
   }
+  e.next(); // ← 必须调用，否则默认处理不会执行（改了/删了也等于没改）
 }, "teacher_salary_records")
