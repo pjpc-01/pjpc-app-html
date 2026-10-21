@@ -79,6 +79,7 @@ export default function StudentReportsPage() {
   const { students, loading: studentsLoading, refetch } = useStudents()
   const [reports, setReports] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState("")
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [reportSettings, setReportSettings] = useState<ReportSettingsPreset>({
     id: "default", name: "默认", schoolName: "", schoolNameEn: "", schoolLogo: "",
@@ -148,13 +149,31 @@ export default function StudentReportsPage() {
   }
 
   useEffect(() => {
+    // ⚠️ 这里原来没有任何错误处理：取数一失败，d.items 不存在 → 列表设成空数组
+    //    → 界面就是一张空表、一句提示都没有，看起来像「报告全部不见了」。
+    //    现在失败要在页面上说清楚（401 = 登录过期，不是数据没了）。
     fetch("/api/pocketbase-proxy/api/collections/student_reports/records?sort=-created&perPage=200&expand=studentId")
-      .then(r => r.json())
+      .then(async r => {
+        if (!r.ok) {
+          let msg = `取数失败（HTTP ${r.status}）`
+          try {
+            const e = await r.json()
+            msg = e?.error || e?.message || msg
+          } catch { /* 不是 JSON 就用默认文案 */ }
+          if (r.status === 401) msg = "登录已过期，请重新登录后刷新这页"
+          throw new Error(msg)
+        }
+        return r.json()
+      })
       .then(d => {
         setReports(d.items || [])
+        setLoadError("")
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch((e: any) => {
+        setLoadError(String(e?.message || e))
+        setLoading(false)
+      })
   }, [])
 
   const statusMap: Record<string, string> = {
@@ -291,7 +310,13 @@ export default function StudentReportsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {loadError ? (
+            <div className="text-center py-8">
+              <p className="text-red-600 font-medium">{loadError}</p>
+              <p className="text-gray-500 text-sm mt-1">{t("数据没有丢，是这一页没取到。刷新或重新登录即可。")}</p>
+              <button className="mt-3 px-3 py-1.5 border rounded text-sm hover:bg-gray-50" onClick={() => location.reload()}>{t("重新加载")}</button>
+            </div>
+          ) : loading ? (
             <p className="text-gray-500 text-center py-8">{t('teacher.loading')}</p>
           ) : filteredReports.length === 0 ? (
             <p className="text-gray-500 text-center py-8">{listGrade ? `该年级(${listGrade})暂无学生报告。` : `暂无学生报告。点击右上角「新建报告」选择学生开始填写。`}</p>
