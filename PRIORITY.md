@@ -6,6 +6,12 @@
 
 ## 🚦 总表（唯一可信：现在还剩什么）
 
+### 🔜 待接（用户 2026-10-21 指示，留意）
+- **AI 老师（Codex）接入**：先拿「中学生名册」给外部 Codex 当 AI 老师，用来 **track 学生学习程度**；等 Codex 那边改善到一定程度，**把它的记忆拉过来**，再把 Codex 放进 pjpcapp 里。
+  · 名册导出：`/home/pjpc/exports/secondary-students-<日期>.{json,csv,md}`（**不在 git 里**，含学生姓名/ID）
+  · 接进来时要用的关键主键：**`students.id`**（31 个中学生）、`exam_targets` 七科、`student_reports` 分数
+  · 注意：现有「考试目标」是**目标分不是成绩**；中学报告 25 份**全部还没填分** → 接入前要先想清楚「学习程度」的数据来源（考试目标 / 报告分 / 平时分）
+
 ### ✅ 2026-10-20 垃圾清理（已完成）
 - **孤儿集合已删**：`photo_moments` / `points_transactions`（0 条记录 + 全库零引用；DB 已备份到 `~/backups/pb-20261020_100603`）
 - **6 个零引用组件已删**：tv-board 的 AnimatedNumber / ParticleBackground / ProgressBoard / RankingChange / StatusIndicator + `components/ui/drawer.tsx`
