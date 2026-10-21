@@ -64,6 +64,13 @@ export default function Dashboard() {
     }
   }, [loading, userProfile?.role, router])
 
+  // 学生角色：首页没他们的东西，直接去学生中心（/my）
+  useEffect(() => {
+    if (!loading && userProfile?.role === "student") {
+      router.replace("/my")
+    }
+  }, [loading, userProfile?.role, router])
+
   const renderDashboard = () => {
     if (!userProfile) {
       return (
@@ -92,6 +99,15 @@ export default function Dashboard() {
         )
       case "accountant":
         return <AccountantDashboard activeTab={activeTab} setActiveTab={setActiveTab} />
+      case "student":
+        return (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-500">
+              <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
+              <p>{t("正在跳转学生中心...")}</p>
+            </div>
+          </div>
+        )
       default:
         return (
           <div className="text-center py-12">

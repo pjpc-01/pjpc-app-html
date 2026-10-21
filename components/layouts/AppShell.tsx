@@ -41,6 +41,7 @@ import {
   GripVertical,
   Edit3,
   Target,
+  UserRound,
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import LanguageSwitcher from "@/components/LanguageSwitcher"
@@ -287,6 +288,12 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
           { label: "学生请假", href: "/student-leave", icon: CalendarCheck },
         ],
       },
+    ],
+  },
+  student: {
+    title: "学生",
+    navItems: [
+      { label: "我的", href: "/my", icon: UserRound },
     ],
   },
   office_admin: {
@@ -549,6 +556,7 @@ export default function AppShell({
     "教学评估": "education.teaching_report",
   }
   const CHILD_PERM: Record<string, string> = {
+    "/my": "my.home",
     "/": "overview.dashboard", "/dashboard/slideshow": "overview.slideshow",
     "/education": "education.overview", "/student-management": "education.students",
     "/student-reports": "education.reports", "/parent-management": "education.parents",

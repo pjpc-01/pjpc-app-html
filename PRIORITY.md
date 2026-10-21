@@ -16,6 +16,17 @@
 **验收**：公网不带登录 → 工资/学生/发票/付款/审计 **全 401**；管理员全 200；老师取学生/课程/作业 200、工资/审计/用户 **403**；老师 PATCH 工资 **403**；登录接口正常（错密码 400）；41 页扫描 **0 失败请求 / 0 控制台错误 / 0 卡加载**。
 **⛔ 还开着（下一步做学生账号前必须一起处理）**：应用接口 `/api/students`、`/api/points`、`/api/teachers`、`/api/exam-targets`、`/api/centers` 仍是**不带登录可读 200** —— 因为电视看板 `/tv-board` 靠它们且不登录。要关就得让看板登录一次（或给它单独发一个只读令牌）。
 
+### 🎓 2026-10-21 学生账号第二步：student 角色 + 只看自己（已完成）
+**代理层（真正的关卡）**：`session.role === 'student'` →
+- **只读**：任何非 GET → 403（学生改不了积分、改不了自己名字）
+- **只看自己**：请求里的 filter 被服务端 AND 上 `字段 = "<自己的学生ID>"`，前端改不掉
+  - `students`→`id`；`student_reports`/`points`→`studentId`；`point_logs`→`student`；`student_attendance`/`exam_targets`→`student_id`
+- 单条详情（`/records/<id>`）先查记录属主，不是本人 → **403**
+- 整表可读白名单：`courses` / `centers` / `homework` / `report_settings`；其余一律 403
+- 工资 / 账号 / 审计 / 发票 / 月结 → 403
+**前端**：新增学生中心 `/my`（我的资料 / 积分 / 报告 / 最近积分变动 / 最近考勤）；`AppShell` 加 `ROLE_CONFIGS.student`（只有「我的」一项）+ `CHILD_PERM["/my"]="my.home"`；`role_permissions` 加 `student` 行（`{my.home:true}`）；根页面对 student 角色直接跳 `/my`（不再显示 Unknown Role）。
+**实测（临时学生账号，测完已删）**：登录 → 自动进 `/my`；学生表只回 1 条（自己）、报告 1 条、考勤 28 条全是自己；拿**别人的 id 直读 → 403**；用 filter 查别人 → **0 条**；改自己名字/建积分 → **403**；工资/账号/审计/发票 → 403。41 页全站回归：0 失败 0 错误 0 卡加载。
+
 ### 🔜 待接（用户 2026-10-21 指示，留意）
 - **AI 老师（Codex）接入**：先拿「中学生名册」给外部 Codex 当 AI 老师，用来 **track 学生学习程度**；等 Codex 那边改善到一定程度，**把它的记忆拉过来**，再把 Codex 放进 pjpcapp 里。
   · 名册导出：`/home/pjpc/exports/secondary-students-<日期>.{json,csv,md}`（**不在 git 里**，含学生姓名/ID）
