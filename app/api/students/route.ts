@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const url = new URL(request.url)
     const searchParams = url.searchParams.toString()
@@ -30,6 +34,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const body = await request.json()
     const response = await fetch(`http://127.0.0.1:3001/api/pocketbase-proxy/api/collections/students/records`, {
@@ -50,6 +57,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const body = await request.json()
     const { id, ...studentData } = body

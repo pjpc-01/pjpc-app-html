@@ -52,7 +52,7 @@ async function processAttendance(
         
         // 获取学生数据
         try {
-          const studentResponse = await fetch(`/api/students?center=${encodeURIComponent(center)}&limit=500`)
+          const studentResponse = await fetch(`/api/tv-board/data?resource=students&center=${encodeURIComponent(center)}&limit=500`)
           const studentData = await studentResponse.json()
           
           if (studentData.success && studentData.data && studentData.data.length > 0) {
@@ -82,7 +82,7 @@ async function processAttendance(
         
         // 获取教师数据
         try {
-          const teacherResponse = await fetch(`/api/teachers?center=${encodeURIComponent(center)}&limit=100`)
+          const teacherResponse = await fetch(`/api/tv-board/data?resource=teachers&center=${encodeURIComponent(center)}&limit=100`)
           const teacherData = await teacherResponse.json()
           
           if (teacherData.success && teacherData.data && teacherData.data.length > 0) {

@@ -19,7 +19,7 @@ export default function TVBoardPage() {
     const loadCenters = async () => {
       try {
         // 尝试从API获取centers
-        const response = await fetch('/api/centers')
+        const response = await fetch('/api/tv-board/data?resource=centers')
         if (response.ok) {
           const data = await response.json()
           if (data.data && data.data.length > 0) {
@@ -35,7 +35,7 @@ export default function TVBoardPage() {
         
         // 如果API失败或返回空数据，从学生数据中推导centers
         try {
-          const studentsResponse = await fetch('/api/students?limit=1000')
+          const studentsResponse = await fetch('/api/tv-board/data?resource=students&limit=1000')
           if (studentsResponse.ok) {
             const studentsData = await studentsResponse.json()
             const students = studentsData.data || studentsData.students || []

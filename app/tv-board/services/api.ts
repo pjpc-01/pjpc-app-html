@@ -17,6 +17,17 @@ interface ApiConfig {
   retryDelay?: number
 }
 
+/** 各接口包装不同（students / items / data / records），统一拆成数组 */
+function unwrapList(raw: any): any[] {
+  if (Array.isArray(raw)) return raw
+  if (!raw || typeof raw !== 'object') return []
+  for (const k of ['students', 'items', 'data', 'records']) {
+    if (Array.isArray(raw[k])) return raw[k]
+    if (raw[k] && typeof raw[k] === 'object') return unwrapList(raw[k])
+  }
+  return []
+}
+
 class ApiService {
   private baseConfig: ApiConfig = {
     timeout: 60000, // 增加超时时间到60秒
@@ -27,7 +38,7 @@ class ApiService {
   // 简单的持久化缓存
   private cache = new Map<string, { data: any; timestamp: number }>()
   private cacheTimeout = 5000 
-  private STORAGE_KEY = 'tv_board_api_cache'
+  private STORAGE_KEY = 'tv_board_api_cache_v2'
 
   constructor() {
     this.loadCacheFromStorage()
@@ -184,7 +195,13 @@ class ApiService {
           this.saveCacheToStorage()
         }
         
-        return { success: true, data }
+        // 各接口的包装不一样：students / items / data / records 都见过，
+        // 统一在这里拆成数组，否则上层看到的是「成功但 0 条」。
+        const payload = Array.isArray(data)
+          ? data
+          : (data?.students ?? data?.items ?? data?.data ?? data?.records ?? data)
+
+        return { success: true, data: payload }
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error')
         
@@ -209,7 +226,7 @@ class ApiService {
     
     // 优先使用最稳定的端点
     const endpoints = [
-      `/api/students?center=${encodeURIComponent(center)}&limit=500` // 主要端点（工作正常）
+      `/api/tv-board/data?resource=students&center=${encodeURIComponent(center)}&limit=500` // 主要端点（工作正常）
     ]
 
     for (const endpoint of endpoints) {
@@ -226,7 +243,7 @@ class ApiService {
       })
       if (result.success) {
         // 学生API返回的数据结构是 {success: true, data: [...], total: ...}
-        const finalData = result.data || (result as any).students || []
+        const finalData = unwrapList(result.data)
         console.log('[API] getStudents 结果:', { 
           success: result.success,
           dataLength: Array.isArray(finalData) ? finalData.length : 0,
@@ -247,13 +264,13 @@ class ApiService {
     }
 
     // 如果所有端点都失败，尝试全量获取
-    const result = await this.fetchWithRetry<any>('/api/students?limit=500', {}, {
+    const result = await this.fetchWithRetry<any>('/api/tv-board/data?resource=students&limit=500', {}, {
       timeout: 45000,
       retries: 1
     })
     if (result.success) {
       // 学生API返回的数据结构是 {success: true, data: [...], total: ...}
-      const finalData = result.data || (result as any).students || []
+      const finalData = unwrapList(result.data)
       console.log('[API] getStudents 全量获取结果:', { 
         success: result.success,
         dataLength: Array.isArray(finalData) ? finalData.length : 0,
@@ -275,7 +292,7 @@ class ApiService {
   async getPoints(): Promise<ApiResponse<any[]>> {
     console.log('[API] getPoints 调用')
     
-    const result = await this.fetchWithRetry<any>('/api/points?page=1&per_page=300', {}, {
+    const result = await this.fetchWithRetry<any>('/api/tv-board/data?resource=points&page=1&per_page=300', {}, {
       timeout: 45000, // 减少超时时间
       retries: 2 // 减少重试次数
     })
@@ -285,7 +302,7 @@ class ApiService {
       itemsLength: result.data?.items?.length || 0
     })
     if (result.success) {
-      const finalData = result.data?.items || result.data?.data?.items || result.data || []
+      const finalData = unwrapList(result.data)
       console.log('[API] getPoints 成功:', { 
         dataLength: Array.isArray(finalData) ? finalData.length : 0,
         isArray: Array.isArray(finalData),
@@ -301,7 +318,7 @@ class ApiService {
 
   // 获取公告数据
   async getAnnouncements(): Promise<ApiResponse<any[]>> {
-    const result = await this.fetchWithRetry<any>('/api/announcements?status=published&page=1&per_page=50')
+    const result = await this.fetchWithRetry<any>('/api/tv-board/data?resource=announcements&status=published&page=1&per_page=50')
     if (result.success) {
       return {
         success: true,
@@ -313,7 +330,7 @@ class ApiService {
 
   // 获取交易记录
   async getTransactions(center: string, limit: number = 5): Promise<ApiResponse<any[]>> {
-    const url = `/api/points?transactions=true&limit=${limit}&center=${encodeURIComponent(center)}`
+    const url = `/api/tv-board/data?resource=points&transactions=true&limit=${limit}&center=${encodeURIComponent(center)}`
     const result = await this.fetchWithRetry<any>(url)
     if (result.success) {
       return {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from "@/lib/pb-admin-token"
 
 const PB_URL = process.env.POCKETBASE_URL || process.env.NEXT_PUBLIC_POCKETBASE_URL || "http://127.0.0.1:8090"
@@ -32,6 +33,9 @@ const num = (v: any) => (v === null || v === undefined || v === "" ? null : Numb
 
 /** GET /api/exam-targets — 列出学生考试目标 */
 export async function GET(req: NextRequest) {
+  const gate = await requireRoles(req, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const term = new URL(req.url).searchParams.get("term") || ""
     const filter = term ? `deleted != true && term = "${term}"` : "deleted != true"
@@ -56,6 +60,9 @@ export async function GET(req: NextRequest) {
 
 /** POST /api/exam-targets — 新增一行目标 */
 export async function POST(req: NextRequest) {
+  const gate = await requireRoles(req, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const b = await req.json()
     if (!b?.name) return NextResponse.json({ success: false, error: "missing_name" }, { status: 400 })
@@ -74,6 +81,9 @@ export async function POST(req: NextRequest) {
 
 /** PATCH /api/exam-targets?id=xxx — 改某行（学生目标改动频繁，支持逐格改） */
 export async function PATCH(req: NextRequest) {
+  const gate = await requireRoles(req, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const id = new URL(req.url).searchParams.get("id")
     if (!id) return NextResponse.json({ success: false, error: "missing_id" }, { status: 400 })
@@ -95,6 +105,9 @@ export async function PATCH(req: NextRequest) {
 
 /** DELETE /api/exam-targets?id=xxx — 软删除 */
 export async function DELETE(req: NextRequest) {
+  const gate = await requireRoles(req, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const id = new URL(req.url).searchParams.get("id")
     if (!id) return NextResponse.json({ success: false, error: "missing_id" }, { status: 400 })
