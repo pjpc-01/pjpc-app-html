@@ -1443,14 +1443,16 @@ export const defaultInvoiceDates = (base = new Date()) => ({
 ### UX 检测 v2 结果（2026-10-08 · 已覆盖弹窗型）
 
 **弹窗后 filter 被清空（4 个）— 对应用户反馈「进 item 再出来 filter 没了」**
-- [ ] `/student-management` 学生列表 → 搜索框被清空
-- [ ] `/finance/invoices` 发票管理 → 搜索框被清空
-- [ ] `/finance/payments` 付款和收据 → 搜索框被清空
-- [ ] `/finance/payroll` 薪资管理 → 关掉弹窗后筛选控件整个没了
+- [x] `/student-management` 学生列表 → ✅ 2026-10-21 实测**已正常**：输入「林」50→6 行（真在过滤），开条目再关掉，搜索值保留
+- [x] `/finance/invoices` 发票管理 → ✅ 实测已正常：输入「林」15→12 行，开条目关掉后保留
+- [x] `/finance/payments` 付款和收据 → ✅ 实测已正常：同上
+- [x] `/finance/payroll` 薪资管理 → ✅ 2026-10-21 **已修**：查清真相不是「控件消失」—— `filters` state 存在但**从来没有任何 UI 绑它**（`setFilters` 全文件 0 次调用，等于死代码）。现已补上筛选栏：**年份 / 月份 / 状态 / 教师 / 清除筛选**，并持久化（`payroll.filters`）。同时接口 `/api/teacher-salary?type=record` 原来**不认 status**，已补（`status=paid/draft`）。实测：8 月 20→14 行真实过滤；跳到发票页再回来仍停在 8 月；零控制台错误。
 
 **跳页后 filter 被清空（2 个）**
-- [ ] `/homework` 作业管理
-- [ ] `/inventory` 库存管理
+- [x] `/homework` 作业管理 → ✅ 实测已正常：早已用 `usePersistedState`（hw.search/hw.subject/hw.grade），跳页回来保留
+- [x] `/inventory` 库存管理 → ✅ 实测已正常：早已用 `usePersistedState`（inv.search/inv.category/inv.status），保留
+
+> 结论（2026-10-21 复核）：14 页里**只有薪资页是真坏的**，其余已随之前的持久化改造好了。剩下 8 页（教师列表/成绩/学生费用/支出/积分/资源库/教学评估/每日日志）未发现筛选丢失反馈，暂不动。
 
 **Back 去向**：测到的 3 个跳页型（作业/库存/学生报告）Back 都正常回列表 ✓；
 其余 item 是弹窗型，浏览器 Back 不适用 → 用户报的「Back 弹回首页」未复现，怀疑是详情页里的「返回」按钮行为，待单独查。

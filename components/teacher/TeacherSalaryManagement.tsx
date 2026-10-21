@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect, useMemo } from "react"
+import { usePersistedState } from "@/lib/use-persisted-filter"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { RowActions } from "@/components/ui/row-actions"
@@ -358,8 +359,10 @@ export default function TeacherSalaryManagement() {
     notes: ''
   })
   
-  // Filters
-  const [filters, setFilters] = useState({
+  // Filters（持久化：跳页/关弹窗后不丢）
+  const [filters, setFilters] = usePersistedState<{
+    teacher_id: string; year: number; month: string; status: string
+  }>("payroll.filters", {
     teacher_id: '',
     year: new Date().getFullYear(),
     month: '',
@@ -1416,6 +1419,69 @@ export default function TeacherSalaryManagement() {
               )}
             </div>
             ) : (<>
+              {/* ── 筛选栏（年份 / 月份 / 状态 / 教师）── */}
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <Select
+                  value={String(filters.year)}
+                  onValueChange={v => setFilters(f => ({ ...f, year: Number(v) }))}
+                >
+                  <SelectTrigger className="h-8 w-[108px] text-sm"><SelectValue placeholder={t("年份")} /></SelectTrigger>
+                  <SelectContent>
+                    {[0, 1, 2].map(d => {
+                      const y = new Date().getFullYear() - d
+                      return <SelectItem key={y} value={String(y)}>{y} {t("年")}</SelectItem>
+                    })}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={filters.month || "all"}
+                  onValueChange={v => setFilters(f => ({ ...f, month: v === "all" ? "" : v }))}
+                >
+                  <SelectTrigger className="h-8 w-[100px] text-sm"><SelectValue placeholder={t("月份")} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("全年")}</SelectItem>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                      <SelectItem key={m} value={String(m)}>{m} {t("月")}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={filters.status || "all"}
+                  onValueChange={v => setFilters(f => ({ ...f, status: v === "all" ? "" : v }))}
+                >
+                  <SelectTrigger className="h-8 w-[112px] text-sm"><SelectValue placeholder={t("状态")} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("全部状态")}</SelectItem>
+                    <SelectItem value="paid">{t("已发放")}</SelectItem>
+                    <SelectItem value="draft">{t("草稿")}</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={filters.teacher_id || "all"}
+                  onValueChange={v => setFilters(f => ({ ...f, teacher_id: v === "all" ? "" : v }))}
+                >
+                  <SelectTrigger className="h-8 w-[155px] text-sm"><SelectValue placeholder={t("全部教师")} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("全部教师")}</SelectItem>
+                    {teachers.map(tc => <SelectItem key={tc.id} value={tc.id}>{tc.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+
+                {(filters.teacher_id || filters.month || filters.status) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => setFilters(f => ({ ...f, teacher_id: '', month: '', status: '' }))}
+                  >
+                    {t("清除筛选")}
+                  </Button>
+                )}
+              </div>
+
               {/* ── Batch action bar for records ── */}
               {someRecordsSelected && (
                 <div className="flex items-center justify-between mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
