@@ -164,29 +164,40 @@ export function useTVBoardData(center: string): TVBoardDataResult {
 
       try {
         setError(null)
-        debugLog('Mock Mode Active: Skipping API and using mock data directly')
-        
-        const mockStudents = MOCK_STUDENTS.filter(s => s.center === center)
-        setStudents(mockStudents)
-        
-        const mockPoints = mockStudents.map(s => ({
-          student_id: s.id,
-          points: Math.floor(Math.random() * 500) + 100,
-          last_update: new Date().toISOString()
-        }))
-        setPoints(mockPoints)
-        
-        setAnnouncements([{ id: 'mock-1', content: 'FRONTEND TEST MODE: Using Mock Data', type: 'info', center: center }])
-        setTransactions([])
-        setLastUpdate(new Date())
-        setReady(true)
-        setError(null)
-        
-        fetchRetryCountRef.current = 0 
+        // ★ 真正去取数据（以前这里直接塞 Mock 假数据 —— 看板上墙一直显示的是假学生/随机积分）
+        const [studentsRes, pointsRes, announcementsRes, transactionsRes] = await Promise.all([
+          apiService.getStudents(center),
+          apiService.getPoints(),
+          apiService.getAnnouncements(),
+          apiService.getTransactions(center, 5),
+        ])
+
+        processData(
+          studentsRes,
+          pointsRes,
+          announcementsRes,
+          transactionsRes,
+          center,
+          setStudents, setPoints, setAnnouncements, setTransactions, setLastUpdate, setReady, setError
+        )
+
+        fetchRetryCountRef.current = 0
       } catch (err) {
-        debugLog('Mock data load failed:', err)
-        setError('Failed to load mock data')
-        setReady(true)
+        // 只有在真的取不到时才退回 Mock，并且把错误显示出来（别静默假装有数据）
+        debugLog('取数失败，退回 Mock:', err)
+        try {
+          const mockStudents = MOCK_STUDENTS.filter(s => s.center === center)
+          setStudents(mockStudents)
+          setPoints(mockStudents.map(s => ({ student_id: s.id, points: 0, last_update: new Date().toISOString() })))
+          setAnnouncements([{ id: 'mock-err', content: '看板取数失败，显示的是占位数据，请检查网络或接口', type: 'warning', center }])
+          setTransactions([])
+          setLastUpdate(new Date())
+          setReady(true)
+          setError(String((err as any)?.message || err))
+        } catch {
+          setError('Failed to load data')
+          setReady(true)
+        }
       }
     }
 
@@ -236,10 +247,10 @@ export function useTVBoardData(center: string): TVBoardDataResult {
     }
 
     const loadInitialData = async () => {
-      const cachedStudents = getCachedApiResponse<Student[]>(`/api/students?center=${encodeURIComponent(center)}&limit=500`)
-      const cachedPoints = getCachedApiResponse<StudentPoints[]>('/api/points?page=1&per_page=300')
-      const cachedAnnouncements = getCachedApiResponse<AnnouncementItem[]>('/api/announcements?status=published&page=1&per_page=50')
-      const cachedTransactions = getCachedApiResponse<any[]>(`/api/points?transactions=true&limit=10&center=${encodeURIComponent(center)}`)
+      const cachedStudents = getCachedApiResponse<Student[]>(`/api/tv-board/data?resource=students&center=${encodeURIComponent(center)}&limit=500`)
+      const cachedPoints = getCachedApiResponse<StudentPoints[]>('/api/tv-board/data?resource=points&page=1&per_page=300')
+      const cachedAnnouncements = getCachedApiResponse<AnnouncementItem[]>('/api/tv-board/data?resource=announcements&status=published&page=1&per_page=50')
+      const cachedTransactions = getCachedApiResponse<any[]>(`/api/tv-board/data?resource=points&transactions=true&limit=10&center=${encodeURIComponent(center)}`)
 
       if (cachedStudents || cachedPoints || cachedAnnouncements) {
         debugLog('检测到缓存数据，执行瞬时加载...')

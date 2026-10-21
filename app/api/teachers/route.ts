@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   const { searchParams } = new URL(request.url)
   const limit = parseInt(searchParams.get('limit') || '100')
   const id = searchParams.get('id')
@@ -68,6 +72,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const body = await request.json()
     console.log('🔧 API: creating teacher from form data:', body)

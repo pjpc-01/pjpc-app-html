@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { generateIdentifierVariants } from '@/lib/uid-normalizer'
 import { assertPointsEnabled, validatePointsDelta } from '@/lib/points-guard'
 import { getAdminToken } from '@/lib/pb-admin-token'
@@ -13,6 +14,9 @@ async function pbAuth(): Promise<string> {
 // Body: { card_uid?, student_id?, points, reason?, mode? }
 // mode="direct" → 直接用 student_id，跳过查卡
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const token = await pbAuth()
     const { card_uid, student_id, points = 1, reason = '', mode } = await request.json()
@@ -87,6 +91,9 @@ export async function POST(request: NextRequest) {
 
 // GET — 获取学生积分排行
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const token = await pbAuth()
     const { searchParams } = new URL(request.url)

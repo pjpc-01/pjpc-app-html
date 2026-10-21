@@ -131,7 +131,7 @@ export default function TVBoardByCenter() {
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
-        const response = await fetch(`/api/teachers?center=${encodeURIComponent(center)}&limit=100`)
+        const response = await fetch(`/api/tv-board/data?resource=teachers&center=${encodeURIComponent(center)}&limit=100`)
         const data = await response.json()
         if (data.success) {
           setTeachers(data.data || [])
