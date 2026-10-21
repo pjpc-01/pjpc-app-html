@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import PageLayout from "@/components/layouts/PageLayout"
 import { isPrimaryGrade, isSecondaryGrade } from "@/lib/grades"
+import { reportSubjectsForGrade } from "@/lib/report-subjects"
 import TabbedPage from "@/components/layouts/TabbedPage"
 import { usePersistedState } from "@/lib/use-persisted-filter"
 import StatsGrid from "@/components/ui/StatsGrid"
@@ -405,9 +406,8 @@ export default function StudentManagementPage() {
     const studentName = student.student_name || student.name || "学生"
 
     // Build subjects from settings or fallback
-    const subjectNames = settings?.defaultSubjects?.length > 0
-      ? settings.defaultSubjects
-      : ["华文", "国文", "英文", "科学", "数学"]
+    // 中学（Form 1-6）不看模板那五科，直接用「考试目标」那七科
+    const subjectNames = reportSubjectsForGrade((student as any).grade, settings?.defaultSubjects)
     const subjects = subjectNames.map((name: string) => ({
       name, midterm: null, final: null, evaluation: ""
     }))
