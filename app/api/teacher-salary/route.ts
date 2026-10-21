@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { getPocketBase } from '@/lib/pocketbase'
 import { authenticateAdmin } from '@/lib/auth-utils'
 import { TeacherSalaryStructure, TeacherSalaryRecord } from '@/lib/pocketbase-schema'
@@ -7,6 +8,8 @@ import { getSocsoEmployee, getSocsoEmployer, getEisContribution } from '@/lib/pe
 // 获取教师薪资结构
 export async function GET(request: NextRequest) {
   try {
+    const gate = await requireRoles(request, ['admin', 'office_admin'])
+    if ('error' in gate) return gate.error
     const pb = await getPocketBase()
     await authenticateAdmin(pb)
 
@@ -175,6 +178,8 @@ export async function GET(request: NextRequest) {
 // 创建薪资结构
 export async function POST(request: NextRequest) {
   try {
+    const gate = await requireRoles(request, ['admin', 'office_admin'])
+    if ('error' in gate) return gate.error
     const pb = await getPocketBase()
     await authenticateAdmin(pb)
 
@@ -285,6 +290,8 @@ export async function POST(request: NextRequest) {
 // 更新薪资数据
 export async function PUT(request: NextRequest) {
   try {
+    const gate = await requireRoles(request, ['admin', 'office_admin'])
+    if ('error' in gate) return gate.error
     const pb = await getPocketBase()
     await authenticateAdmin(pb)
 
@@ -325,6 +332,8 @@ export async function PUT(request: NextRequest) {
 // 删除薪资数据
 export async function DELETE(request: NextRequest) {
   try {
+    const gate = await requireRoles(request, ['admin', 'office_admin'])
+    if ('error' in gate) return gate.error
     const pb = await getPocketBase()
     await authenticateAdmin(pb)
 

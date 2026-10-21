@@ -15,29 +15,9 @@ const getPocketBaseInstance = async (): Promise<PocketBase> => {
   return pb
 }
 
-// ★ 给所有请求统一带上「操作人」，供 PocketBase 审计钩子记录「谁改的」。
-//   没有这一步，audit_logs 的 user_name 永远是空 —— 因为代理走的是 admin token，认不出是谁。
-if (typeof window !== 'undefined' && !(window as any).__pjpcActorPatched) {
-  ;(window as any).__pjpcActorPatched = true
-  const origFetch = window.fetch.bind(window)
-  window.fetch = (input: any, init?: any) => {
-    try {
-      const raw = localStorage.getItem('pocketbase_auth')
-      if (raw) {
-        const model = JSON.parse(raw)?.model
-        const who = model?.name || model?.email || model?.id
-        if (who) {
-          const base = init?.headers || (typeof Request !== 'undefined' && input instanceof Request ? input.headers : undefined)
-          const h = new Headers(base as any)
-          // HTTP 头只能是 ASCII → 中文名字先做 URL 编码，PB 钩子那边再 decode
-          if (!h.has('x-actor')) h.set('x-actor', encodeURIComponent(String(who)))
-          init = { ...(init || {}), headers: h }
-        }
-      }
-    } catch { /* 带不上身份不影响请求本身 */ }
-    return origFetch(input, init)
-  }
-}
+// ★ 全局 fetch 拦截器（x-actor + 代理 token）已抽到 lib/auth-fetch.ts，
+//   这里保留 import 让老路径也生效；幂等，不会重复 patch。
+import '@/lib/auth-fetch'
 
 interface AuthContextType {
   user: any | null

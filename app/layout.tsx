@@ -1,4 +1,6 @@
 import type React from "react"
+// ★ 必须放第一个 import：全局 fetch 拦截器要在任何网络请求之前生效（见 lib/auth-fetch.ts）
+import "@/lib/auth-fetch"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"

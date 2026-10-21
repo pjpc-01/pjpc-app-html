@@ -9,7 +9,9 @@ export async function GET(request: NextRequest) {
     let pbUrl = `/api/pocketbase-proxy/api/collections/students/records?perPage=500&expand=centerId&filter=(status!='deleted')`
     if (searchParams) pbUrl += `&${searchParams}`
     
-    const response = await fetch(`http://127.0.0.1:3001${pbUrl}`)
+    const response = await fetch(`http://127.0.0.1:3001${pbUrl}`, {
+      headers: { 'x-pjpc-internal': process.env.PROXY_INTERNAL_KEY || '' },
+    })
     
     if (!response.ok) {
       return NextResponse.json({ success: false, error: 'Proxy error' }, { status: response.status })
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const response = await fetch(`http://127.0.0.1:3001/api/pocketbase-proxy/api/collections/students/records`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-pjpc-internal': process.env.PROXY_INTERNAL_KEY || '' },
       body: JSON.stringify(body)
     })
     
@@ -61,7 +63,7 @@ export async function PUT(request: NextRequest) {
     
     const response = await fetch(proxyUrl, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-pjpc-internal': process.env.PROXY_INTERNAL_KEY || '' },
       body: JSON.stringify(studentData)
     })
     

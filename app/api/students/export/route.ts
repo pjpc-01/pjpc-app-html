@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   try {
     const origin = new URL(request.url).origin.replace('https://', 'http://')
-    const response = await fetch(`${origin}/api/pocketbase-proxy/api/collections/students/records?perPage=500`)
+    const response = await fetch(`${origin}/api/pocketbase-proxy/api/collections/students/records?perPage=500`, {
+      headers: { 'x-pjpc-internal': process.env.PROXY_INTERNAL_KEY || '' },
+    })
     
     if (!response.ok) {
       return NextResponse.json({ success: false, error: 'Proxy error' }, { status: response.status })
