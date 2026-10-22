@@ -193,6 +193,13 @@ async function proxyRequest(method: string, request: NextRequest) {
         if (!sid) {
           return NextResponse.json({ error: '这个账号还没绑定学生资料，请联系老师' }, { status: 403 })
         }
+        // 学生读自己账号资料 / 读页面权限表：只读放行（前端要用来渲染导航）
+        const selfRid = (pbPath.match(/\/records\/([^/?#]+)/) || [])[1]
+        if (col === 'users' && selfRid && selfRid === String(session.id || '')) {
+          // 交给下面用超管转发
+        } else if (col === 'role_permissions') {
+          // 只读放行
+        } else {
         const field = col ? STUDENT_SELF_FIELD[col] : undefined
         const rid = pbPath.match(/\/records\/([^/]+)$/)
         if (field) {
@@ -213,6 +220,7 @@ async function proxyRequest(method: string, request: NextRequest) {
           }
         } else if (!col || !STUDENT_OPEN_READ.has(col)) {
           return NextResponse.json({ error: '没有权限访问该数据' }, { status: 403 })
+        }
         }
       } else if (!STAFF_ROLES.has(session.role)) {
         // 未知/未开放角色
