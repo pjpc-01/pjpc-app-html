@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
 import { gradeCanon } from '@/lib/grades'
 
@@ -19,6 +20,8 @@ function timeStr(date: Date): string {
 
 // GET — 增强考勤报告：含迟到/早退/缺勤（分年级/分老师阈值）
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const token = await pbAuth()
     const { searchParams } = new URL(request.url)

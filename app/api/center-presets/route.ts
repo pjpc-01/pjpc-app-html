@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import fs from 'fs'
 import path from 'path'
 
@@ -17,11 +18,15 @@ function writeData(data: Record<string, any>) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8')
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   return NextResponse.json({ success: true, data: readData() })
 }
 
 export async function PATCH(req: NextRequest) {
+  const gate = await requireRoles(req, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const body = await req.json()
     const current = readData()

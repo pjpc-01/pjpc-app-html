@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 
 const WHATSAPP_API = 'https://graph.facebook.com/v21.0'
 
 // POST: Send WhatsApp PDF document ONLY (no text field message)
 export async function POST(req: NextRequest) {
+  const gate = await requireRoles(req, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const { to, pdfUrl, invoiceNumber } = await req.json()
 

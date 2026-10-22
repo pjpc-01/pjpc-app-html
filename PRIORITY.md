@@ -1,3 +1,19 @@
+
+## 🔒 2026-10-22 安全堵洞（第二步·应用接口全关）
+
+**问题**：`/api/*` 里 60 个应用路由自己拿超管 token 打 PocketBase，**公网不带登录就能读工资/审计/财务/学生**。实测匿名 POST `/api/users/reset-password` 能把任何人的密码改掉。
+
+**已做**：
+- 所有应用路由统一用 `lib/api-auth.ts` 的 `requireRoles()` 守卫
+- 财务/薪资/审计/用户 → 只 admin（财务含 office_admin）
+- 业务接口（学生/考勤/积分/排课/资源/发票 PDF…）→ admin/teacher/office_admin
+- **保持公开（免登录，有理由）**：`/api/health`、`/api/events`(SSE)、`/api/tv-board/data`(看板专用只读口)、`/api/nfc/tap`(学生自助刷卡)、`/api/student-leave`(刷卡机请假)、`/api/auth/nfc-login`、`/api/pocketbase-proxy`(自身有守门+学生隔离)
+- `/api/users/reset-password`：密码下限从 6 改 8（PB 硬性要求 8，以前只回「PB 拒绝400」）
+
+**验收**：匿名打 18 个样本接口全 401；管理员全 200；学生打财务/用户 403；41 页回归 0 失败 0 错误；TV 看板 86 人正常；学生自助刷卡页正常。
+
+**遗留**：TV/刷卡页顶部会打两个 401（`centers/records`、`users/nav-order`），因为 AppShell 的登录态组件在免登录页也渲染 —— 只影响顶部控件，不影响数据。
+
 # PJPC 待处理事项
 
 > 最后整理：**2026-10-12** ｜ 先读下面「🚦 总表」｜ 历史档案在文末（不用逐条读）

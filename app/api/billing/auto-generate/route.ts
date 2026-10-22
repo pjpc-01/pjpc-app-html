@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { requireRoles } from '@/lib/api-auth'
 
 // 定期账单自动生成 API
 // 为所有有活跃学生费用的学生生成当月账单
@@ -39,6 +40,8 @@ async function getNextInvoiceNumber(token: string, period: string): Promise<stri
 }
 
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
   _invoiceSeq = 0 // Reset sequence counter for this request
   try {
     const token = await getAdminToken()

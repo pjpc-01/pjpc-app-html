@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { getPocketBase, authenticateAdmin } from '@/lib/pocketbase'
 import { gradeRank } from '@/lib/grades'
 
@@ -14,6 +15,8 @@ function fileUrlOf(record: any): string | null {
 
 // 列表 + 搜索 + 科目/年级/类型 筛选
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const pb = await getPocketBase()
     await authenticateAdmin()
@@ -113,6 +116,8 @@ export async function GET(request: NextRequest) {
 
 // 新建资源（multipart/form-data）：title 必填；file 与 link 至少一个
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const pb = await getPocketBase()
     await authenticateAdmin()

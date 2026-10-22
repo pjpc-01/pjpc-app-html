@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 
 const PB_URL = 'http://127.0.0.1:8090'
 
@@ -8,6 +9,8 @@ const PB_URL = 'http://127.0.0.1:8090'
  * Requires PB auth cookie/token in request.
  */
 export async function PATCH(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const body = await request.json()
     const { email, oldPassword, password, passwordConfirm } = body

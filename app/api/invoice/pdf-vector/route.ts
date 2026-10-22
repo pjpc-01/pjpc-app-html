@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 
 // 发票「真矢量 PDF」生成路由
 // 客户端把已经渲染好的发票 HTML 发过来（模板零改动），服务端用 Chromium 打成矢量 PDF：
@@ -28,6 +29,8 @@ async function getBrowser() {
 }
 
 export async function POST(req: NextRequest) {
+  const gate = await requireRoles(req, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   let html = ''
   try {
     const body = await req.json()

@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
 
 // POST: Upload PDF blob, store to public/invoices/, return URL
 export async function POST(req: NextRequest) {
+  const gate = await requireRoles(req, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const formData = await req.formData()
     const file = formData.get('pdf') as Blob

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { normalizeCardUid } from '@/lib/utils'
 import { getAdminToken } from '@/lib/pb-admin-token'
 
@@ -10,6 +11,8 @@ async function pbAuth(): Promise<string> {
 
 // POST — 发卡
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const token = await pbAuth()
     const body = await request.json()
@@ -49,6 +52,8 @@ export async function POST(request: NextRequest) {
 
 // PATCH — 停用/恢复卡片 或 转绑
 export async function PATCH(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const token = await pbAuth()
     const body = await request.json()
@@ -123,6 +128,8 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE — 删除卡片
 export async function DELETE(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const token = await pbAuth()
     const { searchParams } = new URL(request.url)

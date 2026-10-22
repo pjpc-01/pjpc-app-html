@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const origin = new URL(request.url).origin.replace('https://', 'http://')
     const response = await fetch(`${origin}/api/pocketbase-proxy/api/collections/students/records?perPage=500`, {
