@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { getPocketBase } from '@/lib/pocketbase-optimized'
 
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const body = await request.json()
     console.log('🔍 接收到的教师考勤数据:', body)
@@ -209,6 +212,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const { searchParams } = new URL(request.url)
     const centerId = searchParams.get('center')

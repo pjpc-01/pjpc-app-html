@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
 
 const PB_URL = 'http://127.0.0.1:8090'
@@ -8,6 +9,8 @@ async function pbAuth(): Promise<string> {
 }
 
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const token = await pbAuth()
     const { searchParams } = new URL(request.url)

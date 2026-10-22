@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { getPocketBase } from '@/lib/pocketbase'
 import { authenticateAdmin } from '@/lib/auth-utils'
 import type { TeacherLeaveRecord } from '@/components/teacher/TeacherLeaveManagement'
 
 // 获取教师请假记录
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const pb = await getPocketBase()
     await authenticateAdmin(pb)
@@ -58,6 +61,8 @@ export async function GET(request: NextRequest) {
 
 // 创建请假申请
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const pb = await getPocketBase()
     await authenticateAdmin(pb)
@@ -105,6 +110,8 @@ export async function POST(request: NextRequest) {
 
 // 更新请假记录（审批）
 export async function PUT(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const pb = await getPocketBase()
     await authenticateAdmin(pb)
@@ -164,6 +171,8 @@ export async function PUT(request: NextRequest) {
 
 // 删除请假记录
 export async function DELETE(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const pb = await getPocketBase()
     await authenticateAdmin(pb)

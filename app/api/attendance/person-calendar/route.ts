@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
 import { toLocalMonthKey } from "@/lib/utils"
 
@@ -11,6 +12,8 @@ async function pbAuth(): Promise<string> {
 // GET — 单人月度考勤日历
 // Query: ?person_id=B10&person_type=student&month=2026-07
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const token = await pbAuth()
     const { searchParams } = new URL(request.url)

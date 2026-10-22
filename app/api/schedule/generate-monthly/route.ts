@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { getPocketBase } from '@/lib/pocketbase'
 import { authenticateAdmin } from '@/lib/auth-utils'
 
@@ -7,6 +8,8 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 // 从课程时间表自动生成时薪老师本月排班（真实日期，今天起，已过日期不动）
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const pb = await getPocketBase()
     if (!pb.authStore.isValid) await authenticateAdmin(pb)

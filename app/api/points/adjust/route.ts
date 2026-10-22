@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { assertPointsEnabled, validatePointsDelta } from '@/lib/points-guard'
 import { getAdminToken } from '@/lib/pb-admin-token'
 
@@ -11,6 +12,8 @@ async function pbAuth(): Promise<string> {
 // POST: Adjust student points (+/-)
 // Body: { student_id, amount, reason, teacher_id }
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const token = await pbAuth()
     const { student_id, amount, reason, teacher_id } = await request.json()
@@ -94,6 +97,8 @@ export async function POST(request: NextRequest) {
 
 // GET: Get student's current points
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const token = await pbAuth()
     const { searchParams } = new URL(request.url)

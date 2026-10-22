@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { normalizeCardUid, getCardUidSearchTerms } from '@/lib/utils'
 import { getAdminToken } from '@/lib/pb-admin-token'
 
@@ -20,6 +21,8 @@ async function resolveId(token: string, collection: string, lookupField: string,
 
 // GET: list NFC cards (supports filtering by studentId, teacherId, type, status)
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const token = await pbAuth()
     const url = new URL(request.url)
@@ -56,6 +59,8 @@ export async function GET(request: NextRequest) {
 
 // POST: register a new NFC card (student or teacher)
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const token = await pbAuth()
     const body = await request.json()
@@ -139,6 +144,8 @@ export async function POST(request: NextRequest) {
 
 // PATCH: update card (status, rebind, etc.)
 export async function PATCH(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const token = await pbAuth()
     const body = await request.json()
@@ -161,6 +168,8 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE: remove card
 export async function DELETE(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const token = await pbAuth()
     const url = new URL(request.url)

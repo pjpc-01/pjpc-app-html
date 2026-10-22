@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import nodemailer from 'nodemailer'
 
 // POST: Send email with PDF attachment
 export async function POST(req: NextRequest) {
+  const gate = await requireRoles(req, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const formData = await req.formData()
     const file = formData.get('pdf') as Blob

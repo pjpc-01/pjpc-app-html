@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
 import { gradeLabel } from '@/lib/grades'
 
@@ -10,6 +11,8 @@ async function pbAuth(): Promise<string> {
 
 // GET — 获取所有学生的积分记录（含分行筛选）
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const token = await pbAuth()
     const { searchParams } = new URL(request.url)

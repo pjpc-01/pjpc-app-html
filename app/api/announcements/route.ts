@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { getPocketBase, authenticateAdmin } from '@/lib/pocketbase'
 
 export const dynamic = 'force-dynamic'
@@ -6,6 +7,8 @@ export const dynamic = 'force-dynamic'
 // 公告数据源统一为 activities 集合（PB 没有 announcements 表）。
 // TV 看板 / 教育概览都从 activities 读活动与公告。
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const pb = await getPocketBase()
     await authenticateAdmin()
@@ -57,6 +60,8 @@ export async function GET(request: NextRequest) {
 
 // 新建公告 = 新建活动（写入 activities）
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const pb = await getPocketBase()
     await authenticateAdmin()

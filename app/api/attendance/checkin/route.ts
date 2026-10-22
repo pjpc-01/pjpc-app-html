@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { formatGrade } from '@/lib/utils'
 import { gradeCanon } from '@/lib/grades'
 import { getAdminToken } from '@/lib/pb-admin-token'
@@ -37,6 +38,8 @@ function todayLocal(): string {
 
 // POST — 统一考勤打卡 + 积分联动
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'teacher', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const body = await request.json()
     const {
