@@ -10,10 +10,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Loader2, Trash2, ArrowLeft, Users, ShieldOff, Shield,
-  CheckCircle2, MailCheck, MailX, UserCog,
+  CheckCircle2, MailCheck, MailX, UserCog, UserPlus,
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import PermissionEditor from "@/components/admin/PermissionEditor"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 export default function UserManagementPage() {
   const { t } = useLanguage()
@@ -25,6 +28,9 @@ export default function UserManagementPage() {
   const [roleOptions, setRoleOptions] = useState<{ value: string; label: string }[]>([])
   const [teachers, setTeachers] = useState<any[]>([])
   const [students, setStudents] = useState<any[]>([])
+  const [createOpen, setCreateOpen] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [newUser, setNewUser] = useState({ email: "", password: "", name: "", role: "teacher", student_id: "" })
 
   const isAdmin = userProfile?.role === "admin"
 
@@ -112,6 +118,43 @@ export default function UserManagementPage() {
     } finally { setUpdating(null) }
   }
 
+  const createUser = async () => {
+    const email = newUser.email.trim()
+    const name = newUser.name.trim()
+    if (!email || !newUser.password) { window.alert(t("账号和密码都要填")); return }
+    if (newUser.password.length < 8) { window.alert(t("密码至少 8 位")); return }
+    if (newUser.role === "student" && !newUser.student_id) { window.alert(t("学生账号要选一位学生绑定")); return }
+    setCreating(true)
+    try {
+      const body: any = {
+        email,
+        password: newUser.password,
+        passwordConfirm: newUser.password,
+        name: name || email,
+        role: newUser.role,
+        emailVisibility: false,
+      }
+      if (newUser.role === "student") body.student_id = newUser.student_id
+      const res = await fetch("/api/pocketbase-proxy/api/collections/users/records", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      const d = await res.json().catch(() => null)
+      if (!res.ok) {
+        const detail = d?.data ? Object.values(d.data).map((v: any) => v?.message).filter(Boolean).join(" / ") : ""
+        window.alert(t("建账号失败：") + (detail || d?.message || String(res.status)))
+        return
+      }
+      setCreateOpen(false)
+      setNewUser({ email: "", password: "", name: "", role: "teacher", student_id: "" })
+      window.alert(t("账号已建好，请把账号和密码告知本人：") + email)
+      fetchUsers()
+    } catch (e) {
+      window.alert(t("建账号失败：") + (e instanceof Error ? e.message : ""))
+    } finally { setCreating(false) }
+  }
+
   const linkProfile = async (userId: string, profileId: string) => {
     setUpdating(userId)
     try {
@@ -156,9 +199,14 @@ export default function UserManagementPage() {
           <h1 className="text-2xl font-bold tracking-tight">{t("用户与权限管理")}</h1>
           <p className="text-sm text-muted-foreground">{t("管理用户账号、角色权限和档案绑定")}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => router.push("/")} className="gap-2">
-          <ArrowLeft className="h-4 w-4" />{t("返回")}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-2">
+            <UserPlus className="h-4 w-4" />{t("新增用户")}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => router.push("/")} className="gap-2">
+            <ArrowLeft className="h-4 w-4" />{t("返回")}
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="users" onValueChange={handleTabChange}>
@@ -271,6 +319,62 @@ export default function UserManagementPage() {
           <PermissionEditor />
         </TabsContent>
       </Tabs>
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("新增用户账号")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label>{t("账号（邮箱）")}</Label>
+              <Input value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} placeholder="name@pjpc.com" />
+            </div>
+            <div>
+              <Label>{t("姓名")}</Label>
+              <Input value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} />
+            </div>
+            <div>
+              <Label>{t("初始密码")}</Label>
+              <Input value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} placeholder={t("至少 8 位")} />
+            </div>
+            <div>
+              <Label>{t("角色")}</Label>
+              <select
+                value={newUser.role}
+                onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                className="w-full text-sm rounded-md border border-gray-200 bg-white px-3 py-2"
+              >
+                <option value="teacher">{t("教师")}</option>
+                <option value="office_admin">{t("办公室")}</option>
+                <option value="student">{t("学生")}</option>
+                <option value="admin">{t("管理员")}</option>
+              </select>
+            </div>
+            {newUser.role === "student" && (
+              <div>
+                <Label>{t("绑定学生")}</Label>
+                <select
+                  value={newUser.student_id}
+                  onChange={(e) => setNewUser({ ...newUser, student_id: e.target.value })}
+                  className="w-full text-sm rounded-md border border-gray-200 bg-white px-3 py-2"
+                >
+                  <option value="">{t("— 请选择 —")}</option>
+                  {students.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name || s.student_name} {s.grade ? `(${s.grade})` : ""}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={creating}>{t("取消")}</Button>
+            <Button onClick={createUser} disabled={creating} className="gap-2">
+              {creating && <Loader2 className="h-4 w-4 animate-spin" />}{t("建账号")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
