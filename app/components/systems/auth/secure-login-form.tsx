@@ -343,11 +343,11 @@ export default function SecureLoginForm() {
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-email">{t('student.email_address')}</Label>
+                    <Label htmlFor="login-email">{t("学号或邮箱")}</Label>
                     <Input
                       id="login-email"
-                      type="email"
-                      placeholder={t("请输入邮箱地址")}
+                      type="text"
+                      placeholder={t("请输入学号或邮箱")}
                       value={loginData.email}
                       onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                       required
