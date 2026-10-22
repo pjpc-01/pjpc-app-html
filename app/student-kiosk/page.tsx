@@ -182,18 +182,17 @@ export default function StudentKioskPage() {
 
     ;(async () => {
       try {
-        const [stuRes, coRes, scRes, hwRes, lvRes] = await Promise.all([
-          fetch(`/api/pocketbase-proxy/api/collections/students/records/${pid}?fields=id,name,student_id,grade,points,center,avatar`),
-          fetch(`/api/pocketbase-proxy/api/collections/courses/records?perPage=200&fields=id,title,subject,grade_level`),
-          fetch(`/api/pocketbase-proxy/api/collections/schedules/records?perPage=300&fields=id,course_id,course_title,day_of_week,start_time,end_time,teacher_name`),
-          fetch(`/api/pocketbase-proxy/api/collections/homework/records?perPage=100&fields=id,title,subject,grade,dueDate,status`),
+        // 刷卡机是免登录设备：走专用只读口（代理现在要登录，直连会全 401）
+        const [kRes, lvRes] = await Promise.all([
+          fetch(`/api/kiosk/student?id=${encodeURIComponent(pid)}`),
           fetch(`/api/student-leave?student_id=${encodeURIComponent(pid)}&limit=50`),
         ])
 
-        const stu = await stuRes.json().catch(() => ({}))
-        const courses = (await coRes.json().catch(() => ({ items: [] }))).items || []
-        const scheds = (await scRes.json().catch(() => ({ items: [] }))).items || []
-        const hws = (await hwRes.json().catch(() => ({ items: [] }))).items || []
+        const kd = await kRes.json().catch(() => ({}))
+        const stu = kd.student || {}
+        const courses = kd.courses || []
+        const scheds = kd.schedules || []
+        const hws = kd.homework || []
         const lv = await lvRes.json().catch(() => ({ data: [] }))
 
         const courseIds = new Set(courses.filter((c: any) => gradeCanon(c.grade_level) === canon).map((c: any) => c.id))
@@ -235,14 +234,9 @@ export default function StudentKioskPage() {
     setResults([])
     setSearched(true)
     try {
-      const params = new URLSearchParams({
-        perPage: "10",
-        filter: `name~"${q}" && status="active"`,
-        fields: "id,name,student_id,grade,center",
-      })
-      const res = await fetch(`/api/pocketbase-proxy/api/collections/students/records?${params}`)
+      const res = await fetch(`/api/kiosk/student?q=${encodeURIComponent(q)}`)
       const d = await res.json()
-      const arr = d.items || []
+      const arr = d.results || []
       setResults(arr.map((s: any) => ({
         id: s.id,
         student_id: s.student_id || s.id,

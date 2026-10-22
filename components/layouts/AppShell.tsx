@@ -346,13 +346,14 @@ export default function AppShell({
     }
   }, [userRole])
 
-  // Fetch centers for sidebar filter
+  // Fetch centers for sidebar filter（未登录页不拉，避免免登录页冒 401）
   useEffect(() => {
+    if (!userRole) return
     fetch("/api/pocketbase-proxy/api/collections/centers/records")
       .then(r => r.json())
       .then(d => setCenters(d?.items?.map((c:any) => ({ id: c.id, code: c.code, name: c.name })) || []))
       .catch(() => {})
-  }, [])
+  }, [userRole])
 
   // 取当前登录 token（兼容 PB SDK 存在 localStorage 的各种键名）
   const findAuthToken = (): string | null => {
@@ -387,6 +388,7 @@ export default function AppShell({
     const load = async () => {
       try {
         const token = findAuthToken()
+        if (!token) return
         const res = await fetch('/api/users/nav-order', {
           headers: token ? { Authorization: token } : {},
         })
