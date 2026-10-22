@@ -108,11 +108,22 @@ export default function Dashboard() {
             </div>
           </div>
         )
+      case "pending":
+        return (
+          <div className="text-center py-16 max-w-md mx-auto">
+            <Clock className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold mb-2">{t("账号待审核")}</h2>
+            <p className="text-gray-600 mb-1">{t("注册已提交，等管理员在「用户管理」里给你分配角色后才能使用。")}</p>
+            <p className="text-sm text-gray-500 mb-6">{t("急用可直接联系院长或办公室。")}</p>
+            <Button variant="outline" onClick={() => logout()}>{t("退出登录")}</Button>
+          </div>
+        )
       default:
         return (
           <div className="text-center py-12">
             <GraduationCap className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-            <p className="text-gray-600">Unknown Role</p>
+            <p className="text-gray-600">{t("这个账号还没分配角色，请联系管理员。")}</p>
+            <Button variant="outline" className="mt-4" onClick={() => logout()}>{t("退出登录")}</Button>
           </div>
         )
     }

@@ -38,7 +38,9 @@ export default function UserManagementPage() {
     try {
       const res = await fetch("/api/pocketbase-proxy/api/collections/role_permissions/records?perPage=50&sort=role")
       const data = await res.json()
-      setRoleOptions((data?.items || []).map((item: any) => ({ value: item.role, label: item.label || item.role })))
+      const opts = (data?.items || []).map((item: any) => ({ value: item.role, label: item.label || item.role }))
+      if (!opts.some((o: any) => o.value === 'pending')) opts.unshift({ value: 'pending', label: t('待审核') })
+      setRoleOptions(opts)
     } catch { setRoleOptions([{ value: "admin", label: "管理员" }]) }
   }
 

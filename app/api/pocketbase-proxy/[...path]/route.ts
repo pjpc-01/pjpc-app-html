@@ -136,7 +136,9 @@ async function proxyRequest(method: string, request: NextRequest) {
     const session = isInternal ? { id: 'internal', role: 'admin' } : await getSession(request)
 
     if (!session) {
-      if (!isPublicFile) {
+      // ★ 注册：登录页「注册账户」是未登录状态，必须放行 —— 但只能建 users，且角色由服务端强制
+      const isSignup = method === 'POST' && /^\/api\/collections\/users\/records\/?$/.test(pbPath)
+      if (!isPublicFile && !isSignup) {
         return NextResponse.json({ error: '请先登录' }, { status: 401 })
       }
     } else {
@@ -199,6 +201,26 @@ async function proxyRequest(method: string, request: NextRequest) {
     } else {
       headers['Content-Type'] = 'application/json'
       body = await request.text()
+
+      // ★ 匿名注册：不让前端决定角色（否则谁都能注册成管理员）
+      const isAnonSignup = method === 'POST'
+        && /^\/api\/collections\/users\/records\/?$/.test(pbPath)
+        && !request.headers.get('authorization')
+        && request.headers.get('x-pjpc-internal') !== (process.env.PROXY_INTERNAL_KEY || '')
+      if (isAnonSignup) {
+        try {
+          const raw = JSON.parse(body || '{}')
+          body = JSON.stringify({
+            email: raw.email,
+            password: raw.password,
+            passwordConfirm: raw.passwordConfirm ?? raw.password,
+            name: raw.name || raw.email,
+            role: 'pending',            // 待审核：管理员在「用户管理」里改角色才生效
+            emailVisibility: false,
+          })
+          headers['x-pjpc-signup'] = '1'
+        } catch { /* 解析不了就原样发过去，让 PB 自己报错 */ }
+      }
     }
   }
 
