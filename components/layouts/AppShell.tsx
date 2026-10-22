@@ -36,6 +36,8 @@ import {
   Star,
   ScrollText,
   Trophy,
+  Calendar,
+  Megaphone,
   Truck,
   MonitorPlay,
   GripVertical,
@@ -272,7 +274,18 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
   teacher: {
     title: "教师工作台",
     navItems: [
-      { label: "我的工作台", href: "/teacher-workspace", icon: ClipboardCheck },
+      {
+        label: "我的工作台",
+        href: "/teacher-workspace",
+        icon: ClipboardCheck,
+        children: [
+          { label: "今日待办", href: "/teacher-workspace", icon: ClipboardCheck },
+          { label: "我的学生", href: "/teacher-workspace/students", icon: Users },
+          { label: "我的课程", href: "/teacher-workspace/courses", icon: BookOpen },
+          { label: "我的考勤与积分", href: "/teacher-workspace/attendance", icon: UserCheck },
+          { label: "请假", href: "/teacher-workspace/leave", icon: CalendarCheck },
+        ],
+      },
       {
         label: "教务",
         href: "/education",
@@ -293,7 +306,13 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
   student: {
     title: "学生",
     navItems: [
-      { label: "我的", href: "/my", icon: UserRound },
+      { label: "我的首页", href: "/my", icon: UserRound },
+      { label: "我的课表", href: "/my/timetable", icon: Calendar },
+      { label: "我的作业", href: "/my/homework", icon: BookOpen },
+      { label: "我的积分", href: "/my/points", icon: Trophy },
+      { label: "公告", href: "/my/notices", icon: Megaphone },
+      { label: "请假", href: "/my/leave", icon: CalendarCheck },
+      { label: "我的报告", href: "/my/reports", icon: FileText },
     ],
   },
   office_admin: {
@@ -558,7 +577,9 @@ export default function AppShell({
     "教学评估": "education.teaching_report",
   }
   const CHILD_PERM: Record<string, string> = {
-    "/my": "my.home",
+    "/my": "my.home", "/my/timetable": "my.timetable", "/my/homework": "my.homework",
+    "/my/points": "my.points", "/my/notices": "my.notices", "/my/leave": "my.leave",
+    "/my/reports": "my.reports",
     "/": "overview.dashboard", "/dashboard/slideshow": "overview.slideshow",
     "/education": "education.overview", "/student-management": "education.students",
     "/student-reports": "education.reports", "/parent-management": "education.parents",
@@ -582,6 +603,8 @@ export default function AppShell({
     "/user-management": "system.users", "/center-management": "system.centers",
     "/settings": "system.settings",
     "/teacher-workspace": "education.workspace",
+    "/teacher-workspace/students": "education.workspace", "/teacher-workspace/courses": "education.workspace",
+    "/teacher-workspace/attendance": "education.workspace", "/teacher-workspace/leave": "education.workspace",
     "/teacher-teaching-report": "education.teaching_report",
     "/resource-library": "education.resources",
     "/tv-board": "system.tv_board",

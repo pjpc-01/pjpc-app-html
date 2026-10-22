@@ -186,7 +186,20 @@ async function proxyRequest(method: string, request: NextRequest) {
       const col = collectionOf(pbPath)
       if (session.role === 'student') {
         // ★ 学生：只读 + 只看自己（服务端拼条件，前端改不了）
-        if (method !== 'GET') {
+        // 唯一例外：登录成功后前端要把自己的 loginAttempts/lockedUntil 归零（清失败次数），
+        // 只允许改这两个字段，改别的一律 403。
+        if (method === 'PATCH') {
+          const selfUser = (pbPath.match(/^\/api\/collections\/users\/records\/([^/?#]+)\/?$/) || [])[1]
+          const rawBody = await request.clone().text().catch(() => '')
+          let keys: string[] = []
+          try { keys = Object.keys(JSON.parse(rawBody || '{}')) } catch { keys = ['?'] }
+          const onlyCounters = keys.length > 0 && keys.every((k) => k === 'loginAttempts' || k === 'lockedUntil')
+          if (selfUser && selfUser === String(session.id || '') && onlyCounters) {
+            // 放行（下面用超管转发）
+          } else {
+            return NextResponse.json({ error: '学生账号只能查看' }, { status: 403 })
+          }
+        } else if (method !== 'GET') {
           return NextResponse.json({ error: '学生账号只能查看' }, { status: 403 })
         }
         const sid = String(session.studentId || '')
@@ -228,8 +241,18 @@ async function proxyRequest(method: string, request: NextRequest) {
       } else if (session.role !== 'admin' && col && ADMIN_ONLY.has(col)) {
         // ★ 例外：任何人都能读「自己」的 users 记录（前端要拿姓名/角色/绑定信息）
         const selfId = (pbPath.match(/\/records\/([^/?#]+)/) || [])[1]
-        const isSelfRead = col === 'users' && method === 'GET' && selfId && selfId === String(session.id || '')
-        if (!isSelfRead) {
+        const isSelf = col === 'users' && selfId && selfId === String(session.id || '')
+        const isSelfRead = isSelf && method === 'GET'
+        // 登录成功后前端把自己那条 users 的失败次数归零（loginAttempts/lockedUntil），只放这两个字段
+        let isSelfCounterPatch = false
+        if (isSelf && method === 'PATCH') {
+          const raw = await request.clone().text().catch(() => '')
+          try {
+            const keys = Object.keys(JSON.parse(raw || '{}'))
+            isSelfCounterPatch = keys.length > 0 && keys.every((k) => k === 'loginAttempts' || k === 'lockedUntil')
+          } catch { isSelfCounterPatch = false }
+        }
+        if (!isSelfRead && !isSelfCounterPatch) {
           return NextResponse.json({ error: '没有权限访问该数据' }, { status: 403 })
         }
       }
