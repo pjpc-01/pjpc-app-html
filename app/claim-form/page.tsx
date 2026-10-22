@@ -173,7 +173,7 @@ export default function ClaimFormPage() {
                         <TableCell><Input className="h-8" value={it.no} onChange={e => setItem(i, { no: e.target.value })} /></TableCell>
                         <TableCell><Input className="h-8" type="date" value={it.date} onChange={e => setItem(i, { date: e.target.value })} /></TableCell>
                         <TableCell><Input className="h-8" value={it.desc} onChange={e => setItem(i, { desc: e.target.value })} /></TableCell>
-                        <TableCell><Input className="h-8" type="number" value={it.amount} onChange={e => setItem(i, { amount: Number(e.target.value) })} /></TableCell>
+                        <TableCell><Input className="h-8" type="number" step="0.01" value={it.amount} onChange={e => setItem(i, { amount: Number(e.target.value) })} /></TableCell>
                         <TableCell className="text-center"><input type="checkbox" checked={!!it.receipt} onChange={e => setItem(i, { receipt: e.target.checked })} /></TableCell>
                         <TableCell><Button size="sm" variant="ghost" className="text-red-600 h-8" onClick={() => delItem(i)}><Trash2 className="h-3.5 w-3.5" /></Button></TableCell>
                       </TableRow>

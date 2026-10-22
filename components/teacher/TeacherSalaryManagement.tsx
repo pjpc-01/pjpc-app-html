@@ -2079,6 +2079,7 @@ export default function TeacherSalaryManagement() {
                 <Input
                   id="record_year"
                   type="number"
+              step="0.01"
                   value={recordForm.year || ''}
                   onChange={async (e) => {
                     const yv = parseInt(e.target.value) || 0
