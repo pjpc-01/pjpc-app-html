@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { getPocketBase, authenticateAdmin } from '@/lib/pocketbase'
 
 // 获取薪资参数设置
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const pb = await getPocketBase()
     await authenticateAdmin()
@@ -48,6 +51,9 @@ export async function GET() {
 
 // 保存薪资参数设置
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const pb = await getPocketBase()
     await authenticateAdmin()

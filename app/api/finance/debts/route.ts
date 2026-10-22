@@ -1,3 +1,4 @@
+import { requireRoles } from '@/lib/api-auth'
 import { NextRequest, NextResponse } from "next/server"
 import { getAdminToken } from "@/lib/pb-admin-token"
 
@@ -18,7 +19,9 @@ async function pb(path: string, init: RequestInit = {}) {
 }
 
 /** GET /api/finance/debts — 列出债务 + 已还/剩余 + 汇总 + 历史类型（供联想） */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const [d, p] = await Promise.all([
       pb(`debts/records?perPage=200&sort=-created&filter=${enc("deleted != true")}`),
@@ -66,6 +69,9 @@ export async function GET() {
 
 /** POST /api/finance/debts — 新增 */
 export async function POST(req: NextRequest) {
+  const gate = await requireRoles(req, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const b = await req.json()
     if (!b?.name || String(b.name).trim() === "") {
@@ -94,6 +100,9 @@ export async function POST(req: NextRequest) {
 
 /** PATCH /api/finance/debts?id=xxx — 修改 */
 export async function PATCH(req: NextRequest) {
+  const gate = await requireRoles(req, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const id = new URL(req.url).searchParams.get("id")
     if (!id) return NextResponse.json({ success: false, error: "missing_id" }, { status: 400 })
@@ -113,6 +122,9 @@ export async function PATCH(req: NextRequest) {
 
 /** DELETE /api/finance/debts?id=xxx — 软删除 */
 export async function DELETE(req: NextRequest) {
+  const gate = await requireRoles(req, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const id = new URL(req.url).searchParams.get("id")
     if (!id) return NextResponse.json({ success: false, error: "missing_id" }, { status: 400 })

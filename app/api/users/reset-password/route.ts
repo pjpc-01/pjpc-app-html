@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminToken } from '@/lib/pb-admin-token'
+import { requireRoles } from '@/lib/api-auth'
 
 // 管理员重设用户密码（不依赖 SMTP）
 // 用法：POST { userId, newPassword }
@@ -9,6 +10,9 @@ import { getAdminToken } from '@/lib/pb-admin-token'
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 
 export async function POST(request: NextRequest) {
+  // ★ 只允许管理员：以前这个接口没鉴权，公网谁都能把任何人的密码改掉
+  const gate = await requireRoles(request, ['admin'])
+  if ('error' in gate) return gate.error
   try {
     const body = await request.json().catch(() => ({} as any))
     const userId: string | undefined = body?.userId
@@ -17,8 +21,9 @@ export async function POST(request: NextRequest) {
     if (!userId || !newPassword) {
       return NextResponse.json({ success: false, error: '缺少参数：userId / newPassword' }, { status: 400 })
     }
-    if (typeof newPassword !== 'string' || newPassword.length < 6) {
-      return NextResponse.json({ success: false, error: '密码至少 6 位' }, { status: 400 })
+    if (typeof newPassword !== 'string' || newPassword.length < 8) {
+      // PocketBase 自己就要求 ≥8，这里提前挡，别让用户看到「PB 拒绝（400）」这种天书
+      return NextResponse.json({ success: false, error: '密码至少 8 位' }, { status: 400 })
     }
 
     const token = await getAdminToken()
@@ -34,8 +39,15 @@ export async function POST(request: NextRequest) {
 
     if (!res.ok) {
       const detail = await res.text().catch(() => '')
+      // 把 PB 的字段级原因翻成人话（password: Must be at least 8 characters → 密码至少 8 位）
+      let msg = ''
+      try {
+        const j = JSON.parse(detail)
+        const first = j?.data ? Object.values(j.data)[0] as any : null
+        msg = first?.message || j?.message || ''
+      } catch { /* 不是 JSON 就算了 */ }
       return NextResponse.json(
-        { success: false, error: `PB 拒绝（${res.status}）`, detail: detail.slice(0, 300) },
+        { success: false, error: msg || `PB 拒绝（${res.status}）`, detail: detail.slice(0, 300) },
         { status: res.status }
       )
     }

@@ -1,6 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin'])
+  if ('error' in gate) return gate.error
   try {
     const { email, name, role, password } = await request.json()
 

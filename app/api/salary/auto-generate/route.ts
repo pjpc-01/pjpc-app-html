@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { getPocketBase, authenticateAdmin } from '@/lib/pocketbase'
 import { getSocsoEmployee, getSocsoEmployer, getEisContribution, getPCB } from '@/lib/perkeso-rates'
 
@@ -19,6 +20,9 @@ function calculateEIS(grossSalary: number): number { return getEisContribution(g
 
 // 自动生成月度薪资记录
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const data = await request.json()
     const { year, month, teacher_id, created_by, payment_date } = data

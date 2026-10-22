@@ -1,3 +1,4 @@
+import { requireRoles } from '@/lib/api-auth'
 import { NextRequest, NextResponse } from "next/server"
 
 const PB_URL = process.env.NEXT_PUBLIC_POCKETBASE_URL || "http://127.0.0.1:8090"
@@ -78,6 +79,9 @@ async function computeSpent(
 // Lists budgets with optional month/year filters and computes spent from expenses.
 // ──────────────────────────────────────────────
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const token = await getAdminToken()
     const headers = getHeaders(token)
@@ -184,6 +188,9 @@ export async function GET(request: NextRequest) {
 // POST /api/finance/budgets — create a budget
 // ──────────────────────────────────────────────
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const body = await request.json()
 
@@ -244,6 +251,9 @@ export async function POST(request: NextRequest) {
 // PATCH /api/finance/budgets?id=xxx — update a budget
 // ──────────────────────────────────────────────
 export async function PATCH(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
@@ -314,6 +324,9 @@ export async function PATCH(request: NextRequest) {
 // DELETE /api/finance/budgets?id=xxx — delete a budget
 // ──────────────────────────────────────────────
 export async function DELETE(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")

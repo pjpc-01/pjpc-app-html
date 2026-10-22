@@ -1,11 +1,15 @@
-import { NextResponse } from "next/server"
+import { requireRoles } from '@/lib/api-auth'
+import { NextRequest, NextResponse } from "next/server"
 import { getAdminToken } from "@/lib/pb-admin-token"
 
 const PB_URL = process.env.POCKETBASE_URL || process.env.NEXT_PUBLIC_POCKETBASE_URL || "http://127.0.0.1:8090"
 
+import { NextRequest } from 'next/server'
 export const dynamic = "force-dynamic"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin'])
+  if ('error' in gate) return gate.error
   try {
     // audit_logs 集合权限规则全为 null（本项目有意设计：读写一律走服务端）
     // → 匿名直连会被 403，必须带管理员 token，否则这里永远读到 0 条

@@ -266,7 +266,7 @@ export default function SecureLoginForm() {
 
     try {
       await resetPassword(resetEmail)
-      setSuccess(t("密码重置邮件已发送，请检查您的邮箱。"))
+      setSuccess(t("这台系统没有配置邮件服务，重置邮件不会真的寄出。请直接找办公室或院长帮你重设密码。"))
       setResetEmail("")
     } catch (error: any) {
       setError(error.message)

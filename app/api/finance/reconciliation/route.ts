@@ -1,3 +1,4 @@
+import { requireRoles } from '@/lib/api-auth'
 import { NextRequest, NextResponse } from "next/server"
 
 // Bank reconciliation auto-match API
@@ -73,6 +74,9 @@ function datesWithin(dateA: string, dateB: string, maxDays: number): boolean {
 }
 
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const body = await request.json()
     const { bankAccountId, startDate, endDate, startingBalance, endingBalance } = body

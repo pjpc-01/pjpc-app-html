@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { getPocketBase, authenticateAdmin } from '@/lib/pocketbase'
 
 // 根据绩效评估调整薪资结构
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const data = await request.json()
     const { teacher_id, evaluation_id, adjustment_type, created_by } = data
