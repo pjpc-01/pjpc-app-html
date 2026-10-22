@@ -10,6 +10,8 @@ import StudentProfileView from "@/components/teacher/StudentProfileView"
 import TeacherStats from "@/components/teacher/TeacherStats"
 import ClassSchedule from "@/components/teacher/ClassSchedule"
 import TeacherProfile from "@/components/teacher/TeacherProfile"
+import TodayPanel from "@/components/teacher/TodayPanel"
+import TeacherLeavePanel from "@/components/teacher/TeacherLeavePanel"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -40,6 +42,7 @@ import {
   FileEdit,
   ExternalLink,
   ClipboardCheck,
+  CalendarCheck,
   Info,
   Clock,
   ChevronLeft,
@@ -528,7 +531,12 @@ export default function TeacherWorkspace() {
               id: 'dashboard',
               label: t("今日"),
               icon: BarChart3,
-              content: <TeacherDashboard teacherId={teacher.id} />
+              content: (
+                <div className="space-y-6">
+                  <TodayPanel teacherId={teacher.id} />
+                  <TeacherDashboard teacherId={teacher.id} />
+                </div>
+              )
             },
             {
               id: 'students',
@@ -586,6 +594,12 @@ export default function TeacherWorkspace() {
               label: t("我的考勤与积分"),
               icon: ClipboardCheck,
               content: <AttendanceAndPoints teacherId={teacher.id} teacherName={teacher.name || ''} t={t} />
+            },
+            {
+              id: 'leave',
+              label: t("请假"),
+              icon: CalendarCheck,
+              content: <TeacherLeavePanel teacherId={teacher.id} />
             },
           ]}
           defaultTab={activeTab}

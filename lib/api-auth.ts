@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const POCKETBASE_URL = 'http://127.0.0.1:8090'
 
-export type ApiSession = { id: string; role: string; studentId?: string; internal?: boolean }
+export type ApiSession = { id: string; role: string; studentId?: string; teacherId?: string; name?: string; internal?: boolean }
 
 /**
  * 应用接口（/api/*）的登录校验。
@@ -32,6 +32,8 @@ export async function requireRoles(
   let role = ''
   let id = ''
   let studentId = ''
+  let teacherId = ''
+  let name = ''
   try {
     const r = await fetch(`${POCKETBASE_URL}/api/collections/users/auth-refresh`, {
       method: 'POST',
@@ -44,6 +46,8 @@ export async function requireRoles(
     role = String(d?.record?.role || '')
     id = d?.record?.id || ''
     studentId = d?.record?.student_id || ''
+    teacherId = d?.record?.teacher_id || ''
+    name = String(d?.record?.name || d?.record?.username || '')
   } catch {
     return { error: NextResponse.json({ success: false, error: '鉴权失败' }, { status: 500 }) }
   }
@@ -51,5 +55,5 @@ export async function requireRoles(
   if (!allowedRoles.includes(role)) {
     return { error: NextResponse.json({ success: false, error: '没有权限' }, { status: 403 }) }
   }
-  return { session: { id, role, studentId } }
+  return { session: { id, role, studentId, teacherId, name } }
 }
