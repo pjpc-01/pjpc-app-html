@@ -272,6 +272,74 @@ function AttendanceAndPoints({ teacherId, teacherName, t }: { teacherId: string;
   )
 }
 
+
+/**
+ * 没绑定教师档案时的兜底工作台。
+ *
+ * 以前这里只有一条红色错误条 —— 账号没绑 teachers 记录就整个页面死掉，
+ * 登录后什么都点不了（teacher_test 就是这样）。现在给一个能用的壳：
+ * 说明 + 自己的账号信息 + 常用页面直接入口。
+ */
+function UnboundWorkspace({ user, reason, t }: { user: any; reason: string; t: (k: string) => string }) {
+  const links = [
+    { href: '/student-management', label: t('学生列表'), icon: Users },
+    { href: '/homework', label: t('作业管理'), icon: FileEdit },
+    { href: '/grades', label: t('成绩管理'), icon: ClipboardCheck },
+    { href: '/daily-logs', label: t('每日日志'), icon: FileEdit },
+    { href: '/course-management', label: t('课程管理'), icon: BookOpen },
+    { href: '/student-leave', label: t('学生请假'), icon: Calendar },
+  ]
+  return (
+    <PageLayout
+      title={t('教师工作台')}
+      description={user?.name || user?.email || ''}
+      userRole="teacher"
+      status={t('待绑定档案')}
+      background="bg-gray-50"
+    >
+      <div className="space-y-6">
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            {t('这个账号还没有绑定教师档案，所以看不到课表、学生和考勤。')}
+            <br />
+            {t('请管理员到「用户管理 → 绑定档案」给你选一位教师；绑定后刷新即可。')}
+            {reason ? <span className="block text-xs text-gray-500 mt-1">{reason}</span> : null}
+          </AlertDescription>
+        </Alert>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><User className="h-5 w-5" />{t('我的账号')}</CardTitle>
+            <CardDescription>{t('这是系统记录的账号信息')}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <p><span className="text-gray-500">{t('姓名')}: </span>{user?.name || '-'}</p>
+            <p><span className="text-gray-500">{t('邮箱')}: </span>{user?.email || '-'}</p>
+            <p><span className="text-gray-500">{t('角色')}: </span>{t('教师')}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('可以先用的页面')}</CardTitle>
+            <CardDescription>{t('这些页面按年级/分行取数，不依赖教师档案')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {links.map(l => (
+                <Link key={l.href} href={l.href} className="flex items-center gap-2 rounded-lg border p-3 text-sm hover:bg-gray-50">
+                  <l.icon className="h-4 w-4 text-gray-500" />{l.label}
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </PageLayout>
+  )
+}
+
 export default function TeacherWorkspace() {
   const { t } = useLanguage()
   const router = useRouter()
@@ -360,27 +428,11 @@ export default function TeacherWorkspace() {
   }
 
   if (teacherError) {
-    return (
-      <div className="p-6">
-        <Alert variant="destructive">
-          <AlertDescription>
-            {t("加载教师信息失败:")} {teacherError}
-          </AlertDescription>
-        </Alert>
-      </div>
-    )
+    return <UnboundWorkspace user={user} reason={teacherError} t={t} />
   }
 
   if (!teacher) {
-  return (
-            <div className="p-6">
-        <Alert>
-          <AlertDescription>
-            {t("未找到教师信息，请检查您的账户设置。")}
-          </AlertDescription>
-        </Alert>
-                  </div>
-    )
+    return <UnboundWorkspace user={user} reason="" t={t} />
   }
 
   const menuContent = (() => {
