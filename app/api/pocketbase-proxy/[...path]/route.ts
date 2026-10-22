@@ -218,7 +218,12 @@ async function proxyRequest(method: string, request: NextRequest) {
         // 未知/未开放角色
         return NextResponse.json({ error: '没有权限' }, { status: 403 })
       } else if (session.role !== 'admin' && col && ADMIN_ONLY.has(col)) {
-        return NextResponse.json({ error: '没有权限访问该数据' }, { status: 403 })
+        // ★ 例外：任何人都能读「自己」的 users 记录（前端要拿姓名/角色/绑定信息）
+        const selfId = (pbPath.match(/\/records\/([^/?#]+)/) || [])[1]
+        const isSelfRead = col === 'users' && method === 'GET' && selfId && selfId === String(session.id || '')
+        if (!isSelfRead) {
+          return NextResponse.json({ error: '没有权限访问该数据' }, { status: 403 })
+        }
       }
     }
 
