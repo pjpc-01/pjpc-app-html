@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import PocketBase from 'pocketbase'
 import { authenticateAdmin } from '@/lib/auth-utils'
 
 const pb = new PocketBase(process.env.POCKETBASE_URL || 'http://pjpc.tplinkdns.com:8090')
 
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin'])
+  if ('error' in gate) return gate.error
+
   try {
     console.log('🔍 开始获取用户数据...')
     

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 import { getPocketBase } from '@/lib/pocketbase'
 import { authenticateAdmin } from '@/lib/auth-utils'
 import { TeacherPerformanceEvaluation } from '@/lib/pocketbase-schema'
 
 // 获取教师绩效评估记录
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin', 'teacher'])
+  if ('error' in gate) return gate.error
+
   try {
     const pb = await getPocketBase()
     await authenticateAdmin(pb)
@@ -56,6 +60,9 @@ export async function GET(request: NextRequest) {
 
 // 创建绩效评估
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin', 'teacher'])
+  if ('error' in gate) return gate.error
+
   try {
     const pb = await getPocketBase()
     await authenticateAdmin(pb)
@@ -126,6 +133,9 @@ export async function POST(request: NextRequest) {
 
 // 更新绩效评估
 export async function PUT(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin', 'teacher'])
+  if ('error' in gate) return gate.error
+
   try {
     const pb = await getPocketBase()
     await authenticateAdmin(pb)
@@ -177,6 +187,9 @@ export async function PUT(request: NextRequest) {
 
 // 删除绩效评估
 export async function DELETE(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin', 'teacher'])
+  if ('error' in gate) return gate.error
+
   try {
     const pb = await getPocketBase()
     await authenticateAdmin(pb)

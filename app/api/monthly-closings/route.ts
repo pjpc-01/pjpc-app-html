@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireRoles } from '@/lib/api-auth'
 
 // ─────────────────────────────────────────────────────────────
 // 月度结账（月结 / 关账）
@@ -213,6 +214,9 @@ async function compute(month: string, kind: string, token: string) {
 }
 
 export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const sp = new URL(request.url).searchParams
     const token = await pbToken()
@@ -244,6 +248,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const body = await request.json()
     const month = String(body.month || '')

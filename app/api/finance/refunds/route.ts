@@ -1,3 +1,4 @@
+import { requireRoles } from '@/lib/api-auth'
 import { NextRequest, NextResponse } from "next/server"
 
 const PB_URL = process.env.NEXT_PUBLIC_POCKETBASE_URL || "http://127.0.0.1:8090"
@@ -28,7 +29,9 @@ function pbUrl(collection: string, id?: string) {
 }
 
 // GET /api/finance/refunds — list all refunds (sorted -created)
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
   try {
     const token = await getAdminToken()
     const res = await fetch(pbUrl("refunds") + "?sort=-created&perPage=500", {
@@ -49,6 +52,9 @@ export async function GET() {
 
 // POST /api/finance/refunds — create a refund
 export async function POST(request: NextRequest) {
+  const gate = await requireRoles(request, ['admin', 'office_admin'])
+  if ('error' in gate) return gate.error
+
   try {
     const body = await request.json()
 
