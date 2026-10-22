@@ -148,12 +148,12 @@ export default function NewInventoryItemPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>{t("初始库存")}</Label>
-                  <Input type="number" min="0" value={form.stock}
+                  <Input type="number" step="1" min="0" value={form.stock}
                     onChange={e => updateField("stock", e.target.value)} />
                 </div>
                 <div>
                   <Label>{t("最低库存预警")}</Label>
-                  <Input type="number" min="0" value={form.minStock}
+                  <Input type="number" step="1" min="0" value={form.minStock}
                     onChange={e => updateField("minStock", e.target.value)}
                     placeholder={t("低于此数量时高亮提醒")} />
                 </div>

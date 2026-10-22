@@ -483,6 +483,7 @@ export default function TeacherForm({
               <Input
                 id="totalChild"
                 type="number"
+              step="0.01"
                 min="0"
                 value={formData.totalChild}
                 onChange={(e) => handleInputChange('totalChild', parseInt(e.target.value) || 0)}

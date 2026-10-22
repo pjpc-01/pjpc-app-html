@@ -937,9 +937,11 @@ export default function AppShell({
         <div className="flex-shrink-0 border-t border-gray-200/30">
           {/* Center filter */}
           <div className="px-3 pt-3 pb-2">
-            <p className="text-[10px] text-gray-400/40 uppercase tracking-wider font-semibold px-2 mb-1.5">{t('common.center_filter')}</p>
+            {userRole && (
+              <p className="text-[10px] text-gray-400/40 uppercase tracking-wider font-semibold px-2 mb-1.5">{t('common.center_filter')}</p>
+            )}
             <div className="flex flex-wrap gap-1">
-              {centers.length === 0 ? (
+              {!userRole ? null : centers.length === 0 ? (
                 <div className="text-[10px] text-gray-400/40 px-2">{t('teacher.loading')}</div>
               ) : (
                 [{ id: "all", code: "全部", icon: Building2 } as const, ...centers.map(c => ({ id: c.id, code: c.code, icon: School } as const))].map((c) => (

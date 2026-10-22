@@ -253,7 +253,7 @@ export default function InventoryItemDetailPage() {
           <form onSubmit={handleStockSubmit} className="space-y-4">
             <div>
               <Label>{t("数量 *")}</Label>
-              <Input type="number" min="1" value={txForm.quantity}
+              <Input type="number" step="1" min="1" value={txForm.quantity}
                 onChange={e => setTxForm(prev => ({ ...prev, quantity: e.target.value }))}
                 placeholder={`入库/出库数量（${item.unit || "件"}）`} required />
             </div>

@@ -207,6 +207,7 @@ function CourseFormDialog({
               <Input
                 id="duration"
                 type="number"
+                step="1"
                 value={form.duration || 60}
                 onChange={(e) => setForm({ ...form, duration: parseInt(e.target.value) || 60 })}
               />
@@ -216,6 +217,7 @@ function CourseFormDialog({
               <Input
                 id="max_students"
                 type="number"
+                step="1"
                 value={form.max_students || 30}
                 onChange={(e) => setForm({ ...form, max_students: parseInt(e.target.value) || 30 })}
               />

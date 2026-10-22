@@ -270,7 +270,7 @@ export default function DebtManagement() {
             </div>
             <div>
               <Label>{t("每月还款日")}</Label>
-              <Input type="number" min={1} max={31} value={form.paymentDay} onChange={(e) => setForm((p: any) => ({ ...p, paymentDay: e.target.value }))} placeholder={t("几号（1-31）")} />
+              <Input type="number" step="0.01" min={1} max={31} value={form.paymentDay} onChange={(e) => setForm((p: any) => ({ ...p, paymentDay: e.target.value }))} placeholder={t("几号（1-31）")} />
             </div>
             <div>
               <Label>{t("状态")}</Label>

@@ -45,7 +45,7 @@ function isAuthEndpoint(path: string): boolean {
 // ─── 守门：谁在调、能碰什么 ─────────────────────────────────────────────
 // 原来所有请求都套 superuser token → 不带任何登录就能读工资表/学生/发票（公网实测 200）。
 // 现在：除登录类接口与图片文件外，一律要求有效登录，并按角色挡敏感集合。
-type Session = { id: string; role: string; studentId?: string } | null
+type Session = { id: string; role: string; studentId?: string; name?: string } | null
 const sessionCache = new Map<string, { s: Session; exp: number }>()
 
 async function getSession(request: NextRequest): Promise<Session> {
@@ -70,10 +70,48 @@ async function getSession(request: NextRequest): Promise<Session> {
       id: d?.record?.id || '',
       role: String(d?.record?.role || ''),
       studentId: d?.record?.student_id || '',
+      name: String(d?.record?.name || d?.record?.username || d?.record?.email || ''),
     }
     sessionCache.set(token, { s, exp: Date.now() + 60_000 })
     return s
   } catch { return null }
+}
+
+/**
+ * 写一条代理层审计：补齐「谁改的」。
+ *
+ * 为什么在代理写：PB 0.39.6 的 pb_hooks 拿不到请求头，钩子里只能记「改了什么」，
+ * 记不到人。代理这层既有登录态（id/姓名/角色），又有 IP 和 UA。
+ * action 用 `proxy:<method>:<collection>` 前缀，跟钩子自己写的行区分开。
+ */
+async function writeProxyAudit(opts: {
+  method: string
+  collection: string
+  recordId: string
+  actor: { id: string; name: string; role: string }
+  request: NextRequest
+}) {
+  try {
+    const tok = await getAdminToken()
+    if (!tok) return
+    const { method, collection, recordId, actor, request } = opts
+    const ip = String(request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '')
+      .split(',')[0].trim().slice(0, 60)
+    const who = actor.name || actor.id || '未知'
+    await fetch(`${POCKETBASE_URL}/api/collections/audit_logs/records`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok}` },
+      body: JSON.stringify({
+        action: `proxy:${method.toLowerCase()}:${collection}`,
+        description: `${collection} #${recordId || '-'} | ${method} | ${who}`,
+        user_id: actor.id || '',
+        user_name: actor.name || '',
+        ip_address: ip,
+        user_agent: String(request.headers.get('user-agent') || '').slice(0, 300),
+        metadata: JSON.stringify({ collection, record_id: recordId, method, role: actor.role, via: 'proxy' }),
+      }),
+    })
+  } catch { /* 记日志失败不影响业务 */ }
 }
 
 /** 从 /api/collections/<name>/... 取出集合名 */
@@ -125,6 +163,7 @@ async function proxyRequest(method: string, request: NextRequest) {
   let targetSearch = method === 'GET' ? url.search : ''
 
   const headers: Record<string, string> = {}
+  let auditActor: { id: string; name: string; role: string } | null = null
   let body: any // string | ArrayBuffer（multipart 上传要用 arrayBuffer）
 
   if (!isAuthEndpoint(pbPath)) {
@@ -142,6 +181,8 @@ async function proxyRequest(method: string, request: NextRequest) {
         return NextResponse.json({ error: '请先登录' }, { status: 401 })
       }
     } else {
+      auditActor = { id: String(session.id || ''), name: String(session.name || ''), role: String(session.role || '') }
+      if (isInternal) auditActor.name = '系统内部'
       const col = collectionOf(pbPath)
       if (session.role === 'student') {
         // ★ 学生：只读 + 只看自己（服务端拼条件，前端改不了）
@@ -227,26 +268,29 @@ async function proxyRequest(method: string, request: NextRequest) {
   const targetUrl = `${POCKETBASE_URL}${targetPath}${targetSearch}`
   const response = await fetch(targetUrl, { method, headers, body })
 
-  if (response.status === 204) {
-    // 删除排班也要记一条：204 没有 body，记录 id 从路径里取
-    if (pbPath.includes('/collections/schedules/records') && method === 'DELETE') {
-      try {
-        const rid = String(pbPath.split('/records/')[1] || '').split('?')[0]
-        const adminTok = await getAdminToken()
-        if (adminTok) {
-          await fetch(`${POCKETBASE_URL}/api/collections/audit_logs/records`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminTok}` },
-            body: JSON.stringify({
-              action: 'delete:schedules',
-              description: `schedules #${rid} | DELETE via proxy`,
-              user_name: headers['x-actor'] || '',
-              metadata: JSON.stringify({ collection: 'schedules', record_id: rid, action: 'delete', via: 'proxy' }),
-            }),
-          })
+  // ★ 统一审计：PB 0.39.6 的 hooks 拿不到请求头，记不到「谁改的」→ 在代理这层补记
+  if ((method === 'POST' || method === 'PATCH' || method === 'DELETE') && response.ok) {
+    try {
+      const col = collectionOf(pbPath)
+      if (col && col !== 'audit_logs') {
+        let rid = ''
+        const m = pbPath.match(/\/records\/([^/?#]+)/)
+        if (m) rid = m[1]
+        if (!rid && method === 'POST') {
+          const cloned = response.clone()
+          const d = await cloned.json().catch(() => null)
+          rid = d?.id || ''
         }
-      } catch { /* 记日志失败不影响删除本身 */ }
-    }
+        await writeProxyAudit({
+          method, collection: col, recordId: rid,
+          actor: auditActor || { id: '', name: '', role: 'anonymous' },
+          request,
+        })
+      }
+    } catch { /* 审计失败绝不影响业务 */ }
+  }
+
+  if (response.status === 204) {
     return new NextResponse(null, { status: 204 })
   }
 

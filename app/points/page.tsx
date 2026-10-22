@@ -271,7 +271,7 @@ export default function PointsPage() {
                     <option value="subtract">{t("减少")}</option>
                     <option value="set">{t("设置为")}</option>
                   </select>
-                  <Input type="number" min={0} value={batchAmount} onChange={e => setBatchAmount(e.target.value)}
+                  <Input type="number" step="1" min={0} value={batchAmount} onChange={e => setBatchAmount(e.target.value)}
                     className="w-20 h-8 text-sm" placeholder={t("数量")} />
                   <Input
                     value={batchReason}

@@ -330,7 +330,7 @@ export default function GradesManagementPage() {
                               const cellKey = `${s.id}-${subj}`
                               const isEditing = editingCell === cellKey
                               if (isEditing) {
-                                return <form onSubmit={e => { e.preventDefault(); handleCellSave(s.id, subj) }} className="flex items-center gap-1"><Input type="number" min={0} max={100} value={editCellScore} onChange={e => setEditCellScore(e.target.value)} className="w-14 h-6 text-xs p-1" autoFocus onBlur={() => handleCellSave(s.id, subj)} /></form>
+                                return <form onSubmit={e => { e.preventDefault(); handleCellSave(s.id, subj) }} className="flex items-center gap-1"><Input type="number" step="0.01" min={0} max={100} value={editCellScore} onChange={e => setEditCellScore(e.target.value)} className="w-14 h-6 text-xs p-1" autoFocus onBlur={() => handleCellSave(s.id, subj)} /></form>
                               }
                               if (d) {
                                 return <span onClick={() => { setEditingCell(cellKey); setEditCellScore(String(d.score)) }} className={`text-xs font-mono cursor-pointer hover:bg-indigo-50 rounded px-1 -mx-1 ${d.score >= 80 ? "text-emerald-600" : d.score >= 50 ? "text-slate-700" : "text-red-600"}`}>{d.score}<span className="text-[10px] ml-0.5 text-slate-400">{d.letter}</span></span>

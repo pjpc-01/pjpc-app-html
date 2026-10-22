@@ -687,6 +687,7 @@ export default function TeacherPerformanceManagement() {
                 <Input
                   id="year"
                   type="number"
+              step="0.01"
                   value={evaluationForm.year}
                   onChange={(e) => setEvaluationForm(prev => ({ 
                     ...prev, 
