@@ -521,90 +521,12 @@ export default function TeacherWorkspace() {
       )}
 
       {menuItem ? (
-        <div className="space-y-6">
-          {menuContent}
-        </div>
+        <div className="space-y-6">{menuContent}</div>
       ) : (
-        <TabbedPage
-          tabs={[
-            {
-              id: 'dashboard',
-              label: t("今日"),
-              icon: BarChart3,
-              content: (
-                <div className="space-y-6">
-                  <TodayPanel teacherId={teacher.id} />
-                  <TeacherDashboard teacherId={teacher.id} />
-                </div>
-              )
-            },
-            {
-              id: 'students',
-              label: t("我的学生"),
-              icon: Users,
-              content: <StudentProfileView teacherId={teacher.id} />
-            },
-            {
-              id: 'courses',
-              label: t("我的课程"),
-              icon: Calendar,
-              content: (
-                <div className="space-y-6">
-                  <ClassSchedule teacherId={teacher.id} />
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <FileEdit className="h-5 w-5" />
-                        {t("作业管理")}
-                      </CardTitle>
-                      <CardDescription>{t("布置、查看和批改学生作业")}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Card className="bg-blue-50 border-blue-200 cursor-pointer hover:shadow-md transition-shadow"
-                          onClick={() => window.open('/homework', '_blank')}>
-                          <CardContent className="pt-6 text-center">
-                            <FileEdit className="h-10 w-10 mx-auto mb-3 text-blue-600" />
-                            <h3 className="font-medium">{t("作业总览")}</h3>
-                            <p className="text-sm text-muted-foreground mt-1">{t("查看所有作业和提交状态")}</p>
-                          </CardContent>
-                        </Card>
-                        <Card className="bg-green-50 border-green-200 cursor-pointer hover:shadow-md transition-shadow"
-                          onClick={() => window.open('/homework/new', '_blank')}>
-                          <CardContent className="pt-6 text-center">
-                            <BookOpen className="h-10 w-10 mx-auto mb-3 text-green-600" />
-                            <h3 className="font-medium">{t("布置新作业")}</h3>
-                            <p className="text-sm text-muted-foreground mt-1">{t("为学生布置新的作业和练习")}</p>
-                          </CardContent>
-                        </Card>
-                      </div>
-                      <div className="mt-4 text-center">
-                        <Button variant="outline" onClick={() => window.open('/homework', '_blank')}>
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          {t("打开完整作业管理")}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )
-            },
-            {
-              id: 'attendance',
-              label: t("我的考勤与积分"),
-              icon: ClipboardCheck,
-              content: <AttendanceAndPoints teacherId={teacher.id} teacherName={teacher.name || ''} t={t} />
-            },
-            {
-              id: 'leave',
-              label: t("请假"),
-              icon: CalendarCheck,
-              content: <TeacherLeavePanel teacherId={teacher.id} />
-            },
-          ]}
-          defaultTab={activeTab}
-          onTabChange={setActiveTab}
-        />
+        <div className="space-y-6">
+          <TodayPanel teacherId={teacher.id} />
+          <TeacherDashboard teacherId={teacher.id} />
+        </div>
       )}
     </PageLayout>
   )

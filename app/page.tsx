@@ -64,6 +64,13 @@ export default function Dashboard() {
     }
   }, [loading, userProfile?.role, router])
 
+  // 教师角色：首页就是工作台，统一落到 /teacher-workspace（导航高亮才对得上）
+  useEffect(() => {
+    if (!loading && userProfile?.role === "teacher") {
+      router.replace("/teacher-workspace")
+    }
+  }, [loading, userProfile?.role, router])
+
   // 学生角色：首页没他们的东西，直接去学生中心（/my）
   useEffect(() => {
     if (!loading && userProfile?.role === "student") {
