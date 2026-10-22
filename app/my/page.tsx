@@ -31,7 +31,7 @@ export default function MyPage() {
       try {
         const [rMe, rPts, rLogs, rRep, rAtt] = await Promise.all([
           fetch(`${API}/students/records?perPage=1`),
-          fetch(`${API}/points/records?perPage=1&sort=-updated`),
+          fetch(`/api/my/summary`),
           fetch(`${API}/point_logs/records?perPage=10&sort=-created`),
           fetch(`${API}/student_reports/records?perPage=20&sort=-created`),
           fetch(`${API}/student_attendance/records?perPage=30&sort=-date`),
@@ -42,7 +42,13 @@ export default function MyPage() {
         }
         const dMe = await rMe.json()
         setMe(dMe?.items?.[0] || null)
-        setPts((await rPts.json().catch(() => ({})))?.items?.[0] || null)
+        const dSum = await rPts.json().catch(() => ({}))
+        setPts(dSum?.success ? {
+          total_points: dSum.student?.points ?? 0,
+          monthly_points: dSum.monthly_points ?? 0,
+          points_enabled: dSum.student?.points_enabled !== false,
+          present_total: dSum.attendance?.present_total ?? 0,
+        } : null)
         setLogs((await rLogs.json().catch(() => ({})))?.items || [])
         setReports((await rRep.json().catch(() => ({})))?.items || [])
         setAtt((await rAtt.json().catch(() => ({})))?.items || [])
@@ -97,7 +103,7 @@ export default function MyPage() {
               </Card>
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm text-gray-500">{t("出勤天数")}</CardTitle></CardHeader>
-                <CardContent><div className="text-3xl font-semibold">{presentDays}</div></CardContent>
+                <CardContent><div className="text-3xl font-semibold">{(pts as any)?.present_total ?? presentDays}</div></CardContent>
               </Card>
             </div>
 
