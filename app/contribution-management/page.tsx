@@ -25,7 +25,8 @@ export default function ContributionManagementPage() {
   const [items, setItems] = useState<any[]>([])
   const [rewards, setRewards] = useState<any[]>([])
   const [pending, setPending] = useState<any[]>([])
-  const [rank, setRank] = useState<any>({ list: [], total_points: 0, students: 0 })
+  const [rank, setRank] = useState<any>({ overall: { list: [], total_points: 0, students: 0 }, groups: [] })
+  const [rankCenter, setRankCenter] = useState<string>("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [msg, setMsg] = useState("")
@@ -57,7 +58,7 @@ export default function ContributionManagementPage() {
       setItems(da.items || [])
       setRewards(db.items || [])
       setPending(dc.items || [])
-      if (d.ok && dd?.success) setRank({ list: dd.list || [], total_points: dd.total_points || 0, students: dd.students || 0 })
+      if (d.ok && dd?.success) setRank({ overall: dd.overall || { list: [], total_points: 0, students: 0 }, groups: dd.groups || [] })
       setError("")
     } catch (e: any) {
       setError(String(e?.message || e))
@@ -215,52 +216,74 @@ export default function ContributionManagementPage() {
               </CardContent>
             </Card>
 
-            {/* 学生贡献榜 */}
+            {/* 学生贡献榜（按中心分） */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base"><Trophy className="h-4 w-4" />{t("学生贡献榜")}</CardTitle>
                 <CardDescription>
-                  {t("共")} {rank.students} {t("人参与")} · {t("合计")} {rank.total_points} {t("分")} · {t("占比按全校贡献算")}
+                  {(() => {
+                    const v = rankCenter ? (rank.groups || []).find((g: any) => g.center === rankCenter) : rank.overall
+                    const total = v?.total_points || 0
+                    const count = v?.students || 0
+                    return `${rankCenter ? rankCenter : t("全校")} · ${t("共")} ${count} ${t("人参与")} · ${t("合计")} ${total} ${t("分")}`
+                  })()}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                {rank.list.length === 0 ? (
-                  <p className="text-sm text-gray-500 py-2">{t("还没有学生贡献积分")}</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[560px] text-sm">
-                      <thead>
-                        <tr className="border-b text-left text-xs text-gray-500">
-                          <th className="py-2 pr-2 w-10">#</th>
-                          <th className="py-2 pr-2">{t("学生")}</th>
-                          <th className="py-2 pr-2">{t("中心")}</th>
-                          <th className="py-2 pr-2 text-right">{t("累计贡献")}</th>
-                          <th className="py-2 pr-2 w-40">{t("占比")}</th>
-                          <th className="py-2 text-right">{t("次数")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rank.list.map((x: any, i: number) => (
-                          <tr key={x.student_id_record} className="border-b last:border-0">
-                            <td className="py-2 pr-2 text-gray-400">{i + 1}</td>
-                            <td className="py-2 pr-2 font-medium">{x.name}</td>
-                            <td className="py-2 pr-2 text-gray-500">{x.center || "-"}</td>
-                            <td className="py-2 pr-2 text-right font-semibold text-orange-600">{x.points}</td>
-                            <td className="py-2 pr-2">
-                              <div className="flex items-center gap-2">
-                                <div className="h-1.5 flex-1 overflow-hidden rounded bg-gray-100">
-                                  <div className="h-full bg-orange-500" style={{ width: `${Math.min(100, x.percent)}%` }} />
-                                </div>
-                                <span className="w-12 text-right text-xs text-gray-600">{x.percent}%</span>
-                              </div>
-                            </td>
-                            <td className="py-2 text-right text-gray-500">{x.times}</td>
+              <CardContent className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setRankCenter("")}
+                    className={`rounded-md px-3 py-1.5 text-sm ${rankCenter === "" ? "bg-gray-900 text-white" : "border text-gray-600 hover:bg-gray-50"}`}
+                  >{t("全校")}</button>
+                  {(rank.groups || []).map((g: any) => (
+                    <button
+                      key={g.center}
+                      onClick={() => setRankCenter(g.center)}
+                      className={`rounded-md px-3 py-1.5 text-sm ${rankCenter === g.center ? "bg-gray-900 text-white" : "border text-gray-600 hover:bg-gray-50"}`}
+                    >{g.center} <span className="text-xs opacity-70">{g.total_points}</span></button>
+                  ))}
+                </div>
+
+                {(() => {
+                  const v = rankCenter ? (rank.groups || []).find((g: any) => g.center === rankCenter) : rank.overall
+                  const list = v?.list || []
+                  if (list.length === 0) return <p className="text-sm text-gray-500 py-2">{t("还没有学生贡献积分")}</p>
+                  return (
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[560px] text-sm">
+                        <thead>
+                          <tr className="border-b text-left text-xs text-gray-500">
+                            <th className="py-2 pr-2 w-10">#</th>
+                            <th className="py-2 pr-2">{t("学生")}</th>
+                            {!rankCenter && <th className="py-2 pr-2">{t("中心")}</th>}
+                            <th className="py-2 pr-2 text-right">{t("累计贡献")}</th>
+                            <th className="py-2 pr-2 w-40">{t("占比")}</th>
+                            <th className="py-2 text-right">{t("次数")}</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                        </thead>
+                        <tbody>
+                          {list.map((x: any, i: number) => (
+                            <tr key={x.student_id_record} className="border-b last:border-0">
+                              <td className="py-2 pr-2 text-gray-400">{i + 1}</td>
+                              <td className="py-2 pr-2 font-medium">{x.name}</td>
+                              {!rankCenter && <td className="py-2 pr-2 text-gray-500">{x.center || "-"}</td>}
+                              <td className="py-2 pr-2 text-right font-semibold text-orange-600">{x.points}</td>
+                              <td className="py-2 pr-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-1.5 flex-1 overflow-hidden rounded bg-gray-100">
+                                    <div className="h-full bg-orange-500" style={{ width: `${Math.min(100, x.percent)}%` }} />
+                                  </div>
+                                  <span className="w-12 text-right text-xs text-gray-600">{x.percent}%</span>
+                                </div>
+                              </td>
+                              <td className="py-2 text-right text-gray-500">{x.times}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )
+                })()}
               </CardContent>
             </Card>
 
