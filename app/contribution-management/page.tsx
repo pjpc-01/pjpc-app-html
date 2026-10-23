@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/contexts/language-context"
-import { AlertCircle, Gift, Heart, CheckCircle2 } from "lucide-react"
+import { AlertCircle, Gift, Heart, CheckCircle2, ImagePlus } from "lucide-react"
 
 const API = "/api/pocketbase-proxy/api/collections"
 
@@ -219,24 +219,37 @@ export default function ContributionManagementPage() {
                 <CardDescription>{t("学生把积分投到这些物品上")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-2 items-end">
-                  <div className="grid gap-1.5 md:col-span-2">
-                    <Label>{t("名称")}</Label>
-                    <Input value={iName} onChange={(e) => setIName(e.target.value)} placeholder={t("例如：电子琴")} />
+                <div className="space-y-2 rounded-lg border bg-gray-50/60 p-3">
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+                    <div className="grid gap-1.5 md:col-span-2">
+                      <Label>{t("名称")}</Label>
+                      <Input value={iName} onChange={(e) => setIName(e.target.value)} placeholder={t("例如：电子琴")} />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>{t("目标积分")}</Label>
+                      <Input type="number" min={0} step={1} value={iTarget} onChange={(e) => setITarget(e.target.value)} placeholder="2000" />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>{t("中心")}</Label>
+                      <Input value={iCenter} onChange={(e) => setICenter(e.target.value)} placeholder="PU1 / BATU14" />
+                    </div>
                   </div>
-                  <div className="grid gap-1.5">
-                    <Label>{t("目标积分")}</Label>
-                    <Input type="number" min={0} step={1} value={iTarget} onChange={(e) => setITarget(e.target.value)} />
-                  </div>
-                  <div className="grid gap-1.5">
-                    <Label>{t("中心")}</Label>
-                    <Input value={iCenter} onChange={(e) => setICenter(e.target.value)} placeholder="PU1 / BATU14" />
-                  </div>
-                  <Button disabled={busy} onClick={addItem}>{t("添加")}</Button>
-                  <div className="grid gap-1.5 md:col-span-5">
-                    <Label>{t("照片")}</Label>
-                    <input type="file" accept="image/*" onChange={(e) => setIImg(e.target.files?.[0] || null)}
-                      className="text-sm file:mr-2 file:rounded file:border file:px-2 file:py-1 file:text-xs" />
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+                    <div className="grid gap-1.5 md:col-span-2">
+                      <Label>{t("说明")}</Label>
+                      <Input value={iDesc} onChange={(e) => setIDesc(e.target.value)} placeholder={t("一句话说明，可不填")} />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>{t("照片")}</Label>
+                      <label className="flex h-9 cursor-pointer items-center gap-2 rounded-md border bg-white px-3 text-sm text-gray-600 hover:bg-gray-50">
+                        <ImagePlus className="h-4 w-4 shrink-0 text-gray-400" />
+                        <span className="truncate">{iImg ? iImg.name : t("选择照片")}</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => setIImg(e.target.files?.[0] || null)} />
+                      </label>
+                    </div>
+                    <div className="flex items-end">
+                      <Button className="w-full" disabled={busy} onClick={addItem}>{t("添加")}</Button>
+                    </div>
                   </div>
                 </div>
                 {items.length === 0 ? <p className="text-sm text-gray-500">{t("还没有物品")}</p> : (
@@ -246,7 +259,7 @@ export default function ContributionManagementPage() {
                         <div className="relative aspect-square w-full bg-gray-100">
                           {x.image
                             ? <img src={`/api/pocketbase-proxy/api/files/${x.collectionId}/${x.id}/${x.image}`} alt={x.name} className="h-full w-full object-cover" />
-                            : <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">{t("无图")}</div>}
+                            : <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-xs text-gray-400"><ImagePlus className="h-5 w-5" />{t("无图")}</div>}
                         </div>
                         <div className="flex flex-1 flex-col gap-2 p-3">
                           <p className="line-clamp-2 min-h-[2.5rem] text-sm font-medium">{x.name}</p>
@@ -256,14 +269,14 @@ export default function ContributionManagementPage() {
                           }`}>
                             {x.status === "active" ? t("进行中") : x.status === "achieved" ? t("已完成") : t("已关闭")}
                           </span>
-                          <div className="mt-auto flex items-center gap-1 pt-1">
-                            <label className="flex-1 cursor-pointer rounded border px-2 py-1 text-center text-xs hover:bg-gray-50">
+                          <div className="mt-auto flex items-center gap-2 pt-1">
+                            <label className="flex-1 cursor-pointer rounded border px-2 py-1.5 text-center text-xs hover:bg-gray-50">
                               {t("换照片")}
                               <input type="file" accept="image/*" className="hidden"
                                 onChange={(e) => { const f = e.target.files?.[0]; if (f) changeImage("contribution_items", x.id, f) }} />
                             </label>
                             {x.status === "active" && (
-                              <button className="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50" disabled={busy} onClick={() => setStatus(x, "closed")}>{t("关闭")}</button>
+                              <button className="flex-1 rounded border px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50" disabled={busy} onClick={() => setStatus(x, "closed")}>{t("关闭")}</button>
                             )}
                           </div>
                         </div>
@@ -280,24 +293,37 @@ export default function ContributionManagementPage() {
                 <CardDescription>{t("学生用贡献积分换这些")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-2 items-end">
-                  <div className="grid gap-1.5 md:col-span-2">
-                    <Label>{t("名称")}</Label>
-                    <Input value={rName} onChange={(e) => setRName(e.target.value)} placeholder={t("例如：笔记本")} />
+                <div className="space-y-2 rounded-lg border bg-gray-50/60 p-3">
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+                    <div className="grid gap-1.5 md:col-span-2">
+                      <Label>{t("名称")}</Label>
+                      <Input value={rName} onChange={(e) => setRName(e.target.value)} placeholder={t("例如：笔记本")} />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>{t("需要贡献积分")}</Label>
+                      <Input type="number" min={0} step={1} value={rCost} onChange={(e) => setRCost(e.target.value)} placeholder="120" />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>{t("库存")}</Label>
+                      <Input type="number" min={0} step={1} value={rStock} onChange={(e) => setRStock(e.target.value)} placeholder={t("留空=不限")} />
+                    </div>
                   </div>
-                  <div className="grid gap-1.5">
-                    <Label>{t("需要贡献积分")}</Label>
-                    <Input type="number" min={0} step={1} value={rCost} onChange={(e) => setRCost(e.target.value)} />
-                  </div>
-                  <div className="grid gap-1.5">
-                    <Label>{t("库存")}</Label>
-                    <Input type="number" min={0} step={1} value={rStock} onChange={(e) => setRStock(e.target.value)} placeholder={t("留空=不限")} />
-                  </div>
-                  <Button disabled={busy} onClick={addReward}>{t("添加")}</Button>
-                  <div className="grid gap-1.5 md:col-span-5">
-                    <Label>{t("照片")}</Label>
-                    <input type="file" accept="image/*" onChange={(e) => setRImg(e.target.files?.[0] || null)}
-                      className="text-sm file:mr-2 file:rounded file:border file:px-2 file:py-1 file:text-xs" />
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+                    <div className="grid gap-1.5 md:col-span-2">
+                      <Label>{t("说明")}</Label>
+                      <Input value={rDesc} onChange={(e) => setRDesc(e.target.value)} placeholder={t("一句话说明，可不填")} />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>{t("照片")}</Label>
+                      <label className="flex h-9 cursor-pointer items-center gap-2 rounded-md border bg-white px-3 text-sm text-gray-600 hover:bg-gray-50">
+                        <ImagePlus className="h-4 w-4 shrink-0 text-gray-400" />
+                        <span className="truncate">{rImg ? rImg.name : t("选择照片")}</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => setRImg(e.target.files?.[0] || null)} />
+                      </label>
+                    </div>
+                    <div className="flex items-end">
+                      <Button className="w-full" disabled={busy} onClick={addReward}>{t("添加")}</Button>
+                    </div>
                   </div>
                 </div>
                 {rewards.length === 0 ? <p className="text-sm text-gray-500">{t("还没有物品")}</p> : (
@@ -307,19 +333,19 @@ export default function ContributionManagementPage() {
                         <div className="relative aspect-square w-full bg-gray-100">
                           {x.image
                             ? <img src={`/api/pocketbase-proxy/api/files/${x.collectionId}/${x.id}/${x.image}`} alt={x.name} className="h-full w-full object-cover" />
-                            : <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">{t("无图")}</div>}
+                            : <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-xs text-gray-400"><ImagePlus className="h-5 w-5" />{t("无图")}</div>}
                         </div>
                         <div className="flex flex-1 flex-col gap-2 p-3">
                           <p className="line-clamp-2 min-h-[2.5rem] text-sm font-medium">{x.name}</p>
                           <p className="text-sm font-semibold text-orange-600">{x.cost_points} <span className="text-xs font-normal text-gray-500">{t("贡献积分")}</span></p>
                           <p className="text-xs text-gray-500">{x.stock === null || x.stock === undefined ? t("不限量") : `${t("剩")} ${x.stock}`}{x.status !== "active" ? ` · ${t("已下架")}` : ""}</p>
-                          <div className="mt-auto flex items-center gap-1 pt-1">
-                            <label className="flex-1 cursor-pointer rounded border px-2 py-1 text-center text-xs hover:bg-gray-50">
+                          <div className="mt-auto flex items-center gap-2 pt-1">
+                            <label className="flex-1 cursor-pointer rounded border px-2 py-1.5 text-center text-xs hover:bg-gray-50">
                               {t("换照片")}
                               <input type="file" accept="image/*" className="hidden"
                                 onChange={(e) => { const f = e.target.files?.[0]; if (f) changeImage("reward_items", x.id, f) }} />
                             </label>
-                            <button className="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50" disabled={busy}
+                            <button className="flex-1 rounded border px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50" disabled={busy}
                               onClick={async () => { await patch("reward_items", x.id, { status: x.status === "active" ? "closed" : "active" }); load() }}>
                               {x.status === "active" ? t("下架") : t("上架")}
                             </button>
