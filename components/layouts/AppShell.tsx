@@ -36,6 +36,7 @@ import {
   Star,
   ScrollText,
   Trophy,
+  Gift,
   Calendar,
   Megaphone,
   Truck,
@@ -175,7 +176,6 @@ const EDU_FULL_CHILDREN: NavItem[] = [
   { label: "教学", icon: BookOpen, children: EDU_TEACHING_GROUP },
   { label: "教师", icon: UserCog, children: EDU_TEACHERS_GROUP },
   { label: "资源", icon: Package, children: EDU_RESOURCES_GROUP },
-  { label: "贡献兑换", href: "/contribution-management", icon: Star },
 ]
 
 // office_admin 的教务：去掉「资源」二级分组
@@ -184,7 +184,6 @@ const EDU_OFFICE_CHILDREN: NavItem[] = [
   { label: "学生", icon: Users, children: EDU_STUDENTS_GROUP },
   { label: "教学", icon: BookOpen, children: EDU_TEACHING_GROUP },
   { label: "教师", icon: UserCog, children: EDU_TEACHERS_GROUP },
-  { label: "贡献兑换", href: "/contribution-management", icon: Star },
 ]
 
 const FIN_OVERVIEW_LEAF: NavItem = { label: "财务概览", href: "/finance/overview", icon: PiggyBank }
@@ -231,6 +230,7 @@ const SYS_POINTS_GROUP: NavItem[] = [
   { label: "积分操作", href: "/points", icon: Star },
   { label: "积分规则", href: "/points/rules", icon: ScrollText },
   { label: "积分排行", href: "/points/leaderboard", icon: Trophy },
+  { label: "贡献兑换", href: "/contribution-management", icon: Gift },
 ]
 
 const SYS_ORG_GROUP: NavItem[] = [
@@ -286,7 +286,16 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
           { label: "我的课程", href: "/teacher-workspace/courses", icon: BookOpen },
           { label: "我的考勤与积分", href: "/teacher-workspace/attendance", icon: UserCheck },
           { label: "请假", href: "/teacher-workspace/leave", icon: CalendarCheck },
-          { label: "贡献兑换", href: "/contribution-management", icon: Star },
+        ],
+      },
+      {
+        label: "积分",
+        href: "/points",
+        icon: Star,
+        children: [
+          { label: "积分操作", href: "/points", icon: Star },
+          { label: "积分排行", href: "/points/leaderboard", icon: Trophy },
+          { label: "贡献兑换", href: "/contribution-management", icon: Gift },
         ],
       },
       {
@@ -848,6 +857,7 @@ export default function AppShell({
     "/attendance": { label: t("考勤中心"), parent: t("系统") },
     "/card-management": { label: t("卡片管理"), parent: t("系统") },
     "/points": { label: t("积分操作"), parent: t("系统") },
+    "/contribution-management": { label: t("贡献兑换"), parent: t("积分") },
     "/points/rules": { label: t("积分规则"), parent: t("系统") },
     "/points/leaderboard": { label: t("积分排行"), parent: t("系统") },
     "/user-management": { label: t("用户管理"), parent: t("系统") },
