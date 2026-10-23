@@ -16,6 +16,8 @@ export interface LeaderboardStudent {
   grade: string
   student_id?: string
   avatar?: string
+  title?: string
+  title_icon?: string
 }
 
 export interface CenterInfo {
@@ -128,6 +130,13 @@ export function LeaderboardList({
         <span className={`text-sm font-medium truncate ${nameCol(r)}`}>
           {s.name}
         </span>
+        {s.title ? (
+          <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] leading-none ${
+            r === 1 ? "bg-amber-400/30 text-amber-100" : "bg-gray-100 text-gray-600"
+          }`}>
+            {s.title_icon ? `${s.title_icon} ` : ""}{t(s.title)}
+          </span>
+        ) : null}
         {s.student_id && (
           <span className={`text-[10px] ml-1.5 px-1.5 py-0.5 rounded shrink-0 ${idCol}`}>{s.student_id}</span>
         )}
