@@ -138,9 +138,14 @@ export default function MyContributionPage() {
           {items.map((x: Any_) => (
             <div key={x.id} className="rounded-lg border p-3">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium">{x.name}</p>
-                  {x.description && <p className="text-xs text-gray-500 mt-0.5">{x.description}</p>}
+                <div className="flex items-start gap-3 min-w-0">
+                  {x.image_url
+                    ? <img src={x.image_url} alt={x.name} className="h-16 w-16 rounded object-cover border shrink-0" />
+                    : <div className="h-16 w-16 rounded border bg-gray-50 flex items-center justify-center text-[10px] text-gray-400 shrink-0">{t("无图")}</div>}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{x.name}</p>
+                    {x.description && <p className="text-xs text-gray-500 mt-0.5">{x.description}</p>}
+                  </div>
                 </div>
                 <span className="text-xs text-gray-500 shrink-0">{x.current_points} / {x.target_points}</span>
               </div>
@@ -166,9 +171,14 @@ export default function MyContributionPage() {
           ))}
           {achieved.map((x: Any_) => (
             <div key={x.id} className="rounded-lg border bg-green-50/50 p-3 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">{x.name}</p>
-                <p className="text-xs text-gray-500">{t("已经筹集够了")}</p>
+              <div className="flex items-center gap-3">
+                {x.image_url
+                  ? <img src={x.image_url} alt={x.name} className="h-12 w-12 rounded object-cover border" />
+                  : <div className="h-12 w-12 rounded border bg-white flex items-center justify-center text-[10px] text-gray-400">{t("无图")}</div>}
+                <div>
+                  <p className="text-sm font-medium">{x.name}</p>
+                  <p className="text-xs text-gray-500">{t("已经筹集够了")}</p>
+                </div>
               </div>
               <Badge variant="secondary" className="text-[10px]">{t("已完成")}</Badge>
             </div>
@@ -186,13 +196,18 @@ export default function MyContributionPage() {
             <ul className="divide-y">
               {rewards.map((x: Any_) => (
                 <li key={x.id} className="py-3 flex items-center justify-between gap-3">
-                  <div>
+                  <div className="flex items-center gap-3 min-w-0">
+                  {x.image_url
+                    ? <img src={x.image_url} alt={x.name} className="h-14 w-14 rounded object-cover border shrink-0" />
+                    : <div className="h-14 w-14 rounded border bg-gray-50 flex items-center justify-center text-[10px] text-gray-400 shrink-0">{t("无图")}</div>}
+                  <div className="min-w-0">
                     <p className="text-sm font-medium">{x.name}</p>
                     {x.description && <p className="text-xs text-gray-500">{x.description}</p>}
                     <p className="text-xs text-gray-500 mt-0.5">
                       {x.cost_points} {t("贡献积分")}
                       {x.stock !== null && <> · {t("剩")} {x.stock} {t("个")}</>}
                     </p>
+                  </div>
                   </div>
                   <Button size="sm" disabled={busy || b.available < x.cost_points} onClick={() => redeem(x.id, x.name)}>
                     {b.available < x.cost_points ? `${t("还差")} ${x.cost_points - b.available}` : t("兑换")}

@@ -69,6 +69,7 @@ export async function GET(request: NextRequest) {
       },
       items: (items.items || []).map((x: any) => ({
         id: x.id, name: x.name, description: x.description || '', center: x.center || '',
+        image_url: x.image ? `/api/pocketbase-proxy/api/files/${x.collectionId}/${x.id}/${x.image}` : '',
         target_points: Number(x.target_points || 0),
         current_points: Number(x.current_points || 0),
         status: x.status || 'active',
@@ -76,6 +77,7 @@ export async function GET(request: NextRequest) {
       })),
       rewards: (rewards.items || []).map((x: any) => ({
         id: x.id, name: x.name, description: x.description || '', cost_points: Number(x.cost_points || 0),
+        image_url: x.image ? `/api/pocketbase-proxy/api/files/${x.collectionId}/${x.id}/${x.image}` : '',
         stock: x.stock === undefined || x.stock === null ? null : Number(x.stock), status: x.status || 'active',
       })),
       my_logs: myLogs.items || [],

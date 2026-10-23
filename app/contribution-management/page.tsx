@@ -35,10 +35,12 @@ export default function ContributionManagementPage() {
   const [iTarget, setITarget] = useState("")
   const [iCenter, setICenter] = useState("")
   const [iDesc, setIDesc] = useState("")
+  const [iImg, setIImg] = useState<File | null>(null)
   const [rName, setRName] = useState("")
   const [rCost, setRCost] = useState("")
   const [rStock, setRStock] = useState("")
   const [rDesc, setRDesc] = useState("")
+  const [rImg, setRImg] = useState<File | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -63,15 +65,36 @@ export default function ContributionManagementPage() {
 
   useEffect(() => { load() }, [])
 
-  const post = async (col: string, body: any) => {
-    const r = await fetch(`${API}/${col}/records`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    })
+  const post = async (col: string, body: any, file?: File | null) => {
+    let r: Response
+    if (file) {
+      const fd = new FormData()
+      Object.entries(body).forEach(([k, v]) => { if (v !== undefined && v !== null) fd.append(k, String(v)) })
+      fd.append("image", file)
+      r = await fetch(`${API}/${col}/records`, { method: "POST", body: fd })
+    } else {
+      r = await fetch(`${API}/${col}/records`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+    }
     const d = await r.json().catch(() => ({}))
     if (!r.ok) throw new Error(d?.message || `保存失败（${r.status}）`)
     return d
+  }
+
+  // 给已有物品换照片
+  const changeImage = async (col: string, id: string, file: File) => {
+    setBusy(true); setMsg("")
+    try {
+      const fd = new FormData()
+      fd.append("image", file)
+      const r = await fetch(`${API}/${col}/records/${id}`, { method: "PATCH", body: fd })
+      if (!r.ok) throw new Error(`上传失败（${r.status}）`)
+      setMsg(t("照片已更新"))
+      await load()
+    } catch (e: any) { setMsg(String(e?.message || e)) } finally { setBusy(false) }
   }
 
   const patch = async (col: string, id: string, body: any) => {
@@ -94,8 +117,8 @@ export default function ContributionManagementPage() {
         center: iCenter.trim(),
         description: iDesc.trim(),
         status: "active",
-      })
-      setIName(""); setITarget(""); setICenter(""); setIDesc("")
+      }, iImg)
+      setIName(""); setITarget(""); setICenter(""); setIDesc(""); setIImg(null)
       setMsg(t("已添加中心物品"))
       await load()
     } catch (e: any) { setMsg(String(e?.message || e)) } finally { setBusy(false) }
@@ -111,8 +134,8 @@ export default function ContributionManagementPage() {
         stock: rStock === "" ? null : Number(rStock),
         description: rDesc.trim(),
         status: "active",
-      })
-      setRName(""); setRCost(""); setRStock(""); setRDesc("")
+      }, rImg)
+      setRName(""); setRCost(""); setRStock(""); setRDesc(""); setRImg(null)
       setMsg(t("已添加可兑换物品"))
       await load()
     } catch (e: any) { setMsg(String(e?.message || e)) } finally { setBusy(false) }
@@ -210,18 +233,42 @@ export default function ContributionManagementPage() {
                     <Input value={iCenter} onChange={(e) => setICenter(e.target.value)} placeholder="PU1 / BATU14" />
                   </div>
                   <Button disabled={busy} onClick={addItem}>{t("添加")}</Button>
+                  <div className="grid gap-1.5 md:col-span-5">
+                    <Label>{t("照片")}</Label>
+                    <input type="file" accept="image/*" onChange={(e) => setIImg(e.target.files?.[0] || null)}
+                      className="text-sm file:mr-2 file:rounded file:border file:px-2 file:py-1 file:text-xs" />
+                  </div>
                 </div>
                 {items.length === 0 ? <p className="text-sm text-gray-500">{t("还没有物品")}</p> : (
                   <ul className="divide-y">
                     {items.map((x: any) => (
                       <li key={x.id} className="py-2.5 flex items-center justify-between gap-3 text-sm">
-                        <div>
-                          <p className="font-medium">{x.name} {x.status !== "active" && <span className="text-xs text-gray-400">{t("（")}{x.status === "achieved" ? t("已完成") : t("已关闭")}{t("）")}</span>}</p>
-                          <p className="text-xs text-gray-500">{x.current_points || 0} / {x.target_points || 0}{x.center ? ` · ${x.center}` : ""}</p>
+                        <div className="flex items-center gap-3 min-w-0">
+                          {x.image
+                            ? <img src={`/api/pocketbase-proxy/api/files/${x.collectionId}/${x.id}/${x.image}`} alt={x.name} className="h-12 w-12 rounded object-cover border shrink-0" />
+                            : <div className="h-12 w-12 rounded border bg-gray-50 flex items-center justify-center text-[10px] text-gray-400 shrink-0">{t("无图")}</div>}
+                          <div className="min-w-0">
+                            <p className="font-medium">
+                              {x.name}
+                              {x.status !== "active" && (
+                                <span className="text-xs text-gray-400 ml-1">
+                                  {x.status === "achieved" ? t("已完成") : t("已关闭")}
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-xs text-gray-500">{x.current_points || 0} / {x.target_points || 0}{x.center ? ` · ${x.center}` : ""}</p>
+                          </div>
                         </div>
-                        {x.status === "active" && (
-                          <Button size="sm" variant="ghost" disabled={busy} onClick={() => setStatus(x, "closed")}>{t("关闭")}</Button>
-                        )}
+                        <div className="flex items-center gap-1">
+                          <label className="text-xs px-2 py-1 border rounded cursor-pointer hover:bg-gray-50">
+                            {t("换照片")}
+                            <input type="file" accept="image/*" className="hidden"
+                              onChange={(e) => { const f = e.target.files?.[0]; if (f) changeImage("contribution_items", x.id, f) }} />
+                          </label>
+                          {x.status === "active" && (
+                            <Button size="sm" variant="ghost" disabled={busy} onClick={() => setStatus(x, "closed")}>{t("关闭")}</Button>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -250,18 +297,38 @@ export default function ContributionManagementPage() {
                     <Input type="number" min={0} step={1} value={rStock} onChange={(e) => setRStock(e.target.value)} placeholder={t("留空=不限")} />
                   </div>
                   <Button disabled={busy} onClick={addReward}>{t("添加")}</Button>
+                  <div className="grid gap-1.5 md:col-span-5">
+                    <Label>{t("照片")}</Label>
+                    <input type="file" accept="image/*" onChange={(e) => setRImg(e.target.files?.[0] || null)}
+                      className="text-sm file:mr-2 file:rounded file:border file:px-2 file:py-1 file:text-xs" />
+                  </div>
                 </div>
                 {rewards.length === 0 ? <p className="text-sm text-gray-500">{t("还没有物品")}</p> : (
                   <ul className="divide-y">
                     {rewards.map((x: any) => (
                       <li key={x.id} className="py-2.5 flex items-center justify-between gap-3 text-sm">
-                        <div>
-                          <p className="font-medium">{x.name} {x.status !== "active" && <span className="text-xs text-gray-400">{t("（")}{t("已下架")}{t("）")}</span>}</p>
-                          <p className="text-xs text-gray-500">{x.cost_points} {t("贡献积分")}{x.stock !== null && x.stock !== undefined ? ` · ${t("剩")} ${x.stock}` : ""}</p>
+                        <div className="flex items-center gap-3 min-w-0">
+                          {x.image
+                            ? <img src={`/api/pocketbase-proxy/api/files/${x.collectionId}/${x.id}/${x.image}`} alt={x.name} className="h-12 w-12 rounded object-cover border shrink-0" />
+                            : <div className="h-12 w-12 rounded border bg-gray-50 flex items-center justify-center text-[10px] text-gray-400 shrink-0">{t("无图")}</div>}
+                          <div className="min-w-0">
+                            <p className="font-medium">
+                              {x.name}
+                              {x.status !== "active" && <span className="text-xs text-gray-400 ml-1">{t("已下架")}</span>}
+                            </p>
+                            <p className="text-xs text-gray-500">{x.cost_points} {t("贡献积分")}{x.stock !== null && x.stock !== undefined ? ` · ${t("剩")} ${x.stock}` : ""}</p>
+                          </div>
                         </div>
-                        <Button size="sm" variant="ghost" disabled={busy} onClick={async () => { await patch("reward_items", x.id, { status: x.status === "active" ? "closed" : "active" }); load() }}>
-                          {x.status === "active" ? t("下架") : t("上架")}
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <label className="text-xs px-2 py-1 border rounded cursor-pointer hover:bg-gray-50">
+                            {t("换照片")}
+                            <input type="file" accept="image/*" className="hidden"
+                              onChange={(e) => { const f = e.target.files?.[0]; if (f) changeImage("reward_items", x.id, f) }} />
+                          </label>
+                          <Button size="sm" variant="ghost" disabled={busy} onClick={async () => { await patch("reward_items", x.id, { status: x.status === "active" ? "closed" : "active" }); load() }}>
+                            {x.status === "active" ? t("下架") : t("上架")}
+                          </Button>
+                        </div>
                       </li>
                     ))}
                   </ul>

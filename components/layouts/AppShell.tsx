@@ -175,6 +175,7 @@ const EDU_FULL_CHILDREN: NavItem[] = [
   { label: "教学", icon: BookOpen, children: EDU_TEACHING_GROUP },
   { label: "教师", icon: UserCog, children: EDU_TEACHERS_GROUP },
   { label: "资源", icon: Package, children: EDU_RESOURCES_GROUP },
+  { label: "贡献兑换", href: "/contribution-management", icon: Star },
 ]
 
 // office_admin 的教务：去掉「资源」二级分组
@@ -183,6 +184,7 @@ const EDU_OFFICE_CHILDREN: NavItem[] = [
   { label: "学生", icon: Users, children: EDU_STUDENTS_GROUP },
   { label: "教学", icon: BookOpen, children: EDU_TEACHING_GROUP },
   { label: "教师", icon: UserCog, children: EDU_TEACHERS_GROUP },
+  { label: "贡献兑换", href: "/contribution-management", icon: Star },
 ]
 
 const FIN_OVERVIEW_LEAF: NavItem = { label: "财务概览", href: "/finance/overview", icon: PiggyBank }
