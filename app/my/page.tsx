@@ -6,13 +6,14 @@
  * 原来这页用标签页塞了六个模块；现在拆成导航栏里的独立页面，
  * 这里只留「我是谁 + 三个数字 + 今天几节课 + 各页入口」。
  */
+import { useState } from "react"
 import Link from "next/link"
 import PageLayout from "@/components/layouts/PageLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useLanguage } from "@/contexts/language-context"
 import { useStudentHome } from "@/hooks/useStudentHome"
 import { formatGrade } from "@/lib/utils"
-import { AlertCircle, Calendar, BookOpen, Trophy, Megaphone, CalendarCheck, FileText, ArrowRight } from "lucide-react"
+import { AlertCircle, Calendar, BookOpen, Trophy, Megaphone, CalendarCheck, FileText, ArrowRight, Award } from "lucide-react"
 
 const LINKS = [
   { href: "/my/timetable", label: "我的课表", icon: Calendar },
@@ -21,11 +22,25 @@ const LINKS = [
   { href: "/my/notices", label: "公告", icon: Megaphone },
   { href: "/my/leave", label: "请假", icon: CalendarCheck },
   { href: "/my/reports", label: "我的报告", icon: FileText },
+  { href: "/my/achievements", label: "我的成就", icon: Award },
 ]
 
 export default function MyPage() {
   const { t } = useLanguage()
   const { data, loading, error, reload } = useStudentHome()
+  const [bannerClosed, setBannerClosed] = useState(false)
+
+  // 点「知道了」= 记成看过了，下次不再弹
+  const dismissBanner = async () => {
+    setBannerClosed(true)
+    try {
+      await fetch("/api/achievements", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "mark_seen" }),
+      })
+    } catch { /* 关掉就算了，不影响页面 */ }
+  }
 
   const shell = (children: React.ReactNode) => (
     <PageLayout title={t("我的")} description={t("我的资料、积分、报告与考勤")}>
@@ -51,8 +66,32 @@ export default function MyPage() {
   const s = data.student
   const today = data.today || { classes: [] }
 
+  const fresh: any[] = (data as any)?.achievements?.fresh || []
+
   return shell(
     <>
+      {fresh.length > 0 && !bannerClosed && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <div className="flex items-start gap-3">
+            <div className="text-2xl leading-none">🎉</div>
+            <div className="flex-1">
+              <p className="font-semibold text-amber-900">{t("你解锁了新成就")}</p>
+              <p className="mt-1 text-sm text-amber-800">
+                {fresh.map((a: any) => `${a.icon || "🏅"} ${t(a.name)}`).join("　")}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Link href="/my/achievements" className="rounded bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700">
+                  {t("去设称号")}
+                </Link>
+                <button onClick={dismissBanner} className="rounded border border-amber-300 bg-white px-3 py-1.5 text-xs text-amber-800 hover:bg-amber-100">
+                  {t("知道了")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Card>
         <CardContent className="pt-6 flex items-center gap-4">
           <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center text-xl font-medium text-gray-500">
