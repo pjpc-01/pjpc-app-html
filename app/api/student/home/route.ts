@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
 import { gradeCanon } from '@/lib/grades'
+import { getNewAchievements } from '@/lib/achievements'
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 
@@ -133,8 +134,20 @@ export async function GET(request: NextRequest) {
       records: attItems.length,
     }
 
+    // 6) 成就：算一下有没有新解锁没看过的（首页提示用）
+    let achievements = { earned_count: 0, total: 0, fresh: [] as any[] }
+    try {
+      const a = await getNewAchievements(token, sid)
+      achievements = {
+        earned_count: a.earned.size,
+        total: a.total,
+        fresh: (a.fresh || []).map((d) => ({ code: d.code, name: d.name, icon: d.icon || '', condition: d.condition || '' })),
+      }
+    } catch { /* 成就算不出来不影响首页其他内容 */ }
+
     return NextResponse.json({
       success: true,
+      achievements,
       student: {
         id: student.id, name: student.name, student_id: student.student_id,
         grade: student.grade, center: student.center, avatar: student.avatar,

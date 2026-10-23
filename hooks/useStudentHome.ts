@@ -18,6 +18,7 @@ export type StudentHome = {
   attendance: { present: number; absent: number; records: number }
   notices: any[]
   leaves: any[]
+  achievements?: { earned_count: number; total: number; fresh: any[] }
 }
 
 export function useStudentHome() {
