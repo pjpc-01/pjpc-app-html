@@ -239,6 +239,29 @@ export default function StudentReportContent() {
     if (data) setReport(data)
   }
 
+  // 安亲班月测（按月，跟学校期中期末分开）
+  const [monthlyTests, setMonthlyTests] = useState<Array<{ subject: string; month: number; score: number }>>([])
+  useEffect(() => {
+    const sid = report?.studentId
+    const yr = Number((report as any)?.year || new Date().getFullYear())
+    if (!sid) { setMonthlyTests([]); return }
+    let alive = true
+    ;(async () => {
+      try {
+        const r = await fetch(`/api/monthly-tests?studentId=${encodeURIComponent(sid)}&year=${yr}`)
+        const d = await r.json().catch(() => ({}))
+        if (!alive) return
+        const rows = (d?.rows || [])
+          .filter((x: any) => x && x.subject && x.score !== null && x.score !== undefined)
+          .map((x: any) => ({ subject: String(x.subject), month: Number(x.month), score: Number(x.score) }))
+        setMonthlyTests(rows)
+      } catch {
+        if (alive) setMonthlyTests([])
+      }
+    })()
+    return () => { alive = false }
+  }, [report?.studentId, (report as any)?.year])
+
   // Find student by report's studentId
   const student = report?.expand?.studentId || students.find(s => s.id === report?.studentId)
   // 返回学生报告列表 + 保持当前年级（4年级→4年级，5年级→5年级）
@@ -443,7 +466,7 @@ export default function StudentReportContent() {
         dob: student.dob,
         grade: student.grade,
         avatar: avatarSrc,
-      }, { pdfPageImages })
+      }, { pdfPageImages, monthlyTests, monthlyYear: Number((report as any)?.year || 0) })
     } catch (e: any) {
       alert("PDF下载失败: " + (e.message || "未知错误"))
     } finally {
@@ -523,7 +546,7 @@ export default function StudentReportContent() {
             dob: student?.dob || '',
             grade: student?.grade || '',
             avatar: avatarSrc,
-          }, { hideGrowth: editMode, pdfPageImages }) : ''}
+          }, { hideGrowth: editMode, pdfPageImages, monthlyTests, monthlyYear: Number((report as any)?.year || 0) }) : ''}
           onLoad={syncIframeHeight}
           className="w-full border-0 rounded-lg bg-white"
           style={{ minHeight: '900px', height: `${iframeHeight}px` }}
