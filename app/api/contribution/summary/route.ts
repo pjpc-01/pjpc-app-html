@@ -34,11 +34,12 @@ export async function GET(request: NextRequest) {
       return r.ok ? r.json() : { items: [] }
     }
 
-    const [items, rewards, myLogs, myRedemptions] = await Promise.all([
+    const [items, rewards, myLogs, myRedemptions, allDonate] = await Promise.all([
       get('contribution_items/records?perPage=100&sort=sort_order,name'),
       get('reward_items/records?perPage=100&sort=sort_order,name'),
       sid ? get(`contribution_logs/records?perPage=100&sort=-created&filter=${encodeURIComponent(`student="${sid}"`)}`) : { items: [] },
       sid ? get(`reward_redemptions/records?perPage=100&sort=-created&filter=${encodeURIComponent(`student="${sid}"`)}`) : { items: [] },
+      get(`contribution_logs/records?perPage=500&fields=student,points,kind&filter=${encodeURIComponent('kind="donate"')}`),
     ])
 
     let student: any = null
@@ -51,6 +52,11 @@ export async function GET(request: NextRequest) {
     const spent = (myRedemptions.items || [])
       .filter((x: any) => x.status !== 'rejected')
       .reduce((a: number, x: any) => a + Number(x.cost || 0), 0)
+
+    // 全体贡献：算自己的占比（贡献程度）
+    const communityTotal = (allDonate.items || []).reduce((a: number, x: any) => a + Number(x.points || 0), 0)
+    const contributors = new Set((allDonate.items || []).map((x: any) => String(x.student || '')).filter(Boolean)).size
+    const myPercent = communityTotal > 0 && donated > 0 ? Math.round((donated / communityTotal) * 1000) / 10 : 0
 
     // 员工看全部待审批兑换
     const allPending = isStaff ? await get(`reward_redemptions/records?perPage=100&sort=-created&filter=${encodeURIComponent('status="pending"')}`) : { items: [] }
@@ -66,6 +72,11 @@ export async function GET(request: NextRequest) {
         spent,
         available: donated - spent,
         points_now: Number(student?.points || 0),
+      },
+      community: {
+        total_points: communityTotal,
+        contributors,
+        my_percent: myPercent,
       },
       items: (items.items || []).map((x: any) => ({
         id: x.id, name: x.name, description: x.description || '', center: x.center || '',
