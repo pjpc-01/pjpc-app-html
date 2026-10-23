@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/contexts/language-context"
-import { AlertCircle, Gift, Heart, CheckCircle2, ImagePlus } from "lucide-react"
+import { AlertCircle, Gift, Heart, CheckCircle2, ImagePlus, Trophy } from "lucide-react"
 
 const API = "/api/pocketbase-proxy/api/collections"
 
@@ -25,6 +25,7 @@ export default function ContributionManagementPage() {
   const [items, setItems] = useState<any[]>([])
   const [rewards, setRewards] = useState<any[]>([])
   const [pending, setPending] = useState<any[]>([])
+  const [rank, setRank] = useState<any>({ list: [], total_points: 0, students: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [msg, setMsg] = useState("")
@@ -45,16 +46,18 @@ export default function ContributionManagementPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const [a, b, c] = await Promise.all([
+      const [a, b, c, d] = await Promise.all([
         fetch(`${API}/contribution_items/records?perPage=100&sort=-created`),
         fetch(`${API}/reward_items/records?perPage=100&sort=-created`),
         fetch(`${API}/reward_redemptions/records?perPage=100&sort=-created`),
+        fetch(`/api/contribution/ranking`),
       ])
-      const [da, db, dc] = await Promise.all([a.json(), b.json(), c.json()])
+      const [da, db, dc, dd] = await Promise.all([a.json(), b.json(), c.json(), d.json()])
       if (!a.ok || !b.ok || !c.ok) throw new Error("读取失败")
       setItems(da.items || [])
       setRewards(db.items || [])
       setPending(dc.items || [])
+      if (d.ok && dd?.success) setRank({ list: dd.list || [], total_points: dd.total_points || 0, students: dd.students || 0 })
       setError("")
     } catch (e: any) {
       setError(String(e?.message || e))
@@ -208,6 +211,55 @@ export default function ContributionManagementPage() {
                       </li>
                     ))}
                   </ul>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* 学生贡献榜 */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base"><Trophy className="h-4 w-4" />{t("学生贡献榜")}</CardTitle>
+                <CardDescription>
+                  {t("共")} {rank.students} {t("人参与")} · {t("合计")} {rank.total_points} {t("分")} · {t("占比按全校贡献算")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {rank.list.length === 0 ? (
+                  <p className="text-sm text-gray-500 py-2">{t("还没有学生贡献积分")}</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[560px] text-sm">
+                      <thead>
+                        <tr className="border-b text-left text-xs text-gray-500">
+                          <th className="py-2 pr-2 w-10">#</th>
+                          <th className="py-2 pr-2">{t("学生")}</th>
+                          <th className="py-2 pr-2">{t("中心")}</th>
+                          <th className="py-2 pr-2 text-right">{t("累计贡献")}</th>
+                          <th className="py-2 pr-2 w-40">{t("占比")}</th>
+                          <th className="py-2 text-right">{t("次数")}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rank.list.map((x: any, i: number) => (
+                          <tr key={x.student_id_record} className="border-b last:border-0">
+                            <td className="py-2 pr-2 text-gray-400">{i + 1}</td>
+                            <td className="py-2 pr-2 font-medium">{x.name}</td>
+                            <td className="py-2 pr-2 text-gray-500">{x.center || "-"}</td>
+                            <td className="py-2 pr-2 text-right font-semibold text-orange-600">{x.points}</td>
+                            <td className="py-2 pr-2">
+                              <div className="flex items-center gap-2">
+                                <div className="h-1.5 flex-1 overflow-hidden rounded bg-gray-100">
+                                  <div className="h-full bg-orange-500" style={{ width: `${Math.min(100, x.percent)}%` }} />
+                                </div>
+                                <span className="w-12 text-right text-xs text-gray-600">{x.percent}%</span>
+                              </div>
+                            </td>
+                            <td className="py-2 text-right text-gray-500">{x.times}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </CardContent>
             </Card>

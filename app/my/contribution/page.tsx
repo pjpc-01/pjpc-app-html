@@ -131,6 +131,9 @@ export default function MyContributionPage() {
         <div className="rounded-xl border bg-white px-4 py-3">
           <p className="text-xs text-gray-500">{t("累计贡献")}</p>
           <p className="mt-1 text-2xl font-semibold">{b.contributed}</p>
+          <p className="mt-1 text-[11px] text-gray-500">
+            {t("占全校贡献")} {(data.community?.my_percent ?? 0)}%
+          </p>
         </div>
         <div className="rounded-xl border bg-white px-4 py-3">
           <p className="text-xs text-gray-500">{t("我的总积分")}</p>
