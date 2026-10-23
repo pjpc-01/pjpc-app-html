@@ -683,6 +683,15 @@ export default function AppShell({
     return qs ? `${base}?${qs}` : base
   }
 
+  // 【页面级守门】导航里被权限隐藏的页面，直接敲 URL 也不给看内容（接口那边另有 401/403）
+  const pathBlocked = (() => {
+    if (userRole === 'admin') return false
+    if (Object.keys(rolePerms).length === 0) return false
+    const key = CHILD_PERM[pathname]
+    if (!key) return false
+    return rolePerms[key] !== true
+  })()
+
   const isActive = (href?: string) => {
     if (!href) return false
     if (href === "/") return pathname === "/"
@@ -1072,7 +1081,18 @@ export default function AppShell({
       >
         <main className="p-4 sm:p-6 lg:p-8">
           <GlobalSearch />
-          {children}
+          {pathBlocked ? (
+            <div className="mx-auto mt-16 max-w-md rounded-xl border bg-white p-8 text-center">
+              <p className="text-base font-semibold text-gray-800">{t("没有权限")}</p>
+              <p className="mt-2 text-sm text-gray-500">{t("这个页面不在你的权限范围内，需要的话找管理员开。")}</p>
+              <button
+                onClick={() => router.push("/")}
+                className="mt-4 rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+              >
+                {t("回首页")}
+              </button>
+            </div>
+          ) : children}
         </main>
       </div>
     </div>
