@@ -240,43 +240,40 @@ export default function ContributionManagementPage() {
                   </div>
                 </div>
                 {items.length === 0 ? <p className="text-sm text-gray-500">{t("还没有物品")}</p> : (
-                  <ul className="divide-y">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                     {items.map((x: any) => (
-                      <li key={x.id} className="py-2.5 flex items-center justify-between gap-3 text-sm">
-                        <div className="flex items-center gap-3 min-w-0">
+                      <div key={x.id} className="flex flex-col overflow-hidden rounded-xl border bg-white">
+                        <div className="relative aspect-square w-full bg-gray-100">
                           {x.image
-                            ? <img src={`/api/pocketbase-proxy/api/files/${x.collectionId}/${x.id}/${x.image}`} alt={x.name} className="h-12 w-12 rounded object-cover border shrink-0" />
-                            : <div className="h-12 w-12 rounded border bg-gray-50 flex items-center justify-center text-[10px] text-gray-400 shrink-0">{t("无图")}</div>}
-                          <div className="min-w-0">
-                            <p className="font-medium">
-                              {x.name}
-                              {x.status !== "active" && (
-                                <span className="text-xs text-gray-400 ml-1">
-                                  {x.status === "achieved" ? t("已完成") : t("已关闭")}
-                                </span>
-                              )}
-                            </p>
-                            <p className="text-xs text-gray-500">{x.current_points || 0} / {x.target_points || 0}{x.center ? ` · ${x.center}` : ""}</p>
+                            ? <img src={`/api/pocketbase-proxy/api/files/${x.collectionId}/${x.id}/${x.image}`} alt={x.name} className="h-full w-full object-cover" />
+                            : <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">{t("无图")}</div>}
+                        </div>
+                        <div className="flex flex-1 flex-col gap-2 p-3">
+                          <p className="line-clamp-2 min-h-[2.5rem] text-sm font-medium">{x.name}</p>
+                          <p className="text-xs text-gray-500">{x.current_points || 0} / {x.target_points || 0}{x.center ? ` · ${x.center}` : ""}</p>
+                          <span className={`w-fit rounded px-1.5 py-0.5 text-[11px] ${
+                            x.status === "active" ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"
+                          }`}>
+                            {x.status === "active" ? t("进行中") : x.status === "achieved" ? t("已完成") : t("已关闭")}
+                          </span>
+                          <div className="mt-auto flex items-center gap-1 pt-1">
+                            <label className="flex-1 cursor-pointer rounded border px-2 py-1 text-center text-xs hover:bg-gray-50">
+                              {t("换照片")}
+                              <input type="file" accept="image/*" className="hidden"
+                                onChange={(e) => { const f = e.target.files?.[0]; if (f) changeImage("contribution_items", x.id, f) }} />
+                            </label>
+                            {x.status === "active" && (
+                              <button className="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50" disabled={busy} onClick={() => setStatus(x, "closed")}>{t("关闭")}</button>
+                            )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <label className="text-xs px-2 py-1 border rounded cursor-pointer hover:bg-gray-50">
-                            {t("换照片")}
-                            <input type="file" accept="image/*" className="hidden"
-                              onChange={(e) => { const f = e.target.files?.[0]; if (f) changeImage("contribution_items", x.id, f) }} />
-                          </label>
-                          {x.status === "active" && (
-                            <Button size="sm" variant="ghost" disabled={busy} onClick={() => setStatus(x, "closed")}>{t("关闭")}</Button>
-                          )}
-                        </div>
-                      </li>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* 可兑换私人物品 */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base"><Gift className="h-4 w-4" />{t("可兑换的私人物品")}</CardTitle>
@@ -304,34 +301,33 @@ export default function ContributionManagementPage() {
                   </div>
                 </div>
                 {rewards.length === 0 ? <p className="text-sm text-gray-500">{t("还没有物品")}</p> : (
-                  <ul className="divide-y">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                     {rewards.map((x: any) => (
-                      <li key={x.id} className="py-2.5 flex items-center justify-between gap-3 text-sm">
-                        <div className="flex items-center gap-3 min-w-0">
+                      <div key={x.id} className="flex flex-col overflow-hidden rounded-xl border bg-white">
+                        <div className="relative aspect-square w-full bg-gray-100">
                           {x.image
-                            ? <img src={`/api/pocketbase-proxy/api/files/${x.collectionId}/${x.id}/${x.image}`} alt={x.name} className="h-12 w-12 rounded object-cover border shrink-0" />
-                            : <div className="h-12 w-12 rounded border bg-gray-50 flex items-center justify-center text-[10px] text-gray-400 shrink-0">{t("无图")}</div>}
-                          <div className="min-w-0">
-                            <p className="font-medium">
-                              {x.name}
-                              {x.status !== "active" && <span className="text-xs text-gray-400 ml-1">{t("已下架")}</span>}
-                            </p>
-                            <p className="text-xs text-gray-500">{x.cost_points} {t("贡献积分")}{x.stock !== null && x.stock !== undefined ? ` · ${t("剩")} ${x.stock}` : ""}</p>
+                            ? <img src={`/api/pocketbase-proxy/api/files/${x.collectionId}/${x.id}/${x.image}`} alt={x.name} className="h-full w-full object-cover" />
+                            : <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">{t("无图")}</div>}
+                        </div>
+                        <div className="flex flex-1 flex-col gap-2 p-3">
+                          <p className="line-clamp-2 min-h-[2.5rem] text-sm font-medium">{x.name}</p>
+                          <p className="text-sm font-semibold text-orange-600">{x.cost_points} <span className="text-xs font-normal text-gray-500">{t("贡献积分")}</span></p>
+                          <p className="text-xs text-gray-500">{x.stock === null || x.stock === undefined ? t("不限量") : `${t("剩")} ${x.stock}`}{x.status !== "active" ? ` · ${t("已下架")}` : ""}</p>
+                          <div className="mt-auto flex items-center gap-1 pt-1">
+                            <label className="flex-1 cursor-pointer rounded border px-2 py-1 text-center text-xs hover:bg-gray-50">
+                              {t("换照片")}
+                              <input type="file" accept="image/*" className="hidden"
+                                onChange={(e) => { const f = e.target.files?.[0]; if (f) changeImage("reward_items", x.id, f) }} />
+                            </label>
+                            <button className="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-50" disabled={busy}
+                              onClick={async () => { await patch("reward_items", x.id, { status: x.status === "active" ? "closed" : "active" }); load() }}>
+                              {x.status === "active" ? t("下架") : t("上架")}
+                            </button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <label className="text-xs px-2 py-1 border rounded cursor-pointer hover:bg-gray-50">
-                            {t("换照片")}
-                            <input type="file" accept="image/*" className="hidden"
-                              onChange={(e) => { const f = e.target.files?.[0]; if (f) changeImage("reward_items", x.id, f) }} />
-                          </label>
-                          <Button size="sm" variant="ghost" disabled={busy} onClick={async () => { await patch("reward_items", x.id, { status: x.status === "active" ? "closed" : "active" }); load() }}>
-                            {x.status === "active" ? t("下架") : t("上架")}
-                          </Button>
-                        </div>
-                      </li>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 )}
               </CardContent>
             </Card>
