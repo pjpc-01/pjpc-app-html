@@ -284,6 +284,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
           { label: "我的课程", href: "/teacher-workspace/courses", icon: BookOpen },
           { label: "我的考勤与积分", href: "/teacher-workspace/attendance", icon: UserCheck },
           { label: "请假", href: "/teacher-workspace/leave", icon: CalendarCheck },
+          { label: "贡献兑换", href: "/contribution-management", icon: Star },
         ],
       },
       {
@@ -310,6 +311,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
       { label: "我的课表", href: "/my/timetable", icon: Calendar },
       { label: "我的作业", href: "/my/homework", icon: BookOpen },
       { label: "我的积分", href: "/my/points", icon: Trophy },
+      { label: "我的贡献", href: "/my/contribution", icon: Star },
       { label: "公告", href: "/my/notices", icon: Megaphone },
       { label: "请假", href: "/my/leave", icon: CalendarCheck },
       { label: "我的报告", href: "/my/reports", icon: FileText },
@@ -579,7 +581,7 @@ export default function AppShell({
   const CHILD_PERM: Record<string, string> = {
     "/my": "my.home", "/my/timetable": "my.timetable", "/my/homework": "my.homework",
     "/my/points": "my.points", "/my/notices": "my.notices", "/my/leave": "my.leave",
-    "/my/reports": "my.reports",
+    "/my/reports": "my.reports", "/my/contribution": "my.contribution",
     "/": "overview.dashboard", "/dashboard/slideshow": "overview.slideshow",
     "/education": "education.overview", "/student-management": "education.students",
     "/student-reports": "education.reports", "/parent-management": "education.parents",
@@ -605,6 +607,7 @@ export default function AppShell({
     "/teacher-workspace": "education.workspace",
     "/teacher-workspace/students": "education.workspace", "/teacher-workspace/courses": "education.workspace",
     "/teacher-workspace/attendance": "education.workspace", "/teacher-workspace/leave": "education.workspace",
+    "/contribution-management": "education.contribution",
     "/teacher-teaching-report": "education.teaching_report",
     "/resource-library": "education.resources",
     "/tv-board": "system.tv_board",
