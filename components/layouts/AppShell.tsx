@@ -45,6 +45,7 @@ import {
   Edit3,
   Target,
   UserRound,
+  MessageSquarePlus,
 } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import LanguageSwitcher from "@/components/LanguageSwitcher"
@@ -248,12 +249,14 @@ const SYS_SETTINGS_GROUP: NavItem[] = [
 const SYS_OFFICE_CHILDREN: NavItem[] = [
   { label: "考勤门禁", icon: ClipboardCheck, children: SYS_ATTENDANCE_GATE_GROUP },
   { label: "积分", icon: Star, children: SYS_POINTS_GROUP },
+  { label: "建议箱", href: "/suggestions", icon: MessageSquarePlus },
 ]
 
 const SYS_FULL_CHILDREN: NavItem[] = [
   { label: "考勤门禁", icon: ClipboardCheck, children: SYS_ATTENDANCE_GATE_GROUP },
   { label: "积分", icon: Star, children: SYS_POINTS_GROUP },
   { label: "组织", icon: Building, children: SYS_ORG_GROUP },
+  { label: "建议箱", href: "/suggestions", icon: MessageSquarePlus },
   { label: "设置", icon: Settings, children: SYS_SETTINGS_GROUP },
 ]
 
@@ -313,6 +316,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
           { label: "课程管理", href: "/course-management", icon: BookOpen },
           { label: "教学评估", href: "/teacher-teaching-report", icon: ClipboardCheck },
           { label: "学生请假", href: "/student-leave", icon: CalendarCheck },
+          { label: "建议箱", href: "/suggestions", icon: MessageSquarePlus },
         ],
       },
     ],
@@ -328,6 +332,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
       { label: "公告", href: "/my/notices", icon: Megaphone },
       { label: "请假", href: "/my/leave", icon: CalendarCheck },
       { label: "我的报告", href: "/my/reports", icon: FileText },
+      { label: "我的建议", href: "/my/suggestions", icon: MessageSquarePlus },
     ],
   },
   office_admin: {
@@ -595,6 +600,7 @@ export default function AppShell({
     "/my": "my.home", "/my/timetable": "my.timetable", "/my/homework": "my.homework",
     "/my/points": "my.points", "/my/notices": "my.notices", "/my/leave": "my.leave",
     "/my/reports": "my.reports", "/my/contribution": "my.contribution",
+    "/my/suggestions": "my.suggestions", "/suggestions": "system.suggestions",
     "/": "overview.dashboard", "/dashboard/slideshow": "overview.slideshow",
     "/education": "education.overview", "/student-management": "education.students",
     "/student-reports": "education.reports", "/parent-management": "education.parents",
