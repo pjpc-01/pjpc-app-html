@@ -837,7 +837,7 @@ export const REPORT_EN_DEFAULT = {
   summary: 'This term I made progress in both studies and life, but also realised my weaknesses. I will hold myself to a higher standard and keep improving!',
 }
 
-export const generateReportHTML = (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }, options?: { hideGrowth?: boolean; lang?: 'zh' | 'en'; photoDataUrls?: Record<string, string>; pdfPageImages?: Record<string, string[]> }): string => {
+export const generateReportHTML = (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }, options?: { hideGrowth?: boolean; lang?: 'zh' | 'en'; photoDataUrls?: Record<string, string>; pdfPageImages?: Record<string, string[]>; monthlyTests?: Array<{ subject: string; month: number; score: number }>; monthlyYear?: number }): string => {
   const color = settings.primaryColor || "#3b82f6"
   const lang: 'zh' | 'en' = options?.lang || ((report as any).language === 'en' ? 'en' : 'zh')
   const isEn = lang === 'en'
@@ -889,6 +889,55 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
         <td style="text-align:center;"><span class="eval-badge eval-grade">${evalText}</span></td>
       </tr>`
   }).join('')
+
+  // ── 安亲班月测（每月自测，跟学校期中期末分开）──
+  const monthlyData = (options?.monthlyTests || []).filter((r: any) => r && r.subject && r.score !== null && r.score !== undefined && Number.isFinite(Number(r.score)))
+  let monthlySection = ''
+  if (monthlyData.length > 0) {
+    const monthSet = [...new Set(monthlyData.map((r: any) => Number(r.month)))].filter((m) => m >= 1 && m <= 12).sort((a, b) => a - b)
+    const bySubject = new Map<string, Record<number, number>>()
+    for (const r of monthlyData) {
+      const m = bySubject.get(r.subject) || {}
+      m[Number(r.month)] = Number(r.score)
+      bySubject.set(r.subject, m)
+    }
+    const orderIdx = (name: string) => {
+      const i = subjects.findIndex((x: any) => x.name === name)
+      return i < 0 ? 99 : i
+    }
+    const rowNames = [...bySubject.keys()].sort((a, b) => orderIdx(a) - orderIdx(b))
+    const cellColor = (v: number) => v >= 80 ? '#16a34a' : v >= 60 ? '#374151' : '#dc2626'
+    const headCells = monthSet.map((m) => `<th style="font-size:11px;">${m}${L('月','')}</th>`).join('')
+    const bodyRows = rowNames.map((name) => {
+      const row = bySubject.get(name)!
+      const vals = monthSet.map((m) => row[m]).filter((v) => v !== undefined)
+      const avg = vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : null
+      const tds = monthSet.map((m) => {
+        const v = row[m]
+        return `<td style="text-align:center;font-size:12px;color:${v === undefined ? '#9ca3af' : cellColor(v)};">${v === undefined ? '—' : v}</td>`
+      }).join('')
+      return `<tr><td style="font-weight:600;color:#374151;">${subjectLabel(name)}</td>${tds}<td style="text-align:center;font-weight:700;">${avg ?? '—'}</td></tr>`
+    }).join('')
+    const monthAvgCells = monthSet.map((m) => {
+      const vals = monthlyData.filter((r: any) => Number(r.month) === m).map((r: any) => Number(r.score))
+      const avg = vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : null
+      return `<td style="text-align:center;font-size:12px;font-weight:600;color:#4b5563;">${avg ?? '—'}</td>`
+    }).join('')
+    const allVals = monthlyData.map((r: any) => Number(r.score))
+    const grandAvg = allVals.length ? Math.round((allVals.reduce((a, b) => a + b, 0) / allVals.length) * 10) / 10 : null
+
+    monthlySection = `
+  <!-- Section 1b: Monthly tests (安亲班) -->
+  <div class="card">
+    <div class="section-label">📝 ${L('安亲班月测成绩', 'Tuition Centre Monthly Test')}<span style="font-size:11px;font-weight:400;color:#6b7280;margin-left:6px;">${options?.monthlyYear ? options.monthlyYear : ''} ${L('（安亲班每月自测，与学校期中期末分开）', '(centre-run monthly tests, separate from school exams)')}</span></div>
+    <table>
+      <tr><th>${L('学科','Subject')}</th>${headCells}<th style="font-size:11px;">${L('平均','Avg')}</th></tr>
+      ${bodyRows}
+      <tr><th style="background:#f9fafb;">${L('月均','Monthly Avg')}</th>${monthAvgCells}<th style="background:#f9fafb;text-align:center;">${grandAvg ?? '—'}</th></tr>
+    </table>
+  </div>
+`
+  }
 
   // Use preset content, fall back to report data
   const studentName = student?.name || ''
@@ -1087,7 +1136,7 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
       <div class="stat"><div class="num">${report.improvement || "—"}</div><div class="label">${L('进步幅度','Improvement')}</div></div>
     </div>` : ''}
   </div>
-
+${monthlySection}
   <!-- Section 2: Comprehensive -->
   <div class="card">
     <div class="section-label">⭐ ${L('二、综合素质','2. Overall Development')}</div>
@@ -1229,7 +1278,7 @@ export const generateReportHTML = (report: StudentReport, settings: ReportSettin
 }
 
 // ── Report PDF Generation ──
-export const generateReportPDF = async (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }, options?: { hideGrowth?: boolean; lang?: 'zh' | 'en'; pdfPageImages?: Record<string, string[]> }): Promise<Blob> => {
+export const generateReportPDF = async (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }, options?: { hideGrowth?: boolean; lang?: 'zh' | 'en'; pdfPageImages?: Record<string, string[]>; photoDataUrls?: Record<string, string>; monthlyTests?: Array<{ subject: string; month: number; score: number }>; monthlyYear?: number }): Promise<Blob> => {
   const html = generateReportHTML(report, settings, student, options)
 
   // Create hidden iframe to render full HTML
@@ -1367,7 +1416,7 @@ export const generateReportPDF = async (report: StudentReport, settings: ReportS
   }
 }
 
-export const downloadReportPDF = async (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }, options?: { hideGrowth?: boolean; lang?: 'zh' | 'en'; pdfPageImages?: Record<string, string[]> }): Promise<void> => {
+export const downloadReportPDF = async (report: StudentReport, settings: ReportSettingsPreset, student?: { name?: string; student_id?: string; code?: string; dob?: string; grade?: string; avatar?: string }, options?: { hideGrowth?: boolean; lang?: 'zh' | 'en'; pdfPageImages?: Record<string, string[]>; photoDataUrls?: Record<string, string>; monthlyTests?: Array<{ subject: string; month: number; score: number }>; monthlyYear?: number }): Promise<void> => {
   try {
     const blob = await generateReportPDF(report, settings, student, options)
     const url = URL.createObjectURL(blob)

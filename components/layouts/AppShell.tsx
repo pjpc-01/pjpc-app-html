@@ -155,6 +155,7 @@ const EDU_TEACHING_GROUP: NavItem[] = [
   { label: "课程管理", href: "/course-management", icon: BookOpen },
   { label: "作业管理", href: "/homework", icon: FileEdit },
   { label: "成绩管理", href: "/grades", icon: GraduationCap },
+  { label: "安亲班月测", href: "/monthly-tests", icon: ClipboardCheck },
   { label: "活动管理", href: "/activities", icon: CalendarCheck },
 ]
 
@@ -308,6 +309,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
           { label: "每日日志", href: "/daily-logs", icon: FileEdit },
           { label: "作业管理", href: "/homework", icon: FileEdit },
           { label: "成绩管理", href: "/grades", icon: GraduationCap },
+          { label: "安亲班月测", href: "/monthly-tests", icon: ClipboardCheck },
           { label: "课程管理", href: "/course-management", icon: BookOpen },
           { label: "教学评估", href: "/teacher-teaching-report", icon: ClipboardCheck },
           { label: "学生请假", href: "/student-leave", icon: CalendarCheck },
@@ -597,6 +599,7 @@ export default function AppShell({
     "/education": "education.overview", "/student-management": "education.students",
     "/student-reports": "education.reports", "/parent-management": "education.parents",
     "/homework": "education.homework", "/grades": "education.grades",
+    "/monthly-tests": "education.monthly_tests",
     "/pickup": "education.pickup", "/daily-logs": "education.logs",
     "/student-leave": "education.students",
     "/teacher-management": "education.teachers", "/teacher-attendance-reports": "education.teacher_attendance",
