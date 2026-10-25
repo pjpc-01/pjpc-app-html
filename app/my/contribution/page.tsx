@@ -10,7 +10,7 @@ import { useEffect, useState } from "react"
 import PageLayout from "@/components/layouts/PageLayout"
 import { Input } from "@/components/ui/input"
 import { useLanguage } from "@/contexts/language-context"
-import { AlertCircle, Gift, Heart, Trophy } from "lucide-react"
+import { AlertCircle, Gift, Heart, Trophy, Lightbulb, History, Camera } from "lucide-react"
 
 type Any_ = Record<string, any>
 
@@ -40,6 +40,14 @@ export default function MyContributionPage() {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState("")
 
+  // 我要提议物品
+  const [propType, setPropType] = useState<"upgrade" | "reward">("upgrade")
+  const [propName, setPropName] = useState("")
+  const [propDesc, setPropDesc] = useState("")
+  const [propImg, setPropImg] = useState<File | null>(null)
+  const [myReqs, setMyReqs] = useState<any[]>([])
+  const [proposing, setProposing] = useState(false)
+
   const load = async () => {
     try {
       const r = await fetch("/api/contribution/summary")
@@ -47,6 +55,11 @@ export default function MyContributionPage() {
       if (!r.ok || !d?.success) throw new Error(d?.error || `加载失败（HTTP ${r.status}）`)
       setData(d)
       setError("")
+      try {
+        const r2 = await fetch("/api/contribution/item-requests")
+        const d2 = await r2.json().catch(() => ({}))
+        if (r2.ok && d2?.success) setMyReqs(d2.requests || [])
+      } catch { /* 提议列表拉不到不影响主内容 */ }
     } catch (e: any) {
       setError(String(e?.message || e))
     } finally {
@@ -71,7 +84,8 @@ export default function MyContributionPage() {
       if (!r.ok || !d?.success) throw new Error(d?.error || `投入失败（HTTP ${r.status}）`)
       setDonateItem(null); setAmount("")
       await load()
-      setMsg(`${t("已投入")} ${n} ${t("分")}，${t("贡献积分")} +${n}`)
+      const got = Number(d.earned_contribution_points ?? n)
+      setMsg(`${t("已投入")} ${n} ${t("分")}，${t("贡献积分")} +${got}</b>`.replace("</b>", ""))
     } catch (e: any) {
       setMsg(String(e?.message || e))
     } finally {
@@ -96,6 +110,29 @@ export default function MyContributionPage() {
       setMsg(String(e?.message || e))
     } finally {
       setBusy(false)
+    }
+  }
+
+  const submitProposal = async () => {
+    if (propName.trim().length < 2) { setMsg(t("写上物品名称")); return }
+    if (propDesc.trim().length < 2) { setMsg(t("说说想要什么")); return }
+    setProposing(true); setMsg("")
+    try {
+      const fd = new FormData()
+      fd.append("type", propType)
+      fd.append("name", propName.trim())
+      fd.append("description", propDesc.trim())
+      if (propImg) fd.append("image", propImg)
+      const r = await fetch("/api/contribution/item-requests", { method: "POST", body: fd })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok || !d?.success) throw new Error(d?.error || `提交失败（HTTP ${r.status}）`)
+      setPropName(""); setPropDesc(""); setPropImg(null)
+      setMsg(t("已提交，等老师审批"))
+      await load()
+    } catch (e: any) {
+      setMsg(String(e?.message || e))
+    } finally {
+      setProposing(false)
     }
   }
 
@@ -141,6 +178,11 @@ export default function MyContributionPage() {
           <p className="mt-1 text-2xl font-semibold">{b.points_now}</p>
         </div>
       </div>
+
+      <p className="text-xs text-gray-500">
+        {t("现在的比率")}{t("：")}{t("每投入 1 分得")} {data.rate ?? 1} {t("贡献积分")}
+        {" · "}{t("余额")} {b.balance ?? b.available}{t("（")}{t("待批占用")} {b.held ?? 0}{t("）")}
+      </p>
 
       {msg && <div className="rounded-lg border bg-white px-3 py-2 text-sm text-gray-700">{msg}</div>}
 
@@ -224,6 +266,98 @@ export default function MyContributionPage() {
                 </div>
               )
             })}
+          </div>
+        )}
+      </section>
+
+      {/* 我要提议物品 */}
+      <section className="space-y-3">
+        <div className="flex items-end justify-between">
+          <h2 className="flex items-center gap-2 text-base font-semibold"><Lightbulb className="h-4 w-4 text-orange-500" />{t("我想提议物品")}</h2>
+          <p className="text-xs text-gray-500">{t("想要中心买什么，或想要什么私人物品，写下来给老师看")}</p>
+        </div>
+        <div className="rounded-xl border bg-white p-3 space-y-2">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPropType("upgrade")}
+              className={`rounded-md px-3 py-1.5 text-sm ${propType === "upgrade" ? "bg-gray-900 text-white" : "border text-gray-600"}`}
+            >{t("中心升级物品")}</button>
+            <button
+              onClick={() => setPropType("reward")}
+              className={`rounded-md px-3 py-1.5 text-sm ${propType === "reward" ? "bg-gray-900 text-white" : "border text-gray-600"}`}
+            >{t("私人物品")}</button>
+          </div>
+          <Input className="h-9" placeholder={t("物品名称，例如：电子琴")} value={propName} onChange={(e) => setPropName(e.target.value)} />
+          <textarea
+            className="min-h-[70px] w-full resize-y rounded-md border px-3 py-2 text-sm"
+            placeholder={t("为什么想要它？想拿来做什么？")}
+            value={propDesc}
+            onChange={(e) => setPropDesc(e.target.value)}
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">
+              <Camera className="h-4 w-4" />
+              {propImg ? propImg.name.slice(0, 18) : t("加照片（可选）")}
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => setPropImg(e.target.files?.[0] || null)} />
+            </label>
+            <button
+              className="rounded-md bg-orange-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
+              disabled={proposing}
+              onClick={submitProposal}
+            >{proposing ? t("提交中…") : t("提交提议")}</button>
+          </div>
+          {myReqs.length > 0 && (
+            <div className="space-y-1.5 pt-1">
+              <p className="text-xs font-medium text-gray-600">{t("我提过的")}</p>
+              {myReqs.map((rc: any) => (
+                <div key={rc.id} className="flex flex-wrap items-center gap-2 rounded border px-2 py-1.5 text-sm">
+                  <span className="text-[11px] text-gray-400">{rc.type === "reward" ? t("私人物品") : t("中心升级")}</span>
+                  <span className="font-medium">{rc.name}</span>
+                  <span className={`ml-auto rounded px-2 py-0.5 text-[11px] ${
+                    rc.status === "approved" ? "bg-green-50 text-green-700" : rc.status === "rejected" ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-700"
+                  }`}>
+                    {rc.status === "approved" ? t("已通过") : rc.status === "rejected" ? t("已拒绝") : t("待审批")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 我的贡献积分明细 */}
+      <section className="space-y-3">
+        <h2 className="flex items-center gap-2 text-base font-semibold"><History className="h-4 w-4 text-orange-500" />{t("我的贡献积分明细")}</h2>
+        {(data.my_point_logs || []).length === 0 ? (
+          <div className="rounded-xl border bg-white py-6 text-center text-sm text-gray-500">{t("还没有明细")}</div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border bg-white">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-gray-50 text-left text-xs text-gray-500">
+                  <th className="px-3 py-2">{t("时间")}</th>
+                  <th className="px-3 py-2">{t("类型")}</th>
+                  <th className="px-3 py-2 text-right">{t("变动")}</th>
+                  <th className="px-3 py-2 text-right">{t("余额")}</th>
+                  <th className="px-3 py-2">{t("说明")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data.my_point_logs || []).map((x: any) => (
+                  <tr key={x.id} className="border-b last:border-0">
+                    <td className="px-3 py-2 text-xs text-gray-500">{(x.created || "").slice(0, 16).replace("T", " ")}</td>
+                    <td className="px-3 py-2 text-xs">
+                      {x.kind === "donate" ? t("投入") : x.kind === "redeem" ? t("兑换") : x.kind === "refund" ? t("退回") : t("手动调整")}
+                    </td>
+                    <td className={`px-3 py-2 text-right font-semibold ${Number(x.amount) > 0 ? "text-green-600" : "text-red-600"}`}>
+                      {Number(x.amount) > 0 ? "+" : ""}{x.amount}
+                    </td>
+                    <td className="px-3 py-2 text-right text-gray-600">{x.balance_after}</td>
+                    <td className="px-3 py-2 text-xs text-gray-600">{x.note || "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </section>

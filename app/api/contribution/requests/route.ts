@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
+import { addContributionPoints } from '@/lib/contribution'
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 
 /**
  * 老师/管理员审批兑换申请：approved / rejected / delivered。
  *
- * 批准时扣库存；拒绝不扣库存（学生额度自动退回，因为额度算法只算非 rejected 的）。
+ * 批准：扣库存 + 扣学生贡献积分（写 contribution_point_logs）
+ * 拒绝：不扣库存；如果之前批准过（已扣贡献积分），退回（写 refund 流水）
  * 已领（delivered）之后不能再改。
  */
 export async function PATCH(request: NextRequest) {
@@ -37,6 +39,34 @@ export async function PATCH(request: NextRequest) {
       method: 'PATCH', headers: H, body: JSON.stringify({ status }),
     })
     if (!u.ok) return NextResponse.json({ success: false, error: '更新失败' }, { status: 500 })
+
+    // 贡献积分：批准时扣，从已批改回拒绝时退
+    const wasApproved = rec.status === 'approved'
+    const cost = Number(rec.cost || rec.cost_points || 0)
+    if (status === 'approved' && !wasApproved && cost > 0 && rec.student) {
+      try {
+        await addContributionPoints(token, {
+          studentId: String(rec.student),
+          studentName: rec.student_name || '',
+          amount: -cost,
+          kind: 'redeem',
+          note: `兑换「${rec.item_name || '-'}」`,
+          operator: gate.session.name || gate.session.role,
+        })
+      } catch { /* 扣不到就放过，管理端可在贡献积分流水里补 */ }
+    }
+    if (status === 'rejected' && wasApproved && cost > 0 && rec.student) {
+      try {
+        await addContributionPoints(token, {
+          studentId: String(rec.student),
+          studentName: rec.student_name || '',
+          amount: cost,
+          kind: 'refund',
+          note: `退回兑换「${rec.item_name || '-'}」`,
+          operator: gate.session.name || gate.session.role,
+        })
+      } catch { /* 同上 */ }
+    }
 
     // 批准时扣库存
     if (status === 'approved' && rec.item) {

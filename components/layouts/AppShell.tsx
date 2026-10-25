@@ -233,6 +233,7 @@ const SYS_POINTS_GROUP: NavItem[] = [
   { label: "积分规则", href: "/points/rules", icon: ScrollText },
   { label: "积分排行", href: "/points/leaderboard", icon: Trophy },
   { label: "贡献兑换", href: "/contribution-management", icon: Gift },
+  { label: "成就管理", href: "/achievement-management", icon: Award },
 ]
 
 const SYS_ORG_GROUP: NavItem[] = [
@@ -300,6 +301,7 @@ const ROLE_CONFIGS: Record<string, RoleConfig> = {
           { label: "积分操作", href: "/points", icon: Star },
           { label: "积分排行", href: "/points/leaderboard", icon: Trophy },
           { label: "贡献兑换", href: "/contribution-management", icon: Gift },
+          { label: "成就管理", href: "/achievement-management", icon: Award },
         ],
       },
       {
@@ -630,6 +632,7 @@ export default function AppShell({
     "/teacher-workspace/students": "education.workspace", "/teacher-workspace/courses": "education.workspace",
     "/teacher-workspace/attendance": "education.workspace", "/teacher-workspace/leave": "education.workspace",
     "/contribution-management": "education.contribution",
+    "/achievement-management": "system.achievements",
     "/teacher-teaching-report": "education.teaching_report",
     "/resource-library": "education.resources",
     "/tv-board": "system.tv_board",
@@ -878,6 +881,7 @@ export default function AppShell({
     "/card-management": { label: t("卡片管理"), parent: t("系统") },
     "/points": { label: t("积分操作"), parent: t("系统") },
     "/contribution-management": { label: t("贡献兑换"), parent: t("积分") },
+    "/achievement-management": { label: t("成就管理"), parent: t("积分") },
     "/points/rules": { label: t("积分规则"), parent: t("系统") },
     "/points/leaderboard": { label: t("积分排行"), parent: t("系统") },
     "/user-management": { label: t("用户管理"), parent: t("系统") },

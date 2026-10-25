@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
+import { pendingRedeemCost } from '@/lib/contribution'
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 
 /**
  * 学生用「贡献积分」兑换私人物品。
  *
- * 贡献积分 = 累计投入中心物品的分数 − 已占用（待审批/已批/已领）。
- * 兑换先进待审批，由老师/管理员在「贡献兑换」页审批；被拒绝的会退回额度。
+ * 余额 = students.contribution_points（每笔投入按比率入账，每笔兑换/退回都写 contribution_point_logs）
+ * 申请时只检查「余额 − 待批占用」够不够，不动余额；批准时才真扣，拒绝时退。
  */
 export async function POST(request: NextRequest) {
   const gate = await requireRoles(request, ['student', 'admin'])
@@ -53,12 +54,14 @@ export async function POST(request: NextRequest) {
 
     const donated = (logs.items || []).reduce((a: number, x: any) => a + Number(x.points || 0), 0)
     const spent = (reds.items || []).filter((x: any) => x.status !== 'rejected').reduce((a: number, x: any) => a + Number(x.cost || 0), 0)
-    const available = donated - spent
+    const held = await pendingRedeemCost(token, sid)
+    const balanceNow = Number(student.contribution_points || 0)
+    const available = balanceNow - held
     const cost = Number(item.cost_points || 0)
 
     if (cost <= 0) return NextResponse.json({ success: false, error: '这个物品没有标价，请联系老师' }, { status: 400 })
     if (cost > available) {
-      return NextResponse.json({ success: false, error: `你的贡献积分只有 ${available}，不够换这个（要 ${cost}）` }, { status: 400 })
+      return NextResponse.json({ success: false, error: `你的贡献积分只剩 ${available}（余额 ${balanceNow}，待批占用 ${held}），不够换这个（要 ${cost}）` }, { status: 400 })
     }
 
     const rRes = await fetch(`${PB_URL}/api/collections/reward_redemptions/records`, {
@@ -78,7 +81,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       redemption: rec,
-      balance: { contributed: donated, spent: spent + cost, available: available - cost },
+      balance: { balance: balanceNow, held: held + cost, available: available - cost, contributed: donated, spent },
     })
   } catch (e) {
     return NextResponse.json({ success: false, error: e instanceof Error ? e.message : '操作失败' }, { status: 500 })

@@ -53,6 +53,12 @@ export async function computeEarned(token: string, sid: string) {
   const homework = Number(hw.totalItems || 0)
   if (homework >= 10) earned.add('homework_10')
 
+  // 管理员手动授予的（student_achievements）
+  const manual = await pbGet(token, 'student_achievements/records?perPage=100&fields=achievement_code&filter=' + encodeURIComponent(`student="${sid}"`))
+  for (const m of manual.items || []) {
+    if (m.achievement_code) earned.add(String(m.achievement_code))
+  }
+
   return { student, earned, contributed, attendance, homework, points: Number(student.points || 0) }
 }
 

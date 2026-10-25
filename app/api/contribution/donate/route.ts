@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
+import { addContributionPoints, earnedFrom, getContributionRate } from '@/lib/contribution'
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 
 /**
  * 学生把普通积分投入中心的升级物品。
  *
- * 院长定的规则：投进去的积分从总积分里扣掉（排行榜会掉），同时 1:1 攒贡献积分。
+ * 院长定的规则：投进去的积分从总积分里扣掉（排行榜会掉），同时按「比率」攒贡献积分
+ * （比率在 contribution_settings.points_rate，默认 1:1，管理员可改）。
  * 贡献积分只能换私人物品，不能加回总积分。
  *
  * 安全性：学生只能投自己的（studentId 取登录态，不接受前端传的 id）；
@@ -94,11 +96,35 @@ export async function POST(request: NextRequest) {
       }),
     }).catch(() => {})
 
+    // 6) 贡献积分（投入 × 比率）入账 + 流水
+    const rate = await getContributionRate(token)
+    const earned = earnedFrom(points, rate)
+    let contributionBalance: number | null = null
+    if (earned > 0) {
+      try {
+        const r = await addContributionPoints(token, {
+          studentId: sid,
+          studentName: student.name || '',
+          amount: earned,
+          kind: 'donate',
+          donatePoints: points,
+          rate,
+          note: `投入 ${points} 分给「${item.name || '-'}」`,
+          operator: student.name || '',
+          center: student.center || '',
+        })
+        contributionBalance = r.balance
+      } catch { /* 贡献积分失败不回滚投入，下次可在管理端补 */ }
+    }
+
     return NextResponse.json({
       success: true,
       points_before: before,
       points_after: after,
       contributed: points,
+      rate,
+      earned_contribution_points: earned,
+      contribution_balance: contributionBalance,
       item: { id: itemId, name: item.name, current_points: nextCurrent, target_points: target },
     })
   } catch (e) {
