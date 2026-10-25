@@ -140,7 +140,7 @@ export function LeaderboardList({
         {s.student_id && (
           <span className={`text-[10px] ml-1.5 px-1.5 py-0.5 rounded shrink-0 ${idCol}`}>{s.student_id}</span>
         )}
-        <p className={`text-[10px] leading-tight ${gradeCol(r)}`}>{toGradeDisplay(s.grade)}</p>
+        <p className={`text-[10px] leading-tight ${gradeCol(r)}`}>{t(toGradeDisplay(s.grade))}</p>
       </div>
       <span className={`text-sm font-bold tabular-nums shrink-0 ${ptsCol}`}>
         {s.points}<span className="text-[10px] font-normal opacity-60 ml-0.5">{t("分")}</span>

@@ -129,7 +129,7 @@ export default function MonthlyTestsPage() {
                 <Label>{t("年级")}</Label>
                 <select className="h-9 rounded-md border px-2 text-sm" value={grade} onChange={(e) => setGrade(e.target.value)}>
                   <option value="">{t("请选择年级")}</option>
-                  {GRADE_CANON_ALL.map((g) => <option key={g} value={g}>{gradeLabel(g)}</option>)}
+                  {GRADE_CANON_ALL.map((g) => <option key={g} value={g}>{t(gradeLabel(g))}</option>)}
                 </select>
               </div>
               <div className="grid gap-1.5">
@@ -161,7 +161,7 @@ export default function MonthlyTestsPage() {
         ) : (
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">{gradeLabel(grade)} · {year} {t("年")} {month} {t("月")}</CardTitle>
+              <CardTitle className="text-base">{t(gradeLabel(grade))} · {year} {t("年")} {month} {t("月")}</CardTitle>
               <CardDescription>{t("已录")} {filled} / {totalCells}</CardDescription>
             </CardHeader>
             <CardContent>
