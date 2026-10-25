@@ -26,7 +26,7 @@ const NAV = [
   ['财务/预算管理', '/finance/budget'], ['财务/财务报表', '/finance/reports'], ['财务/报销单', '/claim-form'], ['财务/库存管理', '/inventory'],
   ['系统/考勤中心', '/attendance'], ['系统/卡片管理', '/card-management'], ['系统/积分操作', '/points'],
   ['系统/积分规则', '/points/rules'], ['系统/积分排行', '/points/leaderboard'], ['系统/用户管理', '/user-management'],
-  ['系统/贡献兑换', '/contribution-management'], ['系统/建议箱', '/suggestions'],
+  ['系统/贡献兑换', '/contribution-management'], ['系统/成就管理', '/achievement-management'], ['系统/建议箱', '/suggestions'],
   ['教务/安亲班月测', '/monthly-tests'],
   ['系统/分行管理', '/center-management'], ['系统/设置', '/settings'], ['系统/管理面板', '/admin'],
   ['系统/学生自助刷卡', '/student-kiosk'],

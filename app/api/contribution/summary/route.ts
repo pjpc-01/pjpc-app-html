@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRoles } from '@/lib/api-auth'
 import { getAdminToken } from '@/lib/pb-admin-token'
+import { getContributionRate, pendingRedeemCost } from '@/lib/contribution'
 
 const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
 
@@ -10,10 +11,10 @@ const PB_URL = process.env.POCKETBASE_URL || 'http://127.0.0.1:8090'
  * 规则（2026-10-23 院长定的）：
  *  - 中心放「升级物品」（电子琴、懒人椅…），标目标积分；
  *  - 学生拿自己的普通积分投入 → 总积分真的扣掉（排行榜会掉）；
- *  - 投入多少就攒多少「贡献积分」（1:1）；
+ *  - 投入的分 × 比率 = 得到的「贡献积分」（比率在 contribution_settings，管理员可改）；
  *  - 贡献积分只能拿去换私人物品，不能加回总积分。
  *
- * 贡献积分余额 = 累计投入 − 未被拒绝的兑换占用。
+ * 贡献积分余额 = students.contribution_points（每笔变动都在 contribution_point_logs）。
  */
 export async function GET(request: NextRequest) {
   const gate = await requireRoles(request, ['student', 'admin', 'teacher', 'office_admin'])
@@ -34,12 +35,14 @@ export async function GET(request: NextRequest) {
       return r.ok ? r.json() : { items: [] }
     }
 
-    const [items, rewards, myLogs, myRedemptions, allDonate] = await Promise.all([
+    const [items, rewards, myLogs, myRedemptions, allDonate, myPointLogs, rate] = await Promise.all([
       get('contribution_items/records?perPage=100&sort=sort_order,name'),
       get('reward_items/records?perPage=100&sort=sort_order,name'),
       sid ? get(`contribution_logs/records?perPage=100&sort=-created&filter=${encodeURIComponent(`student="${sid}"`)}`) : { items: [] },
       sid ? get(`reward_redemptions/records?perPage=100&sort=-created&filter=${encodeURIComponent(`student="${sid}"`)}`) : { items: [] },
       get(`contribution_logs/records?perPage=500&fields=student,points,kind,center&filter=${encodeURIComponent('kind="donate"')}`),
+      sid ? get(`contribution_point_logs/records?perPage=100&sort=-created&filter=${encodeURIComponent(`student="${sid}"`)}`) : { items: [] },
+      getContributionRate(token),
     ])
 
     let student: any = null
@@ -52,6 +55,10 @@ export async function GET(request: NextRequest) {
     const spent = (myRedemptions.items || [])
       .filter((x: any) => x.status !== 'rejected')
       .reduce((a: number, x: any) => a + Number(x.cost || 0), 0)
+    const balanceNow = Number(student?.contribution_points || 0)
+    const held = sid ? await pendingRedeemCost(token, sid) : 0
+    const pointLogs = myPointLogs.items || []
+    const earnedTotal = pointLogs.filter((x: any) => Number(x.amount) > 0).reduce((a: number, x: any) => a + Number(x.amount || 0), 0)
 
     // 全体贡献：算自己的占比（贡献程度）
     const communityTotal = (allDonate.items || []).reduce((a: number, x: any) => a + Number(x.points || 0), 0)
@@ -72,12 +79,22 @@ export async function GET(request: NextRequest) {
         id: student.id, name: student.name, student_id: student.student_id,
         grade: student.grade, center: student.center, points: Number(student.points || 0),
       } : null,
+      rate,
       balance: {
         contributed: donated,
         spent,
-        available: donated - spent,
+        earned: earnedTotal,
+        balance: balanceNow,
+        held,
+        available: balanceNow - held,
         points_now: Number(student?.points || 0),
       },
+      my_point_logs: pointLogs.map((x: any) => ({
+        id: x.id, amount: Number(x.amount || 0), kind: x.kind || '',
+        donate_points: Number(x.donate_points || 0), rate: Number(x.rate || 0),
+        balance_after: Number(x.balance_after || 0), note: x.note || '',
+        operator: x.operator || '', center: x.center || '', created: x.created || '',
+      })),
       community: {
         total_points: communityTotal,
         contributors,
